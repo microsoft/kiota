@@ -250,7 +250,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
     private static bool IsCodePropertyCollection(CodeProperty property)
     {
-        return property?.Type?.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && property?.Type is CodeType currentType && (currentType != null && currentType?.TypeDefinition != null);
+        return property?.Type?.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && property?.Type is CodeType currentType && currentType?.TypeDefinition != null;
     }
 
     private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
