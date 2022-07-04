@@ -374,7 +374,8 @@ namespace Kiota.Builder.Writers.Go {
             WriteReturnError(writer, returnType);
             var constructorFunction = returnType switch {
                 _ when isVoid => string.Empty,
-                _ when isPrimitive || isBinary => $"\"{returnType.TrimCollectionAndPointerSymbols()}\", ",
+                _ when isPrimitive => $"\"{returnType.TrimCollectionAndPointerSymbols()}\", ",
+                _ when isBinary => $"\"{returnType}\", ",
                 _ when isEnum => $"{conventions.GetImportedStaticMethodName(codeElement.ReturnType, codeElement.Parent, "Parse", string.Empty, string.Empty)}, ",
                 _ => $"{conventions.GetImportedStaticMethodName(codeElement.ReturnType, codeElement.Parent, "Create", "FromDiscriminatorValue", "able")}, ",
             };
