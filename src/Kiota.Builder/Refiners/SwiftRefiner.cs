@@ -22,7 +22,19 @@ public class SwiftRefiner : CommonLanguageRefiner
         RemoveCancellationParameter(generatedCode);
         ConvertUnionTypesToWrapper(
             generatedCode,
-            _configuration.UsesBackingStore
+            _configuration.UsesBackingStore,
+            new CodeUsing {
+                    Name = "IntersectionWrapper",
+                    Declaration = new CodeType {
+                        Name = "MicrosoftKiotaAbstractions"
+                    },
+                },
+                new CodeUsing {
+                    Name = "UnionWrapper",
+                    Declaration = new CodeType {
+                        Name = "MicrosoftKiotaAbstractions"
+                    },
+                }
         );
         AddPropertiesAndMethodTypesImports(
             generatedCode,

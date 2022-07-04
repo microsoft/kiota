@@ -34,9 +34,9 @@ public enum CodePropertyKind
     /// </summary>
     Options,
     /// <summary>
-    /// The request response handler. Used when request parameters are wrapped in a class.
+    /// Serialization hint for composed type wrappers.
     /// </summary>
-    ResponseHandler,
+    SerializationHint,
 }
 
 public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement

@@ -12,7 +12,20 @@ namespace Kiota.Builder.Refiners {
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
+            ConvertUnionTypesToWrapper(generatedCode,
+                _configuration.UsesBackingStore,
+                new CodeUsing {
+                    Name = "IIntersectionWrapper",
+                    Declaration = new CodeType {
+                        Name = "Microsoft.Kiota.Abstractions.Serialization"
+                    },
+                },
+                new CodeUsing {
+                    Name = "IUnionWrapper",
+                    Declaration = new CodeType {
+                        Name = "Microsoft.Kiota.Abstractions.Serialization"
+                    },
+                });
             AddRawUrlConstructorOverload(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);

@@ -21,7 +21,21 @@ namespace Kiota.Builder.Refiners
             );
             AddConstructorsForDefaultValues(generatedCode, true);
             RemoveCancellationParameter(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode, false, false);
+            ConvertUnionTypesToWrapper(generatedCode, 
+                _configuration.UsesBackingStore,
+                new CodeUsing {
+                    Name = "IntersectionWrapper",
+                    Declaration = new CodeType {
+                        Name = "Microsoft\\Kiota\\Abstractions\\Serialization"
+                    },
+                },
+                new CodeUsing {
+                    Name = "UnionWrapper",
+                    Declaration = new CodeType {
+                        Name = "Microsoft\\Kiota\\Abstractions\\Serialization"
+                    },
+                },
+                false);
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",

@@ -27,7 +27,19 @@ public class GoRefiner : CommonLanguageRefiner
         );
         ConvertUnionTypesToWrapper(
             generatedCode,
-            _configuration.UsesBackingStore
+            _configuration.UsesBackingStore,
+            new CodeUsing {
+                    Name = "IntersectionWrapper",
+                    Declaration = new CodeType {
+                        Name = "github.com/microsoft/kiota-abstractions-go/serialization"
+                    },
+                },
+                new CodeUsing {
+                    Name = "UnionWrapper",
+                    Declaration = new CodeType {
+                        Name = "github.com/microsoft/kiota-abstractions-go/serialization"
+                    },
+                }
         );
         AddRawUrlConstructorOverload(
             generatedCode

@@ -16,7 +16,20 @@ namespace Kiota.Builder.Refiners
             AddDefaultImports(generatedCode, additionalUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
+            ConvertUnionTypesToWrapper(generatedCode, 
+                _configuration.UsesBackingStore,
+                new CodeUsing {
+                        Name = "IIntersectionWrapper",
+                        Declaration = new CodeType {
+                            Name = "Microsoft.Kiota.Abstractions.Serialization"
+                        },
+                    },
+                    new CodeUsing {
+                        Name = "IUnionWrapper",
+                        Declaration = new CodeType {
+                            Name = "Microsoft.Kiota.Abstractions.Serialization"
+                        },
+                });
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddInnerClasses(generatedCode, false);
             AddParsableImplementsForModelClasses(generatedCode, "IParsable");

@@ -341,70 +341,84 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration));
     }
-    protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, bool supportInnerClasses = true) {
+    protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, CodeUsing intersectionInterfaceType, CodeUsing unionInterfaceType, bool supportInnerClasses = true) {
         var parentClass = currentElement.Parent as CodeClass;
         if(currentElement is CodeMethod currentMethod) {
             if(currentMethod.ReturnType is CodeComposedTypeBase currentUnionType)
-                currentMethod.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, supportInnerClasses);
+                currentMethod.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, intersectionInterfaceType, unionInterfaceType, supportInnerClasses);
             if(currentMethod.Parameters.Any(static x => x.Type is CodeComposedTypeBase))
                 foreach(var currentParameter in currentMethod.Parameters.Where(x => x.Type is CodeComposedTypeBase))
-                    currentParameter.Type = ConvertComposedTypeToWrapper(parentClass, currentParameter.Type as CodeComposedTypeBase, usesBackingStore, supportInnerClasses);
+                    currentParameter.Type = ConvertComposedTypeToWrapper(parentClass, currentParameter.Type as CodeComposedTypeBase, usesBackingStore, intersectionInterfaceType, unionInterfaceType, supportInnerClasses);
             if(currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeComposedTypeBase>().Any())
                 foreach(var errorUnionType in currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeComposedTypeBase>())
-                    currentMethod.ReplaceErrorMapping(errorUnionType, ConvertComposedTypeToWrapper(parentClass, errorUnionType, usesBackingStore, supportInnerClasses));
+                    currentMethod.ReplaceErrorMapping(errorUnionType, ConvertComposedTypeToWrapper(parentClass, errorUnionType, usesBackingStore, intersectionInterfaceType, unionInterfaceType, supportInnerClasses));
         }
         else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeComposedTypeBase currentUnionType)
-            currentIndexer.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore);
+            currentIndexer.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, intersectionInterfaceType, unionInterfaceType);
         else if(currentElement is CodeProperty currentProperty && currentProperty.Type is CodeComposedTypeBase currentPropUnionType)
-            currentProperty.Type = ConvertComposedTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, supportInnerClasses);
+            currentProperty.Type = ConvertComposedTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, intersectionInterfaceType, unionInterfaceType, supportInnerClasses);
 
-        CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, supportInnerClasses));
+        CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, intersectionInterfaceType, unionInterfaceType, supportInnerClasses));
     }
-    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeUnionType, bool usesBackingStore, bool supportsInnerClasses = true)
+    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, CodeUsing intersectionInterfaceType, CodeUsing unionInterfaceType, bool supportsInnerClasses = true)
     {
         if(codeClass == null) throw new ArgumentNullException(nameof(codeClass));
-        if(codeUnionType == null) throw new ArgumentNullException(nameof(codeUnionType));
+        if(codeComposedType == null) throw new ArgumentNullException(nameof(codeComposedType));
         CodeClass newClass;
         var description =
-            $"Union type wrapper for classes {codeUnionType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}";
+            $"Composed type wrapper for classes {codeComposedType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}";
         if (!supportsInnerClasses)
         {
             var @namespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
             newClass = @namespace.AddClass(new CodeClass()
             {
-                Name = codeUnionType.Name,
+                Name = codeComposedType.Name,
                 Description = description
             }).Last();
         }
         else {
-            if(codeUnionType.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase))
-                codeUnionType.Name = $"{codeUnionType.Name}Wrapper";
+            if(codeComposedType.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase))
+                codeComposedType.Name = $"{codeComposedType.Name}Wrapper";
             newClass = codeClass.AddInnerClass(new CodeClass {
-            Name = codeUnionType.Name,
+            Name = codeComposedType.Name,
             Description = description}).First();
         }
-        newClass.AddProperty(codeUnionType
+        newClass.AddProperty(codeComposedType
                                 .Types
                                 .Select(x => new CodeProperty {
                                     Name = x.Name,
                                     Type = x,
-                                    Description = $"Union type representation for type {x.Name}"
+                                    Description = $"Composed type representation for type {x.Name}"
                                 }).ToArray());
-        if(codeUnionType.Types.All(static x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
+        if(codeComposedType.Types.All(static x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
                                 x.TypeDefinition is CodeEnum || x.TypeDefinition is null))
         {
             KiotaBuilder.AddSerializationMembers(newClass, true, usesBackingStore);
+            newClass.AddProperty(new CodeProperty {
+                Name = "serializationHint",
+                Type = new CodeType { Name = "string" },
+                Description = "Serialization hint for the current wrapper.",
+                Access = AccessModifier.Public,
+                Kind = CodePropertyKind.SerializationHint,
+            });
+            if(unionInterfaceType != null && codeComposedType is CodeUnionType) {
+                newClass.AddUsing(unionInterfaceType);
+                newClass.StartBlock.AddImplements(new CodeType { Name = unionInterfaceType.Name });
+            } else if(intersectionInterfaceType != null && codeComposedType is CodeIntersectionType) {
+                newClass.AddUsing(intersectionInterfaceType);
+                newClass.StartBlock.AddImplements(new CodeType { Name = intersectionInterfaceType.Name });
+            }
             newClass.Kind = CodeClassKind.Model;
         }
-        newClass.OriginalComposedType = codeUnionType;
+        newClass.OriginalComposedType = codeComposedType;
         // Add the discriminator function to the wrapper as it will be referenced. 
-        KiotaBuilder.AddDiscriminatorMethod(newClass, codeUnionType.DiscriminatorInformation.DiscriminatorPropertyName, codeUnionType.DiscriminatorInformation.DiscriminatorMappings);
+        KiotaBuilder.AddDiscriminatorMethod(newClass, codeComposedType.DiscriminatorInformation.DiscriminatorPropertyName, codeComposedType.DiscriminatorInformation.DiscriminatorMappings);
         return new CodeType {
             Name = newClass.Name,
             TypeDefinition = newClass,
-            CollectionKind = codeUnionType.CollectionKind,
-            IsNullable = codeUnionType.IsNullable,
-            ActionOf = codeUnionType.ActionOf,
+            CollectionKind = codeComposedType.CollectionKind,
+            IsNullable = codeComposedType.IsNullable,
+            ActionOf = codeComposedType.ActionOf,
         };
     }
     protected static void MoveClassesWithNamespaceNamesUnderNamespace(CodeElement currentElement) {
