@@ -303,6 +303,11 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             return value;
         return null;
     }
+    public void RemoveDiscriminatorMapping(params string[] keys) {
+        if(keys == null || !keys.Any()) throw new ArgumentNullException(nameof(keys));
+        foreach(var key in keys)
+            discriminatorMappings.TryRemove(key, out var _);
+    }
     public CodeTypeBase GetErrorMappingValue(string key)
     {
         if(string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));

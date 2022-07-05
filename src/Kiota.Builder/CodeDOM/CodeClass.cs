@@ -80,5 +80,18 @@ public class ClassDeclaration : ProprietableBlockDeclaration
         EnsureElementsAreChildren(value);
         inherits = value;
     } }
+
+    public bool InheritsFrom(CodeClass candidate) {
+        ArgumentNullException.ThrowIfNull(candidate, nameof(candidate));
+
+        if (inherits is CodeType currentInheritsType &&
+            currentInheritsType.TypeDefinition is CodeClass currentParentClass)
+            if (currentParentClass == candidate)
+                return true;
+            else
+                return currentParentClass.StartBlock.InheritsFrom(candidate);
+        else
+            return false;
+    }
 }
 
