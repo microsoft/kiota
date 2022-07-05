@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using Kiota.Builder.Tests;
 using Xunit;
@@ -72,8 +72,8 @@ public class CodePropertyWriterTests: IDisposable {
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains("get { return BackingStore?.Get<Somecustomtype>(nameof(PropertyName)); }", result);
-        Assert.Contains("set { BackingStore?.Set(nameof(PropertyName), value);", result);
+        Assert.Contains("get { return BackingStore?.Get<Somecustomtype>(\"propertyName\"); }", result);
+        Assert.Contains("set { BackingStore?.Set(\"propertyName\", value);", result);
     }
     [Fact]
     public void MapsAdditionalDataPropertiesToBackingStore() {
@@ -81,8 +81,8 @@ public class CodePropertyWriterTests: IDisposable {
         property.Kind = CodePropertyKind.AdditionalData;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains("get { return BackingStore?.Get<Somecustomtype>(nameof(PropertyName)); }", result);
-        Assert.Contains("set { BackingStore?.Set(nameof(PropertyName), value);", result);
+        Assert.Contains("get { return BackingStore?.Get<Somecustomtype>(\"propertyName\"); }", result);
+        Assert.Contains("set { BackingStore?.Set(\"propertyName\", value);", result);
     }
     [Fact]
     public void WritesSerializationAttribute() {

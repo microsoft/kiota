@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Extensions;
@@ -26,10 +26,11 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
             break;
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
             case CodePropertyKind.Custom when backingStoreProperty != null:
+                var backingStoreKey = codeElement.SerializationName ?? codeElement.Name.ToFirstCharacterLowerCase();
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"get {{ return {backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Get<{propertyType}>(nameof({codeElement.Name.ToFirstCharacterUpperCase()})); }}");
-                writer.WriteLine($"set {{ {backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Set(nameof({codeElement.Name.ToFirstCharacterUpperCase()}), value); }}");
+                writer.WriteLine($"get {{ return {backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Get<{propertyType}>(\"{backingStoreKey}\"); }}");
+                writer.WriteLine($"set {{ {backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Set(\"{backingStoreKey}\", value); }}");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             break;
