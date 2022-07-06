@@ -486,13 +486,6 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesSerializerBody() {
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
-        };
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationProperties();
