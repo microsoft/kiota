@@ -66,6 +66,6 @@ https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/open
 
 ## Next steps
 
-For details on running Kiota, see [Using the Kiota tool](/docs/using.md)
+For details on running Kiota, see [Using the Kiota tool](../using)
 
 The following topics provide details on using Kiota to generate SDKs for specific languages.
