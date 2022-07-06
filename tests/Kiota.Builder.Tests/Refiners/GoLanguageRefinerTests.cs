@@ -34,10 +34,10 @@ public class GoLanguageRefinerTests {
                 TypeDefinition = baseModel,
             },
         }).First();
-        factoryMethod.DiscriminatorPropertyName = "Discriminator";
-        factoryMethod.AddDiscriminatorMapping("DerivedModel", new CodeType{ Name = derivedModel.Name, TypeDefinition = derivedModel });
+        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = "Discriminator";
+        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("DerivedModel", new CodeType{ Name = derivedModel.Name, TypeDefinition = derivedModel });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Empty(factoryMethod.DiscriminatorMappings);
+        Assert.Empty(factoryMethod.DiscriminatorInformation.DiscriminatorMappings);
         Assert.Empty(baseModel.Usings.Where(x => x.Name.Equals("models.sub", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
