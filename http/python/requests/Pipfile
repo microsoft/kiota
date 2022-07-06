@@ -23,7 +23,7 @@ isort = {version="5.10.1", index="pypi"}
 pytest = {version="7.1.2", index="pypi"}
 pytest-asyncio = {version="0.18.3", index="pypi"}
 pytest-cov = {version="3.0.0", index="pypi"}
-pytest-mock = {version="3.8.1", index="pypi"}
+pytest-mock = {version="3.8.2", index="pypi"}
 asyncmock = {version="0.4.2", index="pypi"}
 responses = {version="0.21.0", index="pypi"}
 types-requests = {version="*", index="pypi"}
