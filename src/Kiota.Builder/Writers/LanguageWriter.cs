@@ -85,10 +85,10 @@ namespace Kiota.Builder.Writers
         {
             if(Writers.TryGetValue(code.GetType(), out var elementWriter))
                 switch(code) {
-                    case CodeProperty p: // we have to do this triage because dotnet is limited in terms of covariance
+                    case CodeProperty p when !p.ExistsInBaseType: // to avoid duplicating props on inheritance structure
                         ((ICodeElementWriter<CodeProperty>) elementWriter).WriteCodeElement(p, this);
                         break;
-                    case CodeIndexer i:
+                    case CodeIndexer i: // we have to do this triage because dotnet is limited in terms of covariance
                         ((ICodeElementWriter<CodeIndexer>) elementWriter).WriteCodeElement(i, this);
                         break;
                     case ClassDeclaration d:
