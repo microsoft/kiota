@@ -31,9 +31,10 @@ public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumen
     public string Description {get; set;}
     public virtual IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
     {
-        ArgumentNullException.ThrowIfNull(properties, nameof(properties));
+        if(properties == null || properties.Any(x => x == null))
+            throw new ArgumentNullException(nameof(properties));
         if(!properties.Any())
-            return Enumerable.Empty<CodeProperty>();
+            throw new ArgumentOutOfRangeException(nameof(properties));
         return AddRange(properties);
     }
     public T Kind { get; set; }
