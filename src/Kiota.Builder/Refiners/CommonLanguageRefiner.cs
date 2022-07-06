@@ -927,4 +927,23 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         else return null;
     }
+    protected void RemoveDiscriminatorMappingsTargetingSubNamespaces(CodeElement currentElement) {
+        if (currentElement is CodeMethod currentMethod &&
+            currentMethod.IsOfKind(CodeMethodKind.Factory) &&
+            currentMethod.Parent is CodeClass currentClass &&
+            currentMethod.DiscriminatorMappings.Any()) {
+                var currentNamespace = currentMethod.GetImmediateParentOfType<CodeNamespace>();
+                var keysToRemove = currentMethod.DiscriminatorMappings
+                                                .Where(x => x.Value is CodeType mappingType &&
+                                                            mappingType.TypeDefinition is CodeClass mappingClass &&
+                                                            mappingClass.Parent is CodeNamespace mappingNamespace &&
+                                                            currentNamespace.IsParentOf(mappingNamespace) &&
+                                                            mappingClass.StartBlock.InheritsFrom(currentClass))
+                                                .Select(x => x.Key)
+                                                .ToArray();
+                if(keysToRemove.Any())
+                    currentMethod.RemoveDiscriminatorMapping(keysToRemove);
+            }
+        CrawlTree(currentElement, RemoveDiscriminatorMappingsTargetingSubNamespaces);
+    }
 }

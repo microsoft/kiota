@@ -165,4 +165,32 @@ public class CodeClassTests {
         });
         Assert.True(codeClass.ContainsMember("subclass"));
     }
+    [Fact]
+    public void InheritsFrom() {
+        var root = CodeNamespace.InitRootNamespace();
+        var child = root.AddNamespace(CodeNamespaceTests.ChildName);
+        var baseClass = child.AddClass(new CodeClass {
+            Name = "baseClass"
+        }).First();
+        var baseClass2 = child.AddClass(new CodeClass {
+            Name = "baseClass2"
+        }).First();
+        baseClass2.StartBlock.Inherits = new CodeType {
+            TypeDefinition = baseClass,
+        };
+        var subClass = child.AddClass(new CodeClass {
+            Name = "subclass"
+        }).First();
+        var unrelatedClass = child.AddClass(new CodeClass {
+            Name = "unrelatedClass"
+        }).First();
+        subClass.StartBlock.Inherits = new CodeType {
+            TypeDefinition = baseClass2,
+        };
+        Assert.True(baseClass2.StartBlock.InheritsFrom(baseClass));
+        Assert.True(subClass.StartBlock.InheritsFrom(baseClass));
+        Assert.True(subClass.StartBlock.InheritsFrom(baseClass2));
+        Assert.False(subClass.StartBlock.InheritsFrom(unrelatedClass));
+        Assert.False(baseClass.StartBlock.InheritsFrom(baseClass2));
+    }
 }
