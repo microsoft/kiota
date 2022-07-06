@@ -304,7 +304,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         return null;
     }
     public void RemoveDiscriminatorMapping(params string[] keys) {
-        if(keys == null || !keys.Any()) throw new ArgumentNullException(nameof(keys));
+        ArgumentNullException.ThrowIfNull(keys, nameof(keys));
         foreach(var key in keys)
             discriminatorMappings.TryRemove(key, out var _);
     }
