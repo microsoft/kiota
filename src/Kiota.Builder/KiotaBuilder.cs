@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -8,6 +8,7 @@ using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeRenderers;
+using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
@@ -919,7 +920,7 @@ public class KiotaBuilder
             return GetPrimitiveType(schema, string.Empty);
         else if(schema.AnyOf.Any() || schema.OneOf.Any() || schema.AllOf.Any()) // we have an empty node because of some local override for schema properties and need to unwrap it.
             return CreateModelDeclarations(currentNode, schema.AnyOf.FirstOrDefault() ?? schema.OneOf.FirstOrDefault() ?? schema.AllOf.FirstOrDefault(), operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema);
-        else throw new InvalidOperationException("un handled case, might be object type or array type");
+        else throw new InvalidSchemaException("unhandled case, might be object type or array type");
     }
     private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace, string typeNameForInlineSchema = default)
     {
@@ -1068,8 +1069,16 @@ public class KiotaBuilder
                                     var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
                                     var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
                                                             (rootNamespace.FindNamespaceByName(shortestNamespaceName) ?? rootNamespace.AddNamespace(shortestNamespaceName));
-                                    var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, default, typeNameForInlineSchema: className);
-                                    return CreateProperty(x.Key, definition.Name, typeSchema: propertySchema, existingType: definition);
+                                    #if RELEASE
+                                    try {
+                                    #endif
+                                        var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, default, typeNameForInlineSchema: className);
+                                        return CreateProperty(x.Key, definition.Name, typeSchema: propertySchema, existingType: definition);
+                                    #if RELEASE
+                                    } catch (InvalidSchemaException ex) {
+                                        throw new InvalidOperationException($"Error creating property {x.Key} for model {model.Name} in API path {currentNode.Path}, the schema is invalid.", ex);
+                                    }
+                                    #endif
                                 })
                                 .ToArray());
         }
