@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where additional data and backing store properties would be duplicated. [#1671](https://github.com/microsoft/kiota/issues/1671)
 - Fixed a bug where serialized properties would not match the json property name when using the backing store. (CSharp).
 - Corrected PHPDoc types for headers and request options properties in request configuration classes. [#1711](https://github.com/microsoft/kiota/pull/1711)
+- Fixed a bug where properties defined at multiple inherited models would collide. [#1717](https://github.com/microsoft/kiota/issues/1717)
 
 ## [0.2.1] - 2022-05-30
 
