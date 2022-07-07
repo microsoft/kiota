@@ -1181,13 +1181,11 @@ public class KiotaBuilder
                     Name = parameter.Name.SanitizeParameterNameForCodeSymbols(),
                     Description = parameter.Description.CleanupDescription(),
                     Kind = CodePropertyKind.QueryParameter,
-                    Type = new CodeType
-                    {
-                        IsExternal = true,
-                        Name = parameter.Schema?.Items?.Type ?? parameter.Schema?.Type ?? "string", // since its a query parameter default to string if there is no schema
-                        CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default,
-                    },
+                    Type = GetPrimitiveType(parameter.Schema),
                 };
+                prop.Type.CollectionKind = parameter.Schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
+                if(string.IsNullOrEmpty(prop.Type.Name))
+                    prop.Type.Name = parameter.Schema?.Items?.Type ?? parameter.Schema?.Type ?? "string"; // since its a query parameter default to string if there is no schema
 
                 if(!parameter.Name.Equals(prop.Name))
                 {
