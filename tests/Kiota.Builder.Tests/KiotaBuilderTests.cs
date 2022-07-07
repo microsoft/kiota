@@ -1714,8 +1714,86 @@ components:
         Assert.Equal(expected, property.Type.Name);
         Assert.True(property.Type.AllTypes.First().IsExternal);
     }
+    [InlineData(true)]
+    [InlineData(false)]
+    [Theory]
+    public void MapsQueryParameterCollectionKinds(bool isArray){
+        var baseSchema = new OpenApiSchema {
+            Type = "number",
+            Format = "int64"
+        };
+        var arraySchema = new OpenApiSchema {
+            Type = "array",
+            Items = baseSchema
+        };
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["primitive"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Parameters = new List<OpenApiParameter> {
+                                new OpenApiParameter {
+                                    Name = "query",
+                                    In = ParameterLocation.Query,
+                                    Schema = isArray ? arraySchema : baseSchema
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse {}
+                            }
+                        }
+                    } 
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters", true);
+        Assert.NotNull(queryParameters);
+        var property = queryParameters.Properties.First(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.Equal("int64", property.Type.Name);
+        Assert.Equal(isArray ? CodeTypeBase.CodeTypeCollectionKind.Array : CodeTypeBase.CodeTypeCollectionKind.None, property.Type.CollectionKind);
+        Assert.True(property.Type.AllTypes.First().IsExternal);
+    }
     [Fact]
-    public void DoesntGenerateNamesapacesWhenNotRequired(){
+    public void DefaultsQueryParametersWithNoSchemaToString(){
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["primitive"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Parameters = new List<OpenApiParameter> {
+                                new OpenApiParameter {
+                                    Name = "query",
+                                    In = ParameterLocation.Query
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse {}
+                            }
+                        }
+                    } 
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters", true);
+        Assert.NotNull(queryParameters);
+        var property = queryParameters.Properties.First(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.Equal("string", property.Type.Name);
+        Assert.True(property.Type.AllTypes.First().IsExternal);
+    }
+    [Fact]
+    public void DoesntGenerateNamespacesWhenNotRequired(){
         var myObjectSchema = new OpenApiSchema {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
