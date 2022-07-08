@@ -577,7 +577,7 @@ public class KiotaBuilder
         if(typeSchema?.AnyOf?.Any() ?? false)
             typeNames.AddRange(typeSchema.AnyOf.Select(x => x.Type)); // double is sometimes an anyof string, number and enum
         // first value that's not null, and not "object" for primitive collections, the items type matters
-        var typeName = typeNames.FirstOrDefault(x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
+        var typeName = typeNames.FirstOrDefault(static x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
         
         var isExternal = false;
         if (typeSchema?.Items?.Enum?.Any() ?? false)
@@ -1184,37 +1184,40 @@ public class KiotaBuilder
                 Description = (operation.Description ?? operation.Summary).CleanupDescription(),
             }).First();
             foreach (var parameter in parameters)
-            {
-                var prop = new CodeProperty
-                {
-                    Name = parameter.Name.SanitizeParameterNameForCodeSymbols(),
-                    Description = parameter.Description.CleanupDescription(),
-                    Kind = CodePropertyKind.QueryParameter,
-                    Type = new CodeType
-                    {
-                        IsExternal = true,
-                        Name = parameter.Schema?.Items?.Type ?? parameter.Schema?.Type ?? "string", // since its a query parameter default to string if there is no schema
-                        CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default,
-                    },
-                };
-
-                if(!parameter.Name.Equals(prop.Name))
-                {
-                    prop.SerializationName = parameter.Name.SanitizeParameterNameForUrlTemplate();
-                }
-
-                if (!parameterClass.ContainsMember(parameter.Name))
-                {
-                    parameterClass.AddProperty(prop);
-                }
-                else
-                {
-                    logger.LogWarning("Ignoring duplicate parameter {name}", parameter.Name);
-                }
-            }
-
+                AddPropertyForParameter(parameter, parameterClass);
+                
             return parameterClass;
         } else return null;
+    }
+    private void AddPropertyForParameter(OpenApiParameter parameter, CodeClass parameterClass) {
+        var prop = new CodeProperty
+        {
+            Name = parameter.Name.SanitizeParameterNameForCodeSymbols(),
+            Description = parameter.Description.CleanupDescription(),
+            Kind = CodePropertyKind.QueryParameter,
+            Type = GetPrimitiveType(parameter.Schema),
+        };
+        prop.Type.CollectionKind = parameter.Schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
+        if(string.IsNullOrEmpty(prop.Type.Name) && prop.Type is CodeType parameterType) {
+            // since its a query parameter default to string if there is no schema
+            // it also be an object type, but we'd need to create the model in that case and there's no standard on how to serialize those as query parameters
+            parameterType.Name = "string";
+            parameterType.IsExternal = true;
+        }
+
+        if(!parameter.Name.Equals(prop.Name))
+        {
+            prop.SerializationName = parameter.Name.SanitizeParameterNameForUrlTemplate();
+        }
+
+        if (!parameterClass.ContainsMember(parameter.Name))
+        {
+            parameterClass.AddProperty(prop);
+        }
+        else
+        {
+            logger.LogWarning("Ignoring duplicate parameter {name}", parameter.Name);
+        }
     }
     private static CodeType GetQueryParameterType(OpenApiSchema schema) =>
         new()

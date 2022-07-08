@@ -1650,8 +1650,150 @@ components:
         Assert.Equal(expected, method.ReturnType.Name);
         Assert.True(method.ReturnType.AllTypes.First().IsExternal);
     }
+    [InlineData("string", "", "string")]// https://spec.openapis.org/registry/format/
+    [InlineData("string", "commonmark", "string")]
+    [InlineData("string", "html", "string")]
+    [InlineData("string", "date-time", "DateTimeOffset")]
+    [InlineData("string", "duration", "TimeSpan")]
+    [InlineData("string", "date", "DateOnly")]
+    [InlineData("string", "time", "TimeOnly")]
+    [InlineData("string", "base64url", "binary")]
+    // floating points can only be declared as numbers
+    [InlineData("number", "double", "double")]
+    [InlineData("number", "float", "float")]
+    [InlineData("number", "decimal", "decimal")]
+    // integers can only be declared as numbers or integers
+    [InlineData("number", "int32", "integer")]
+    [InlineData("integer", "int32", "integer")]
+    [InlineData("number", "int64", "int64")]
+    [InlineData("integer", "int64", "int64")]
+    [InlineData("number", "int8", "sbyte")]
+    [InlineData("integer", "int8", "sbyte")]
+    [InlineData("number", "uint8", "byte")]
+    [InlineData("integer", "uint8", "byte")]
+    [InlineData("number", "", "int64")]
+    [InlineData("integer", "", "integer")]
+    [InlineData("boolean", "", "boolean")]
+    [InlineData("", "byte", "binary")]
+    [InlineData("", "binary", "binary")]
+    [InlineData("file", null, "binary")]
+    [Theory]
+    public void MapsQueryParameterTypes(string type, string format, string expected){
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["primitive"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Parameters = new List<OpenApiParameter> {
+                                new OpenApiParameter {
+                                    Name = "query",
+                                    In = ParameterLocation.Query,
+                                    Schema = new OpenApiSchema {
+                                        Type = type,
+                                        Format = format
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse {}
+                            }
+                        }
+                    } 
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters", true);
+        Assert.NotNull(queryParameters);
+        var property = queryParameters.Properties.First(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.Equal(expected, property.Type.Name);
+        Assert.True(property.Type.AllTypes.First().IsExternal);
+    }
+    [InlineData(true)]
+    [InlineData(false)]
+    [Theory]
+    public void MapsQueryParameterCollectionKinds(bool isArray){
+        var baseSchema = new OpenApiSchema {
+            Type = "number",
+            Format = "int64"
+        };
+        var arraySchema = new OpenApiSchema {
+            Type = "array",
+            Items = baseSchema
+        };
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["primitive"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Parameters = new List<OpenApiParameter> {
+                                new OpenApiParameter {
+                                    Name = "query",
+                                    In = ParameterLocation.Query,
+                                    Schema = isArray ? arraySchema : baseSchema
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse {}
+                            }
+                        }
+                    } 
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters", true);
+        Assert.NotNull(queryParameters);
+        var property = queryParameters.Properties.First(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.Equal("int64", property.Type.Name);
+        Assert.Equal(isArray ? CodeTypeBase.CodeTypeCollectionKind.Array : CodeTypeBase.CodeTypeCollectionKind.None, property.Type.CollectionKind);
+        Assert.True(property.Type.AllTypes.First().IsExternal);
+    }
     [Fact]
-    public void DoesntGenerateNamesapacesWhenNotRequired(){
+    public void DefaultsQueryParametersWithNoSchemaToString(){
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["primitive"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Parameters = new List<OpenApiParameter> {
+                                new OpenApiParameter {
+                                    Name = "query",
+                                    In = ParameterLocation.Query
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse {}
+                            }
+                        }
+                    } 
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters", true);
+        Assert.NotNull(queryParameters);
+        var property = queryParameters.Properties.First(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.Equal("string", property.Type.Name);
+        Assert.True(property.Type.AllTypes.First().IsExternal);
+    }
+    [Fact]
+    public void DoesntGenerateNamespacesWhenNotRequired(){
         var myObjectSchema = new OpenApiSchema {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
