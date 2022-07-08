@@ -45,6 +45,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, ICloneable, 
     public bool ReadOnly {get;set;} = false;
     public AccessModifier Access {get;set;} = AccessModifier.Public;
     private CodeTypeBase type;
+    public bool ExistsInBaseType {get;set;}
     public CodeMethod Getter {get; set;}
     public CodeMethod Setter {get; set;}
     public CodeTypeBase Type {get => type ;set {

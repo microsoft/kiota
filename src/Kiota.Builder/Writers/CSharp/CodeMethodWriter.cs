@@ -84,7 +84,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 break;
         }
     }
-    private static void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
+    private void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
         if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
             writer.WriteLine($"var mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{codeElement.DiscriminatorPropertyName}\");");
@@ -92,7 +92,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.WriteLine("return mappingValue switch {");
             writer.IncreaseIndent();
             foreach(var mappedType in codeElement.DiscriminatorMappings) {
-                writer.WriteLine($"\"{mappedType.Key}\" => new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}(),");
+                writer.WriteLine($"\"{mappedType.Key}\" => new {conventions.GetTypeString(mappedType.Value.AllTypes.First() ,codeElement)}(),");
             }
             writer.WriteLine($"_ => new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}(),");
             writer.CloseBlock("};");
@@ -179,8 +179,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         writer.IncreaseIndent();
         foreach (var otherProp in parentClass
                                         .Properties
-                                        .Where(x => x.IsOfKind(CodePropertyKind.Custom))
-                                        .OrderBy(x => x.Name))
+                                        .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                        .OrderBy(static x => x.Name))
         {
             writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
         }
@@ -299,8 +299,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.WriteLine("base.Serialize(writer);");
         foreach (var otherProp in parentClass
                                         .Properties
-                                        .Where(x => x.IsOfKind(CodePropertyKind.Custom))
-                                        .OrderBy(x => x.Name))
+                                        .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                        .OrderBy(static x => x.Name))
         {
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
         }

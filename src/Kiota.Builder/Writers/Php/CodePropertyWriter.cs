@@ -46,7 +46,14 @@ namespace Kiota.Builder.Writers.Php
 
         private string GetCollectionDocString(CodeProperty codeProperty)
         {
-            return codeProperty.IsOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.PathParameters) ? "array<string, mixed>" : $"array<{conventions.TranslateType(codeProperty.Type)}>";
+            return codeProperty.Kind switch
+            {
+                CodePropertyKind.AdditionalData => "array<string, mixed>",
+                CodePropertyKind.PathParameters => "array<string, mixed>",
+                CodePropertyKind.Headers => "array<string, string>",
+                CodePropertyKind.Options => "array<string, RequestOption>",
+                _ => $"array<{conventions.TranslateType(codeProperty.Type)}>"
+            };
         }
 
         private void WriteRequestBuilderBody(CodeProperty codeElement, LanguageWriter writer, string returnType, string propertyAccess, string propertyName)

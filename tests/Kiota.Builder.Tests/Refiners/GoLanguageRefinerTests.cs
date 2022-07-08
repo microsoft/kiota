@@ -7,6 +7,40 @@ public class GoLanguageRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLangRefinerTests
     [Fact]
+    public void TrimsCircularDiscriminatorReferences() {
+        var modelsNS = root.AddNamespace("models");
+        var baseModel = modelsNS.AddClass(new CodeClass {
+            Kind = CodeClassKind.Model,
+            Name = "BaseModel",
+        }).First();
+        baseModel.AddProperty(new CodeProperty {
+            Name = "Discriminator",
+            Type = new CodeType {Name = "string"},
+        });
+        var subNamespace = modelsNS.AddNamespace($"{modelsNS.Name}.sub");
+        var derivedModel = subNamespace.AddClass(new CodeClass{
+            Kind = CodeClassKind.Model,
+            Name = "DerivedModel",
+        }).First();
+        derivedModel.StartBlock.Inherits = new CodeType {
+            Name = baseModel.Name,
+            TypeDefinition = baseModel,
+        };
+        var factoryMethod = baseModel.AddMethod(new CodeMethod {
+            Kind = CodeMethodKind.Factory,
+            Name = "factory",
+            ReturnType = new CodeType {
+                Name = baseModel.Name,
+                TypeDefinition = baseModel,
+            },
+        }).First();
+        factoryMethod.DiscriminatorPropertyName = "Discriminator";
+        factoryMethod.AddDiscriminatorMapping("DerivedModel", new CodeType{ Name = derivedModel.Name, TypeDefinition = derivedModel });
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Empty(factoryMethod.DiscriminatorMappings);
+        Assert.Empty(baseModel.Usings.Where(x => x.Name.Equals("models.sub", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
     public void ReplacesModelsByInterfaces() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",

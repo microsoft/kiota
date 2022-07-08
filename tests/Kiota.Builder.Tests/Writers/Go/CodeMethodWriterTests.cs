@@ -101,6 +101,13 @@ public class CodeMethodWriterTests : IDisposable {
                 Name = "EnumType"
             }
         };
+        parentClass.AddProperty(new CodeProperty {
+            Name = "definedInParent",
+            Type = new CodeType {
+                Name = "string"
+            },
+            ExistsInBaseType = true,
+        });
     }
     private void AddInheritanceClass() {
         (parentClass.StartBlock as ClassDeclaration).Inherits = new CodeType {
@@ -543,13 +550,6 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesDeSerializerBody() {
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
-        };
         method.Kind = CodeMethodKind.Deserializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -559,6 +559,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("GetCollectionOfPrimitiveValues", result);
         Assert.Contains("GetCollectionOfObjectValues", result);
         Assert.Contains("GetEnumValue", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -574,13 +575,6 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesSerializerBody() {
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
-        };
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -590,6 +584,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("WriteCollectionOfStringValues", result);
         Assert.Contains("WriteCollectionOfObjectValues", result);
         Assert.Contains("WriteAdditionalData(m.GetAdditionalData())", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact(Skip = "descriptions are not supported")]

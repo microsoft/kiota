@@ -137,7 +137,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"err := m.{parentClass.StartBlock.Inherits.Name.ToFirstCharacterUpperCase()}.Serialize(writer)");
                 WriteReturnError(writer);
             }
-            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
+            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType)) {
                 WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase(), $"m.Get{otherProp.SymbolName.ToFirstCharacterUpperCase()}()", shouldDeclareErrorVar, writer);
             }
             if(additionalDataProperty != null) {
@@ -249,14 +249,20 @@ namespace Kiota.Builder.Writers.Go {
                                                                             CodePropertyKind.RequestBuilder,
                                                                             CodePropertyKind.UrlTemplate,
                                                                             CodePropertyKind.PathParameters)
-                                            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                            .OrderBy(x => x.Name)) {
+                                            .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                            .OrderBy(static x => x.Name)) {
                 writer.WriteLine($"m.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
             }
-            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData) //additional data and backing Store rely on accessors
-                                            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                            .OrderBy(x => x.Name)) {
-                writer.WriteLine($"m.Set{propWithDefault.Name.ToFirstCharacterUpperCase()}({propWithDefault.DefaultValue});");
+            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom rely on accessors
+                                            .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                            .OrderBy(static x => x.Name)) {
+                var defaultValueReference = propWithDefault.DefaultValue;
+                if(defaultValueReference.StartsWith("\"")) {
+                    defaultValueReference = $"{propWithDefault.SymbolName.ToFirstCharacterLowerCase()}Value";
+                    writer.WriteLine($"{defaultValueReference} := {propWithDefault.DefaultValue};");
+                    defaultValueReference = $"&{defaultValueReference}";    
+                }
+                writer.WriteLine($"m.Set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}({defaultValueReference});");
             }
             if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
@@ -301,7 +307,7 @@ namespace Kiota.Builder.Writers.Go {
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, urlTemplateVarName: conventions.TempDictionaryVarName);
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
-            var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
+            var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType);
             if(inherits)
                 writer.WriteLine($"res := m.{parentClass.StartBlock.Inherits.Name.ToFirstCharacterUpperCase()}.{codeElement.Name.ToFirstCharacterUpperCase()}()");
             else
@@ -374,7 +380,8 @@ namespace Kiota.Builder.Writers.Go {
             WriteReturnError(writer, returnType);
             var constructorFunction = returnType switch {
                 _ when isVoid => string.Empty,
-                _ when isPrimitive || isBinary => $"\"{returnType.TrimCollectionAndPointerSymbols()}\", ",
+                _ when isPrimitive => $"\"{returnType.TrimCollectionAndPointerSymbols()}\", ",
+                _ when isBinary => $"\"{returnType}\", ",
                 _ when isEnum => $"{conventions.GetImportedStaticMethodName(codeElement.ReturnType, codeElement.Parent, "Parse", string.Empty, string.Empty)}, ",
                 _ => $"{conventions.GetImportedStaticMethodName(codeElement.ReturnType, codeElement.Parent, "Create", "FromDiscriminatorValue", "able")}, ",
             };

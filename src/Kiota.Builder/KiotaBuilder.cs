@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -8,6 +8,7 @@ using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeRenderers;
+using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
@@ -263,7 +264,7 @@ public class KiotaBuilder
 
     public async Task CreateLanguageSourceFilesAsync(GenerationLanguage language, CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        var languageWriter = LanguageWriter.GetLanguageWriter(language, config.OutputPath, config.ClientNamespaceName);
+        var languageWriter = LanguageWriter.GetLanguageWriter(language, config.OutputPath, config.ClientNamespaceName, config.UsesBackingStore);
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var codeRenderer = CodeRenderer.GetCodeRender(config);
@@ -548,18 +549,21 @@ public class KiotaBuilder
         };
     }
 
-    private CodeProperty CreateProperty(string childIdentifier, string childType, string defaultValue = null, OpenApiSchema typeSchema = null, CodeTypeBase existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
+    private CodeProperty CreateProperty(string childIdentifier, string childType, OpenApiSchema typeSchema = null, CodeTypeBase existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
     {
         var propertyName = childIdentifier.CleanupSymbolName(config.PropertiesPrefixToStrip);
         var prop = new CodeProperty
         {
             Name = propertyName,
-            DefaultValue = defaultValue,
             Kind = kind,
             Description = typeSchema?.Description.CleanupDescription() ?? $"The {propertyName} property",
         };
         if(propertyName != childIdentifier)
             prop.SerializationName = childIdentifier;
+        if(kind == CodePropertyKind.Custom &&
+            typeSchema?.Default is OpenApiString stringDefaultValue &&
+            !string.IsNullOrEmpty(stringDefaultValue.Value))
+            prop.DefaultValue = $"\"{stringDefaultValue.Value}\"";
         
         if (existingType != null)
             prop.Type = existingType;
@@ -576,7 +580,7 @@ public class KiotaBuilder
         if(typeSchema?.AnyOf?.Any() ?? false)
             typeNames.AddRange(typeSchema.AnyOf.Select(x => x.Type)); // double is sometimes an anyof string, number and enum
         // first value that's not null, and not "object" for primitive collections, the items type matters
-        var typeName = typeNames.FirstOrDefault(x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
+        var typeName = typeNames.FirstOrDefault(static x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
         
         var isExternal = false;
         if (typeSchema?.Items?.Enum?.Any() ?? false)
@@ -919,7 +923,7 @@ public class KiotaBuilder
             return GetPrimitiveType(schema, string.Empty);
         else if(schema.AnyOf.Any() || schema.OneOf.Any() || schema.AllOf.Any()) // we have an empty node because of some local override for schema properties and need to unwrap it.
             return CreateModelDeclarations(currentNode, schema.AnyOf.FirstOrDefault() ?? schema.OneOf.FirstOrDefault() ?? schema.AllOf.FirstOrDefault(), operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema);
-        else throw new InvalidOperationException("un handled case, might be object type or array type");
+        else throw new InvalidSchemaException("unhandled case, might be object type or array type");
     }
     private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace, string typeNameForInlineSchema = default)
     {
@@ -1009,6 +1013,8 @@ public class KiotaBuilder
 
         var factoryMethod = AddDiscriminatorMethod(newClass, discriminator?.PropertyName);
         
+        CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass); // order matters since we might be recursively generating ancestors for discriminator mappings and duplicating additional data/backing store properties
+        
         if (discriminator?.Mapping?.Any() ?? false)
             discriminator.Mapping
                 .Where(x => !x.Key.TrimStart('#').Equals(schema.Reference?.Id, StringComparison.OrdinalIgnoreCase))
@@ -1017,7 +1023,6 @@ public class KiotaBuilder
                 .ToList()
                 .ForEach(x => factoryMethod.AddDiscriminatorMapping(x.Key, x.Item2));
 
-        CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass);
         return newClass;
     }
     public static CodeMethod AddDiscriminatorMethod(CodeClass newClass, string discriminatorPropertyName) {
@@ -1047,7 +1052,7 @@ public class KiotaBuilder
         }
         var className = currentNode.GetClassName(config.StructuredMimeTypes, schema: discriminatorSchema).CleanupSymbolName();
         var shouldInherit = discriminatorSchema.AllOf.Any(x => currentSchema.Reference?.Id.Equals(x.Reference?.Id, StringComparison.OrdinalIgnoreCase) ?? false);
-        var codeClass = AddModelDeclarationIfDoesntExist(currentNode, discriminatorSchema, className, currentNamespace, shouldInherit ? currentClass : null);
+        var codeClass = AddModelDeclarationIfDoesntExist(currentNode, discriminatorSchema, className, GetShortestNamespace(currentNamespace, discriminatorSchema), shouldInherit ? currentClass : null);
         return new CodeType {
             Name = codeClass.Name,
             TypeDefinition = codeClass,
@@ -1067,8 +1072,16 @@ public class KiotaBuilder
                                     var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
                                     var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
                                                             (rootNamespace.FindNamespaceByName(shortestNamespaceName) ?? rootNamespace.AddNamespace(shortestNamespaceName));
-                                    var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, default, typeNameForInlineSchema: className);
-                                    return CreateProperty(x.Key, definition.Name, typeSchema: propertySchema, existingType: definition);
+                                    #if RELEASE
+                                    try {
+                                    #endif
+                                        var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, default, typeNameForInlineSchema: className);
+                                        return CreateProperty(x.Key, definition.Name, typeSchema: propertySchema, existingType: definition);
+                                    #if RELEASE
+                                    } catch (InvalidSchemaException ex) {
+                                        throw new InvalidOperationException($"Error creating property {x.Key} for model {model.Name} in API path {currentNode.Path}, the schema is invalid.", ex);
+                                    }
+                                    #endif
                                 })
                                 .ToArray());
         }
@@ -1174,37 +1187,40 @@ public class KiotaBuilder
                 Description = (operation.Description ?? operation.Summary).CleanupDescription(),
             }).First();
             foreach (var parameter in parameters)
-            {
-                var prop = new CodeProperty
-                {
-                    Name = parameter.Name.SanitizeParameterNameForCodeSymbols(),
-                    Description = parameter.Description.CleanupDescription(),
-                    Kind = CodePropertyKind.QueryParameter,
-                    Type = new CodeType
-                    {
-                        IsExternal = true,
-                        Name = parameter.Schema?.Items?.Type ?? parameter.Schema?.Type ?? "string", // since its a query parameter default to string if there is no schema
-                        CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default,
-                    },
-                };
-
-                if(!parameter.Name.Equals(prop.Name))
-                {
-                    prop.SerializationName = parameter.Name.SanitizeParameterNameForUrlTemplate();
-                }
-
-                if (!parameterClass.ContainsMember(parameter.Name))
-                {
-                    parameterClass.AddProperty(prop);
-                }
-                else
-                {
-                    logger.LogWarning("Ignoring duplicate parameter {name}", parameter.Name);
-                }
-            }
-
+                AddPropertyForParameter(parameter, parameterClass);
+                
             return parameterClass;
         } else return null;
+    }
+    private void AddPropertyForParameter(OpenApiParameter parameter, CodeClass parameterClass) {
+        var prop = new CodeProperty
+        {
+            Name = parameter.Name.SanitizeParameterNameForCodeSymbols(),
+            Description = parameter.Description.CleanupDescription(),
+            Kind = CodePropertyKind.QueryParameter,
+            Type = GetPrimitiveType(parameter.Schema),
+        };
+        prop.Type.CollectionKind = parameter.Schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
+        if(string.IsNullOrEmpty(prop.Type.Name) && prop.Type is CodeType parameterType) {
+            // since its a query parameter default to string if there is no schema
+            // it also be an object type, but we'd need to create the model in that case and there's no standard on how to serialize those as query parameters
+            parameterType.Name = "string";
+            parameterType.IsExternal = true;
+        }
+
+        if(!parameter.Name.Equals(prop.Name))
+        {
+            prop.SerializationName = parameter.Name.SanitizeParameterNameForUrlTemplate();
+        }
+
+        if (!parameterClass.ContainsMember(parameter.Name))
+        {
+            parameterClass.AddProperty(prop);
+        }
+        else
+        {
+            logger.LogWarning("Ignoring duplicate parameter {name}", parameter.Name);
+        }
     }
     private static CodeType GetQueryParameterType(OpenApiSchema schema) =>
         new()
