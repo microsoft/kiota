@@ -92,5 +92,13 @@ public class CodePropertyWriterTests: IDisposable {
         var result = tw.ToString();
         Assert.Contains("[QueryParameter(\"someserializationname\")", result);
     }
+    [Fact]
+    public void DoesntWritePropertiesExistingInParentType() {
+        property.Kind = CodePropertyKind.Custom;
+        property.ExistsInBaseType = true;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Empty(result);
+    }
 }
 

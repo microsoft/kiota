@@ -141,14 +141,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                                                         CodePropertyKind.RequestBuilder,
                                                                         CodePropertyKind.UrlTemplate,
                                                                         CodePropertyKind.PathParameters)
-                                        .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                        .OrderBy(x => x.Name)) {
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        .OrderBy(static x => x.Name)) {
             writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
         }
-        foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData) //additional data and backing Store rely on accessors
-                                        .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                        .OrderBy(x => x.Name)) {
-            writer.WriteLine($"this.set{propWithDefault.Name.ToFirstCharacterUpperCase()}({propWithDefault.DefaultValue});");
+        foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        .OrderBy(static x => x.Name)) {
+            writer.WriteLine($"this.set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}({propWithDefault.DefaultValue});");
         }
         if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
@@ -224,7 +224,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if(fieldToSerialize.Any()) {
             writer.IncreaseIndent();
             fieldToSerialize
-                    .OrderBy(x => x.Name)
+                    .Where(static x => !x.ExistsInBaseType)
+                    .OrderBy(static x => x.Name)
                     .Select(x => 
                         $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (n) -> {{ currentObject.set{x.SymbolName.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method)}); }});")
                     .ToList()
@@ -342,7 +343,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
         if(inherits)
             writer.WriteLine("super.serialize(writer);");
-        foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom))
+        foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType))
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.{otherProp.Getter?.Name ?? "get" + otherProp.Name.ToFirstCharacterLowerCase()}());");
         if(additionalDataProperty != null)
             writer.WriteLine($"writer.writeAdditionalData(this.get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");

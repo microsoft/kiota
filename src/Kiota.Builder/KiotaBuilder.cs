@@ -264,7 +264,7 @@ public class KiotaBuilder
 
     public async Task CreateLanguageSourceFilesAsync(GenerationLanguage language, CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        var languageWriter = LanguageWriter.GetLanguageWriter(language, config.OutputPath, config.ClientNamespaceName);
+        var languageWriter = LanguageWriter.GetLanguageWriter(language, config.OutputPath, config.ClientNamespaceName, config.UsesBackingStore);
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var codeRenderer = CodeRenderer.GetCodeRender(config);
@@ -549,18 +549,21 @@ public class KiotaBuilder
         };
     }
 
-    private CodeProperty CreateProperty(string childIdentifier, string childType, string defaultValue = null, OpenApiSchema typeSchema = null, CodeTypeBase existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
+    private CodeProperty CreateProperty(string childIdentifier, string childType, OpenApiSchema typeSchema = null, CodeTypeBase existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
     {
         var propertyName = childIdentifier.CleanupSymbolName(config.PropertiesPrefixToStrip);
         var prop = new CodeProperty
         {
             Name = propertyName,
-            DefaultValue = defaultValue,
             Kind = kind,
             Description = typeSchema?.Description.CleanupDescription() ?? $"The {propertyName} property",
         };
         if(propertyName != childIdentifier)
             prop.SerializationName = childIdentifier;
+        if(kind == CodePropertyKind.Custom &&
+            typeSchema?.Default is OpenApiString stringDefaultValue &&
+            !string.IsNullOrEmpty(stringDefaultValue.Value))
+            prop.DefaultValue = $"\"{stringDefaultValue.Value}\"";
         
         if (existingType != null)
             prop.Type = existingType;

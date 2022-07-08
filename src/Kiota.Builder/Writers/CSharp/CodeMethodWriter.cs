@@ -179,8 +179,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         writer.IncreaseIndent();
         foreach (var otherProp in parentClass
                                         .Properties
-                                        .Where(x => x.IsOfKind(CodePropertyKind.Custom))
-                                        .OrderBy(x => x.Name))
+                                        .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                        .OrderBy(static x => x.Name))
         {
             writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
         }
@@ -299,8 +299,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.WriteLine("base.Serialize(writer);");
         foreach (var otherProp in parentClass
                                         .Properties
-                                        .Where(x => x.IsOfKind(CodePropertyKind.Custom))
-                                        .OrderBy(x => x.Name))
+                                        .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                        .OrderBy(static x => x.Name))
         {
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
         }

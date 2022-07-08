@@ -1212,9 +1212,13 @@ components:
                 },
                 {
                     "@odata.type", new OpenApiSchema {
-                        Type = "string"
+                        Type = "string",
+                        Default = new OpenApiString("#microsoft.graph.entity")
                     }
                 }
+            },
+            Required = new HashSet<string> {
+                "@odata.type"
             },
             Discriminator = new() {
                 PropertyName = "@odata.type",
@@ -1236,6 +1240,11 @@ components:
                 {
                     "tenant", new OpenApiSchema {
                         Type = "string"
+                    }
+                },
+                {   "@odata.type", new OpenApiSchema {
+                        Type = "string",
+                        Default = new OpenApiString("#microsoft.graph.directoryObject")
                     }
                 }
             },
@@ -1310,6 +1319,9 @@ components:
             throw new InvalidOperationException("Discriminator mapping value is not a CodeType");
         Assert.NotNull(castType.TypeDefinition);
         Assert.Equal(directoryObjectClass, castType.TypeDefinition);
+        var doTypeProperty = directoryObjectClass.Properties.First(x => x.Name.Equals("type", StringComparison.OrdinalIgnoreCase));
+        Assert.True(doTypeProperty.ExistsInBaseType);
+        Assert.Equal("\"#microsoft.graph.directoryObject\"", doTypeProperty.DefaultValue);
     }
     [Fact]
     public void UnionOfPrimitiveTypesWorks() {

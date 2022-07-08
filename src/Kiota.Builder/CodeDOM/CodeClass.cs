@@ -44,6 +44,13 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         } else
             AddRange(indexer);
     }
+    public override IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties) {
+        var result = base.AddProperty(properties);
+        foreach(var addedProperty in result.Where(x => StartBlock.HasPropertyDefinedInBaseTypes(x.Name)))
+            addedProperty.ExistsInBaseType = true;
+
+        return result;
+    }
     public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
     {
         if(codeClasses == null || codeClasses.Any(x => x == null))
@@ -80,6 +87,19 @@ public class ClassDeclaration : ProprietableBlockDeclaration
         EnsureElementsAreChildren(value);
         inherits = value;
     } }
+
+    public bool HasPropertyDefinedInBaseTypes(string propertyName) {
+        if (string.IsNullOrEmpty(propertyName)) throw new ArgumentNullException(nameof(propertyName));
+
+        if (inherits is CodeType currentInheritsType &&
+            currentInheritsType.TypeDefinition is CodeClass currentParentClass)
+            if (currentParentClass.FindChildByName<CodeProperty>(propertyName) is not null)
+                return true;
+            else
+                return currentParentClass.StartBlock.HasPropertyDefinedInBaseTypes(propertyName);
+        else
+            return false;
+    }
 
     public bool InheritsFrom(CodeClass candidate) {
         ArgumentNullException.ThrowIfNull(candidate, nameof(candidate));
