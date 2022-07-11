@@ -215,7 +215,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
-        var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
         var generatorMethodName = (codeElement.Parent as CodeClass)
                                             .Methods
                                             .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
@@ -239,8 +238,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass returnTypeClass
                                 ? $", {returnTypeWithoutCollectionInformation}.CreateFromDiscriminatorValue"
                                 : null;
-        var isEnum = returnTypeCodeType?.TypeDefinition is CodeEnum;
-        writer.WriteLine($"{(isVoid ? string.Empty : "return ")}await RequestAdapter.{GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType, isEnum)}(requestInfo{returnTypeFactory}, responseHandler, {errorMappingVarName}, cancellationToken);");
+        var prefix = (isVoid, codeElement.ReturnType.IsCollection) switch {
+            (true, _) => string.Empty,
+            (_, true) => "var collectionResult = ",
+            (_, _ ) => "return ",
+        };
+        writer.WriteLine($"{prefix}await RequestAdapter.{GetSendRequestMethodName(isVoid, codeElement.Parent, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, responseHandler, {errorMappingVarName}, cancellationToken);");
+        if (codeElement.ReturnType.IsCollection)
+            writer.WriteLine("return collectionResult.ToList();");
     }
     private const string RequestInfoVarName = "requestInfo";
     private const string RequestConfigVarName = "requestConfig";
@@ -263,12 +268,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.WriteLine($"{RequestInfoVarName}.Headers.Add(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\");");
         if (requestParams.requestBody != null)
         {
+            var suffix = requestParams.requestBody.Type.IsCollection ? ".ToArray()" : string.Empty;
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                 writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestParams.requestBody.Name});");
             else if (requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass)
-                writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name});");
+                writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name}{suffix});");
             else
-                writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name});");
+                writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name}{suffix});");
         }
         
         if (requestParams.requestConfiguration != null)
@@ -313,16 +319,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         throw new InvalidOperationException("CommandBuilder methods are not implemented in this SDK. They're currently only supported in the shell language.");
     }
 
-    protected string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType, bool isEnum)
+    protected string GetSendRequestMethodName(bool isVoid, CodeElement currentElement, CodeTypeBase returnType)
     {
+        var returnTypeName = conventions.GetTypeString(returnType, currentElement, false);
+        var isStream = conventions.StreamTypeName.Equals(returnTypeName, StringComparison.OrdinalIgnoreCase);
+        var isEnum = returnType is CodeType codeType && codeType.TypeDefinition is CodeEnum;
         if (isVoid) return "SendNoContentAsync";
-        else if (isStream || conventions.IsPrimitiveType(returnType) || isEnum)
-            if (isCollection)
-                return $"SendPrimitiveCollectionAsync<{returnType.StripArraySuffix()}>";
+        else if (isStream || conventions.IsPrimitiveType(returnTypeName) || isEnum)
+            if (returnType.IsCollection)
+                return $"SendPrimitiveCollectionAsync<{returnTypeName}>";
             else
-                return $"SendPrimitiveAsync<{returnType}>";
-        else if (isCollection) return $"SendCollectionAsync<{returnType.StripArraySuffix()}>";
-        else return $"SendAsync<{returnType}>";
+                return $"SendPrimitiveAsync<{returnTypeName}>";
+        else if (returnType.IsCollection) return $"SendCollectionAsync<{returnTypeName}>";
+        else return $"SendAsync<{returnTypeName}>";
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
     {
