@@ -886,7 +886,7 @@ public class KiotaBuilder
             var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
             return new CodeType {
                 TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, targetSchema, className, shortestNamespace),
-                Name = typeName,
+                Name = className,
             };// so we don't create unnecessary union types when anyOf was used only for nullable.
         }
         var (unionType, schemas) = (schema.IsOneOf(), schema.IsAnyOf()) switch {
