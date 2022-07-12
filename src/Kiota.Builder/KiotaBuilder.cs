@@ -896,10 +896,17 @@ public class KiotaBuilder
                 Name = className,
             });
         }
-        if(unionType.Types.Count() == 1 &&
-            schema.Nullable &&
-            unionType.Types.First().TypeDefinition != null)
-            return unionType.Types.First();// so we don't create unnecessary union types when anyOf was used only for nullable.
+        var typesCount = unionType.Types.Count();
+        if ((typesCount == 1 && schema.Nullable && unionType.Types.First().TypeDefinition != null) || // nullable on the root schema outside of anyOf
+            typesCount == 2 && schema.AnyOf.Any(static x => // nullable on a schema in the anyOf
+                                                        x.Nullable &&
+                                                        x.IsObject() &&
+                                                        !x.IsOneOf() &&
+                                                        !x.IsAnyOf() &&
+                                                        !x.IsAllOf() &&
+                                                        !x.IsArray() &&
+                                                        !x.IsReferencedSchema())) // once openAPI 3.1 is supported, there will be a third case oneOf with Ref and type null.
+            return unionType.Types.First(static x => !string.IsNullOrEmpty(x.Name));// so we don't create unnecessary union types when anyOf was used only for nullable.
         return unionType;
     }
     private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse response = default, string typeNameForInlineSchema = default)
