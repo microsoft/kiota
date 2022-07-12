@@ -1198,6 +1198,7 @@ components:
         var executorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executorMethod);
         Assert.True(executorMethod.ReturnType is CodeType); // not union
+        Assert.Null(codeModel.FindChildByName<CodeClass>("createUploadSessionResponseMember1", true));
     }
     [Fact]
     public void SquishesLonelyNullablesBothAnyOf(){
@@ -1238,7 +1239,6 @@ components:
                                                 AnyOf = new List<OpenApiSchema> {
                                                     uploadSessionSchema,
                                                     new OpenApiSchema {
-                                                        Type = "object",
                                                         Nullable = true,
                                                     }
                                                 }
@@ -1272,6 +1272,7 @@ components:
         var executorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executorMethod);
         Assert.True(executorMethod.ReturnType is CodeType); // not union
+        Assert.Null(codeModel.FindChildByName<CodeClass>("createUploadSessionResponseMember1", true));
     }
 
     [Fact]
