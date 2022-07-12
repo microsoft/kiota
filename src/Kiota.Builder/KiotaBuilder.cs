@@ -900,6 +900,7 @@ public class KiotaBuilder
         if ((typesCount == 1 && schema.Nullable && unionType.Types.First().TypeDefinition != null) || // nullable on the root schema outside of anyOf
             typesCount == 2 && schema.AnyOf.Any(static x => // nullable on a schema in the anyOf
                                                         x.Nullable &&
+                                                        x.IsObject() &&
                                                         !x.IsOneOf() &&
                                                         !x.IsAnyOf() &&
                                                         !x.IsAllOf() &&
