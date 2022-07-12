@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where collections types would generate invalid return types in CSharp.
+- Fixed a bug where a nullable entry in anyOf schemas would create unnecessary composed types.
 
 ## [0.3.0] - 2022-07-08
 
