@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where collections types would generate invalid return types in CSharp.
+
 ## [0.3.0] - 2022-07-08
 
 ### Added
