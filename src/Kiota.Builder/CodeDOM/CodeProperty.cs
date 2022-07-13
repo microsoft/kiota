@@ -51,7 +51,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
         get {
             if (Getter != null)
                 return Getter;
-            else if (OriginalPropertyFromBaseType != null)
+            else if (ExistsInBaseType)
                 return OriginalPropertyFromBaseType.Getter;
             else
                 return default;
