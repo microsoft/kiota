@@ -138,7 +138,7 @@ namespace Kiota.Builder.Writers.Go {
                 WriteReturnError(writer);
             }
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType)) {
-                WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase(), $"m.Get{otherProp.SymbolName.ToFirstCharacterUpperCase()}()", shouldDeclareErrorVar, writer);
+                WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase(), $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", shouldDeclareErrorVar, writer);
             }
             if(additionalDataProperty != null) {
                 writer.WriteLine("{");
@@ -262,7 +262,8 @@ namespace Kiota.Builder.Writers.Go {
                     writer.WriteLine($"{defaultValueReference} := {propWithDefault.DefaultValue};");
                     defaultValueReference = $"&{defaultValueReference}";    
                 }
-                writer.WriteLine($"m.Set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}({defaultValueReference});");
+                var setterName = propWithDefault.Setter?.Name.ToFirstCharacterUpperCase() ?? $"Set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
+                writer.WriteLine($"m.{setterName}({defaultValueReference});");
             }
             if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
@@ -340,7 +341,7 @@ namespace Kiota.Builder.Writers.Go {
             };
             if(property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
                 WriteCollectionCast(propertyTypeImportName, "val", "res", writer, pointerSymbol, dereference);
-            writer.WriteLine($"m.Set{property.SymbolName.ToFirstCharacterUpperCase()}({valueArgument})");
+            writer.WriteLine($"m.{property.Setter.Name.ToFirstCharacterUpperCase()}({valueArgument})");
             writer.CloseBlock();
             writer.WriteLine("return nil");
             writer.CloseBlock();

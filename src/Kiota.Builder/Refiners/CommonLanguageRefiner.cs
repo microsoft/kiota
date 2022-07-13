@@ -88,7 +88,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         } else
             return false;
     }
-    protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix) {
+    protected void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix) {
         if(!(propertyKindsToAddAccessors?.Any() ?? true)) return;
         if(current is CodeProperty currentProperty &&
             !currentProperty.ExistsInBaseType &&
@@ -104,7 +104,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var propertyOriginalName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
                                         .ToFirstCharacterLowerCase();
             var accessorName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
-                                .CleanupSymbolName()
+                                .CleanupSymbolName(_configuration.PropertiesPrefixToStrip)
                                 .ToFirstCharacterUpperCase();
             currentProperty.Getter = parentClass.AddMethod(new CodeMethod {
                 Name = $"get-{accessorName}",
@@ -216,7 +216,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             isNotInExceptions &&
             shouldReplace) {
             if(current is CodeProperty currentProperty &&
-                currentProperty.IsOfKind(CodePropertyKind.Custom)) {
+                currentProperty.IsOfKind(CodePropertyKind.Custom) &&
+                string.IsNullOrEmpty(currentProperty.SerializationName)) {
                 currentProperty.SerializationName = currentProperty.Name;
             }
             current.Name = replacement.Invoke(current.Name);
