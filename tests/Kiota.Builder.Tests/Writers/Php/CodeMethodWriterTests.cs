@@ -203,6 +203,7 @@ namespace Kiota.Builder.Writers.Php.Tests
             new object[] { new CodeProperty { Name = "dateValue", Type = new CodeType { Name = "DateTime" }, Access = AccessModifier.Private}, "$writer->writeDateTimeValue('dateValue', $this->dateValue);" },
             new object[] { new CodeProperty { Name = "duration", Type = new CodeType { Name = "duration" }, Access = AccessModifier.Private}, "$writer->writeDateIntervalValue('duration', $this->duration);" },
             new object[] { new CodeProperty { Name = "stream", Type = new CodeType { Name = "binary" }, Access = AccessModifier.Private}, "$writer->writeBinaryContent('stream', $this->stream);" },
+            new object[] { new CodeProperty { Name = "definedInParent", Type = new CodeType { Name = "string"}, ExistsInBaseType = true}, "$write->writeStringValue('definedInParent', $this->definedInParent);"}
         };
         
         [Theory]
@@ -233,7 +234,10 @@ namespace Kiota.Builder.Writers.Php.Tests
             _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
             var result = stringWriter.ToString();
             Assert.Contains("public function serialize(SerializationWriter $writer)", result);
-            Assert.Contains(expected, stringWriter.ToString());
+            if (property.ExistsInBaseType)
+                Assert.DoesNotContain(expected, result);
+            else
+                Assert.Contains(expected, stringWriter.ToString());
         }
 
         [Fact]
@@ -479,6 +483,7 @@ namespace Kiota.Builder.Writers.Php.Tests
             new object[] { new CodeProperty { Name = "years", Type = new CodeType { Name = "int", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
                 "'years' => function (ParseNode $n) use ($o) { $o->setYears($n->getCollectionOfPrimitiveValues())"
             },
+            new object[] { new CodeProperty{ Name = "definedInParent", Type = new CodeType { Name = "string"}, ExistsInBaseType = true }, "'definedInParent' => function (ParseNode $n) use ($o) { $o->setDefinedInParent($n->getStringValue())"}
         };
         private static CodeClass GetParentClassInStaticContext()
         {
@@ -509,7 +514,10 @@ namespace Kiota.Builder.Writers.Php.Tests
             parentClass.AddProperty(property);
             _refiner.Refine(parentClass.Parent as CodeNamespace);
             languageWriter.Write(deserializerMethod);
-            Assert.Contains(expected, stringWriter.ToString());
+            if (property.ExistsInBaseType)
+                Assert.DoesNotContain(expected, stringWriter.ToString());
+            else
+                Assert.Contains(expected, stringWriter.ToString());
         }
 
         [Fact]

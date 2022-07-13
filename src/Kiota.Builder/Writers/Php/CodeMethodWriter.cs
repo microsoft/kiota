@@ -238,7 +238,7 @@ namespace Kiota.Builder.Writers.Php
             if(inherits && implementsParsable)
                 writer.WriteLine($"parent::serialize({writerParameterName});");
             var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
-            foreach(var otherProp in customProperties) {
+            foreach(var otherProp in customProperties.Where(x => !x.ExistsInBaseType)) {
                 writer.WriteLine($"{writerParameterName}->{GetSerializationMethodName(otherProp.Type)}('{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}', $this->{otherProp.Name.ToFirstCharacterLowerCase()});");
             }
             if(additionalDataProperty != null)
@@ -401,6 +401,7 @@ namespace Kiota.Builder.Writers.Php
             if(fieldToSerialize.Any()) {
                 writer.IncreaseIndent();
                 fieldToSerialize
+                    .Where(x => !x.ExistsInBaseType)
                     .OrderBy(x => x.Name)
                     .Select(x => 
                         $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => function (ParseNode $n) use ({currentObjectName}) {{ {currentObjectName}->{x.Setter.Name.ToFirstCharacterLowerCase()}({GetDeserializationMethodName(x.Type, method)}); }},")
