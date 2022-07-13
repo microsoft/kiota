@@ -579,13 +579,21 @@ namespace Kiota.Builder.Writers.Php.Tests
                 ReturnType = new CodeType() {Name = "void"},
                 Kind = CodeMethodKind.Constructor
             };
-            var closingClass = parentClass;
             parentClass.AddMethod(constructor);
-            
+
+            var propWithDefaultValue = new CodeProperty()
+            {
+                Name = "type",
+                DefaultValue = "\"#microsoft.graph.entity\"",
+                Kind = CodePropertyKind.Custom
+            };
+            parentClass.AddProperty(propWithDefaultValue);
+
             _codeMethodWriter.WriteCodeElement(constructor, languageWriter);
             var result = stringWriter.ToString();
 
             Assert.Contains("public function __construct", result);
+            Assert.Contains("$this->type = '#microsoft.graph.entity'", result);
         }
 
         [Fact]
