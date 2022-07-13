@@ -203,7 +203,7 @@ namespace Kiota.Builder.Writers.Php.Tests
             new object[] { new CodeProperty { Name = "dateValue", Type = new CodeType { Name = "DateTime" }, Access = AccessModifier.Private}, "$writer->writeDateTimeValue('dateValue', $this->dateValue);" },
             new object[] { new CodeProperty { Name = "duration", Type = new CodeType { Name = "duration" }, Access = AccessModifier.Private}, "$writer->writeDateIntervalValue('duration', $this->duration);" },
             new object[] { new CodeProperty { Name = "stream", Type = new CodeType { Name = "binary" }, Access = AccessModifier.Private}, "$writer->writeBinaryContent('stream', $this->stream);" },
-            new object[] { new CodeProperty { Name = "definedInParent", Type = new CodeType { Name = "string"}, ExistsInBaseType = true}, "$write->writeStringValue('definedInParent', $this->definedInParent);"}
+            new object[] { new CodeProperty { Name = "definedInParent", Type = new CodeType { Name = "string"}, OriginalPropertyFromBaseType = new CodeProperty{}}, "$write->writeStringValue('definedInParent', $this->definedInParent);"}
         };
         
         [Theory]
@@ -483,7 +483,7 @@ namespace Kiota.Builder.Writers.Php.Tests
             new object[] { new CodeProperty { Name = "years", Type = new CodeType { Name = "int", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
                 "'years' => function (ParseNode $n) use ($o) { $o->setYears($n->getCollectionOfPrimitiveValues())"
             },
-            new object[] { new CodeProperty{ Name = "definedInParent", Type = new CodeType { Name = "string"}, ExistsInBaseType = true }, "'definedInParent' => function (ParseNode $n) use ($o) { $o->setDefinedInParent($n->getStringValue())"}
+            new object[] { new CodeProperty{ Name = "definedInParent", Type = new CodeType { Name = "string"}, OriginalPropertyFromBaseType = new CodeProperty() }, "'definedInParent' => function (ParseNode $n) use ($o) { $o->setDefinedInParent($n->getStringValue())"}
         };
         private static CodeClass GetParentClassInStaticContext()
         {
@@ -593,7 +593,7 @@ namespace Kiota.Builder.Writers.Php.Tests
             var result = stringWriter.ToString();
 
             Assert.Contains("public function __construct", result);
-            Assert.Contains("$this->type = '#microsoft.graph.entity'", result);
+            Assert.Contains("$this->setType('#microsoft.graph.entity')", result);
         }
 
         [Fact]
