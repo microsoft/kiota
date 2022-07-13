@@ -262,7 +262,7 @@ namespace Kiota.Builder.Writers.Go {
                     writer.WriteLine($"{defaultValueReference} := {propWithDefault.DefaultValue};");
                     defaultValueReference = $"&{defaultValueReference}";    
                 }
-                var setterName = propWithDefault.Setter?.Name.ToFirstCharacterUpperCase() ?? $"Set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
+                var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterUpperCase() ?? $"Set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
                 writer.WriteLine($"m.{setterName}({defaultValueReference});");
             }
             if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {

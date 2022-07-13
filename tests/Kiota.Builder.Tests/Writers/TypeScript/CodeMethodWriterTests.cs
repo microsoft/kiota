@@ -103,7 +103,12 @@ public class CodeMethodWriterTests : IDisposable {
             Type = new CodeType {
                 Name = "string"
             },
-            ExistsInBaseType = true,
+            OriginalPropertyFromBaseType = new CodeProperty {
+                Name = "definedInParent",
+                Type = new CodeType {
+                    Name = "string"
+                }
+            }
         });
     }
     private void AddInheritanceClass() {

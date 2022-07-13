@@ -148,7 +148,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderBy(static x => x.Name)) {
-            var setterName = propWithDefault.Setter?.Name.ToFirstCharacterLowerCase() ?? $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
+            var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() ?? $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
             writer.WriteLine($"this.{setterName}({propWithDefault.DefaultValue});");
         }
         if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
