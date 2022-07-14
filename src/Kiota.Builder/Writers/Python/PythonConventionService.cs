@@ -12,7 +12,7 @@ public class PythonConventionService : CommonLanguageConventionService
         writer = languageWriter;
     }
     private readonly LanguageWriter writer;
-    public override string StreamTypeName => "bytess";
+    public override string StreamTypeName => "bytes";
     public override string VoidTypeName => "None";
     public override string DocCommentPrefix => "";
     public override string ParseNodeInterfaceName => "ParseNode";
@@ -27,7 +27,7 @@ public class PythonConventionService : CommonLanguageConventionService
         var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
         var urlTemplateParams = urlTemplateVarName ?? $"self.{pathParametersProperty.Name.ToSnakeCase()}";
         var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}";
-        writer.WriteLine($"return {returnType}({urlTemplateParams}, self.{requestAdapterProp.Name.ToSnakeCase()}{pathParametersSuffix})");
+        writer.WriteLine($"return {returnType}(self.{requestAdapterProp.Name.ToSnakeCase()}, {urlTemplateParams}{pathParametersSuffix})");
     }
     internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
         if(pathParametersType == null) return;
