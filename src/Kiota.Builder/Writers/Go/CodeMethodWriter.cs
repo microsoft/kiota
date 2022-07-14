@@ -79,7 +79,7 @@ namespace Kiota.Builder.Writers.Go {
         }
         private void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
             var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-            if(codeElement.DiscriminatorInformation.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
+            if(codeElement.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
                 writer.WriteLine($"if {parseNodeParameter.Name.ToFirstCharacterLowerCase()} != nil {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{codeElement.DiscriminatorInformation.DiscriminatorPropertyName}\")");

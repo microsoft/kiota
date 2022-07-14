@@ -57,9 +57,17 @@ public class DiscriminatorInformation : CodeElement, ICloneable
         };
     }
     private bool HasBasicDiscriminatorInformation => !string.IsNullOrEmpty(DiscriminatorPropertyName) && discriminatorMappings.Any();
-    public bool ShouldWriteDiscriminatorSwitch => HasBasicDiscriminatorInformation && !IsComposedType;
-    private bool IsComposedType =>
-        Parent is CodeMethod currentMethod && currentMethod.Parent is CodeClass currentClass && currentClass.OriginalComposedType is not null ||
-        Parent is CodeComposedTypeBase;
-    public bool ShouldWriteDiscriminatorForComposedType => HasBasicDiscriminatorInformation && IsComposedType;
+    public bool ShouldWriteDiscriminatorForInheritedType => HasBasicDiscriminatorInformation && IsComplexType;
+    public bool ShouldWriteDiscriminatorForUnionType => IsUnionType; // if union of scalar types, then we don't always get discriminator information
+    public bool ShouldWriteDiscriminatorForIntersectionType => IsIntersectionType; // if intersection of scalar types, then we don't always get discriminator information
+    public bool ShouldWriteDiscriminatorBody => ShouldWriteDiscriminatorForInheritedType || ShouldWriteDiscriminatorForUnionType || ShouldWriteDiscriminatorForIntersectionType;
+    private bool IsUnionType => Is<CodeUnionType>();
+    private bool IsIntersectionType => Is<CodeIntersectionType>();
+    private bool IsComplexType => Parent is CodeMethod currentMethod && currentMethod.Parent is CodeClass currentClass && currentClass.OriginalComposedType is null ||
+                                Parent is CodeMethod parentMethod && parentMethod.Parent is CodeFunction; //static factories outside of classes (TS/Go)
+    private bool Is<T>() where T : CodeComposedTypeBase
+    {
+        return Parent is CodeMethod currentMethod && currentMethod.Parent is CodeClass currentClass && currentClass.OriginalComposedType is T ||
+        Parent is T;
+    }
 }

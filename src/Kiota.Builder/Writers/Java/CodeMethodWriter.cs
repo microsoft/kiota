@@ -83,7 +83,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     }
     private static void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-        if(codeElement.DiscriminatorInformation.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
+        if(codeElement.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
             writer.WriteLines($"final ParseNode mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.DiscriminatorInformation.DiscriminatorPropertyName}\");",
                                 "if (mappingValueNode != null) {");
             writer.IncreaseIndent();

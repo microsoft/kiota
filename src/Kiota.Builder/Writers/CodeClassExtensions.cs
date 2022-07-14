@@ -14,9 +14,9 @@ namespace Kiota.Builder.Writers.Extensions {
                         .Where(x => x.IsOfKind(kinds))
                         .Union(parentClass.Methods
                                 .Where(x => x.IsAccessor && (x.AccessedProperty?.IsOfKind(kinds) ?? false))
-                                .Select(x => x.AccessedProperty))
+                                .Select(static x => x.AccessedProperty))
                         .Distinct()
-                        .OrderBy(x => x.Name);
+                        .OrderBy(static x => x.Name);
         }
         public static IEnumerable<CodeMethod> GetMethodsOffKind(this CodeClass parentClass, params CodeMethodKind[] kinds) {
             if(parentClass == null)

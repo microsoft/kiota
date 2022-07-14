@@ -46,32 +46,36 @@ public class DiscriminatorInformationTests {
     [Fact]
     public void ShouldWriteDiscriminatorSwitch() {
         var information = new DiscriminatorInformation {
-            Parent = new CodeMethod(),
+            Parent = new CodeMethod {
+                Parent = new CodeClass {
+                    Name = "someClass",
+                }
+            },
         };
-        Assert.False(information.ShouldWriteDiscriminatorSwitch);
+        Assert.False(information.ShouldWriteDiscriminatorForInheritedType);
         information.DiscriminatorPropertyName = "foo";
-        Assert.False(information.ShouldWriteDiscriminatorSwitch);
+        Assert.False(information.ShouldWriteDiscriminatorForInheritedType);
         information.AddDiscriminatorMapping("key1", new CodeType());
         information.AddDiscriminatorMapping("key2", new CodeType());
-        Assert.True(information.ShouldWriteDiscriminatorSwitch);
+        Assert.True(information.ShouldWriteDiscriminatorForInheritedType);
 
         information.Parent = new CodeUnionType();
-        Assert.False(information.ShouldWriteDiscriminatorSwitch);
+        Assert.False(information.ShouldWriteDiscriminatorForInheritedType);
     }
     [Fact]
-    public void ShouldWriteDiscriminatorForComposedType() {
+    public void ShouldWriteDiscriminatorForUnionType() {
         var information = new DiscriminatorInformation
         {
             Parent = new CodeUnionType()
         };
-        Assert.False(information.ShouldWriteDiscriminatorForComposedType);
-        information.DiscriminatorPropertyName = "foo";
-        Assert.False(information.ShouldWriteDiscriminatorForComposedType);
-        information.AddDiscriminatorMapping("key1", new CodeType());
-        information.AddDiscriminatorMapping("key2", new CodeType());
-        Assert.True(information.ShouldWriteDiscriminatorForComposedType);
-        
-        information.Parent = new CodeMethod();
-        Assert.False(information.ShouldWriteDiscriminatorForComposedType);
+        Assert.True(information.ShouldWriteDiscriminatorForUnionType);
+    }
+    [Fact]
+    public void ShouldWriteDiscriminatorForIntersectionType() {
+        var information = new DiscriminatorInformation
+        {
+            Parent = new CodeIntersectionType()
+        };
+        Assert.True(information.ShouldWriteDiscriminatorForIntersectionType);
     }
 }

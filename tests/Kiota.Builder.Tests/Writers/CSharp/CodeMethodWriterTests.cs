@@ -118,6 +118,57 @@ public class CodeMethodWriterTests : IDisposable {
             }
         });
     }
+    private CodeClass AddUnionTypeWrapper() {
+        var complexType1 = root.AddClass(new CodeClass
+        {
+            Name = "ComplexType1",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var complexType2 = root.AddClass(new CodeClass
+        {
+            Name = "ComplexType2",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType {
+                Name = "UnionTypeWrapper",
+            }
+        }).First();
+        var cType1 = new CodeType {
+            Name = "ComplexType1",
+            TypeDefinition = complexType1
+        };
+        var cType2 = new CodeType {
+            Name = "ComplexType2",
+            TypeDefinition = complexType2,
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+        };
+        var sType = new CodeType {
+            Name = "string",
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(cType1);
+        unionTypeWrapper.OriginalComposedType.AddType(cType2);
+        unionTypeWrapper.OriginalComposedType.AddType(sType);
+        unionTypeWrapper.AddProperty(new CodeProperty {
+            Name = "ComplexType1Value",
+            Type = cType1,
+            Kind = CodePropertyKind.Custom
+        });
+        unionTypeWrapper.AddProperty(new CodeProperty {
+            Name = "ComplexType2Value",
+            Type = cType2,
+            Kind = CodePropertyKind.Custom
+        });
+        unionTypeWrapper.AddProperty(new CodeProperty {
+            Name = "StringValue",
+            Type = sType,
+            Kind = CodePropertyKind.Custom
+        });
+        return unionTypeWrapper;
+    }
     private void AddInheritanceClass() {
         (parentClass.StartBlock as ClassDeclaration).Inherits = new CodeType {
             Name = "someParentClass"
@@ -256,7 +307,51 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesModelFactoryBody() {
+    public void WritesModelFactoryBodyForUnionModels() {
+        var wrapper = AddUnionTypeWrapper();
+        var factoryMethod = wrapper.AddMethod(new CodeMethod{
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            DiscriminatorInformation = new() {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+            ReturnType = new CodeType {
+                Name = "UnionTypeWrapper",
+                TypeDefinition = wrapper,
+            },
+        }).First();
+        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType {
+            Name = "ComplexType1",
+            TypeDefinition = root.FindChildByName<CodeClass>("ComplexType1", true)
+        });
+        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType2", new CodeType {
+            Name = "ComplexType2",
+            TypeDefinition = root.FindChildByName<CodeClass>("ComplexType2", true)
+        });
+        factoryMethod.AddParameter(new CodeParameter {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType {
+                Name = "ParseNode"
+            }
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
+        Assert.DoesNotContain("return mappingValue switch {", result);
+        Assert.Contains("var result = new UnionTypeWrapper()", result);
+        Assert.Contains("if(\"#kiota.complexType1\".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))", result);
+        Assert.Contains("ComplexType1Value = new ComplexType1()", result);
+        Assert.Contains("else if(parseNode.GetStringValue() is string stringValueValue)", result);
+        Assert.Contains("StringValue = stringValueValue", result);
+        Assert.Contains("parseNode.GetCollectionOfObjectValues<ComplexType2>(ComplexType2.CreateFromDiscriminatorValue)?.ToList() is List<ComplexType2> complexType2ValueValue", result);
+        Assert.Contains("ComplexType2Value = complexType2ValueValue", result);
+        Assert.Contains("return result", result);
+        Assert.InRange(result.IndexOf("GetStringValue() is string stringValueValue", StringComparison.Ordinal), 0, result.IndexOf("GetCollectionOfObjectValues<ComplexType2>"));
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesModelFactoryBodyForInheritedModels() {
         var parentModel = root.AddClass(new CodeClass {
             Name = "parentModel",
             Kind = CodeClassKind.Model,
@@ -294,8 +389,7 @@ public class CodeMethodWriterTests : IDisposable {
         });
         writer.Write(factoryMethod);
         var result = tw.ToString();
-        Assert.Contains("var mappingValueNode = parseNode.GetChildNode(\"@odata.type\")", result);
-        Assert.Contains("var mappingValue = mappingValueNode?.GetStringValue()", result);
+        Assert.Contains("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
         Assert.Contains("return mappingValue switch {", result);
         Assert.Contains("\"ns.childmodel\" => new ChildModel()", result);
         Assert.Contains("_ => new ParentModel()", result);
@@ -329,14 +423,7 @@ public class CodeMethodWriterTests : IDisposable {
                         TypeDefinition = childModel,
                     });
         factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
-        writer.Write(factoryMethod);
-        var result = tw.ToString();
-        Assert.DoesNotContain("var mappingValueNode = parseNode.GetChildNode(\"@odata.type\")", result);
-        Assert.DoesNotContain("var mappingValue = mappingValueNode?.GetStringValue()", result);
-        Assert.DoesNotContain("return mappingValue switch {", result);
-        Assert.DoesNotContain("\"ns.childmodel\" => new ChildModel()", result);
-        Assert.Contains("return new ParentModel()", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        Assert.Throws<InvalidOperationException>(() => writer.Write(factoryMethod));
     }
     [Fact]
     public void DoesntWriteFactorySwitchOnEmptyPropertyName() {
@@ -377,7 +464,7 @@ public class CodeMethodWriterTests : IDisposable {
         });
         writer.Write(factoryMethod);
         var result = tw.ToString();
-        Assert.DoesNotContain("var mappingValueNode = parseNode.GetChildNode(\"@odata.type\")", result);
+        Assert.DoesNotContain("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
         Assert.DoesNotContain("var mappingValue = mappingValueNode?.GetStringValue()", result);
         Assert.DoesNotContain("return mappingValue switch {", result);
         Assert.DoesNotContain("\"ns.childmodel\" => new ChildModel()", result);
@@ -411,7 +498,7 @@ public class CodeMethodWriterTests : IDisposable {
         });
         writer.Write(factoryMethod);
         var result = tw.ToString();
-        Assert.DoesNotContain("var mappingValueNode = parseNode.GetChildNode(\"@odata.type\")", result);
+        Assert.DoesNotContain("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
         Assert.DoesNotContain("var mappingValue = mappingValueNode?.GetStringValue()", result);
         Assert.DoesNotContain("return mappingValue switch {", result);
         Assert.DoesNotContain("\"ns.childmodel\" => new ChildModel()", result);
