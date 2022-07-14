@@ -9,6 +9,7 @@ from .parse_node_factory import ParseNodeFactory
 class ParseNodeProxyFactory(ParseNodeFactory):
     """Proxy factory that allows the composition of before and after callbacks on existing factories
     """
+
     def __init__(
         self, concrete: ParseNodeFactory, on_before: Callable[[Parsable], None],
         on_after: Callable[[Parsable], None]

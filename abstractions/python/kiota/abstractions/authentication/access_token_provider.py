@@ -6,6 +6,7 @@ from .allowed_hosts_validator import AllowedHostsValidator
 class AccessTokenProvider(ABC):
     """Defines a contract for obtaining access tokens for a given url.
     """
+
     @abstractmethod
     async def get_authorization_token(self, uri: str) -> str:
         """This method is called by the BaseBearerTokenAuthenticationProvider class to get the
