@@ -105,16 +105,14 @@ namespace Kiota.Builder.Extensions {
         ///<summary>
         /// Cleanup regex that removes all special characters from ASCII 0-127
         ///</summary>
-        private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*+,./:;<=>?@\[\]\\^`{}|~](?<followingLetter>\w)?", RegexOptions.Compiled);
+        private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*+,./:;<=>?@\[\]\\^`{}|~-](?<followingLetter>\w)?", RegexOptions.Compiled);
         private const string CleanupGroupName = "followingLetter";
         public static string CleanupSymbolName(this string original)
         {
             if (string.IsNullOrEmpty(original))
                 return original;
 
-            var result = original.ToCamelCase(); //ensure the name is camel cased to strip out any potential '-' characters
-
-            result = propertyCleanupRegex.Replace(result, 
+            var result = propertyCleanupRegex.Replace(original, 
                                     static x => x.Groups.Keys.Contains(CleanupGroupName) ? 
                                                     x.Groups[CleanupGroupName].Value.ToFirstCharacterUpperCase() :
                                                     string.Empty); //strip out any invalid characters, and replace any following one by its uppercase version

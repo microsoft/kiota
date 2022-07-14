@@ -62,10 +62,11 @@ namespace Kiota.Builder.Extensions.Tests {
             Assert.Equal("Toto", "toto".NormalizeNameSpaceName("-"));
             Assert.Equal("Microsoft_Graph_Message_Content", "microsoft.Graph.Message.Content".NormalizeNameSpaceName("_"));
         }
-        [InlineData("\" !#$%&'()*+,./:;<=>?@[]\\^`{}|~", "")]
+        [InlineData("\" !#$%&'()*+,./:;<=>?@[]\\^`{}|~-", "")]
         [InlineData("unchanged", "unchanged")]
         [InlineData("@odata.changed", "OdataChanged")]
         [InlineData("specialLast@", "specialLast")]
+        [InlineData("kebab-cased", "kebabCased")]
         [Theory]
         public void CleansUpSymbolNames(string input, string expected) {
             Assert.Equal(expected, input.CleanupSymbolName());
