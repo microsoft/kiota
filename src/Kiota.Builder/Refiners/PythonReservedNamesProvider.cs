@@ -38,7 +38,7 @@ namespace Kiota.Builder.Refiners {
             "try",
             "with",
             "while",
-            "yield",       
+            "yield",
         });
         public HashSet<string> ReservedNames => _reservedNames.Value;
     }

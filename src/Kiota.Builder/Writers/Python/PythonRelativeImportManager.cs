@@ -34,7 +34,7 @@ namespace Kiota.Builder.Writers
             var importSymbol = codeUsing.Declaration == null ? codeUsing.Name : codeUsing.Declaration.TypeDefinition switch
             {
                 CodeFunction f => f.Name.ToFirstCharacterLowerCase(),
-                _ => codeUsing.Declaration.TypeDefinition.Name.ToFirstCharacterUpperCase(),
+                _ => codeUsing.Declaration.TypeDefinition.Name.ToSnakeCase(),
             };
 
             if (typeDef == null)
@@ -43,10 +43,6 @@ namespace Kiota.Builder.Writers
             {
                 var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
                                                         typeDef.GetImmediateParentOfType<CodeNamespace>());
-                if (string.IsNullOrEmpty(importPath))
-                    importPath += codeUsing.Name;
-                else
-                    importPath += codeUsing.Declaration.Name.ToFirstCharacterLowerCase();
                 return (importSymbol, codeUsing.Alias, importPath);
             }
         }
@@ -66,7 +62,7 @@ namespace Kiota.Builder.Writers
         protected static string GetRemainingImportPath(IEnumerable<string> remainingSegments)
         {
             if (remainingSegments.Any())
-                return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate((x, y) => $"{x}.{y}") + '.';
+                return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate((x, y) => $"{x}.{y}");
             else
                 return string.Empty;
         }
