@@ -209,13 +209,18 @@ namespace Kiota.Builder.Writers.Python {
             writer.WriteLine($"return {promisePrefix}{returnType}()");
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
-            writer.WriteLine("return {");
+            writer.WriteLine("fields = {");
                 writer.IncreaseIndent();
                 foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-                    writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToSnakeCase()}\": lambda n : self.set_{otherProp.Name.ToSnakeCase()}(n.{GetDeserializationMethodName(otherProp.Type)}),");
+                    writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToSnakeCase()}\": lambda n : setattr(self, '{otherProp.Name.ToSnakeCase()}', n.{GetDeserializationMethodName(otherProp.Type, codeElement)}),");
                 }
                 writer.DecreaseIndent();
-                writer.WriteLine($"}}{(inherits? $".update(super().{codeElement.Name.ToSnakeCase()}())": string.Empty)}");
+                writer.WriteLine("}");
+                if (inherits) {
+                    writer.WriteLine($"super_fields = super().{codeElement.Name.ToSnakeCase()}()");
+                    writer.WriteLine($"fields.update(super_fields)");
+                }
+                writer.WriteLine("return fields");
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
@@ -244,7 +249,7 @@ namespace Kiota.Builder.Writers.Python {
             writer.WriteLine($"{errorMappingVarName}: Dict[str, ParsableFactory] = {{");
             writer.IncreaseIndent();
             foreach(var errorMapping in codeElement.ErrorMappings) {
-                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorMapping.Value.Name}.get_from_discriminator_value()");
+                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": o_data_error.{errorMapping.Value.Name}.get_from_discriminator_value(),");
             }
             writer.CloseBlock("}");
         }
@@ -252,7 +257,7 @@ namespace Kiota.Builder.Writers.Python {
         writer.IncreaseIndent();
         writer.WriteLine($"raise Exception(\"Http core is null\") ");
         writer.DecreaseIndent();
-        writer.WriteLine($"return self.request_adapter.{genericTypeForSendMethod}(request_info,{newFactoryParameter} response_handler, {errorMappingVarName})");
+        writer.WriteLine($"return await self.request_adapter.{genericTypeForSendMethod}(request_info,{newFactoryParameter} response_handler, {errorMappingVarName})");
         }
         private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName) {
             if(!codeElement.ReturnType.IsCollection) return fullTypeName;
@@ -270,7 +275,7 @@ namespace Kiota.Builder.Writers.Python {
             writer.WriteLines($"{RequestInfoVarName} = RequestInformation()",
                                 $"{RequestInfoVarName}.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
                                 $"{RequestInfoVarName}.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}",
-                                $"{RequestInfoVarName}.http_method = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()}");
+                                $"{RequestInfoVarName}.http_method = Method.{codeElement.HttpMethod.ToString().ToUpperInvariant()}");
             if(requestParams.requestConfiguration != null) {
                 writer.WriteLine($"if {requestParams.requestConfiguration.Name.ToSnakeCase()}:");
                 writer.IncreaseIndent();
@@ -300,10 +305,10 @@ namespace Kiota.Builder.Writers.Python {
             if(inherits)
             writer.WriteLine("super().serialize(writer)");
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToSnakeCase()}\", self.get_{otherProp.Name.ToSnakeCase()}())");
+                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name}\", self.{otherProp.Name.ToSnakeCase()})");
             }
             if(additionalDataProperty != null)
-                writer.WriteLine($"writer.write_additional_data(self.{additionalDataProperty.Name.ToSnakeCase()})");
+                writer.WriteLine($"writer.write_additional_data_value(self.{additionalDataProperty.Name.ToSnakeCase()})");
         }
         private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
             var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
@@ -327,8 +332,10 @@ namespace Kiota.Builder.Writers.Python {
                 writer.WriteLine(localConventions.DocCommentEnd);
             }
         }
-        private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
+        private static readonly PythonCodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
+            if (code.IsOfKind(CodeMethodKind.Factory))
+                writer.WriteLine("@staticmethod");
             var accessModifier = localConventions.GetAccessModifier(code.Access);
             var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
             var methodName = (code.Kind switch {
@@ -336,22 +343,27 @@ namespace Kiota.Builder.Writers.Python {
                 _ when isConstructor => "__init__",
                 _ => code.Name,
             })?.ToSnakeCase();
-            var asyncPrefix = code.IsAsync && code.Kind != CodeMethodKind.RequestExecutor ? "async ": string.Empty;
+            var asyncPrefix = code.IsAsync && code.Kind is CodeMethodKind.RequestExecutor ? "async ": string.Empty;
+            var instanceReference = code.IsOfKind(CodeMethodKind.Factory) ? string.Empty: "self,";
             var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> localConventions.GetParameterSignature(p, code)).ToList());
             var nullablePrefix = code.ReturnType.IsNullable && !isVoid ? "Optional[" : string.Empty;
             var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? "]" : string.Empty;
-            var accessorPrefix = code.Kind switch {
-                    CodeMethodKind.Getter => "get_",
-                    CodeMethodKind.Setter => "set_",
+            var propertyDecorator  = code.Kind switch {
+                    CodeMethodKind.Getter => "@property",
+                    CodeMethodKind.Setter => $"@{methodName}.setter",
                     _ => string.Empty
                 };
             var nullReturnTypeSuffix = !isVoid && !isConstructor;
             var returnTypeSuffix = nullReturnTypeSuffix ? $"{nullablePrefix}{returnType}{nullableSuffix}" : "None";
-            writer.WriteLine($"{asyncPrefix}def {accessModifier}{accessorPrefix}{methodName}(self,{parameters}) -> {returnTypeSuffix}:");
+            if (!string.IsNullOrEmpty(propertyDecorator))
+                writer.WriteLine($"{propertyDecorator}");
+            writer.WriteLine($"{asyncPrefix}def {accessModifier}{methodName}({instanceReference}{parameters}) -> {returnTypeSuffix}:");
         }
-        private string GetDeserializationMethodName(CodeTypeBase propType) {
+        private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod codeElement) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = localConventions.TranslateType(propType);
+            if (localConventions.TypeExistInSameClassAsTarget(propType, codeElement))
+                propertyType = codeElement.Parent.Name.ToFirstCharacterUpperCase();
             if(propType is CodeType currentType) {
                 if(currentType.TypeDefinition is CodeEnum currentEnum)
                     return $"get_{(currentEnum.Flags || isCollection ? "collection_of_enum_values" : "enum_value")}({propertyType.ToCamelCase()})";
@@ -364,6 +376,7 @@ namespace Kiota.Builder.Writers.Python {
             return propertyType switch
             {
                 "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"get_{propertyType.ToSnakeCase()}_value()",
+                "bytes" => "get_byte_array_value()",
                 _ => $"get_object_value({propertyType.ToCamelCase()})",
             };
         }
