@@ -135,11 +135,23 @@ namespace Kiota.Builder.Writers.Python {
                 CodePropertyKind.UrlTemplate,
                 CodePropertyKind.PathParameters,
             };
+            foreach (var propWithoutDefault in parentClass.Properties.Except(parentClass.GetPropertiesOfKind(propertiesWithDefaultValues.ToArray()))
+                                            .Except(parentClass.GetPropertiesOfKind(CodePropertyKind.RequestAdapter))
+                                            .OrderByDescending(x => x.Kind)
+                                            .ThenBy(x => x.Name)) {
+                var returnType = conventions.GetTypeString(propWithoutDefault.Type, propWithoutDefault);
+                conventions.WriteInLineDescription(propWithoutDefault.Description, writer);
+                writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
+                writer.WriteLine();
+            }
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(propertiesWithDefaultValues.ToArray())
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderByDescending(x => x.Kind)
                                             .ThenBy(x => x.Name)) {
-                writer.WriteLine($"self.{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
+                var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault);
+                conventions.WriteInLineDescription(propWithDefault.Description, writer);
+                writer.WriteLine($"self.{conventions.GetAccessModifier(propWithDefault.Access)}{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
+                writer.WriteLine();
             }
             if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
