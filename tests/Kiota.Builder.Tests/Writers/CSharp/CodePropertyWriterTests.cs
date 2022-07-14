@@ -95,7 +95,12 @@ public class CodePropertyWriterTests: IDisposable {
     [Fact]
     public void DoesntWritePropertiesExistingInParentType() {
         property.Kind = CodePropertyKind.Custom;
-        property.ExistsInBaseType = true;
+        property.OriginalPropertyFromBaseType = new CodeProperty {
+            Name = "definedInParent",
+            Type = new CodeType {
+                Name = "string"
+            }
+        };
         writer.Write(property);
         var result = tw.ToString();
         Assert.Empty(result);
