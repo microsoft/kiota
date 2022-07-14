@@ -13,14 +13,14 @@ namespace Kiota.Builder.Writers.Python {
             var parentClass = codeElement.Parent as CodeClass;
             switch(codeElement.Kind) {
                 case CodePropertyKind.RequestBuilder:
-                    writer.WriteLine($"def get_{codeElement.Name.ToSnakeCase()}(self) -> {returnType}:");
+                    writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}(self) -> {returnType}:");
                     writer.IncreaseIndent();
                     conventions.WriteShortDescription(codeElement.Description, writer);
                     conventions.AddRequestBuilderBody(parentClass, returnType, writer);
                     writer.DecreaseIndent();
                     writer.WriteLine();
                 break;
-                default:
+                case CodePropertyKind.QueryParameters: case CodePropertyKind.Headers: case CodePropertyKind.Options: case CodePropertyKind.QueryParameter:
                     conventions.WriteInLineDescription(codeElement.Description, writer);
                     writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name.ToSnakeCase()}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} = None");
                     writer.WriteLine();
