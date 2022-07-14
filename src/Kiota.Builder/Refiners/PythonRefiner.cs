@@ -66,7 +66,7 @@ namespace Kiota.Builder.Refiners {
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 $"{AbstractionsPackageName}.request_adapter", "RequestAdapter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-                $"{AbstractionsPackageName}.method", "HttpMethod"),
+                $"{AbstractionsPackageName}.method", "Method"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
                 $"{AbstractionsPackageName}.request_information", "RequestInformation"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
