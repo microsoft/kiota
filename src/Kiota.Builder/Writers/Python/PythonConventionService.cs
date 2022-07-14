@@ -49,7 +49,7 @@ public class PythonConventionService : CommonLanguageConventionService
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
     {
         var defaultValueSuffiix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
-        return $"{parameter.Name.ToSnakeCase()}: {(parameter.Type.IsNullable ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement)}{(parameter.Type.IsNullable ? "]": string.Empty)}{defaultValueSuffiix}";
+        return $"{parameter.Name.ToSnakeCase()}: {(parameter.Type.IsNullable ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement)}{(parameter.Type.IsNullable ? "] = None": string.Empty)}{defaultValueSuffiix}";
     }
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement) {
         var parentBlock = targetElement.GetImmediateParentOfType<IBlock>();
