@@ -86,6 +86,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         }
     }
     private static readonly CodePropertyTypeComparer CodePropertyTypeForwardComparer = new();
+    private static readonly CodePropertyTypeComparer CodePropertyTypeBackwardComparer = new(true);
     private void WriteFactoryMethodBodyForInheritedType(CodeMethod codeElement, LanguageWriter writer) {
         writer.WriteLine($"return {DiscriminatorMappingVarName} switch {{");
         writer.IncreaseIndent();
@@ -122,14 +123,39 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         writer.WriteLine("return result;");
     }
     private void WriteFactoryMethodBodyForIntersectionType(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer) {
-        throw new NotImplementedException();
         writer.WriteLine($"var result = new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
-        foreach(var mappedType in codeElement.DiscriminatorInformation.DiscriminatorMappings) {
-            writer.WriteLine($"if(\"{mappedType.Key}\".Equals({DiscriminatorMappingVarName}, StringComparison.OrdinalIgnoreCase)) {{");
-            var propertyForType = parentClass.Properties.FirstOrDefault(x => x.Type.Name.Equals(mappedType.Value.AllTypes.First().Name, StringComparison.OrdinalIgnoreCase));
-            writer.IncreaseIndent();//TODO filter out scalars
-            writer.WriteLine($"\"{propertyForType.Name.ToFirstCharacterUpperCase()}\" = new {conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}();");
-            writer.CloseBlock();
+        var includeElse = false;
+        foreach(var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                            .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
+                                            .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
+                                            .ThenBy(static x => x.Name)) {
+            if(property.Type is CodeType propertyType) {
+                var typeName = conventions.GetTypeString(propertyType, codeElement);
+                var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
+                writer.WriteLine($"{(includeElse? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName}) {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
+                writer.CloseBlock();
+            }
+            if(!includeElse)
+                includeElse = true;
+        }
+        var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                            .Select(static x => new Tuple<CodeProperty, CodeType>(x, x.Type as CodeType))
+                                            .Where(static x => x.Item2.TypeDefinition is CodeClass && !x.Item2.IsCollection)
+                                            .ToArray();
+        if(complexProperties.Any()) {
+            if(includeElse) {
+                writer.WriteLine("else {");
+                writer.IncreaseIndent();
+            }
+            foreach(var property in complexProperties) {
+                var mappedType = codeElement.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(property.Item2.Name, StringComparison.OrdinalIgnoreCase));
+                writer.WriteLine($"{property.Item1.Name.ToFirstCharacterUpperCase()} = new {conventions.GetTypeString(property.Item2, codeElement)}();");
+            }
+            if(includeElse) {
+                writer.CloseBlock();
+            }
         }
         writer.WriteLine("return result;");
     }

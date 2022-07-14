@@ -5,22 +5,28 @@ namespace Kiota.Builder.Writers.CSharp;
 internal class CodeTypeComparer : IComparer<CodeTypeBase>
 {
     private readonly bool OrderByDesc;
-    public int DescFactor { get => OrderByDesc ? -1 : 1; }
     public CodeTypeComparer(bool orderByDesc = false)
     {
         OrderByDesc = orderByDesc;
     }
     public int GetHashCode([DisallowNull] CodeTypeBase obj)
     {
-        if(obj is CodeType type)
+        if(obj is CodeType type && !OrderByDesc)
             return (type.TypeDefinition, type.IsCollection) switch {
-                (CodeClass or CodeInterface or CodeEnum, false) => 7 * DescFactor,
-                (null, false) => 11 * DescFactor,
-                (CodeClass or CodeInterface or CodeEnum, true) => 13 * DescFactor,
-                (_, _) => 17 * DescFactor,
+                (CodeClass or CodeInterface or CodeEnum, false) => 7,
+                (null, false) => 11,
+                (CodeClass or CodeInterface or CodeEnum, true) => 13,
+                (_, _) => 17,
+            };
+        else if(obj is CodeType type2 && OrderByDesc)
+            return (type2.TypeDefinition, type2.IsCollection) switch {
+                (null, false) => 7,
+                (CodeClass or CodeInterface or CodeEnum, true) => 13,
+                (CodeClass or CodeInterface or CodeEnum, false) => 11,
+                (_, _) => 17,
             };
         else 
-            return 23 * DescFactor;
+            return 23;
     }
     public int Compare(CodeTypeBase x, CodeTypeBase y)
     {
