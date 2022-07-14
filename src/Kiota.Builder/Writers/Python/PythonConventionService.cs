@@ -82,20 +82,36 @@ public class PythonConventionService : CommonLanguageConventionService
     }
     #pragma warning restore CA1822 // Method should be static
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
-    public override string TranslateType(CodeType type)
-
-    {
-        return type.Name switch  {
-            "String" or "string" => "str",
-            "integer" or "int32" or "int64" or "byte" or "sbyte" => "int",
-            "decimal" or "double" => "float",
-            "void" => "None",
-            "datetime" => "datetime",
-            "DateTimeOffset" => "timedelta",
-            "boolean" => "bool",
-            "Object" or "object" or "float" or "bytes" => type.Name,
-            _ => type.Name.ToFirstCharacterUpperCase().Replace("IParseNode", "ParseNode") ?? "object",
-        };
+    public override string TranslateType(CodeType type) {
+        if (type.IsExternal)
+            return type.Name switch  {
+                "String" or "string" => "str",
+                "integer" or "int32" or "int64" or "byte" or "sbyte" => "int",
+                "decimal" or "double" => "float",
+                "Binary" or "binary" => "bytes",
+                "void" => "None",
+                "DateTimeOffset" => "datetime",
+                "boolean" => "bool",
+                "Object" or "object" or "float" or "bytes" or "datetime" or "timespan" => type.Name,
+                _ => type.Name.ToFirstCharacterUpperCase().Replace("IParseNode", "ParseNode") ?? "object",
+            };
+        else
+            if (type.Name.Contains("RequestConfiguration"))
+                return type.TypeDefinition?.Name.ToFirstCharacterUpperCase();
+            else if (type.Name.Contains("QueryParameters"))
+                return type.Name;
+            else
+                return type.Name switch  {
+                    "String" or "string" => "str",
+                    "integer" or "int32" or "int64" or "byte" or "sbyte" => "int",
+                    "decimal" or "double" => "float",
+                    "Binary" or "binary" => "bytes",
+                    "void" => "None",
+                    "DateTimeOffset" => "datetime",
+                    "boolean" => "bool",
+                    "Object" or "object" or "float" or "bytes" or "datetime" or "timespan" => type.Name,
+                    _ => $"{type.Name.ToSnakeCase()}.{type.Name.ToFirstCharacterUpperCase()}" ?? "object",
+                };
     }
     
     #pragma warning disable CA1822 // Method should be static
