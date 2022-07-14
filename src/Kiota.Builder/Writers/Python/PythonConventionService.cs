@@ -71,6 +71,8 @@ public class PythonConventionService : CommonLanguageConventionService
             return currentUnion.Types.Select(x => GetTypeString(x, targetElement)).Aggregate((x, y) => $"Union[{x}, {y.ToFirstCharacterLowerCase()}]");
         else if(code is CodeType currentType) {
             var typeName = GetTypeAlias(currentType, targetElement) ?? TranslateType(currentType);
+            if (TypeExistInSameClassAsTarget(code, targetElement))
+                typeName = targetElement.Parent.Name.ToFirstCharacterUpperCase();
             if (code.ActionOf)
                 return WriteInlineDeclaration(currentType, targetElement);
             else
@@ -95,6 +97,12 @@ public class PythonConventionService : CommonLanguageConventionService
             _ => type.Name.ToFirstCharacterUpperCase().Replace("IParseNode", "ParseNode") ?? "object",
         };
     }
+    
+    #pragma warning disable CA1822 // Method should be static
+    public bool TypeExistInSameClassAsTarget(CodeTypeBase currentType, CodeElement targetElement)
+        {
+            return targetElement.Parent is CodeClass && currentType.Name == targetElement.Parent.Name;
+        }
     #pragma warning disable CA1822 // Method should be static
     public bool IsPrimitiveType(string typeName) {
         return typeName switch {
