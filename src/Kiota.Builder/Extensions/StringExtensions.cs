@@ -103,21 +103,21 @@ namespace Kiota.Builder.Extensions {
             return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase())).Trim('\\');
         }
         ///<summary>
-        /// Cleanup regex that remvoes all special characters from ASCII 0-127
+        /// Cleanup regex that removes all special characters from ASCII 0-127
         ///</summary>
-        private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*+,./:;<=>?@\[\]\\^`{}|~]", RegexOptions.Compiled);
-        public static string CleanupSymbolName(this string original, params string[] prefixesToStrip)
+        private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*+,./:;<=>?@\[\]\\^`{}|~](?<followingLetter>\w)?", RegexOptions.Compiled);
+        private const string CleanupGroupName = "followingLetter";
+        public static string CleanupSymbolName(this string original)
         {
             if (string.IsNullOrEmpty(original))
                 return original;
 
-            var result = original;
-            foreach (var prefix in prefixesToStrip.Where(x => !string.IsNullOrEmpty(x)))
-                result = result.Replace(prefix, string.Empty);
-            
-            result = result.ToCamelCase(); //ensure the name is camel cased to strip out any potential '-' characters
+            var result = original.ToCamelCase(); //ensure the name is camel cased to strip out any potential '-' characters
 
-            result = propertyCleanupRegex.Replace(result, string.Empty); //strip out any invalid characters
+            result = propertyCleanupRegex.Replace(result, 
+                                    static x => x.Groups.Keys.Contains(CleanupGroupName) ? 
+                                                    x.Groups[CleanupGroupName].Value.ToFirstCharacterUpperCase() :
+                                                    string.Empty); //strip out any invalid characters, and replace any following one by its uppercase version
 
             if(int.TryParse(result, out var _)) // in most languages a number is not a valid symbol name
                 result = $"{original.ToString().GetNamespaceImportSymbol()}_{result}";

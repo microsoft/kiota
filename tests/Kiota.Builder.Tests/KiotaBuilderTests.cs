@@ -1394,7 +1394,7 @@ components:
             throw new InvalidOperationException("Discriminator mapping value is not a CodeType");
         Assert.NotNull(castType.TypeDefinition);
         Assert.Equal(directoryObjectClass, castType.TypeDefinition);
-        var doTypeProperty = directoryObjectClass.Properties.First(x => x.Name.Equals("type", StringComparison.OrdinalIgnoreCase));
+        var doTypeProperty = directoryObjectClass.Properties.First(x => x.Name.Equals("ODataType", StringComparison.OrdinalIgnoreCase));
         Assert.True(doTypeProperty.ExistsInBaseType);
         Assert.Equal("\"#microsoft.graph.directoryObject\"", doTypeProperty.DefaultValue);
     }

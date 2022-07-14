@@ -551,7 +551,7 @@ public class KiotaBuilder
 
     private CodeProperty CreateProperty(string childIdentifier, string childType, OpenApiSchema typeSchema = null, CodeTypeBase existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
     {
-        var propertyName = childIdentifier.CleanupSymbolName(config.PropertiesPrefixToStrip);
+        var propertyName = childIdentifier.CleanupSymbolName();
         var prop = new CodeProperty
         {
             Name = propertyName,
