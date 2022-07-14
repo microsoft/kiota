@@ -53,8 +53,8 @@ namespace Kiota.Builder.Refiners {
                     $"{AbstractionsPackageName}.serialization.ParseNodeFactoryRegistry" });
             AddParentClassToErrorClasses(
                     generatedCode,
-                    "ApiError",
-                    "kiota.abstractions"
+                    "APIError",
+                    "kiota.abstractions.api_error"
             );
             AddQueryParameterMapperMethod(
                 generatedCode
