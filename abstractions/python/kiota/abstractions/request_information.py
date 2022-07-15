@@ -1,5 +1,5 @@
-from io import BytesIO
 from dataclasses import fields
+from io import BytesIO
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
 from uritemplate import URITemplate
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 Url = str
 T = TypeVar("T", bound=Parsable)
-QueryParams = TypeVar('QueryParams', int, float, str, bool, None)
+QueryParams = TypeVar('QueryParams')
 
 
 class RequestInformation(Generic[QueryParams]):
@@ -22,7 +22,7 @@ class RequestInformation(Generic[QueryParams]):
     RAW_URL_KEY = 'request-raw-url'
     BINARY_CONTENT_TYPE = 'application/octet-stream'
     CONTENT_TYPE_HEADER = 'Content-Type'
-    
+
     def __init__(self) -> None:
 
         # The uri of the request
@@ -84,23 +84,23 @@ class RequestInformation(Generic[QueryParams]):
 
     def get_request_headers(self) -> Optional[Dict]:
         return self.headers
-    
+
     def add_request_headers(self, headers_to_add: Optional[Dict[str, str]]) -> None:
         """Adds headers to the request
         """
         if headers_to_add:
             for key in headers_to_add:
                 self.headers[key.lower()] = headers_to_add[key]
-                
+
     def remove_request_headers(self, key: str) -> None:
         """Removes a request header from the current request
 
         Args:
             key (str): The key of the header to remove
         """
-        if key and key.lower in self.headers.keys():
+        if key and key.lower() in self.headers:
             del self.headers[key.lower()]
-             
+
     def get_request_options(self) -> List[Tuple[str, RequestOption]]:
         """Gets the request options for the request.
         """
@@ -155,13 +155,13 @@ class RequestInformation(Generic[QueryParams]):
         """
         self.headers[self.CONTENT_TYPE_HEADER] = self.BINARY_CONTENT_TYPE
         self.content = value
-        
-    def set_query_string_parameters_from_raw_object(self, q: Optional[object]) -> None:
+
+    def set_query_string_parameters_from_raw_object(self, q: Optional[QueryParams]) -> None:
         if q:
             for field in fields(q):
-                key = field
+                key = field.name
                 if hasattr(q, 'get_query_parameter'):
-                    serialization_key = q.get_query_parameter(key)
+                    serialization_key = q.get_query_parameter(key)  #type: ignore
                     if serialization_key:
                         key = serialization_key
                 self.query_parameters[key] = getattr(q, field.name)
