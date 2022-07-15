@@ -16,19 +16,22 @@ namespace  Kiota.Builder.Writers.Ruby {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
             if(writer == null) throw new ArgumentNullException(nameof(writer));
             var currentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
-            foreach (var codeUsing in codeElement.Usings
-                                        .Where(x => x.IsExternal)
-                                        .Distinct()
-                                        .GroupBy(x => x.Declaration?.Name)
-                                        .OrderBy(x => x.Key))
-                writer.WriteLine($"require '{codeUsing.Key.ToSnakeCase()}'");
-            foreach (var relativePath in codeElement.Usings
-                                        .Where(x => !x.IsExternal)
-                                        .Select(x => relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
-                                        .Select(x => x.Item3)
-                                        .Distinct()
-                                        .OrderBy(x => x))
-                writer.WriteLine($"require_relative '{relativePath.ToSnakeCase()}'");
+            if(codeElement?.Parent?.Parent is not CodeClass) {
+                foreach (var codeUsing in codeElement.Usings
+                                            .Where(x => x.IsExternal)
+                                            .Distinct()
+                                            .GroupBy(x => x.Declaration?.Name)
+                                            .OrderBy(x => x.Key))
+                        writer.WriteLine($"require '{codeUsing.Key.ToSnakeCase()}'");
+                        
+                foreach (var relativePath in codeElement.Usings
+                                            .Where(x => !x.IsExternal)
+                                            .Select(x => relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
+                                            .Select(x => x.Item3)
+                                            .Distinct()
+                                            .OrderBy(x => x))
+                            writer.WriteLine($"require_relative '{relativePath.ToSnakeCase()}'");
+            }
             writer.WriteLine();
             if(codeElement?.Parent?.Parent is CodeNamespace ns) {
                 writer.WriteLine($"module {ns.Name.NormalizeNameSpaceName("::")}");

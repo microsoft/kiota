@@ -56,7 +56,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         if(code is null)
             return null;
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "[]";
-        if(code is CodeUnionType currentUnion && currentUnion.Types.Any())
+        if(code is CodeComposedTypeBase currentUnion && currentUnion.Types.Any())
             return currentUnion.Types.Select(x => GetTypeString(x, targetElement)).Aggregate((x, y) => $"{x} | {y}") + collectionSuffix;
         else if(code is CodeType currentType) {
             var typeName = GetTypeAlias(currentType, targetElement) ?? TranslateType(currentType);
@@ -121,6 +121,6 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
         if(!string.IsNullOrEmpty(description))
-            writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)} {DocCommentEnd}");
+            writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
 }

@@ -124,7 +124,7 @@
                  "${workspaceFolder}/samples/msgraph-mail/Swiftconsoleapp/Sources/Swiftconsoleapp",
                  "-n",
                  "Swiftconsoleapp",
-                 "-co" ],
+                 "--co" ],
             "cwd": "${workspaceFolder}/src/kiota",
             "console": "internalConsole",
             "stopAtEntry": false

@@ -4,7 +4,7 @@ parent: Kiota deep dive
 
 # Serialization with Kiota clients
 
-APIs rely on some serialization format (JSON, YAML, XML...) to be able to receive and respond payloads from and to their clients. Kiota generated models and request builders are not tied to any specific serialization format or implementation library. To achieve this Kiota generated clients rely on two key concepts:
+APIs rely on some serialization format (JSON, YAML, XML...) to be able to receive and respond to requests from their clients. Kiota generated models and request builders are not tied to any specific serialization format or implementation library. To achieve this Kiota generated clients rely on two key concepts:
 
 - Models rely on a set of abstractions described below, available in the abstractions package and implemented in a separate package for each format.
 - Models self-describe their serialization/deserialization logic, more information in [the models](./models.md) documentation page.

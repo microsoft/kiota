@@ -16,7 +16,7 @@ namespace Kiota.Builder.Writers.Ruby {
             conventions.WriteShortDescription(codeElement.Description, writer);
             writer.WriteLine($"{codeElement.Name.ToFirstCharacterUpperCase()} = {{");
             writer.IncreaseIndent();
-            codeElement.Options.ToList().ForEach(x => writer.WriteLine($"{x.ToFirstCharacterUpperCase()}: :{x.ToFirstCharacterUpperCase()},"));
+            codeElement.Options.ToList().ForEach(x => writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: :{x.Name.ToFirstCharacterUpperCase()},"));
             writer.CloseBlock();
             if(codeElement.Parent is CodeNamespace)
                 writer.CloseBlock("end");
