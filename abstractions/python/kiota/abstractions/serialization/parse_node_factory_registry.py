@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from io import BytesIO
 from typing import Dict
 
@@ -36,9 +37,16 @@ class ParseNodeFactoryRegistry(ParseNodeFactory):
         if not content:
             raise Exception("Content cannot be null")
 
-        factory = self.CONTENT_TYPE_ASSOCIATED_FACTORIES.get(content_type)
+        vendor_specific_content_type = content_type.split(';')[0]
+        factory = self.CONTENT_TYPE_ASSOCIATED_FACTORIES.get(vendor_specific_content_type)
         if factory:
-            return factory.get_root_parse_node(content_type, content)
+            return factory.get_root_parse_node(vendor_specific_content_type, content)
+
+        cleaned_content_type = re.sub(r'[^/]+\+', '', vendor_specific_content_type)
+        factory = self.CONTENT_TYPE_ASSOCIATED_FACTORIES.get(cleaned_content_type)
+        if factory:
+            return factory.get_root_parse_node(cleaned_content_type, content)
+
         raise Exception(
-            f"Content type {content_type} does not have a factory registered to be parsed"
+            f"Content type {cleaned_content_type} does not have a factory registered to be parsed"
         )

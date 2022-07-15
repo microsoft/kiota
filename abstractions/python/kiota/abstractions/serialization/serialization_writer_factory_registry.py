@@ -1,3 +1,4 @@
+import re
 from typing import Dict
 
 from .serialization_writer import SerializationWriter
@@ -32,9 +33,16 @@ class SerializationWriterFactoryRegistry(SerializationWriterFactory):
         if not content_type:
             raise Exception("Content type cannot be null")
 
-        factory = self.CONTENT_TYPE_ASSOCIATED_FACTORIES.get(content_type)
+        vendor_specific_content_type = content_type.split(';')[0]
+        factory = self.CONTENT_TYPE_ASSOCIATED_FACTORIES.get(vendor_specific_content_type)
         if factory:
-            return factory.get_serialization_writer(content_type)
+            return factory.get_serialization_writer(vendor_specific_content_type)
+        cleaned_content_type = re.sub(r'[^/]+\+', '', vendor_specific_content_type)
+
+        factory = self.CONTENT_TYPE_ASSOCIATED_FACTORIES.get(cleaned_content_type)
+        if factory:
+            return factory.get_serialization_writer(cleaned_content_type)
         raise Exception(
-            f"Content type {content_type} does not have a factory registered to be serialized"
+            f"Content type {cleaned_content_type} does not have a factory registered"
+            "to be serialized"
         )
