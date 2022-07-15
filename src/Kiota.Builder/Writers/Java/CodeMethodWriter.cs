@@ -73,7 +73,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
             case CodeMethodKind.Factory:
-                WriteFactoryMethodBody(codeElement, writer);
+                WriteFactoryMethodBody(codeElement, parentClass, writer);
                 break;
             default:
                 writer.WriteLine("return null;");
@@ -81,16 +81,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         }
         writer.CloseBlock();
     }
-    private static void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
+    private static void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer){
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-        if(codeElement.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
-            writer.WriteLines($"final ParseNode mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.DiscriminatorInformation.DiscriminatorPropertyName}\");",
+        if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
+            writer.WriteLines($"final ParseNode mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\");",
                                 "if (mappingValueNode != null) {");
             writer.IncreaseIndent();
             writer.WriteLines($"final String mappingValue = mappingValueNode.getStringValue();");
             writer.WriteLine("switch (mappingValue) {");
             writer.IncreaseIndent();
-            foreach(var mappedType in codeElement.DiscriminatorInformation.DiscriminatorMappings) {
+            foreach(var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings) {
                 writer.WriteLine($"case \"{mappedType.Key}\": return new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}();");
             }
             writer.CloseBlock();

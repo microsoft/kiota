@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
@@ -46,11 +45,9 @@ public class DiscriminatorInformationTests {
     [Fact]
     public void ShouldWriteDiscriminatorSwitch() {
         var information = new DiscriminatorInformation {
-            Parent = new CodeMethod {
-                Parent = new CodeClass {
-                    Name = "someClass",
-                }
-            },
+            Parent = new CodeClass {
+                Name = "someClass",
+            }
         };
         Assert.False(information.ShouldWriteDiscriminatorForInheritedType);
         information.DiscriminatorPropertyName = "foo";

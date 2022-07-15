@@ -63,11 +63,11 @@ public class DiscriminatorInformation : CodeElement, ICloneable
     public bool ShouldWriteDiscriminatorBody => ShouldWriteDiscriminatorForInheritedType || ShouldWriteDiscriminatorForUnionType || ShouldWriteDiscriminatorForIntersectionType;
     private bool IsUnionType => Is<CodeUnionType>();
     private bool IsIntersectionType => Is<CodeIntersectionType>();
-    private bool IsComplexType => Parent is CodeMethod currentMethod && currentMethod.Parent is CodeClass currentClass && currentClass.OriginalComposedType is null ||
-                                Parent is CodeMethod parentMethod && parentMethod.Parent is CodeFunction; //static factories outside of classes (TS/Go)
+    private bool IsComplexType => Parent is CodeClass currentClass && currentClass.OriginalComposedType is null ||
+                                Parent is CodeMethod parentMethod && parentMethod.Parent is CodeFunction currentFunction && currentFunction.OriginalMethodParentClass?.OriginalComposedType is null; //static factories outside of classes (TS/Go)
     private bool Is<T>() where T : CodeComposedTypeBase
     {
-        return Parent is CodeMethod currentMethod && currentMethod.Parent is CodeClass currentClass && currentClass.OriginalComposedType is T ||
+        return Parent is CodeClass currentClass && currentClass.OriginalComposedType is T ||
         Parent is T;
     }
 }

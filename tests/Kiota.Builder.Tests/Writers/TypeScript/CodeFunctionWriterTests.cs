@@ -62,11 +62,11 @@ public class CodeFunctionWriterTests : IDisposable {
             },
             IsStatic = true,
         }).First();
-        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
@@ -115,11 +115,11 @@ public class CodeFunctionWriterTests : IDisposable {
             },
             IsStatic = true,
         }).First();
-        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         var factoryFunction = root.AddFunction(new CodeFunction(factoryMethod)).First();
         writer.Write(factoryFunction);
         var result = tw.ToString();
@@ -156,11 +156,11 @@ public class CodeFunctionWriterTests : IDisposable {
             },
             IsStatic = true,
         }).First();
-        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = string.Empty;
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = string.Empty;
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
@@ -201,7 +201,7 @@ public class CodeFunctionWriterTests : IDisposable {
             },
             IsStatic = true,
         }).First();
-        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,

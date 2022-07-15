@@ -1072,7 +1072,7 @@ public class KiotaBuilder
             IsAsync = false,
         }).First();
         discriminatorMappings?.ToList()
-                .ForEach(x => factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping(x.Key, x.Value));
+                .ForEach(x => newClass.DiscriminatorInformation.AddDiscriminatorMapping(x.Key, x.Value));
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
@@ -1080,7 +1080,7 @@ public class KiotaBuilder
             Optional = false,
             Type = new CodeType { Name = ParseNodeInterface, IsExternal = true },
         });
-        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = discriminatorPropertyName;
+        newClass.DiscriminatorInformation.DiscriminatorPropertyName = discriminatorPropertyName;
     }
     private CodeTypeBase GetCodeTypeForMapping(OpenApiUrlTreeNode currentNode, string referenceId, CodeNamespace currentNamespace, CodeClass baseClass, OpenApiSchema currentSchema) {
         var componentKey = referenceId.Replace("#/components/schemas/", string.Empty);

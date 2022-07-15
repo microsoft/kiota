@@ -60,7 +60,7 @@ namespace Kiota.Builder.Writers.Php
                         WriteRequestExecutorBody(codeElement, parentClass, requestParams, writer);
                         break;
                     case CodeMethodKind.Factory:
-                        WriteFactoryMethodBody(codeElement, writer);
+                        WriteFactoryMethodBody(codeElement, parentClass, writer);
                         break;
             }
             writer.CloseBlock();
@@ -520,16 +520,16 @@ namespace Kiota.Builder.Writers.Php
             else return $"sendAsync";
         }
         
-        private static void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
+        private static void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer){
             var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-            if(codeElement.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
-                writer.WriteLines($"$mappingValueNode = ${parseNodeParameter.Name.ToFirstCharacterLowerCase()}->getChildNode(\"{codeElement.DiscriminatorInformation.DiscriminatorPropertyName}\");",
+            if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
+                writer.WriteLines($"$mappingValueNode = ${parseNodeParameter.Name.ToFirstCharacterLowerCase()}->getChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\");",
                     "if ($mappingValueNode !== null) {");
                 writer.IncreaseIndent();
                 writer.WriteLines("$mappingValue = $mappingValueNode->getStringValue();");
                 writer.WriteLine("switch ($mappingValue) {");
                 writer.IncreaseIndent();
-                foreach(var mappedType in codeElement.DiscriminatorInformation.DiscriminatorMappings) {
+                foreach(var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings) {
                     writer.WriteLine($"case '{mappedType.Key}': return new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}();");
                 }
                 writer.CloseBlock();

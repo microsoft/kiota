@@ -27,7 +27,7 @@ public enum CodeClassKind {
 /// <summary>
 /// CodeClass represents an instance of a Class to be generated in source code
 /// </summary>
-public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition
+public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition, IDiscriminatorInformationHolder
 {
     public bool IsErrorDefinition { get; set; }
 
@@ -84,6 +84,20 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         // we don't want to return the current class if this is the start node in the inheritance tree and doesn't have parent
         else
             return parentClass.GetGreatestGrandparent(startClassToSkip);
+    }
+    private DiscriminatorInformation _discriminatorInformation;
+    /// <inheritdoc />
+    public DiscriminatorInformation DiscriminatorInformation { 
+        get {
+            if (_discriminatorInformation == null)
+                DiscriminatorInformation = new DiscriminatorInformation();
+            return _discriminatorInformation;
+        } 
+        set {
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
+            EnsureElementsAreChildren(value);
+            _discriminatorInformation = value;
+        }
     }
 }
 public class ClassDeclaration : ProprietableBlockDeclaration

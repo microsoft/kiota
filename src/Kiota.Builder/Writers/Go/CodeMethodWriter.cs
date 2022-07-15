@@ -69,7 +69,7 @@ namespace Kiota.Builder.Writers.Go {
                     WriteRequestBuilderBody(parentClass, codeElement, writer);
                     break;
                 case CodeMethodKind.Factory:
-                    WriteFactoryMethodBody(codeElement, writer);
+                    WriteFactoryMethodBody(codeElement, parentClass, writer);
                     break;
                 default:
                     writer.WriteLine("return nil");
@@ -77,12 +77,12 @@ namespace Kiota.Builder.Writers.Go {
             }
             writer.CloseBlock();
         }
-        private void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
+        private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer){
             var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-            if(codeElement.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
+            if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
                 writer.WriteLine($"if {parseNodeParameter.Name.ToFirstCharacterLowerCase()} != nil {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{codeElement.DiscriminatorInformation.DiscriminatorPropertyName}\")");
+                writer.WriteLine($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")");
                 WriteReturnError(writer, codeElement.ReturnType.Name);
                 writer.WriteLine("if mappingValueNode != nil {");
                 writer.IncreaseIndent();
@@ -93,7 +93,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLines("mappingStr := *mappingValue",
                                     "switch mappingStr {");
                 writer.IncreaseIndent();
-                foreach(var mappedType in codeElement.DiscriminatorInformation.DiscriminatorMappings) {
+                foreach(var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings) {
                     writer.WriteLine($"case \"{mappedType.Key}\":");
                     writer.IncreaseIndent();
                     writer.WriteLine($"return {conventions.GetImportedStaticMethodName(mappedType.Value, codeElement.Parent)}(), nil");

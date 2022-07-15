@@ -30,8 +30,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     private static void WriteFactoryMethodBody(CodeFunction codeElement, string returnType, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.OriginalLocalMethod.Parameters.OfKind(CodeParameterKind.ParseNode);
-        if(codeElement.OriginalLocalMethod.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
-            writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.OriginalLocalMethod.DiscriminatorInformation.DiscriminatorPropertyName}\");",
+        if(codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
+            writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorPropertyName}\");",
                                 $"if (mappingValueNode) {{");
             writer.IncreaseIndent();
             writer.WriteLines($"const mappingValue = mappingValueNode.getStringValue();",
@@ -40,7 +40,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
             writer.WriteLine($"switch (mappingValue) {{");
             writer.IncreaseIndent();
-            foreach(var mappedType in codeElement.OriginalLocalMethod.DiscriminatorInformation.DiscriminatorMappings) {
+            foreach(var mappedType in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings) {
                 writer.WriteLine($"case \"{mappedType.Key}\":");
                 writer.IncreaseIndent();
                 writer.WriteLine($"return new {mappedType.Value.Name.ToFirstCharacterUpperCase()}();");

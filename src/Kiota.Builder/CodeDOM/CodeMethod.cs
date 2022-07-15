@@ -70,7 +70,7 @@ public class PagingInformation : ICloneable
     }
 }
 
-public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement, IDiscriminatorInformationHolder
+public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
 {
     public static CodeMethod FromIndexer(CodeIndexer originalIndexer, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable)
     {
@@ -224,20 +224,6 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             errorMappings[code] = newType;
         }
     }
-    private DiscriminatorInformation _discriminatorInformation;
-    /// <inheritdoc />
-    public DiscriminatorInformation DiscriminatorInformation { 
-        get {
-            if (_discriminatorInformation == null)
-                DiscriminatorInformation = new DiscriminatorInformation();
-            return _discriminatorInformation;
-        } 
-        set {
-            ArgumentNullException.ThrowIfNull(value, nameof(value));
-            EnsureElementsAreChildren(value);
-            _discriminatorInformation = value;
-        }
-    }
     public object Clone()
     {
         var method = new CodeMethod {
@@ -260,7 +246,6 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             errorMappings = errorMappings == null ? null : new (errorMappings),
             acceptedResponseTypes = acceptedResponseTypes == null ? null : new (acceptedResponseTypes),
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
-            DiscriminatorInformation = DiscriminatorInformation?.Clone() as DiscriminatorInformation,
         };
         if(Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());

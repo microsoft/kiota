@@ -34,10 +34,10 @@ public class GoLanguageRefinerTests {
                 TypeDefinition = baseModel,
             },
         }).First();
-        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = "Discriminator";
-        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("DerivedModel", new CodeType{ Name = derivedModel.Name, TypeDefinition = derivedModel });
+        baseModel.DiscriminatorInformation.DiscriminatorPropertyName = "Discriminator";
+        baseModel.DiscriminatorInformation.AddDiscriminatorMapping("DerivedModel", new CodeType{ Name = derivedModel.Name, TypeDefinition = derivedModel });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Empty(factoryMethod.DiscriminatorInformation.DiscriminatorMappings);
+        Assert.Empty(baseModel.DiscriminatorInformation.DiscriminatorMappings);
         Assert.Empty(baseModel.Usings.Where(x => x.Name.Equals("models.sub", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
@@ -211,7 +211,7 @@ public class GoLanguageRefinerTests {
                 TypeDefinition = parentModel,
             },
         }).First();
-        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
             Name = "childModel",
             TypeDefinition = childModel,
         });
@@ -243,7 +243,7 @@ public class GoLanguageRefinerTests {
                 TypeDefinition = parentModel,
             },
         }).First();
-        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
             Name = "childModel",
             TypeDefinition = childModel,
         });

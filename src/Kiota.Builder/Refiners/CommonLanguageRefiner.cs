@@ -184,6 +184,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 ReplaceReservedCodeUsingNamespaceSegmentNames(currentDeclaration, provider, replacement);
             if(provider.ReservedNames.Contains(currentDeclaration.Inherits?.Name))
                 currentDeclaration.Inherits.Name = replacement(currentDeclaration.Inherits.Name);
+            if(currentClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
+                ReplaceMappingNames(currentClass.DiscriminatorInformation.DiscriminatorMappings, provider, replacement);
         } else if(current is CodeNamespace currentNamespace &&
             isNotInExceptions &&
             shouldReplace &&
@@ -200,8 +202,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 currentMethod.Name = replacement.Invoke(currentMethod.Name);
             if(currentMethod.ErrorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
                 ReplaceMappingNames(currentMethod.ErrorMappings, provider, replacement);
-            if(currentMethod.DiscriminatorInformation.DiscriminatorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
-                ReplaceMappingNames(currentMethod.DiscriminatorInformation.DiscriminatorMappings, provider, replacement);
             ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
         } else if (current is CodeProperty currentProperty &&
                 isNotInExceptions &&
@@ -672,9 +672,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentMethod.Parent is CodeClass parentClass &&
             parentClass.StartBlock is ClassDeclaration declaration) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Factory) &&
-                    currentMethod.DiscriminatorInformation.DiscriminatorMappings != null) {
+                    parentClass.DiscriminatorInformation.DiscriminatorMappings != null) {
                         if(addUsings)
-                            declaration.AddUsings(currentMethod.DiscriminatorInformation.DiscriminatorMappings
+                            declaration.AddUsings(parentClass.DiscriminatorInformation.DiscriminatorMappings
                                 .Select(x => x.Value)
                                 .OfType<CodeType>()
                                 .Where(x => x.TypeDefinition != null)
@@ -982,9 +982,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if (currentElement is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.Factory) &&
             currentMethod.Parent is CodeClass currentClass &&
-            currentMethod.DiscriminatorInformation.DiscriminatorMappings.Any()) {
+            currentClass.DiscriminatorInformation.DiscriminatorMappings.Any()) {
                 var currentNamespace = currentMethod.GetImmediateParentOfType<CodeNamespace>();
-                var keysToRemove = currentMethod.DiscriminatorInformation.DiscriminatorMappings
+                var keysToRemove = currentClass.DiscriminatorInformation.DiscriminatorMappings
                                                 .Where(x => x.Value is CodeType mappingType &&
                                                             mappingType.TypeDefinition is CodeClass mappingClass &&
                                                             mappingClass.Parent is CodeNamespace mappingNamespace &&
@@ -993,7 +993,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                 .Select(x => x.Key)
                                                 .ToArray();
                 if(keysToRemove.Any())
-                    currentMethod.DiscriminatorInformation.RemoveDiscriminatorMapping(keysToRemove);
+                    currentClass.DiscriminatorInformation.RemoveDiscriminatorMapping(keysToRemove);
             }
         CrawlTree(currentElement, RemoveDiscriminatorMappingsTargetingSubNamespaces);
     }

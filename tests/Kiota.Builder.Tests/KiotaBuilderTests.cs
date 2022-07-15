@@ -1434,12 +1434,12 @@ components:
         Assert.NotNull(entityClass);
         var factoryMethod = entityClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(factoryMethod);
-        Assert.Equal("@odata.type", factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName);
-        Assert.Single(factoryMethod.DiscriminatorInformation.DiscriminatorMappings);
+        Assert.Equal("@odata.type", entityClass.DiscriminatorInformation.DiscriminatorPropertyName);
+        Assert.Single(entityClass.DiscriminatorInformation.DiscriminatorMappings);
         var doFactoryMethod = directoryObjectClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(doFactoryMethod);
-        Assert.Empty(doFactoryMethod.DiscriminatorInformation.DiscriminatorMappings);
-        if(factoryMethod.DiscriminatorInformation?.GetDiscriminatorMappingValue("#microsoft.graph.directoryObject") is not CodeType castType)
+        Assert.Empty(directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings);
+        if(entityClass.DiscriminatorInformation?.GetDiscriminatorMappingValue("#microsoft.graph.directoryObject") is not CodeType castType)
             throw new InvalidOperationException("Discriminator mapping value is not a CodeType");
         Assert.NotNull(castType.TypeDefinition);
         Assert.Equal(directoryObjectClass, castType.TypeDefinition);
@@ -1863,8 +1863,8 @@ components:
         Assert.NotNull(secondLevelDerivedObject);
         var factoryMethod = secondLevelDerivedClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(factoryMethod);
-        Assert.Equal("kind", factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName);
-        Assert.NotEmpty(factoryMethod.DiscriminatorInformation.DiscriminatorMappings);
+        Assert.Equal("kind", secondLevelDerivedClass.DiscriminatorInformation.DiscriminatorPropertyName);
+        Assert.NotEmpty(secondLevelDerivedClass.DiscriminatorInformation.DiscriminatorMappings);
     }
     [InlineData("string", "", "string")]// https://spec.openapis.org/registry/format/
     [InlineData("string", "commonmark", "string")]

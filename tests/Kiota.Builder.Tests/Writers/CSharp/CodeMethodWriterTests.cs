@@ -135,7 +135,10 @@ public class CodeMethodWriterTests : IDisposable {
             Kind = CodeClassKind.Model,
             OriginalComposedType = new CodeUnionType {
                 Name = "UnionTypeWrapper",
-            }
+            },
+            DiscriminatorInformation = new() {
+                DiscriminatorPropertyName = "@odata.type",
+            },
         }).First();
         var cType1 = new CodeType {
             Name = "ComplexType1",
@@ -149,6 +152,14 @@ public class CodeMethodWriterTests : IDisposable {
         var sType = new CodeType {
             Name = "string",
         };
+        unionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType {
+            Name = "ComplexType1",
+            TypeDefinition = cType1
+        });
+        unionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType2", new CodeType {
+            Name = "ComplexType2",
+            TypeDefinition = cType2
+        });
         unionTypeWrapper.OriginalComposedType.AddType(cType1);
         unionTypeWrapper.OriginalComposedType.AddType(cType2);
         unionTypeWrapper.OriginalComposedType.AddType(sType);
@@ -180,13 +191,21 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "ComplexType2",
             Kind = CodeClassKind.Model,
         }).First();
+        var complexType3 = root.AddClass(new CodeClass
+        {
+            Name = "ComplexType3",
+            Kind = CodeClassKind.Model,
+        }).First();
         var intersectionTypeWrapper = root.AddClass(new CodeClass
         {
             Name = "IntersectionTypeWrapper",
             Kind = CodeClassKind.Model,
             OriginalComposedType = new CodeIntersectionType {
                 Name = "IntersectionTypeWrapper",
-            }
+            },
+            DiscriminatorInformation = new() {
+                DiscriminatorPropertyName = "@odata.type",
+            },
         }).First();
         var cType1 = new CodeType {
             Name = "ComplexType1",
@@ -197,11 +216,28 @@ public class CodeMethodWriterTests : IDisposable {
             TypeDefinition = complexType2,
             CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
         };
+        var cType3 = new CodeType {
+            Name = "ComplexType3",
+            TypeDefinition = complexType3
+        };
+        intersectionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType {
+            Name = "ComplexType1",
+            TypeDefinition = cType1
+        });
+        intersectionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType2", new CodeType {
+            Name = "ComplexType2",
+            TypeDefinition = cType2
+        });
+        intersectionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType3", new CodeType {
+            Name = "ComplexType3",
+            TypeDefinition = cType3
+        });
         var sType = new CodeType {
             Name = "string",
         };
         intersectionTypeWrapper.OriginalComposedType.AddType(cType1);
         intersectionTypeWrapper.OriginalComposedType.AddType(cType2);
+        intersectionTypeWrapper.OriginalComposedType.AddType(cType3);
         intersectionTypeWrapper.OriginalComposedType.AddType(sType);
         intersectionTypeWrapper.AddProperty(new CodeProperty {
             Name = "ComplexType1Value",
@@ -211,6 +247,11 @@ public class CodeMethodWriterTests : IDisposable {
         intersectionTypeWrapper.AddProperty(new CodeProperty {
             Name = "ComplexType2Value",
             Type = cType2,
+            Kind = CodePropertyKind.Custom
+        });
+        intersectionTypeWrapper.AddProperty(new CodeProperty {
+            Name = "ComplexType3Value",
+            Type = cType3,
             Kind = CodePropertyKind.Custom
         });
         intersectionTypeWrapper.AddProperty(new CodeProperty {
@@ -363,22 +404,11 @@ public class CodeMethodWriterTests : IDisposable {
         var factoryMethod = wrapper.AddMethod(new CodeMethod{
             Name = "factory",
             Kind = CodeMethodKind.Factory,
-            DiscriminatorInformation = new() {
-                DiscriminatorPropertyName = "@odata.type",
-            },
             ReturnType = new CodeType {
                 Name = "UnionTypeWrapper",
                 TypeDefinition = wrapper,
             },
         }).First();
-        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType {
-            Name = "ComplexType1",
-            TypeDefinition = root.FindChildByName<CodeClass>("ComplexType1", true)
-        });
-        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType2", new CodeType {
-            Name = "ComplexType2",
-            TypeDefinition = root.FindChildByName<CodeClass>("ComplexType2", true)
-        });
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
@@ -407,22 +437,12 @@ public class CodeMethodWriterTests : IDisposable {
         var factoryMethod = wrapper.AddMethod(new CodeMethod{
             Name = "factory",
             Kind = CodeMethodKind.Factory,
-            DiscriminatorInformation = new() {
-                DiscriminatorPropertyName = "@odata.type",
-            },
+            
             ReturnType = new CodeType {
                 Name = "IntersectionTypeWrapper",
                 TypeDefinition = wrapper,
             },
         }).First();
-        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType {
-            Name = "ComplexType1",
-            TypeDefinition = root.FindChildByName<CodeClass>("ComplexType1", true)
-        });
-        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType2", new CodeType {
-            Name = "ComplexType2",
-            TypeDefinition = root.FindChildByName<CodeClass>("ComplexType2", true)
-        });
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
@@ -468,11 +488,11 @@ public class CodeMethodWriterTests : IDisposable {
             },
             IsStatic = true,
         }).First();
-        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
@@ -513,11 +533,11 @@ public class CodeMethodWriterTests : IDisposable {
             },
             IsStatic = true,
         }).First();
-        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         Assert.Throws<InvalidOperationException>(() => writer.Write(factoryMethod));
     }
     [Fact]
@@ -543,11 +563,11 @@ public class CodeMethodWriterTests : IDisposable {
             },
             IsStatic = true,
         }).First();
-        factoryMethod.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = string.Empty;
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = string.Empty;
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
@@ -581,7 +601,7 @@ public class CodeMethodWriterTests : IDisposable {
             },
             IsStatic = true,
         }).First();
-        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
@@ -705,7 +725,67 @@ public class CodeMethodWriterTests : IDisposable {
         AddInheritanceClass();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("base.Serialize(writer);", result);
+        Assert.Contains("base.Serialize(writer)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesUnionSerializerBody() {
+        var wrapper = AddUnionTypeWrapper();
+        var serializationMethod = wrapper.AddMethod(new CodeMethod{
+            Name = "factory",
+            Kind = CodeMethodKind.Serializer,
+            IsAsync = false,
+            ReturnType = new CodeType {
+                Name = "void",
+            },
+        }).First();
+        serializationMethod.AddParameter(new CodeParameter {
+            Name = "writer",
+            Kind = CodeParameterKind.Serializer,
+            Type = new CodeType {
+                Name = "SerializationWriter"
+            }
+        });
+        writer.Write(serializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("base.Serialize(writer)", result);
+        Assert.Contains("ComplexType1Value != null", result);
+        Assert.Contains("writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value)", result);
+        Assert.Contains("StringValue != null", result);
+        Assert.Contains("writer.WriteStringValue(null, StringValue)", result);
+        Assert.Contains("ComplexType2Value != null", result);
+        Assert.Contains("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesIntersectionSerializerBody() {
+        var wrapper = AddIntersectionTypeWrapper();
+        var serializationMethod = wrapper.AddMethod(new CodeMethod{
+            Name = "factory",
+            Kind = CodeMethodKind.Serializer,
+            IsAsync = false,
+            ReturnType = new CodeType {
+                Name = "void",
+            },
+        }).First();
+        serializationMethod.AddParameter(new CodeParameter {
+            Name = "writer",
+            Kind = CodeParameterKind.Serializer,
+            Type = new CodeType {
+                Name = "SerializationWriter"
+            }
+        });
+        writer.Write(serializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("base.Serialize(writer)", result);
+        Assert.DoesNotContain("ComplexType1Value != null", result);
+        Assert.Contains("writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value, ComplexType3Value)", result);
+        Assert.Contains("StringValue != null", result);
+        Assert.Contains("writer.WriteStringValue(null, StringValue)", result);
+        Assert.Contains("ComplexType2Value != null", result);
+        Assert.Contains("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)", result);
+        Assert.InRange(result.IndexOf("writer.WriteStringValue(null, StringValue)"), 0, result.IndexOf("writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value, ComplexType3Value)"));
+        Assert.InRange(result.IndexOf("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)"), 0, result.IndexOf("writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value, ComplexType3Value)"));
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
