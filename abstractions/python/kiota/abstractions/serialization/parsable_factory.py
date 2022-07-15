@@ -7,6 +7,7 @@ from .parse_node import ParseNode, U
 class ParsableFactory(Parsable):
     """Defines the factory for creating parsable objects.
     """
+
     @staticmethod
     def create(parse_node: Optional[ParseNode]) -> U:
         """Create a new parsable object from the given serialized data.

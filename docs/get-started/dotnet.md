@@ -10,7 +10,7 @@ parent: Get started
 
 ## Target project requirements
 
-Before you can compile and run the generated files, you will need to make sure they are part of a project with the required dependencies. After creating a new project, or reusing an existing one, you will need to add references to the [abstraction](https://github.com/microsoft/kiota/tree/main/abstractions/dotnet), [authentication](https://github.com/microsoft/kiota/tree/main/authentication/dotnet/azure), [http](https://github.com/microsoft/kiota/tree/main/http/dotnet/httpclient), and [serialization](https://github.com/microsoft/kiota/tree/main/serialization/dotnet/json) packages from the GitHub feed.
+Before you can compile and run the generated files, you will need to make sure they are part of a project with the required dependencies. After creating a new project, or reusing an existing one, you will need to add references to the [abstraction](https://github.com/microsoft/kiota-abstractions-dotnet), [authentication](https://github.com/microsoft/kiota-authentication-azure-dotnet), [http](https://github.com/microsoft/kiota-http-dotnet), and [JSON](https://github.com/microsoft/kiota-serialization-json-dotnet) and [text](https://github.com/microsoft/kiota-serialization-text-dotnet) serialization packages from the GitHub feed.
 
 ## Creating target projects
 

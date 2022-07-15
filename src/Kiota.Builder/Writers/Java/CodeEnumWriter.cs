@@ -7,7 +7,8 @@ namespace Kiota.Builder.Writers.Java {
         public CodeEnumWriter(JavaConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
         {
-            if(!codeElement.Options.Any())
+            var enumOptions = codeElement.Options.ToArray();
+            if(!enumOptions.Any())
                 return;
             var enumName = codeElement.Name.ToFirstCharacterUpperCase();
             writer.WriteLines($"package {(codeElement.Parent as CodeNamespace)?.Name};",
@@ -18,9 +19,11 @@ namespace Kiota.Builder.Writers.Java {
             conventions.WriteShortDescription(codeElement.Description, writer);
             writer.WriteLine($"public enum {enumName} implements ValuedEnum {{");
             writer.IncreaseIndent();
-            writer.Write(codeElement.Options
-                        .Select(x => $"{x.ToFirstCharacterUpperCase()}(\"{x}\")")
-                        .Aggregate((x, y) => $"{x},{LanguageWriter.NewLine}{writer.GetIndent()}{y}") + ";" + LanguageWriter.NewLine);
+            var lastEnumOption = enumOptions.Last();
+            foreach(var enumOption in enumOptions) {
+                conventions.WriteShortDescription(enumOption.Description, writer);
+                writer.WriteLine($"{enumOption.Name.ToFirstCharacterUpperCase()}(\"{enumOption.Name}\"){(enumOption == lastEnumOption ? ";" : ",")}");
+            }
             writer.WriteLines("public final String value;",
                 $"{enumName}(final String value) {{");
             writer.IncreaseIndent();
@@ -35,8 +38,8 @@ namespace Kiota.Builder.Writers.Java {
             writer.WriteLines("Objects.requireNonNull(searchValue);",
                             "switch(searchValue) {");
             writer.IncreaseIndent();
-            writer.Write(codeElement.Options
-                        .Select(x => $"case \"{x}\": return {x.ToFirstCharacterUpperCase()};")
+            writer.Write(enumOptions
+                        .Select(x => $"case \"{x.SerializationName ?? x.Name}\": return {x.Name.ToFirstCharacterUpperCase()};")
                         .Aggregate((x, y) => $"{x}{LanguageWriter.NewLine}{writer.GetIndent()}{y}") + LanguageWriter.NewLine);
             writer.WriteLine("default: return null;");
             writer.CloseBlock();

@@ -69,7 +69,7 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
-            if(code is CodeUnionType)
+            if(code is CodeComposedTypeBase)
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
                 var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
@@ -90,8 +90,25 @@ namespace Kiota.Builder.Writers.CSharp {
         private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
         {
             var parentElements = new List<string>();
-            if(targetElement.Parent is CodeClass parentClass)
+            if (targetElement.Parent is CodeClass parentClass)
+            {
                 parentElements.AddRange(parentClass.Methods.Select(x => x.Name).Union(parentClass.Properties.Select(x => x.Name)));
+                
+                if (targetElement is CodeMethod discriminatorMethod && discriminatorMethod.IsOfKind(CodeMethodKind.Factory))
+                {
+                    // Get the discriminator mappings that refer to types  are in a different namespace that are have the same name
+                    // E.g. DataSource from Microsoft.Graph.Beta.Models.Ediscovery and DataSource from Microsoft.Graph.Beta.Models.Security will need to be disambiguated.
+                    var duplicateMappingTypes = discriminatorMethod.DiscriminatorMappings.Select(x => x.Value).OfType<CodeType>()
+                        .Where(x => !DoesTypeExistsInSameNamesSpaceAsTarget(x, targetElement))
+                        .Select(x => x.Name)
+                        .GroupBy(x => x)
+                        .Where(group => group.Count() > 1)
+                        .Select(x => x.Key);
+                    
+                    parentElements.AddRange(duplicateMappingTypes);
+                }
+            }
+            
             var parentElementsHash = new HashSet<string>(parentElements, StringComparer.OrdinalIgnoreCase);
             var typeName = TranslateType(currentType);
             var areElementsInSameNamesSpace = DoesTypeExistsInSameNamesSpaceAsTarget(currentType, targetElement);

@@ -1,0 +1,17 @@
+name: .NET # name must match the original workflow
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', 'cli/**', '**.md', '.vscode/**', '**.svg'] # must be the exact opposite of the original workflow
+  pull_request:
+    paths: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', 'cli/**', '**.md', '.vscode/**', '**.svg']
+
+# https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No build required"'

@@ -6,6 +6,7 @@ class BackingStoreSerializationWriterProxyFactory(SerializationWriterProxyFactor
     """Proxy implementation of SerializationWriterFactory for the backing store that
     automatically sets the state of the backing store when serializing.
     """
+
     def __init__(self, concrete: SerializationWriterFactory) -> None:
         """Initializes a new instance of the BackingStoreSerializationWriterProxyFactory class
         given a concrete implementation of SerializationWriterFactory.
@@ -14,6 +15,7 @@ class BackingStoreSerializationWriterProxyFactory(SerializationWriterProxyFactor
             concrete (SerializationWriterFactory):  a concrete implementation of
             SerializationWriterFactory to wrap.
         """
+
         def func1(x):
             if isinstance(x, BackedModel):
                 backed_model = x

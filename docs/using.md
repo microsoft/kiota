@@ -12,16 +12,43 @@ nav_order: 2
 Kiota accepts the following parameters during the generation.
 
 ```shell
-kiota [--backing-store | -b]
-      [--class-name | -c]
-      [--clean-output | -co]
-      [--deserializer | -ds]
-      [--language | -l]
-      [--loglevel | -ll]
-      [--namespace-name | -n]
-      [--openapi | -d]
-      [--output | -o]
-      [--serializer | -s]
+kiota (--openapi | -d) <path>
+      (--language | -l) <language>
+      [(--output | -o) <path>]
+      [(--class-name | -c) <name>]
+      [(--namespace-name | -n) <name>]
+      [(--log-level | --ll) <level>]
+      [--backing-store | -b]
+      [(--serializer | -s) <classes>]
+      [(--deserializer | --ds) <classes>]
+      [--clean-output | --co]
+      [(--structured-mime-types | -m) <mime-types>]
+```
+
+## Mandatory parameters
+
+### `--openapi (-d)`
+
+The location of the OpenAPI description in JSON or YAML format to use to generate the SDK.
+
+### `--language (-l)`
+
+The target language for the generated code files.
+
+#### Accepted values
+
+- `csharp`
+- `go`
+- `java`
+- `php`
+- `python`
+- `ruby`
+- `shell`
+- `swift`
+- `typescript`
+
+```shell
+kiota --language java
 ```
 
 ## Optional parameters
@@ -38,14 +65,6 @@ kiota --backing-store
 
 The class name to use for the core client class. Defaults to `ApiClient`.
 
-### `--clean-output (-co)`
-
-Delete the output directory before generating the client. Defaults to false.
-
-```shell
-kiota --clean-output
-```
-
 #### Accepted values
 
 The provided name MUST be a valid class name for the target language.
@@ -54,14 +73,22 @@ The provided name MUST be a valid class name for the target language.
 kiota --class-name MyApiClient
 ```
 
-### `--deserializer (-ds)`
+### `--clean-output (--co)`
+
+Delete the output directory before generating the client. Defaults to false.
+
+```shell
+kiota --clean-output
+```
+
+### `--deserializer (--ds)`
 
 The fully qualified class names for deserializers. Defaults to the following values.
 
 | Language   | Default deserializers                                           |
 |------------|-----------------------------------------------------------------|
 | C#         | `Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory`, `Microsoft.Kiota.Serialization.Text.TextParseNodeFactory`      |
-| Go         | `github.com/microsoft/kiota/serialization/go/json.JsonParseNodeFactory`, `github.com/microsoft/kiota/serialization/go/text.TextParseNodeFactory` |
+| Go         | `github.com/microsoft/kiota-serialization-json-go/json.JsonParseNodeFactory`, `github.com/microsoft/kiota-serialization-text-go/text.TextParseNodeFactory` |
 | Java       | `com.microsoft.kiota.serialization.JsonParseNodeFactory`, `com.microsoft.kiota.serialization.TextParseNodeFactory`        |
 | Ruby       | `microsoft_kiota_serialization/json_parse_node_factory`         |
 | TypeScript | `@microsoft/kiota-serialization-json.JsonParseNodeFactory`, `@microsoft/kiota-serialization-text.TextParseNodeFactory`      |
@@ -74,25 +101,7 @@ One or more module names that implements `IParseNodeFactory`.
 kiota --deserializer Contoso.Json.CustomDeserializer
 ```
 
-### `--language (-l)`
-
-The target language for the generated code files. Defaults to `csharp`.
-
-#### Accepted values
-
-- `csharp`
-- `go`
-- `java`
-- `php`
-- `python`
-- `ruby`
-- `typescript`
-
-```shell
-kiota --language java
-```
-
-### `--loglevel (-ll)`
+### `--log-level (--ll)`
 
 The log level to use when logging events to the main output. Defaults to `warning`.
 
@@ -122,10 +131,6 @@ The provided name MUST be a valid module or namespace name for the target langua
 kiota --namespace-name MyAppNamespace.Clients
 ```
 
-### `--openapi (-d)`
-
-The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Defaults to `./openapi.yml`.
-
 #### Accepted values
 
 A valid URI to an OpenAPI description in the local filesystem or hosted on an HTTPS server.
@@ -153,7 +158,7 @@ The fully qualified class names for deserializers. Defaults to the following val
 | Language   | Default deserializer                                            |
 |------------|-----------------------------------------------------------------|
 | C#         | `Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory`, `Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory` |
-| Go         | `github.com/microsoft/kiota/serialization/go/json.JsonSerializationWriterFactory`, `github.com/microsoft/kiota/serialization/go/text.TextSerializationWriterFactory` |
+| Go         | `github.com/microsoft/kiota-serialization-json-go/json.JsonSerializationWriterFactory`, `github.com/microsoft/kiota-serialization-text-go/text.TextSerializationWriterFactory` |
 | Java       | `com.microsoft.kiota.serialization.JsonSerializationWriterFactory`, `com.microsoft.kiota.serialization.TextSerializationWriterFactory` |
 | Ruby       | `microsoft_kiota_serialization/json_serialization_writer_factory` |
 | TypeScript | `@microsoft/kiota-serialization-json.JsonSerializationWriterFactory`, `@microsoft/kiota-serialization-text.TextSerializationWriterFactory` |
@@ -165,6 +170,24 @@ One or more module names that implements `ISerializationWriterFactory`.
 ```shell
 kiota --serializer Contoso.Json.CustomSerializer
 ```
+
+### `--structured-mime-types (-m)`
+
+The MIME types to use for structured data model generation. Accepts multiple values.
+
+Default values :
+
+- `application/json`
+- `application/xml`
+- `text/plain`
+- `text/xml`
+- `text/yaml`
+
+> Note: Only request body types or response types with a defined schema will generate models, other entries will default back to stream/byte array.
+
+#### Accepted values
+
+Any valid MIME type which will match a request body type or a response type in the OpenAPI description.
 
 ## Examples
 

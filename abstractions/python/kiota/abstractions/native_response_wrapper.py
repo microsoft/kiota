@@ -25,6 +25,7 @@ class NativeResponseWrapper:
     """This class can be used to wrap a request using the fluent API and get the native response
     object in return.
     """
+
     async def call_and_get_native(
         self, original_call: OriginalCallType, q: Optional[QueryParametersType],
         h: Optional[HeadersType], o: Optional[RequestOption]

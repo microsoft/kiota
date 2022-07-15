@@ -14,6 +14,11 @@ namespace Kiota.Builder.Refiners
         public override void Refine(CodeNamespace generatedCode)
         {
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
+            AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiException",
+                "Microsoft\\Kiota\\Abstractions"
+            );
             AddConstructorsForDefaultValues(generatedCode, true);
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, false, false);
@@ -23,12 +28,22 @@ namespace Kiota.Builder.Refiners
                 addUsings: false
             );
             CorrectParameterType(generatedCode);
-            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             MakeModelPropertiesNullable(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            ReplaceDefaultSerializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory");
-            ReplaceDefaultDeserializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory");
+            var defaultConfiguration = new GenerationConfiguration();
+            ReplaceDefaultSerializationModules(generatedCode,
+                defaultConfiguration.Serializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory",
+                    "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory"}
+            );
+            ReplaceDefaultDeserializationModules(generatedCode, 
+                defaultConfiguration.Deserializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory",
+                    "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"}
+            );
             AliasUsingWithSameSymbol(generatedCode);
             AddSerializationModulesImport(generatedCode, new []{"Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"}, null, '\\');
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
@@ -45,6 +60,11 @@ namespace Kiota.Builder.Refiners
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
+            AddInnerClasses(generatedCode, 
+                true, 
+                string.Empty,
+                true);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
         }
         private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -118,9 +138,11 @@ namespace Kiota.Builder.Refiners
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor), "Http\\Promise", "Promise", "RejectedPromise"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor), "", "Exception"),
             new (x => x is CodeEnum, "Microsoft\\Kiota\\Abstractions\\", "Enum"),
-            new(x => x is CodeProperty property && property.Type.Name.Equals("DateTime", StringComparison.OrdinalIgnoreCase), "", "DateTime"),
-            new(x => x is CodeProperty property && property.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase), "", "DateTime"),
-            new(x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor), "Microsoft\\Kiota\\Abstractions", "ApiClientBuilder")
+            new(x => x is CodeProperty {Type.Name: {}} property && property.Type.Name.Equals("DateTime", StringComparison.OrdinalIgnoreCase), "", "DateTime"),
+            new(x => x is CodeProperty {Type.Name: {}} property && property.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase), "", "DateTime"),
+            new(x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor), "Microsoft\\Kiota\\Abstractions", "ApiClientBuilder"),
+            new(x => x is CodeProperty property && property.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(property.SerializationName), "Microsoft\\Kiota\\Abstractions", "QueryParameter"),
+            new(x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration), "Microsoft\\Kiota\\Abstractions", "RequestOption")
         };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
@@ -145,9 +167,13 @@ namespace Kiota.Builder.Refiners
             } else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))
             {
                 currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
-            } else if (currentProperty.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase))
+            } else if (currentProperty.Type?.Name?.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) ?? false)
             {
                 currentProperty.Type.Name = "DateTime";
+            } else if (currentProperty.IsOfKind(CodePropertyKind.Options, CodePropertyKind.Headers))
+            {
+                currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+                currentProperty.Type.Name = "array";
             }
             CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
@@ -157,9 +183,6 @@ namespace Kiota.Builder.Refiners
             if (method.IsOfKind(CodeMethodKind.Deserializer))
             {
                 method.ReturnType.Name = "array";
-            } else if (method.IsOfKind(CodeMethodKind.RequestExecutor))
-            {
-                method.ReturnType = new CodeType() {Name = method.ReturnType.Name, IsExternal = true, IsNullable = false};
             }
             CorrectDateTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
                 .Select(x => x.Type)
@@ -171,10 +194,6 @@ namespace Kiota.Builder.Refiners
             var currentMethod = codeElement as CodeMethod;
             var parameters = currentMethod?.Parameters;
             var codeParameters = parameters as CodeParameter[] ?? parameters?.ToArray();
-            codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.Options, CodeParameterKind.Headers)).ToList().ForEach(x =>
-            {
-                x.Type.Name = "array";
-            });
             codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.ParseNode)).ToList().ForEach(x =>
             {
                 x.Type.Name = "ParseNode";

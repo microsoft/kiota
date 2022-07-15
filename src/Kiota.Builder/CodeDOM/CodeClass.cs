@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder;
 
@@ -18,6 +19,10 @@ public enum CodeClassKind {
     /// A class used as a placeholder for the barrel file.
     /// </summary>
     BarrelInitializer,
+    /// <summary>
+    /// Configuration for the request to be sent with the headers, query parameters, and middleware options
+    /// </summary>
+    RequestConfiguration,
 }
 /// <summary>
 /// CodeClass represents an instance of a Class to be generated in source code
@@ -29,9 +34,23 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         if(indexer == null)
             throw new ArgumentNullException(nameof(indexer));
-        if(InnerChildElements.Values.OfType<CodeIndexer>().Any())
-            throw new InvalidOperationException("this class already has an indexer, remove it first");
-        AddRange(indexer);
+        if(InnerChildElements.Values.OfType<CodeIndexer>().Any() || InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility))) {
+            var existingIndexer = InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
+            if(existingIndexer != null) {
+                RemoveChildElement(existingIndexer);
+                AddRange(CodeMethod.FromIndexer(existingIndexer, this, $"By{existingIndexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", true));
+            }
+            AddRange(CodeMethod.FromIndexer(indexer, this, $"By{indexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", false));
+        } else
+            AddRange(indexer);
+    }
+    public override IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties) {
+        var result = base.AddProperty(properties);
+        foreach(var addedPropertyTuple in result.Select(x => new Tuple<CodeProperty, CodeProperty>(x, StartBlock.GetOriginalPropertyDefinedFromBaseType(x.Name)))
+                                        .Where(static x => x.Item2 != null))
+            addedPropertyTuple.Item1.OriginalPropertyFromBaseType = addedPropertyTuple.Item2;
+
+        return result;
     }
     public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
     {
@@ -69,5 +88,31 @@ public class ClassDeclaration : ProprietableBlockDeclaration
         EnsureElementsAreChildren(value);
         inherits = value;
     } }
+
+    public CodeProperty GetOriginalPropertyDefinedFromBaseType(string propertyName) {
+        if (string.IsNullOrEmpty(propertyName)) throw new ArgumentNullException(nameof(propertyName));
+
+        if (inherits is CodeType currentInheritsType &&
+            currentInheritsType.TypeDefinition is CodeClass currentParentClass)
+            if (currentParentClass.FindChildByName<CodeProperty>(propertyName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
+                return currentProperty;
+            else
+                return currentParentClass.StartBlock.GetOriginalPropertyDefinedFromBaseType(propertyName);
+        else
+            return default;
+    }
+
+    public bool InheritsFrom(CodeClass candidate) {
+        ArgumentNullException.ThrowIfNull(candidate, nameof(candidate));
+
+        if (inherits is CodeType currentInheritsType &&
+            currentInheritsType.TypeDefinition is CodeClass currentParentClass)
+            if (currentParentClass == candidate)
+                return true;
+            else
+                return currentParentClass.StartBlock.InheritsFrom(candidate);
+        else
+            return false;
+    }
 }
 

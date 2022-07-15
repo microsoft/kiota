@@ -119,14 +119,23 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             var stringType = new CodeType {
                 Name = "string",
             };
-            method.AddParameter(new CodeParameter {
+            var requestConfigClass = parentClass.AddInnerClass(new CodeClass {
+                Name = "RequestConfig",
+                Kind = CodeClassKind.RequestConfiguration,
+            }).First();
+            requestConfigClass.AddProperty(new() {
                 Name = "h",
-                Kind = CodeParameterKind.Headers,
+                Kind = CodePropertyKind.Headers,
                 Type = stringType,
-            });
-            method.AddParameter(new CodeParameter{
+            },
+            new () {
                 Name = "q",
-                Kind = CodeParameterKind.QueryParameter,
+                Kind = CodePropertyKind.QueryParameters,
+                Type = stringType,
+            },
+            new () {
+                Name = "o",
+                Kind = CodePropertyKind.Options,
                 Type = stringType,
             });
             method.AddParameter(new CodeParameter{
@@ -135,31 +144,16 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 Type = stringType,
             });
             method.AddParameter(new CodeParameter{
-                Name = "r",
-                Kind = CodeParameterKind.ResponseHandler,
-                Type = stringType,
+                Name = "config",
+                Kind = CodeParameterKind.RequestConfiguration,
+                Type = new CodeType {
+                    Name = "RequestConfig",
+                    TypeDefinition = requestConfigClass,
+                    ActionOf = true,
+                },
+                Optional = true,
             });
-        }
-        private void AddVoidRequestBodyParameters() {
-            var stringType = new CodeType {
-                Name = "string",
-            };
-            voidMethod.AddParameter(new CodeParameter {
-                Name = "h",
-                Kind = CodeParameterKind.Headers,
-                Type = stringType,
-            });
-            voidMethod.AddParameter(new CodeParameter{
-                Name = "q",
-                Kind = CodeParameterKind.QueryParameter,
-                Type = stringType,
-            });
-            voidMethod.AddParameter(new CodeParameter{
-                Name = "b",
-                Kind = CodeParameterKind.RequestBody,
-                Type = stringType,
-            });
-            voidMethod.AddParameter(new CodeParameter{
+            method.AddParameter(new CodeParameter{
                 Name = "r",
                 Kind = CodeParameterKind.ResponseHandler,
                 Type = stringType,
@@ -192,7 +186,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         public void WritesRequestExecutorBodyWithNamespace() {
             voidMethod.Kind = CodeMethodKind.RequestExecutor;
             voidMethod.HttpMethod = HttpMethod.Get;
-            AddVoidRequestBodyParameters();
+            AddRequestBodyParameters();
             writer.Write(voidMethod);
             var result = tw.ToString();
             Assert.Contains("request_info", result);

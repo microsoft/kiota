@@ -10,6 +10,7 @@ The following is a minimal OpenAPI description that describes how to call the `/
 - [Build SDKs for .NET](dotnet.md)
 - [Build SDKs for Go](go.md)
 - [Build SDKs for Java](java.md)
+- [Build SDKs for Ruby](ruby.md)
 - [Build SDKs for TypeScript](typescript.md)
 
 ```yaml

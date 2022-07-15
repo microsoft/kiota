@@ -10,6 +10,7 @@ ModelType = TypeVar("ModelType")
 class ResponseHandler(ABC):
     """Abstract class that defines the contract for a response handler
     """
+
     @abstractmethod
     async def handle_response_async(
         self, response: NativeResponseType, error_map: Dict[str, Optional[ParsableFactory]]
