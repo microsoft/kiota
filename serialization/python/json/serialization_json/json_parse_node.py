@@ -143,7 +143,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
             List[T]: The collection of primitive values
         """
 
-        def func(item):
+        def func(item):  # pylint: disable=too-many-return-statements
             generic_type = type(item)
             current_parse_node = JsonParseNode(item)
             if generic_type == bool:

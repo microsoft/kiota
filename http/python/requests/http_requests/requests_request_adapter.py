@@ -271,8 +271,8 @@ class RequestsRequestAdapter(RequestAdapter):
 
     async def get_root_parse_node(self, response: requests.Response) -> ParseNode:
         payload = response.content
-        print(payload)
         response_content_type = self.get_response_content_type(response)
+        
         if not response_content_type:
             raise Exception("No response content type found for deserialization")
 

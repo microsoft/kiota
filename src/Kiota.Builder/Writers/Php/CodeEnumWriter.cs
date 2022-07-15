@@ -44,7 +44,7 @@ namespace Kiota.Builder.Writers.Php
             writer.IncreaseIndent();
             foreach (var enumProperty     in enumProperties)
             {
-                writer.WriteLine($"public const {GetEnumValueName(enumProperty)} = '{enumProperty}';");
+                writer.WriteLine($"public const {GetEnumValueName(enumProperty.Name)} = '{enumProperty.SerializationName ?? enumProperty.Name}';");
             }
         }
         

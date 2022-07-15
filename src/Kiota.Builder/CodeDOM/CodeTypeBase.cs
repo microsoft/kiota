@@ -20,12 +20,12 @@ namespace Kiota.Builder {
         public CodeTypeCollectionKind CollectionKind {get;set;} = CodeTypeCollectionKind.None;
         public bool IsCollection { get { return CollectionKind != CodeTypeCollectionKind.None; } }
         public bool IsArray { get { return CollectionKind == CodeTypeCollectionKind.Array; } }
-        protected ChildType BaseClone<ChildType>(CodeTypeBase source) where ChildType : CodeTypeBase
+        protected virtual ChildType BaseClone<ChildType>(CodeTypeBase source) where ChildType : CodeTypeBase
         {
             ActionOf = source.ActionOf;
             IsNullable = source.IsNullable;
             CollectionKind = source.CollectionKind;
-            Name = source.Name.Clone() as string;
+            Name = source.Name?.Clone() as string;
             Parent = source.Parent;
             return this as ChildType;
         }
@@ -36,7 +36,7 @@ namespace Kiota.Builder {
             get {
                 if(this is CodeType currentType)
                     return new CodeType[] { currentType };
-                else if (this is CodeUnionType currentUnion)
+                else if (this is CodeComposedTypeBase currentUnion)
                     return currentUnion.Types;
                 else
                     return Enumerable.Empty<CodeType>();

@@ -6,6 +6,7 @@ from .serialization_writer import SerializationWriter
 class SerializationWriterFactory(ABC):
     """Defines the contract for a factory that creates SerializationWriter instances.
     """
+
     @abstractmethod
     def get_valid_content_type(self) -> str:
         """Gets the content type this factory creates serialization writers for.

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -16,7 +16,7 @@ namespace Kiota.Builder.Refiners {
             AddRawUrlConstructorOverload(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
-            AddInnerClasses(generatedCode, false);
+            AddInnerClasses(generatedCode, false, string.Empty);
             AddParsableImplementsForModelClasses(generatedCode, "IParsable");
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
@@ -42,8 +42,7 @@ namespace Kiota.Builder.Refiners {
             );
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
-                "IParseNode",
-                addUsings: false
+                "IParseNode"
             );
         }
         protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
@@ -117,6 +116,10 @@ namespace Kiota.Builder.Refiners {
         }
         protected static void CorrectPropertyType(CodeProperty currentProperty)
         {
+            if(currentProperty.IsOfKind(CodePropertyKind.Options))
+                currentProperty.DefaultValue = "new List<IRequestOption>()";
+            else if(currentProperty.IsOfKind(CodePropertyKind.Headers))
+                currentProperty.DefaultValue = "new Dictionary<string, string>()";
             CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
         protected static void CorrectMethodType(CodeMethod currentMethod)

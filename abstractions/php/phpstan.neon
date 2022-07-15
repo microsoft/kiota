@@ -1,6 +1,0 @@
-parameters:
-  level: 9
-  polluteScopeWithAlwaysIterableForeach: false
-  polluteScopeWithLoopInitialAssignments: false
-  paths:
-    - src

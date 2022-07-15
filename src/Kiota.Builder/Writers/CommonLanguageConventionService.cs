@@ -31,7 +31,7 @@ namespace Kiota.Builder.Writers {
         public string TranslateType(CodeTypeBase type) {
             if(type is CodeType currentType)
                 return TranslateType(currentType);
-            else if(type is CodeUnionType currentUnionType)
+            else if(type is CodeComposedTypeBase currentUnionType)
                 return TranslateType(currentUnionType.AllTypes.First());
             else
                 throw new InvalidOperationException("Unknown type");

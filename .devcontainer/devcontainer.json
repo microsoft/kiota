@@ -39,7 +39,8 @@
 		"ms-vscode.powershell",
 		"rebornix.ruby",
 		"visualstudioexptteam.vscodeintellicode",
-        "streetsidesoftware.code-spell-checker"
+        "streetsidesoftware.code-spell-checker",
+        "sswg.swift-lang"
 	],
 	"remoteUser": "vscode",
 	"features": {
@@ -50,8 +51,9 @@
 		"java": "latest",
 		"ruby": "latest",
 		"rust": "latest",
-		"powershell": "latest"
+		"powershell": "latest",
+        "swift": "latest"
 	},
     "postCreateCommand":
-        "git config pull.rebase false && git config push.default simple && git config remote.origin.prune true && git config commit.gpgsign true && git config tag.gpgsign true && git config core.safecrlf false && gh repo clone microsoft/kiota-samples samples"
+        "git config pull.rebase false && git config push.default simple && git config remote.origin.prune true && git config commit.gpgsign true && git config tag.gpgsign true && git config core.safecrlf false && [ ! -d ./samples ] && gh repo clone microsoft/kiota-samples samples"
 }
