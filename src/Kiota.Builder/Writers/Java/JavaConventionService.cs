@@ -34,7 +34,7 @@ public class JavaConventionService : CommonLanguageConventionService
 
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
     {
-        if(code is CodeUnionType) 
+        if(code is CodeComposedTypeBase) 
             throw new InvalidOperationException($"Java does not support union types, the union type {code.Name} should have been filtered out by the refiner");
         else if (code is CodeType currentType) {
             var typeName = TranslateType(currentType);
@@ -78,7 +78,7 @@ public class JavaConventionService : CommonLanguageConventionService
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
         if(!string.IsNullOrEmpty(description))
-            writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)} {DocCommentEnd}");
+            writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
     #pragma warning disable CA1822 // Method should be static

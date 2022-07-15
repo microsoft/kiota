@@ -2,14 +2,14 @@
 {
     public class TypeScriptWriter : LanguageWriter
     {
-        public TypeScriptWriter(string rootPath, string clientNamespaceName)
+        public TypeScriptWriter(string rootPath, string clientNamespaceName, bool usesBackingStore = false)
         {
             PathSegmenter = new TypeScriptPathSegmenter(rootPath,clientNamespaceName);
             var conventionService = new TypeScriptConventionService(null);
             AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
             AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
             AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
-            AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService, usesBackingStore));
             AddOrReplaceCodeElementWriter(new CodeFunctionWriter(conventionService, clientNamespaceName));
             AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));

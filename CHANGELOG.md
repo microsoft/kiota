@@ -8,6 +8,134 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added support for no-content responses in python abstractions and http packages. [#1630](https://github.com/microsoft/kiota/issues/1459)
+- Added support for vendor-specific content types in python. [#1631](https://github.com/microsoft/kiota/issues/1463)
+
+### Changed
+
+- Fixed a bug where collections types would generate invalid return types in CSharp.
+- Fixed a bug where a nullable entry in anyOf schemas would create unnecessary composed types.
+
+## [0.3.0] - 2022-07-08
+
+### Added
+
+- Added a more explicit error message for invalid schemas. [#1718](https://github.com/microsoft/kiota/issues/1718)
+- Added a parameter to specify why mime types to evaluate for models. [#134](https://github.com/microsoft/kiota/issues/134)
+- Added an explicit error message for external references in the schema. [#1580](https://github.com/microsoft/kiota/issues/1580)
+- Added accept header for all schematized requests. [#1607](https://github.com/microsoft/kiota/issues/1607)
+- Added support for paging. [#1569](https://github.com/microsoft/kiota/issues/1569)
+- Added support for vendor specific content types(PHP) [#1464](https://github.com/microsoft/kiota/issues/1464)
+- Added support for accept request header (PHP) [#1616](https://github.com/microsoft/kiota/issues/1616)
+- Added Getting Started steps for PHP. [#1642](https://github.com/microsoft/kiota/pull/1642)
+
+### Changed
+
+- Fixed a bug where query parameter types would not consider the format. [#1721](https://github.com/microsoft/kiota/issues/1721)
+- Fixed a bug where discriminator mappings across namespaces could create circular dependencies in Go. [#1712](https://github.com/microsoft/kiota/issues/1712)
+- Fixed a bug where Go binary downloads would try to parse a structured object.
+- Aligned mime types model generation behaviour for request bodies on response content. [#134](https://github.com/microsoft/kiota/issues/134)
+- Fixed an issue where some critical errors would not return a failed exit code. [#1605](https://github.com/microsoft/kiota/issues/1605)
+- Moved nested request configuration classes into separate files within the namespace for PHP. [#1620](https://github.com/microsoft/kiota/pull/1620)
+- Fixed an issue where duplicate 'require' statements are generated for inner classes in the middle of the file (Ruby). [#1649](https://github.com/microsoft/kiota/issues/1649)
+- Fixed wrong parameter type for Request config for request executors(PHP). [#1629](https://github.com/microsoft/kiota/pull/1629)
+- Increased indentation for errorMappings in the request executor (PHP). [#1629](https://github.com/microsoft/kiota/pull/1629)
+- Fixed bugs in PHP discriminator factory methods, Guzzle request adapter send methods, stream and plain text response handling. [#1634](https://github.com/microsoft/kiota/pull/1634)
+- Removed abstractions, authentication, http and serialization packages for PHP. [#1637](https://github.com/microsoft/kiota/pull/1637)
+- Fixed a bug where generated discriminator methods would reference types in other namespaces without proper resolution. [#1670](https://github.com/microsoft/kiota/issues/1670)
+- Fixed a bug where additional data and backing store properties would be duplicated. [#1671](https://github.com/microsoft/kiota/issues/1671)
+- Fixed a bug where serialized properties would not match the json property name when using the backing store. (CSharp).
+- Corrected PHPDoc types for headers and request options properties in request configuration classes. [#1711](https://github.com/microsoft/kiota/pull/1711)
+- Fixed a bug where properties defined at multiple inherited models would collide. [#1717](https://github.com/microsoft/kiota/issues/1717)
+
+## [0.2.1] - 2022-05-30
+
+### Added
+
+- Added missing mappings in PHP for uint8 and int8. [#1473](https://github.com/microsoft/kiota/pull/1473)
+- Added support for enum and enum collections responses in Go. [#1578](https://github.com/microsoft/kiota/issues/1578)
+- Added Kiota builder engine as a package for external services integration. [#1582](https://github.com/microsoft/kiota/issues/1582)
+
+### Changed
+
+- Fixed a bug where the logger would not log all the information. [#1588](https://github.com/microsoft/kiota/issues/1588)
+
+## [0.2.0] - 2022-05-24
+
+### Added
+
+- Added support for enum options descriptions (C#/Go/Java/TypeScript). [#90](https://github.com/microsoft/kiota/issues/90)
+- Added support for file parameters types. [#221](https://github.com/microsoft/kiota/issues/221)
+- Added support for no content responses in PHP. [#1458](https://github.com/microsoft/kiota/issues/1458)
+- Added support for error handling in php request adapter. [#1157](https://github.com/microsoft/kiota/issues/1157)
+- Added support for discriminator downcast in PHP. [#1255](https://github.com/microsoft/kiota/issues/1255)
+- Added support for multiple collections indexing under the same parent.
+- Added code exclusions placeholder in the generation. (oneOf)
+- Added support for continuous access evaluation in Java. [#1179](https://github.com/microsoft/kiota/issues/1179)
+- Added support for special characters in URL query parameter names. [#1584](https://github.com/microsoft/kiota/pull/1584)
+
+### Changed
+
+- Fixed a bug where union types would not work as error types.
+- Fixed a bug where generation names could collide with platform names in CSharp.
+- Fixed missing numbers mapping cases.
+- Fixed multiple bugs enum options invalid symbols generation.
+- Fixed a bug where symbols (classes, enums, properties...) could be only numbers, which is unsupported by most languages.
+- Fixed a bug where union types would be missing serialization information.
+- Fixed a bug where inline request bodies could override each other for the same path item with multiple operations.
+- Fixed simple collections (arrays) support in CSharp.
+- Fixed a bug where code properties could not be union or exclusion types.
+- Fixed a bug where models would fail to generate if the schema type wasn't set to object.
+- Fixed a bug where nullable wrapper schema flattening would ignore some composed type options.
+- Fixed a bug where arrays without items definition would derail generation.
+- Fixed a bug with enums detection for generation. (interpreted as string)
+- Fixed a bug where classes names cleanup could end-up in a collision.
+- Fixed a bug where null reference exception would be thrown when trying to lookup type inheritance on discriminators
+- Fixed the lookup of model namespaces to only look in the target namespace to avoid reference collisions.
+- Fixed a bug for the generated send method for paths returning Enums in dotnet.
+- Breaking: renamed the --loglevel parameter to --log-level.
+- Fixed a bug where some path parameter objects would have empty key values [#1586](https://github.com/microsoft/kiota/issues/1586)
+
+## [0.1.3] - 2022-05-06
+
+### Added
+
+- Added text serialization library for PHP. [#1546](https://github.com/microsoft/kiota/pull/1546).
+
+### Changed
+
+- Fixed the image name in CI for MCR.
+
+### Changed
+
+## [0.1.2] - 2022-05-06
+
+### Changed
+
+- Minor changes in the parameters (-co => --co, -ll => --ll, -d is required, -l is required).
+
+## [0.1.1] - 2022-05-06
+
+### Changed
+
+- Add binder for nullable boolean options. (Shell)
+
+## [0.1.0] - 2022-05-04
+
+### Added
+
+- The dotnet tool is now available on the public feed `dotnet tool install -g Microsoft.OpenApi.Kiota --prerelease`.
+- The dotnet OpenApi reference package is now available `Microsoft.OpenApi.Kiota.ApiDescription.Client`.
+- The container image is now available on mcr. `docker pull mcr.microsoft.com/kiota/generator:latest`.
+
+### Changed
+
+- Revamped the api surface for request configuration. [#1494](https://github.com/microsoft/kiota/issues/1494)
+- Fixed a bug in methods naming in Go after request configuration revamp.
+- Fixes a bug where reserved names would not be updated for inheritance.
+- Add `item` subcommand for indexers. Fixes conflicts when paths have repeating segments. (Shell) [#1541](https://github.com/microsoft/kiota/issues/1541)
+
+## [0.0.23] - 2022-04-19
 
 ### Changed
 

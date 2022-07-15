@@ -42,10 +42,85 @@ public enum HttpMethod {
     Trace
 }
 
+public class PagingInformation : ICloneable
+{
+    public string ItemName
+    {
+        get; set;
+    }
+
+    public string NextLinkName
+    {
+        get; set;
+    }
+
+    public string OperationName
+    {
+        get; set;
+    }
+
+    public object Clone()
+    {
+        return new PagingInformation
+        {
+            ItemName = ItemName?.Clone() as string,
+            NextLinkName = NextLinkName?.Clone() as string,
+            OperationName = OperationName?.Clone() as string,
+        };
+    }
+}
+
 public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
 {
+    public static CodeMethod FromIndexer(CodeIndexer originalIndexer, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable)
+    {
+        if(originalIndexer == null)
+            throw new ArgumentNullException(nameof(originalIndexer));
+        if(indexerClass == null)
+            throw new ArgumentNullException(nameof(indexerClass));
+        var method = new CodeMethod {
+            IsAsync = false,
+            IsStatic = false,
+            Access = AccessModifier.Public,
+            Kind = CodeMethodKind.IndexerBackwardCompatibility,
+            Name = originalIndexer.PathSegment + methodNameSuffix,
+            Description = originalIndexer.Description,
+            ReturnType = new CodeType {
+                IsNullable = false,
+                TypeDefinition = indexerClass,
+                Name = indexerClass.Name,
+            },
+            OriginalIndexer = originalIndexer,
+        };
+        var parameter = new CodeParameter {
+            Name = "id",
+            Optional = false,
+            Kind = CodeParameterKind.Custom,
+            Description = "Unique identifier of the item",
+            Type = new CodeType {
+                Name = "String",
+                IsNullable = parameterNullable,
+                IsExternal = true,
+            },
+        };
+        method.AddParameter(parameter);
+        return method;
+    }
     public HttpMethod? HttpMethod {get;set;}
-    public string ContentType { get; set; }
+    public string RequestBodyContentType { get; set; }
+    private HashSet<string> acceptedResponseTypes;
+    public HashSet<string> AcceptedResponseTypes {
+        get
+        {
+            if(acceptedResponseTypes == null)
+                acceptedResponseTypes = new(StringComparer.OrdinalIgnoreCase);
+            return acceptedResponseTypes;
+        }
+        set
+        {
+            acceptedResponseTypes = value;
+        }
+    }
     public AccessModifier Access {get;set;} = AccessModifier.Public;
     private CodeTypeBase returnType;
     public CodeTypeBase ReturnType {get => returnType;set {
@@ -65,11 +140,16 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         parameters.Clear();
     }
     private readonly CodeParameterOrderComparer parameterOrderComparer = new ();
-    public IEnumerable<CodeParameter> Parameters { get => parameters.Values.OrderBy(x => x, parameterOrderComparer); }
+    public IEnumerable<CodeParameter> Parameters { get => parameters.Values.OrderBy(static x => x, parameterOrderComparer); }
     public bool IsStatic {get;set;} = false;
     public bool IsAsync {get;set;} = true;
     public string Description {get; set;}
-    
+
+    public PagingInformation PagingInformation
+    {
+        get; set;
+    }
+
     /// <summary>
     /// The combination of the path, query and header parameters for the current URL.
     /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. Shell/CLI)
@@ -97,8 +177,8 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public bool IsAccessor { 
         get => IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter);
     }
-    public List<string> SerializerModules { get; set; }
-    public List<string> DeserializerModules { get; set; }
+    public HashSet<string> SerializerModules { get; set; }
+    public HashSet<string> DeserializerModules { get; set; }
     /// <summary>
     /// Indicates whether this method is an overload for another method.
     /// </summary>
@@ -133,7 +213,15 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         get
         {
-            return errorMappings.OrderBy(x => x.Key);
+            return errorMappings.OrderBy(static x => x.Key);
+        }
+    }
+    public void ReplaceErrorMapping(CodeTypeBase oldType, CodeTypeBase newType)
+    {
+        var codes = errorMappings.Where(x => x.Value == oldType).Select(x => x.Key).ToArray();
+        foreach (var code in codes)
+        {
+            errorMappings[code] = newType;
         }
     }
     private ConcurrentDictionary<string, CodeTypeBase> discriminatorMappings = new();
@@ -144,7 +232,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         get
         {
-            return discriminatorMappings.OrderBy(x => x.Key);
+            return discriminatorMappings.OrderBy(static x => x.Key);
         }
     }
     /// <summary>
@@ -167,7 +255,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Access = Access,
             IsStatic = IsStatic,
             Description = Description?.Clone() as string,
-            ContentType = ContentType?.Clone() as string,
+            RequestBodyContentType = RequestBodyContentType?.Clone() as string,
             BaseUrl = BaseUrl?.Clone() as string,
             AccessedProperty = AccessedProperty,
             SerializerModules = SerializerModules == null ? null : new (SerializerModules),
@@ -177,7 +265,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             OriginalIndexer = OriginalIndexer,
             errorMappings = errorMappings == null ? null : new (errorMappings),
             discriminatorMappings = discriminatorMappings == null ? null : new (discriminatorMappings),
-            DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string
+            DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string,
+            acceptedResponseTypes = acceptedResponseTypes == null ? null : new (acceptedResponseTypes),
+            PagingInformation = PagingInformation?.Clone() as PagingInformation,
         };
         if(Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());
@@ -212,6 +302,11 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         if(discriminatorMappings.TryGetValue(key, out var value))
             return value;
         return null;
+    }
+    public void RemoveDiscriminatorMapping(params string[] keys) {
+        ArgumentNullException.ThrowIfNull(keys, nameof(keys));
+        foreach(var key in keys)
+            discriminatorMappings.TryRemove(key, out var _);
     }
     public CodeTypeBase GetErrorMappingValue(string key)
     {

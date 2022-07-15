@@ -8,6 +8,7 @@ from .serialization_writer_factory import SerializationWriterFactory
 class SerializationWriterProxyFactory(SerializationWriterFactory):
     """Proxy factory that allows the composition of before and after callbacks on existing factories
     """
+
     def __init__(
         self, concrete: SerializationWriterFactory, on_before: Optional[Callable[[Parsable], None]],
         on_after: Optional[Callable[[Parsable], None]],

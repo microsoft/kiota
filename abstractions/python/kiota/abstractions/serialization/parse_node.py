@@ -24,6 +24,7 @@ class ParseNode(ABC):
     Interface for a deserialization node in a parse tree. This interace provides an abstraction
     layer over serialization formats, libraries and implementations.
     """
+
     @abstractmethod
     def get_string_value(self) -> str:
         """Gets the string value of the node

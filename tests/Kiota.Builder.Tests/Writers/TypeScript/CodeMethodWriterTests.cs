@@ -98,39 +98,71 @@ public class CodeMethodWriterTests : IDisposable {
                 Name = "EnumType"
             }
         };
+        parentClass.AddProperty(new CodeProperty {
+            Name = "definedInParent",
+            Type = new CodeType {
+                Name = "string"
+            },
+            OriginalPropertyFromBaseType = new CodeProperty {
+                Name = "definedInParent",
+                Type = new CodeType {
+                    Name = "string"
+                }
+            }
+        });
     }
     private void AddInheritanceClass() {
         (parentClass.StartBlock as ClassDeclaration).Inherits = new CodeType {
             Name = "someParentClass"
         };
     }
-    private void AddRequestBodyParameters() {
+    private void AddRequestBodyParameters(bool useComplexTypeForBody = false) {
         var stringType = new CodeType {
             Name = "string",
         };
-        method.AddParameter(new CodeParameter {
+        var requestConfigClass = parentClass.AddInnerClass(new CodeClass {
+            Name = "RequestConfig",
+            Kind = CodeClassKind.RequestConfiguration,
+        }).First();
+        requestConfigClass.AddProperty(new() {
             Name = "h",
-            Kind = CodeParameterKind.Headers,
+            Kind = CodePropertyKind.Headers,
             Type = stringType,
-        });
-        method.AddParameter(new CodeParameter{
+        },
+        new () {
             Name = "q",
-            Kind = CodeParameterKind.QueryParameter,
+            Kind = CodePropertyKind.QueryParameters,
+            Type = stringType,
+        },
+        new () {
+            Name = "o",
+            Kind = CodePropertyKind.Options,
             Type = stringType,
         });
         method.AddParameter(new CodeParameter{
             Name = "b",
             Kind = CodeParameterKind.RequestBody,
-            Type = stringType,
+            Type = useComplexTypeForBody ? new CodeType {
+                Name = "SomeComplexTypeForRequestBody",
+                TypeDefinition = root.AddClass(new CodeClass {
+                    Name = "SomeComplexTypeForRequestBody",
+                    Kind = CodeClassKind.Model,
+                }).First(),
+            } : stringType,
+        });
+        method.AddParameter(new CodeParameter{
+            Name = "c",
+            Kind = CodeParameterKind.RequestConfiguration,
+            Type = new CodeType {
+                Name = "RequestConfig",
+                TypeDefinition = requestConfigClass,
+                ActionOf = true,
+            },
+            Optional = true,
         });
         method.AddParameter(new CodeParameter{
             Name = "r",
             Kind = CodeParameterKind.ResponseHandler,
-            Type = stringType,
-        });
-        method.AddParameter(new CodeParameter {
-            Name = "o",
-            Kind = CodeParameterKind.Options,
             Type = stringType,
         });
     }
@@ -238,21 +270,46 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesRequestGeneratorBody() {
+    public void WritesRequestGeneratorBodyForScalar() {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
         AddRequestBodyParameters();
+        method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("const requestInfo = new RequestInformation()", result);
         Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
         Assert.Contains("requestInfo.urlTemplate = ", result);
         Assert.Contains("requestInfo.pathParameters = ", result);
-        Assert.Contains("requestInfo.headers =", result);
-        Assert.Contains("setQueryStringParametersFromRawObject", result);
+        Assert.Contains("requestInfo.headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("if (c)", result);
+        Assert.Contains("requestInfo.addRequestHeaders", result);
+        Assert.Contains("requestInfo.addRequestOptions", result);
+        Assert.Contains("requestInfo.setQueryStringParametersFromRawObject", result);
+        Assert.Contains("setContentFromScalar", result);
+        Assert.Contains("return requestInfo;", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyForParsable() {
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        method.AcceptedResponseTypes.Add("application/json");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("const requestInfo = new RequestInformation()", result);
+        Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
+        Assert.Contains("requestInfo.urlTemplate = ", result);
+        Assert.Contains("requestInfo.pathParameters = ", result);
+        Assert.Contains("requestInfo.headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("if (c)", result);
+        Assert.Contains("requestInfo.addRequestHeaders", result);
+        Assert.Contains("requestInfo.addRequestOptions", result);
+        Assert.Contains("requestInfo.setQueryStringParametersFromRawObject", result);
         Assert.Contains("setContentFromParsable", result);
-        Assert.Contains("addRequestOptions", result);
         Assert.Contains("return requestInfo;", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
@@ -269,13 +326,6 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesDeSerializerBody() {
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
-        };
         method.Kind = CodeMethodKind.Deserializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -285,6 +335,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("getCollectionOfPrimitiveValues", result);
         Assert.Contains("getCollectionOfObjectValues", result);
         Assert.Contains("getEnumValue", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -300,13 +351,6 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesSerializerBody() {
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
-        };
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -317,6 +361,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("writeCollectionOfObjectValues", result);
         Assert.Contains("writeEnumValue", result);
         Assert.Contains("writeAdditionalData(this.additionalData);", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -362,7 +407,7 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void Defensive() {
-        var codeMethodWriter = new CodeMethodWriter(new TypeScriptConventionService(writer));
+        var codeMethodWriter = new CodeMethodWriter(new TypeScriptConventionService(writer), false);
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
         var originalParent = method.Parent;

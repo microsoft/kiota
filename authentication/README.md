@@ -5,7 +5,7 @@ Your project will need a reference to the abstraction package to build and run, 
 
 - [Dotnet](https://github.com/microsoft/kiota-authentication-azure-dotnet): relies on [Azure identity](https://www.nuget.org/packages/Azure.Identity).
 - [Go](https://github.com/microsoft/kiota-authentication-azure-go/): relies on [Azure identity](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity)
-- [Java](./java/azure) : relies on [Azure identity](https://docs.microsoft.com/en-us/java/api/overview/azure/identity-readme?view=azure-java-stable).
+- [Java](https://github.com/microsoft/kiota-java/tree/main/components/authentication/azure) : relies on [Azure identity](https://docs.microsoft.com/en-us/java/api/overview/azure/identity-readme?view=azure-java-stable).
 - [TypeScript](https://github.com/microsoft/kiota-typescript/tree/main/packages/authentication/azure) : relies on [Azure identity](https://www.npmjs.com/package/@azure/identity).
 - [Python](./python/azure) : relies on [Azure identity](https://pypi.org/project/azure-identity/).
-- [PHP](./php/phpleague) : relies on [The PHP League OAuth 2 client](https://packagist.org/packages/league/oauth2-client) to authenticate against the Azure Identity platform.
+- [PHP](https://github.com/microsoft/kiota-authentication-phpleague-php) : relies on [The PHP League OAuth 2 client](https://packagist.org/packages/league/oauth2-client) to authenticate against the Azure Identity platform.

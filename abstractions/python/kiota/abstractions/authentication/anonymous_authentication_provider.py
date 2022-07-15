@@ -8,6 +8,7 @@ class AnonymousAuthenticationProvider(AuthenticationProvider):
     Args:
         AuthenticationProvider (ABC): The abstract base class that this class implements
     """
+
     async def authenticate_request(self, request: RequestInformation) -> None:
         """Authenticates the provided request information
 
