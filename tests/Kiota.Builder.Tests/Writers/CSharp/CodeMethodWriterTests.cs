@@ -428,7 +428,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("parseNode.GetCollectionOfObjectValues<ComplexType2>(ComplexType2.CreateFromDiscriminatorValue)?.ToList() is List<ComplexType2> complexType2ValueValue", result);
         Assert.Contains("ComplexType2Value = complexType2ValueValue", result);
         Assert.Contains("return result", result);
-        Assert.InRange(result.IndexOf("GetStringValue() is string stringValueValue", StringComparison.Ordinal), 0, result.IndexOf("GetCollectionOfObjectValues<ComplexType2>"));
+        AssertExtensions.Before("GetStringValue() is string stringValueValue", "GetCollectionOfObjectValues<ComplexType2>", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -462,7 +462,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("ComplexType2Value = complexType2ValueValue", result);
         Assert.Contains("ComplexType1Value = new ComplexType1()", result);
         Assert.Contains("return result", result);
-        Assert.InRange(result.IndexOf("GetStringValue() is string stringValueValue", StringComparison.Ordinal), 0, result.IndexOf("GetCollectionOfObjectValues<ComplexType2>"));
+        AssertExtensions.Before("GetStringValue() is string stringValueValue", "GetCollectionOfObjectValues<ComplexType2>", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -704,6 +704,48 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.Contains("base.", result);
         Assert.Contains("new", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesUnionDeSerializerBody() {
+        var wrapper = AddUnionTypeWrapper();
+        var deserializationMethod = wrapper.AddMethod(new CodeMethod{
+            Name = "GetFieldDeserializers",
+            Kind = CodeMethodKind.Deserializer,
+            IsAsync = false,
+            ReturnType = new CodeType {
+                Name = "IDictionary<string, Action<IParseNode>>",
+            },
+        }).First();
+        writer.Write(deserializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("base.", result);
+        Assert.Contains("ComplexType1Value != null", result);
+        Assert.Contains("return ComplexType1Value.GetFieldDeserializers()", result);
+        Assert.Contains("new", result);
+        Assert.Contains("return new Dictionary<string, Action<IParseNode>>()", result);
+        AssertExtensions.Before("return ComplexType1Value.GetFieldDeserializers()", "return new Dictionary<string, Action<IParseNode>>()", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesIntersectionDeSerializerBody() {
+        var wrapper = AddIntersectionTypeWrapper();
+        var deserializationMethod = wrapper.AddMethod(new CodeMethod{
+            Name = "GetFieldDeserializers",
+            Kind = CodeMethodKind.Deserializer,
+            IsAsync = false,
+            ReturnType = new CodeType {
+                Name = "IDictionary<string, Action<IParseNode>>",
+            },
+        }).First();
+        writer.Write(deserializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("base.", result);
+        Assert.Contains("ComplexType1Value != null || ComplexType3Value != null", result);
+        Assert.Contains("return ParseNodeHelper.MergeDeserializersForIntersectionWrapper(ComplexType1Value, ComplexType3Value)", result);
+        Assert.Contains("return new Dictionary<string, Action<IParseNode>>()", result);
+        AssertExtensions.Before("return ParseNodeHelper.MergeDeserializersForIntersectionWrapper(ComplexType1Value, ComplexType3Value)", "return new Dictionary<string, Action<IParseNode>>()", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesDeSerializerBody() {
@@ -784,8 +826,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("writer.WriteStringValue(null, StringValue)", result);
         Assert.Contains("ComplexType2Value != null", result);
         Assert.Contains("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)", result);
-        Assert.InRange(result.IndexOf("writer.WriteStringValue(null, StringValue)"), 0, result.IndexOf("writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value, ComplexType3Value)"));
-        Assert.InRange(result.IndexOf("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)"), 0, result.IndexOf("writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value, ComplexType3Value)"));
+        AssertExtensions.Before("writer.WriteStringValue(null, StringValue)", "writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value, ComplexType3Value)", result);
+        AssertExtensions.Before("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)", "writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value, ComplexType3Value)", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

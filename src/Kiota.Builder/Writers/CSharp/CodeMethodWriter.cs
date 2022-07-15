@@ -248,11 +248,59 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = {parameter.Name};");
         }
     }
+    private string DefaultDeserializerValue => $"new Dictionary<string, Action<{conventions.ParseNodeInterfaceName}>>";
     private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
+        if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+            WriteDeserializerBodyForUnionModel(codeElement, parentClass, writer);
+        else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+            WriteDeserializerBodyForIntersectionModel(codeElement, parentClass, writer);
+        else
+            WriteDeserializerBodyForInheritedModel(shouldHide, codeElement, parentClass, writer);
+    }
+    private void WriteDeserializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
+    {
+        var includeElse = false;
+        foreach (var otherProp in parentClass
+                                        .Properties
+                                        .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                        .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
+                                        .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                        .ThenBy(static x => x.Name))
+        {
+            writer.StartBlock($"{(includeElse? "else " : string.Empty)}if({otherProp.Name.ToFirstCharacterUpperCase()} != null) {{");
+            writer.WriteLine($"return {otherProp.Name.ToFirstCharacterUpperCase()}.{method.Name.ToFirstCharacterUpperCase()}();");
+            writer.CloseBlock();
+            if(!includeElse)
+                includeElse = true;
+        }
+        writer.WriteLine($"return {DefaultDeserializerValue}();");
+    }
+    private void WriteDeserializerBodyForIntersectionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
+    {
+        var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                            .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
+                                            .ToArray();
+        if(complexProperties.Any()) {
+            var propertiesNames = complexProperties
+                                .Select(static x => x.Name.ToFirstCharacterUpperCase())
+                                .OrderBy(static x => x)
+                                .ToArray();
+            var propertiesNamesAsConditions = propertiesNames
+                                .Select(static x => $"{x} != null")
+                                .Aggregate(static (x, y) => $"{x} || {y}");
+            writer.StartBlock($"if({propertiesNamesAsConditions}) {{");
+            var propertiesNamesAsArgument = propertiesNames
+                                .Aggregate(static (x, y) => $"{x}, {y}");
+            writer.WriteLine($"return ParseNodeHelper.MergeDeserializersForIntersectionWrapper({propertiesNamesAsArgument});");//TODO: import in refiner
+            writer.CloseBlock();
+        }
+        writer.WriteLine($"return {DefaultDeserializerValue}();");
+    }
+    private void WriteDeserializerBodyForInheritedModel(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
         var parentSerializationInfo = shouldHide ? $"(base.{codeElement.Name.ToFirstCharacterUpperCase()}())" : string.Empty;
-        writer.WriteLine($"return new Dictionary<string, Action<{conventions.ParseNodeInterfaceName}>>{parentSerializationInfo} {{");
-        writer.IncreaseIndent();
+        writer.StartBlock($"return {DefaultDeserializerValue}{parentSerializationInfo} {{");
         foreach (var otherProp in parentClass
                                         .Properties
                                         .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
@@ -260,8 +308,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
         }
-        writer.DecreaseIndent();
-        writer.WriteLine("};");
+        writer.CloseBlock("};");
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method)
     {
