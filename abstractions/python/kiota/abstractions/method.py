@@ -2,9 +2,7 @@ from enum import Enum
 
 
 class Method(Enum):
-    """
-    Represents the HTTP method used by a request.
-    """
+    """Represents the HTTP method used by a request."""
     # The HTTP GET method
     GET = "GET"
     # The HTTP POST method

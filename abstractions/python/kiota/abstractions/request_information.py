@@ -1,12 +1,12 @@
-from dataclasses import fields
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple, TypeVar
+from dataclasses import fields
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
 
 from uritemplate import URITemplate
 
 from .method import Method
 from .request_option import RequestOption
-from .serialization import Parsable
+from .serialization import Parsable, SerializationWriter
 
 if TYPE_CHECKING:
     from .request_adapter import RequestAdapter
@@ -34,10 +34,10 @@ class RequestInformation(Generic[QueryParams]):
         self.path_parameters: Dict[str, Any] = {}
 
         # The URL template for the request
-        self.url_template: Optional[str]
+        self.url_template: Optional[str] = None
 
         # The HTTP Method for the request
-        self.http_method: Method
+        self.http_method: Method = None
 
         # The query parameters for the request
         self.query_parameters: Dict[str, QueryParams] = {}
@@ -46,9 +46,10 @@ class RequestInformation(Generic[QueryParams]):
         self.headers: Dict[str, str] = {}
 
         # The Request Body
-        self.content: BytesIO
+        self.content: BytesIO = None
 
-    def get_url(self) -> Url:
+    @property
+    def url(self) -> Url:
         """ Gets the URL of the request
         """
         raw_url = self.path_parameters.get(self.RAW_URL_KEY)
@@ -56,9 +57,9 @@ class RequestInformation(Generic[QueryParams]):
             return self.__uri
         if raw_url:
             return raw_url
-        if not self.query_parameters:
+        if self.query_parameters is None:
             raise Exception("Query parameters cannot be null")
-        if not self.path_parameters:
+        if self.path_parameters is None:
             raise Exception("Path parameters cannot be null")
         if not self.url_template:
             raise Exception("Url Template cannot be null")
@@ -73,7 +74,8 @@ class RequestInformation(Generic[QueryParams]):
         result = template.expand(data)
         return result
 
-    def set_url(self, url: Url) -> None:
+    @url.setter
+    def url(self, url: Url) -> None:
         """ Sets the URL of the request
         """
         if not url:
@@ -82,7 +84,8 @@ class RequestInformation(Generic[QueryParams]):
         self.query_parameters.clear()
         self.path_parameters.clear()
 
-    def get_request_headers(self) -> Optional[Dict]:
+    @property
+    def request_headers(self) -> Optional[Dict]:
         return self.headers
 
     def add_request_headers(self, headers_to_add: Optional[Dict[str, str]]) -> None:
@@ -101,10 +104,11 @@ class RequestInformation(Generic[QueryParams]):
         if key and key.lower() in self.headers:
             del self.headers[key.lower()]
 
-    def get_request_options(self) -> List[Tuple[str, RequestOption]]:
+    @property
+    def request_options(self) -> Dict[str, RequestOption]:
         """Gets the request options for the request.
         """
-        return list(self.__request_options.items())
+        return self.__request_options
 
     def add_request_options(self, options: List[RequestOption]) -> None:
         if not options:
@@ -120,7 +124,7 @@ class RequestInformation(Generic[QueryParams]):
 
     def set_content_from_parsable(
         self, request_adapter: Optional['RequestAdapter'], content_type: Optional[str],
-        values: List[T]
+        values: Union[T, List[T]]
     ) -> None:
         """Sets the request body from a model with the specified content type.
 
@@ -128,24 +132,16 @@ class RequestInformation(Generic[QueryParams]):
             request_adapter (Optional[RequestAdapter]): The adapter service to get the serialization
             writer from.
             content_type (Optional[str]): the content type.
-            values (List[T]): the models.
+            values (Union[T, List[T]]): the models.
         """
-        if not request_adapter:
-            raise Exception("HttpCore cannot be undefined")
-        if not content_type:
-            raise Exception("HttpCore cannot be undefined")
-        if not values:
-            raise Exception("Values cannot be empty")
+        writer = self._get_serialization_writer(request_adapter, content_type, values)
 
-        writer = request_adapter.get_serialization_writer_factory(
-        ).get_serialization_writer(content_type)
-        self.headers[self.CONTENT_TYPE_HEADER] = content_type
-        if len(values) == 1:
-            writer.write_object_value(None, values[0])
+        if isinstance(values, list):
+            writer.writer = writer.write_collection_of_object_values(None, values)
         else:
-            writer.write_collection_of_object_values(None, values)
+            writer.writer = writer.write_object_value(None, values)
 
-        self.content = writer.get_serialized_content()
+        self._set_content_and_content_type(writer, content_type)
 
     def set_stream_content(self, value: BytesIO) -> None:
         """Sets the request body to be a binary stream.
@@ -165,3 +161,29 @@ class RequestInformation(Generic[QueryParams]):
                     if serialization_key:
                         key = serialization_key
                 self.query_parameters[key] = getattr(q, field.name)
+
+    def _get_serialization_writer(
+        self, request_adapter: 'RequestAdapter', content_type: str, values: Union[T, List[T]]
+    ):
+        """_summary_
+
+        Args:
+            request_adapter (RequestAdapter): _description_
+            content_type (str): _description_
+            values (Union[T, List[T]]): _description_
+        """
+        if not request_adapter:
+            raise Exception("HttpCore cannot be null")
+        if not content_type:
+            raise Exception("Content Type cannot be null")
+        if not values:
+            raise Exception("Values cannot be null")
+        return request_adapter.get_serialization_writer_factory(
+        ).get_serialization_writer(content_type)
+
+    def _set_content_and_content_type(self, writer: SerializationWriter, content_type: str):
+        if content_type:
+            self.headers[self.CONTENT_TYPE_HEADER] = content_type
+        print(writer.writer)
+        self.content = writer.get_serialized_content()
+        print(self.content)
