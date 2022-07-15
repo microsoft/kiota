@@ -26,7 +26,7 @@ class ParseNode(ABC):
     """
 
     @abstractmethod
-    def get_string_value(self) -> str:
+    def get_str_value(self) -> str:
         """Gets the string value of the node
 
         Returns:
@@ -47,7 +47,7 @@ class ParseNode(ABC):
         pass
 
     @abstractmethod
-    def get_boolean_value(self) -> Optional[bool]:
+    def get_bool_value(self) -> Optional[bool]:
         """Gets the boolean value of the node
 
         Returns:
@@ -83,11 +83,11 @@ class ParseNode(ABC):
         pass
 
     @abstractmethod
-    def get_datetime_offset_value(self) -> Optional[datetime]:
-        """Gets the datetime offset value of the node
+    def get_datetime_value(self) -> Optional[datetime]:
+        """Gets the datetime value of the node
 
         Returns:
-            datetime: The datetime offset value of the node
+            datetime: The datetime value of the node
         """
         pass
 
