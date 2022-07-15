@@ -1,3 +1,4 @@
+from dataclasses import fields
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
 
 Url = str
 T = TypeVar("T", bound=Parsable)
-QueryParams = TypeVar('QueryParams', int, float, str, bool, None)
+QueryParams = TypeVar('QueryParams')
 
 
 class RequestInformation(Generic[QueryParams]):
@@ -22,28 +23,30 @@ class RequestInformation(Generic[QueryParams]):
     BINARY_CONTENT_TYPE = 'application/octet-stream'
     CONTENT_TYPE_HEADER = 'Content-Type'
 
-    # The uri of the request
-    __uri: Optional[Url]
+    def __init__(self) -> None:
 
-    __request_options: Dict[str, RequestOption] = {}
+        # The uri of the request
+        self.__uri: Optional[Url] = None
 
-    # The path parameters for the current request
-    path_parameters: Dict[str, Any] = {}
+        self.__request_options: Dict[str, RequestOption] = {}
 
-    # The URL template for the request
-    url_template: Optional[str]
+        # The path parameters for the current request
+        self.path_parameters: Dict[str, Any] = {}
 
-    # The HTTP Method for the request
-    http_method: Method
+        # The URL template for the request
+        self.url_template: Optional[str]
 
-    # The query parameters for the request
-    query_parameters: Dict[str, QueryParams] = {}
+        # The HTTP Method for the request
+        self.http_method: Method
 
-    # The Request Headers
-    headers: Dict[str, str] = {}
+        # The query parameters for the request
+        self.query_parameters: Dict[str, QueryParams] = {}
 
-    # The Request Body
-    content: BytesIO
+        # The Request Headers
+        self.headers: Dict[str, str] = {}
+
+        # The Request Body
+        self.content: BytesIO
 
     def get_url(self) -> Url:
         """ Gets the URL of the request
@@ -78,6 +81,25 @@ class RequestInformation(Generic[QueryParams]):
         self.__uri = url
         self.query_parameters.clear()
         self.path_parameters.clear()
+
+    def get_request_headers(self) -> Optional[Dict]:
+        return self.headers
+
+    def add_request_headers(self, headers_to_add: Optional[Dict[str, str]]) -> None:
+        """Adds headers to the request
+        """
+        if headers_to_add:
+            for key in headers_to_add:
+                self.headers[key.lower()] = headers_to_add[key]
+
+    def remove_request_headers(self, key: str) -> None:
+        """Removes a request header from the current request
+
+        Args:
+            key (str): The key of the header to remove
+        """
+        if key and key.lower() in self.headers:
+            del self.headers[key.lower()]
 
     def get_request_options(self) -> List[Tuple[str, RequestOption]]:
         """Gets the request options for the request.
@@ -133,3 +155,13 @@ class RequestInformation(Generic[QueryParams]):
         """
         self.headers[self.CONTENT_TYPE_HEADER] = self.BINARY_CONTENT_TYPE
         self.content = value
+
+    def set_query_string_parameters_from_raw_object(self, q: Optional[QueryParams]) -> None:
+        if q:
+            for field in fields(q):
+                key = field.name
+                if hasattr(q, 'get_query_parameter'):
+                    serialization_key = q.get_query_parameter(key)  #type: ignore
+                    if serialization_key:
+                        key = serialization_key
+                self.query_parameters[key] = getattr(q, field.name)
