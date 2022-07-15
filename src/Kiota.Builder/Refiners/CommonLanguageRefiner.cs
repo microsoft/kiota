@@ -341,26 +341,26 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration));
     }
-    protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, CodeUsing intersectionInterfaceType, CodeUsing unionInterfaceType, bool supportInnerClasses = true) {
+    protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, bool supportInnerClasses = true) {
         var parentClass = currentElement.Parent as CodeClass;
         if(currentElement is CodeMethod currentMethod) {
             if(currentMethod.ReturnType is CodeComposedTypeBase currentUnionType)
-                currentMethod.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, intersectionInterfaceType, unionInterfaceType, supportInnerClasses);
+                currentMethod.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, supportInnerClasses);
             if(currentMethod.Parameters.Any(static x => x.Type is CodeComposedTypeBase))
                 foreach(var currentParameter in currentMethod.Parameters.Where(x => x.Type is CodeComposedTypeBase))
-                    currentParameter.Type = ConvertComposedTypeToWrapper(parentClass, currentParameter.Type as CodeComposedTypeBase, usesBackingStore, intersectionInterfaceType, unionInterfaceType, supportInnerClasses);
+                    currentParameter.Type = ConvertComposedTypeToWrapper(parentClass, currentParameter.Type as CodeComposedTypeBase, usesBackingStore, supportInnerClasses);
             if(currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeComposedTypeBase>().Any())
                 foreach(var errorUnionType in currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeComposedTypeBase>())
-                    currentMethod.ReplaceErrorMapping(errorUnionType, ConvertComposedTypeToWrapper(parentClass, errorUnionType, usesBackingStore, intersectionInterfaceType, unionInterfaceType, supportInnerClasses));
+                    currentMethod.ReplaceErrorMapping(errorUnionType, ConvertComposedTypeToWrapper(parentClass, errorUnionType, usesBackingStore, supportInnerClasses));
         }
         else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeComposedTypeBase currentUnionType)
-            currentIndexer.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, intersectionInterfaceType, unionInterfaceType);
+            currentIndexer.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore);
         else if(currentElement is CodeProperty currentProperty && currentProperty.Type is CodeComposedTypeBase currentPropUnionType)
-            currentProperty.Type = ConvertComposedTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, intersectionInterfaceType, unionInterfaceType, supportInnerClasses);
+            currentProperty.Type = ConvertComposedTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, supportInnerClasses);
 
-        CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, intersectionInterfaceType, unionInterfaceType, supportInnerClasses));
+        CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, supportInnerClasses));
     }
-    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, CodeUsing intersectionInterfaceType, CodeUsing unionInterfaceType, bool supportsInnerClasses = true)
+    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, bool supportsInnerClasses = true)
     {
         if(codeClass == null) throw new ArgumentNullException(nameof(codeClass));
         if(codeComposedType == null) throw new ArgumentNullException(nameof(codeComposedType));
@@ -401,13 +401,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Access = AccessModifier.Public,
                 Kind = CodePropertyKind.SerializationHint,
             });
-            if(unionInterfaceType != null && codeComposedType is CodeUnionType) {
-                newClass.AddUsing(unionInterfaceType);
-                newClass.StartBlock.AddImplements(new CodeType { Name = unionInterfaceType.Name });
-            } else if(intersectionInterfaceType != null && codeComposedType is CodeIntersectionType) {
-                newClass.AddUsing(intersectionInterfaceType);
-                newClass.StartBlock.AddImplements(new CodeType { Name = intersectionInterfaceType.Name });
-            }
             newClass.Kind = CodeClassKind.Model;
         }
         newClass.OriginalComposedType = codeComposedType;

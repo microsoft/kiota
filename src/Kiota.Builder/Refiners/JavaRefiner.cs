@@ -16,19 +16,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
         RemoveCancellationParameter(generatedCode);
         ConvertUnionTypesToWrapper(generatedCode, 
-            _configuration.UsesBackingStore,
-            new CodeUsing {
-                    Name = "IntersectionWrapper",
-                    Declaration = new CodeType {
-                        Name = "com.microsoft.kiota.serialization"
-                    },
-                },
-                new CodeUsing {
-                    Name = "UnionWrapper",
-                    Declaration = new CodeType {
-                        Name = "com.microsoft.kiota.serialization"
-                    },
-                });
+            _configuration.UsesBackingStore
+        );
         AddRawUrlConstructorOverload(generatedCode);
         CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
         ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);

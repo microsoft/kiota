@@ -23,18 +23,6 @@ namespace Kiota.Builder.Refiners
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, 
                 _configuration.UsesBackingStore,
-                new CodeUsing {
-                    Name = "IntersectionWrapper",
-                    Declaration = new CodeType {
-                        Name = "Microsoft\\Kiota\\Abstractions\\Serialization"
-                    },
-                },
-                new CodeUsing {
-                    Name = "UnionWrapper",
-                    Declaration = new CodeType {
-                        Name = "Microsoft\\Kiota\\Abstractions\\Serialization"
-                    },
-                },
                 false);
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
