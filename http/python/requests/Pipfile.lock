@@ -24,7 +24,7 @@
                 "sha256:84c85a9078b11105f04f3036a9482ae10e4621616db313fe045dd24743a0820d",
                 "sha256:fe86415d55e84719d75f8b69414f6438ac3547d2078ab91b67e779ef69378412"
             ],
-            "markers": "python_version >= '3.6'",
+            "markers": "python_full_version >= '3.6.0'",
             "version": "==2022.6.15"
         },
         "charset-normalizer": {
@@ -32,7 +32,7 @@
                 "sha256:5189b6f22b01957427f35b6a08d9a0bc45b46d3788ef5a92e978433c7a35f8a5",
                 "sha256:575e708016ff3a5e3681541cb9d79312c416835686d054a23accb873b254f413"
             ],
-            "markers": "python_version >= '3.6'",
+            "markers": "python_full_version >= '3.6.0'",
             "version": "==2.1.0"
         },
         "idna": {
@@ -45,11 +45,11 @@
         },
         "kiota-abstractions": {
             "hashes": [
-                "sha256:28cc3acf20cacd22c7723470fd5d80967645c1526e5bdaa1ebc0060940d87d5b",
-                "sha256:f956105a774e22d849b66e8a27bf219c66f6d0f6f67fcd4d7ddba746061e06bf"
+                "sha256:6090cf3c225fc863c663be04ec253a35cc156a32699faa2bf9f8406fd5130ef4",
+                "sha256:98ef98da57f707d30bf8fe43c502ec035f519da0188d8a5655abbb3699edf80a"
             ],
             "index": "testpypi",
-            "version": "==0.3.0"
+            "version": "==0.4.0"
         },
         "python-dateutil": {
             "hashes": [
@@ -124,7 +124,7 @@
                 "sha256:84c85a9078b11105f04f3036a9482ae10e4621616db313fe045dd24743a0820d",
                 "sha256:fe86415d55e84719d75f8b69414f6438ac3547d2078ab91b67e779ef69378412"
             ],
-            "markers": "python_version >= '3.6'",
+            "markers": "python_full_version >= '3.6.0'",
             "version": "==2022.6.15"
         },
         "charset-normalizer": {
@@ -132,7 +132,7 @@
                 "sha256:5189b6f22b01957427f35b6a08d9a0bc45b46d3788ef5a92e978433c7a35f8a5",
                 "sha256:575e708016ff3a5e3681541cb9d79312c416835686d054a23accb873b254f413"
             ],
-            "markers": "python_version >= '3.6'",
+            "markers": "python_full_version >= '3.6.0'",
             "version": "==2.1.0"
         },
         "coverage": {
