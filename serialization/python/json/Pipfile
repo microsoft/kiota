@@ -21,3 +21,4 @@ isort = {version="5.10.1", index="pypi"}
 pytest = {version="7.1.2", index="pypi"}
 pytest-cov = {version="3.0.0", index="pypi"}
 types-python-dateutil = {version="*", index="pypi"}
+toml =  "==0.10.2" 

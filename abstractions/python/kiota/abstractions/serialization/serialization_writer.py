@@ -16,6 +16,7 @@ U = TypeVar("U", bound=Parsable)
 class SerializationWriter(ABC):
     """Defines an interface for serialization of objects to a stream
     """
+
     @abstractmethod
     def write_string_value(self, key: Optional[str], value: Optional[str]) -> None:
         """Writes the specified string value to the stream with an optional given key.

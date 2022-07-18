@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added support for no-content responses in python abstractions and http packages. [#1630](https://github.com/microsoft/kiota/issues/1459)
+- Added support for vendor-specific content types in python. [#1631](https://github.com/microsoft/kiota/issues/1463)
+- Simplified field deserializers for json in Python. [#1632](https://github.com/microsoft/kiota/issues/1492)
 
 ### Changed
 
@@ -142,6 +145,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug with special characters in query parameters names. [#1445](https://github.com/microsoft/kiota/issues/1445)
 - Fixed a bug where complex types path parameters would fail to generate.
 - Fixed a bug where Go serialization/deserialization method would generate invalid accessor names.
+- Added discriminator support in the python abstractions serialization and http packages. [#1500](https://github.com/microsoft/kiota/issues/1256)
 
 ## [0.0.22] - 2022-04-08
 

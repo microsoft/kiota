@@ -367,7 +367,7 @@ class JsonSerializationWriter(SerializationWriter):
             return value.__dict__
         return None
 
-    def write_any_value(self, key: Optional[str], value: Any) -> Any:
+    def write_any_value(self, key: Optional[str], value: Any) -> Any:  # pylint: disable=too-many-return-statements,too-many-branches
         """Writes the specified value to the stream with an optional given key.
         Args:
             key (Optional[str]): The key to be used for the written value. May be null.
