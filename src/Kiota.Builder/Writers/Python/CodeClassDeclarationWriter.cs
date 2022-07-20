@@ -14,7 +14,6 @@ namespace Kiota.Builder.Writers.Python {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
             if(writer == null) throw new ArgumentNullException(nameof(writer));
             var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
-            AddStandardImports(writer);
             var externalImportSymbolsAndPaths = codeElement.Usings
                                                             .Where(x => x.IsExternal)
                                                             .Select(x => (x.Name, string.Empty, x.Declaration?.Name))
@@ -56,13 +55,6 @@ namespace Kiota.Builder.Writers.Python {
         }
         private static string GetAliasedSymbol(string symbol, string alias) {
             return string.IsNullOrEmpty(alias) ? symbol : $"{symbol} as {alias}";
-        }
-
-        private static void AddStandardImports(LanguageWriter writer) {
-            if(string.IsNullOrEmpty(writer.GetIndent())){  // Don't add for inner classes
-                writer.WriteLine("from __future__ import annotations");
-                writer.WriteLine("from typing import Any, Callable, Dict, List, Optional, Union");
-            }            
         }
     }
 }

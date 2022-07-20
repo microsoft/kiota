@@ -40,9 +40,12 @@ namespace Kiota.Builder.Writers.Python.Tests {
             declaration.AddImplements(new CodeType {
                 Name = "someInterface"
             });
+            declaration.AddImplements(new CodeType {
+                Name = "secondInterface"
+            });
             codeElementWriter.WriteCodeElement(declaration, writer);
             var result = tw.ToString();
-            Assert.Contains("(SomeInterface):", result);
+            Assert.Contains("(SecondInterface, SomeInterface):", result);
         }
         [Fact]
         public void WritesInheritance() {
@@ -52,7 +55,7 @@ namespace Kiota.Builder.Writers.Python.Tests {
             };
             codeElementWriter.WriteCodeElement(declaration, writer);
             var result = tw.ToString();
-            Assert.Contains("(SomeInterface):", result);
+            Assert.Contains("(some_interface.SomeInterface):", result);
         }
         [Fact]
         public void WritesImports() {
@@ -66,17 +69,7 @@ namespace Kiota.Builder.Writers.Python.Tests {
             });
             codeElementWriter.WriteCodeElement(declaration, writer);
             var result = tw.ToString();
-            Assert.Contains("from", result);
-            Assert.Contains("import", result);
-            Assert.Contains("util", result);
-        }
-        [Fact]
-        public void WritesStandardImports() {
-            var declaration = parentClass.StartBlock as ClassDeclaration;
-            codeElementWriter.WriteCodeElement(declaration, writer);
-            var result = tw.ToString();
-            Assert.Contains("__future__", result);
-            Assert.Contains("Callable", result);
+            Assert.Contains("from util import Objects", result);
         }
     }
 }
