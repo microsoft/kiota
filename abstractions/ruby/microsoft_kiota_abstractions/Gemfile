@@ -14,5 +14,3 @@ gem 'rubocop', require: false
 gem 'concurrent-ruby', '~> 1.1', '>= 1.1.9'
 
 gem 'addressable', '~> 2.7', '>= 2.7.0'
-
-gem 'oauth2', '~> 2.0'
