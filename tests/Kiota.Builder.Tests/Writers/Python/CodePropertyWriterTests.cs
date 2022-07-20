@@ -29,9 +29,6 @@ namespace Kiota.Builder.Writers.Python.Tests {
                 Name = TypeName
             };
             parentClass.AddProperty(property, new() {
-                Name = "pathParameters",
-                Kind = CodePropertyKind.PathParameters,
-            }, new() {
                 Name = "requestAdapter",
                 Kind = CodePropertyKind.RequestAdapter,
             });
@@ -41,42 +38,18 @@ namespace Kiota.Builder.Writers.Python.Tests {
             GC.SuppressFinalize(this);
         }
         [Fact]
-        public void WritesRequestBuilder() {
-            property.Kind = CodePropertyKind.RequestBuilder;
+        public void WritesQueryParameters() {
+            property.Kind = CodePropertyKind.QueryParameters;
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains($"return {TypeName}(", result);
-            Assert.Contains("self.request_adapter", result);
-            Assert.Contains("self.path_parameters", result);
+            Assert.Contains($"property_name: Optional[somecustomtype.Somecustomtype]", result);
         }
         [Fact]
-        public void WritesCustomProperty() {
-            property.Kind = CodePropertyKind.Custom;
+        public void WritesDefaultValuesForProperties() {
+            property.Kind = CodePropertyKind.Headers;
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains($": Optional[{TypeName}]", result);
-        }
-        [Fact]
-        public void WritesPrivateSetter() {
-            property.Kind = CodePropertyKind.Custom;
-            property.ReadOnly = true;
-            writer.Write(property);
-            var result = tw.ToString();
-            Assert.Contains("property_name", result);
-        }
-        [Fact]
-        public void WritesFlagEnums() {
-            property.Kind = CodePropertyKind.Custom;
-            property.Type = new CodeType {
-                Name = "customEnum",
-            };
-            (property.Type as CodeType).TypeDefinition = new CodeEnum {
-                Name = "customEnumType",
-                Flags = true,
-            };
-            writer.Write(property);
-            var result = tw.ToString();
-            Assert.Contains("CustomEnum", result);
+            Assert.Contains("= None", result);
         }
     }
 }
