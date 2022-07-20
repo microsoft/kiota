@@ -1,8 +1,8 @@
 require 'concurrent'
 
-module MicrosoftKiotaAbstractions
+module MicrosoftKiotaAuthentication
   class AnonymousAuthenticationProvider
-    include MicrosoftKiotaAbstractions::AuthenticationProvider
+    include MicrosoftKiotaAuthentication::AuthenticationProvider
     include Concurrent::Async
     def authenticate_request(request)
     end

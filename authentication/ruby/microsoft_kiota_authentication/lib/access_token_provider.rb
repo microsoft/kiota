@@ -8,7 +8,7 @@ require_relative 'contexts/client_credential_context'
 require_relative 'contexts/authorization_code_context'
 require_relative 'contexts/on_behalf_of_context'
 
-module MicrosoftKiotaAbstractions
+module MicrosoftKiotaAuthentication
   # Access Token Provider class implementation
   class AccessTokenProvider
     include Concurrent::Async
@@ -62,11 +62,11 @@ module MicrosoftKiotaAbstractions
 
       token = nil
 
-      if @token_request_context.instance_of?(MicrosoftKiotaAbstractions::ClientCredentialContext)
+      if @token_request_context.instance_of?(MicrosoftKiotaAuthentication::ClientCredentialContext)
         token = client_credential_get_authorization_token
-      elsif @token_request_context.instance_of?(MicrosoftKiotaAbstractions::AuthorizationCodeContext)
+      elsif @token_request_context.instance_of?(MicrosoftKiotaAuthentication::AuthorizationCodeContext)
         token = auth_code_get_authorization_token
-      elsif @token_request_context.instance_of?(MicrosoftKiotaAbstractions::OnBehalfOf)
+      elsif @token_request_context.instance_of?(MicrosoftKiotaAuthentication::OnBehalfOf)
         token = on_behalf_of_get_authorization_token
       else
         raise StandardError, 'token_request_context must be an instance of one of our grant flow context classes.'
@@ -102,8 +102,8 @@ module MicrosoftKiotaAbstractions
 
     # This function initializes the oauth_provider
     def init_oauth_provider
-      if (@token_request_context.instance_of? MicrosoftKiotaAbstractions::ClientCredentialContext) ||
-          (@token_request_context.instance_of? MicrosoftKiotaAbstractions::AuthorizationCodeContext)
+      if (@token_request_context.instance_of? MicrosoftKiotaAuthentication::ClientCredentialContext) ||
+          (@token_request_context.instance_of? MicrosoftKiotaAuthentication::AuthorizationCodeContext)
         OAuth2::Client.new(@token_request_context.client_id, 
                             @token_request_context.client_secret, 
                             site: 'https://login.microsoftonline.com',
@@ -116,13 +116,13 @@ module MicrosoftKiotaAbstractions
 
     # This function initializes the scopes for the access token provider
     def init_scopes(scopes)
-      if (scopes.nil? || scopes.empty?) && ((@token_request_context.instance_of? MicrosoftKiotaAbstractions::AuthorizationCodeContext) || 
-         (@token_request_context.instance_of? MicrosoftKiotaAbstractions::OnBehalfOfContext))
+      if (scopes.nil? || scopes.empty?) && ((@token_request_context.instance_of? MicrosoftKiotaAuthentication::AuthorizationCodeContext) || 
+         (@token_request_context.instance_of? MicrosoftKiotaAuthentication::OnBehalfOfContext))
         raise StandardError, 'Parameter scopes cannot be nil/empty while using auth code or on behalf of grant type.' 
       end
 
-      if (@token_request_context.instance_of? MicrosoftKiotaAbstractions::AuthorizationCodeContext) || 
-        (@token_request_context.instance_of? MicrosoftKiotaAbstractions::OnBehalfOfContext)
+      if (@token_request_context.instance_of? MicrosoftKiotaAuthentication::AuthorizationCodeContext) || 
+        (@token_request_context.instance_of? MicrosoftKiotaAuthentication::OnBehalfOfContext)
         scopes.unshift('offline_access')
       end 
 

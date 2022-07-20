@@ -4,7 +4,7 @@ require 'concurrent'
 require_relative './authentication_provider'
 require_relative './access_token_provider'
 
-module MicrosoftKiotaAbstractions
+module MicrosoftKiotaAuthentication
   # Provides a base class for implementing AuthenticationProvider for Bearer token scheme
   class BaseBearerTokenAuthenticationProvider
     include Concurrent::Async

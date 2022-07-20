@@ -1,4 +1,4 @@
-module MicrosoftKiotaAbstractions
+module MicrosoftKiotaAuthentication
   module AuthenticationProvider
 
     def authenticate_request(request)

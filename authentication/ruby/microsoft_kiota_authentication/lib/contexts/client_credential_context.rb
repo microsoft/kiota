@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module MicrosoftKiotaAbstractions
+module MicrosoftKiotaAuthentication
   # Token request context class for the client credential grant type.
   class ClientCredentialContext
     attr_reader :grant_type, :additional_params, :tenant_id, :client_id, :client_secret

@@ -2,7 +2,7 @@
 
 require 'uri'
 
-module MicrosoftKiotaAbstractions
+module MicrosoftKiotaAuthentication
   # Maintains a list of valid hosts and allows authentication providers to check whether
   # a host is valid before authenticating a request
   class AllowedHostsValidator
