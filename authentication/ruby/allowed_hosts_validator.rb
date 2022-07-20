@@ -8,17 +8,27 @@ module MicrosoftKiotaAbstractions
   class AllowedHostsValidator
     # creates a new AllocatedHostsValidator with provided values
     def initialize(allowed_hosts)
-      raise NotImplementedError.new
+      @allowed_hosts = []
+      allowed_hosts.each { |host| @allowed_hosts << host.downcase }
     end
 
     # sets the list of valid hosts with provided value (val)
     def allowed_hosts=(val)
-      raise NotImplementedError.new
+      @allowed_hosts = []
+      val.each { |host| @allowed_hosts << host.downcase }
     end
 
     # checks whether the provided host is valid
     def url_host_valid?(url)
-      raise NotImplementedError.new
+      return false unless url =~ URI::DEFAULT_PARSER.regexp[:ABS_URI]
+
+      return true if @allowed_hosts.empty?
+
+      parsed_url = URI(url)
+
+      return false if parsed_url.host.nil?
+
+      @allowed_hosts.include? parsed_url.host.downcase
     end
 
     # gets the list of valid hosts
