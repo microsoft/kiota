@@ -19,7 +19,10 @@ namespace Kiota.Builder.Refiners {
             AddPropertiesAndMethodTypesImportsPython(generatedCode, true, true, true);           
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "bytes",null);
-            ReplaceReservedNames(generatedCode, new PythonReservedNamesProvider(), x => $"{x}_escaped");
+            ReplaceReservedNames(
+                generatedCode,
+                new PythonReservedNamesProvider(), x => $"{x}_escaped"
+            );
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,

@@ -151,9 +151,15 @@ public class PythonLanguageRefinerTests {
             Name = "break",
             Kind = CodeClassKind.Model
         }).First();
+        var voidMethod = model.AddMethod(new CodeMethod {
+            Name = "continue",// this is a keyword
+            ReturnType = new CodeType {
+                Name = "void"
+            }
+        }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         Assert.NotEqual("break", model.Name);
-        Assert.Contains("escaped", model.Name);
+        Assert.Contains("escaped", voidMethod.Name);
     }
     [Fact]
     public void CorrectsCoreType() {
