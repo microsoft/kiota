@@ -63,6 +63,8 @@ namespace Kiota.Builder.Refiners {
 
         private const string AbstractionsPackageName = "kiota.abstractions";
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+            new (x => x is CodeClass @class, "__future__", "annotations"),
+            new (x => x is CodeClass @class, "typing", "Any, Callable, Dict, List, Optional, Union"),
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 $"{AbstractionsPackageName}.request_adapter", "RequestAdapter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -90,7 +92,8 @@ namespace Kiota.Builder.Refiners {
                 $"{AbstractionsPackageName}.store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
                 $"{AbstractionsPackageName}.store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
-            new (x => x is CodeClass && x.Parent is CodeClass, "dataclasses", "dataclass")
+            new (x => x is CodeClass && x.Parent is CodeClass, "dataclasses", "dataclass"),
+            
         };
         private static void CorrectImplements(ProprietableBlockDeclaration block) {
             block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
@@ -155,6 +158,9 @@ namespace Kiota.Builder.Refiners {
         }
         private static readonly CodeUsingComparer usingComparerWithDeclarations = new(true);
         private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new(false);
+        
+        // Caters for QueryParameters and RequestConfiguration which are implemented as nested classes.
+        // No imports required for nested classes in Python.
         private static void AddPropertiesAndMethodTypesImportsPython(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration) {
         if(current is CodeClass currentClass &&
             currentClass.StartBlock is ClassDeclaration currentClassDeclaration) {
