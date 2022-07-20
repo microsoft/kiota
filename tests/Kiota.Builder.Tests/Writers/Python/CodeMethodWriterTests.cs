@@ -167,9 +167,9 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.Contains("request_info", result);
         Assert.Contains("error_mapping: Dict[str, ParsableFactory] =", result);
-        Assert.Contains("\"4XX\": Error4XX.get_from_discriminator_value()", result);
-        Assert.Contains("\"5XX\": Error5XX.get_from_discriminator_value()", result);
-        Assert.Contains("\"403\": Error403.get_from_discriminator_value()", result);
+        Assert.Contains("\"4XX\": o_data_error.Error4XX.get_from_discriminator_value()", result);
+        Assert.Contains("\"5XX\": o_data_error.Error5XX.get_from_discriminator_value()", result);
+        Assert.Contains("\"403\": o_data_error.Error403.get_from_discriminator_value()", result);
         Assert.Contains("send_async", result);
         Assert.Contains("raise Exception", result);
     }
@@ -202,13 +202,10 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("request_info = RequestInformation()", result);
-        Assert.Contains("request_info.http_method = HttpMethod", result);
+        Assert.Contains("request_info.http_method = Method", result);
         Assert.Contains("request_info.url_template = ", result);
         Assert.Contains("request_info.path_parameters = ", result);
-        Assert.Contains("request_info.headers =", result);
-        Assert.Contains("set_query_string_parameters_from_raw_object", result);
         Assert.Contains("set_content_from_parsable", result);
-        Assert.Contains("add_request_options", result);
         Assert.Contains("return request_info", result);
     }
     [Fact]
@@ -219,7 +216,9 @@ public class CodeMethodWriterTests : IDisposable {
         AddInheritanceClass();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("update(super().", result);
+        Assert.Contains("super_fields = super()", result);
+        Assert.Contains("fields.update(super_fields)", result);
+        Assert.Contains("return fields", result);
     }
     [Fact]
     public void WritesDeSerializerBody() {
@@ -268,7 +267,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("write_collection_of_primitive_values", result);
         Assert.Contains("write_collection_of_object_values", result);
         Assert.Contains("write_enum_value", result);
-        Assert.Contains("write_additional_data(self.additional_data)", result);
+        Assert.Contains("write_additional_data_value(self.additional_data)", result);
     }
     [Fact]
     public void WritesMethodAsyncDescription() {
@@ -435,14 +434,7 @@ public class CodeMethodWriterTests : IDisposable {
     public void WritesConstructor() {
         method.Kind = CodeMethodKind.Constructor;
         method.IsAsync = false;
-        var defaultValue = "someVal";
-        var propName = "prop_with_default_value";
         parentClass.Kind = CodeClassKind.RequestBuilder;
-        parentClass.AddProperty(new CodeProperty {
-            Name = propName,
-            DefaultValue = defaultValue,
-            Kind = CodePropertyKind.UrlTemplate,
-        });
         AddRequestProperties();
         method.AddParameter(new CodeParameter {
             Name = "pathParameters",
@@ -453,7 +445,6 @@ public class CodeMethodWriterTests : IDisposable {
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains($"self.{propName} = {defaultValue}", result);
         Assert.Contains("get_path_parameters", result);
     }
     [Fact]
