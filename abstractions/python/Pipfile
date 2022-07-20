@@ -9,7 +9,7 @@ uritemplate = "==4.1.1"
 [dev-packages]
 flit = "==3.7.1"
 pylint = "==2.14.5"
-mypy = "==0.961"
+mypy = "==0.971"
 yapf = "==0.32.0"
 isort = "==5.10.1"
 toml =  "==0.10.2" 
