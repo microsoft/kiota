@@ -76,11 +76,11 @@ module MicrosoftKiotaAuthentication
       token
     end
 
-    attr_reader :scopes, :cached_token, :host_validator
+    attr_reader :scopes, :host_validator
     
-    private
+    protected
 
-    attr_writer :host_validator, :token_credential, :scopes
+    attr_writer :host_validator, :token_credential, :scopes, :cached_token
 
     def on_behalf_of_get_authorization_token(additional_properties = {})
       params = {
