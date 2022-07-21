@@ -84,7 +84,12 @@ public class PythonConventionService : CommonLanguageConventionService
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
     public override string TranslateType(CodeType type) {
         if (type.IsExternal)
-            return type.Name switch  {
+            return TranslateExternalType(type);     
+        else
+            return TranslateInternalType(type);
+    }
+    private static string TranslateExternalType(CodeType type) {
+        return type.Name switch  {
                 "String" or "string" => "str",
                 "integer" or "int32" or "int64" or "byte" or "sbyte" => "int",
                 "decimal" or "double" => "float",
@@ -95,8 +100,9 @@ public class PythonConventionService : CommonLanguageConventionService
                 "Object" or "object" or "float" or "bytes" or "datetime" or "timespan" => type.Name,
                 _ => type.Name.ToFirstCharacterUpperCase().Replace("IParseNode", "ParseNode") ?? "object",
             };
-        else
-            if (type.Name.Contains("RequestConfiguration"))
+    }
+    private static string TranslateInternalType(CodeType type) {
+        if (type.Name.Contains("RequestConfiguration"))
                 return type.TypeDefinition?.Name.ToFirstCharacterUpperCase();
             else if (type.Name.Contains("QueryParameters"))
                 return type.Name;
@@ -113,7 +119,7 @@ public class PythonConventionService : CommonLanguageConventionService
                     _ => $"{type.Name.ToSnakeCase()}.{type.Name.ToFirstCharacterUpperCase()}" ?? "object",
                 };
     }
-    
+
     #pragma warning disable CA1822 // Method should be static
     public bool TypeExistInSameClassAsTarget(CodeTypeBase currentType, CodeElement targetElement)
         {

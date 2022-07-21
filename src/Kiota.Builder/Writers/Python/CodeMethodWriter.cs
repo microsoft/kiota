@@ -303,7 +303,7 @@ namespace Kiota.Builder.Writers.Python {
         private void WriteSerializerBody(bool inherits, CodeClass parentClass, LanguageWriter writer) {
             var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
             if(inherits)
-            writer.WriteLine("super().serialize(writer)");
+                writer.WriteLine("super().serialize(writer)");
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
                 writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name}\", self.{otherProp.Name.ToSnakeCase()})");
             }
