@@ -31,6 +31,7 @@ GEM
     parallel (1.22.1)
     parser (3.1.2.0)
       ast (~> 2.4.1)
+    pg (1.4.1-x64-mingw-ucrt)
     public_suffix (4.0.7)
     rack (2.2.4)
     rainbow (3.1.1)
@@ -77,6 +78,7 @@ DEPENDENCIES
   concurrent-ruby (~> 1.1, >= 1.1.9)
   microsoft_kiota_abstractions!
   oauth2 (~> 2.0)
+  pg
   rake (~> 13.0)
   rspec (~> 3.0)
   rubocop
