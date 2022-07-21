@@ -1,10 +1,8 @@
 # frozen_string_literal: true
 
-require_relative "lib/microsoft_kiota_authentication/version"
-
 Gem::Specification.new do |spec|
   spec.name          = "microsoft_kiota_authentication"
-  spec.version       = MicrosoftKiotaAuthentication::VERSION
+  spec.version       = "0.0.1"
   spec.authors       = 'Microsoft Corporation'
   spec.email         = 'graphsdkpub@microsoft.com'
   spec.description   = 'Kiota Authentication implementation with oauth2'
@@ -30,4 +28,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   
   spec.add_dependency 'concurrent-ruby', '~> 1.1', '>= 1.1.9'
+  spec.add_dependency 'addressable', '~> 2.7', '>= 2.7.0'
+  spec.add_dependency "oauth2", "~> 2.0"
+
 end
