@@ -12,7 +12,8 @@ namespace Kiota.Builder.Writers.Python {
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
             var parentClass = codeElement.Parent as CodeClass;
             /* Only write specific properties as class attributes
-            * The rest will be implemented as instance attributes, to avoid mutable properties from being modified across instances 
+            * The rest will be implemented as instance attributes, to avoid mutable properties
+            * from being modified across instances. 
             */
             switch(codeElement.Kind) {
                 case CodePropertyKind.RequestBuilder:

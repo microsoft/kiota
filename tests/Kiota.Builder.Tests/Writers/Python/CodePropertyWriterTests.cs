@@ -29,6 +29,9 @@ namespace Kiota.Builder.Writers.Python.Tests {
                 Name = TypeName
             };
             parentClass.AddProperty(property, new() {
+                Name = "pathParameters",
+                Kind = CodePropertyKind.PathParameters,
+            }, new() {
                 Name = "requestAdapter",
                 Kind = CodePropertyKind.RequestAdapter,
             });
@@ -38,11 +41,21 @@ namespace Kiota.Builder.Writers.Python.Tests {
             GC.SuppressFinalize(this);
         }
         [Fact]
+        public void WritesRequestBuilder() {
+            property.Kind = CodePropertyKind.RequestBuilder;
+            writer.Write(property);
+            var result = tw.ToString();
+            Assert.Contains($"def property_name(", result);
+            Assert.Contains($"return {TypeName.ToLower()}.{TypeName}(", result);
+            Assert.Contains("self.request_adapter", result);
+            Assert.Contains("self.path_parameters", result);
+        }
+        [Fact]
         public void WritesQueryParameters() {
             property.Kind = CodePropertyKind.QueryParameters;
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains($"property_name: Optional[somecustomtype.Somecustomtype]", result);
+            Assert.Contains($"property_name: Optional[{TypeName.ToLower()}.{TypeName}]", result);
         }
         [Fact]
         public void WritesDefaultValuesForProperties() {
