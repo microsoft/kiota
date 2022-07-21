@@ -66,11 +66,29 @@ public class CodeMethodWriterTests : IDisposable {
         addData.Type = new CodeType {
             Name = "string"
         };
-        var dummyProp = parentClass.AddProperty(new CodeProperty {
-            Name = "dummyProp",
+        var dummyString = parentClass.AddProperty(new CodeProperty {
+            Name = "dummyString",
         }).First();
-        dummyProp.Type = new CodeType {
+        dummyString.Type = new CodeType {
             Name = "string"
+        };
+        var dummyInteger = parentClass.AddProperty(new CodeProperty {
+            Name = "dummyInteger",
+        }).First();
+        dummyInteger.Type = new CodeType {
+            Name = "integer"
+        };
+        var dummyBoolean = parentClass.AddProperty(new CodeProperty {
+            Name = "dummyBoolean",
+        }).First();
+        dummyBoolean.Type = new CodeType {
+            Name = "boolean"
+        };
+        var dummyFloat = parentClass.AddProperty(new CodeProperty {
+            Name = "dummyFloat",
+        }).First();
+        dummyFloat.Type = new CodeType {
+            Name = "decimal"
         };
         var dummyClass = parentClass.AddProperty(new CodeProperty {
             Name = "dummyClass",
@@ -82,7 +100,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "dummyStream",
         }).First();
         dummyStream.Type = new CodeType {
-            Name = "bytes"
+            Name = "binary"
         };
         var dummyCollectionProp = parentClass.AddProperty(new CodeProperty {
             Name = "dummyColl",
@@ -284,6 +302,9 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("get_str_value", result);
+        Assert.Contains("get_int_value", result);
+        Assert.Contains("get_float_value", result);
+        Assert.Contains("get_bool_value", result);
         Assert.Contains("get_bytes_value", result);
         Assert.Contains("get_object_value", result);
         Assert.Contains("get_collection_of_primitive_values", result);
@@ -550,6 +571,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = propName,
             DefaultValue = defaultValue,
             Kind = CodePropertyKind.UrlTemplate,
+            Description = "This property has a description",
             Type = new CodeType {
                 Name = "string"
             }
@@ -566,6 +588,7 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("super().__init__()", result);
+        Assert.Contains("has a description", result);
         Assert.Contains($"self.{propName}: Optional[str] = {defaultValue}", result);
         Assert.Contains("get_path_parameters", result);
     }

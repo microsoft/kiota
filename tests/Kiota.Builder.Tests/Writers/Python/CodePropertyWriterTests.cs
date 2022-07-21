@@ -43,9 +43,11 @@ namespace Kiota.Builder.Writers.Python.Tests {
         [Fact]
         public void WritesRequestBuilder() {
             property.Kind = CodePropertyKind.RequestBuilder;
+            property.Description = "This is a request builder";
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"def property_name(", result);
+            Assert.Contains($"This is a request builder", result);
             Assert.Contains($"return {TypeName.ToLower()}.{TypeName}(", result);
             Assert.Contains("self.request_adapter", result);
             Assert.Contains("self.path_parameters", result);
