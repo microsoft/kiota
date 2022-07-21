@@ -72,6 +72,18 @@ public class CodeMethodWriterTests : IDisposable {
         dummyProp.Type = new CodeType {
             Name = "string"
         };
+        var dummyClass = parentClass.AddProperty(new CodeProperty {
+            Name = "dummyClass",
+        }).First();
+        dummyClass.Type = new CodeType {
+            Name = "dummyClass"
+        };
+        var dummyStream = parentClass.AddProperty(new CodeProperty {
+            Name = "dummyStream",
+        }).First();
+        dummyStream.Type = new CodeType {
+            Name = "bytes"
+        };
         var dummyCollectionProp = parentClass.AddProperty(new CodeProperty {
             Name = "dummyColl",
         }).First();
@@ -272,6 +284,8 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("get_str_value", result);
+        Assert.Contains("get_bytes_value", result);
+        Assert.Contains("get_object_value", result);
         Assert.Contains("get_collection_of_primitive_values", result);
         Assert.Contains("get_collection_of_object_values", result);
         Assert.Contains("get_enum_value", result);
@@ -363,6 +377,11 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Throws<InvalidOperationException>(() => codeMethodWriter.WriteCodeElement(method, writer));
     }
     [Fact]
+    public void ThrowsIfMethodIsRawUrlConstructor() {
+        method.Kind = CodeMethodKind.RawUrlConstructor;
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+    }
+    [Fact]
     public void ThrowsIfParentIsNotClass() {
         method.Parent = CodeNamespace.InitRootNamespace();
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
@@ -393,6 +412,15 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("async", result);
+    }
+    [Fact]
+    public void WritesFactoryMethods() {
+        method.Kind = CodeMethodKind.Factory;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("@staticmethod", result);
+        Assert.DoesNotContain("self", result);
+
     }
     [Fact]
     public void WritesPublicMethodByDefault() {
@@ -451,7 +479,16 @@ public class CodeMethodWriterTests : IDisposable {
         method.Kind = CodeMethodKind.Getter;
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("self.backing_store.get(\"some_property\")", result);
+        Assert.Contains("@property", result);
+        Assert.Contains("return self.backing_store.get(\"some_property\")", result);
+    }
+    [Fact]
+    public void WritesGetterNullBackingStore() {
+        method.AddAccessedProperty();
+        method.Kind = CodeMethodKind.Getter;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("return self.some_property", result);
     }
     [Fact]
     public void WritesGetterToBackingStoreWithNonnullProperty() {
@@ -468,6 +505,14 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.Contains("if not value:", result);
         Assert.Contains(defaultValue, result);
+    }
+    [Fact]
+    public void WritesSetterNullBackingStore() {
+        method.AddAccessedProperty();
+        method.Kind = CodeMethodKind.Setter;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("self.some_property = value", result);
     }
     [Fact]
     public void WritesSetterToBackingStore() {
@@ -520,6 +565,7 @@ public class CodeMethodWriterTests : IDisposable {
         });
         writer.Write(method);
         var result = tw.ToString();
+        Assert.DoesNotContain("super().__init__()", result);
         Assert.Contains($"self.{propName}: Optional[str] = {defaultValue}", result);
         Assert.Contains("get_path_parameters", result);
     }
@@ -615,5 +661,33 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("if original_name == \"filter\":", result);
         Assert.Contains("return \"%24filter\"", result);
         Assert.Contains("return original_name", result);
+    }
+    [Fact]
+    public void MapperMethodFailsIfNoQueryParametersMapperParameter() {
+        method.Kind = CodeMethodKind.QueryParametersMapper;
+        method.IsAsync = false;
+        parentClass.AddProperty(new CodeProperty {
+            Name = "select",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "%24select"
+        },
+        new CodeProperty {
+            Name = "expand",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "%24expand"
+        },
+        new CodeProperty {
+            Name = "filter",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "%24filter"
+        });
+        method.AddParameter(new CodeParameter{
+            Kind = CodeParameterKind.RawUrl,
+            Name = "originalName",
+            Type = new CodeType {
+                Name = "string",
+            }
+        });
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
 }

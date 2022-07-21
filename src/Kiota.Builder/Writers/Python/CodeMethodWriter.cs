@@ -71,7 +71,7 @@ namespace Kiota.Builder.Writers.Python {
                     WriteQueryParametersMapper(codeElement, parentClass, writer);
                     break;
                 case CodeMethodKind.RawUrlConstructor:
-                    throw new InvalidOperationException("RawUrlConstructor is not supported as typescript relies on union types.");
+                    throw new InvalidOperationException("RawUrlConstructor is not supported in python");
                 case CodeMethodKind.RequestBuilderBackwardCompatibility:
                     throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
                 default:
@@ -376,7 +376,7 @@ namespace Kiota.Builder.Writers.Python {
             return propertyType switch
             {
                 "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"get_{propertyType.ToSnakeCase()}_value()",
-                "bytes" => "get_byte_array_value()",
+                "bytes" => "get_bytes_value()",
                 _ => $"get_object_value({propertyType.ToCamelCase()})",
             };
         }
