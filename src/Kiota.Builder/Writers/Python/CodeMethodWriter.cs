@@ -8,7 +8,6 @@ namespace Kiota.Builder.Writers.Python {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionService>
     {
         public CodeMethodWriter(PythonConventionService conventionService) : base(conventionService){}
-        private PythonConventionService localConventions;
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
@@ -16,8 +15,7 @@ namespace Kiota.Builder.Writers.Python {
             if(writer == null) throw new ArgumentNullException(nameof(writer));
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
-            localConventions = new PythonConventionService(writer); //because we allow inline type definitions for method parameters
-            var returnType = localConventions.GetTypeString(codeElement.ReturnType, codeElement);
+            var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
             var isVoid = "None".Equals(returnType, StringComparison.OrdinalIgnoreCase);
             WriteMethodPrototype(codeElement, writer, returnType, isVoid);
             writer.IncreaseIndent();
@@ -83,15 +81,15 @@ namespace Kiota.Builder.Writers.Python {
         }
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer) {
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-            localConventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"self.{pathParametersProperty.Name}",
+            conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"self.{pathParametersProperty.Name}",
                 (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, "id"));
-            localConventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
+            conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
         }
         private void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer)
         {
             var codePathParameters = codeElement.Parameters
                                                         .Where(x => x.IsOfKind(CodeParameterKind.Path));
-            localConventions.AddRequestBuilderBody(parentClass, returnType, writer, pathParameters: codePathParameters);
+            conventions.AddRequestBuilderBody(parentClass, returnType, writer, pathParameters: codePathParameters);
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
@@ -156,7 +154,7 @@ namespace Kiota.Builder.Writers.Python {
             if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                     var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
-                    localConventions.AddParametersAssignment(writer, 
+                    conventions.AddParametersAssignment(writer, 
                                                         pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
                                                         pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                         currentMethod.Parameters
@@ -239,7 +237,7 @@ namespace Kiota.Builder.Writers.Python {
                 writer.DecreaseIndent();
             }
             writer.WriteLine(")");
-            var isStream = localConventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
+            var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(codeElement, returnType);
             var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol);
             var newFactoryParameter = GetTypeFactory(isVoid, isStream, returnTypeWithoutCollectionSymbol);
@@ -291,7 +289,7 @@ namespace Kiota.Builder.Writers.Python {
                 writer.DecreaseIndent();
             }
             if(requestParams.requestBody != null) {
-                if(requestParams.requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+                if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}.set_stream_content({requestParams.requestBody.Name.ToSnakeCase()})");
                 else {
                     writer.WriteLine($"{RequestInfoVarName}.set_content_from_parsable(self.{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
@@ -316,27 +314,27 @@ namespace Kiota.Builder.Writers.Python {
             var nullablePrefix = code.ReturnType.IsNullable && !isVoid ? "Optional[" : string.Empty;
             var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? "]" : string.Empty;
             if (isDescriptionPresent || parametersWithDescription.Any()) {
-                writer.WriteLine(localConventions.DocCommentStart);
+                writer.WriteLine(conventions.DocCommentStart);
                 if(isDescriptionPresent)
-                    writer.WriteLine($"{localConventions.DocCommentPrefix}{PythonConventionService.RemoveInvalidDescriptionCharacters(code.Description)}");
+                    writer.WriteLine($"{conventions.DocCommentPrefix}{PythonConventionService.RemoveInvalidDescriptionCharacters(code.Description)}");
                 if(parametersWithDescription.Any()) {
                     writer.WriteLine($"Args:");
                     writer.IncreaseIndent();
                     
                     foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
-                        writer.WriteLine($"{localConventions.DocCommentPrefix}{paramWithDescription.Name}: {PythonConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
+                        writer.WriteLine($"{conventions.DocCommentPrefix}{paramWithDescription.Name}: {PythonConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
                     writer.DecreaseIndent();
                 }
                 if(!isVoid)
-                    writer.WriteLine($"{localConventions.DocCommentPrefix}Returns: {nullablePrefix}{returnType}{nullableSuffix}");
-                writer.WriteLine(localConventions.DocCommentEnd);
+                    writer.WriteLine($"{conventions.DocCommentPrefix}Returns: {nullablePrefix}{returnType}{nullableSuffix}");
+                writer.WriteLine(conventions.DocCommentEnd);
             }
         }
         private static readonly PythonCodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
             if (code.IsOfKind(CodeMethodKind.Factory))
                 writer.WriteLine("@staticmethod");
-            var accessModifier = localConventions.GetAccessModifier(code.Access);
+            var accessModifier = conventions.GetAccessModifier(code.Access);
             var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
             var methodName = (code.Kind switch {
                 _ when code.IsAccessor => code.AccessedProperty?.Name,
@@ -345,7 +343,7 @@ namespace Kiota.Builder.Writers.Python {
             })?.ToSnakeCase();
             var asyncPrefix = code.IsAsync && code.Kind is CodeMethodKind.RequestExecutor ? "async ": string.Empty;
             var instanceReference = code.IsOfKind(CodeMethodKind.Factory) ? string.Empty: "self,";
-            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> localConventions.GetParameterSignature(p, code)).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code)).ToList());
             var nullablePrefix = code.ReturnType.IsNullable && !isVoid ? "Optional[" : string.Empty;
             var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? "]" : string.Empty;
             var propertyDecorator  = code.Kind switch {
@@ -361,8 +359,8 @@ namespace Kiota.Builder.Writers.Python {
         }
         private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod codeElement) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = localConventions.TranslateType(propType);
-            if (localConventions.TypeExistInSameClassAsTarget(propType, codeElement))
+            var propertyType = conventions.TranslateType(propType);
+            if (conventions.TypeExistInSameClassAsTarget(propType, codeElement))
                 propertyType = codeElement.Parent.Name.ToFirstCharacterUpperCase();
             if(propType is CodeType currentType) {
                 if(currentType.TypeDefinition is CodeEnum currentEnum)
@@ -382,7 +380,7 @@ namespace Kiota.Builder.Writers.Python {
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = localConventions.TranslateType(propType);
+            var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(currentType.TypeDefinition is CodeEnum)
                     return $"write_enum_value";
