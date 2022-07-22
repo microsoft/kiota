@@ -14,8 +14,8 @@ namespace Kiota.Builder.Writers.Python {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
             if(writer == null) throw new ArgumentNullException(nameof(writer));
             var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
-            AddExternalImports(codeElement, writer); // external imports before internal imports
-            AddInternalImports(codeElement, writer, parentNamespace);
+            WriteExternalImports(codeElement, writer); // external imports before internal imports
+            WriteInternalImports(codeElement, writer, parentNamespace);
             
             var inheritSymbol = conventions.GetTypeString(codeElement.Inherits, codeElement);
             var abcClass = !codeElement.Implements.Any() ? string.Empty : $"{codeElement.Implements.Select(x => x.Name.ToFirstCharacterUpperCase()).Aggregate((x,y) => x + ", " + y)}";
@@ -28,7 +28,7 @@ namespace Kiota.Builder.Writers.Python {
             conventions.WriteShortDescription((codeElement.Parent as CodeClass).Description, writer);
         }
         
-        private static void AddExternalImports(ClassDeclaration codeElement, LanguageWriter writer) {
+        private static void WriteExternalImports(ClassDeclaration codeElement, LanguageWriter writer) {
             var externalImportSymbolsAndPaths = codeElement.Usings
                                                             .Where(x => x.IsExternal)
                                                             .Select(x => (x.Name, string.Empty, x.Declaration?.Name))
@@ -47,7 +47,7 @@ namespace Kiota.Builder.Writers.Python {
             }
         }
 
-        private void AddInternalImports(ClassDeclaration codeElement, LanguageWriter writer, CodeNamespace parentNameSpace) {
+        private void WriteInternalImports(ClassDeclaration codeElement, LanguageWriter writer, CodeNamespace parentNameSpace) {
             var internalImportSymbolsAndPaths = codeElement.Usings
                                                             .Where(x => !x.IsExternal)
                                                             .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNameSpace))
