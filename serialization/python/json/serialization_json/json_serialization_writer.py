@@ -85,8 +85,7 @@ class JsonSerializationWriter(SerializationWriter):
             return str(value)
         return None
 
-    def write_datetime_value(self, key: Optional[str],
-                                    value: Optional[datetime]) -> Optional[str]:
+    def write_datetime_value(self, key: Optional[str], value: Optional[datetime]) -> Optional[str]:
         """Writes the specified datetime offset value to the stream with an optional given key.
         Args:
             key (Optional[str]): The key to be used for the written value. May be null.
@@ -149,8 +148,9 @@ class JsonSerializationWriter(SerializationWriter):
             return list(map(lambda x: self.write_any_value(None, x), values))
         return None
 
-    def write_collection_of_object_values(self, key: Optional[str],
-                                          values: Optional[List[U]]) -> Optional[List[Dict]]:
+    def write_collection_of_object_values(
+        self, key: Optional[str], values: Optional[List[U]]
+    ) -> Optional[List[Optional[Dict]]]:
         """Writes the specified collection of model objects to the stream with an optional
         given key.
         Args:
@@ -158,13 +158,11 @@ class JsonSerializationWriter(SerializationWriter):
             values (Optional[List[U]]): The collection of model objects to be written.
         """
         if key and (values or values == []):
-            obj_list = list(
-                map(lambda x: self.write_object_value(None, x), values)
-            )# type: ignore
+            obj_list = list(map(lambda x: self.write_object_value(None, x), values))  # type: ignore
             if obj_list != [None]:
                 self.writer[key] = obj_list
         elif (values or values == []) and not key:
-            obj_list =  list(map(lambda x: self.write_object_value(None, x), values))  # type: ignore
+            obj_list = list(map(lambda x: self.write_object_value(None, x), values))  # type: ignore
             if obj_list != [None]:
                 return obj_list
         return None
@@ -373,7 +371,6 @@ class JsonSerializationWriter(SerializationWriter):
                 self.write_non_parsable_object_value(key, value)
             else:
                 raise Exception(f"Encountered an unknown type during serialization {value_type}")
-
 
         elif value and not key:
             value_type = type(value)

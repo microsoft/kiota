@@ -33,7 +33,7 @@ class JsonParseNodeFactory(ParseNodeFactory):
 
         if not content:
             raise TypeError("Content cannot be null")
-        
+
         content_as_str = content.decode('utf-8')
         content_dict = json.loads(content_as_str)
         return JsonParseNode(content_dict)

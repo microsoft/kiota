@@ -78,8 +78,11 @@ disable=long-suffix,
         missing-class-docstring,
         missing-function-docstring,
         C0103,
+        E0110,
         R0801,
         R0904,
+        R0911,
+        R0912,
 
 
 # Enable the message, report, category or checker with the given id(s). You can
