@@ -20,7 +20,6 @@ namespace Kiota.Builder.Writers.Python {
             WriteMethodPrototype(codeElement, writer, returnType, isVoid);
             writer.IncreaseIndent();
             WriteMethodDocumentation(codeElement, writer, returnType, isVoid);
-            var parentClass = codeElement.Parent as CodeClass;
             var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var requestConfigParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
@@ -343,7 +342,10 @@ namespace Kiota.Builder.Writers.Python {
             })?.ToSnakeCase();
             var asyncPrefix = code.IsAsync && code.Kind is CodeMethodKind.RequestExecutor ? "async ": string.Empty;
             var instanceReference = code.IsOfKind(CodeMethodKind.Factory) ? string.Empty: "self,";
-            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code)).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer)
+                                                            .Select(p=> new PythonConventionService(writer) // requires a writer instance because method parameters use inline type definitions
+                                                            .GetParameterSignature(p, code))
+                                                            .ToList());
             var nullablePrefix = code.ReturnType.IsNullable && !isVoid ? "Optional[" : string.Empty;
             var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? "]" : string.Empty;
             var propertyDecorator  = code.Kind switch {
