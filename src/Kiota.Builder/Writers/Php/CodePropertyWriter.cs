@@ -39,7 +39,7 @@ namespace Kiota.Builder.Writers.Php
             {
                 writer.WriteLine($"{conventions.DocCommentPrefix}@QueryParameter(\"{codeProperty.SerializationName}\")");
             }
-            writer.WriteLine($"{conventions.DocCommentPrefix}@var {typeString}{(codeProperty.Type.IsNullable ? "|null" : string.Empty)} ${codeProperty.Name} " +
+            writer.WriteLine($"{conventions.DocCommentPrefix}@var {typeString}{(codeProperty.Type.IsNullable ? "|null" : string.Empty)} ${codeProperty.Name.ToFirstCharacterLowerCase()} " +
                              $"{(hasDescription ? propertyDescription : string.Empty)}");
             writer.WriteLine(conventions.DocCommentEnd);
         }
