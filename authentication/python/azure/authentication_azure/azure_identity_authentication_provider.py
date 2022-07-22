@@ -13,7 +13,7 @@ class AzureIdentityAuthenticationProvider(BaseBearerTokenAuthenticationProvider)
     def __init__(
         self,
         credentials: "AsyncTokenCredential",
-        options: Optional[Dict],
+        options: Optional[Dict] = None,
         scopes: List[str] = ['https://graph.microsoft.com/.default'],
         allowed_hosts: Set[str] = {
             'graph.microsoft.com', 'graph.microsoft.us', 'dod-graph.microsoft.us',
