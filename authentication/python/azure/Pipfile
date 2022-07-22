@@ -19,3 +19,4 @@ pylint = {version="2.12.2", index="pypi"}
 mypy = {version="0.910", index="pypi"}
 yapf = {version="0.31.0", index="pypi"}
 isort = {version="5.10.1", index="pypi"}
+toml = {version="0.10.2", index="pypi"}

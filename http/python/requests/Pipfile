@@ -28,3 +28,4 @@ asyncmock = {version="0.4.2", index="pypi"}
 responses = {version="0.21.0", index="pypi"}
 types-requests = {version="*", index="pypi"}
 kiota-serialization-json = {version="*", index="testpypi"}
+toml = {version="0.10.2", index="pypi"}
