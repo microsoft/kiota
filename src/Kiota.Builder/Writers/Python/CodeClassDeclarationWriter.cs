@@ -25,7 +25,7 @@ namespace Kiota.Builder.Writers.Python {
             }
             writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}({derivation}):");
             writer.IncreaseIndent();
-            conventions.WriteShortDescription((codeElement.Parent as CodeClass).Description, writer);
+            conventions.WriteShortDescription((codeElement.Parent as CodeClass)?.Description, writer);
         }
         
         private static void WriteExternalImports(ClassDeclaration codeElement, LanguageWriter writer) {
