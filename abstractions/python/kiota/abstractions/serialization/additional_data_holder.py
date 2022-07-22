@@ -15,8 +15,3 @@ class AdditionalDataHolder(ABC):
             Dict[str, Any]: The additional data for this object
         """
         pass
-
-    @additional_data.setter
-    @abstractmethod
-    def additional_data(self, value):
-        pass

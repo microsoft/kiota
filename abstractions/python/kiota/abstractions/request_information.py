@@ -1,5 +1,5 @@
-from io import BytesIO
 from dataclasses import fields
+from io import BytesIO
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
 
 from uritemplate import URITemplate
@@ -37,7 +37,7 @@ class RequestInformation(Generic[QueryParams]):
         self.url_template: Optional[str] = None
 
         # The HTTP Method for the request
-        self.http_method: Method = None
+        self.http_method: Optional[Method] = None
 
         # The query parameters for the request
         self.query_parameters: Dict[str, QueryParams] = {}
@@ -46,7 +46,7 @@ class RequestInformation(Generic[QueryParams]):
         self.headers: Dict[str, str] = {}
 
         # The Request Body
-        self.content: BytesIO = None
+        self.content: Optional[BytesIO] = None
 
     @property
     def url(self) -> Url:
@@ -163,7 +163,8 @@ class RequestInformation(Generic[QueryParams]):
                 self.query_parameters[key] = getattr(q, field.name)
 
     def _get_serialization_writer(
-        self, request_adapter: 'RequestAdapter', content_type: str, values: Union[T, List[T]]
+        self, request_adapter: Optional['RequestAdapter'], content_type: Optional[str],
+        values: Union[T, List[T]]
     ):
         """_summary_
 
@@ -181,9 +182,9 @@ class RequestInformation(Generic[QueryParams]):
         return request_adapter.get_serialization_writer_factory(
         ).get_serialization_writer(content_type)
 
-    def _set_content_and_content_type(self, writer: SerializationWriter, content_type: str):
+    def _set_content_and_content_type(
+        self, writer: SerializationWriter, content_type: Optional[str]
+    ):
         if content_type:
             self.headers[self.CONTENT_TYPE_HEADER] = content_type
-        print(writer.writer)
         self.content = writer.get_serialized_content()
-        print(self.content)
