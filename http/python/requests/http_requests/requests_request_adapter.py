@@ -115,7 +115,6 @@ class RequestsRequestAdapter(RequestAdapter):
 
         if response_handler:
             return await response_handler.handle_response_async(response, error_map)
-
         await self.throw_failed_responses(response, error_map)
         if self._should_return_none(response):
             return None
@@ -142,7 +141,6 @@ class RequestsRequestAdapter(RequestAdapter):
         """
         if not request_info:
             raise TypeError("Request info cannot be null")
-
         response = await self.get_http_response_message(request_info)
 
         if response_handler:
@@ -180,7 +178,6 @@ class RequestsRequestAdapter(RequestAdapter):
 
         if response_handler:
             return await response_handler.handle_response_async(response, error_map)
-
         await self.throw_failed_responses(response, error_map)
         if self._should_return_none(response):
             return None
@@ -272,7 +269,6 @@ class RequestsRequestAdapter(RequestAdapter):
     async def get_root_parse_node(self, response: requests.Response) -> ParseNode:
         payload = response.content
         response_content_type = self.get_response_content_type(response)
-        
         if not response_content_type:
             raise Exception("No response content type found for deserialization")
 
@@ -286,6 +282,7 @@ class RequestsRequestAdapter(RequestAdapter):
     ) -> None:
         if response.ok:
             return
+
         status_code = response.status_code
         status_code_str = str(response.status_code)
 
@@ -322,20 +319,20 @@ class RequestsRequestAdapter(RequestAdapter):
         await self._authentication_provider.authenticate_request(request_info)
 
         request = self.get_request_from_request_information(request_info)
-        return self._http_client.client.send(request)
+        return self._http_client.client.send(request, request_options=request_info.request_options)
 
     def set_base_url_for_request_information(self, request_info: RequestInformation) -> None:
-        request_info.path_parameters["base_url"] = self.base_url
+        request_info.path_parameters["baseurl"] = self.base_url
 
     def get_request_from_request_information(
         self, request_info: RequestInformation
     ) -> requests.PreparedRequest:
         req = requests.Request(
-            method=str(request_info.http_method),
-            url=request_info.get_url(),
-            headers=request_info.get_request_headers(),
+            method=request_info.http_method.value,
+            url=request_info.url,
+            headers=request_info.request_headers,
             data=request_info.content,
-            params=request_info.query_parameters,
+            # params=request_info.query_parameters,
         )
         prepared_request = req.prepare()
         return prepared_request
