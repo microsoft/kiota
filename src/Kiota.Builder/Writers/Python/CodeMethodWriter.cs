@@ -13,7 +13,7 @@ namespace Kiota.Builder.Writers.Python {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
             if(codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
             if(writer == null) throw new ArgumentNullException(nameof(writer));
-            if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
+            if(!(codeElement.Parent is CodeClass parentClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
             var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
             var isVoid = "None".Equals(returnType, StringComparison.OrdinalIgnoreCase);
