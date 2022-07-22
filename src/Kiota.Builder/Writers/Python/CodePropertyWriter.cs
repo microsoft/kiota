@@ -24,7 +24,10 @@ namespace Kiota.Builder.Writers.Python {
                     writer.DecreaseIndent();
                     writer.WriteLine();
                 break;
-                case CodePropertyKind.QueryParameters: case CodePropertyKind.Headers: case CodePropertyKind.Options: case CodePropertyKind.QueryParameter:
+                case CodePropertyKind.QueryParameters:
+                case CodePropertyKind.Headers:
+                case CodePropertyKind.Options:
+                case CodePropertyKind.QueryParameter:
                     conventions.WriteInLineDescription(codeElement.Description, writer);
                     writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name.ToSnakeCase()}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} = None");
                     writer.WriteLine();
