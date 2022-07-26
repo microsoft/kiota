@@ -266,8 +266,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
 
     def _assign_field_values(self, item: U) -> None:
         fields = item.get_field_deserializers()
-        item_additional_data: Optional[Dict[str, Any]] = None
-        if isinstance(item, AdditionalDataHolder) and item.additional_data:
+        if isinstance(item, AdditionalDataHolder):
             item_additional_data = item.additional_data
         object_dict = self._json_node
         for key, val in object_dict.items():
@@ -276,5 +275,5 @@ class JsonParseNode(ParseNode, Generic[T, U]):
             if deserializer:
                 deserializer(JsonParseNode(val))
             else:
-                if item_additional_data:
-                    item_additional_data[snake_case_key] = val
+                # if item_additional_data:
+                item_additional_data[snake_case_key] = val

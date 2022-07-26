@@ -346,9 +346,9 @@ class JsonSerializationWriter(SerializationWriter):
         if key and value:
             value_type = type(value)
             if value_type == bool:
-                self.write_boolean_value(key, value)
+                self.write_bool_value(key, value)
             elif value_type == str:
-                self.write_string_value(key, value)
+                self.write_str_value(key, value)
             elif value_type == int:
                 self.write_int_value(key, value)
             elif value_type == float:
@@ -356,7 +356,7 @@ class JsonSerializationWriter(SerializationWriter):
             elif value_type == UUID:
                 self.write_uuid_value(key, value)
             elif value_type == datetime:
-                self.write_datetime_offset_value(key, value)
+                self.write_datetime_value(key, value)
             elif value_type == timedelta:
                 self.write_timedelta_value(key, value)
             elif value_type == date:
@@ -375,9 +375,9 @@ class JsonSerializationWriter(SerializationWriter):
         elif value and not key:
             value_type = type(value)
             if value_type == bool:
-                return self.write_boolean_value(None, value)
+                return self.write_bool_value(None, value)
             if value_type == str:
-                return self.write_string_value(None, value)
+                return self.write_str_value(None, value)
             if value_type == int:
                 return self.write_int_value(None, value)
             if value_type == float:
@@ -385,7 +385,7 @@ class JsonSerializationWriter(SerializationWriter):
             if value_type == UUID:
                 return self.write_uuid_value(None, value)
             if value_type == datetime:
-                return self.write_datetime_offset_value(None, value)
+                return self.write_datetime_value(None, value)
             if value_type == timedelta:
                 return self.write_timedelta_value(None, value)
             if value_type == date:
