@@ -11,6 +11,7 @@ using Kiota.Builder.Writers.Ruby;
 using Kiota.Builder.Writers.Shell;
 using Kiota.Builder.Writers.TypeScript;
 using Kiota.Builder.Writers.Php;
+using Kiota.Builder.Writers.Swift;
 
 namespace Kiota.Builder.Writers
 {
@@ -85,10 +86,10 @@ namespace Kiota.Builder.Writers
         {
             if(Writers.TryGetValue(code.GetType(), out var elementWriter))
                 switch(code) {
-                    case CodeProperty p: // we have to do this triage because dotnet is limited in terms of covariance
+                    case CodeProperty p when !p.ExistsInBaseType: // to avoid duplicating props on inheritance structure
                         ((ICodeElementWriter<CodeProperty>) elementWriter).WriteCodeElement(p, this);
                         break;
-                    case CodeIndexer i:
+                    case CodeIndexer i: // we have to do this triage because dotnet is limited in terms of covariance
                         ((ICodeElementWriter<CodeIndexer>) elementWriter).WriteCodeElement(i, this);
                         break;
                     case ClassDeclaration d:
@@ -127,17 +128,18 @@ namespace Kiota.Builder.Writers
                 Writers[typeof(T)] = writer;
         }
         private readonly Dictionary<Type, object> Writers = new(); // we have to type as object because dotnet doesn't have type capture i.e eq for `? extends CodeElement`
-        public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName) {
+        public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName, bool usesBackingStore = false) {
             return language switch
             {
                 GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
-                GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName),
+                GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName, usesBackingStore),
                 GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.PHP => new PhpWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.Go => new GoWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.PowerShell => new PowerShellWritter(outputPath, clientNamespaceName),
                 GenerationLanguage.Shell => new ShellWriter(outputPath, clientNamespaceName),
+                GenerationLanguage.Swift => new SwiftWriter(outputPath, clientNamespaceName),
                 _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),
             };
         }

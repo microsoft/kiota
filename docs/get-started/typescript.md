@@ -6,12 +6,12 @@ parent: Get started
 
 ## Required tools
 
-- [NodeJS 14](https://nodejs.org/en/)
+- [NodeJS 16](https://nodejs.org/en/)
 - [TypeScript](https://www.typescriptlang.org/)
 
 ## Target project requirements
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota/tree/main/abstractions/typescript), [authentication](https://github.com/microsoft/kiota/tree/main/authentication/typescript/azure), [http](https://github.com/microsoft/kiota/tree/main/http/typescript/fetch), and [serialization](https://github.com/microsoft/kiota/tree/main/serialization/typescript/json) packages from the GitHub feed.
+Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to install dependencies of the [abstractions](https://www.npmjs.com/package/@microsoft/kiota-abstractions), [authentication](https://www.npmjs.com/package/@microsoft/kiota-authentication-azure), [http fetch](https://www.npmjs.com/package/@microsoft/kiota-http-fetchlibrary), [serialization json](https://www.npmjs.com/package/@microsoft/kiota-serialization-json) and [serialization text](https://www.npmjs.com/package/@microsoft/kiota-serialization-text) packages from the npm registry.
 
 ## Creating target projects
 
@@ -27,28 +27,7 @@ npx tsc --init
 
 ## Adding dependencies
 
-### Getting access to the packages
-
-> **Note:** This is a temporary requirement while Kiota is in preview.
-
-1. Navigate to [New personal access token](https://github.com/settings/tokens/new) and generate a new token. (permissions: `package:read`, `repo`).
-1. Copy the token, you will need it later.
-1. Enable SSO for the Microsoft org on the token if you are a Microsoft employee.
-1. Add a new file named **.npmrc** in the root of the project with the following content.
-
-    ```conf
-    @microsoft:registry=https://npm.pkg.github.com/
-    ```
-
-1. Run the following command to authenticate NPM to the GitHub package server. When prompted, enter your GitHub username and use the personal access token you generated earlier as the password.
-
-    ```bash
-    npm login --scope=@microsoft --registry=https://npm.pkg.github.com
-    ```
-
-### Add Kiota and dependencies
-
-Once the package feed is accessible the following packages can be added to the project.
+The following packages can be added to the project.
 
 ```bash
 npm install @microsoft/kiota-abstractions

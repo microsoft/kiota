@@ -13,7 +13,10 @@ namespace Kiota.Builder.Writers.TypeScript {
             conventions.WriteShortDescription(codeElement.Description, writer);
             writer.WriteLine($"export enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
             writer.IncreaseIndent();
-            codeElement.Options.ToList().ForEach(x => writer.WriteLine($"{x.ToFirstCharacterUpperCase()} = \"{x}\","));
+            codeElement.Options.ToList().ForEach(x => {
+                conventions.WriteShortDescription(x.Description, writer);
+                writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()} = \"{x.SerializationName ?? x.Name}\",");
+            });
         }
     }
 }

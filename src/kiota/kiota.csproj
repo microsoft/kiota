@@ -2,13 +2,29 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <LangVersion>Latest</LangVersion>
     <TargetFramework>net6.0</TargetFramework>
     <PackAsTool>true</PackAsTool>
+    <PackageProjectUrl>https://github.com/microsoft/kiota</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <ToolCommandName>kiota</ToolCommandName>
+    <Authors>Microsoft</Authors>
+    <Company>Microsoft</Company>
+    <Title>Microsoft.OpenApi.Kiota</Title>
+    <PackageId>Microsoft.OpenApi.Kiota</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <Version>0.0.19</Version>
+    <Version>0.3.0-preview</Version>
+    <PackageReleaseNotes>
+      https://github.com/microsoft/kiota/releases
+    </PackageReleaseNotes>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/microsoft/kiota</RepositoryUrl>
+    <Description>OpenAPI based client generator.</Description>
+    <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
+    <PackageTags>OpenAPI .NET CSharp TypeScript Java Go PHP Python REST API</PackageTags>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\Microsoft.OpenApi.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,7 +39,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="6.0.0" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0-beta3.22114.1" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

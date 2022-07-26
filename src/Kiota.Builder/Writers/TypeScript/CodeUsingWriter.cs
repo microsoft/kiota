@@ -1,12 +1,12 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class CodeUsingWriter {
-    private readonly RelativeImportManager _relativeImportManager;
+    private readonly TypescriptRelativeImportManager _relativeImportManager;
     public CodeUsingWriter(string clientNamespaceName)
     {
-        _relativeImportManager = new RelativeImportManager(clientNamespaceName, '.');
+        _relativeImportManager = new TypescriptRelativeImportManager(clientNamespaceName, '.');
     }
     public void WriteCodeElement(IEnumerable<CodeUsing> usings, CodeNamespace parentNamespace, LanguageWriter writer ) {
         var externalImportSymbolsAndPaths = usings

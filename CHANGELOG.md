@@ -8,10 +8,196 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added support for no-content responses in python abstractions and http packages. [#1630](https://github.com/microsoft/kiota/issues/1459)
+- Added support for vendor-specific content types in python. [#1631](https://github.com/microsoft/kiota/issues/1463)
+- Simplified field deserializers for json in Python. [#1632](https://github.com/microsoft/kiota/issues/1492)
 
 ### Changed
 
+- Fixed a bug where collections types would generate invalid return types in CSharp.
+- Fixed a bug where a nullable entry in anyOf schemas would create unnecessary composed types.
+- Removed duplicate properties defined in base types from model serialization and deserialization methods and initialise property defaults in constructor. [#1737](https://github.com/microsoft/kiota/pull/1737)
+
+## [0.3.0] - 2022-07-08
+
+### Added
+
+- Added a more explicit error message for invalid schemas. [#1718](https://github.com/microsoft/kiota/issues/1718)
+- Added a parameter to specify why mime types to evaluate for models. [#134](https://github.com/microsoft/kiota/issues/134)
+- Added an explicit error message for external references in the schema. [#1580](https://github.com/microsoft/kiota/issues/1580)
+- Added accept header for all schematized requests. [#1607](https://github.com/microsoft/kiota/issues/1607)
+- Added support for paging. [#1569](https://github.com/microsoft/kiota/issues/1569)
+- Added support for vendor specific content types(PHP) [#1464](https://github.com/microsoft/kiota/issues/1464)
+- Added support for accept request header (PHP) [#1616](https://github.com/microsoft/kiota/issues/1616)
+- Added Getting Started steps for PHP. [#1642](https://github.com/microsoft/kiota/pull/1642)
+
+### Changed
+
+- Fixed a bug where query parameter types would not consider the format. [#1721](https://github.com/microsoft/kiota/issues/1721)
+- Fixed a bug where discriminator mappings across namespaces could create circular dependencies in Go. [#1712](https://github.com/microsoft/kiota/issues/1712)
+- Fixed a bug where Go binary downloads would try to parse a structured object.
+- Aligned mime types model generation behaviour for request bodies on response content. [#134](https://github.com/microsoft/kiota/issues/134)
+- Fixed an issue where some critical errors would not return a failed exit code. [#1605](https://github.com/microsoft/kiota/issues/1605)
+- Moved nested request configuration classes into separate files within the namespace for PHP. [#1620](https://github.com/microsoft/kiota/pull/1620)
+- Fixed an issue where duplicate 'require' statements are generated for inner classes in the middle of the file (Ruby). [#1649](https://github.com/microsoft/kiota/issues/1649)
+- Fixed wrong parameter type for Request config for request executors(PHP). [#1629](https://github.com/microsoft/kiota/pull/1629)
+- Increased indentation for errorMappings in the request executor (PHP). [#1629](https://github.com/microsoft/kiota/pull/1629)
+- Fixed bugs in PHP discriminator factory methods, Guzzle request adapter send methods, stream and plain text response handling. [#1634](https://github.com/microsoft/kiota/pull/1634)
+- Removed abstractions, authentication, http and serialization packages for PHP. [#1637](https://github.com/microsoft/kiota/pull/1637)
+- Fixed a bug where generated discriminator methods would reference types in other namespaces without proper resolution. [#1670](https://github.com/microsoft/kiota/issues/1670)
+- Fixed a bug where additional data and backing store properties would be duplicated. [#1671](https://github.com/microsoft/kiota/issues/1671)
+- Fixed a bug where serialized properties would not match the json property name when using the backing store. (CSharp).
+- Corrected PHPDoc types for headers and request options properties in request configuration classes. [#1711](https://github.com/microsoft/kiota/pull/1711)
+- Fixed a bug where properties defined at multiple inherited models would collide. [#1717](https://github.com/microsoft/kiota/issues/1717)
+
+## [0.2.1] - 2022-05-30
+
+### Added
+
+- Added missing mappings in PHP for uint8 and int8. [#1473](https://github.com/microsoft/kiota/pull/1473)
+- Added support for enum and enum collections responses in Go. [#1578](https://github.com/microsoft/kiota/issues/1578)
+- Added Kiota builder engine as a package for external services integration. [#1582](https://github.com/microsoft/kiota/issues/1582)
+
+### Changed
+
+- Fixed a bug where the logger would not log all the information. [#1588](https://github.com/microsoft/kiota/issues/1588)
+
+## [0.2.0] - 2022-05-24
+
+### Added
+
+- Added support for enum options descriptions (C#/Go/Java/TypeScript). [#90](https://github.com/microsoft/kiota/issues/90)
+- Added support for file parameters types. [#221](https://github.com/microsoft/kiota/issues/221)
+- Added support for no content responses in PHP. [#1458](https://github.com/microsoft/kiota/issues/1458)
+- Added support for error handling in php request adapter. [#1157](https://github.com/microsoft/kiota/issues/1157)
+- Added support for discriminator downcast in PHP. [#1255](https://github.com/microsoft/kiota/issues/1255)
+- Added support for multiple collections indexing under the same parent.
+- Added code exclusions placeholder in the generation. (oneOf)
+- Added support for continuous access evaluation in Java. [#1179](https://github.com/microsoft/kiota/issues/1179)
+- Added support for special characters in URL query parameter names. [#1584](https://github.com/microsoft/kiota/pull/1584)
+
+### Changed
+
+- Fixed a bug where union types would not work as error types.
+- Fixed a bug where generation names could collide with platform names in CSharp.
+- Fixed missing numbers mapping cases.
+- Fixed multiple bugs enum options invalid symbols generation.
+- Fixed a bug where symbols (classes, enums, properties...) could be only numbers, which is unsupported by most languages.
+- Fixed a bug where union types would be missing serialization information.
+- Fixed a bug where inline request bodies could override each other for the same path item with multiple operations.
+- Fixed simple collections (arrays) support in CSharp.
+- Fixed a bug where code properties could not be union or exclusion types.
+- Fixed a bug where models would fail to generate if the schema type wasn't set to object.
+- Fixed a bug where nullable wrapper schema flattening would ignore some composed type options.
+- Fixed a bug where arrays without items definition would derail generation.
+- Fixed a bug with enums detection for generation. (interpreted as string)
+- Fixed a bug where classes names cleanup could end-up in a collision.
+- Fixed a bug where null reference exception would be thrown when trying to lookup type inheritance on discriminators
+- Fixed the lookup of model namespaces to only look in the target namespace to avoid reference collisions.
+- Fixed a bug for the generated send method for paths returning Enums in dotnet.
+- Breaking: renamed the --loglevel parameter to --log-level.
+- Fixed a bug where some path parameter objects would have empty key values [#1586](https://github.com/microsoft/kiota/issues/1586)
+
+## [0.1.3] - 2022-05-06
+
+### Added
+
+- Added text serialization library for PHP. [#1546](https://github.com/microsoft/kiota/pull/1546).
+
+### Changed
+
+- Fixed the image name in CI for MCR.
+
+### Changed
+
+## [0.1.2] - 2022-05-06
+
+### Changed
+
+- Minor changes in the parameters (-co => --co, -ll => --ll, -d is required, -l is required).
+
+## [0.1.1] - 2022-05-06
+
+### Changed
+
+- Add binder for nullable boolean options. (Shell)
+
+## [0.1.0] - 2022-05-04
+
+### Added
+
+- The dotnet tool is now available on the public feed `dotnet tool install -g Microsoft.OpenApi.Kiota --prerelease`.
+- The dotnet OpenApi reference package is now available `Microsoft.OpenApi.Kiota.ApiDescription.Client`.
+- The container image is now available on mcr. `docker pull mcr.microsoft.com/kiota/generator:latest`.
+
+### Changed
+
+- Revamped the api surface for request configuration. [#1494](https://github.com/microsoft/kiota/issues/1494)
+- Fixed a bug in methods naming in Go after request configuration revamp.
+- Fixes a bug where reserved names would not be updated for inheritance.
+- Add `item` subcommand for indexers. Fixes conflicts when paths have repeating segments. (Shell) [#1541](https://github.com/microsoft/kiota/issues/1541)
+
+## [0.0.23] - 2022-04-19
+
+### Changed
+
+- Fixed a bug where line returns in descriptions could break the generated code. [#1504](https://github.com/microsoft/kiota/issues/1504)
+- Fixed a bug with special characters in query parameters names. [#1445](https://github.com/microsoft/kiota/issues/1445)
+- Fixed a bug where complex types path parameters would fail to generate.
+- Fixed a bug where Go serialization/deserialization method would generate invalid accessor names.
+- Added discriminator support in the python abstractions serialization and http packages. [#1500](https://github.com/microsoft/kiota/issues/1256)
+
+## [0.0.22] - 2022-04-08
+
+### Added
+
+- Added generation of command options for headers defined in the OpenAPI metadata source file. (Shell)
+- Added retry, redirect, chaos and telemetry handler in java.
+
+### Changed
+
+- Simplified field deserialization.(PHP) [#1493](https://github.com/microsoft/kiota/issues/1493)
+- Fixed a bug where the generator would not strip the common namespace component id for models. [#1483](https://github.com/microsoft/kiota/issues/1483)
+- Simplified field deserialization. [#1490](https://github.com/microsoft/kiota/issues/1490)
+
+## [0.0.21] - 2022-04-01
+
+### Added
+
+- Added text output formatter to CLI commons. (Shell)
+- Added support for vendor specific content types generation/serialization. [#1197](https://github.com/microsoft/kiota/issues/1197)
+- Added support for 204 no content in generation and CSharp/Java/Go/TypeScript request adapters. #1410
+- Added a draft swift generation implementation. #1444
+- Added support for yaml response type generation. [#302](https://github.com/microsoft/kiota/issues/302)
+- Added support for xml response type generation. [#302](https://github.com/microsoft/kiota/issues/302)
+- Added support for unstructured response generation (stream). [#546](https://github.com/microsoft/kiota/issues/546)
+
+### Changed
+
+- Moved go libraries to their own repository. [#370](https://github.com/microsoft/kiota/issues/370)
+- Fixed a bug where the base url of the request adapter would be reset by the client(PHP). [#1469](https://github.com/microsoft/kiota/issues/1469)
+- Fixed issue where custom date types are never corrected for method parameters(PHP). #1474
+- Replaced DateTimeOffset with DateTime for custom date types(PHP). #1474
+- Fixed a bug where the base url of the request adapter would be reset by the client. [#1443](https://github.com/microsoft/kiota/issues/1443)
+- Fixed a bug where request builder classes for collections endpoints would have a wrong name. #1052
+- Fixed issue with ambiguous type names causing build errors and stack overflows. (Shell) #1052
+- Fixed a bug where symbols (properties, methods, classes) could contain invalid characters #1436
+- Renamed parameters for requests: o => options, q => queryParameters, h => headers. [#1380](https://github.com/microsoft/kiota/issues/1380)
+- Fixed a bug where names would clash with reserved type [#1437](https://github.com/microsoft/kiota/issues/1437)
+- Fixed unnecessary use of fully qualified type names in Dotnet.
+
+## [0.0.20] - 2022-03-25
+
+### Changed
+
+- Moved TypeScript middleware from Graph core to kiota http.
+- Fixed a bug where errors would fail to deserialize for TypeScript.
+- Fixed a bug where decimal types would not be mapped in TypeScript.
+- Fixed circular dependencies issues for TypeScript #870.
 - Fixed a bug where JSON serialization would fail on nil properties in Go.
+- Moved typescript core packages into Kiota-TypeScript repo and delete for Kiota repo.
+- Fixed a bug where collections of complex types could be mis-represented. [#1438](https://github.com/microsoft/kiota/issues/1438)
+- Fixed a bug where inline properties would not generate their own type definition. [#1438](https://github.com/microsoft/kiota/issues/1438)
 
 ## [0.0.19] - 2022-03-18
 
@@ -94,6 +280,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug with inconsistent Java namespace and directory name casing #1267
 - Fixed typeOf string check in JsonParseNode Typescript.
 - Fixed shell stream output getting processed by output formatters when no file path is provided #1291
+- Using Record type instead of Map for additionalData in TypeScript
 
 ## [0.0.16] - 2022-02-23
 

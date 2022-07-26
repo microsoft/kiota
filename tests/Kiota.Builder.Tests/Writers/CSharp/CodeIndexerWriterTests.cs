@@ -23,7 +23,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             root.AddClass(parentClass);
             indexer = new CodeIndexer {
                 Name = "idx",
-                ParameterName = "id"
+                SerializationName = "id"
             };
             indexer.IndexType = new CodeType {
                 Name = "string",

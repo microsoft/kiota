@@ -29,7 +29,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         [Fact]
         public void WritesEnum() {
             const string optionName = "option1";
-            currentEnum.Options.Add(optionName);
+            currentEnum.AddOption(new CodeEnumOption { Name = optionName});
             writer.Write(currentEnum);
             var result = tw.ToString();
             Assert.Contains($"type {EnumName.ToFirstCharacterUpperCase()} int", result);
@@ -41,7 +41,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains($"[i]", result);
             Assert.Contains($"func Parse", result);
             Assert.Contains($"(v string) (interface{{}}, error)", result);
-            Assert.Contains($"switch strings.ToUpper(v)", result);
+            Assert.Contains($"switch v", result);
             Assert.Contains($"default", result);
             Assert.Contains($"result :=", result);
             Assert.Contains($"return &result, nil", result);
@@ -60,10 +60,22 @@ namespace Kiota.Builder.Writers.Go.Tests {
             currentEnum.AddUsing(new CodeUsing {
                 Name = "using1",
             });
-            currentEnum.Options.Add("o");
+            currentEnum.AddOption(new CodeEnumOption{ Name = "o"});
             writer.Write(currentEnum);
             var result = tw.ToString();
             Assert.Contains("using1", result);
+        }
+        [Fact]
+        public void WritesEnumOptionDescription() {
+            var option = new CodeEnumOption {
+                Description = "Some option description",
+                Name = "option1",
+            };
+            currentEnum.AddOption(option);
+            writer.Write(currentEnum);
+            var result = tw.ToString();
+            Assert.Contains($"// {option.Description}", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
     }
 }

@@ -30,7 +30,7 @@ public class TableOutputFormatter : IOutputFormatter
     }
 
     /// <inheritdoc />
-    public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions options, CancellationToken cancellationToken = default) {
+    public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions? options = null, CancellationToken cancellationToken = default) {
         using var doc = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
         var table = ConstructTable(doc);
         _ansiConsole.Write(table);

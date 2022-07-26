@@ -11,6 +11,7 @@ namespace Kiota.Builder.Writers.Php
         public CodeMethodWriter(PhpConventionService conventionService) : base(conventionService) { }
         
         private const string RequestInfoVarName = "$requestInfo";
+        private const string CreateDiscriminatorMethodName = "createFromDiscriminatorValue";
         public override void  WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
 
@@ -19,10 +20,8 @@ namespace Kiota.Builder.Writers.Php
             var inherits = parentClass?.StartBlock?.Inherits != null;
             var orNullReturn = codeElement.ReturnType.IsNullable ? new[]{"?", "|null"} : new[] {string.Empty, string.Empty};
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
-            var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
-            var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
-            var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
-            var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
+            var config = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
+            var requestParams = new RequestParams(requestBodyParam, config);
             
             WriteMethodPhpDocs(codeElement, writer, orNullReturn);
             WriteMethodsAndParameters(codeElement, writer, orNullReturn, codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor));
@@ -72,21 +71,22 @@ namespace Kiota.Builder.Writers.Php
             if(inherits)
                 writer.WriteLine("parent::__construct();");
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(
-                                                                            CodePropertyKind.BackingStore,
-                                                                            CodePropertyKind.RequestBuilder,
-                                                                            CodePropertyKind.UrlTemplate,
-                                                                            CodePropertyKind.PathParameters)
-                                            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                            .OrderByDescending(x => x.Kind)
-                                            .ThenBy(x => x.Name))
+                    CodePropertyKind.BackingStore,
+                    CodePropertyKind.RequestBuilder,
+                    CodePropertyKind.UrlTemplate,
+                    CodePropertyKind.PathParameters)
+                .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
+                .OrderByDescending(x => x.Kind)
+                .ThenBy(x => x.Name))
             {
                 var isPathSegment = propWithDefault.IsOfKind(CodePropertyKind.PathParameters);
-                writer.WriteLine($"$this->{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {(isPathSegment ? "[]" :propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote())};");
+                writer.WriteLine($"$this->{propWithDefault.Name.ToFirstCharacterLowerCase()} = {(isPathSegment ? "[]" :propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote())};");
             }
-            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData) //additional data and backing Store rely on accessors
+            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
                 .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                 .OrderBy(x => x.Name)) {
-                writer.WriteLine($"$this->{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
+                var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() ?? $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
+                writer.WriteLine($"$this->{setterName}({propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote()});");
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
@@ -189,7 +189,7 @@ namespace Kiota.Builder.Writers.Php
             };
             if(codeMethod.IsOfKind(CodeMethodKind.Deserializer))
             {
-                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function getFieldDeserializers(): array {{");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)}{(codeMethod.IsStatic ? " static" : string.Empty)} function getFieldDeserializers(): array {{");
                 writer.IncreaseIndent();
                 return;
             }
@@ -217,12 +217,12 @@ namespace Kiota.Builder.Writers.Php
                 var parameters = pathParameters.ToList();
                 if (parameters.Any()) pathParamsString = $", {string.Join(", ", parameters)}";
                 var pathParametersString = pathParametersParam != null ? $"{conventions.GetParameterSignature(pathParametersParam, codeMethod)}, " : string.Empty;
-                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}({pathParametersString}{conventions.GetParameterSignature(requestAdapterParam, codeMethod)}{pathParamsString}) {{");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)}{(codeMethod.IsStatic ? " static" : string.Empty)} function {methodName}({pathParametersString}{conventions.GetParameterSignature(requestAdapterParam, codeMethod)}{pathParamsString}) {{");
             }
             else
             {
                 writer.WriteLine(
-                    $"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}({methodParameters}){(!codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) ? $"{returnValue}" : ": Promise")} {{");
+                    $"{conventions.GetAccessModifier(codeMethod.Access)} {(codeMethod.IsStatic ? "static " : string.Empty)}function {methodName}({methodParameters}){(!codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) ? $"{returnValue}" : ": Promise")} {{");
             }
 
             writer.IncreaseIndent();
@@ -234,10 +234,12 @@ namespace Kiota.Builder.Writers.Php
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
             var writerParameter = codeMethod.Parameters.FirstOrDefault(x => x.Kind == CodeParameterKind.Serializer);
             var writerParameterName = conventions.GetParameterName(writerParameter);
-            if(inherits)
+            var implementsParsable = parentClass.StartBlock?.Inherits?.TypeDefinition is CodeClass codeClass &&
+                                     codeClass.IsOfKind(CodeClassKind.Model);
+            if(inherits && implementsParsable)
                 writer.WriteLine($"parent::serialize({writerParameterName});");
             var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
-            foreach(var otherProp in customProperties) {
+            foreach(var otherProp in customProperties.Where(x => !x.ExistsInBaseType)) {
                 writer.WriteLine($"{writerParameterName}->{GetSerializationMethodName(otherProp.Type)}('{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}', $this->{otherProp.Name.ToFirstCharacterLowerCase()});");
             }
             if(additionalDataProperty != null)
@@ -259,25 +261,21 @@ namespace Kiota.Builder.Writers.Php
                 {
                     return "writeEnumValue";
                 }
-
-                if (currentType.TypeDefinition is CodeClass cc && cc.IsOfKind(CodeClassKind.Model))
-                {
-                    return "writeObjectValue";
-                }
             }
 
-            var lowerCaseProp = propertyType.ToLower();
+            var lowerCaseProp = propertyType?.ToLower();
             return lowerCaseProp switch
             {
                 "string" or "guid" => "writeStringValue",
-                "enum" or "float" or "date" or "time" => $"write{lowerCaseProp.ToFirstCharacterUpperCase()}Value",
+                "enum" or "float" or "date" or "time" or "byte" => $"write{lowerCaseProp.ToFirstCharacterUpperCase()}Value",
                 "bool" or "boolean" => "writeBooleanValue",
                 "double" or "decimal" => "writeFloatValue",
                 "datetime" or "datetimeoffset" => "writeDateTimeValue",
                 "duration" or "timespan" or "dateinterval" => "writeDateIntervalValue",
                 "int" or "number" => "writeIntegerValue",
                 "streaminterface" => "writeBinaryContent",
-                _ => "writeAnyValue"
+                _ when conventions.PrimitiveTypes.Contains(lowerCaseProp) => $"write{lowerCaseProp.ToFirstCharacterUpperCase()}Value",
+                _ => "writeObjectValue"
             };
         }
         
@@ -291,13 +289,13 @@ namespace Kiota.Builder.Writers.Php
                         null => "$n->getCollectionOfPrimitiveValues()",
                         CodeEnum enumType =>
                             $"$n->getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
-                        _ => $"$n->getCollectionOfObjectValues({conventions.TranslateType(propType)}::class)"
+                        _ => $"$n->getCollectionOfObjectValues(array({conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'))"
                     };
                 else if (currentType.TypeDefinition is CodeEnum)
                     return $"$n->getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
             }
 
-            var lowerCaseType = propertyType.ToLower();
+            var lowerCaseType = propertyType?.ToLower();
             return lowerCaseType switch
             {
                 "int" => "$n->getIntegerValue()",
@@ -305,8 +303,9 @@ namespace Kiota.Builder.Writers.Php
                 "number" => "$n->getIntegerValue()",
                 "decimal" or "double" => "$n->getFloatValue()",
                 "streaminterface" => "$n->getBinaryContent()",
+                "byte" => $"$n->getByteValue()",
                 _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"$n->get{propertyType.ToFirstCharacterUpperCase()}Value()",
-                _ => $"$n->getObjectValue({propertyType.ToFirstCharacterUpperCase()}::class)",
+                _ => $"$n->getObjectValue(array({propertyType.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'))",
             };
         }
 
@@ -339,23 +338,39 @@ namespace Kiota.Builder.Writers.Php
                                 $"{RequestInfoVarName}->urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
                                 $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(pathParametersProperty, "''")};",
                                 $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
-            if (requestParams.headers != null)
+            WriteAcceptHeaderDef(codeElement, writer);
+            if (requestParams.requestConfiguration != null)
             {
-                writer.WriteLine($"if ({conventions.GetParameterName(requestParams.headers)} !== null) {{");
+                var queryString = requestParams.QueryParameters;
+                var headers = requestParams.Headers;
+                var options = requestParams.Options;
+                var requestConfigParamName = conventions.GetParameterName(requestParams.requestConfiguration);
+                writer.WriteLine($"if ({requestConfigParamName} !== null) {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"{RequestInfoVarName}->headers = array_merge({RequestInfoVarName}->headers, {conventions.GetParameterName(requestParams.headers)});");
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
-            }
-
-            if (requestParams.queryString != null)
-            {
-                writer.WriteLine($"if ({conventions.GetParameterName(requestParams.queryString)} !== null) {{");
-                writer.IncreaseIndent();
-                writer.WriteLines(
-                    $"{RequestInfoVarName}->setQueryParameters({conventions.GetParameterName(requestParams.queryString)});");
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
+                if(headers != null) {
+                    var headersName = $"{requestConfigParamName}->{headers.Name.ToFirstCharacterLowerCase()}";
+                    writer.WriteLine($"if ({headersName} !== null) {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{RequestInfoVarName}->headers = array_merge({RequestInfoVarName}->headers, {headersName});");
+                    writer.CloseBlock();
+                }
+                if (queryString != null)
+                {
+                    var queryStringName = $"{requestConfigParamName}->{queryString.Name.ToFirstCharacterLowerCase()}";
+                    writer.WriteLine($"if ({queryStringName} !== null) {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{RequestInfoVarName}->setQueryParameters({queryStringName});");
+                    writer.CloseBlock();
+                }
+                if (options != null)
+                {
+                    var optionsName = $"{requestConfigParamName}->{options.Name.ToFirstCharacterLowerCase()}";
+                    writer.WriteLine($"if ({optionsName} !== null) {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{RequestInfoVarName}->addRequestOptions(...{optionsName});");
+                    writer.CloseBlock();
+                }
+                writer.CloseBlock();
             }
 
             if(requestParams.requestBody != null) {
@@ -363,41 +378,45 @@ namespace Kiota.Builder.Writers.Php
                     writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)});");
                 else {
                     var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{conventions.GetParameterName(requestParams.requestBody)});");
+                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {spreadOperator}{conventions.GetParameterName(requestParams.requestBody)});");
                 }
-            }
-
-            if (requestParams.options != null)
-            {
-                writer.WriteLine($"if ({conventions.GetParameterName(requestParams.options)} !== null) {{");
-                writer.IncreaseIndent();
-                writer.WriteLine($"{RequestInfoVarName}->addRequestOptions(...$options);");
-                writer.CloseBlock();
             }
 
             writer.WriteLine($"return {RequestInfoVarName};");
         }
+
+        private void WriteAcceptHeaderDef(CodeMethod codeMethod, LanguageWriter writer)
+        {
+            if(codeMethod.AcceptedResponseTypes.Any())
+                writer.WriteLine($"{RequestInfoVarName}->headers = array_merge({RequestInfoVarName}->headers, [\"Accept\" => \"{string.Join(", ", codeMethod.AcceptedResponseTypes)}\"]);");
+        }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method) {
             var inherits = parentClass.StartBlock?.Inherits != null;
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
-            writer.WriteLine($"return {(inherits ? "array_merge(parent::getFieldDeserializers()," : string.Empty)} [");
+            var implementsParsable = parentClass.StartBlock?.Inherits?.TypeDefinition is CodeClass codeClass &&
+                                     codeClass.IsOfKind(CodeClassKind.Model);
+            var canCallParent = inherits && parentClass.StartBlock != null && implementsParsable;
+            var currentObjectName = "$o";
+            writer.WriteLine($"{currentObjectName} = $this;");
+            writer.WriteLine($"return {(canCallParent ? "array_merge(parent::getFieldDeserializers()," : string.Empty)} [");
             if(fieldToSerialize.Any()) {
                 writer.IncreaseIndent();
                 fieldToSerialize
+                    .Where(x => !x.ExistsInBaseType)
                     .OrderBy(x => x.Name)
                     .Select(x => 
-                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => function (self $o, ParseNode $n) {{ $o->set{x.Name.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method)}); }},")
+                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => function (ParseNode $n) use ({currentObjectName}) {{ {currentObjectName}->{x.Setter.Name.ToFirstCharacterLowerCase()}({GetDeserializationMethodName(x.Type, method)}); }},")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
                 writer.DecreaseIndent();
             }
-            writer.WriteLine($"]{(inherits ? ')': string.Empty )};");
+            writer.WriteLine($"]{(canCallParent ? ')': string.Empty )};");
         }
         
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer) {
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"$this->{pathParametersProperty.Name}",
-                (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.ParameterName, "$id"));
+                (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, "$id"));
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
         }
 
@@ -408,7 +427,7 @@ namespace Kiota.Builder.Writers.Php
                 .FirstOrDefault(x =>
                     x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
             var generatorMethodName = generatorMethod?.Name.ToFirstCharacterLowerCase();
-            var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
+            var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration }
                 .Select(x => x).Where(x => x?.Name != null);
             var infoParameters = requestInfoParameters as CodeParameter[] ?? requestInfoParameters.ToArray();
             var callParams = infoParameters.Select(x => conventions.GetParameterName(x));
@@ -420,14 +439,50 @@ namespace Kiota.Builder.Writers.Php
             }
             
             var returnType = conventions.TranslateType(codeElement.ReturnType);
-            var returnVoidOrString = returnType.Equals("void", StringComparison.OrdinalIgnoreCase) || conventions.PrimitiveTypes.Contains(returnType.ToLower());
             writer.WriteLine($"$requestInfo = $this->{generatorMethodName}({joinedParams});");
             writer.WriteLine("try {");
             writer.IncreaseIndent();
-            if(codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
-                writer.WriteLine($"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->sendAsync({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class": "''")}, $responseHandler);");
+            var errorMappings = codeElement.ErrorMappings;
+            var hasErrorMappings = false;
+            var errorMappingsVarName = "$errorMappings";
+            if (errorMappings != null && errorMappings.Any())
+            {
+                hasErrorMappings = true;
+                writer.WriteLine($"{errorMappingsVarName} = [");
+                writer.IncreaseIndent(2);
+                errorMappings.ToList().ForEach(errorMapping =>
+                {
+                    writer.WriteLine($"'{errorMapping.Key}' => array({errorMapping.Value.Name}::class, '{CreateDiscriminatorMethodName}'),");
+                });
+                writer.DecreaseIndent();
+                writer.WriteLine("];");
+            }
+
+            var returnsVoid = returnType.Equals("void", StringComparison.OrdinalIgnoreCase);
+            var isStream = returnType.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase);
+            var isCollection = codeElement.ReturnType.IsCollection;
+            var methodName = GetSendRequestMethodName(returnsVoid, isStream, isCollection, returnType);
+            var returnTypeFactory = codeElement.ReturnType is CodeType {TypeDefinition: CodeClass returnTypeClass}
+                ? $", array({returnType}::class, '{CreateDiscriminatorMethodName}')"
+                : string.Empty;
+            var returnWithCustomType =
+                !returnsVoid && string.IsNullOrEmpty(returnTypeFactory) && conventions.CustomTypes.Contains(returnType)
+                    ? $", {returnType}::class"
+                    : returnTypeFactory;
+            var finalReturn = string.IsNullOrEmpty(returnWithCustomType) && !returnsVoid
+                ? $", '{returnType}'"
+                : returnWithCustomType;
+            if (codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
+            {
+                writer.WriteLine(
+                    $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}{finalReturn}, $responseHandler, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
+            }
             else
-                writer.WriteLine($"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->sendAsync({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class": "''")}, null);");
+            {
+                writer.WriteLine(
+                    $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}{finalReturn}, null, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
+            }
+
             writer.DecreaseIndent();
             writer.WriteLine("} catch(Exception $ex) {");
             writer.IncreaseIndent();
@@ -441,19 +496,34 @@ namespace Kiota.Builder.Writers.Php
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             WriteSerializationRegistration(codeMethod.SerializerModules, writer, "registerDefaultSerializer");
             WriteSerializationRegistration(codeMethod.DeserializerModules, writer, "registerDefaultDeserializer");
+            writer.WriteLines($"if (empty({GetPropertyCall(requestAdapterProperty, string.Empty)}->getBaseUrl())) {{");
+            writer.IncreaseIndent();
             writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl}');");
+            writer.CloseBlock();
         }
         
-        private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
+        private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName) {
             if(serializationModules != null)
                 foreach(var module in serializationModules)
                     writer.WriteLine($"ApiClientBuilder::{methodName}({module}::class);");
         }
         
+        protected string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
+        {
+            if (isVoid) return "sendNoContentAsync";
+            else if (isStream || conventions.PrimitiveTypes.Contains(returnType.ToLowerInvariant()))
+                if (isCollection)
+                    return $"sendPrimitiveCollectionAsync";
+                else
+                    return $"sendPrimitiveAsync";
+            else if (isCollection) return $"sendCollectionAsync";
+            else return $"sendAsync";
+        }
+        
         private static void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
             var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
             if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
-                writer.WriteLines($"$mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterUpperCase()}::getChildNode(\"{codeElement.DiscriminatorPropertyName}\");",
+                writer.WriteLines($"$mappingValueNode = ${parseNodeParameter.Name.ToFirstCharacterLowerCase()}->getChildNode(\"{codeElement.DiscriminatorPropertyName}\");",
                     "if ($mappingValueNode !== null) {");
                 writer.IncreaseIndent();
                 writer.WriteLines("$mappingValue = $mappingValueNode->getStringValue();");

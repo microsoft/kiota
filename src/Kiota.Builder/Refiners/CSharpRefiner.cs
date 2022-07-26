@@ -16,7 +16,7 @@ namespace Kiota.Builder.Refiners {
             AddRawUrlConstructorOverload(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
-            AddInnerClasses(generatedCode, false);
+            AddInnerClasses(generatedCode, false, string.Empty);
             AddParsableImplementsForModelClasses(generatedCode, "IParsable");
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
@@ -28,8 +28,10 @@ namespace Kiota.Builder.Refiners {
             ReplaceReservedNames(
                 generatedCode,
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
-                new HashSet<Type>{ typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod) }
+                new HashSet<Type>{ typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum) }
             );
+            // Replace the reserved types
+            ReplaceReservedModelTypes(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Object");
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);
@@ -40,8 +42,7 @@ namespace Kiota.Builder.Refiners {
             );
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
-                "IParseNode",
-                addUsings: false
+                "IParseNode"
             );
         }
         protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
@@ -100,6 +101,8 @@ namespace Kiota.Builder.Refiners {
                 "Microsoft.Kiota.Abstractions.Store",  "IBackingStoreFactory", "IBackingStoreFactorySingleton"),
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
                 "Microsoft.Kiota.Abstractions.Store",  "IBackingStore", "IBackedModel", "BackingStoreFactorySingleton" ),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(prop.SerializationName),
+                "Microsoft.Kiota.Abstractions", "QueryParameterAttribute"),
         };
         protected static void CapitalizeNamespacesFirstLetters(CodeElement current) {
             if(current is CodeNamespace currentNamespace)
@@ -114,6 +117,10 @@ namespace Kiota.Builder.Refiners {
         }
         protected static void CorrectPropertyType(CodeProperty currentProperty)
         {
+            if(currentProperty.IsOfKind(CodePropertyKind.Options))
+                currentProperty.DefaultValue = "new List<IRequestOption>()";
+            else if(currentProperty.IsOfKind(CodePropertyKind.Headers))
+                currentProperty.DefaultValue = "new Dictionary<string, string>()";
             CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
         protected static void CorrectMethodType(CodeMethod currentMethod)
@@ -123,6 +130,7 @@ namespace Kiota.Builder.Refiners {
                                                     .Union(new CodeTypeBase[] { currentMethod.ReturnType })
                                                     .ToArray());
         }
+
         private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
         {
             {

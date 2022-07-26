@@ -1,7 +1,0 @@
-*.js
-*.js.map
-*.d.ts
-
-node_modules
-lib
-spec/development

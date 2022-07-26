@@ -7,6 +7,21 @@ public class JavaLanguageRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLanguageRefinerTests
     [Fact]
+    public void ReplacesReservedEnumOptions()
+    {
+        var model = root.AddEnum(new CodeEnum
+        {
+            Name = "model",
+        }).First();
+        var option = new CodeEnumOption {
+            Name = "break", // this a keyword
+        };
+        model.AddOption(option);
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        Assert.Equal("break_escaped", option.Name);
+        Assert.Equal("break", option.SerializationName);
+    }
+    [Fact]
     public void AddsExceptionInheritanceOnErrorClasses() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
@@ -247,7 +262,7 @@ public class JavaLanguageRefinerTests {
         }).First();
         var parameter = new CodeParameter {
             Name = "param1",
-            Kind = CodeParameterKind.QueryParameter,
+            Kind = CodeParameterKind.RequestConfiguration,
             Type = new CodeType {
                 Name = "SomeCustomType",
                 ActionOf = true,
@@ -319,6 +334,7 @@ public class JavaLanguageRefinerTests {
         const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
         const string dateTimeOffsetDefaultName = "DateTimeOffset";
         const string additionalDataDefaultName = "new Dictionary<string, object>()";
+        const string headersDefaultName = "IDictionary<string, string>";
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -341,9 +357,14 @@ public class JavaLanguageRefinerTests {
             Type = new CodeType {
                 Name = additionalDataDefaultName
             }
+        }, new () {
+            Name = "headers",
+            Kind = CodePropertyKind.Headers,
+            Type = new CodeType() {
+                Name = headersDefaultName
+            }
         });
         const string handlerDefaultName = "IResponseHandler";
-        const string headersDefaultName = "IDictionary<string, string>";
         const string additionalDataHolderDefaultName = "IAdditionalDataHolder";
         model.StartBlock.AddImplements(new CodeType {
             Name = additionalDataHolderDefaultName,
@@ -362,17 +383,11 @@ public class JavaLanguageRefinerTests {
             },
             Kind = CodeMethodKind.Deserializer
         }).First();
-        executorMethod.AddParameter(new () {
+        executorMethod.AddParameter(new CodeParameter () {
             Name = "handler",
             Kind = CodeParameterKind.ResponseHandler,
             Type = new CodeType {
                 Name = handlerDefaultName,
-            }
-        }, new () {
-            Name = "headers",
-            Kind = CodeParameterKind.Headers,
-            Type = new CodeType() {
-                Name = headersDefaultName
             }
         });
         const string serializerDefaultName = "ISerializationWriter";
@@ -395,9 +410,9 @@ public class JavaLanguageRefinerTests {
         Assert.Empty(model.Properties.Where(x => factoryDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => additionalDataDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(x => headersDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.Where(x => deserializeDefaultName.Equals(x.ReturnType.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => headersDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.StartBlock.Implements.Where(x => additionalDataHolderDefaultName.Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
         Assert.Contains( additionalDataHolderDefaultName[1..], model.StartBlock.Implements.Select(x => x.Name).ToList());
@@ -415,37 +430,23 @@ public class JavaLanguageRefinerTests {
                 Name = "string"
             }
         }).First();
-        executor.AddParameter(new CodeParameter {
+        executor.AddParameter(new() {
             Name = "handler",
             Kind = CodeParameterKind.ResponseHandler,
             Type = new CodeType {
                 Name = "string"
             }
-        });
-        executor.AddParameter(new CodeParameter {
-            Name = "headers",
-            Kind = CodeParameterKind.Headers,
+        },
+        new() {
+            Name = "config",
+            Kind = CodeParameterKind.RequestConfiguration,
             Type = new CodeType {
                 Name = "string"
             }
-        });
-        executor.AddParameter(new CodeParameter {
-            Name = "query",
-            Kind = CodeParameterKind.QueryParameter,
-            Type = new CodeType {
-                Name = "string"
-            }
-        });
-        executor.AddParameter(new CodeParameter {
+        },
+        new() {
             Name = "body",
             Kind = CodeParameterKind.RequestBody,
-            Type = new CodeType {
-                Name = "string"
-            }
-        });
-        executor.AddParameter(new CodeParameter {
-            Name = "options",
-            Kind = CodeParameterKind.Options,
             Type = new CodeType {
                 Name = "string"
             }
@@ -462,15 +463,10 @@ public class JavaLanguageRefinerTests {
         var childMethods = builder.Methods;
         Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 1);//only the body
         Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 1);//only the body
-        Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 2);// body + query params
-        Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 2);// body + query params
-        Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 3);// body + query params + headers
-        Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 3);// body + query params + headers
-        Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 4);// body + query params + headers + options
-        Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 4);// body + query params + headers + options
-        Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 5);// body + query params + headers + options + response handler
-        Assert.Equal(9, childMethods.Count());
-        Assert.Equal(7, childMethods.Count(x => x.IsOverload));
+        Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 3);// body + query config
+        Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 2);// body + query config
+        Assert.Equal(5, childMethods.Count());
+        Assert.Equal(3, childMethods.Count(x => x.IsOverload));
     }
     #endregion
 }

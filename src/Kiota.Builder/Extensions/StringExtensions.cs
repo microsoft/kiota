@@ -1,27 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Kiota.Builder.Extensions
-{
+namespace Kiota.Builder.Extensions {
     public static class StringExtensions {
         public static string ToFirstCharacterLowerCase(this string input)
             => string.IsNullOrEmpty(input) ? input : $"{char.ToLowerInvariant(input.FirstOrDefault())}{input[1..]}";
         public static string ToFirstCharacterUpperCase(this string input)
             => string.IsNullOrEmpty(input) ? input : Char.ToUpperInvariant(input.FirstOrDefault()) + input[1..];
-        public static string ToCamelCase(this string name, char separator = '-')
+
+        /// <summary>
+        /// Converts a string delimited by a symbol to camel case
+        /// </summary>
+        /// <param name="input">The input string</param>
+        /// <param name="delimiters">The delimiters to use when converting to camel case. If none is given, defaults to '-'</param>
+        /// <returns>A camel case string</returns>
+        public static string ToCamelCase(this string input, params string[] delimiters)
         {
-            if(string.IsNullOrEmpty(name)) return name;
-            var chunks = name.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            var identifier = chunks[0] + string.Join(string.Empty, chunks.Skip(1)
-                                                                .Select(s => ToFirstCharacterUpperCase(s)));
-            return identifier;
+            if (string.IsNullOrEmpty(input)) return input;
+            delimiters = delimiters.Any() ? delimiters : new[] { "-" };
+            var chunks = input.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
+            if (chunks.Length < 1) return string.Empty;
+            return chunks[0] + string.Join(string.Empty, chunks.Skip(1).Select(c => c.ToFirstCharacterUpperCase()));
         }
-        public static string ToPascalCase(this string name, char separator = '-')
-            => string.IsNullOrEmpty(name) ? name : String.Join(null, name.Split(separator, StringSplitOptions.RemoveEmptyEntries)
+
+        public static string ToPascalCase(this string name)
+            => string.IsNullOrEmpty(name) ? name : String.Join(null, name.Split("-", StringSplitOptions.RemoveEmptyEntries)
                                                                             .Select(s => ToFirstCharacterUpperCase(s)));
         public static string ReplaceValueIdentifier(this string original) =>
             original?.Replace("$value", "Content");
@@ -63,16 +71,14 @@ namespace Kiota.Builder.Extensions
                 original :
                 original?.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
         private static readonly HashAlgorithm sha = SHA256.Create();
-        public static string GetNamespaceImportSymbol(this string importName) {
+        public static string GetNamespaceImportSymbol(this string importName, string prefix = "i") {
             if(string.IsNullOrEmpty(importName)) return string.Empty;
-            return "i" + HashString(importName).ToLowerInvariant();
+            return prefix + HashString(importName).ToLowerInvariant();
         }
         private static string HashString(string input) {
             var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
             return hash.Select(b => b.ToString("x2")).Aggregate((x, y) => x + y);
         }
-        public static string SanitizeUrlTemplateParameterName(this string original) =>
-            original?.Replace('-', '_');
         /// <summary>
         /// For Php strings, having double quotes around strings might cause an issue
         /// if the string contains valid variable name.
@@ -99,5 +105,33 @@ namespace Kiota.Builder.Extensions
             var parts = namespaced.Split('.');
             return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase())).Trim('\\');
         }
+        ///<summary>
+        /// Cleanup regex that removes all special characters from ASCII 0-127
+        ///</summary>
+        private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*+,./:;<=>?@\[\]\\^`{}|~-](?<followingLetter>\w)?", RegexOptions.Compiled);
+        private const string CleanupGroupName = "followingLetter";
+        public static string CleanupSymbolName(this string original)
+        {
+            if (string.IsNullOrEmpty(original))
+                return original;
+
+            var result = propertyCleanupRegex.Replace(original, 
+                                    static x => x.Groups.Keys.Contains(CleanupGroupName) ? 
+                                                    x.Groups[CleanupGroupName].Value.ToFirstCharacterUpperCase() :
+                                                    string.Empty); //strip out any invalid characters, and replace any following one by its uppercase version
+
+            if(int.TryParse(result, out var _)) // in most languages a number is not a valid symbol name
+                result = $"{original.ToString().GetNamespaceImportSymbol()}_{result}";
+
+            return result;
+        }
+
+        /// <summary>
+        /// Cleanup the XML string
+        /// </summary>
+        /// <param name="original">The original string</param>
+        /// <returns></returns>
+        public static string CleanupXMLString(this string original) 
+            => SecurityElement.Escape(original);
     }
 }

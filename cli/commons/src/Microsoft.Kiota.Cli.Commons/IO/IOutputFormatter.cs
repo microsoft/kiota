@@ -11,5 +11,5 @@ public interface IOutputFormatter
     /// <param name="content">The stream content to format and write out</param>
     /// <param name="options">The options to use when formatting output</param>
     /// <param name="cancellationToken">The cancellation token</param>
-    Task WriteOutputAsync(Stream content, IOutputFormatterOptions options, CancellationToken cancellationToken = default);
+    Task WriteOutputAsync(Stream content, IOutputFormatterOptions? options = null, CancellationToken cancellationToken = default);
 }

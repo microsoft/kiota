@@ -1,4 +1,4 @@
-using Xunit;
+﻿using Xunit;
 
 namespace Kiota.Builder.Extensions.Tests {
     public class StringExtensionsTests {
@@ -25,8 +25,10 @@ namespace Kiota.Builder.Extensions.Tests {
             string nString = null;
             Assert.Null(nString.ToCamelCase());
             Assert.Equal(string.Empty, string.Empty.ToCamelCase());
+            Assert.Equal(string.Empty, "-".ToCamelCase());
             Assert.Equal("toto", "toto".ToCamelCase());
             Assert.Equal("totoCamelCase", "toto-camel-case".ToCamelCase());
+            Assert.Equal("totoCamelCase", "toto.camel~case".ToCamelCase(".", "~"));
         }
         [Fact]
         public void ToPascalCase() {
@@ -59,6 +61,15 @@ namespace Kiota.Builder.Extensions.Tests {
             Assert.Equal(string.Empty, string.Empty.NormalizeNameSpaceName("."));
             Assert.Equal("Toto", "toto".NormalizeNameSpaceName("-"));
             Assert.Equal("Microsoft_Graph_Message_Content", "microsoft.Graph.Message.Content".NormalizeNameSpaceName("_"));
+        }
+        [InlineData("\" !#$%&'()*+,./:;<=>?@[]\\^`{}|~-", "")]
+        [InlineData("unchanged", "unchanged")]
+        [InlineData("@odata.changed", "OdataChanged")]
+        [InlineData("specialLast@", "specialLast")]
+        [InlineData("kebab-cased", "kebabCased")]
+        [Theory]
+        public void CleansUpSymbolNames(string input, string expected) {
+            Assert.Equal(expected, input.CleanupSymbolName());
         }
     }
     

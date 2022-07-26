@@ -1,41 +1,16 @@
-FROM mcr.microsoft.com/vscode/devcontainers/dotnetcore:6.0
+# See here for image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.224.3/containers/dotnet/.devcontainer/base.Dockerfile
 
-# installs tools required for installation of other tools
-RUN apt-get update \
-    && apt-get dist-upgrade -y \
-    && apt-get install wget apt-transport-https software-properties-common -y
+# [Choice] .NET version: 6.0, 5.0, 3.1, 6.0-bullseye, 5.0-bullseye, 3.1-bullseye, 6.0-focal, 5.0-focal, 3.1-focal
+ARG VARIANT="6.0-bullseye-slim"
+FROM mcr.microsoft.com/vscode/devcontainers/dotnet:0-${VARIANT}
 
-# installs java
-RUN wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | sudo apt-key add - \
-    && apt-get update \
-    && add-apt-repository --yes https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ \
-    && apt-get update \
-    && apt-get install unzip adoptopenjdk-16-hotspot -y
+# [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
+ARG NODE_VERSION="none"
+RUN if [ "${NODE_VERSION}" != "none" ]; then su vscode -c "umask 0002 && . /usr/local/share/nvm/nvm.sh && nvm install ${NODE_VERSION} 2>&1"; fi
 
-# installs golang
-RUN wget -c https://dl.google.com/go/go1.17.2.linux-amd64.tar.gz -O - | tar -xz -C /usr/local \
-    && export PATH=$PATH:/usr/local/go/bin \
-    && go get -v golang.org/x/tools/gopls
+# [Optional] Uncomment this section to install additional OS packages.
+# RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+#     && apt-get -y install --no-install-recommends <your-package-list-here>
 
-# installs node
-RUN apt-get install nodejs npm -y \
-    && npm i -g typescript eslint prettier
-
-# installs powershell
-RUN wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb \
-    && dpkg -i packages-microsoft-prod.deb \
-    && apt-get update \
-    && add-apt-repository universe \
-    && apt-get install -y powershell
-
-# install ruby
-RUN apt-get install ruby-full bundler -y
-
-# install github CLI
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0 \
-    && apt-add-repository https://cli.github.com/packages \
-    && apt update \
-    && apt install gh -y
-
-# General updates for sanity
-RUN apt-get dist-upgrade -y
+# [Optional] Uncomment this line to install global node packages.
+# RUN su vscode -c "source /usr/local/share/nvm/nvm.sh && npm install -g <your-package-here>" 2>&1

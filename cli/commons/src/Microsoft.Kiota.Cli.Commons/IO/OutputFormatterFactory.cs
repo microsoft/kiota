@@ -10,6 +10,7 @@ public sealed class OutputFormatterFactory : IOutputFormatterFactory
         {
             FormatterType.JSON => new JsonOutputFormatter(),
             FormatterType.TABLE => new TableOutputFormatter(),
+            FormatterType.TEXT => new TextOutputFormatter(),
             _ => throw new NotSupportedException(),
         };
     }

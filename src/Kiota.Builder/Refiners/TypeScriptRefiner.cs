@@ -9,11 +9,19 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) {}
     public override void Refine(CodeNamespace generatedCode)
     {
-        AddDefaultImports(generatedCode, defaultUsingEvaluators);
         ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
         RemoveCancellationParameter(generatedCode);
         CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
         CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
+        AddInnerClasses(generatedCode, 
+            true, 
+            string.Empty,
+            true);
+        // `AddInnerClasses` will have inner classes moved to their own files, so  we add the imports after so that the files don't miss anything.
+        // This is because imports are added at the file level so nested classes would potentially use the higher level imports.
+        AddDefaultImports(generatedCode, defaultUsingEvaluators);
+        DisableActionOf(generatedCode, 
+            CodeParameterKind.RequestConfiguration);
         AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
         AliasUsingsWithSameSymbol(generatedCode);
         AddParsableImplementsForModelClasses(generatedCode, "Parsable");
@@ -29,15 +37,22 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             string.Empty,
             string.Empty);
         AddConstructorsForDefaultValues(generatedCode, true);
+        var defaultConfiguration = new GenerationConfiguration();
         ReplaceDefaultSerializationModules(
             generatedCode,
-            "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory",
-            "@microsoft/kiota-serialization-text.TextSerializationWriterFactory"
+            defaultConfiguration.Serializers,
+            new (StringComparer.OrdinalIgnoreCase) {
+                "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory",
+                "@microsoft/kiota-serialization-text.TextSerializationWriterFactory"
+            }
         );
         ReplaceDefaultDeserializationModules(
             generatedCode,
-            "@microsoft/kiota-serialization-json.JsonParseNodeFactory",
-            "@microsoft/kiota-serialization-text.TextParseNodeFactory"
+            defaultConfiguration.Deserializers,
+            new (StringComparer.OrdinalIgnoreCase) {
+                "@microsoft/kiota-serialization-json.JsonParseNodeFactory",
+                "@microsoft/kiota-serialization-text.TextParseNodeFactory"
+            }
         );
         AddSerializationModulesImport(generatedCode,
             new[] { $"{AbstractionsPackageName}.registerDefaultSerializer", 
@@ -77,6 +92,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             generatedCode,
             factoryNameCallbackFromType
         );
+        AddQueryParameterMapperMethod(
+            generatedCode
+        );
     }
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
     private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {
@@ -110,6 +128,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             AbstractionsPackageName, "RequestAdapter"),
+        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
+            AbstractionsPackageName, "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             AbstractionsPackageName, "HttpMethod", "RequestInformation", "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
@@ -140,10 +160,17 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "RequestAdapter";
         else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
-        else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
-            currentProperty.Type.Name = "Map<string, unknown>";
-            currentProperty.DefaultValue = "new Map<string, unknown>()";
-        } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
+        else if(currentProperty.IsOfKind(CodePropertyKind.Options))
+            currentProperty.Type.Name = "RequestOption[]";
+        else if(currentProperty.IsOfKind(CodePropertyKind.Headers))
+            currentProperty.Type.Name = "Record<string, string>";
+        else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
+        {
+            currentProperty.Type.Name = "Record<string, unknown>";
+            currentProperty.DefaultValue = "{}";
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
+        {
             currentProperty.Type.IsNullable = false;
             currentProperty.Type.Name = "Record<string, unknown>";
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
@@ -155,14 +182,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => x.Type.Name = "RequestOption[]");
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers)).ToList().ForEach(x => { x.Type.Name = "Record<string, string>"; x.Type.ActionOf = false; });
         }
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
-        else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
-            currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
-        else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor)) {
+        else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
+            currentMethod.ReturnType.Name = $"Record<string, (node: ParseNode) => void>";
+        else if (currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
+        {
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore))
                 .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                 .ToList()
@@ -172,7 +198,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 urlTplParams.Type is CodeType originalType) {
                 originalType.Name = "Record<string, unknown>";
                 urlTplParams.Description = "The raw url or the Url template parameters for the request.";
-                var unionType = new CodeUnionType {
+                var unionType = new CodeExclusionType {
                     Name = "rawUrlOrTemplateParameters",
                     IsNullable = true,
                 };

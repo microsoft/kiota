@@ -13,8 +13,8 @@ public class GoConventionService : CommonLanguageConventionService
     public override string DocCommentPrefix => "// ";
     public override string ParseNodeInterfaceName => "ParseNode";
     #pragma warning disable CA1822 // Method should be static
-    public string AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
-    public string SerializationHash => "i04eb5309aeaafadd28374d79c8471df9b267510b4dc2e3144c378c50f6fd7b55";
+    public string AbstractionsHash => "i2ae4187f7daee263371cb1c977df639813ab50ffa529013b7437480d1ec0158f";
+    public string SerializationHash => "i878a80d2330e89d26896388a3f487eef27b0a0e6c010c493bf80be1452208f91";
     #pragma warning restore CA1822 // Method should be static
     public override string GetAccessModifier(AccessModifier access)
     {
@@ -38,7 +38,7 @@ public class GoConventionService : CommonLanguageConventionService
         GetTypeString(code, targetElement, includeCollectionInformation, true);
     public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool addPointerSymbol)
     {
-        if(code is CodeUnionType) 
+        if(code is CodeComposedTypeBase) 
             throw new InvalidOperationException($"Go does not support union types, the union type {code.Name} should have been filtered out by the refiner");
         else if (code is CodeType currentType) {
             var importSymbol = GetImportSymbol(code, targetElement);
@@ -67,7 +67,7 @@ public class GoConventionService : CommonLanguageConventionService
     #pragma warning disable CA1822 // Method should be static
     public string TranslateType(CodeTypeBase type, bool includeImportSymbol)
     {
-        if(type.Name.StartsWith("map[")) return type.Name; //casing hack
+        if(type.Name?.StartsWith("map[") ?? false) return type.Name; //casing hack
 
         return type.Name switch {
             "void" => string.Empty,
@@ -100,8 +100,8 @@ public class GoConventionService : CommonLanguageConventionService
         };
     }
     public bool IsScalarType(string typeName) {
-        if(typeName.StartsWith("map[")) return true;
-        return typeName.ToLowerInvariant() switch {
+        if(typeName?.StartsWith("map[") ?? false) return true;
+        return typeName?.ToLowerInvariant() switch {
             "binary" or "void" or "[]byte" => true,
             _ => false,
         };
@@ -125,7 +125,7 @@ public class GoConventionService : CommonLanguageConventionService
                                             (targetTypeDef as CodeClass)?.StartBlock as BlockDeclaration ??
                                             (targetTypeDef as CodeInterface)?.StartBlock as BlockDeclaration)
                                                         .Usings
-                                                        .FirstOrDefault(x => currentBaseType.Name.Equals(x.Name, StringComparison.OrdinalIgnoreCase));
+                                                        .FirstOrDefault(x => currentBaseType.Name?.Equals(x.Name, StringComparison.OrdinalIgnoreCase) ?? false);
                         return symbolUsing == null ? string.Empty : symbolUsing.Declaration.Name.GetNamespaceImportSymbol();
                     }
         }

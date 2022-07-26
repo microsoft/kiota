@@ -2,11 +2,10 @@
 using System.IO;
 using System.Linq;
 using Kiota.Builder.Refiners;
-using Kiota.Builder.Writers;
-using Kiota.Builder.Writers.Php;
+using Kiota.Builder.Tests;
 using Xunit;
 
-namespace Kiota.Builder.Tests.Writers.Php
+namespace Kiota.Builder.Writers.Php.Tests
 {
     public class CodeEnumWriterTests :IDisposable {
         private const string DefaultPath = "./";
@@ -38,7 +37,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         {
             var declaration = currentEnum.Parent as CodeNamespace;
             const string optionName = "option1";
-            currentEnum.Options.Add(optionName);
+            currentEnum.AddOption(new CodeEnumOption { Name = optionName});
             _languageRefiner.Refine(declaration);
             _codeEnumWriter.WriteCodeElement(currentEnum, writer);
             var result = tw.ToString();

@@ -13,6 +13,7 @@ jobs:
     env:
       relativePath: ./serialization/ruby/json/microsoft_kiota_serialization
       BUNDLE_HTTPS://RUBYGEMS__PKG__GITHUB__COM/MICROSOFT/: "${{ secrets.PUBLISH_GH_USERNAME }}:${{ secrets.PUBLISH_GH_TOKEN }}"
+      BUNDLE_RUBYGEMS__PKG__GITHUB__COM: "${{ secrets.PUBLISH_GH_USERNAME }}:${{ secrets.PUBLISH_GH_TOKEN }}" #needed for jruby-head
     strategy:
       fail-fast: false
       matrix:
@@ -34,7 +35,7 @@ jobs:
         working-directory: ${{ env.relativePath }}
       - name: Upload artifacts for ruby version 3 and ubuntu
         if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: drop
           path: |

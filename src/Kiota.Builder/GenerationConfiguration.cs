@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Kiota.Builder {
     public class GenerationConfiguration {
@@ -10,11 +11,15 @@ namespace Kiota.Builder {
         public string ModelsNamespaceName { get => $"{ClientNamespaceName}{NamespaceNameSeparator}models"; }
         public GenerationLanguage Language { get; set; } = GenerationLanguage.CSharp;
         public string ApiRootUrl { get; set; }
-        public List<string> PropertiesPrefixToStrip { get; set; } = new() { "@odata."};
-        public HashSet<string> IgnoredRequestContentTypes { get; set; } = new();
         public bool UsesBackingStore { get; set; }
-        public List<string> Serializers { get; set; } = new();
-        public List<string> Deserializers { get; set; } = new();
+        public HashSet<string> Serializers { get; set; } = new(StringComparer.OrdinalIgnoreCase){
+            "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
+            "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory"
+        };
+        public HashSet<string> Deserializers { get; set; } = new(StringComparer.OrdinalIgnoreCase) {
+            "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
+            "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory"
+        };
         public bool ShouldWriteNamespaceIndices { get { return BarreledLanguages.Contains(Language); } }
         public bool ShouldWriteBarrelsIfClassExists { get { return BarreledLanguagesWithConstantFileName.Contains(Language); } }
         public bool ShouldRenderMethodsOutsideOfClasses { get { return MethodOutsideOfClassesLanguages.Contains(Language); } }
@@ -24,15 +29,23 @@ namespace Kiota.Builder {
         };
         private static readonly HashSet<GenerationLanguage> BarreledLanguages = new () {
             GenerationLanguage.Ruby,
-            // TODO: add typescript once we have a barrel writer for it
+            GenerationLanguage.TypeScript,
+            GenerationLanguage.Swift,
         };
         private static readonly HashSet<GenerationLanguage> BarreledLanguagesWithConstantFileName = new () {
-            //TODO: add typescript once we have a barrel writer for it
+            GenerationLanguage.TypeScript
         };
         private static readonly HashSet<GenerationLanguage> FunctionalLanguages = new()
         {
             GenerationLanguage.PowerShell,
         };
         public bool CleanOutput { get; set;}
+        public HashSet<string> StructuredMimeTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase) {
+            "application/json",
+            "application/xml",
+            "text/plain",
+            "text/xml",
+            "text/yaml",
+        };
     }
 }

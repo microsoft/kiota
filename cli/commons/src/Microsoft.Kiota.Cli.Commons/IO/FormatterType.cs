@@ -14,6 +14,10 @@ public enum FormatterType
     /// </summary>
     TABLE,
     /// <summary>
+    /// Text formatting
+    /// </summary>
+    TEXT,
+    /// <summary>
     /// No formatting
     /// </summary>
     NONE

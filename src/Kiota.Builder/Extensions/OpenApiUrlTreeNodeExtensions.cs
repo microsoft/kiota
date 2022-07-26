@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -8,7 +8,7 @@ using Microsoft.OpenApi.Services;
 namespace Kiota.Builder.Extensions {
     public static class OpenApiUrlTreeNodeExtensions {
         private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
-        private static readonly Func<string, string> replaceSingleParameterSegementByItem =
+        private static readonly Func<string, string> replaceSingleParameterSegmentByItem =
         x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
         public static string GetNamespaceFromPath(this string currentPath, string prefix) => 
             prefix + 
@@ -16,12 +16,13 @@ namespace Kiota.Builder.Extensions {
                         (string.IsNullOrEmpty(prefix) ? string.Empty : ".")
                              + currentPath
                                 ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
-                                ?.Select(replaceSingleParameterSegementByItem)
-                                ?.Select(x => CleanupParametersFromPath((x ?? string.Empty).Split('.', StringSplitOptions.RemoveEmptyEntries)
-                                ?.Select(x => x.TrimStart('$')) //$ref from OData
+                                ?.Select(replaceSingleParameterSegmentByItem)
+                                ?.Select(static x => CleanupParametersFromPath((x ?? string.Empty).Split('.', StringSplitOptions.RemoveEmptyEntries)
+                                ?.Select(static x => x.TrimStart('$')) //$ref from OData
                                                                 .Last()))
+                                ?.Select(static x => x.CleanupSymbolName())
                                 ?.Aggregate(string.Empty, 
-                                    (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
+                                    static (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
                         string.Empty)
                     .ReplaceValueIdentifier();
         public static string GetNodeNamespaceFromPath(this OpenApiUrlTreeNode currentNode, string prefix) =>
@@ -34,8 +35,9 @@ namespace Kiota.Builder.Extensions {
         private static readonly char requestParametersEndChar = '}';
         private static readonly char requestParametersSectionChar = '(';
         private static readonly char requestParametersSectionEndChar = ')';
+        private const string WithKeyword = "With";
         private static readonly MatchEvaluator requestParametersMatchEvaluator = (match) => {
-            return "With" + match.Groups["paramName"].Value.ToFirstCharacterUpperCase();
+            return WithKeyword + match.Groups["paramName"].Value.ToFirstCharacterUpperCase();
         };
         private static string CleanupParametersFromPath(string pathSegment) {
             if((pathSegment?.Contains(requestParametersChar) ?? false) ||
@@ -58,29 +60,35 @@ namespace Kiota.Builder.Extensions {
             return Enumerable.Empty<OpenApiParameter>();
         }
         private static readonly char pathNameSeparator = '\\';
-        private static readonly Regex idClassNameCleanup = new(@"Id\d?$", RegexOptions.Compiled);
+        private static readonly Regex idClassNameCleanup = new(@"-?id\d?}?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         ///<summary>
         /// Returns the class name for the node with more or less precision depending on the provided arguments
         ///</summary>
-        public static string GetClassName(this OpenApiUrlTreeNode currentNode, string suffix = default, string prefix = default, OpenApiOperation operation = default, OpenApiResponse response = default, OpenApiSchema schema = default) {
-            var rawClassName = (schema?.Reference?.GetClassName() ??
-                                response?.GetResponseSchema()?.Reference?.GetClassName() ??
-                                operation?.GetResponseSchema()?.Reference?.GetClassName() ?? 
-                                CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier())
-                                .TrimEnd(requestParametersEndChar)
-                                .TrimStart(requestParametersChar)
-                                .TrimStart('$') //$ref from OData
-                                .Split('-')
-                                .First();
-            if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName))
+        public static string GetClassName(this OpenApiUrlTreeNode currentNode, HashSet<string> structuredMimeTypes, string suffix = default, string prefix = default, OpenApiOperation operation = default, OpenApiResponse response = default, OpenApiSchema schema = default) {
+            var rawClassName = schema?.Reference?.GetClassName() ??
+                                response?.GetResponseSchema(structuredMimeTypes)?.Reference?.GetClassName() ??
+                                operation?.GetResponseSchema(structuredMimeTypes)?.Reference?.GetClassName() ?? 
+                                CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier();
+            if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName)) {
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
-            return prefix + rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries)?.LastOrDefault() + suffix;
+                if(rawClassName == WithKeyword) // in case the single parameter doesn't follow {classname-id} we get the previous segment
+                    rawClassName = currentNode.Path
+                                            .Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
+                                            .SkipLast(1)
+                                            .Last()
+                                            .ToFirstCharacterUpperCase();
+
+            }
+            return (prefix + rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries)?.LastOrDefault() + suffix)
+                    .CleanupSymbolName();
         }
+        private static readonly Regex descriptionCleanupRegex = new (@"[\r\n\t]", RegexOptions.Compiled);
+        public static string CleanupDescription(this string description) => string.IsNullOrEmpty(description) ? description : descriptionCleanupRegex.Replace(description, string.Empty);
         public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string defaultValue = default) =>
         !string.IsNullOrEmpty(label) && (currentNode?.PathItems.ContainsKey(label) ?? false) ?
-                currentNode.PathItems[label].Description ??
+                (currentNode.PathItems[label].Description ??
                 currentNode.PathItems[label].Summary ??
-                defaultValue :
+                defaultValue).CleanupDescription() :
             defaultValue;
         public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParameter();
         public static bool IsPathSegmentWithSingleSimpleParameter(this OpenApiUrlTreeNode currentNode) =>
@@ -100,32 +108,47 @@ namespace Kiota.Builder.Extensions {
             if(currentNode.HasOperations(Constants.DefaultOpenApiLabel))
             {
                 var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
-                var parameters = pathItem.Parameters.Where(x => x.In == ParameterLocation.Query).ToList();
-                parameters.AddRange(pathItem.Operations.SelectMany(x => x.Value.Parameters).Where(x => x.In == ParameterLocation.Query));
+                var parameters = pathItem.Parameters
+                                        .Where(x => x.In == ParameterLocation.Query)
+                                        .Union(
+                                            pathItem.Operations
+                                                    .SelectMany(x => x.Value.Parameters)
+                                                    .Where(x => x.In == ParameterLocation.Query))
+                                        .ToArray();
                 if(parameters.Any())
                     queryStringParameters = "{?" + 
                                             parameters.Select(x => 
-                                                                x.Name.TrimStart('$') +
+                                                                x.Name.SanitizeParameterNameForUrlTemplate() +
                                                                 (x.Explode ? 
                                                                     "*" : string.Empty))
                                                     .Aggregate((x, y) => $"{x},{y}") +
                                             '}';
             }
             return "{+baseurl}" + 
-                    SanitizePathParameterNames(currentNode.Path.Replace('\\', '/')) +
+                    SanitizePathParameterNamesForUrlTemplate(currentNode.Path.Replace('\\', '/')) +
                     queryStringParameters;
         }
-        private static readonly Regex pathParamMatcher = new(@"{[\w-]+}",RegexOptions.Compiled);
-        private static string SanitizePathParameterNames(string original) {
+        private static readonly Regex pathParamMatcher = new(@"{(?<paramname>[^}]+)}",RegexOptions.Compiled);
+        private static string SanitizePathParameterNamesForUrlTemplate(string original) {
             if(string.IsNullOrEmpty(original) || !original.Contains('{')) return original;
             var parameters = pathParamMatcher.Matches(original);
-            foreach(var value in parameters.Select(x => x.Value))
-                original = original.SanitizePathParameterName();
+            foreach(var value in parameters.Select(x => x.Groups["paramname"].Value))
+                original = original.Replace(value, value.SanitizeParameterNameForUrlTemplate());
             return original;
         }
-        public static string SanitizePathParameterName(this string original) {
+        public static string SanitizeParameterNameForUrlTemplate(this string original) {
             if(string.IsNullOrEmpty(original)) return original;
-            return original.Replace('-', '_');
+            return Uri.EscapeDataString(original
+                                    .TrimStart('{')
+                                    .TrimEnd('}'))
+                        .Replace("-", "%2D")
+                        .Replace(".", "%2E")
+                        .Replace("~", "%7E");// - . ~ are invalid uri template character but don't get encoded by Uri.EscapeDataString
+        }
+        private static readonly Regex removePctEncodedCharacters = new(@"%[0-9A-F]{2}", RegexOptions.Compiled);
+        public static string SanitizeParameterNameForCodeSymbols(this string original, string replaceEncodedCharactersWith = "") {
+            if(string.IsNullOrEmpty(original)) return original;
+            return removePctEncodedCharacters.Replace(original.ToCamelCase("-", ".", "~").SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);
         }
     }
 }

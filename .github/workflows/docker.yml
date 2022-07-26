@@ -5,21 +5,24 @@ on:
     branches: [main]
     tags: ['v*']
     paths: ['src/**', '.github/workflows/**']
+env:
+  REGISTRY: msgraphprod.azurecr.io
+  IMAGE_NAME: public/kiota/generator
 jobs:
   push_to_registry:
     environment:
-      name: staging_feeds
-    name: Push Docker image to GitHub Packages
+      name: acr
+    name: Push Docker image
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
       - name: Login to GitHub package feed
-        uses: docker/login-action@v1.14.1 
+        uses: docker/login-action@v2.0.0 
         with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+          registry: ${{ env.REGISTRY }}
       - run: |
           $version = $Env:BRANCH_NAME -replace "refs/tags/v",""
           echo "::set-output name=version::${version}"
@@ -30,13 +33,13 @@ jobs:
           BRANCH_NAME: ${{ github.ref }}
       - name: Push to GitHub Packages - Nightly
         if: contains(github.ref, 'refs/head/main')
-        uses: docker/build-push-action@v2.10.0
+        uses: docker/build-push-action@v3.1.0
         with:
           push: true
-          tags: docker.pkg.github.com/microsoft/kiota/generator:nightly
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly
       - name: Push to GitHub Packages - Release
         if: contains(github.ref, 'refs/tags/v')
-        uses: docker/build-push-action@v2.10.0
+        uses: docker/build-push-action@v3.1.0
         with:
           push: true
-          tags: docker.pkg.github.com/microsoft/kiota/generator:latest,docker.pkg.github.com/microsoft/kiota/generator:${{ steps.getversion.outputs.version }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.getversion.outputs.version }}

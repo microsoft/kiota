@@ -4,9 +4,9 @@ The Kiota abstractions are language specific libraries defining the basic constr
 Your project will need a reference to the abstraction package to build and run, the following languages are currently supported:
 
 - [Dotnet](https://github.com/microsoft/kiota-abstractions-dotnet)
-- [Java](./java)
-- [Go](./go)
+- [Java](https://github.com/microsoft/kiota-java/tree/main/components/abstractions)
+- [Go](https://github.com/microsoft/kiota-abstractions-go)
 - [Ruby](./ruby/microsoft_kiota_abstractions)
-- [TypeScript](./typescript)
-- [PHP](./php)
+- [TypeScript](https://github.com/microsoft/kiota-typescript/tree/main/packages/abstractions)
+- [PHP](https://github.com/microsoft/kiota-abstractions-php)
 - [Python](./python)

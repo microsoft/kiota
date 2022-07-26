@@ -17,6 +17,26 @@ public class TypeScriptLanguageRefinerTests {
     }
 #region commonrefiner
     [Fact]
+    public void AddsQueryParameterMapperMethod() {
+        var model = graphNS.AddClass(new CodeClass {
+            Name = "somemodel",
+            Kind = CodeClassKind.QueryParameters,
+        }).First();
+
+        model.AddProperty(new CodeProperty {
+            Name = "Select",
+            SerializationName = "%24select",
+            Type = new CodeType {
+                Name = "string"
+            },
+        });
+
+        Assert.Empty(model.Methods);
+
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, graphNS);
+        Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
+    }
+    [Fact]
     public void AddStaticMethodsUsingsForDeserializer() {
         var model = graphNS.AddClass(new CodeClass {
             Name = "somemodel",
@@ -265,7 +285,7 @@ public class TypeScriptLanguageRefinerTests {
         Assert.Empty(model.Methods.Where(x => DeserializeDefaultName.Equals(x.ReturnType.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => HandlerDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
-        Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeUnionType));
+        Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeComposedTypeBase));
     }
     [Fact]
     public void ReplacesDateTimeOffsetByNativeType() {

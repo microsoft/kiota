@@ -9,7 +9,12 @@ from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
 
 from dateutil import parser
-from kiota.abstractions.serialization import AdditionalDataHolder, Parsable, ParseNode
+from kiota.abstractions.serialization import (
+    AdditionalDataHolder,
+    Parsable,
+    ParsableFactory,
+    ParseNode,
+)
 
 T = TypeVar("T")
 
@@ -138,7 +143,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
             List[T]: The collection of primitive values
         """
 
-        def func(item):
+        def func(item):  # pylint: disable=too-many-return-statements
             generic_type = type(item)
             current_parse_node = JsonParseNode(item)
             if generic_type == bool:
@@ -165,14 +170,14 @@ class JsonParseNode(ParseNode, Generic[T, U]):
             return list(map(func, json.loads(self._json_node)))
         return list(map(func, list(self._json_node)))
 
-    def get_collection_of_object_values(self, class_type: Type[U]) -> List[U]:
+    def get_collection_of_object_values(self, factory: ParsableFactory) -> List[U]:
         """Gets the collection of type U values from the json node
         Returns:
             List[U]: The collection of model object values of the node
         """
         return list(
             map(
-                lambda x: JsonParseNode(json.dumps(x)).get_object_value(class_type),  # type: ignore
+                lambda x: JsonParseNode(json.dumps(x)).get_object_value(factory),  # type: ignore
                 json.loads(self._json_node)
             )
         )
@@ -203,12 +208,12 @@ class JsonParseNode(ParseNode, Generic[T, U]):
                 raise Exception(f'Invalid key: {raw_key} for enum {enum_class._name_}.')
         return None
 
-    def get_object_value(self, class_type: Callable[[], U]) -> U:
+    def get_object_value(self, factory: ParsableFactory) -> U:
         """Gets the model object value of the node
         Returns:
             Parsable: The model object value of the node
         """
-        result = class_type()
+        result = factory.create(self)
         if self.on_before_assign_field_values:
             self.on_before_assign_field_values(result)
         self._assign_field_values(result)
@@ -267,8 +272,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
             snake_case_key = re.sub(r'(?<!^)(?=[A-Z])', '_', key).lower()
             deserializer = fields.get(snake_case_key)
             if deserializer:
-                deserializer(item, JsonParseNode(val))
+                deserializer(JsonParseNode(val))
             else:
                 if item_additional_data:
                     item_additional_data[snake_case_key] = val
-                

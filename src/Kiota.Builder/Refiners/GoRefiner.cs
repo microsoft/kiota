@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Extensions;
 using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
@@ -22,6 +20,7 @@ public class GoRefiner : CommonLanguageRefiner
             false,
             "ById");
         RemoveCancellationParameter(generatedCode);
+        RemoveDiscriminatorMappingsTargetingSubNamespaces(generatedCode);
         ReplaceRequestBuilderPropertiesByMethods(
             generatedCode
         );
@@ -56,9 +55,9 @@ public class GoRefiner : CommonLanguageRefiner
             CorrectMethodType,
             CorrectPropertyType,
             CorrectImplements);
-        PatchHeaderParametersType(
-            generatedCode,
-            "map[string]string");
+        InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
+        DisableActionOf(generatedCode, 
+            CodeParameterKind.RequestConfiguration);
         AddGetterAndSetterMethods(
             generatedCode, 
             new () { 
@@ -72,29 +71,33 @@ public class GoRefiner : CommonLanguageRefiner
         AddConstructorsForDefaultValues(
             generatedCode,
             true,
-            true); //forcing add as constructors are required for by factories
+            true,  //forcing add as constructors are required for by factories 
+            new CodeClassKind[] { CodeClassKind.RequestConfiguration });
         MakeModelPropertiesNullable(
             generatedCode);
         AddErrorImportForEnums(
             generatedCode);
+        var defaultConfiguration = new GenerationConfiguration();
         ReplaceDefaultSerializationModules(
             generatedCode,
-            "github.com/microsoft/kiota/serialization/go/json.JsonSerializationWriterFactory",
-            "github.com/microsoft/kiota/serialization/go/text.TextSerializationWriterFactory");
+            defaultConfiguration.Serializers,
+            new (StringComparer.OrdinalIgnoreCase) {
+                "github.com/microsoft/kiota-serialization-json-go.JsonSerializationWriterFactory",
+                "github.com/microsoft/kiota-serialization-text-go.TextSerializationWriterFactory"});
         ReplaceDefaultDeserializationModules(
             generatedCode,
-            "github.com/microsoft/kiota/serialization/go/json.JsonParseNodeFactory",
-            "github.com/microsoft/kiota/serialization/go/text.TextParseNodeFactory");
+            defaultConfiguration.Deserializers,
+            new (StringComparer.OrdinalIgnoreCase) {
+                "github.com/microsoft/kiota-serialization-json-go.JsonParseNodeFactory",
+                "github.com/microsoft/kiota-serialization-text-go.TextParseNodeFactory"});
         AddSerializationModulesImport(
             generatedCode,
-            new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultSerializer"},
-            new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.ParseNodeFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultDeserializer"});
-        ReplaceExecutorAndGeneratorParametersByParameterSets(
-            generatedCode);
+            new string[] {"github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer"},
+            new string[] {"github.com/microsoft/kiota-abstractions-go/serialization.ParseNodeFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultDeserializer"});
         AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiError",
-                "github.com/microsoft/kiota/abstractions/go"
+                "github.com/microsoft/kiota-abstractions-go"
         );
         AddDiscriminatorMappingsUsingsToParentClasses(
             generatedCode,
@@ -110,62 +113,30 @@ public class GoRefiner : CommonLanguageRefiner
             x => $"{x.Name}able"
         );
     }
-    private static void ReplaceExecutorAndGeneratorParametersByParameterSets(CodeElement currentElement) {
-        if (currentElement is CodeMethod currentMethod &&
-            currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
-            currentMethod.Parameters.Any() &&
-            currentElement.Parent is CodeClass parentClass) {
-                var parameterSetClass = parentClass.AddInnerClass(new CodeClass{
-                    Name = $"{parentClass.Name.ToFirstCharacterUpperCase()}{currentMethod.HttpMethod}Options",
-                    Kind = CodeClassKind.ParameterSet,
-                    Description = $"Options for {currentMethod.Name}",
-                }).First();
-                parameterSetClass.AddProperty(
-                    currentMethod.Parameters.Select(x => new CodeProperty{
-                        Name = x.Name,
-                        Type = x.Type,
-                        Description = x.Description,
-                        Access = AccessModifier.Public,
-                        Kind = x.Kind switch {
-                            CodeParameterKind.RequestBody => CodePropertyKind.RequestBody,
-                            CodeParameterKind.QueryParameter => CodePropertyKind.QueryParameter,
-                            CodeParameterKind.Headers => CodePropertyKind.Headers,
-                            CodeParameterKind.Options => CodePropertyKind.Options,
-                            CodeParameterKind.ResponseHandler => CodePropertyKind.ResponseHandler,
-                            _ => CodePropertyKind.Custom
-                        },
-                    }).ToArray());
-                parameterSetClass.Properties.ToList().ForEach(x => {x.Type.ActionOf = false;});
-                currentMethod.RemoveParametersByKind(CodeParameterKind.RequestBody,
-                                                    CodeParameterKind.QueryParameter,
-                                                    CodeParameterKind.Headers,
-                                                    CodeParameterKind.Options,
-                                                    CodeParameterKind.ResponseHandler);
-                var parameterSetParameter = new CodeParameter{
-                    Name = "options",
-                    Type = new CodeType {
-                        Name = parameterSetClass.Name,
-                        ActionOf = false,
-                        IsNullable = true,
-                        TypeDefinition = parameterSetClass,
-                        IsExternal = false,
-                    },
-                    Optional = false,
-                    Description = "Options for the request",
-                    Kind = CodeParameterKind.ParameterSet,
-                };
-                currentMethod.AddParameter(parameterSetParameter);
-                var generatorMethod = parentClass.GetMethodsOffKind(CodeMethodKind.RequestGenerator)
-                                                .FirstOrDefault(x => x.HttpMethod == currentMethod.HttpMethod);
-                if(!(generatorMethod?.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ParameterSet)) ?? true)) {
-                    generatorMethod.RemoveParametersByKind(CodeParameterKind.RequestBody,
-                                                    CodeParameterKind.QueryParameter,
-                                                    CodeParameterKind.Headers,
-                                                    CodeParameterKind.Options);
-                    generatorMethod.AddParameter(parameterSetParameter);
-                }
+    private void InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(CodeElement currentElement) {
+        if(currentElement is CodeClass currentClass) {
+            var codeMethods = currentClass.Methods;
+            if(codeMethods.Any(x => x.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))) {
+                var originalExecutorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor)).ToList();
+                var executorMethodsToAdd = originalExecutorMethods
+                                    .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration, CodeParameterKind.ResponseHandler))
+                                    .Where(x => x != null)
+                                    .ToArray();//otherwise the name change also affects the clones
+                var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator)).ToList();
+                var generatorMethodsToAdd = originalGeneratorMethods
+                                    .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration))
+                                    .Where(x => x != null)
+                                    .ToArray();
+                originalExecutorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.RequestConfiguration)}And{nameof(CodeParameterKind.ResponseHandler)}");
+                originalGeneratorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.RequestConfiguration)}");
+                if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
+                    currentClass.AddMethod(executorMethodsToAdd
+                                            .Union(generatorMethodsToAdd)
+                                            .ToArray());
             }
-        CrawlTree(currentElement, ReplaceExecutorAndGeneratorParametersByParameterSets);
+        }
+
+        CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors);
     }
     private static void RemoveModelPropertiesThatDependOnSubNamespaces(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass && 
@@ -252,26 +223,25 @@ public class GoRefiner : CommonLanguageRefiner
     };
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
-            "github.com/microsoft/kiota/abstractions/go", "RequestAdapter"),
+            "github.com/microsoft/kiota-abstractions-go", "RequestAdapter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            "github.com/microsoft/kiota/abstractions/go", "RequestInformation", "HttpMethod", "RequestOption"),
+            "github.com/microsoft/kiota-abstractions-go", "RequestInformation", "HttpMethod", "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "github.com/microsoft/kiota/abstractions/go", "ResponseHandler"),
+            "github.com/microsoft/kiota-abstractions-go", "ResponseHandler"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor) &&
                     method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) &&
                                             !typeToSkipStrConv.Contains(x.Type.Name)),
             "strconv", "FormatBool"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-            "github.com/microsoft/kiota/abstractions/go/serialization", "SerializationWriter"),
+            "github.com/microsoft/kiota-abstractions-go/serialization", "SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
-            "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "Parsable"),
+            "github.com/microsoft/kiota-abstractions-go/serialization", "ParseNode", "Parsable"),
         new (x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
-            "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
+            "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && 
                                             (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
                                             @class.StartBlock.Implements.Any(x => KiotaBuilder.AdditionalHolderInterface.Equals(x.Name, StringComparison.OrdinalIgnoreCase))),
-            "github.com/microsoft/kiota/abstractions/go/serialization", "AdditionalDataHolder"),
-        new (x => x is CodeEnum num, "ToUpper", "strings"),
+            "github.com/microsoft/kiota-abstractions-go/serialization", "AdditionalDataHolder"),
     };//TODO add backing store types once we have them defined
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
         block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");
@@ -287,17 +257,11 @@ public class GoRefiner : CommonLanguageRefiner
                 });
             else if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
                 currentMethod.ReturnType.IsNullable = true;
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => {
-                x.Type.IsNullable = false;
-                x.Type.Name = "RequestOption";
-                x.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
-            });
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.QueryParameter)).ToList().ForEach(x => x.Type.Name = $"{parentClass.Name}{x.Type.Name}");
         }
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
         else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
-            currentMethod.ReturnType.Name = $"map[string]func(interface{{}}, {conventions.SerializationHash}.ParseNode)(error)";
+            currentMethod.ReturnType.Name = $"map[string]func({conventions.SerializationHash}.ParseNode)(error)";
             currentMethod.Name = "getFieldDeserializers";
         } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor)) {
             var rawUrlParam = currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl);
@@ -329,21 +293,21 @@ public class GoRefiner : CommonLanguageRefiner
         {"TimeSpan", ("ISODuration", new CodeUsing {
                                         Name = "ISODuration",
                                         Declaration = new CodeType {
-                                            Name = "github.com/microsoft/kiota/abstractions/go/serialization",
+                                            Name = "github.com/microsoft/kiota-abstractions-go/serialization",
                                             IsExternal = true,
                                         },
                                     })},
         {"DateOnly", (null, new CodeUsing {
                                 Name = "DateOnly",
                                 Declaration = new CodeType {
-                                    Name = "github.com/microsoft/kiota/abstractions/go/serialization",
+                                    Name = "github.com/microsoft/kiota-abstractions-go/serialization",
                                     IsExternal = true,
                                 },
                             })},
         {"TimeOnly", (null, new CodeUsing {
                                 Name = "TimeOnly",
                                 Declaration = new CodeType {
-                                    Name = "github.com/microsoft/kiota/abstractions/go/serialization",
+                                    Name = "github.com/microsoft/kiota-abstractions-go/serialization",
                                     IsExternal = true,
                                 },
                             })},
@@ -362,6 +326,13 @@ public class GoRefiner : CommonLanguageRefiner
                 currentProperty.Type.Name = "map[string]string";
                 if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                     currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
+            } else if(currentProperty.IsOfKind(CodePropertyKind.Headers)) {
+                currentProperty.Type.Name = "map[string]string";
+                currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
+            } else if(currentProperty.IsOfKind(CodePropertyKind.Options)) {
+                currentProperty.Type.IsNullable = false;
+                currentProperty.Type.Name = "RequestOption";
+                currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
             } else
                 CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }

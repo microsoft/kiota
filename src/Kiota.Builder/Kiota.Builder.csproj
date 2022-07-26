@@ -1,14 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <LangVersion>Latest</LangVersion>
     <TargetFramework>net6.0</TargetFramework>
+    <SignAssembly>true</SignAssembly>
+    <PackageProjectUrl>https://github.com/microsoft/kiota</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Authors>Microsoft</Authors>
+    <Company>Microsoft</Company>
+    <Title>Microsoft.OpenApi.Kiota.Builder</Title>
+    <PackageId>Microsoft.OpenApi.Kiota.Builder</PackageId>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <Version>0.3.0-preview</Version>
+    <PackageReleaseNotes>
+      https://github.com/microsoft/kiota/releases
+    </PackageReleaseNotes>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <RepositoryUrl>https://github.com/microsoft/kiota</RepositoryUrl>
+    <Description>The core engine behind the OpenAPI based client generator.</Description>
+    <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
+    <PackageTags>OpenAPI .NET CSharp TypeScript Java Go PHP Python REST API</PackageTags>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\Microsoft.OpenApi.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Humanizer" Version="2.13.14" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />
-    <PackageReference Include="Microsoft.OpenApi" Version="1.3.0-preview" />
-    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.3.0-preview" />
+    <PackageReference Include="Microsoft.OpenApi" Version="1.3.2" />
+    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.3.2" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>
