@@ -54,7 +54,7 @@ module MicrosoftKiotaAuthentication
         return token.token if !token.nil? && !token.expired?
 
         if token.expired?
-          token = token.resfresh!
+          token = token.refresh!
           @cached_token = token.to_hash
           return token.token
         end
@@ -133,19 +133,3 @@ module MicrosoftKiotaAuthentication
     end
   end
 end
-
-
-
-# Break this file down between definition + implementation 
-#pushing implementation into different libraries 
-#json serialization depends on abstractions but is seperate 
-
-# seperate contract definitions from implementation work 
-
-# Look @ request adapter + http for example
-
-# add a new Ruby folder under authentication for PR 
-
-
-
-# add to an extensions folder 
