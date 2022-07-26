@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bugs in PHP discriminator factory methods, Guzzle request adapter send methods, stream and plain text response handling. [#1634](https://github.com/microsoft/kiota/pull/1634)
 - Removed abstractions, authentication, http and serialization packages for PHP. [#1637](https://github.com/microsoft/kiota/pull/1637)
 - Fixes a bug where generated discriminator methods would reference types in other namespaces without proper resolution. [#1670](https://github.com/microsoft/kiota/issues/1670)
+- Fixed a bug where the generated code had incorrect casing within a method (Ruby). [#1672](https://github.com/microsoft/kiota/issues/1672)
 
 ## [0.2.1] - 2022-05-30
 
