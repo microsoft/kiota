@@ -7,6 +7,7 @@ from .parse_node import ParseNode
 class ParseNodeFactory(ABC):
     """Defines the protocol for a factory that is used to create ParseNodes.
     """
+
     @abstractmethod
     def get_valid_content_type(self) -> str:
         """Returns the content type this factory's parse nodes can deserialize

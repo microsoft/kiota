@@ -87,34 +87,34 @@ class User(Parsable, AdditionalDataHolder):
     def set_additional_data(self, data: Dict[str, Any]) -> None:
         self._additional_data = data
 
-    def get_field_deserializers(self) -> Dict[str, Callable[[T, ParseNode], None]]:
+    def get_field_deserializers(self) -> Dict[str, Callable[[ParseNode], None]]:
         """Gets the deserialization information for this object.
 
         Returns:
-            Dict[str, Callable[[T, ParseNode], None]]: The deserialization information for this
+            Dict[str, Callable[[ParseNode], None]]: The deserialization information for this
             object where each entry is a property key with its deserialization callback.
         """
         return {
             "id":
-            lambda o, n: o.set_id(n.get_uuid_value()),
+            lambda n: self.set_id(n.get_uuid_value()),
             "display_name":
-            lambda o, n: o.set_display_name(n.get_string_value()),
+            lambda n: self.set_display_name(n.get_string_value()),
             "office_location":
-            lambda o, n: o.set_office_location(n.get_enum_value(OfficeLocation)),
+            lambda n: self.set_office_location(n.get_enum_value(OfficeLocation)),
             "updated_at":
-            lambda o, n: o.set_updated_at(n.get_datetime_offset_value()),
+            lambda n: self.set_updated_at(n.get_datetime_offset_value()),
             "birthday":
-            lambda o, n: o.set_birthday(n.get_date_value()),
+            lambda n: self.set_birthday(n.get_date_value()),
             "business_phones":
-            lambda o, n: o.set_business_phones(n.get_collection_of_primitive_values()),
+            lambda n: self.set_business_phones(n.get_collection_of_primitive_values()),
             "mobile_phone":
-            lambda o, n: o.set_mobile_phone(n.get_string_value()),
+            lambda n: self.set_mobile_phone(n.get_string_value()),
             "is_active":
-            lambda o, n: o.set_is_active(n.get_boolean_value()),
+            lambda n: self.set_is_active(n.get_boolean_value()),
             "age":
-            lambda o, n: o.set_age(n.get_int_value()),
+            lambda n: self.set_age(n.get_int_value()),
             "gpa":
-            lambda o, n: o.set_gpa(n.get_float_value())
+            lambda n: self.set_gpa(n.get_float_value())
         }
 
     def serialize(self, writer: SerializationWriter) -> None:

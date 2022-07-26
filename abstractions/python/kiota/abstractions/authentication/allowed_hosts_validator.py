@@ -6,6 +6,7 @@ class AllowedHostsValidator:
     """Maintains a list of valid hosts and allows authentication providers to check whether
     a host is valid before authenticating a request
     """
+
     def __init__(self, allowed_hosts: List[str]) -> None:
         """Creates a new AllowedHostsValidator object with provided values.
 

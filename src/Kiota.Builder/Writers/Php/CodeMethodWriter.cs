@@ -71,21 +71,22 @@ namespace Kiota.Builder.Writers.Php
             if(inherits)
                 writer.WriteLine("parent::__construct();");
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(
-                                                                            CodePropertyKind.BackingStore,
-                                                                            CodePropertyKind.RequestBuilder,
-                                                                            CodePropertyKind.UrlTemplate,
-                                                                            CodePropertyKind.PathParameters)
-                                            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                            .OrderByDescending(x => x.Kind)
-                                            .ThenBy(x => x.Name))
+                    CodePropertyKind.BackingStore,
+                    CodePropertyKind.RequestBuilder,
+                    CodePropertyKind.UrlTemplate,
+                    CodePropertyKind.PathParameters)
+                .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
+                .OrderByDescending(x => x.Kind)
+                .ThenBy(x => x.Name))
             {
                 var isPathSegment = propWithDefault.IsOfKind(CodePropertyKind.PathParameters);
-                writer.WriteLine($"$this->{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {(isPathSegment ? "[]" :propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote())};");
+                writer.WriteLine($"$this->{propWithDefault.Name.ToFirstCharacterLowerCase()} = {(isPathSegment ? "[]" :propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote())};");
             }
-            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData) //additional data and backing Store rely on accessors
+            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
                 .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                 .OrderBy(x => x.Name)) {
-                writer.WriteLine($"$this->{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
+                var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() ?? $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
+                writer.WriteLine($"$this->{setterName}({propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote()});");
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
@@ -238,7 +239,7 @@ namespace Kiota.Builder.Writers.Php
             if(inherits && implementsParsable)
                 writer.WriteLine($"parent::serialize({writerParameterName});");
             var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
-            foreach(var otherProp in customProperties) {
+            foreach(var otherProp in customProperties.Where(x => !x.ExistsInBaseType)) {
                 writer.WriteLine($"{writerParameterName}->{GetSerializationMethodName(otherProp.Type)}('{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}', $this->{otherProp.Name.ToFirstCharacterLowerCase()});");
             }
             if(additionalDataProperty != null)
@@ -401,6 +402,7 @@ namespace Kiota.Builder.Writers.Php
             if(fieldToSerialize.Any()) {
                 writer.IncreaseIndent();
                 fieldToSerialize
+                    .Where(x => !x.ExistsInBaseType)
                     .OrderBy(x => x.Name)
                     .Select(x => 
                         $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => function (ParseNode $n) use ({currentObjectName}) {{ {currentObjectName}->{x.Setter.Name.ToFirstCharacterLowerCase()}({GetDeserializationMethodName(x.Type, method)}); }},")

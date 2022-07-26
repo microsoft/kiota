@@ -34,7 +34,7 @@ namespace Kiota.Builder.Writers.Php.Tests
         {
             var property = new CodeProperty()
             {
-                Name = "email",
+                Name = "Email",
                 Access = AccessModifier.Private,
                 Type = new CodeType()
                 {

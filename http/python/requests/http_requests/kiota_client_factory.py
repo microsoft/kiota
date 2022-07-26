@@ -2,8 +2,7 @@ import functools
 
 import requests
 
-from .middleware import MiddlewarePipeline, RetryHandler
-
+from .middleware import MiddlewarePipeline, ParametersNameDecodingHandler, RetryHandler
 
 class KiotaClientFactory:
     DEFAULT_CONNECTION_TIMEOUT: int = 30
@@ -35,6 +34,7 @@ class KiotaClientFactory:
         """
         middleware_pipeline = MiddlewarePipeline()
         middlewares = [
+            ParametersNameDecodingHandler(),
             RetryHandler(),
         ]
 

@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, TypeVar
 
 from .request_information import RequestInformation
 from .response_handler import ResponseHandler
-from .serialization import Parsable, SerializationWriterFactory
+from .serialization import Parsable, ParsableFactory, SerializationWriterFactory
 from .store import BackingStoreFactory
 
 ResponseType = TypeVar("ResponseType", str, int, float, bool, datetime, BytesIO)
@@ -30,19 +30,18 @@ class RequestAdapter(ABC):
 
     @abstractmethod
     async def send_async(
-        self, request_info: RequestInformation, type: ModelType,
-        response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, Optional[Callable[[], Parsable]]]
-    ) -> ModelType:
+        self, request_info: RequestInformation, type: ParsableFactory,
+        response_handler: Optional[ResponseHandler], error_map: Dict[str, Optional[ParsableFactory]]
+    ) -> Optional[ModelType]:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized response model.
 
         Args:
             request_info (RequestInformation): the request info to execute.
-            type (ModelType): the class of the response model to deserialize the response into.
+            type (ParsableFactory): the class of response model to deserialize the response into.
             response_handler (Optional[ResponseHandler]): The response handler to use for the HTTP
             request instead of the default handler.
-            error_map (Dict[str, Optional[Callable[[], Parsable]]]): the error dict to use in case
+            error_map (Dict[str, Optional[ParsableFactory]]): the error dict to use in case
             of a failed request.
 
         Returns:
@@ -52,19 +51,21 @@ class RequestAdapter(ABC):
 
     @abstractmethod
     async def send_collection_async(
-        self, request_info: RequestInformation, type: ModelType,
+        self,
+        request_info: RequestInformation,
+        type: ParsableFactory,
         response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, Optional[Callable[[], Parsable]]]
-    ) -> List[ModelType]:
+        error_map: Dict[str, Optional[ParsableFactory]],
+    ) -> Optional[List[ModelType]]:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized response model collection.
 
         Args:
             request_info (RequestInformation): the request info to execute.
-            type (ModelType): the class of the response model to deserialize the response into.
+            type (ParsableFactory): the class of response model to deserialize the response into.
             response_handler (Optional[ResponseHandler]): The response handler to use for the
             HTTP request instead of the default handler.
-            error_map (Dict[str, Optional[Callable[[], Parsable]]]): the error dict to use in
+            error_map (Dict[str, Optional[ParsableFactory]]): the error dict to use in
             case of a failed request.
 
         Returns:
@@ -74,9 +75,11 @@ class RequestAdapter(ABC):
 
     @abstractmethod
     async def send_collection_of_primitive_async(
-        self, request_info: RequestInformation, response_type: ResponseType,
+        self,
+        request_info: RequestInformation,
+        response_type: ResponseType,
         response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, Optional[Callable[[], Parsable]]]
+        error_map: Dict[str, Optional[ParsableFactory]],
     ) -> Optional[List[ResponseType]]:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized response model collection.
@@ -87,20 +90,19 @@ class RequestAdapter(ABC):
             response into.
             response_handler (Optional[ResponseType]): The response handler to use for the HTTP
             request instead of the default handler.
-            error_map (Dict[str, Optional[Callable[[], Parsable]]]): the error dict to use in
+            error_map (Dict[str, Optional[ParsableFactory]]): the error dict to use in
             case of a failed request.
 
         Returns:
-            Optional[List[ModelType]]: he deserialized response model collection.
+            Optional[List[ModelType]]: The deserialized response model collection.
         """
         pass
 
     @abstractmethod
     async def send_primitive_async(
         self, request_info: RequestInformation, response_type: ResponseType,
-        response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, Optional[Callable[[], Parsable]]]
-    ) -> ResponseType:
+        response_handler: Optional[ResponseHandler], error_map: Dict[str, Optional[ParsableFactory]]
+    ) -> Optional[ResponseType]:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized primitive response model.
 
@@ -110,7 +112,7 @@ class RequestAdapter(ABC):
             response into.
             response_handler (Optional[ResponseHandler]): The response handler to use for the
             HTTP request instead of the default handler.
-            error_map (Dict[str, Optional[Callable[[], Parsable]]]): the error dict to use in
+            error_map (Dict[str, Optional[ParsableFactory]]): the error dict to use in
             case of a failed request.
 
         Returns:
@@ -121,7 +123,7 @@ class RequestAdapter(ABC):
     @abstractmethod
     async def send_no_response_content_async(
         self, request_info: RequestInformation, response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, Optional[Callable[[], Parsable]]]
+        error_map: Dict[str, Optional[ParsableFactory]]
     ) -> None:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized primitive response model.
@@ -130,7 +132,7 @@ class RequestAdapter(ABC):
             request_info (RequestInformation):the request info to execute.
             response_handler (Optional[ResponseHandler]): The response handler to use for the
             HTTP request instead of the default handler.
-            error_map (Dict[str, Optional[Callable[[], Parsable]]]): the error dict to use in
+            error_map (Dict[str, Optional[Optional[ParsableFactory]]): the error dict to use in
             case of a failed request.
         """
         pass
