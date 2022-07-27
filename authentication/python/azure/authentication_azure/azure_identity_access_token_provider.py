@@ -16,10 +16,10 @@ class AzureIdentityAccessTokenProvider(AccessTokenProvider):
         credentials: "AsyncTokenCredential",
         options: Optional[Dict],
         scopes: List[str] = ['https://graph.microsoft.com/.default'],
-        allowed_hosts: Set[str] = {
+        allowed_hosts: List[str] = [
             'graph.microsoft.com', 'graph.microsoft.us', 'dod-graph.microsoft.us',
             'graph.microsoft.de', 'microsoftgraph.chinacloudapi.cn', 'canary.graph.microsoft.com'
-        },
+        ],
     ) -> None:
         if not credentials:
             raise Exception("Parameter credentials cannot be null")

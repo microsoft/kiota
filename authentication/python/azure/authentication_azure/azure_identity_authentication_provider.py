@@ -15,10 +15,10 @@ class AzureIdentityAuthenticationProvider(BaseBearerTokenAuthenticationProvider)
         credentials: "AsyncTokenCredential",
         options: Optional[Dict] = None,
         scopes: List[str] = ['https://graph.microsoft.com/.default'],
-        allowed_hosts: Set[str] = {
+        allowed_hosts: List[str] = [
             'graph.microsoft.com', 'graph.microsoft.us', 'dod-graph.microsoft.us',
             'graph.microsoft.de', 'microsoftgraph.chinacloudapi.cn', 'canary.graph.microsoft.com'
-        }
+        ]
     ) -> None:
         """[summary]
 
