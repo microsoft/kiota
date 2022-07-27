@@ -20,7 +20,7 @@ namespace Kiota.Builder.CodeRenderers
         }
         public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile, CancellationToken cancellationToken)
         {
-            using var stream = new FileStream(outputFile, FileMode.Create);
+            using var stream = new FileStream(outputFile, FileMode.CreateNew);
 
             var sw = new StreamWriter(stream);
             writer.SetTextWriter(sw);
@@ -29,7 +29,7 @@ namespace Kiota.Builder.CodeRenderers
                 await sw.FlushAsync(); // streamwriter doesn't not have a cancellation token overload https://github.com/dotnet/runtime/issues/64340
         }
         // We created barrells for codenamespaces. Skipping for empty namespaces, ones created for users, and ones with same namspace as class name.
-        public async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root, CancellationToken cancellationToken)
+        public virtual async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root, CancellationToken cancellationToken)
         {
             if(cancellationToken.IsCancellationRequested) return;
             foreach (var codeElement in root.GetChildElements(true))
@@ -48,7 +48,7 @@ namespace Kiota.Builder.CodeRenderers
                 }
             }
         }
-        private async Task RenderBarrel(LanguageWriter writer, CodeNamespace root, CodeNamespace codeNamespace, CancellationToken cancellationToken) {
+        internal async Task RenderBarrel(LanguageWriter writer, CodeNamespace root, CodeNamespace codeNamespace, CancellationToken cancellationToken) {
             if (!string.IsNullOrEmpty(codeNamespace.Name) &&
                 !string.IsNullOrEmpty(root.Name) &&
                 _configuration.ShouldWriteNamespaceIndices &&
@@ -85,6 +85,8 @@ namespace Kiota.Builder.CodeRenderers
             {
                 GenerationLanguage.TypeScript =>
                     new TypeScriptCodeRenderer(config),
+                GenerationLanguage.PowerShell =>
+                    new PowerShellCodeRenderer(config),
                 _ => new CodeRenderer(config),
             };
         }

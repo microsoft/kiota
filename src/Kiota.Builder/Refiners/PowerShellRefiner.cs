@@ -56,8 +56,8 @@ namespace Kiota.Builder.Refiners
                     cmdletClass.AddProperty(requiredProperties.ToArray());
 
                     var requestGenerator = requestGenerators.Where(g => g.HttpMethod == requestExecutor.HttpMethod).FirstOrDefault();
-                    if (requestGenerator.PathAndQueryParameters != null)
-                        cmdletClass.AddProperty(GetCmdletParamters(requestGenerator.PathAndQueryParameters).ToArray());
+                    if (requestGenerator.PathQueryAndHeaderParameters != null)
+                        cmdletClass.AddProperty(GetCmdletParamters(requestGenerator.PathQueryAndHeaderParameters).ToArray());
                     cmdletClass.AddMethod(requestGenerator);
                     cmdletClass.AddMethod(requestExecutor);
                     cmdletClass.AddMethod(GetCmdletMethods());
@@ -71,10 +71,11 @@ namespace Kiota.Builder.Refiners
         private CodeClass GetCmdletClass(CodeMethod currentMethod, string entityName, CodeNamespace parentNamespace)
         {
             string className = GetClassName(currentMethod.HttpMethod, entityName, parentNamespace);
-            // TODO: Add *_{UniqueParameterSetName} to class namme.
+            var methodIdSegments = GetSegmentsFromMethodId(currentMethod.Id);
+            string parameterSetName = $"{methodIdSegments.Item1}{methodIdSegments.Item2}{methodIdSegments.Item3}";
             var newClass = new CodeClass
             {
-                Name = className,
+                Name = $"{className}_{parameterSetName}",
                 Kind = CodeClassKind.RequestBuilder,
                 Parent = parentNamespace,
                 Description = currentMethod.Description,
@@ -119,7 +120,7 @@ namespace Kiota.Builder.Refiners
             {
                 cmdletParameters.Add(new CodeProperty
                 {
-                    Name = pathAndQueryParameter.Name.ToPascalCase('_'),
+                    Name = pathAndQueryParameter.Name.ToPascalCase(),
                     Description = pathAndQueryParameter.Description,
                     Access = AccessModifier.Public,
                     Kind = CodePropertyKind.Custom,
@@ -154,6 +155,8 @@ namespace Kiota.Builder.Refiners
 
         private string GetPowerShellVerb(HttpMethod httpMethod) => httpMethod switch
         {
+            // TODO: Use operationIds to get command verb.
+            // TODO: Look for existing NLPs libs to determine the verb.
             HttpMethod.Get => "Get",
             HttpMethod.Post => "New",
             HttpMethod.Put => "Set",
@@ -161,6 +164,17 @@ namespace Kiota.Builder.Refiners
             HttpMethod.Delete => "Remove",
             _ => "Invoke",
         };
+
+        private Tuple<string, string, string> GetSegmentsFromMethodId(string Id)
+        {
+            var idSegments = Id.Split("_");
+            var pathSegment = idSegments.FirstOrDefault().Replace(".", string.Empty);
+            var verbSegments = idSegments.LastOrDefault().Humanize().Split();
+            var subject = verbSegments.LastOrDefault();
+            var verb = verbSegments.FirstOrDefault();
+
+            return new Tuple<string, string, string>(verb, pathSegment.Singularize(), subject.Singularize());
+        }
 
         private static readonly AdditionalUsingEvaluator[] powerShellUsingEvaluators = new AdditionalUsingEvaluator[] {
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),

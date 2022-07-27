@@ -1,4 +1,4 @@
-using Kiota.Builder.Extensions;
+﻿using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp;
 public class CodeIndexerWriter : BaseElementWriter<CodeIndexer, CSharpConventionService>

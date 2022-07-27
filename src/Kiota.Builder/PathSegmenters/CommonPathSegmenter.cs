@@ -27,6 +27,13 @@ namespace Kiota.Builder {
             Directory.CreateDirectory(directoryPath);
             return targetPath;
         }
+        public string GetPath(CodeElement currentElement, string outputFolder) {
+            var fileName = NormalizeFileName(currentElement);
+            var targetPath = Path.Combine(RootPath, outputFolder, fileName + FileSuffix);
+            var directoryPath = Path.GetDirectoryName(targetPath);
+            Directory.CreateDirectory(directoryPath);
+            return targetPath;
+        }
         public IList<string> GetNamespacePathSegments(CodeNamespace currentNamespace, CodeElement currentElement, string fileName)
         {
             var namespacePathSegments = new List<string>(currentNamespace.Name

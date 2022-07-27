@@ -145,6 +145,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public bool IsAsync {get;set;} = true;
     public bool IsOverride {get;set;} = false;
     public string Description {get; set;}
+    public string Id {get; set;}
 
     public PagingInformation PagingInformation
     {

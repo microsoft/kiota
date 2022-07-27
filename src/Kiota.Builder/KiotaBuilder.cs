@@ -652,6 +652,7 @@ public class KiotaBuilder
         var schema = operation.GetResponseSchema(config.StructuredMimeTypes);
         var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
         var executorMethod = parentClass.AddMethod(new CodeMethod {
+            Id = operation.OperationId,
             Name = operationType.ToString(),
             Kind = CodeMethodKind.RequestExecutor,
             HttpMethod = method,
