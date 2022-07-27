@@ -62,45 +62,100 @@ public class CodeMethodWriterTests : IDisposable {
         });
     }
     private void AddSerializationProperties() {
-        var addData = parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty {
             Name = "additionalData",
             Kind = CodePropertyKind.AdditionalData,
-        }).First();
-        addData.Type = new CodeType {
-            Name = "string"
-        };
-        var dummyProp = parentClass.AddProperty(new CodeProperty {
+            Type = new CodeType {
+                Name = "string"
+            },
+            Getter = new CodeMethod {
+                Name = "GetAdditionalData",
+                ReturnType = new CodeType {
+                    Name = "string"
+                }
+            },
+            Setter = new CodeMethod {
+                Name = "SetAdditionalData",
+            }
+        });
+        parentClass.AddProperty(new CodeProperty {
             Name = "dummyProp",
-        }).First();
-        dummyProp.Type = new CodeType {
-            Name = "string"
-        };
-        var dummyCollectionProp = parentClass.AddProperty(new CodeProperty {
+            Type = new CodeType {
+                Name = "string"
+            },
+            Getter = new CodeMethod {
+                Name = "GetDummyProp",
+                ReturnType = new CodeType {
+                    Name = "string"
+                },
+            },
+            Setter = new CodeMethod {
+                Name = "SetDummyProp",
+            },
+        });
+        parentClass.AddProperty(new CodeProperty {
             Name = "dummyColl",
-        }).First();
-        dummyCollectionProp.Type = new CodeType {
-            Name = "string",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-        };
-        var dummyComplexCollection = parentClass.AddProperty(new CodeProperty {
-            Name = "dummyComplexColl"
-        }).First();
-        dummyComplexCollection.Type = new CodeType {
-            Name = "Complex",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-            TypeDefinition = new CodeClass {
-                Name = "SomeComplexType"
+            Type = new CodeType {
+                Name = "string",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+            Getter = new CodeMethod {
+                Name = "GetDummyColl",
+                ReturnType = new CodeType {
+                    Name = "string",
+                    CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                },
+            },
+            Setter = new CodeMethod {
+                Name = "SetDummyColl",
+                ReturnType = new CodeType {
+                    Name = "void",
+                }
+            },
+        });
+        parentClass.AddProperty(new CodeProperty {
+            Name = "dummyComplexColl",
+            Type = new CodeType {
+                Name = "Complex",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                TypeDefinition = new CodeClass {
+                    Name = "SomeComplexType"
+                }
+            },
+            Getter = new CodeMethod {
+                Name = "GetDummyComplexColl",
+            },
+            Setter = new CodeMethod {
+                Name = "SetDummyComplexColl",
             }
-        };
-        var dummyEnumProp = parentClass.AddProperty(new CodeProperty{
+        });
+        parentClass.AddProperty(new CodeProperty{
             Name = "dummyEnumCollection",
-        }).First();
-        dummyEnumProp.Type = new CodeType {
-            Name = "SomeEnum",
-            TypeDefinition = new CodeEnum {
-                Name = "EnumType"
+            Type = new CodeType {
+                Name = "SomeEnum",
+                TypeDefinition = new CodeEnum {
+                    Name = "EnumType"
+                }
+            },
+            Getter = new CodeMethod {
+                Name = "GetDummyEnumCollection",
+            },
+            Setter = new CodeMethod {
+                Name = "SetDummyEnumCollection",
             }
-        };
+        });
+        parentClass.AddProperty(new CodeProperty {
+            Name = "definedInParent",
+            Type = new CodeType {
+                Name = "string"
+            },
+            OriginalPropertyFromBaseType = new CodeProperty {
+                Name = "definedInParent",
+                Type = new CodeType {
+                    Name = "string"
+                }
+            }
+        });
     }
     private void AddInheritanceClass() {
         (parentClass.StartBlock as ClassDeclaration).Inherits = new CodeType {
@@ -543,13 +598,6 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesDeSerializerBody() {
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
-        };
         method.Kind = CodeMethodKind.Deserializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -559,6 +607,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("GetCollectionOfPrimitiveValues", result);
         Assert.Contains("GetCollectionOfObjectValues", result);
         Assert.Contains("GetEnumValue", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -574,13 +623,6 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesSerializerBody() {
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
-        };
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -590,18 +632,21 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("WriteCollectionOfStringValues", result);
         Assert.Contains("WriteCollectionOfObjectValues", result);
         Assert.Contains("WriteAdditionalData(m.GetAdditionalData())", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact(Skip = "descriptions are not supported")]
     public void WritesMethodSyncDescription() {
         method.Description = MethodDescription;
         method.IsAsync = false;
-        var parameter = new CodeParameter{
+        var parameter = new CodeParameter
+        {
             Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
         };
         method.AddParameter(parameter);
         writer.Write(method);

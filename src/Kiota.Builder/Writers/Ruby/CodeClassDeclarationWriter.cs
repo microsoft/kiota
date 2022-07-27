@@ -23,6 +23,7 @@ namespace  Kiota.Builder.Writers.Ruby {
                                             .GroupBy(x => x.Declaration?.Name)
                                             .OrderBy(x => x.Key))
                     writer.WriteLine($"require '{codeUsing.Key.ToSnakeCase()}'");
+                        
                 foreach (var relativePath in codeElement.Usings
                                             .Where(x => !x.IsExternal)
                                             .Select(x => relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))

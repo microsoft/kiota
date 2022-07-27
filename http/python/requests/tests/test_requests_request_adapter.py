@@ -197,6 +197,30 @@ def mock_primitive_response(mocker):
     resp = session.send(prepped)
     return resp
 
+@pytest.fixture
+@responses.activate
+def mock_no_content_response(mocker):
+    responses.add(
+        responses.GET,
+        url=BASE_URL,
+        status=204,
+        match=[
+            matchers.header_matcher({"Content-Type": "application/json"}, strict_match=True)
+        ]
+    )
+    
+    session = requests.Session()
+    prepped = session.prepare_request(
+        requests.Request(
+            method="GET",
+            url=BASE_URL,      
+        )
+    )
+    prepped.headers = {"Content-Type": "application/json"}
+
+    resp = session.send(prepped)
+    return resp
+
 def test_create_requests_request_adapter(auth_provider, parse_node_factory, serialization_writer_factory):
     request_adapter =  RequestsRequestAdapter(auth_provider, parse_node_factory, serialization_writer_factory)
     assert request_adapter._authentication_provider is auth_provider
@@ -293,3 +317,12 @@ async def test_send_primitive_async(request_adapter, request_info, mock_primitiv
     assert resp.headers.get("content-type") == 'application/json'
     final_result = await request_adapter.send_primitive_async(request_info, float, None, {})
     assert final_result == 22.3
+    
+@pytest.mark.asyncio
+@responses.activate
+async def test_send_primitive_async(request_adapter, request_info, mock_no_content_response):
+    request_adapter.get_http_response_message = AsyncMock(return_value = mock_no_content_response)
+    resp = await request_adapter.get_http_response_message(request_info)
+    assert resp.headers.get("content-type") == 'application/json'
+    final_result = await request_adapter.send_primitive_async(request_info, float, None, {})
+    assert final_result is None

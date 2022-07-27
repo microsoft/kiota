@@ -84,9 +84,9 @@
                   "--language",
                   "php",
                   "-o",
-                  "${workspaceFolder}/samples/msgraph-mail/php/src/Generated/Mail",
+                  "${workspaceFolder}/samples/msgraph-mail/php/src/",
                   "-n",
-                  "GraphPhpV4"
+                  "Microsoft\\Graph"
             ],
             "cwd": "${workspaceFolder}/src/kiota",
             "console": "internalConsole",

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from io import BytesIO
-from typing import Callable, List, Optional, TypeVar
+from typing import TYPE_CHECKING, Callable, List, Optional, TypeVar
 from uuid import UUID
 
 from .parsable import Parsable
@@ -15,12 +15,16 @@ U = TypeVar("U", bound=Parsable)
 
 K = TypeVar("K", bound=Enum)
 
+if TYPE_CHECKING:
+    from .parsable_factory import ParsableFactory
+
 
 class ParseNode(ABC):
     """
     Interface for a deserialization node in a parse tree. This interace provides an abstraction
     layer over serialization formats, libraries and implementations.
     """
+
     @abstractmethod
     def get_string_value(self) -> str:
         """Gets the string value of the node
@@ -124,9 +128,10 @@ class ParseNode(ABC):
         pass
 
     @abstractmethod
-    def get_collection_of_object_values(self) -> List[U]:
+    def get_collection_of_object_values(self, factory: ParsableFactory) -> List[U]:
         """Gets the collection of model object values of the node
-
+        Args:
+            factory (ParsableFactory): The factory to use to create the model object.
         Returns:
             List[U]: The collection of model object values of the node
         """
@@ -151,9 +156,10 @@ class ParseNode(ABC):
         pass
 
     @abstractmethod
-    def get_object_value(self, class_type: Callable[[], U]) -> U:
+    def get_object_value(self, factory: ParsableFactory) -> U:
         """Gets the model object value of the node
-
+        Args:
+            factory (ParsableFactory): The factory to use to create the model object.
         Returns:
             Parsable: The model object value of the node
         """

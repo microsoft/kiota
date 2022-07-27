@@ -20,6 +20,7 @@ public class GoRefiner : CommonLanguageRefiner
             false,
             "ById");
         RemoveCancellationParameter(generatedCode);
+        RemoveDiscriminatorMappingsTargetingSubNamespaces(generatedCode);
         ReplaceRequestBuilderPropertiesByMethods(
             generatedCode
         );
