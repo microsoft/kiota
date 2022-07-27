@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from kiota.abstractions.authentication import BaseBearerTokenAuthenticationProvider
 

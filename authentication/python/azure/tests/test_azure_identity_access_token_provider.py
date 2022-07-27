@@ -1,6 +1,6 @@
 import pytest
 
-from kiota.abstractions.authentication import AccessTokenProvider, AllowedHostsValidator
+from kiota.abstractions.authentication import AllowedHostsValidator
 from authentication_azure.azure_identity_access_token_provider import AzureIdentityAccessTokenProvider
 from .helpers import DummyAzureTokenCredential
 

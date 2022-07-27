@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Dict, List, Optional
 from urllib.parse import urlparse
 
 from kiota.abstractions.authentication import AccessTokenProvider, AllowedHostsValidator
