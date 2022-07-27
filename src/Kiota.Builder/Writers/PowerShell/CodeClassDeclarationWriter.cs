@@ -29,7 +29,7 @@ namespace Kiota.Builder.Writers.PowerShell
                 if (!nameSegments.Any())
                     throw new ArgumentException($"{codeElement.Name} class name is malformed. Class names should be in the form of VerbNoun_ParameterSetName");
                 var verbSegment = nameSegments.First();
-                var nounSegment = nameSegments.Skip(1).Aggregate((a, b) => a + b);
+                var nounSegment = codeElement.Name.Remove(0, verbSegment.Length);
 
                 writer.WriteLine($"[Cmdlet(VerbsCommon.{verbSegment}, \"{nounSegment}\")]");
                 if (codeElement.Parent is CodeClass parentClass &&

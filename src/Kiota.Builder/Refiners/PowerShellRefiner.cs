@@ -63,6 +63,8 @@ namespace Kiota.Builder.Refiners
                     cmdletClass.AddMethod(GetCmdletMethods());
 
                     parentNamespace.AddClass(cmdletClass);
+                    // TODO: Get root namespace from configuration.
+                    parentNamespace.Name = $"ApiSDK.Cmdlets";
                 }
             }
             CrawlTree(currentElement, MoveOperationsToClasses);
@@ -78,7 +80,7 @@ namespace Kiota.Builder.Refiners
                 Name = $"{className}_{parameterSetName}",
                 Kind = CodeClassKind.RequestBuilder,
                 Parent = parentNamespace,
-                Description = currentMethod.Description,
+                Description = currentMethod.Description
             };
             newClass.StartBlock.AddImplements(new CodeType { Name = "PSCmdlet", IsExternal = true });
             return newClass;
@@ -168,12 +170,13 @@ namespace Kiota.Builder.Refiners
         private Tuple<string, string, string> GetSegmentsFromMethodId(string Id)
         {
             var idSegments = Id.Split("_");
-            var pathSegment = idSegments.FirstOrDefault().Replace(".", string.Empty);
-            var verbSegments = idSegments.LastOrDefault().Humanize().Split();
-            var subject = verbSegments.LastOrDefault();
-            var verb = verbSegments.FirstOrDefault();
+            // TODO: Optimize call.
+            var pathSegment = idSegments.FirstOrDefault().Split(".").Aggregate((x, y) => $"{x.Singularize().Pascalize()}{y.Singularize().Pascalize()}").Singularize().Pascalize();
+            var verbSegments = idSegments.LastOrDefault().SplitPascalCase();
+            var subject = verbSegments.Skip(1).Aggregate((x, y) => $"{x}{y}").Singularize().Pascalize();
+            var verb = verbSegments.FirstOrDefault().Singularize().Pascalize();
 
-            return new Tuple<string, string, string>(verb, pathSegment.Singularize(), subject.Singularize());
+            return new Tuple<string, string, string>(verb, pathSegment, subject);
         }
 
         private static readonly AdditionalUsingEvaluator[] powerShellUsingEvaluators = new AdditionalUsingEvaluator[] {
