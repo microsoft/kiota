@@ -15,7 +15,7 @@ namespace Kiota.Builder.Refiners {
             AddParsableImplementsForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
             AddInheritedAndMethodTypesImports(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            CorrectCoreType(generatedCode, null, CorrectPropertyType);
+            CorrectCoreType(generatedCode, null, CorrectPropertyType, CorrectImplements);
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
@@ -67,6 +67,8 @@ namespace Kiota.Builder.Refiners {
                 "microsoft_kiota_abstractions", "Parsable"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
                 "microsoft_kiota_abstractions", "Parsable"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+                "microsoft_kiota_abstractions", "AdditionalDataHolder"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                         method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
                 "microsoft_kiota_abstractions", "BackingStoreFactory", "BackingStoreFactorySingleton"),
@@ -126,5 +128,8 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(current, c => AddNamespaceModuleImports(c, clientNamespaceName));
         }
+        private static void CorrectImplements(ProprietableBlockDeclaration block) {
+            block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
+            }
     }
 }
