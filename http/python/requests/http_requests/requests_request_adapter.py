@@ -182,7 +182,7 @@ class RequestsRequestAdapter(RequestAdapter):
         if self._should_return_none(response):
             return None
         root_node = await self.get_root_parse_node(response)
-        return root_node.get_collection_of_primitive_values()
+        return root_node.get_collection_of_primitive_values(response_type)
 
     async def send_primitive_async(
         self, request_info: RequestInformation, response_type: ResponseType,
@@ -322,7 +322,7 @@ class RequestsRequestAdapter(RequestAdapter):
         return self._http_client.client.send(request, request_options=request_info.request_options)
 
     def set_base_url_for_request_information(self, request_info: RequestInformation) -> None:
-        request_info.path_parameters["baseurl"] = self.base_url
+        request_info.path_parameters["base_url"] = self.base_url
 
     def get_request_from_request_information(
         self, request_info: RequestInformation
