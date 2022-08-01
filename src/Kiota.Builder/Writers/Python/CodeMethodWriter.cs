@@ -309,7 +309,7 @@ namespace Kiota.Builder.Writers.Python {
         }
         private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
             var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
-            var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
+            var parametersWithDescription = code.Parameters.Where(_ => !string.IsNullOrEmpty(code.Description));
             var nullablePrefix = code.ReturnType.IsNullable && !isVoid ? "Optional[" : string.Empty;
             var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? "]" : string.Empty;
             if (isDescriptionPresent || parametersWithDescription.Any()) {
