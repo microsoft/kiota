@@ -30,13 +30,13 @@ public class CodeClassDeclarationWriterTests : IDisposable
     }
     [Fact]
     public void WritesSimpleDeclaration() {
-        codeElementWriter.WriteCodeElement(parentClass.StartBlock as ClassDeclaration, writer);
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
         Assert.Contains("class", result);
     }
     [Fact]
     public void WritesImplementation() {
-        var declaration = parentClass.StartBlock as ClassDeclaration;
+        var declaration = parentClass.StartBlock;
         declaration.AddImplements(new CodeType {
             Name = "someInterface"
         });
@@ -49,7 +49,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
     }
     [Fact]
     public void WritesInheritance() {
-        var declaration = parentClass.StartBlock as ClassDeclaration;
+        var declaration = parentClass.StartBlock;
         declaration.Inherits = new () {
             Name = "someInterface"
         };
@@ -59,7 +59,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
     }
     [Fact]
     public void WritesImports() {
-        var declaration = parentClass.StartBlock as ClassDeclaration;
+        var declaration = parentClass.StartBlock;
         declaration.AddUsings(new CodeUsing {
             Name = "Objects",
             Declaration = new () {

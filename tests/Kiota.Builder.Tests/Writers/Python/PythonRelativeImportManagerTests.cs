@@ -19,7 +19,7 @@ public class PythonRelativeImportManagerTests {
         var rootNS = parentClass.Parent as CodeNamespace;
         rootNS.RemoveChildElement(parentClass);
         graphNS.AddClass(parentClass);
-        var declaration = parentClass.StartBlock as ClassDeclaration;
+        var declaration = parentClass.StartBlock;
         var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
         var messageClassDef = new CodeClass {
             Name = "Message",
@@ -38,7 +38,7 @@ public class PythonRelativeImportManagerTests {
     }
     [Fact]
     public void ReplacesImportsParentNamespace() {
-        var declaration = parentClass.StartBlock as ClassDeclaration;
+        var declaration = parentClass.StartBlock;
         var modelsNS = graphNS.AddNamespace($"{graphNS.Name}.models");
         graphNS.RemoveChildElement(parentClass);
         modelsNS.AddClass(parentClass);
@@ -72,7 +72,7 @@ public class PythonRelativeImportManagerTests {
         };
         usedRangeNS1.AddClass(usedRangeClassDef1);
         
-        var declaration1 = usedRangeClassDef1.StartBlock as ClassDeclaration;
+        var declaration1 = usedRangeClassDef1.StartBlock;
         var nUsing = new CodeUsing {
             Name = workbookNS.Name,
             Declaration = new () {
@@ -85,7 +85,7 @@ public class PythonRelativeImportManagerTests {
             Name = "usedRangeRequestBuilder",
         };
         usedRangeNS2.AddClass(usedRangeClassDef2);
-        var declaration2 = usedRangeClassDef2.StartBlock as ClassDeclaration;
+        var declaration2 = usedRangeClassDef2.StartBlock;
         var nUsing2 = new CodeUsing {
             Name = workbookNS.Name,
             Declaration = new () {
@@ -101,7 +101,7 @@ public class PythonRelativeImportManagerTests {
     }
     [Fact]
     public void ReplacesImportsSameNamespace() {
-        var declaration = parentClass.StartBlock as ClassDeclaration;
+        var declaration = parentClass.StartBlock;
         var messageClassDef = new CodeClass {
             Name = "Message",
         };
@@ -121,7 +121,7 @@ public class PythonRelativeImportManagerTests {
     [Fact]
     public void ReplacesImportsSameNamespaceIndex()
     {
-        var declaration = parentClass.StartBlock as ClassDeclaration;
+        var declaration = parentClass.StartBlock;
         var messageClassDef = new CodeClass
         {
             Name = "Message",

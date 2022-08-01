@@ -31,13 +31,13 @@ public class CodeClassEndWriterTests: IDisposable {
         var child = parentClass.AddInnerClass(new CodeClass {
             Name = "child"
         }).First();
-        codeElementWriter.WriteCodeElement(child.EndBlock as BlockEnd, writer);
+        codeElementWriter.WriteCodeElement(child.EndBlock, writer);
         var result = tw.ToString();
         Assert.True(string.IsNullOrWhiteSpace(result));//classes end with a blank line
     }
     [Fact]
     public void ClosesNonNestedClasses() {
-        codeElementWriter.WriteCodeElement(parentClass.EndBlock as BlockEnd, writer);
+        codeElementWriter.WriteCodeElement(parentClass.EndBlock, writer);
         var result = tw.ToString();
         Assert.True(string.IsNullOrWhiteSpace(result));
     }
