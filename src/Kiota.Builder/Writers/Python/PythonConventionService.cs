@@ -103,21 +103,21 @@ public class PythonConventionService : CommonLanguageConventionService
     }
     private static string TranslateInternalType(CodeType type) {
         if (type.Name.Contains("RequestConfiguration"))
-                return type.TypeDefinition?.Name.ToFirstCharacterUpperCase();
-            else if (type.Name.Contains("QueryParameters"))
-                return type.Name;
-            else
-                return type.Name switch  {
-                    "String" or "string" => "str",
-                    "integer" or "int32" or "int64" or "byte" or "sbyte" => "int",
-                    "decimal" or "double" => "float",
-                    "Binary" or "binary" => "bytes",
-                    "void" => "None",
-                    "DateTimeOffset" => "datetime",
-                    "boolean" => "bool",
-                    "Object" or "object" or "float" or "bytes" or "datetime" or "timespan" => type.Name,
-                    _ => $"{type.Name.ToSnakeCase()}.{type.Name.ToFirstCharacterUpperCase()}" ?? "object",
-                };
+            return type.TypeDefinition?.Name.ToFirstCharacterUpperCase();
+        else if (type.Name.Contains("QueryParameters"))
+            return type.Name;
+        else
+            return type.Name switch  {
+                "String" or "string" => "str",
+                "integer" or "int32" or "int64" or "byte" or "sbyte" => "int",
+                "decimal" or "double" => "float",
+                "Binary" or "binary" => "bytes",
+                "void" => "None",
+                "DateTimeOffset" => "datetime",
+                "boolean" => "bool",
+                "Object" or "object" or "float" or "bytes" or "datetime" or "timespan" => type.Name,
+                _ => $"{type.Name.ToSnakeCase()}.{type.Name.ToFirstCharacterUpperCase()}" ?? "object",
+            };
     }
 
     #pragma warning disable CA1822 // Method should be static
