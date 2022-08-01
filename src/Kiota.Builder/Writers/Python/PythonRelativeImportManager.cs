@@ -5,11 +5,11 @@ using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers
 {
-    public class PythonRelativeImportManager
+    public class PythonRelativeImportManager: RelativeImportManager
     {
         private readonly string prefix;
         private readonly char separator;
-        public PythonRelativeImportManager(string namespacePrefix, char namespaceSeparator)
+        public PythonRelativeImportManager(string namespacePrefix, char namespaceSeparator): base(namespacePrefix,namespaceSeparator)
         {
             if (string.IsNullOrEmpty(namespacePrefix))
                 throw new ArgumentNullException(nameof(namespacePrefix));
@@ -25,7 +25,7 @@ namespace Kiota.Builder.Writers
         /// <param name="codeUsing">The using to import into the current namespace context</param>
         /// <param name="currentNamespace">The current namespace</param>
         /// <returns>The import symbol, it's alias if any and the relative import path</returns>
-        public virtual (string, string, string) GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace)
+        public override (string, string, string) GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace)
         {
             if (codeUsing?.IsExternal ?? true)
                 return (string.Empty, string.Empty, string.Empty);//it's an external import, add nothing
@@ -46,7 +46,7 @@ namespace Kiota.Builder.Writers
                 return (importSymbol, codeUsing.Alias, importPath);
             }
         }
-        protected string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)
+        protected new string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)
         {
             var result = currentNamespace.GetDifferential(importNamespace, prefix, separator);
             return result.State switch
@@ -58,8 +58,8 @@ namespace Kiota.Builder.Writers
                 _ => throw new NotImplementedException(),
             };
         }
-        protected static string GetUpwardsMoves(int UpwardsMovesCount) => string.Join("", Enumerable.Repeat(".", UpwardsMovesCount)) + (UpwardsMovesCount > 0 ? "." : string.Empty);
-        protected static string GetRemainingImportPath(IEnumerable<string> remainingSegments)
+        protected static new string GetUpwardsMoves(int UpwardsMovesCount) => string.Join("", Enumerable.Repeat(".", UpwardsMovesCount)) + (UpwardsMovesCount > 0 ? "." : string.Empty);
+        protected static new string GetRemainingImportPath(IEnumerable<string> remainingSegments)
         {
             if (remainingSegments.Any())
                 return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate((x, y) => $"{x}.{y}");
