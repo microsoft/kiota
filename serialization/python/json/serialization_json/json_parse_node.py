@@ -223,7 +223,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
             self.on_after_assign_field_values(result)
         return result
 
-    def get_byte_array_value(self) -> Optional[bytes]:
+    def get_bytes_value(self) -> Optional[bytes]:
         """Get a bytearray value from the nodes
         Returns:
             bytearray: The bytearray value from the nodes

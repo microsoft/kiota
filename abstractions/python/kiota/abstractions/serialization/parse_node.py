@@ -166,7 +166,7 @@ class ParseNode(ABC):
         pass
 
     @abstractmethod
-    def get_byte_array_value(self) -> BytesIO:
+    def get_bytes_value(self) -> BytesIO:
         """Get a bytearray value from the nodes
 
         Returns:
