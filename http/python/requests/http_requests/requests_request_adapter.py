@@ -332,7 +332,6 @@ class RequestsRequestAdapter(RequestAdapter):
             url=request_info.url,
             headers=request_info.request_headers,
             data=request_info.content,
-            # params=request_info.query_parameters,
         )
         prepared_request = req.prepare()
         return prepared_request
