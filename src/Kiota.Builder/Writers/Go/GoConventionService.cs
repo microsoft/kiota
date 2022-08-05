@@ -34,7 +34,7 @@ public class GoConventionService : CommonLanguageConventionService
         }
         return $"{importSymbol}{methodPrefix}{methodName}{methodSuffix}";
     }
-    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true) =>
+    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null) =>
         GetTypeString(code, targetElement, includeCollectionInformation, true);
     public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool addPointerSymbol)
     {

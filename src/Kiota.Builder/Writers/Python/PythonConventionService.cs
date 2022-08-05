@@ -7,11 +7,6 @@ using static Kiota.Builder.CodeTypeBase;
 namespace Kiota.Builder.Writers.Python;
 public class PythonConventionService : CommonLanguageConventionService
 {
-    public PythonConventionService(LanguageWriter languageWriter)
-    {
-        writer = languageWriter;
-    }
-    private readonly LanguageWriter writer;
     public override string StreamTypeName => "bytes";
     public override string VoidTypeName => "None";
     public override string DocCommentPrefix => "";
@@ -62,19 +57,19 @@ public class PythonConventionService : CommonLanguageConventionService
         }
         return null;
     }
-    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true) {
+    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null) {
         if(code is null)
             return null;
         var collectionPrefix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "List[";
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "]";
         if(code is CodeUnionType currentUnion && currentUnion.Types.Any())
-            return currentUnion.Types.Select(x => GetTypeString(x, targetElement)).Aggregate((x, y) => $"Union[{x}, {y.ToFirstCharacterLowerCase()}]");
+            return currentUnion.Types.Select(x => GetTypeString(x, targetElement, true, writer)).Aggregate((x, y) => $"Union[{x}, {y.ToFirstCharacterLowerCase()}]");
         else if(code is CodeType currentType) {
             var typeName = GetTypeAlias(currentType, targetElement) ?? TranslateType(currentType);
             if (TypeExistInSameClassAsTarget(code, targetElement))
                 typeName = targetElement.Parent.Name.ToFirstCharacterUpperCase();
-            if (code.ActionOf)
-                return WriteInlineDeclaration(currentType, targetElement);
+            if (code.ActionOf && !(writer == null))
+                return WriteInlineDeclaration(currentType, targetElement, writer);
             else
                 return $"{collectionPrefix}{typeName}{collectionSuffix}";
         }
@@ -133,12 +128,12 @@ public class PythonConventionService : CommonLanguageConventionService
         };
     }
 
-    private string WriteInlineDeclaration(CodeType currentType, CodeElement targetElement) {
+    private string WriteInlineDeclaration(CodeType currentType, CodeElement targetElement, LanguageWriter writer) {
         writer.IncreaseIndent(4);
         var childElements = (currentType?.TypeDefinition as CodeClass)
                                     ?.Properties
                                     ?.OrderBy(x => x.Name)
-                                    ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type, targetElement)}");
+                                    ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type, targetElement, true, writer)}");
         var innerDeclaration = childElements?.Any() ?? false ? 
                                         LanguageWriter.NewLine +
                                         writer.GetIndent() +

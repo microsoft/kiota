@@ -26,7 +26,7 @@ namespace Kiota.Builder.Writers {
 
         public abstract string GetAccessModifier(AccessModifier access);
         public abstract string GetParameterSignature(CodeParameter parameter, CodeElement targetElement);
-        public abstract string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true);
+        public abstract string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null);
 
         public string TranslateType(CodeTypeBase type) {
             if(type is CodeType currentType)

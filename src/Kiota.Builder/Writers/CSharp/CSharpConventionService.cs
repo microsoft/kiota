@@ -67,7 +67,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 foreach(var segment in GetNamespaceNameSegments(childNs))
                     yield return segment;
         }
-        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
         {
             if(code is CodeComposedTypeBase)
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");

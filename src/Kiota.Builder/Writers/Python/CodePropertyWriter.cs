@@ -6,7 +6,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
     public CodePropertyWriter(PythonConventionService conventionService) : base(conventionService){}
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
-        var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
+        var returnType = conventions.GetTypeString(codeElement.Type, codeElement, true, writer);
         var parentClass = codeElement.Parent as CodeClass;
         /* Only write specific properties as class attributes
         * The rest will be implemented as instance attributes, to avoid mutable properties

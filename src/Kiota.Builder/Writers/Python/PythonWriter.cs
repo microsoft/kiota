@@ -4,7 +4,7 @@ public class PythonWriter : LanguageWriter
     public PythonWriter(string rootPath, string clientNamespaceName)
     {
         PathSegmenter = new PythonPathSegmenter(rootPath, clientNamespaceName);
-        var conventionService = new PythonConventionService(null);
+        var conventionService = new PythonConventionService();
         AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
         AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));

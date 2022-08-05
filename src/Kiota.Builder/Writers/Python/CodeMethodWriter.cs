@@ -15,7 +15,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if(writer == null) throw new ArgumentNullException(nameof(writer));
         if(!(codeElement.Parent is CodeClass parentClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
-        var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
+        var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, true, writer);
         var isVoid = "None".Equals(returnType, StringComparison.OrdinalIgnoreCase);
         WriteMethodPrototype(codeElement, writer, returnType, isVoid);
         writer.IncreaseIndent();
@@ -136,7 +136,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .Except(parentClass.GetPropertiesOfKind(CodePropertyKind.RequestAdapter))
                                         .OrderByDescending(x => x.Kind)
                                         .ThenBy(x => x.Name)) {
-            var returnType = conventions.GetTypeString(propWithoutDefault.Type, propWithoutDefault);
+            var returnType = conventions.GetTypeString(propWithoutDefault.Type, propWithoutDefault, true, writer);
             conventions.WriteInLineDescription(propWithoutDefault.Description, writer);
             writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
             writer.WriteLine();
@@ -145,7 +145,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderByDescending(x => x.Kind)
                                         .ThenBy(x => x.Name)) {
-            var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault);
+            var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
             conventions.WriteInLineDescription(propWithDefault.Description, writer);
             writer.WriteLine($"self.{conventions.GetAccessModifier(propWithDefault.Access)}{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
             writer.WriteLine();
@@ -190,7 +190,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             if(!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
                 !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
                 !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
-                writer.WriteLines($"value: {conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement)} = self.{backingStore.NamePrefix}{backingStore.Name.ToSnakeCase()}.get(\"{codeElement.AccessedProperty.Name.ToSnakeCase()}\")",
+                writer.WriteLines($"value: {conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement, true, writer)} = self.{backingStore.NamePrefix}{backingStore.Name.ToSnakeCase()}.get(\"{codeElement.AccessedProperty.Name.ToSnakeCase()}\")",
                     "if not value:");
                 writer.IncreaseIndent();
                 writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue}",
@@ -343,7 +343,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var asyncPrefix = code.IsAsync && code.Kind is CodeMethodKind.RequestExecutor ? "async ": string.Empty;
         var instanceReference = code.IsOfKind(CodeMethodKind.Factory) ? string.Empty: "self,";
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer)
-                                                        .Select(p=> new PythonConventionService(writer) // requires a writer instance because method parameters use inline type definitions
+                                                        .Select(p=> new PythonConventionService() // requires a writer instance because method parameters use inline type definitions
                                                         .GetParameterSignature(p, code))
                                                         .ToList());
         var nullablePrefix = code.ReturnType.IsNullable && !isVoid ? "Optional[" : string.Empty;

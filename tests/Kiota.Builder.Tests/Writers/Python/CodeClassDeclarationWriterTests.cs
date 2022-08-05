@@ -14,7 +14,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
 
     public CodeClassDeclarationWriterTests() {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
-        codeElementWriter = new CodeClassDeclarationWriter(new PythonConventionService(writer), "graphtests");
+        codeElementWriter = new CodeClassDeclarationWriter(new PythonConventionService(), "graphtests");
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();

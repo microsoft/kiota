@@ -387,7 +387,7 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void Defensive() {
-        var codeMethodWriter = new CodeMethodWriter(new PythonConventionService(writer));
+        var codeMethodWriter = new CodeMethodWriter(new PythonConventionService());
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
         var originalParent = method.Parent;

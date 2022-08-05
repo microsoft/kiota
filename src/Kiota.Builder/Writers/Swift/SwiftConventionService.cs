@@ -53,7 +53,7 @@ public class SwiftConventionService : CommonLanguageConventionService
             _ => throw new NotImplementedException(),
         };
     }
-    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
+    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
     {
         if(code is CodeComposedTypeBase)
             throw new InvalidOperationException($"Swift does not support union types, the union type {code.Name} should have been filtered out by the refiner");
