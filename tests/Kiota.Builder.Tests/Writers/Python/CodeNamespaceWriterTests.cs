@@ -44,5 +44,6 @@ public class CodeNameSpaceWriterTests : IDisposable
         writer.Write(root);
         var result = tw.ToString();
         Assert.True(string.IsNullOrWhiteSpace(result));// single blank line written in namespace files
+        Assert.NotNull(result);
     }
 }
