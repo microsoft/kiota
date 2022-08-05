@@ -68,7 +68,7 @@ public class PythonConventionService : CommonLanguageConventionService
             var typeName = GetTypeAlias(currentType, targetElement) ?? TranslateType(currentType);
             if (TypeExistInSameClassAsTarget(code, targetElement))
                 typeName = targetElement.Parent.Name.ToFirstCharacterUpperCase();
-            if (code.ActionOf && !(writer == null))
+            if (code.ActionOf)
                 return WriteInlineDeclaration(currentType, targetElement, writer);
             else
                 return $"{collectionPrefix}{typeName}{collectionSuffix}";
@@ -129,6 +129,8 @@ public class PythonConventionService : CommonLanguageConventionService
     }
 
     private string WriteInlineDeclaration(CodeType currentType, CodeElement targetElement, LanguageWriter writer) {
+        if (writer == null)
+            throw new ArgumentNullException(nameof(writer));
         writer.IncreaseIndent(4);
         var childElements = (currentType?.TypeDefinition as CodeClass)
                                     ?.Properties
