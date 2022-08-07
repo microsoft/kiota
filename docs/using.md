@@ -19,6 +19,7 @@ kiota (--openapi | -d) <path>
       [(--namespace-name | -n) <name>]
       [(--log-level | --ll) <level>]
       [--backing-store | -b]
+      [--additional-data | -ad]
       [(--serializer | -s) <classes>]
       [(--deserializer | --ds) <classes>]
       [--clean-output | --co]
@@ -59,6 +60,14 @@ Enables backing store for models. Defaults to `false`.
 
 ```shell
 kiota --backing-store
+```
+
+### `--additional-data (-ad)`
+
+Will include the 'AdditionalData' property for generated models. Defaults to 'true'.
+
+```shell
+kiota --additional-data false
 ```
 
 ### `--class-name (-c)`
