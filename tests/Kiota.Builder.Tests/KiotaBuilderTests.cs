@@ -1198,6 +1198,81 @@ components:
         var executorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executorMethod);
         Assert.True(executorMethod.ReturnType is CodeType); // not union
+        Assert.Null(codeModel.FindChildByName<CodeClass>("createUploadSessionResponseMember1", true));
+    }
+    [Fact]
+    public void SquishesLonelyNullablesBothAnyOf(){
+        var uploadSessionSchema = new OpenApiSchema {
+            Type = "object",
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "date", new OpenApiSchema {
+                        Type = "string",
+                        Format = "date-time"
+                    }
+                },
+                {
+                    "temperature", new OpenApiSchema {
+                        Type = "integer",
+                        Format = "int32"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.uploadSession",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["createUploadSession"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse() {
+                                    Content = new Dictionary<string, OpenApiMediaType> {
+                                        ["application/json"] = new OpenApiMediaType() {
+                                            Schema = new OpenApiSchema() {
+                                                AnyOf = new List<OpenApiSchema> {
+                                                    uploadSessionSchema,
+                                                    new OpenApiSchema {
+                                                        Nullable = true,
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new OpenApiComponents() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "microsoft.graph.uploadSession", uploadSessionSchema
+                    }
+                },
+            },
+        };
+        var node = OpenApiUrlTreeNode.Create(document, "default");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var codeModel = builder.CreateSourceModel(node);
+        var responseClass = codeModel.FindChildByName<CodeClass>("CreateUploadSessionResponse", true);
+        Assert.Null(responseClass);
+        var sessionClass = codeModel.FindChildByName<CodeClass>("UploadSession", true);
+        Assert.NotNull(sessionClass);
+        var requestBuilderClass = codeModel.FindChildByName<CodeClass>("createUploadSessionRequestBuilder", true);
+        Assert.NotNull(requestBuilderClass);
+        var executorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(executorMethod);
+        Assert.True(executorMethod.ReturnType is CodeType); // not union
+        Assert.Null(codeModel.FindChildByName<CodeClass>("createUploadSessionResponseMember1", true));
     }
 
     [Fact]
@@ -1319,7 +1394,7 @@ components:
             throw new InvalidOperationException("Discriminator mapping value is not a CodeType");
         Assert.NotNull(castType.TypeDefinition);
         Assert.Equal(directoryObjectClass, castType.TypeDefinition);
-        var doTypeProperty = directoryObjectClass.Properties.First(x => x.Name.Equals("type", StringComparison.OrdinalIgnoreCase));
+        var doTypeProperty = directoryObjectClass.Properties.First(x => x.Name.Equals("ODataType", StringComparison.OrdinalIgnoreCase));
         Assert.True(doTypeProperty.ExistsInBaseType);
         Assert.Equal("\"#microsoft.graph.directoryObject\"", doTypeProperty.DefaultValue);
     }

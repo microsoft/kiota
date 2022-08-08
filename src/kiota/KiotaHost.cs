@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.Linq;
@@ -47,6 +47,9 @@ public class KiotaHost {
         var backingStoreOption = new Option<bool>("--backing-store", () => defaultConfiguration.UsesBackingStore, "Enables backing store for models.");
         backingStoreOption.AddAlias("-b");
 
+        var additionalDataOption = new Option<bool>("--additional-data", () => defaultConfiguration.IncludeAdditionalData, "Will include the 'AdditionalData' property for models.");
+        additionalDataOption.AddAlias("--ad");
+
         var serializerOption = new Option<List<string>>(
             "--serializer", 
             () => defaultConfiguration.Serializers.ToList(),
@@ -78,6 +81,7 @@ public class KiotaHost {
             namespaceOption,
             logLevelOption,
             backingStoreOption,
+            additionalDataOption,
             serializerOption,
             deserializerOption,
             cleanOutputOption,
@@ -92,6 +96,7 @@ public class KiotaHost {
             NamespaceOption = namespaceOption,
             LogLevelOption = logLevelOption,
             BackingStoreOption = backingStoreOption,
+            AdditionalDataOption = additionalDataOption,
             SerializerOption = serializerOption,
             DeserializerOption = deserializerOption,
             CleanOutputOption = cleanOutputOption,

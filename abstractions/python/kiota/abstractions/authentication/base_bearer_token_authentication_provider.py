@@ -20,10 +20,10 @@ class BaseBearerTokenAuthenticationProvider(AuthenticationProvider):
         """
         if not request:
             raise Exception("Request cannot be null")
-        if not request.headers:
+        if not request.get_request_headers():
             request.headers = {}
 
         if not self.AUTHORIZATION_HEADER in request.headers:
             token = await self.access_token_provider.get_authorization_token(request.get_url())
             if token:
-                request.headers.update({f'{self.AUTHORIZATION_HEADER}': f'Bearer {token}'})
+                request.add_request_headers({f'{self.AUTHORIZATION_HEADER}': f'Bearer {token}'})

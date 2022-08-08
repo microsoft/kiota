@@ -19,6 +19,7 @@ kiota (--openapi | -d) <path>
       [(--namespace-name | -n) <name>]
       [(--log-level | --ll) <level>]
       [--backing-store | -b]
+      [--additional-data | --ad]
       [(--serializer | -s) <classes>]
       [(--deserializer | --ds) <classes>]
       [--clean-output | --co]
@@ -61,6 +62,14 @@ Enables backing store for models. Defaults to `false`.
 kiota --backing-store
 ```
 
+### `--additional-data (--ad)`
+
+Will include the 'AdditionalData' property for generated models. Defaults to 'true'.
+
+```shell
+kiota --additional-data false
+```
+
 ### `--class-name (-c)`
 
 The class name to use for the core client class. Defaults to `ApiClient`.
@@ -88,7 +97,7 @@ The fully qualified class names for deserializers. Defaults to the following val
 | Language   | Default deserializers                                           |
 |------------|-----------------------------------------------------------------|
 | C#         | `Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory`, `Microsoft.Kiota.Serialization.Text.TextParseNodeFactory`      |
-| Go         | `github.com/microsoft/kiota/serialization/go/json.JsonParseNodeFactory`, `github.com/microsoft/kiota/serialization/go/text.TextParseNodeFactory` |
+| Go         | `github.com/microsoft/kiota-serialization-json-go/json.JsonParseNodeFactory`, `github.com/microsoft/kiota-serialization-text-go/text.TextParseNodeFactory` |
 | Java       | `com.microsoft.kiota.serialization.JsonParseNodeFactory`, `com.microsoft.kiota.serialization.TextParseNodeFactory`        |
 | Ruby       | `microsoft_kiota_serialization/json_parse_node_factory`         |
 | TypeScript | `@microsoft/kiota-serialization-json.JsonParseNodeFactory`, `@microsoft/kiota-serialization-text.TextParseNodeFactory`      |
@@ -158,7 +167,7 @@ The fully qualified class names for deserializers. Defaults to the following val
 | Language   | Default deserializer                                            |
 |------------|-----------------------------------------------------------------|
 | C#         | `Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory`, `Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory` |
-| Go         | `github.com/microsoft/kiota/serialization/go/json.JsonSerializationWriterFactory`, `github.com/microsoft/kiota/serialization/go/text.TextSerializationWriterFactory` |
+| Go         | `github.com/microsoft/kiota-serialization-json-go/json.JsonSerializationWriterFactory`, `github.com/microsoft/kiota-serialization-text-go/text.TextSerializationWriterFactory` |
 | Java       | `com.microsoft.kiota.serialization.JsonSerializationWriterFactory`, `com.microsoft.kiota.serialization.TextSerializationWriterFactory` |
 | Ruby       | `microsoft_kiota_serialization/json_serialization_writer_factory` |
 | TypeScript | `@microsoft/kiota-serialization-json.JsonSerializationWriterFactory`, `@microsoft/kiota-serialization-text.TextSerializationWriterFactory` |

@@ -45,9 +45,29 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, ICloneable, 
     public bool ReadOnly {get;set;} = false;
     public AccessModifier Access {get;set;} = AccessModifier.Public;
     private CodeTypeBase type;
-    public bool ExistsInBaseType {get;set;}
+    public bool ExistsInBaseType => OriginalPropertyFromBaseType != null;
     public CodeMethod Getter {get; set;}
     public CodeMethod Setter {get; set;}
+    public CodeMethod GetterFromCurrentOrBaseType {
+        get {
+            if (Getter != null)
+                return Getter;
+            else if (ExistsInBaseType)
+                return OriginalPropertyFromBaseType.Getter;
+            else
+                return default;
+        }
+    }
+    public CodeMethod SetterFromCurrentOrBaseType {
+        get {
+            if (Setter != null)
+                return Setter;
+            else if (ExistsInBaseType)
+                return OriginalPropertyFromBaseType.Setter;
+            else
+                return default;
+        }
+    }
     public CodeTypeBase Type {get => type ;set {
         EnsureElementsAreChildren(value);
         type = value;
@@ -58,7 +78,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, ICloneable, 
     public string NamePrefix { get; set; }
     public bool IsNameEscaped { get => !string.IsNullOrEmpty(SerializationName); }
     public string SymbolName { get => IsNameEscaped ? SerializationName.CleanupSymbolName() : Name; }
-
+    public CodeProperty OriginalPropertyFromBaseType {get;set;}
     public object Clone()
     {
         return new CodeProperty { 
@@ -73,7 +93,8 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, ICloneable, 
             Name = Name,
             Kind = Kind,
             ReadOnly = ReadOnly,
-            SerializationName = SerializationName
+            SerializationName = SerializationName,
+            OriginalPropertyFromBaseType = OriginalPropertyFromBaseType,
         };
     }
 }

@@ -1,5 +1,3 @@
-import imp
-
 from .backed_model import BackingStore
 from .backing_store import BackingStore
 from .backing_store_factory import BackingStoreFactory

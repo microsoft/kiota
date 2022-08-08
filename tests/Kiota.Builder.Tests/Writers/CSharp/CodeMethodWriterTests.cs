@@ -110,7 +110,12 @@ public class CodeMethodWriterTests : IDisposable {
             Type = new CodeType {
                 Name = "string"
             },
-            ExistsInBaseType = true,
+            OriginalPropertyFromBaseType = new CodeProperty {
+                Name = "definedInParent",
+                Type = new CodeType {
+                    Name = "string"
+                }
+            }
         });
     }
     private void AddInheritanceClass() {
@@ -215,6 +220,28 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains(AsyncKeyword, result);
         Assert.Contains("await", result);
         Assert.Contains("cancellationToken", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestExecutorBodyForCollection() {
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        var error4XX = root.AddClass(new CodeClass{
+            Name = "Error4XX",
+        }).First();
+        method.AddErrorMapping("4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX});
+        AddRequestBodyParameters();
+        var bodyParameter = method.Parameters.OfKind(CodeParameterKind.RequestBody);
+        bodyParameter.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+        method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("var requestInfo", result);
+        Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
+        Assert.Contains("{\"4XX\", Error4XX.CreateFromDiscriminatorValue},", result);
+        Assert.Contains("SendCollectionAsync", result);
+        Assert.Contains("return collectionResult.ToList()", result);
+        Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -449,6 +476,21 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.AddRequestOptions(requestConfig.O)", result);
         Assert.Contains("SetContentFromParsable", result);
         Assert.Contains("return requestInfo;", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyForCollection() {
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        method.AcceptedResponseTypes.Add("application/json");
+        var bodyParameter = method.Parameters.OfKind(CodeParameterKind.RequestBody);
+        bodyParameter.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(".ToArray()", result);
+        Assert.Contains("SetContentFromParsable", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

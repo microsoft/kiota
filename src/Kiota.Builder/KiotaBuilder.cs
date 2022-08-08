@@ -551,7 +551,7 @@ public class KiotaBuilder
 
     private CodeProperty CreateProperty(string childIdentifier, string childType, OpenApiSchema typeSchema = null, CodeTypeBase existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
     {
-        var propertyName = childIdentifier.CleanupSymbolName(config.PropertiesPrefixToStrip);
+        var propertyName = childIdentifier.CleanupSymbolName();
         var prop = new CodeProperty
         {
             Name = propertyName,
@@ -871,6 +871,24 @@ public class KiotaBuilder
     }
     private CodeTypeBase CreateComposedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string suffixForInlineSchema, CodeNamespace codeNamespace) {
         var typeName = currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: suffixForInlineSchema, schema: schema).CleanupSymbolName();
+        var typesCount = schema.AnyOf?.Count ?? schema.OneOf?.Count ?? 0;
+        if ((typesCount == 1 && schema.Nullable && schema.IsAnyOf()) || // nullable on the root schema outside of anyOf
+            typesCount == 2 && schema.AnyOf.Any(static x => // nullable on a schema in the anyOf
+                                                        x.Nullable &&
+                                                        !x.Properties.Any() &&
+                                                        !x.IsOneOf() &&
+                                                        !x.IsAnyOf() &&
+                                                        !x.IsAllOf() &&
+                                                        !x.IsArray() &&
+                                                        !x.IsReferencedSchema())) { // once openAPI 3.1 is supported, there will be a third case oneOf with Ref and type null.
+            var targetSchema = schema.AnyOf.First(static x => !string.IsNullOrEmpty(x.GetSchemaName()));
+            var className = targetSchema.GetSchemaName().CleanupSymbolName();
+            var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
+            return new CodeType {
+                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, targetSchema, className, shortestNamespace),
+                Name = className,
+            };// so we don't create unnecessary union types when anyOf was used only for nullable.
+        }
         var (unionType, schemas) = (schema.IsOneOf(), schema.IsAnyOf()) switch {
             (true, false) => (new CodeExclusionType {
                 Name = typeName,
@@ -896,10 +914,6 @@ public class KiotaBuilder
                 Name = className,
             });
         }
-        if(unionType.Types.Count() == 1 &&
-            schema.Nullable &&
-            unionType.Types.First().TypeDefinition != null)
-            return unionType.Types.First();// so we don't create unnecessary union types when anyOf was used only for nullable.
         return unionType;
     }
     private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse response = default, string typeNameForInlineSchema = default)
@@ -1059,7 +1073,11 @@ public class KiotaBuilder
         };
     }
     private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace ns, CodeClass model) {
-        AddSerializationMembers(model, schema?.AdditionalPropertiesAllowed ?? false, config.UsesBackingStore);
+
+        var includeAdditionalDataProperties = config.IncludeAdditionalData &&
+            (schema?.AdditionalPropertiesAllowed ?? false);
+
+        AddSerializationMembers(model, includeAdditionalDataProperties, config.UsesBackingStore);
         if(schema?.Properties?.Any() ?? false)
         {
             model.AddProperty(schema
