@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for no-content responses in python abstractions and http packages. [#1630](https://github.com/microsoft/kiota/issues/1459)
 - Added support for vendor-specific content types in python. [#1631](https://github.com/microsoft/kiota/issues/1463)
 - Simplified field deserializers for json in Python. [#1632](https://github.com/microsoft/kiota/issues/1492)
+- Adds a `--additional-data` argument to generate the AdditionalData properties #1772
 
 ### Changed
 
