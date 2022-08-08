@@ -62,7 +62,7 @@ Enables backing store for models. Defaults to `false`.
 kiota --backing-store
 ```
 
-### `--additional-data (-ad)`
+### `--additional-data (--ad)`
 
 Will include the 'AdditionalData' property for generated models. Defaults to 'true'.
 
