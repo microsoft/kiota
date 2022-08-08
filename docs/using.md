@@ -19,7 +19,7 @@ kiota (--openapi | -d) <path>
       [(--namespace-name | -n) <name>]
       [(--log-level | --ll) <level>]
       [--backing-store | -b]
-      [--additional-data | -ad]
+      [--additional-data | --ad]
       [(--serializer | -s) <classes>]
       [(--deserializer | --ds) <classes>]
       [--clean-output | --co]
