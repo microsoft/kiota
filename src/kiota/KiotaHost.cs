@@ -48,7 +48,7 @@ public class KiotaHost {
         backingStoreOption.AddAlias("-b");
 
         var additionalDataOption = new Option<bool>("--additional-data", () => defaultConfiguration.IncludeAdditionalData, "Will include the 'AdditionalData' property for models.");
-        additionalDataOption.AddAlias("-ad");
+        additionalDataOption.AddAlias("--ad");
 
         var serializerOption = new Option<List<string>>(
             "--serializer", 
