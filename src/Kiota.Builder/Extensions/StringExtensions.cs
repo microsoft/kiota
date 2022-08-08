@@ -67,7 +67,7 @@ namespace Kiota.Builder.Extensions {
             string.IsNullOrEmpty(original) ? 
                 original :
                 original?.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
-        private static readonly HashAlgorithm sha = SHA256.Create();
+        internal static readonly HashAlgorithm sha = SHA256.Create();
         public static string GetNamespaceImportSymbol(this string importName, string prefix = "i") {
             if(string.IsNullOrEmpty(importName)) return string.Empty;
             return prefix + HashString(importName).ToLowerInvariant();

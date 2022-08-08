@@ -48,47 +48,52 @@ public class KiotaBuilder
         string inputPath = config.OpenAPIFilePath;
 
         try {
-            CleanOutputDirectory();
-            // doing this verification at the beginning to give immediate feedback to the user
-            Directory.CreateDirectory(config.OutputPath);
-        } catch (Exception ex) {
-            throw new InvalidOperationException($"Could not open/create output directory {config.OutputPath}, reason: {ex.Message}", ex);
+
+            try {
+                CleanOutputDirectory();
+                // doing this verification at the beginning to give immediate feedback to the user
+                Directory.CreateDirectory(config.OutputPath);
+            } catch (Exception ex) {
+                throw new InvalidOperationException($"Could not open/create output directory {config.OutputPath}, reason: {ex.Message}", ex);
+            }
+            
+            sw.Start();
+            using var input = await LoadStream(inputPath, cancellationToken);
+            if(input == null)
+                return;
+            StopLogAndReset(sw, "step 1 - reading the stream - took");
+
+            // Step 2 - Parse OpenAPI
+            sw.Start();
+            openApiDocument = CreateOpenApiDocument(input);
+            StopLogAndReset(sw, "step 2 - parsing the document - took");
+
+            SetApiRootUrl();
+
+            modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
+
+            // Step 3 - Create Uri Space of API
+            sw.Start();
+            var openApiTree = CreateUriSpace(openApiDocument);
+            StopLogAndReset(sw, "step 3 - create uri space - took");
+
+            // Step 4 - Create Source Model
+            sw.Start();
+            var generatedCode = CreateSourceModel(openApiTree);
+            StopLogAndReset(sw, "step 4 - create source model - took");
+
+            // Step 5 - RefineByLanguage
+            sw.Start();
+            ApplyLanguageRefinement(config, generatedCode);
+            StopLogAndReset(sw, "step 5 - refine by language - took");
+
+            // Step 6 - Write language source 
+            sw.Start();
+            await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken);
+            StopLogAndReset(sw, "step 6 - writing files - took");
+        } finally { // if the hashing is used and there's an exception, it won't be released automatically by the framework, blocking the next execution
+            Extensions.StringExtensions.sha?.Dispose();
         }
-        
-        sw.Start();
-        using var input = await LoadStream(inputPath, cancellationToken);
-        if(input == null)
-            return;
-        StopLogAndReset(sw, "step 1 - reading the stream - took");
-
-        // Step 2 - Parse OpenAPI
-        sw.Start();
-        openApiDocument = CreateOpenApiDocument(input);
-        StopLogAndReset(sw, "step 2 - parsing the document - took");
-
-        SetApiRootUrl();
-
-        modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
-
-        // Step 3 - Create Uri Space of API
-        sw.Start();
-        var openApiTree = CreateUriSpace(openApiDocument);
-        StopLogAndReset(sw, "step 3 - create uri space - took");
-
-        // Step 4 - Create Source Model
-        sw.Start();
-        var generatedCode = CreateSourceModel(openApiTree);
-        StopLogAndReset(sw, "step 4 - create source model - took");
-
-        // Step 5 - RefineByLanguage
-        sw.Start();
-        ApplyLanguageRefinement(config, generatedCode);
-        StopLogAndReset(sw, "step 5 - refine by language - took");
-
-        // Step 6 - Write language source 
-        sw.Start();
-        await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken);
-        StopLogAndReset(sw, "step 6 - writing files - took");
     }
     private void SetApiRootUrl() {
         config.ApiRootUrl = openApiDocument.Servers.FirstOrDefault()?.Url.TrimEnd('/');
