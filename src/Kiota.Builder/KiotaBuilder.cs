@@ -26,6 +26,7 @@ public class KiotaBuilder
     private readonly ILogger<KiotaBuilder> logger;
     private readonly GenerationConfiguration config;
     private OpenApiDocument openApiDocument;
+    internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
     public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config)
     {
@@ -91,8 +92,9 @@ public class KiotaBuilder
             sw.Start();
             await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken);
             StopLogAndReset(sw, "step 6 - writing files - took");
-        } finally { // if the hashing is used and there's an exception, it won't be released automatically by the framework, blocking the next execution
+        } catch { // if the hashing is used and there's an exception, it won't be released automatically by the framework, blocking the next execution
             Extensions.StringExtensions.sha?.Dispose();
+            throw;
         }
     }
     private void SetApiRootUrl() {
@@ -1050,20 +1052,22 @@ public class KiotaBuilder
     private IEnumerable<KeyValuePair<string, CodeTypeBase>> GetDiscriminatorMappings(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace currentNamespace, CodeClass baseClass) {
         if(schema == null)
             return Enumerable.Empty<KeyValuePair<string, CodeTypeBase>>();
-        if(schema.Discriminator?.Mapping == null)
+        if(!(schema.Discriminator?.Mapping?.Any() ?? false))
             if(schema.OneOf.Any())
                 return schema.OneOf.SelectMany(x => GetDiscriminatorMappings(currentNode, x, currentNamespace, baseClass));
             else if (schema.AnyOf.Any())
                 return schema.AnyOf.SelectMany(x => GetDiscriminatorMappings(currentNode, x, currentNamespace, baseClass));
             else if (schema.AllOf.Any())
-                return GetDiscriminatorMappings(currentNode, schema.AllOf.Last(), currentNamespace, baseClass)
-                    .Where(x => !x.Key.TrimStart('#').Equals(schema.Reference?.Id, StringComparison.OrdinalIgnoreCase));
+                return GetDiscriminatorMappings(currentNode, schema.AllOf.Last(), currentNamespace, baseClass);
+            else if (!string.IsNullOrEmpty(schema.Reference?.Id) && GetCodeTypeForMapping(currentNode, schema.Reference?.Id, currentNamespace, baseClass, schema) is CodeTypeBase currentType)
+                return new KeyValuePair<string, CodeTypeBase>[] {
+                    KeyValuePair.Create(schema.Reference?.Id, currentType)
+                };
             else
                 return Enumerable.Empty<KeyValuePair<string, CodeTypeBase>>();
 
         return schema.Discriminator
                 .Mapping
-                .Where(x => !x.Key.TrimStart('#').Equals(schema.Reference?.Id, StringComparison.OrdinalIgnoreCase))
                 .Select(x => KeyValuePair.Create(x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, baseClass, schema)))
                 .Where(static x => x.Value != null);
     }

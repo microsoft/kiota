@@ -8,13 +8,17 @@ public class DiscriminatorInformation : CodeElement, ICloneable
 {
     private ConcurrentDictionary<string, CodeTypeBase> discriminatorMappings = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
-    /// Gets/Sets the discriminator values for the class where the key is the value as represented in the payload.
+    /// Gets the discriminator values for the class where the key is the value as represented in the payload.
     /// </summary>
     public IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> DiscriminatorMappings
     {
         get
         {
-            return discriminatorMappings.OrderBy(static x => x.Key);
+            return (Parent is not CodeUnionType &&
+                    Parent?.GetImmediateParentOfType<CodeClass>() is CodeClass parentClass ?
+                        discriminatorMappings.Where(x => x.Value is not CodeType currentType || currentType.TypeDefinition != parentClass) :
+                        discriminatorMappings)
+                    .OrderBy(static x => x.Key);
         }
     }
     /// <summary>
