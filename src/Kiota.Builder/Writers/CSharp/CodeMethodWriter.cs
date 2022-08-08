@@ -96,8 +96,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         writer.WriteLine($"_ => new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}(),");
         writer.CloseBlock("};");
     }
+    private const string ResultVarName = "result";
     private void WriteFactoryMethodBodyForUnionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer) {
-        writer.WriteLine($"var result = new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
+        writer.WriteLine($"var {ResultVarName} = new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
         var includeElse = false;
         foreach(var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .OrderBy(static x => x, CodePropertyTypeForwardComparer)
@@ -107,14 +108,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                     var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
                     writer.WriteLine($"{(includeElse? "else " : string.Empty)}if(\"{mappedType.Key}\".Equals({DiscriminatorMappingVarName}, StringComparison.OrdinalIgnoreCase)) {{");
                     writer.IncreaseIndent();
-                    writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = new {conventions.GetTypeString(propertyType, codeElement)}();");
+                    writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = new {conventions.GetTypeString(propertyType, codeElement)}();");
                     writer.CloseBlock();
                 } else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null) {
                     var typeName = conventions.GetTypeString(propertyType, codeElement);
                     var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
                     writer.WriteLine($"{(includeElse? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName}) {{");
                     writer.IncreaseIndent();
-                    writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
+                    writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
                     writer.CloseBlock();   
                 }
             if(!includeElse)
@@ -123,7 +124,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         writer.WriteLine("return result;");
     }
     private void WriteFactoryMethodBodyForIntersectionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer) {
-        writer.WriteLine($"var result = new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
+        writer.WriteLine($"var {ResultVarName} = new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
         var includeElse = false;
         foreach(var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
@@ -134,7 +135,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
                 writer.WriteLine($"{(includeElse? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName}) {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
+                writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
                 writer.CloseBlock();
             }
             if(!includeElse)
@@ -151,7 +152,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             }
             foreach(var property in complexProperties) {
                 var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(property.Item2.Name, StringComparison.OrdinalIgnoreCase));
-                writer.WriteLine($"{property.Item1.Name.ToFirstCharacterUpperCase()} = new {conventions.GetTypeString(property.Item2, codeElement)}();");
+                writer.WriteLine($"{ResultVarName}.{property.Item1.Name.ToFirstCharacterUpperCase()} = new {conventions.GetTypeString(property.Item2, codeElement)}();");
             }
             if(includeElse) {
                 writer.CloseBlock();
