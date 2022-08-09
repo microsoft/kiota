@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -235,6 +236,8 @@ public class KiotaBuilder
         rootNamespace = CodeNamespace.InitRootNamespace();
         var codeNamespace = rootNamespace.AddNamespace(config.ClientNamespaceName);
         modelsNamespace = rootNamespace.AddNamespace(config.ModelsNamespaceName);
+        InitializeInheritanceIndex();
+        StopLogAndReset(stopwatch, $"{nameof(InitializeInheritanceIndex)}");
         CreateRequestBuilderClass(codeNamespace, root, root);
         StopLogAndReset(stopwatch, $"{nameof(CreateRequestBuilderClass)}");
         stopwatch.Start();
@@ -1048,6 +1051,7 @@ public class KiotaBuilder
 
         return schema.Discriminator.PropertyName;
     }
+    private static readonly Func<OpenApiSchema, bool> allOfEvaluator = static x => x.Discriminator?.Mapping.Any() ?? false;
     private IEnumerable<KeyValuePair<string, CodeTypeBase>> GetDiscriminatorMappings(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace currentNamespace, CodeClass baseClass) {
         if(schema == null)
             return Enumerable.Empty<KeyValuePair<string, CodeTypeBase>>();
@@ -1056,19 +1060,42 @@ public class KiotaBuilder
                 return schema.OneOf.SelectMany(x => GetDiscriminatorMappings(currentNode, x, currentNamespace, baseClass));
             else if (schema.AnyOf.Any())
                 return schema.AnyOf.SelectMany(x => GetDiscriminatorMappings(currentNode, x, currentNamespace, baseClass));
-            else if (schema.AllOf.Any())
-                return GetDiscriminatorMappings(currentNode, schema.AllOf.Last(), currentNamespace, baseClass);
-            else if (!string.IsNullOrEmpty(schema.Reference?.Id) && GetCodeTypeForMapping(currentNode, schema.Reference?.Id, currentNamespace, baseClass, schema) is CodeTypeBase currentType)
-                return new KeyValuePair<string, CodeTypeBase>[] {
-                    KeyValuePair.Create(schema.Reference?.Id, currentType)
-                };
-            else
+            else if (schema.AllOf.Any(allOfEvaluator))
+                return GetDiscriminatorMappings(currentNode, schema.AllOf.Last(allOfEvaluator), currentNamespace, baseClass);
+            else if (!string.IsNullOrEmpty(schema.Reference?.Id)) {
+                var result = GetAllInheritanceSchemaReferences(schema.Reference?.Id)
+                            .Select(x => KeyValuePair.Create(x, GetCodeTypeForMapping(currentNode, x, currentNamespace, baseClass, schema)))
+                            .Where(x => x.Value != null)
+                            .ToList();
+                if(GetCodeTypeForMapping(currentNode, schema.Reference?.Id, currentNamespace, baseClass, schema) is CodeTypeBase currentType)
+                    result.Add(KeyValuePair.Create(schema.Reference?.Id, currentType));
+                return result;
+            } else
                 return Enumerable.Empty<KeyValuePair<string, CodeTypeBase>>();
 
         return schema.Discriminator
                 .Mapping
                 .Select(x => KeyValuePair.Create(x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, baseClass, schema)))
                 .Where(static x => x.Value != null);
+    }
+    private readonly ConcurrentDictionary<string, HashSet<string>> inheritanceIndex = new ();
+    private void InitializeInheritanceIndex() {
+        if(!inheritanceIndex.Any()) {
+            foreach(var entry in openApiDocument.Components.Schemas) {
+                inheritanceIndex.TryAdd(entry.Key, new(StringComparer.OrdinalIgnoreCase));
+                if(entry.Value.AllOf != null)
+                    foreach(var allOfEntry in entry.Value.AllOf.Where(static x => !string.IsNullOrEmpty(x.Reference?.Id))) {
+                        var dependents = inheritanceIndex.GetOrAdd(allOfEntry.Reference.Id, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+                        dependents.Add(entry.Key);
+                    }
+            }
+        }
+    }
+    private IEnumerable<string> GetAllInheritanceSchemaReferences(string currentReferenceId) {
+        if (inheritanceIndex.TryGetValue(currentReferenceId, out var dependents))
+            return dependents.Union(dependents.SelectMany(x => GetAllInheritanceSchemaReferences(x))).Distinct(StringComparer.OrdinalIgnoreCase);
+        else
+            return Enumerable.Empty<string>();
     }
     public static void AddDiscriminatorMethod(CodeClass newClass, string discriminatorPropertyName, IEnumerable<KeyValuePair<string, CodeTypeBase>> discriminatorMappings) {
         var factoryMethod = newClass.AddMethod(new CodeMethod {
