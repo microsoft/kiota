@@ -68,11 +68,7 @@ namespace Kiota.Builder.Extensions {
             string.IsNullOrEmpty(original) ? 
                 original :
                 original?.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
-        private static readonly ThreadLocal<HashAlgorithm> sha = new(() => SHA256.Create(), true); // getting safe handle null exception from BCrypt on concurrent multi-threaded access
-        public static void Dispose() {
-            sha.Values.ToList().ForEach(static x => x?.Dispose());
-            sha.Dispose();
-        }
+        private static readonly ThreadLocal<HashAlgorithm> sha = new(() => SHA256.Create()); // getting safe handle null exception from BCrypt on concurrent multi-threaded access
         public static string GetNamespaceImportSymbol(this string importName, string prefix = "i") {
             if(string.IsNullOrEmpty(importName)) return string.Empty;
             return prefix + HashString(importName).ToLowerInvariant();
