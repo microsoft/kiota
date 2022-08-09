@@ -92,15 +92,14 @@ public class KiotaBuilder
             sw.Start();
             await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken);
             StopLogAndReset(sw, "step 6 - writing files - took");
-        } catch { // if the hashing is used and there's an exception, it won't be released automatically by the framework, blocking the next execution
-            Extensions.StringExtensions.sha?.Dispose();
-            throw;
+        } finally {
+            Extensions.StringExtensions.Dispose();
         }
     }
     private void SetApiRootUrl() {
         config.ApiRootUrl = openApiDocument.Servers.FirstOrDefault()?.Url.TrimEnd('/');
         if(string.IsNullOrEmpty(config.ApiRootUrl))
-            throw new InvalidOperationException("A servers entry (v3) or host + basePath + schems properties (v2) must be present in the OpenAPI description.");
+            throw new InvalidOperationException("A servers entry (v3) or host + basePath + schemes properties (v2) must be present in the OpenAPI description.");
     }
     private void StopLogAndReset(Stopwatch sw, string prefix) {
         sw.Stop();
