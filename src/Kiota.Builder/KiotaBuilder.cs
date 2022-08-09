@@ -1075,15 +1075,15 @@ public class KiotaBuilder
     }
     private readonly ConcurrentDictionary<string, HashSet<string>> inheritanceIndex = new ();
     private void InitializeInheritanceIndex() {
-        if(!inheritanceIndex.Any()) {
-            foreach(var entry in openApiDocument.Components.Schemas) {
+        if(!inheritanceIndex.Any() && openApiDocument?.Components?.Schemas != null) {
+            Parallel.ForEach(openApiDocument.Components.Schemas, entry => {
                 inheritanceIndex.TryAdd(entry.Key, new(StringComparer.OrdinalIgnoreCase));
                 if(entry.Value.AllOf != null)
                     foreach(var allOfEntry in entry.Value.AllOf.Where(static x => !string.IsNullOrEmpty(x.Reference?.Id))) {
                         var dependents = inheritanceIndex.GetOrAdd(allOfEntry.Reference.Id, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
                         dependents.Add(entry.Key);
                     }
-            }
+            });
         }
     }
     private IEnumerable<string> GetAllInheritanceSchemaReferences(string currentReferenceId) {
