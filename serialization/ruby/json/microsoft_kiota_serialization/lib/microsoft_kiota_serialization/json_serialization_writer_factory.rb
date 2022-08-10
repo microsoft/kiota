@@ -1,4 +1,4 @@
-require 'microsoft_kiota_abstractions'
+require_relative '../microsoft_kiota_abstractions.rb'
 
 module MicrosoftKiotaSerialization
   class JsonSerializationWriterFactory

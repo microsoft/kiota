@@ -1,5 +1,6 @@
-require 'microsoft_kiota_abstractions'
 require 'json'
+require_relative '../microsoft_kiota_abstractions.rb'
+
 
 module MicrosoftKiotaSerialization
   class JsonParseNodeFactory

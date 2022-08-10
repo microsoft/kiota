@@ -1,8 +1,8 @@
-require 'microsoft_kiota_abstractions'
 require 'time'
 require 'date'
 require 'json'
 require "uuidtools"
+require_relative '../microsoft_kiota_abstractions.rb'
 
 module MicrosoftKiotaSerialization
   class JsonSerializationWriter
