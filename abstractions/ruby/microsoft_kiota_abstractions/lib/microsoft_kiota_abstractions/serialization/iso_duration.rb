@@ -31,7 +31,7 @@ module MicrosoftKiotaAbstractions
       elsif input.is_a? Hash
         @duration_obj = parse_hash(input)
       else
-        raise StandardError, 'Must provide initialize ISODuration by providing a hash or an ISO8601-formatted string,'
+        raise StandardError, 'Must provide initialize ISODuration by providing a hash or an ISO8601-formatted string.'
       end
       update_member_variables
       normalize
@@ -46,6 +46,8 @@ module MicrosoftKiotaAbstractions
         iso_str += input[unit].to_s + abrev unless input[unit].zero?
         iso_str += 'T' if unit == :days
       end
+      iso_str = iso_str.strip
+      iso_str = iso_str.chomp('T') if (iso_str[-1]).eql? 'T'
       iso_str
     end
 
@@ -138,18 +140,17 @@ module MicrosoftKiotaAbstractions
     def abs
       @duration_obj = @duration_obj.abs
       update_member_variables
+      return self
     end
 
     def +(other)
-      @duration_obj += other.duration_obj
-      update_member_variables
-      normalize
+      new_obj = self.duration_obj + other.duration_obj
+      MicrosoftKiotaAbstractions::ISODuration.new(dur_obj_to_hash(new_obj))
     end
 
     def -(other)
-      @duration_obj -= other.duration_obj
-      update_member_variables
-      normalize
+      new_obj = self.duration_obj - other.duration_obj
+      MicrosoftKiotaAbstractions::ISODuration.new(dur_obj_to_hash(new_obj))
     end
 
     def ==(other)
@@ -171,10 +172,15 @@ module MicrosoftKiotaAbstractions
 
     def parse_hash(input)
       iso_str = 'P'
+      input.each do |keys, values|
+        raise StandardError, "The key #{keys} is not recognized" unless UNITS.key?(keys)
+      end
       UNITS.each do |unit, abrev|
-        iso_str += input[unit].to_s + abrev if input.key?(unit)
+        iso_str += input[unit].to_s + abrev if input.key?(unit) && !input[unit].zero?
         iso_str += 'T' if unit == :days
       end
+      iso_str = iso_str.strip
+      iso_str = iso_str.chomp('T') if (iso_str[-1]).eql? 'T'
       ISO8601::Duration.new(iso_str)
     end
 
@@ -186,6 +192,18 @@ module MicrosoftKiotaAbstractions
       @weeks = @duration_obj.weeks.nil? ? 0 : ((@duration_obj.weeks.to_s).split('W')[0]).to_i
       @months = @duration_obj.months.nil? ? 0 : ((@duration_obj.months.to_s).split('M')[0]).to_i
       @years = @duration_obj.years.nil? ? 0 : ((@duration_obj.years.to_s).split('Y')[0]).to_i
+    end
+
+    def dur_obj_to_hash(dur_obj)
+      result_hash = {}
+      result_hash[:seconds] = dur_obj.seconds.nil? ? 0 : ((dur_obj.seconds.to_s).split('S')[0]).to_i
+      result_hash[:minutes] = dur_obj.minutes.nil? ? 0 : ((dur_obj.minutes.to_s).split('H')[0]).to_i
+      result_hash[:hours] = dur_obj.hours.nil? ? 0 : ((dur_obj.hours.to_s).split('H')[0]).to_i
+      result_hash[:days] = dur_obj.days.nil? ? 0 : ((dur_obj.days.to_s).split('D')[0]).to_i
+      result_hash[:weeks] = dur_obj.weeks.nil? ? 0 : ((dur_obj.weeks.to_s).split('W')[0]).to_i
+      result_hash[:months] = dur_obj.months.nil? ? 0 : ((dur_obj.months.to_s).split('M')[0]).to_i
+      result_hash[:years] = dur_obj.years.nil? ? 0 : ((dur_obj.years.to_s).split('Y')[0]).to_i
+      result_hash
     end
   end
 end

@@ -1,5 +1,7 @@
-require 'uri'
 # frozen_string_literal: true
+require 'uri'
+require_relative '../lib/microsoft_kiota_abstractions.rb'
+
 
 RSpec.describe MicrosoftKiotaAbstractions do
   it "has a version number" do
@@ -53,5 +55,40 @@ RSpec.describe MicrosoftKiotaAbstractions do
     request_obj.path_parameters["term"] = "search"
     request_obj.query_parameters["q1"] = "option1"
     expect(request_obj.uri).to eq(URI("https://www.bing.com/search?q1=option1"))
+  end
+
+  it "initializes a duration with ISO-formatted string or hash" do 
+    time1 = MicrosoftKiotaAbstractions::ISODuration.new("P2Y1MT2H")
+    time2 = MicrosoftKiotaAbstractions::ISODuration.new({ :years => 2, :months => 1, :hours => 2 } )
+    expect(time1).to eq(time2)
+  end
+
+  it "fails on malformed string inputs" do 
+    expect { MicrosoftKiotaAbstractions::ISODuration.new("P2Y1M3WT2H") }.to raise_error ISO8601::Errors::UnknownPattern
+  end
+
+  it "fails on malformed hash inputs" do
+    expect { MicrosoftKiotaAbstractions::ISODuration.new({ :laughter => 2, :months => 1, :hours => 2 }) }.to raise_error('The key laughter is not recognized')
+  end
+
+  it "handles addition" do 
+    time1 = MicrosoftKiotaAbstractions::ISODuration.new("P2Y1MT2H")
+    time2 = MicrosoftKiotaAbstractions::ISODuration.new({ :years => 2, :months => 1, :hours => 2 } )
+    time3 = time1 + time2
+    expect(time3.string).to eq(MicrosoftKiotaAbstractions::ISODuration.new("P4Y2MT4H").string)
+  end
+
+  it "handles subtraction" do
+    time1 = MicrosoftKiotaAbstractions::ISODuration.new("P4Y2MT2H")
+    time2 = MicrosoftKiotaAbstractions::ISODuration.new({ :years => 1, :months => 1, :hours => 2 } )
+    time3 = time1 - time2
+
+    expect(time3.string).to eq(MicrosoftKiotaAbstractions::ISODuration.new("P3Y1M").string)
+  end
+
+  it "handles equality comparisons" do 
+    time1 = MicrosoftKiotaAbstractions::ISODuration.new("P4Y2MT2H")
+    time2 = MicrosoftKiotaAbstractions::ISODuration.new({ :years => 4, :months => 2, :hours => 2 } )
+    expect(time1).to eq(time2)
   end
 end
