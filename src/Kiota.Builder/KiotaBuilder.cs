@@ -1073,7 +1073,11 @@ public class KiotaBuilder
         };
     }
     private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace ns, CodeClass model) {
-        AddSerializationMembers(model, schema?.AdditionalPropertiesAllowed ?? false, config.UsesBackingStore);
+
+        var includeAdditionalDataProperties = config.IncludeAdditionalData &&
+            (schema?.AdditionalPropertiesAllowed ?? false);
+
+        AddSerializationMembers(model, includeAdditionalDataProperties, config.UsesBackingStore);
         if(schema?.Properties?.Any() ?? false)
         {
             model.AddProperty(schema
