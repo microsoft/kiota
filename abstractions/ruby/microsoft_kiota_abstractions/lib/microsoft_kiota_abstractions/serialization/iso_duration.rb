@@ -36,25 +36,6 @@ module MicrosoftKiotaAbstractions
       update_member_variables
       normalize
     end
-    
-    def parse_hash(input)
-      iso_str = 'P'
-      UNITS.each do |unit, abrev|
-        iso_str += input[unit].to_s + abrev if input.key?(unit)
-        iso_str += 'T' if unit == :days
-      end
-      ISO8601::Duration.new(iso_str)
-    end
-
-    def update_member_variables
-      @seconds = @duration_obj.seconds.nil? ? 0 : ((@duration_obj.seconds.to_s).split('S')[0]).to_i
-      @minutes = @duration_obj.minutes.nil? ? 0 : ((@duration_obj.minutes.to_s).split('H')[0]).to_i
-      @hours = @duration_obj.hours.nil? ? 0 : ((@duration_obj.hours.to_s).split('H')[0]).to_i
-      @days = @duration_obj.days.nil? ? 0 : ((@duration_obj.days.to_s).split('D')[0]).to_i
-      @weeks = @duration_obj.weeks.nil? ? 0 : ((@duration_obj.weeks.to_s).split('W')[0]).to_i
-      @months = @duration_obj.months.nil? ? 0 : ((@duration_obj.months.to_s).split('M')[0]).to_i
-      @years = @duration_obj.years.nil? ? 0 : ((@duration_obj.years.to_s).split('Y')[0]).to_i
-    end
 
     def string
       input = { :seconds => @seconds, :minutes => @minutes, :hours => @hours, 
@@ -184,15 +165,27 @@ module MicrosoftKiotaAbstractions
       @duration_obj == other.duration_obj
     end
 
+    protected
+
+    attr_accessor :duration_obj
+
+    def parse_hash(input)
+      iso_str = 'P'
+      UNITS.each do |unit, abrev|
+        iso_str += input[unit].to_s + abrev if input.key?(unit)
+        iso_str += 'T' if unit == :days
+      end
+      ISO8601::Duration.new(iso_str)
+    end
+
+    def update_member_variables
+      @seconds = @duration_obj.seconds.nil? ? 0 : ((@duration_obj.seconds.to_s).split('S')[0]).to_i
+      @minutes = @duration_obj.minutes.nil? ? 0 : ((@duration_obj.minutes.to_s).split('H')[0]).to_i
+      @hours = @duration_obj.hours.nil? ? 0 : ((@duration_obj.hours.to_s).split('H')[0]).to_i
+      @days = @duration_obj.days.nil? ? 0 : ((@duration_obj.days.to_s).split('D')[0]).to_i
+      @weeks = @duration_obj.weeks.nil? ? 0 : ((@duration_obj.weeks.to_s).split('W')[0]).to_i
+      @months = @duration_obj.months.nil? ? 0 : ((@duration_obj.months.to_s).split('M')[0]).to_i
+      @years = @duration_obj.years.nil? ? 0 : ((@duration_obj.years.to_s).split('Y')[0]).to_i
+    end
   end
 end
-
-time = MicrosoftKiotaAbstractions::ISODuration.new("P2Y")
-
-puts time.years
-
-
-
-puts time.class
-
-# keep fraction of second 
