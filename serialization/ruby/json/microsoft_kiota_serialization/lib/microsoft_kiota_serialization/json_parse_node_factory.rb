@@ -1,5 +1,5 @@
 require 'json'
-require_relative '../../../../../abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions.rb'
+require_relative '../../../../../../abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions.rb'
 
 
 module MicrosoftKiotaSerialization
