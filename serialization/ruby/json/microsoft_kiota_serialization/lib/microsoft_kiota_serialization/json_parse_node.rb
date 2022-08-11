@@ -2,7 +2,7 @@ require 'time'
 require 'date'
 require 'json'
 require 'uuidtools'
-require_relative 'microsoft_kiota_abstractions'
+require 'microsoft_kiota_abstractions'
 
 
 module MicrosoftKiotaSerialization
