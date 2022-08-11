@@ -8,6 +8,7 @@ require 'microsoft_kiota_abstractions'
 module MicrosoftKiotaSerialization
   class JsonParseNode
     include MicrosoftKiotaAbstractions::ParseNode
+    include MicrosoftKiotaAbstractions::ISODuration
     def initialize(node)
       @current_node = node
     end
