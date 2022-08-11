@@ -93,7 +93,7 @@ public class PythonConventionService : CommonLanguageConventionService
                 "DateTimeOffset" => "datetime",
                 "boolean" => "bool",
                 "Object" or "object" or "float" or "bytes" or "datetime" or "timespan" => type.Name,
-                _ => type.Name.ToFirstCharacterUpperCase().Replace("IParseNode", "ParseNode") ?? "object",
+                _ => type.Name.ToFirstCharacterUpperCase() ?? "object",
             };
     }
     private static string TranslateInternalType(CodeType type) {

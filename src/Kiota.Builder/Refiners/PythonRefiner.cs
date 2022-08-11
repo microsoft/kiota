@@ -132,8 +132,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
         else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
             currentMethod.ReturnType.Name = $"Dict[str, Callable[[ParseNode], None]]";
-        else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor)) {
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore))
+        else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.Factory)) {
+            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore, CodeParameterKind.ParseNode))
                 .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                 .ToList()
                 .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
