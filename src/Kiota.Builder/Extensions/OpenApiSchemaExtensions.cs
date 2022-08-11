@@ -56,19 +56,22 @@ namespace Kiota.Builder.Extensions {
         }
         public static bool IsAnyOf(this OpenApiSchema schema)
         {
-            return schema?.AnyOf?.Count > 1;
+            return schema?.AnyOf?.Count(IsSemanticallyMeaningful) > 1;
         }
 
         public static bool IsAllOf(this OpenApiSchema schema)
         {
-            return schema?.AllOf?.Count > 1;
+            return schema?.AllOf?.Count(IsSemanticallyMeaningful) > 1;
         }
 
         public static bool IsOneOf(this OpenApiSchema schema)
         {
-            return schema?.OneOf?.Count > 1;
+            return schema?.OneOf?.Count(IsSemanticallyMeaningful) > 1;
         }
-
+        private static bool IsSemanticallyMeaningful(this OpenApiSchema schema)
+        {
+            return schema.Properties.Any() || schema.Items != null || !string.IsNullOrEmpty(schema.Type) || !string.IsNullOrEmpty(schema.Format);
+        }
         public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
             visitedSchemas ??= new();            
             if(schema != null && !visitedSchemas.Contains(schema)) {
