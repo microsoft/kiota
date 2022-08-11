@@ -4,13 +4,11 @@ source "https://rubygems.org"
 
 gemspec
 
-# git_source(:github) { |repo_name| "https://rubygems.pkg.github.com/microsoft" }
+git_source(:github) { |repo_name| "https://rubygems.pkg.github.com/microsoft" }
 
-# source "https://rubygems.pkg.github.com/microsoft" do
-#   gem "microsoft_kiota_abstractions", "0.1.8"
-# end
-gem 'microsoft_kiota_abstractions', :github => 'microsoft/kiota/abstractions/ruby/microsoft_kiota_abstractions', :branch => 'osose-refiners-ruby-features'
-
+source "https://rubygems.pkg.github.com/microsoft" do
+  gem "microsoft_kiota_abstractions", "0.1.8"
+end
 
 gem 'rake', '~> 13.0'
 
