@@ -69,11 +69,15 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
         {
+            return GetTypeString(code, targetElement, includeCollectionInformation, true);
+        }
+        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool includeNullableInformation)
+        {
             if(code is CodeComposedTypeBase)
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
                 var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
-                var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) ? NullableMarkerAsString : string.Empty;
+                var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) && includeNullableInformation ? NullableMarkerAsString : string.Empty;
                 var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex && includeCollectionInformation ? "List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind switch {
                     CodeTypeCollectionKind.Complex when includeCollectionInformation => ">",
