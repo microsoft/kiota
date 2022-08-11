@@ -380,6 +380,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     Name = codeComposedType.Name,
                                     Description = description})
                                 .First();
+            newClass.AddUsing(codeClass.Usings
+                                        .Where(static x => x.IsExternal)
+                                        .Select(static x => x.Clone() as CodeUsing)
+                                        .ToArray());
         } else {
             if(codeComposedType.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase))
                 codeComposedType.Name = $"{codeComposedType.Name}Wrapper";
