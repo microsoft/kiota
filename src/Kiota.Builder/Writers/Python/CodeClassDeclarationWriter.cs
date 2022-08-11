@@ -30,7 +30,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
     
     private static void WriteExternalImports(ClassDeclaration codeElement, LanguageWriter writer) {
         var externalImportSymbolsAndPaths = codeElement.Usings
-                                                        .Where(x => x.IsExternal)
+                                                        .Where(static x => x.IsExternal)
                                                         .Select(x => (x.Name, string.Empty, x.Declaration?.Name))
                                                         .GroupBy(x => x.Item3)
                                                         .OrderBy(x => x.Key);
