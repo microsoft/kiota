@@ -1,4 +1,4 @@
-require_relative '../../../../../../abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions.rb'
+require 'microsoft_kiota_abstractions'
 require_relative './body_type'
 require_relative './email_address'
 require_relative './entity'

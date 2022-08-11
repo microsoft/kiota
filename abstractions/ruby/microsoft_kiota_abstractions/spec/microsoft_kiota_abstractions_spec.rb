@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 require 'uri'
-require_relative '../lib/microsoft_kiota_abstractions.rb'
+require 'microsoft_kiota_abstractions'
 
 
 RSpec.describe MicrosoftKiotaAbstractions do

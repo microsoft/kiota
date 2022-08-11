@@ -1,4 +1,4 @@
-require_relative '../../../../../../abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions.rb'
+require_relative 'microsoft_kiota_abstractions'
 
 module Files
     class Recipient

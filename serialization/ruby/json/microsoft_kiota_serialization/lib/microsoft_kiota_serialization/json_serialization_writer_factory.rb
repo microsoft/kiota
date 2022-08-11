@@ -1,4 +1,4 @@
-require_relative '../../../../../../abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions.rb'
+require 'microsoft_kiota_abstractions'
 
 module MicrosoftKiotaSerialization
   class JsonSerializationWriterFactory

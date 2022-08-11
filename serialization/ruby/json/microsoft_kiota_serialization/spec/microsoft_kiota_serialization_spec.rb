@@ -2,7 +2,7 @@
 
 require_relative 'spec_helper'
 require_relative './files/files.rb'
-require_relative '../../../../../abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions.rb'
+require 'microsoft_kiota_abstractions'
 require 'json'
 
 RSpec.describe MicrosoftKiotaSerialization do
