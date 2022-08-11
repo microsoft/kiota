@@ -11,7 +11,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
     }
     public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
     {
-        if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+        ArgumentNullException.ThrowIfNull(codeElement, nameof(codeElement));
         if(writer == null) throw new ArgumentNullException(nameof(writer));
         var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
         WriteExternalImports(codeElement, writer); // external imports before internal imports
