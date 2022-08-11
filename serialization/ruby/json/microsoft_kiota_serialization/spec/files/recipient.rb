@@ -1,4 +1,4 @@
-require_relative 'microsoft_kiota_abstractions'
+require 'microsoft_kiota_abstractions'
 
 module Files
     class Recipient
