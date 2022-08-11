@@ -52,13 +52,11 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
                                                         .Where(x => !x.IsExternal)
                                                         .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNameSpace))
                                                         .GroupBy(x => x.Item3)
+                                                        .Where(x => !string.IsNullOrEmpty(x.Key))
                                                         .OrderBy(x => x.Key);
         if(internalImportSymbolsAndPaths.Any()){
             foreach (var codeUsing in internalImportSymbolsAndPaths)
-                if (!string.IsNullOrWhiteSpace(codeUsing.Key))
-                {
-                    writer.WriteLine($"from {codeUsing.Key.ToSnakeCase()} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(x => x).Aggregate((x,y) => x + ", " + y)}");
-                }
+                writer.WriteLine($"from {codeUsing.Key.ToSnakeCase()} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(x => x).Aggregate((x,y) => x + ", " + y)}");
             writer.WriteLine();
         }
     }
