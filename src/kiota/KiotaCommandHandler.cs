@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
@@ -23,6 +23,7 @@ internal class KiotaCommandHandler : ICommandHandler
     public Option<string> NamespaceOption { get;set; }
     public Option<LogLevel> LogLevelOption { get;set; }
     public Option<bool> BackingStoreOption { get;set; }
+    public Option<bool> AdditionalDataOption { get;set; }
     public Option<List<string>> SerializerOption { get;set; }
     public Option<List<string>> DeserializerOption { get;set; }
     public Option<bool> CleanOutputOption { get;set; }
@@ -37,6 +38,7 @@ internal class KiotaCommandHandler : ICommandHandler
         GenerationLanguage language = context.ParseResult.GetValueForOption(LanguageOption);
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption);
         bool backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
+        bool includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
         string className = context.ParseResult.GetValueForOption(ClassOption);
         LogLevel logLevel = context.ParseResult.GetValueForOption(LogLevelOption);
         string namespaceName = context.ParseResult.GetValueForOption(NamespaceOption);
@@ -50,6 +52,7 @@ internal class KiotaCommandHandler : ICommandHandler
         AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
         AssignIfNotNullOrEmpty(namespaceName, (c, s) => c.ClientNamespaceName = s);
         Configuration.UsesBackingStore = backingStore;
+        Configuration.IncludeAdditionalData = includeAdditionalData;
         Configuration.Language = language;
         if(serializer?.Any() ?? false)
             Configuration.Serializers = serializer.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);

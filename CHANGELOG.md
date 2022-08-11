@@ -12,12 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for vendor-specific content types in python. [#1631](https://github.com/microsoft/kiota/issues/1463)
 - Simplified field deserializers for json in Python. [#1632](https://github.com/microsoft/kiota/issues/1492)
 - Adds python code generation support. [#1200](https://github.com/microsoft/kiota/issues/163)
+- Added a `--additional-data` argument to generate the AdditionalData properties [#1772](https://github.com/microsoft/kiota/issues/1772)
 
 ### Changed
 
 - Fixed a bug where collections types would generate invalid return types in CSharp.
 - Fixed a bug where a nullable entry in anyOf schemas would create unnecessary composed types.
 - Removed duplicate properties defined in base types from model serialization and deserialization methods and initialise property defaults in constructor. [#1737](https://github.com/microsoft/kiota/pull/1737)
+- Fixed a bug where the generated code had incorrect casing within a method (Ruby). [#1672](https://github.com/microsoft/kiota/issues/1672)
+- Fixed an issue where duplicate 'require' statements are generated for inner classes in the middle of the file (Ruby). [#1649](https://github.com/microsoft/kiota/issues/1649)
 
 ## [0.3.0] - 2022-07-08
 

@@ -191,9 +191,9 @@ namespace Kiota.Builder.Writers.Ruby {
                 var headers = requestParams.Headers;
                 // TODO add options handling
                 if(headers != null)
-                    writer.WriteLine($"request_info.set_headers_from_raw_object({requestParams.requestConfiguration.Name}.{headers.Name.ToSnakeCase()})");
+                    writer.WriteLine($"request_info.set_headers_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
                 if(queryString != null)
-                    writer.WriteLines($"request_info.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name}.{queryString.Name.ToSnakeCase()})");
+                    writer.WriteLines($"request_info.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
                 if(requestParams.requestBody != null) {
                     if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                         writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name})");
