@@ -2,7 +2,7 @@ require 'time'
 require 'date'
 require 'json'
 require 'uuidtools'
-require_relative '../../../../../../abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions.rb'
+require_relative 'microsoft_kiota_abstractions'
 
 
 module MicrosoftKiotaSerialization
