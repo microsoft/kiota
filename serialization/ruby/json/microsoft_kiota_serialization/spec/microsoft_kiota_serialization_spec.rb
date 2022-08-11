@@ -2,7 +2,7 @@
 
 require_relative 'spec_helper'
 require_relative './files/files.rb'
-require 'microsoft_kiota_abstractions'
+require_relative '../../../../../abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions.rb'
 require 'json'
 
 RSpec.describe MicrosoftKiotaSerialization do
@@ -46,8 +46,8 @@ RSpec.describe MicrosoftKiotaSerialization do
     expect(object_value.value[0].guid_id.instance_of? UUIDTools::UUID).to eq(true)
 
     ## Date tests
-    expect(object_value.value[0].received_date_time.instance_of? Time).to eq(true)
-    expect(object_value.value[0].sent_date_time.instance_of? Time).to eq(true)
+    expect((object_value.value[0].received_date_time).instance_of? DateTime).to eq(true)
+    expect((object_value.value[0].sent_date_time).instance_of? DateTime).to eq(true)
     
     ## Collection of Primitive values tests
     expect(object_value.additional_data["primativeValues"].instance_of? Array).to eq(true)

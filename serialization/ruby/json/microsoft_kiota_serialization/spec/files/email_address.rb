@@ -1,4 +1,4 @@
-require 'microsoft_kiota_abstractions'
+require_relative '../../../../../../abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions.rb'
 
 module Files
     class EmailAddress

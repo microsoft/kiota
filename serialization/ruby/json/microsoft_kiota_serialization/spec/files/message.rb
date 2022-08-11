@@ -1,4 +1,4 @@
-require 'microsoft_kiota_abstractions'
+require_relative '../../../../../../abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions.rb'
 require_relative './outlook_item'
 
 module Files
@@ -315,10 +315,10 @@ module Files
                 "isRead" => lambda {|o, n| o.is_read = n.get_boolean_value() },
                 "isReadReceiptRequested" => lambda {|o, n| o.is_read_receipt_requested = n.get_boolean_value() },
                 "parentFolderId" => lambda {|o, n| o.parent_folder_id = n.get_string_value() },
-                "receivedDateTime" => lambda {|o, n| o.received_date_time = n.get_date_value() },
+                "receivedDateTime" => lambda {|o, n| o.received_date_time = n.get_date_time_value() },
                 "replyTo" => lambda {|o, n| o.reply_to = n.get_collection_of_object_values(Files::Recipient) },
                 "sender" => lambda {|o, n| o.sender = n.get_object_value(Files::Recipient) },
-                "sentDateTime" => lambda {|o, n| o.sent_date_time = n.get_date_value() },
+                "sentDateTime" => lambda {|o, n| o.sent_date_time = n.get_date_time_value() },
                 "subject" => lambda {|o, n| o.subject = n.get_string_value() },
                 "toRecipients" => lambda {|o, n| o.to_recipients = n.get_collection_of_object_values(Files::Recipient) },
                 "uniqueBody" => lambda {|o, n| o.unique_body = n.get_object_value(Files::ItemBody) },
