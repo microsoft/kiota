@@ -59,6 +59,7 @@ namespace Kiota.Builder
                 }
             return result;
         }
+        public CodeNamespace FindOrAddNamespace(string nsName) => FindNamespaceByName(nsName) ?? AddNamespace(nsName);
         public CodeNamespace AddNamespace(string namespaceName) {
             if(string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentNullException(nameof(namespaceName));

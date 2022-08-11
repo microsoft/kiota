@@ -343,7 +343,7 @@ public class KiotaBuilder
         Parallel.ForEach(currentNode.Children.Values, childNode =>
         {
             var targetNamespaceName = childNode.GetNodeNamespaceFromPath(config.ClientNamespaceName);
-            var targetNamespace = rootNamespace.FindNamespaceByName(targetNamespaceName) ?? rootNamespace.AddNamespace(targetNamespaceName);
+            var targetNamespace = rootNamespace.FindOrAddNamespace(targetNamespaceName);
             CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
         });
     }
@@ -846,9 +846,7 @@ public class KiotaBuilder
         foreach(var currentSchema in allOfs) {
             var referenceId = GetReferenceIdFromOriginalSchema(currentSchema, schema);
             var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(referenceId);
-            var shortestNamespace = string.IsNullOrEmpty(referenceId) ? codeNamespaceFromParent : rootNamespace.FindNamespaceByName(shortestNamespaceName);
-            if(shortestNamespace == null)
-                shortestNamespace = rootNamespace.AddNamespace(shortestNamespaceName);
+            var shortestNamespace = string.IsNullOrEmpty(referenceId) ? codeNamespaceFromParent : rootNamespace.FindOrAddNamespace(shortestNamespaceName);
             className = (currentSchema.GetSchemaName() ?? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, schema: schema)).CleanupSymbolName();
             codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace, codeDeclaration as CodeClass);
         }
@@ -904,6 +902,8 @@ public class KiotaBuilder
             }, schema.AnyOf),
             (_, _) => throw new InvalidOperationException("Schema is not oneOf nor anyOf"),
         };
+        if(!string.IsNullOrEmpty(schema.Reference?.Id))
+            unionType.TargetNamespace = codeNamespace.GetRootNamespace().FindOrAddNamespace(GetModelsNamespaceNameFromReferenceId(schema.Reference.Id));
         unionType.DiscriminatorInformation.DiscriminatorPropertyName = GetDiscriminatorPropertyName(schema);
         GetDiscriminatorMappings(currentNode, schema, codeNamespace, null)
             ?.ToList()
@@ -936,8 +936,8 @@ public class KiotaBuilder
             return CreateInheritedModelDeclaration(currentNode, schema, operation, codeNamespace);
         } else if((schema.IsAnyOf() || schema.IsOneOf()) && string.IsNullOrEmpty(schema.Format)) {
             return CreateComposedModelDeclaration(currentNode, schema, operation, suffixForInlineSchema, codeNamespace);
-        } else if(schema.IsObject() || schema.Properties.Any() || schema.Enum.Any()) {
-            // referenced schema, no inheritance or union type
+        } else if(schema.IsObject() || schema.Properties.Any() || schema.Enum.Any() || !string.IsNullOrEmpty(schema.AdditionalProperties?.Type)) {
+            // referenced schema, no inheritance or union type, often empty definitions with only additional properties are used as property bags.
             var targetNamespace = GetShortestNamespace(codeNamespace, schema);
             return CreateModelDeclarationAndType(currentNode, schema, operation, targetNamespace, response: response, typeNameForInlineSchema: typeNameForInlineSchema);
         } else if (schema.IsArray()) {
@@ -1143,7 +1143,7 @@ public class KiotaBuilder
                                         className = $"{model.Name}_{x.Key}";
                                     var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
                                     var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
-                                                            (rootNamespace.FindNamespaceByName(shortestNamespaceName) ?? rootNamespace.AddNamespace(shortestNamespaceName));
+                                                        rootNamespace.FindOrAddNamespace(shortestNamespaceName);
                                     #if RELEASE
                                     try {
                                     #endif

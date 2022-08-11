@@ -37,4 +37,8 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
         DiscriminatorInformation = sourceComposed.DiscriminatorInformation?.Clone() as DiscriminatorInformation;
         return this as ChildType;
     }
+    /// <summary>
+    /// The target namespace if the composed type needs to be represented by a class
+    /// </summary>
+    public CodeNamespace TargetNamespace { get; set; }
 }

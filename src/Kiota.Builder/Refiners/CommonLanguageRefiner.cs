@@ -375,13 +375,18 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Name = codeComposedType.Name,
                 Description = description
             }).Last();
-        }
-        else {
+        } else if (codeComposedType.TargetNamespace is CodeNamespace targetNamespace) {
+            newClass = targetNamespace.AddClass(new CodeClass {
+                                    Name = codeComposedType.Name,
+                                    Description = description})
+                                .First();
+        } else {
             if(codeComposedType.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase))
                 codeComposedType.Name = $"{codeComposedType.Name}Wrapper";
             newClass = codeClass.AddInnerClass(new CodeClass {
-            Name = codeComposedType.Name,
-            Description = description}).First();
+                                    Name = codeComposedType.Name,
+                                    Description = description})
+                                .First();
         }
         newClass.AddProperty(codeComposedType
                                 .Types
