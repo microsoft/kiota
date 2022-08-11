@@ -22,7 +22,7 @@ namespace  Kiota.Builder.Writers.Ruby {
                                             .Distinct()
                                             .GroupBy(x => x.Declaration?.Name)
                                             .OrderBy(x => x.Key))
-                        writer.WriteLine($"require '{codeUsing.Key.ToSnakeCase()}'");
+                    writer.WriteLine($"require '{codeUsing.Key.ToSnakeCase()}'");
                         
                 foreach (var relativePath in codeElement.Usings
                                             .Where(x => !x.IsExternal)
@@ -30,7 +30,7 @@ namespace  Kiota.Builder.Writers.Ruby {
                                             .Select(x => x.Item3)
                                             .Distinct()
                                             .OrderBy(x => x))
-                            writer.WriteLine($"require_relative '{relativePath.ToSnakeCase()}'");
+                    writer.WriteLine($"require_relative '{relativePath.ToSnakeCase()}'");
             }
             writer.WriteLine();
             if(codeElement?.Parent?.Parent is CodeNamespace ns) {
