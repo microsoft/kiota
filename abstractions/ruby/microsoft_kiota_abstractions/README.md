@@ -28,7 +28,7 @@ Add this line to your application's Gemfile:
 
 ```ruby
 source "https://rubygems.pkg.github.com/microsoft" do
-  gem "microsoft_kiota_abstractions", "0.1.1"
+  gem "microsoft_kiota_abstractions", "0.1.11"
 end
 ```
 
@@ -41,7 +41,7 @@ bundle install
 Or install it yourself as:
 
  ```shell
- gem install microsoft_kiota_abstractions --version "0.1.1" --source "https://{USERNAME}{PASSWORD/TOKEN}rubygems.pkg.github.com/microsoft"
+ gem install microsoft_kiota_abstractions --version "0.1.11" --source "https://{USERNAME}{PASSWORD/TOKEN}rubygems.pkg.github.com/microsoft"
  ```
 
 ## Contributing
