@@ -174,7 +174,7 @@ class RequestInformation(Generic[QueryParams]):
             values (Union[T, List[T]]): _description_
         """
         if not request_adapter:
-            raise Exception("HttpCore cannot be null")
+            raise Exception("RequestAdapter cannot be null")
         if not content_type:
             raise Exception("Content Type cannot be null")
         if not values:
