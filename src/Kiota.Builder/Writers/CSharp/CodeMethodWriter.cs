@@ -205,10 +205,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     {
         foreach (var propWithDefault in parentClass
                                         .Properties
-                                        .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                        .OrderByDescending(x => x.Kind)
-                                        .ThenBy(x => x.Name)) {
-            writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {propWithDefault.DefaultValue};");
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        .OrderByDescending(static x => x.Kind)
+                                        .ThenBy(static x => x.Name)) {
+            var defaultValue = propWithDefault.DefaultValue;
+            if(propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition) {
+                defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}.{defaultValue.Trim('"').ToFirstCharacterUpperCase()}";
+            }
+            writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {defaultValue};");
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
