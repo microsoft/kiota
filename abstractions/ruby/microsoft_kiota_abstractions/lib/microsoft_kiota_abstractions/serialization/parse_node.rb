@@ -21,6 +21,18 @@ module MicrosoftKiotaAbstractions
       raise NotImplementedError.new
     end
 
+    def get_time_value()
+      raise NotImplementedError.new
+    end
+
+    def get_date_time_value()
+      raise NotImplementedError.new
+    end
+
+    def get_duration_value()
+      raise NotImplementedError.new 
+    end
+
     def get_collection_of_primitive_values()
       raise NotImplementedError.new
     end
