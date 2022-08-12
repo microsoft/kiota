@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where the generated code had incorrect casing within a method (Ruby). [#1672](https://github.com/microsoft/kiota/issues/1672)
 - Fixed an issue where duplicate 'require' statements are generated for inner classes in the middle of the file (Ruby). [#1649](https://github.com/microsoft/kiota/issues/1649)
 - Split parsable interface and additional property/data interface in Ruby. [#1654](https://github.com/microsoft/kiota/issues/1654)
+- Changed format of datetimes in Go to be converted to ISO 8601 by default when place in path parameters(Go)
 
 ## [0.3.0] - 2022-07-08
 
