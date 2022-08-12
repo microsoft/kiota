@@ -15,7 +15,7 @@ namespace Kiota.Builder.Refiners {
             AddParsableImplementsForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
             AddInheritedAndMethodTypesImports(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            CorrectCoreType(generatedCode, null, CorrectPropertyType);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
@@ -45,12 +45,50 @@ namespace Kiota.Builder.Refiners {
                                                 "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
                                         new [] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
         }
+        private static void CorrectMethodType(CodeMethod currentMethod) {
+            CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+                                        .Select(x => x.Type)
+                                        .Union(new CodeTypeBase[] { currentMethod.ReturnType})
+                                        .ToArray());
+        }
+        private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
+            {"DateTimeOffset", ("DateTime", new CodeUsing {
+                                            Name = "DateTime",
+                                            Declaration = new CodeType {
+                                                Name = "date",
+                                                IsExternal = true,
+                                            },
+                                        })},
+            {"TimeSpan", ("MicrosoftKiotaAbstractions::ISODuration", new CodeUsing {
+                                            Name = "MicrosoftKiotaAbstractions::ISODuration",
+                                            Declaration = new CodeType {
+                                                Name = "github.com/microsoft/kiota/abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions/serialization",
+                                                IsExternal = true,
+                                            },
+                                        })},
+            {"DateOnly", ("Date", new CodeUsing {
+                                    Name = "Date",
+                                    Declaration = new CodeType {
+                                        Name = "date",
+                                        IsExternal = true,
+                                    },
+                                })},
+            {"TimeOnly", ("Time", new CodeUsing {
+                                    Name = "Time",
+                                    Declaration = new CodeType {
+                                        Name = "time",
+                                        IsExternal = true,
+                                    },
+                                })},
+        };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
                 currentProperty.Type.IsNullable = true;
                 if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                     currentProperty.DefaultValue = "Hash.new";
-            }
+            } 
+            CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+            
         }
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
@@ -67,6 +105,8 @@ namespace Kiota.Builder.Refiners {
                 "microsoft_kiota_abstractions", "Parsable"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
                 "microsoft_kiota_abstractions", "Parsable"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+                "microsoft_kiota_abstractions", "AdditionalDataHolder"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                         method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
                 "microsoft_kiota_abstractions", "BackingStoreFactory", "BackingStoreFactorySingleton"),
@@ -126,5 +166,8 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(current, c => AddNamespaceModuleImports(c, clientNamespaceName));
         }
+        private static void CorrectImplements(ProprietableBlockDeclaration block) {
+            block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
+            }
     }
 }
