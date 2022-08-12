@@ -1,7 +1,8 @@
-require 'microsoft_kiota_abstractions'
 require 'time'
+require 'date'
 require 'json'
 require "uuidtools"
+require 'microsoft_kiota_abstractions'
 
 module MicrosoftKiotaSerialization
   class JsonSerializationWriter
@@ -79,12 +80,54 @@ module MicrosoftKiotaSerialization
         raise StandardError, "no key or value included in write_date_value(key, value)"
       end
       if !key
+        return value.strftime("%Y-%m-%d")
+      end
+      if !value
+        @writer[key] = nil
+      else
+        @writer[key] = value.strftime("%Y-%m-%d")
+      end
+    end
+
+    def write_time_value(key, value)
+      if !key && !value
+        raise StandardError, "no key or value included in write_time_value(key, value)"
+      end
+      if !key
+        return value.strftime("%H:%M:%S%Z")
+      end
+      if !value
+        @writer[key] = nil
+      else
+        @writer[key] = value.strftime("%H:%M:%S%Z")
+      end
+    end
+
+    def write_date_time_value(key, value)
+      if !key && !value
+        raise StandardError, "no key or value included in write_date_time_value(key, value)"
+      end
+      if !key
         return value.strftime("%Y-%m-%dT%H:%M:%S%Z")
       end
       if !value
         @writer[key] = nil
       else
         @writer[key] = value.strftime("%Y-%m-%dT%H:%M:%S%Z")
+      end
+    end
+
+    def write_duration_value(key, value)
+      if !key && !value
+        raise StandardError, "no key or value included in write_duration_value(key, value)"
+      end
+      if !key
+        return value.string
+      end
+      if !value
+        @writer[key] = nil
+      else
+        @writer[key] = value.string
       end
     end
 
@@ -158,8 +201,14 @@ module MicrosoftKiotaSerialization
           return self.write_number_value(key, value)
         elsif value.instance_of? Float
           return self.write_float_value(key, value)
+        elsif value.instance_of? DateTime
+          return self.write_date_time_value(key, value)
         elsif value.instance_of? Time
+          return self.write_time_value(key, value)
+        elsif value.instance_of? Date
           return self.write_date_value(key, value)
+        elsif value.instance_of? MicrosoftKiotaAbstractions::ISODuration
+          return self.write_duration_value(key, value)
         elsif value.instance_of? Array
           return self.write_collection_of_primitive_values(key, value)
         elsif value.is_a? Object

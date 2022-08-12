@@ -170,6 +170,7 @@ public class GoConventionService : CommonLanguageConventionService
     }
     #pragma warning restore CA1822 // Method should be static
     private const string StrConvHash = "i53ac87e8cb3cc9276228f74d38694a208cacb99bb8ceb705eeae99fb88d4d274";
+    private const string TimeFormatHash = "i336074805fc853987abe6f7fe3ad97a6a6f3077a16391fec744f671a015fbd7e";
     private static string GetValueStringConversion(string typeName, string reference) {
         return typeName switch {
             "boolean" => $"{StrConvHash}.FormatBool({reference})",
@@ -177,7 +178,8 @@ public class GoConventionService : CommonLanguageConventionService
             "integer" or "int32" => $"{StrConvHash}.FormatInt(int64({reference}), 10)",
             "long" => $"{StrConvHash}.FormatInt({reference}, 10)",
             "float" or "double" or "decimal" or "float64" or "float32" => $"{StrConvHash}.FormatFloat({reference}, 'E', -1, 64)",
-            "DateTimeOffset" or "Time" or "ISODuration" or "TimeSpan" or "TimeOnly" or "DateOnly" => $"({reference}).String()",
+            "DateTimeOffset" or "Time" => $"({reference}).Format({TimeFormatHash}.RFC3339)", // default to using ISO 8601
+            "ISODuration" or "TimeSpan" or "TimeOnly" or "DateOnly" => $"({reference}).String()",
             _ => reference,
         };
     }
