@@ -1465,7 +1465,7 @@ components:
                 {
                     "@odata.type", new OpenApiSchema {
                         Type = "string",
-                        Default = new OpenApiString("#microsoft.graph.entity")
+                        Default = new OpenApiString("microsoft.graph.entity")
                     }
                 }
             },
@@ -1570,7 +1570,7 @@ components:
         var codeModel = builder.CreateSourceModel(node);
         builder.ApplyLanguageRefinement(config, codeModel);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity", true);
-        var directoryObjectsClass = codeModel.FindChildByName<CodeClass>("directoryObjectsResponse", true);
+        var directoryObjectsClass = codeModel.FindChildByName<CodeClass>("directoryObjects", true);
         Assert.NotNull(entityClass);
         Assert.NotNull(directoryObjectsClass);
         var factoryMethod = entityClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));

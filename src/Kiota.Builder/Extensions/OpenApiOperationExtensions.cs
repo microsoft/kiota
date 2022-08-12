@@ -13,24 +13,26 @@ namespace Kiota.Builder.Extensions {
         private static readonly Regex vendorSpecificCleanup = new(@"[^/]+\+", RegexOptions.Compiled);
         public static OpenApiSchema GetResponseSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
         {
-            // Return Schema that represents all the possible success responses!
-            var schemas = operation.Responses.Where(r => successCodes.Contains(r.Key))
-                                .SelectMany(re => re.Value.Content.GetValidSchemas(structuredMimeTypes));
-
-            return schemas.FirstOrDefault();
+            return operation.Responses.Where(r => successCodes.Contains(r.Key))
+                                .SelectMany(re => re.Value.Content.GetValidSchemas(structuredMimeTypes))
+                                .FirstOrDefault();
+        }
+        public static OpenApiSchema GetRequestSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
+        {
+            return operation.RequestBody?.Content
+                                .GetValidSchemas(structuredMimeTypes).FirstOrDefault();
         }
         public static IEnumerable<OpenApiSchema> GetValidSchemas(this IDictionary<string, OpenApiMediaType> source, HashSet<string> structuredMimeTypes)
         {
             if(!(structuredMimeTypes?.Any() ?? false))
                 throw new ArgumentNullException(nameof(structuredMimeTypes));
-            var schemas = source
-                                .Where(c => !string.IsNullOrEmpty(c.Key))
-                                .Select(c => (Key: c.Key.Split(';', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault(), c.Value))
+            return source?
+                                .Where(static c => !string.IsNullOrEmpty(c.Key))
+                                .Select(static c => (Key: c.Key.Split(';', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault(), c.Value))
                                 .Where(c => structuredMimeTypes.Contains(c.Key) || structuredMimeTypes.Contains(vendorSpecificCleanup.Replace(c.Key, string.Empty)))
-                                .Select(co => co.Value.Schema)
-                                .Where(s => s is not null);
-
-            return schemas;
+                                .Select(static co => co.Value.Schema)
+                                .Where(static s => s is not null) ??
+                            Enumerable.Empty<OpenApiSchema>();
         }
         public static OpenApiSchema GetResponseSchema(this OpenApiResponse response, HashSet<string> structuredMimeTypes)
         {
