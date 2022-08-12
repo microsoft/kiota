@@ -191,9 +191,9 @@ namespace Kiota.Builder.Writers.Ruby {
                 var headers = requestParams.Headers;
                 // TODO add options handling
                 if(headers != null)
-                    writer.WriteLine($"request_info.set_headers_from_raw_object({requestParams.requestConfiguration.Name}.{headers.Name.ToSnakeCase()})");
+                    writer.WriteLine($"request_info.set_headers_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
                 if(queryString != null)
-                    writer.WriteLines($"request_info.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name}.{queryString.Name.ToSnakeCase()})");
+                    writer.WriteLines($"request_info.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
                 if(requestParams.requestBody != null) {
                     if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                         writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name})");
@@ -258,7 +258,10 @@ namespace Kiota.Builder.Writers.Ruby {
             return propertyType switch
             {
                 "string" or "boolean" or "number" or "float" or "Guid" => $"get_{propertyType.ToSnakeCase()}_value()",
-                "DateTimeOffset" or "Date" => $"get_date_value()",
+                "DateTimeOffset" or "DateTime" => $"get_date_time_value()",
+                "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => $"get_duration_value()",
+                "DateOnly" or "Date" => $"get_date_value()",
+                "TimeOnly" or "Time" => $"get_time_value()",
                 _ => $"get_object_value({(propType as CodeType).TypeDefinition?.Parent?.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})",
             };
         }
@@ -289,7 +292,10 @@ namespace Kiota.Builder.Writers.Ruby {
             return propertyType switch
             {
                 "string" or "boolean" or "number" or "float" or "Guid" => $"write_{propertyType.ToSnakeCase()}_value",
-                "DateTimeOffset" or "Date" => $"write_date_value",
+                "DateTimeOffset" or "DateTime" => $"write_date_time_value",
+                "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => $"write_duration_value",
+                "DateOnly" or "Date" => $"write_date_value",
+                "TimeOnly" or "Time" => $"write_time_value",
                 _ => $"write_object_value",
             };
         }

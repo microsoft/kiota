@@ -63,6 +63,7 @@ namespace Kiota.Builder.Refiners.Tests {
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
             Assert.NotEmpty(model.StartBlock.Usings);
             Assert.NotEmpty(requestBuilder.StartBlock.Usings);
+        
         }
         #endregion
         #region RubyLanguageRefinerTests
@@ -123,6 +124,70 @@ namespace Kiota.Builder.Refiners.Tests {
             };
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
             Assert.Equal("Graph::Entity", declaration.Inherits.Name);
+        }
+        [Fact]
+        public void ReplacesDateTimeOffsetByNativeType() {
+            var model = root.AddClass(new CodeClass {
+                Name = "model",
+                Kind = CodeClassKind.Model
+            }).First();
+            var method = model.AddMethod(new CodeMethod {
+                Name = "method",
+                ReturnType = new CodeType {
+                    Name = "DateTimeOffset"
+                },
+            }).First();
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            Assert.NotEmpty(model.StartBlock.Usings);
+            Assert.Equal("DateTime", method.ReturnType.Name);
+        }
+        [Fact]
+        public void ReplacesDateOnlyByNativeType() {
+            var model = root.AddClass(new CodeClass {
+                Name = "model",
+                Kind = CodeClassKind.Model
+            }).First();
+            var method = model.AddMethod(new CodeMethod {
+                Name = "method",
+                ReturnType = new CodeType {
+                    Name = "DateOnly"
+                },
+            }).First();
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            Assert.NotEmpty(model.StartBlock.Usings);
+            Assert.Equal("Date", method.ReturnType.Name);
+        }
+        [Fact]
+        public void ReplacesTimeOnlyByNativeType() {
+            var model = root.AddClass(new CodeClass {
+                Name = "model",
+                Kind = CodeClassKind.Model
+            }).First();
+            var method = model.AddMethod(new CodeMethod {
+                Name = "method",
+                ReturnType = new CodeType {
+                    Name = "TimeOnly"
+                },
+            }).First();
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            Assert.NotEmpty(model.StartBlock.Usings);
+            Assert.Equal("Time", method.ReturnType.Name);
+        }
+        [Fact]
+        public void ReplacesDurationByNativeType() {
+            var model = root.AddClass(new CodeClass {
+                Name = "model",
+                Kind = CodeClassKind.Model
+            }).First();
+            var method = model.AddMethod(new CodeMethod {
+                Name = "method",
+                ReturnType = new CodeType {
+                    Name = "TimeSpan"
+                },
+            }).First();
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            Assert.NotEmpty(model.StartBlock.Usings);
+            Assert.Equal("MicrosoftKiotaAbstractions::ISODuration", method.ReturnType.Name);
         }
         [Fact]
         public void AddNamespaceModuleImports() {

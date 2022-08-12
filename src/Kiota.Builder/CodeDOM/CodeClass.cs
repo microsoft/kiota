@@ -44,6 +44,14 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         } else
             AddRange(indexer);
     }
+    public override IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties) {
+        var result = base.AddProperty(properties);
+        foreach(var addedPropertyTuple in result.Select(x => new Tuple<CodeProperty, CodeProperty>(x, StartBlock.GetOriginalPropertyDefinedFromBaseType(x.Name)))
+                                        .Where(static x => x.Item2 != null))
+            addedPropertyTuple.Item1.OriginalPropertyFromBaseType = addedPropertyTuple.Item2;
+
+        return result;
+    }
     public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
     {
         if(codeClasses == null || codeClasses.Any(x => x == null))
@@ -80,5 +88,31 @@ public class ClassDeclaration : ProprietableBlockDeclaration
         EnsureElementsAreChildren(value);
         inherits = value;
     } }
+
+    public CodeProperty GetOriginalPropertyDefinedFromBaseType(string propertyName) {
+        if (string.IsNullOrEmpty(propertyName)) throw new ArgumentNullException(nameof(propertyName));
+
+        if (inherits is CodeType currentInheritsType &&
+            currentInheritsType.TypeDefinition is CodeClass currentParentClass)
+            if (currentParentClass.FindChildByName<CodeProperty>(propertyName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
+                return currentProperty;
+            else
+                return currentParentClass.StartBlock.GetOriginalPropertyDefinedFromBaseType(propertyName);
+        else
+            return default;
+    }
+
+    public bool InheritsFrom(CodeClass candidate) {
+        ArgumentNullException.ThrowIfNull(candidate, nameof(candidate));
+
+        if (inherits is CodeType currentInheritsType &&
+            currentInheritsType.TypeDefinition is CodeClass currentParentClass)
+            if (currentParentClass == candidate)
+                return true;
+            else
+                return currentParentClass.StartBlock.InheritsFrom(candidate);
+        else
+            return false;
+    }
 }
 

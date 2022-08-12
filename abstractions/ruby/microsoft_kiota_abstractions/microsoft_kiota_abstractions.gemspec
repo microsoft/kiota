@@ -30,5 +30,5 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   spec.add_dependency 'concurrent-ruby', '~> 1.1', '>= 1.1.9'
   spec.add_dependency 'addressable', '~> 2.7', '>= 2.7.0'
-  spec.add_dependency "oauth2", "~> 2.0"
+  spec.add_dependency 'iso8601', '~> 0.13.0'
 end

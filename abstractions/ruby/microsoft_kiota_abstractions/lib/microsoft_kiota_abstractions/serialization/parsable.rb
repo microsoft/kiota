@@ -1,9 +1,5 @@
 module MicrosoftKiotaAbstractions
   module Parsable
-    def additional_data 
-      @additional_data ||= Hash.new
-    end
-
     def get_field_deserializers
       raise NotImplementedError.new
     end

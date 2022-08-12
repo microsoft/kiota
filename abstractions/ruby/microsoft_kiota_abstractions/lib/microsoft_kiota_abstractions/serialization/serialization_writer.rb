@@ -28,6 +28,18 @@ module MicrosoftKiotaAbstractions
     def write_date_value(key, value)
       raise NotImplementedError.new
     end
+    
+    def write_time_value(key, value)
+      raise NotImplementedError.new
+    end
+
+    def write_date_time_value(key, value)
+      raise NotImplementedError.new
+    end
+
+    def write_duration_value(key, value)
+      raise NotImplementedError.new
+    end
 
     def write_collection_of_primitive_values(key, value)
       raise NotImplementedError.new

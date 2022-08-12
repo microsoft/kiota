@@ -9,6 +9,7 @@ class BackingStore(ABC):
     Implementations can provide dirty tracking capabilities, caching capabilities
     or integration with 3rd party stores
     """
+
     @abstractmethod
     def get(self, key: str) -> Optional[T]:
         """Gets a value from the backing store based on its key. Returns null if the value hasn't

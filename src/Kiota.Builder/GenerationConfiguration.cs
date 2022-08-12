@@ -11,8 +11,8 @@ namespace Kiota.Builder {
         public string ModelsNamespaceName { get => $"{ClientNamespaceName}{NamespaceNameSeparator}models"; }
         public GenerationLanguage Language { get; set; } = GenerationLanguage.CSharp;
         public string ApiRootUrl { get; set; }
-        public string[] PropertiesPrefixToStrip { get; set; } = new string[] { "@odata."};
         public bool UsesBackingStore { get; set; }
+        public bool IncludeAdditionalData { get; set; } = true;
         public HashSet<string> Serializers { get; set; } = new(StringComparer.OrdinalIgnoreCase){
             "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
             "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory"

@@ -4,6 +4,17 @@
 name: $(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 
 trigger:
+  paths:
+    exclude: [
+      'abstractions/**',
+      'authentication/**',
+      'serialization/**',
+      'http/**',
+      'cli/**',
+      '**.md',
+      '.vscode/**',
+      '**.svg'
+    ]
   tags:
     include:
       - v*

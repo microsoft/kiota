@@ -33,13 +33,13 @@ jobs:
           BRANCH_NAME: ${{ github.ref }}
       - name: Push to GitHub Packages - Nightly
         if: contains(github.ref, 'refs/head/main')
-        uses: docker/build-push-action@v3.0.0
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly
       - name: Push to GitHub Packages - Release
         if: contains(github.ref, 'refs/tags/v')
-        uses: docker/build-push-action@v3.0.0
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.getversion.outputs.version }}
