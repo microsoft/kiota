@@ -50,7 +50,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
                 break;
             case CodeMethodKind.RequestExecutor:
-                WriteRequestExecutorBody(codeElement, requestParams, isVoid, returnType, returnTypeWithoutCollectionInformation, writer);
+                WriteRequestExecutorBody(codeElement, requestParams, isVoid, returnTypeWithoutCollectionInformation, writer);
                 break;
             case CodeMethodKind.Deserializer:
                 WriteDeserializerBody(inherits, codeElement, parentClass, writer);
@@ -339,7 +339,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             _ => $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType}.CreateFromDiscriminatorValue)",
         };
     }
-    protected void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, string returnTypeWithoutCollectionInformation, LanguageWriter writer)
+    protected void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnTypeWithoutCollectionInformation, LanguageWriter writer)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
@@ -371,7 +371,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             (_, true) => "var collectionResult = ",
             (_, _ ) => "return ",
         };
-        writer.WriteLine($"{prefix}await RequestAdapter.{GetSendRequestMethodName(isVoid, codeElement.Parent, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, responseHandler, {errorMappingVarName}, cancellationToken);");
+        writer.WriteLine($"{prefix}await RequestAdapter.{GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, responseHandler, {errorMappingVarName}, cancellationToken);");
         if (codeElement.ReturnType.IsCollection)
             writer.WriteLine("return collectionResult.ToList();");
     }

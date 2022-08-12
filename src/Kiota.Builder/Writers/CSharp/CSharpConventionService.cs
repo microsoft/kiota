@@ -52,20 +52,17 @@ namespace Kiota.Builder.Writers.CSharp {
             if(_namespaceSegmentsNames == null) {
                 lock(_namespaceSegmentsNamesLock) {
                     var rootNamespace = currentElement.GetImmediateParentOfType<CodeNamespace>().GetRootNamespace();
-                    var names = new List<string>(GetNamespaceNameSegments(rootNamespace).Distinct(StringComparer.OrdinalIgnoreCase));
-                    _namespaceSegmentsNames = new (names, StringComparer.OrdinalIgnoreCase);
+                    _namespaceSegmentsNames = GetNamespaceNameSegments(rootNamespace).ToHashSet(StringComparer.OrdinalIgnoreCase);
                     _namespaceSegmentsNames.Add("keyvaluepair"); //workaround as System.Collections.Generic imports keyvalue pair
                 }
             }
             return _namespaceSegmentsNames;
         }
         private static IEnumerable<string> GetNamespaceNameSegments(CodeNamespace ns) {
-            if(!string.IsNullOrEmpty(ns.Name))
-                foreach(var segment in ns.Name.Split('.', StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.OrdinalIgnoreCase))
-                    yield return segment;
-            foreach(var childNs in ns.Namespaces)
-                foreach(var segment in GetNamespaceNameSegments(childNs))
-                    yield return segment;
+            return (string.IsNullOrEmpty(ns.Name) ? Enumerable.Empty<string>() :
+                                                    ns.Name.Split('.', StringSplitOptions.RemoveEmptyEntries))
+                    .Union(ns.Namespaces.SelectMany(static x => GetNamespaceNameSegments(x)))
+                    .Distinct(StringComparer.OrdinalIgnoreCase);
         }
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
         {
@@ -96,18 +93,18 @@ namespace Kiota.Builder.Writers.CSharp {
             var parentElements = new List<string>();
             if (targetElement.Parent is CodeClass parentClass)
             {
-                parentElements.AddRange(parentClass.Methods.Select(x => x.Name).Union(parentClass.Properties.Select(x => x.Name)));
+                parentElements.AddRange(parentClass.Methods.Select(static x => x.Name).Union(parentClass.Properties.Select(static x => x.Name)));
                 
                 if (targetElement is CodeMethod discriminatorMethod && discriminatorMethod.IsOfKind(CodeMethodKind.Factory))
                 {
                     // Get the discriminator mappings that refer to types  are in a different namespace that are have the same name
                     // E.g. DataSource from Microsoft.Graph.Beta.Models.Ediscovery and DataSource from Microsoft.Graph.Beta.Models.Security will need to be disambiguated.
-                    var duplicateMappingTypes = parentClass.DiscriminatorInformation.DiscriminatorMappings.Select(x => x.Value).OfType<CodeType>()
+                    var duplicateMappingTypes = parentClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Value).OfType<CodeType>()
                         .Where(x => !DoesTypeExistsInSameNamesSpaceAsTarget(x, targetElement))
-                        .Select(x => x.Name)
+                        .Select(static x => x.Name)
                         .GroupBy(static x => x, StringComparer.OrdinalIgnoreCase)
-                        .Where(group => group.Count() > 1)
-                        .Select(x => x.Key);
+                        .Where(static group => group.Count() > 1)
+                        .Select(static x => x.Key);
 
                     parentElements.AddRange(duplicateMappingTypes);
                 }
