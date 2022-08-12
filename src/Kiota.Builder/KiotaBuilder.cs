@@ -1073,22 +1073,22 @@ public class KiotaBuilder
                 .Select(x => KeyValuePair.Create(x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, baseClass, schema)))
                 .Where(static x => x.Value != null);
     }
-    private readonly ConcurrentDictionary<string, HashSet<string>> inheritanceIndex = new ();
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex = new ();
     private void InitializeInheritanceIndex() {
         if(!inheritanceIndex.Any() && openApiDocument?.Components?.Schemas != null) {
             Parallel.ForEach(openApiDocument.Components.Schemas, entry => {
                 inheritanceIndex.TryAdd(entry.Key, new(StringComparer.OrdinalIgnoreCase));
                 if(entry.Value.AllOf != null)
                     foreach(var allOfEntry in entry.Value.AllOf.Where(static x => !string.IsNullOrEmpty(x.Reference?.Id))) {
-                        var dependents = inheritanceIndex.GetOrAdd(allOfEntry.Reference.Id, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
-                        dependents.Add(entry.Key);
+                        var dependents = inheritanceIndex.GetOrAdd(allOfEntry.Reference.Id, new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase));
+                        dependents.TryAdd(entry.Key, false);
                     }
             });
         }
     }
     private IEnumerable<string> GetAllInheritanceSchemaReferences(string currentReferenceId) {
         if (inheritanceIndex.TryGetValue(currentReferenceId, out var dependents))
-            return dependents.Union(dependents.SelectMany(x => GetAllInheritanceSchemaReferences(x))).Distinct(StringComparer.OrdinalIgnoreCase);
+            return dependents.Keys.Union(dependents.Keys.SelectMany(x => GetAllInheritanceSchemaReferences(x))).Distinct(StringComparer.OrdinalIgnoreCase);
         else
             return Enumerable.Empty<string>();
     }
