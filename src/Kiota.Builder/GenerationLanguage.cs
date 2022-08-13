@@ -8,6 +8,7 @@
         Go,
         Swift,
         Ruby,
-        Shell
+        Shell,
+        Markdown
     }
 }
