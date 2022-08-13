@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers {
         string TempDictionaryVarName {get;}
         string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null);
         string TranslateType(CodeType type);
-        string GetParameterSignature(CodeParameter parameter, CodeElement targetElement);
+        string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null);
         void WriteShortDescription(string description, LanguageWriter writer);
     }
 }

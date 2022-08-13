@@ -344,7 +344,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var instanceReference = code.IsOfKind(CodeMethodKind.Factory) ? string.Empty: "self,";
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer)
                                                         .Select(p=> new PythonConventionService() // requires a writer instance because method parameters use inline type definitions
-                                                        .GetParameterSignature(p, code))
+                                                        .GetParameterSignature(p, code, writer))
                                                         .ToList());
         var nullablePrefix = code.ReturnType.IsNullable && !isVoid ? "Optional[" : string.Empty;
         var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? "]" : string.Empty;

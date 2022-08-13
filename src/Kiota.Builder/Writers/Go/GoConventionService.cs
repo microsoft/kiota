@@ -20,7 +20,7 @@ public class GoConventionService : CommonLanguageConventionService
     {
         throw new InvalidOperationException("go uses a naming convention for access modifiers");
     }
-    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
     {
         return $"{parameter.Name.ToFirstCharacterLowerCase()} {GetTypeString(parameter.Type, targetElement)}";
     }

@@ -25,7 +25,7 @@ public class JavaConventionService : CommonLanguageConventionService
         };
     }
 
-    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
     {
         var nullKeyword = parameter.Optional ? "Nullable" : "Nonnull";
         var nullAnnotation = parameter.Type.IsNullable ? $"@javax.annotation.{nullKeyword} " : string.Empty;

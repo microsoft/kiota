@@ -96,7 +96,7 @@ public class SwiftConventionService : CommonLanguageConventionService
             _ => type.Name?.ToFirstCharacterUpperCase() ?? "object",
         };
     }
-    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
     {
         var parameterType = GetTypeString(parameter.Type, targetElement);
         var defaultValue = parameter switch {

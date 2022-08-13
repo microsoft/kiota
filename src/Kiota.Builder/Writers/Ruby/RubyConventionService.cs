@@ -22,7 +22,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 _ => "private",
             };
         }
-        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
         {
             var defaultValue = parameter.Optional ? $"={(parameter.DefaultValue ?? "nil")}" : string.Empty;
             return $"{parameter.Name}{defaultValue}";

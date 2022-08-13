@@ -41,10 +41,10 @@ public class PythonConventionService : CommonLanguageConventionService
             _ => "",
         };
     }
-    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
     {
         var defaultValueSuffiix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
-        return $"{parameter.Name.ToSnakeCase()}: {(parameter.Type.IsNullable ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement)}{(parameter.Type.IsNullable ? "] = None": string.Empty)}{defaultValueSuffiix}";
+        return $"{parameter.Name.ToSnakeCase()}: {(parameter.Type.IsNullable ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement, true, writer)}{(parameter.Type.IsNullable ? "] = None": string.Empty)}{defaultValueSuffiix}";
     }
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement) {
         var parentBlock = targetElement.GetImmediateParentOfType<IBlock>();

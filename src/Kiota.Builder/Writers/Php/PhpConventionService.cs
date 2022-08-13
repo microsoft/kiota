@@ -85,7 +85,7 @@ namespace Kiota.Builder.Writers.Php
                 _ => $"${parameter.Name.ToFirstCharacterLowerCase()}"
             };
         }
-        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
         {
             var typeString = GetTypeString(parameter?.Type, parameter);
             var parameterSuffix = parameter?.Kind switch

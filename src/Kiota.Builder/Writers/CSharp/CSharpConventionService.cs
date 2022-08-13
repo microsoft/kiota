@@ -170,7 +170,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 _ => false,
             };
         }
-        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
         {
             var parameterType = GetTypeString(parameter.Type, targetElement);
             var defaultValue = parameter switch {
