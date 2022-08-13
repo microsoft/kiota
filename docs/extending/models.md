@@ -16,17 +16,27 @@ All models declared inline with an operation will be generated under the namespa
 
 Models in an [AllOf](https://spec.openapis.org/oas/latest.html#composition-and-inheritance-polymorphism) schema declaration will inherit from each other. Where the uppermost type in the collection is the greatest ancestor of the chain.
 
-## Faceted implementation of OneOf
+## Faceted implementation of oneOf
 
-OneOf specifies a type exclusion where the response can be of One of the specified schemas. Kiota implements that specification by generating all the target types and using a union type for languages that support it or a wrapper type with one property per type in the union for languages that do not support union types.
+oneOf specifies a type exclusion where the response can be of one of the specified child schemas. Kiota implements that specification by generating types for all the child schemas and using a union type for languages that support it or a wrapper type with one property per type in the union for languages that do not support union types.
 
 The deserialized result will either be of the one of the types of the union or be of the wrapper type with only one of the properties being non null.
 
-## Faceted implementation of AnyOf
+When a oneOf keyword has at least one child schema that is of type object then the OpenApi discriminator keyword MUST be provided to identify the applicable schema.  
 
-OneOf specifies a type inclusion where the response can be of Any of the specified schemas. Kiota implements that specification by generating all the target types and using a union type for languages that support it or a wrapper type with one property per type in the union for languages that do not support union types.
+Child schemas that are arrays or primitives will use the equivalent type language parser to attempt to interpret the input value. The first primitive schema that does not fail to parse will be used to deserialize the input.  
 
-The deserialized result will either be of the one of the types of the union or be of the wrapper type with one or more of the properties being non null.
+Nested oneOf keywords are only supported when the child schema uses a `$ref` to enable naming the nested type.
+
+## Faceted implementation of anyOf
+
+anyOf specifies a type inclusion where the response can be of any of the specified child schemas. Kiota implements that specification by generating types for all the child schemas and using a union type for languages that support it or a wrapper type with one property per type in the union for languages that do not support union types.
+
+The deserialized result will either be of the one of the types of the union or be of the wrapper type with one or more of the properties being non null. 
+> To clarify:  How are we handling this in TypeScript? "one of the types of the union" seems wrong 
+
+Where there are common properties in the child schemas, the corresponding value in the input will deserialized into only one of the child schemas.
+> To clarify:  Is it deterministic which property will get the value? The first?
 
 ## Heterogeneous collections
 
@@ -34,7 +44,29 @@ For any collection of items that rely on AllOf, AnyOf, or OneOf, it is possible 
 
 For example, think of an endpoint returning a collection of directory objects (abstract). Directory object is derived by User and Group, which each have their own set of properties. In this case the endpoint will be documented as returning a collection of directory objects and return in reality a mix of users and groups.
 
-Kiota [has plans](https://github.com/microsoft/kiota/issues/648) to support discriminators, down-casting the returned object during deserialization, however the work on this aspect is currently blocked by work required in dependencies. Kiota will currently return everything as the described type. Properties from the child types can be accessed from the additional data property.
+Kiota supports discriminators by down-casting the returned object during deserialization.  
+
+> To clarify: Can we use a oneOf to constrain the supported derived types?
+> To clarify: If so, are we assuming the first type is the base Type?
+> To clarify: What about this scenario as an inline response schema?
+```json
+{
+    "type": "object",
+    "title": "directoryObject",
+    "oneOf": [
+        {
+            "type": "object",
+            "title: "user"
+        },
+        {
+            "type": "object",
+            "title: "group"
+        }
+
+    ]
+}
+```
+
 
 ## Default members
 
