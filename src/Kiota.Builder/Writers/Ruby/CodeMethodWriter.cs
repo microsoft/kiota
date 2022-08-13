@@ -258,7 +258,10 @@ namespace Kiota.Builder.Writers.Ruby {
             return propertyType switch
             {
                 "string" or "boolean" or "number" or "float" or "Guid" => $"get_{propertyType.ToSnakeCase()}_value()",
-                "DateTimeOffset" or "Date" => $"get_date_value()",
+                "DateTimeOffset" or "DateTime" => $"get_date_time_value()",
+                "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => $"get_duration_value()",
+                "DateOnly" or "Date" => $"get_date_value()",
+                "TimeOnly" or "Time" => $"get_time_value()",
                 _ => $"get_object_value({(propType as CodeType).TypeDefinition?.Parent?.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})",
             };
         }
@@ -289,7 +292,10 @@ namespace Kiota.Builder.Writers.Ruby {
             return propertyType switch
             {
                 "string" or "boolean" or "number" or "float" or "Guid" => $"write_{propertyType.ToSnakeCase()}_value",
-                "DateTimeOffset" or "Date" => $"write_date_value",
+                "DateTimeOffset" or "DateTime" => $"write_date_time_value",
+                "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => $"write_duration_value",
+                "DateOnly" or "Date" => $"write_date_value",
+                "TimeOnly" or "Time" => $"write_time_value",
                 _ => $"write_object_value",
             };
         }
