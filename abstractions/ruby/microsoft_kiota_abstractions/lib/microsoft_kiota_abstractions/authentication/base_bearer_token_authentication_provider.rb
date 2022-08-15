@@ -21,10 +21,8 @@ module MicrosoftKiotaAbstractions
       return if request.headers.key?(AUTHORIZATION_HEADER_KEY)
 
       token = @access_token_provider.get_authorization_token(request, additional_properties)
-      raise StandardError, 'Could not get an authorization token' if token.nil?
 
-      request.headers[AUTHORIZATION_HEADER_KEY] = "Bearer #{token}"
+      request.headers[AUTHORIZATION_HEADER_KEY] = "Bearer #{token}" unless token.nil?
     end
-
   end
 end

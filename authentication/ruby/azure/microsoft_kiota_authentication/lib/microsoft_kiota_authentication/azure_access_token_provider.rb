@@ -23,7 +23,8 @@ module MicrosoftKiotaAuthentication
 
       if !@token_request_context.instance_of?(MicrosoftKiotaAuthentication::ClientCredentialContext) && 
          !@token_request_context.instance_of?(MicrosoftKiotaAuthentication::AuthorizationCodeContext) &&
-         !@token_request_context.instance_of?(MicrosoftKiotaAuthentication::OnBehalfOf)
+         !@token_request_context.instance_of?(MicrosoftKiotaAuthentication::OnBehalfOf) && 
+         !@token_request_context.instance_of?(MicrosoftKiotaAuthentication::CustomContext)
         raise StandardError, 'Parameter token_request_context must be an instance of one of our grant flow context classes.'
       end
 

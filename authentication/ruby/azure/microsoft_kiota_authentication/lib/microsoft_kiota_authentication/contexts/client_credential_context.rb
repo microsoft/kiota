@@ -40,6 +40,9 @@ module MicrosoftKiotaAuthentication
                                             token_url: "/#{@tenant_id}/oauth2/v2.0/token")
     end
 
+    # Function to initialize the scope for the client credential context object.
+    # This function forces to default since gradual consent is not supported 
+    # for this flow.
     def initialize_scopes(scopes = []) 
       scope_str = 'https://graph.microsoft.com/.default'
       @scopes = scope_str

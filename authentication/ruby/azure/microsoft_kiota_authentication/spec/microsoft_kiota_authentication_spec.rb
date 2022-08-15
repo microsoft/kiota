@@ -30,4 +30,8 @@ RSpec.describe MicrosoftKiotaAuthentication do
     expect  { MicrosoftKiotaAuthentication::OnBehalfOfContext.new('tenant_id', 'client_id', '', 'assertion') }.to raise_error(StandardError)
     expect  { MicrosoftKiotaAuthentication::OnBehalfOfContext.new('tenant_id', 'client_id', 'client_secret', '') }.to raise_error(StandardError)
   end
+
+  it 'throws when Custom Context is not implemented' do
+    expect { MicrosoftKiotaAuthentication::CustomContext.new }.to raise_error(NotImplementedError)
+  end
 end
