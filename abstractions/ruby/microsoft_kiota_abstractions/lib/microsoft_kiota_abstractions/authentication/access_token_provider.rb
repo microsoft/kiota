@@ -6,7 +6,6 @@ require_relative 'allowed_hosts_validator'
 module MicrosoftKiotaAbstractions
   # Access Token Provider Module implementation
   module AccessTokenProvider
-    include Concurrent::Async
     # This function obtains the authorization token.
     # :params
     #   uri: a string containing the uri 
