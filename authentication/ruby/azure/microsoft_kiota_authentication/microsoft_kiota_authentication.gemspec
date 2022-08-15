@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "microsoft_kiota_authentication"
-  spec.version       = "0.0.1"
+  spec.version       = "0.1.0"
   spec.authors       = 'Microsoft Corporation'
   spec.email         = 'graphsdkpub@microsoft.com'
   spec.description   = 'Kiota Authentication implementation with oauth2'
