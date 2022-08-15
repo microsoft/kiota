@@ -60,11 +60,19 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
                 // indexer retrofitted to method in the parent request builder on the path and conflicting with the collection request builder property
                 returnedValue = InnerChildElements.GetOrAdd($"{element.Name}-indexerbackcompat", element);
                 added = true;
-            } else if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor)) {
-                // allows for methods overload
-                var methodOverloadNameSuffix = currentMethod.Parameters.Any() ? currentMethod.Parameters.Select(x => x.Name).OrderBy(x => x).Aggregate((x, y) => x + y) : "1";
-                returnedValue = InnerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", element);
-                added = true;
+            } else if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor) &&
+                     returnedValue is CodeMethod existingMethod) {
+                var currentMethodParameterNames = currentMethod.Parameters.Select(static x => x.Name).ToHashSet();
+                var returnedMethodParameterNames = existingMethod.Parameters.Select(static x => x.Name).ToHashSet();
+                if(currentMethodParameterNames.Count != returnedMethodParameterNames.Count ||
+                    currentMethodParameterNames.Union(returnedMethodParameterNames)
+                                                .Except(currentMethodParameterNames.Intersect(returnedMethodParameterNames))
+                                                .Any()) {
+                    // allows for methods overload
+                    var methodOverloadNameSuffix = currentMethodParameterNames.Any() ? currentMethodParameterNames.OrderBy(static x => x).Aggregate(static (x, y) => x + y) : "1";
+                    returnedValue = InnerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", element);
+                    added = true;
+                }
             }
 
         if(!added && returnedValue.GetType() != element.GetType())
