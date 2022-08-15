@@ -1,12 +1,8 @@
 # frozen_string_literal: true
 
 require 'concurrent'
-require 'oauth2'
 require_relative 'extensions/oauth2_ext'
 require_relative 'allowed_hosts_validator'
-require_relative 'contexts/client_credential_context'
-require_relative 'contexts/authorization_code_context'
-require_relative 'contexts/on_behalf_of_context'
 
 module MicrosoftKiotaAbstractions
   # Access Token Provider class implementation
@@ -18,8 +14,15 @@ module MicrosoftKiotaAbstractions
     #   allowed_hosts: an array of strings, where each string is an allowed host, default is empty
     #   scopes: an array of strings, where each string is a scope, default is empty array 
     #   auth_code: a string containting the auth code; default is nil, can be updated post-initialization
-    def initialize(token_request_context, allowed_hosts = [], scopes = [])
-      raise NotImplementedError.new
+    def initialize(allowed_hosts = [], scopes = [])
+      base_constructor = nil 
+      @host_validator = if allowed_hosts.nil? || allowed_hosts.size.zero?
+                          MicrsoftKiotaAbstractions::AllowedHostsValidator.new(['graph.microsoft.com', 'graph.microsoft.us', 'dod-graph.microsoft.us',
+                                                                                'graph.microsoft.de', 'microsoftgraph.chinacloudapi.cn',
+                                                                                'canary.graph.microsoft.com'])
+                        else
+                          MicrsoftKiotaAbstractions::AllocatedHostsValidator.new(allowed_hosts)
+                        end
     end
 
     # This function obtains the authorization token.
