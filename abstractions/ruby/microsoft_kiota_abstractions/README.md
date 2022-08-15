@@ -41,7 +41,7 @@ bundle install
 Or install it yourself as:
 
  ```shell
- gem install microsoft_kiota_abstractions --version "0.1.11" --source "https://{USERNAME}{PASSWORD/TOKEN}rubygems.pkg.github.com/microsoft"
+ gem install microsoft_kiota_abstractions --version "0.2.0" --source "https://{USERNAME}{PASSWORD/TOKEN}rubygems.pkg.github.com/microsoft"
  ```
 
 ## Contributing
