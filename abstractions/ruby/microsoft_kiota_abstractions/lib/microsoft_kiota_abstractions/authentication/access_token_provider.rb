@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'concurrent'
-require_relative 'extensions/oauth2_ext'
 require_relative 'allowed_hosts_validator'
 
 module MicrosoftKiotaAbstractions
