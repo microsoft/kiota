@@ -56,11 +56,11 @@ Kiota supports discriminators by down-casting the returned object during deseria
     "oneOf": [
         {
             "type": "object",
-            "title: "user"
+            "title": "user"
         },
         {
             "type": "object",
-            "title: "group"
+            "title": "group"
         }
 
     ]
