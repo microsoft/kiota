@@ -118,11 +118,27 @@ namespace Kiota.Builder.Extensions {
                                                     x.Groups[CleanupGroupName].Value.ToFirstCharacterUpperCase() :
                                                     string.Empty); //strip out any invalid characters, and replace any following one by its uppercase version
 
-            if(int.TryParse(result, out var _)) // in most languages a number is not a valid symbol name
-                result = $"{original.ToString().GetNamespaceImportSymbol()}_{result}";
+            if(result.Any() && int.TryParse(result.AsSpan(0, 1), out var _)) // in most languages a number or starting with a number is not a valid symbol name
+                result = NumbersSpellingRegex.Replace(result, static x => x.Groups["number"]
+                                                                        .Value
+                                                                        .Select(static x => SpelledOutNumbers[x])
+                                                                        .Aggregate(static (z,y) => z + y));
 
             return result;
         }
+        private static readonly Regex NumbersSpellingRegex = new(@"^(?<number>\d+)", RegexOptions.Compiled);
+        private static readonly Dictionary<char, string> SpelledOutNumbers = new() {
+            {'0', "Zero"},
+            {'1', "One"},
+            {'2', "Two"},
+            {'3', "Three"},
+            {'4', "Four"},
+            {'5', "Five"},
+            {'6', "Six"},
+            {'7', "Seven"},
+            {'8', "Eight"},
+            {'9', "Nine"},
+        };
 
         /// <summary>
         /// Cleanup the XML string
