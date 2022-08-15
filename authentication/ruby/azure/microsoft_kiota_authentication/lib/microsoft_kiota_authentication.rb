@@ -1,0 +1,11 @@
+# frozen_string_literal: true
+
+require_relative "microsoft_kiota_authentication/contexts/authorization_code_context"
+require_relative "microsoft_kiota_authentication/contexts/client_credential_context"
+require_relative "microsoft_kiota_authentication/contexts/on_behalf_of_context"
+require_relative "microsoft_kiota_authentication/extensions/oauth2_ext"
+require_relative "microsoft_kiota_authentication/azure_access_token_provider"
+require_relative "microsoft_kiota_authentication/authentication_provider"
+
+module MicrosoftKiotaAuthentication
+end

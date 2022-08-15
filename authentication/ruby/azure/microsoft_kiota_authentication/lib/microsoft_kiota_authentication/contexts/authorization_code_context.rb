@@ -6,7 +6,8 @@ module MicrosoftKiotaAuthentication
   # Token request context class for the authorization code grant type.
   class AuthorizationCodeContext
     attr_reader :grant_type, :redirect_uri, :additional_params,
-                :tenant_id, :client_id, :client_secret, :auth_code
+                :tenant_id, :client_id, :client_secret, :auth_code, :oauth_provider
+    attr_writer :scopes
 
     # This is the initializer for AuthorizationCodeContext, the token request context when
     # using the authorization code grant flow. 
@@ -24,6 +25,8 @@ module MicrosoftKiotaAuthentication
       @client_secret = client_secret
       @auth_code = auth_code
       @redirect_uri = redirect_uri
+      @scopes = nil
+      @oauth_provider = nil
       @grant_type = 'authorization code'
 
       if tenant_id.nil? || client_id.nil? || client_secret.nil? || tenant_id.empty? || client_id.empty? || client_secret.empty?
@@ -46,24 +49,38 @@ module MicrosoftKiotaAuthentication
     def generate_authorize_url(scopes, additional_params = {})
       @additional_params = additional_params
       
+      self.initialize_scopes(scopes)
+      self.initialize_oauth_provider
+
+      parameters = { scope: scope_str, redirect_uri: @redirect_uri, access_type: 'offline', prompt: 'consent'}
+      parameters = parameters.merge(additional_params)
+      @oauth_provider.auth_code.authorize_url(parameters)
+    end
+
+    def get_token
+      @oauth_provider.auth_code.get_token(@auth_code, redirect_uri: @redirect_uri)
+    end
+
+    def initialize_oauth_provider
+      @oauth_provider = OAuth2::Client.new(@client_id, @client_secret,
+                                           site: 'https://login.microsoftonline.com',
+                                           authorize_url: "/#{@tenant_id}/oauth2/v2.0/authorize",
+                                           token_url: "/#{@tenant_id}/oauth2/v2.0/token")
+    end
+
+    def initialize_scopes(scopes)
       scope_str = ''
       scopes.each { |scope| scope_str += scope + ' '}
       raise StandardError, 'scopes cannot be empty/nil.' if scope_str.empty?
       
       scope_str = 'offline_access ' + scope_str
 
-      client = OAuth2::Client.new(@client_id, @client_secret,
-                                  site: 'https://login.microsoftonline.com',
-                                  authorize_url: "/#{@tenant_id}/oauth2/v2.0/authorize",
-                                  token_url: "/#{@tenant_id}/oauth2/v2.0/token")
-      parameters = { scope: scope_str, redirect_uri: @redirect_uri, access_type: 'offline', prompt: 'consent'}
-      parameters = parameters.merge(additional_params)
-      client.auth_code.authorize_url(parameters)
+      @scopes = scope_str
     end
 
     private
 
     attr_writer :grant_type, :redirect_uri, :additional_params,
-                :tenant_id, :client_id, :client_secret
+                :tenant_id, :client_id, :client_secret, :oauth_provider
   end
 end

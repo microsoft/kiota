@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require_relative '../base_bearer_token_authentication_provider'
-require_relative '../allowed_hosts_validator'
+require 'microsoft_kiota_abstractions'
 require_relative '../contexts/client_credential_context'
 require_relative '../contexts/authorization_code_context'
 require_relative '../contexts/on_behalf_of_context'
-require_relative '../access_token_provider'
+require_relative '../extensions/oauth2_ext'
+require_relative '../azure_access_token_provider'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
