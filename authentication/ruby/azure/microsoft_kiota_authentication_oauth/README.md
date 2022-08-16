@@ -1,4 +1,4 @@
-# MicrosoftKiotaAuthentication
+# MicrosoftKiotaAuthenticationOAuth
 
 ![Ruby](https://github.com/microsoft/kiota/actions/workflows/authentication-ruby-json.yml/badge.svg)
 
@@ -42,7 +42,7 @@ bundle install
 Or install it yourself as:
 
 ```shell
-gem install microsoft_kiota_authentication --version "0.1.0" --source "https://{USERNAME}{PASSWORD/TOKEN}rubygems.pkg.github.com/microsoft"
+gem install microsoft_kiota_authentication_oauth --version "0.1.0" --source "https://{USERNAME}{PASSWORD/TOKEN}rubygems.pkg.github.com/microsoft"
 ```
 
 ## Contributing

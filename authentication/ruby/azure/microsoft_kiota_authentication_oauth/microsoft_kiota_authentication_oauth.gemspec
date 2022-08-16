@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 Gem::Specification.new do |spec|
-  spec.name          = "microsoft_kiota_authentication"
+  spec.name          = "microsoft_kiota_authentication_oauth"
   spec.version       = "0.1.0"
   spec.authors       = 'Microsoft Corporation'
   spec.email         = 'graphsdkpub@microsoft.com'
   spec.description   = 'Kiota Authentication implementation with oauth2'
-  spec.summary       = "Microsoft Kiota Authentication - Kiota Ruby Authentication library"
+  spec.summary       = "Microsoft Kiota Authentication OAuth - Kiota Ruby Authentication OAuth library"
   spec.homepage      = 'https://microsoft.github.io/kiota/'
   spec.license       = 'MIT'
   spec.metadata      = {

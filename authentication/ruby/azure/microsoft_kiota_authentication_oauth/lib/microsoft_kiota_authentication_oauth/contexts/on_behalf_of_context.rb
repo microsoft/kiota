@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module MicrosoftKiotaAuthentication
+module MicrosoftKiotaAuthenticationOAuth
     # Token request context class for the on behlaf of grant type.
     class OnBehalfOfContext
         attr_reader :grant_type, :additional_params, :tenant_id, :client_id, :client_secret, :oauth_provider

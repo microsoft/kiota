@@ -8,7 +8,7 @@ require_relative 'contexts/client_credential_context'
 require_relative 'contexts/authorization_code_context'
 require_relative 'contexts/on_behalf_of_context'
 
-module MicrosoftKiotaAuthentication
+module MicrosoftKiotaAuthenticationOAuth
   # Access Token Provider class implementation
   class OAuthAccessTokenProvider
     include Concurrent::Async
@@ -20,10 +20,10 @@ module MicrosoftKiotaAuthentication
     def initialize(token_request_context, allowed_hosts = [], scopes = [])
       raise StandardError, 'Parameter token_request_context cannot be nil.' if token_request_context.nil?
 
-      if !@token_request_context.instance_of?(MicrosoftKiotaAuthentication::ClientCredentialContext) && 
-         !@token_request_context.instance_of?(MicrosoftKiotaAuthentication::AuthorizationCodeContext) &&
-         !@token_request_context.instance_of?(MicrosoftKiotaAuthentication::OnBehalfOf) && 
-         !@token_request_context.instance_of?(MicrosoftKiotaAuthentication::CustomContext)
+      if !@token_request_context.instance_of?(MicrosoftKiotaAuthenticationOAuth::ClientCredentialContext) && 
+         !@token_request_context.instance_of?(MicrosoftKiotaAuthenticationOAuth::AuthorizationCodeContext) &&
+         !@token_request_context.instance_of?(MicrosoftKiotaAuthenticationOAuth::OnBehalfOf) && 
+         !@token_request_context.instance_of?(MicrosoftKiotaAuthenticationOAuth::CustomContext)
         raise StandardError, 'Parameter token_request_context must be an instance of one of our grant flow context classes.'
       end
 

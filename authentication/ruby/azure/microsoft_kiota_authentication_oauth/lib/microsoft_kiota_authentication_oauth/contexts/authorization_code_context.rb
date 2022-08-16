@@ -2,7 +2,7 @@
 
 require 'oauth2'
 
-module MicrosoftKiotaAuthentication
+module MicrosoftKiotaAuthenticationOAuth
   # Token request context class for the authorization code grant type.
   class AuthorizationCodeContext
     attr_reader :grant_type, :redirect_uri, :additional_params,

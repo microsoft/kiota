@@ -2,7 +2,7 @@
 
 require 'oauth2'
 
-module MicrosoftKiotaAuthentication
+module MicrosoftKiotaAuthenticationOAuth
     # Class for optional custom token request context.
     class CustomContext
       attr_accessor :scopes
