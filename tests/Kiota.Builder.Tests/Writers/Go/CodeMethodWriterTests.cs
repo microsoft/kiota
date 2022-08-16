@@ -819,6 +819,7 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("m.someProperty", result);
+        Assert.DoesNotContain("if m == nil", result);
     }
     [Fact]
     public void WritesSetterToField() {
@@ -827,6 +828,7 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("m.someProperty = value", result);
+        Assert.DoesNotContain("if m == nil", result);
     }
     [Fact]
     public void WritesConstructor() {
