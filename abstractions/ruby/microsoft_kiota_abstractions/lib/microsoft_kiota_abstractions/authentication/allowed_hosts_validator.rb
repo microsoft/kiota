@@ -8,7 +8,7 @@ module MicrosoftKiotaAbstractions
   class AllowedHostsValidator
     # creates a new AllocatedHostsValidator with provided values
     def initialize(allowed_hosts)
-      @allowed_hosts = []
+      @allowed_hosts = {}
       allowed_hosts.each { |host| @allowed_hosts << host.downcase }
     end
 
