@@ -10,14 +10,13 @@ require_relative 'contexts/on_behalf_of_context'
 
 module MicrosoftKiotaAuthentication
   # Access Token Provider class implementation
-  class AzureAccessTokenProvider
+  class OAuthAccessTokenProvider
     include Concurrent::Async
-    # This is the initializer for AzureAccessTokenProvider.
+    # This is the initializer for OAuthAccessTokenProvider.
     # :params
-    #   token_request_context: a instance of one of our token request context
+    #   token_request_context: a instance of one of our token request context or a custom implementation
     #   allowed_hosts: an array of strings, where each string is an allowed host, default is empty
     #   scopes: an array of strings, where each string is a scope, default is empty array 
-    #   auth_code: a string containting the auth code; default is nil, can be updated post-initialization
     def initialize(token_request_context, allowed_hosts = [], scopes = [])
       raise StandardError, 'Parameter token_request_context cannot be nil.' if token_request_context.nil?
 

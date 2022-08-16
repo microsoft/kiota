@@ -9,13 +9,13 @@ module MicrosoftKiotaAbstractions
     # creates a new AllocatedHostsValidator with provided values
     def initialize(allowed_hosts)
       @allowed_hosts = {}
-      allowed_hosts.each { |host| @allowed_hosts << host.downcase }
+      allowed_hosts.each { |host| @allowed_hosts[host.downcase] = true }
     end
 
     # sets the list of valid hosts with provided value (val)
     def allowed_hosts=(val)
-      @allowed_hosts = []
-      val.each { |host| @allowed_hosts << host.downcase }
+      @allowed_hosts = {}
+      val.each { |host| @allowed_hosts[host.downcase] = true }
     end
 
     # checks whether the provided host is valid
@@ -28,7 +28,7 @@ module MicrosoftKiotaAbstractions
 
       return false if parsed_url.host.nil?
 
-      @allowed_hosts.include? parsed_url.host.downcase
+      @allowed_hosts.key? parsed_url.host.downcase
     end
 
     # gets the list of valid hosts

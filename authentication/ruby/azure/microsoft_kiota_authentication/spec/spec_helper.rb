@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
 require 'microsoft_kiota_abstractions'
-require_relative '../contexts/client_credential_context'
-require_relative '../contexts/authorization_code_context'
-require_relative '../contexts/on_behalf_of_context'
-require_relative '../extensions/oauth2_ext'
-require_relative '../azure_access_token_provider'
+require_relative '../lib/microsoft_kiota_authentication/contexts/client_credential_context'
+require_relative '../lib/microsoft_kiota_authentication/contexts/authorization_code_context'
+require_relative '../lib/microsoft_kiota_authentication/contexts/on_behalf_of_context'
+require_relative '../lib/microsoft_kiota_authentication/contexts/custom_context'
+require_relative '../lib/microsoft_kiota_authentication/extensions/oauth2_ext'
+require_relative '../lib/microsoft_kiota_authentication/oauth_access_token_provider'
+require_relative '../lib/microsoft_kiota_authentication/oauth_authentication_provider'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
