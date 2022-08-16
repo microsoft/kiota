@@ -18,7 +18,7 @@ class SerializationWriter(ABC):
     """
 
     @abstractmethod
-    def write_string_value(self, key: Optional[str], value: Optional[str]) -> None:
+    def write_str_value(self, key: Optional[str], value: Optional[str]) -> None:
         """Writes the specified string value to the stream with an optional given key.
 
         Args:
@@ -28,7 +28,7 @@ class SerializationWriter(ABC):
         pass
 
     @abstractmethod
-    def write_boolean_value(self, key: Optional[str], value: Optional[bool]) -> None:
+    def write_bool_value(self, key: Optional[str], value: Optional[bool]) -> None:
         """Writes the specified boolean value to the stream with an optional given key.
 
         Args:
@@ -68,7 +68,7 @@ class SerializationWriter(ABC):
         pass
 
     @abstractmethod
-    def write_datetime_offset_value(self, key: Optional[str], value: Optional[datetime]) -> None:
+    def write_datetime_value(self, key: Optional[str], value: Optional[datetime]) -> None:
         """Writes the specified datetime offset value to the stream with an optional given key.
 
         Args:
@@ -146,7 +146,7 @@ class SerializationWriter(ABC):
         pass
 
     @abstractmethod
-    def write_bytearray_value(self, key: Optional[str], value: BytesIO) -> None:
+    def write_bytes_value(self, key: Optional[str], value: BytesIO) -> None:
         """Writes the specified byte array as a base64 string to the stream with an optional
         given key.
 
