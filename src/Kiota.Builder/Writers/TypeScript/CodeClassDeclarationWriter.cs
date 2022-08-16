@@ -11,8 +11,8 @@ namespace Kiota.Builder.Writers.TypeScript {
         }
         public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
         {
-            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
-            if(writer == null) throw new ArgumentNullException(nameof(writer));
+            ArgumentNullException.ThrowIfNull(codeElement, nameof(codeElement));
+            ArgumentNullException.ThrowIfNull(writer, nameof(writer));
             var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
             _codeUsingWriter.WriteCodeElement(codeElement.Usings, parentNamespace, writer);
             

@@ -10,8 +10,8 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
 
     public override void WriteCodeElement(T codeElement, LanguageWriter writer)
     {
-        if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
-        if(writer == null) throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(codeElement, nameof(codeElement));
+        ArgumentNullException.ThrowIfNull(writer, nameof(writer));
         if (codeElement.Parent?.Parent is CodeNamespace ns)
         {
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty)}");

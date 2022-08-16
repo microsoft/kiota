@@ -98,7 +98,7 @@ namespace Kiota.Builder.Extensions {
         }
         internal static IList<OpenApiSchema> FlattenEmptyEntries(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter, int? maxDepth = default) {
             if(schemas == null) return default;
-            if(subsequentGetter == null) throw new ArgumentNullException(nameof(subsequentGetter));
+            ArgumentNullException.ThrowIfNull(subsequentGetter, nameof(subsequentGetter));
 
             if((maxDepth ?? 1) <= 0)
                 return schemas;

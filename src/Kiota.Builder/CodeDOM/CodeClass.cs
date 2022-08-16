@@ -37,8 +37,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     public CodeComposedTypeBase OriginalComposedType { get; set; }
     public void SetIndexer(CodeIndexer indexer)
     {
-        if(indexer == null)
-            throw new ArgumentNullException(nameof(indexer));
+        ArgumentNullException.ThrowIfNull(indexer, nameof(indexer));
         if(InnerChildElements.Values.OfType<CodeIndexer>().Any() || InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility))) {
             var existingIndexer = InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
             if(existingIndexer != null) {

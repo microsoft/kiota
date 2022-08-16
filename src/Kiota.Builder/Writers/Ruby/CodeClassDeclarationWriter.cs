@@ -13,8 +13,8 @@ namespace  Kiota.Builder.Writers.Ruby {
         
         public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
         {
-            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
-            if(writer == null) throw new ArgumentNullException(nameof(writer));
+            ArgumentNullException.ThrowIfNull(codeElement, nameof(codeElement));
+            ArgumentNullException.ThrowIfNull(writer, nameof(writer));
             var currentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
             if(codeElement?.Parent?.Parent is not CodeClass) {
                 foreach (var codeUsing in codeElement.Usings

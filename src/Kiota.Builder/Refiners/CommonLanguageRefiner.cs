@@ -362,8 +362,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, bool supportsInnerClasses = true)
     {
-        if(codeClass == null) throw new ArgumentNullException(nameof(codeClass));
-        if(codeComposedType == null) throw new ArgumentNullException(nameof(codeComposedType));
+        ArgumentNullException.ThrowIfNull(codeClass, nameof(codeClass));
+        ArgumentNullException.ThrowIfNull(codeComposedType, nameof(codeComposedType));
         CodeClass newClass;
         var description =
             $"Composed type wrapper for classes {codeComposedType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}";

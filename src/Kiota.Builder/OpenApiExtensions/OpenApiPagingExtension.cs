@@ -48,8 +48,7 @@ internal class OpenApiPagingExtension : IOpenApiExtension
     /// <inheritdoc />
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
     {
-        if (writer == null)
-            throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(writer, nameof(writer));
         writer.WriteStartObject();
         if (!string.IsNullOrEmpty(NextLinkName))
         {

@@ -10,9 +10,9 @@ namespace Kiota.Builder.Writers.Go {
         public CodeMethodWriter(GoConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
-            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+            ArgumentNullException.ThrowIfNull(codeElement, nameof(codeElement));
             if(codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
-            if(writer == null) throw new ArgumentNullException(nameof(writer));
+            ArgumentNullException.ThrowIfNull(writer, nameof(writer));
             if(codeElement.Parent is not IProprietableBlock) throw new InvalidOperationException("the parent of a method should be a class or an interface");
             
             var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent);
