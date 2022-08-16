@@ -45,6 +45,10 @@ jobs:
         run: |
           pipenv run mypy authentication_azure
         working-directory: ${{ env.relativePath }}
+      - name: Run tests with Pytest
+        run: |
+          pipenv run pytest
+        working-directory: ${{ env.relativePath }}
 
   publish:
     name: Publish distribution to PyPI

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from kiota.abstractions.authentication import BaseBearerTokenAuthenticationProvider
 
@@ -13,12 +13,12 @@ class AzureIdentityAuthenticationProvider(BaseBearerTokenAuthenticationProvider)
     def __init__(
         self,
         credentials: "AsyncTokenCredential",
-        options: Optional[Dict],
+        options: Optional[Dict] = None,
         scopes: List[str] = ['https://graph.microsoft.com/.default'],
-        allowed_hosts: Set[str] = {
+        allowed_hosts: List[str] = [
             'graph.microsoft.com', 'graph.microsoft.us', 'dod-graph.microsoft.us',
             'graph.microsoft.de', 'microsoftgraph.chinacloudapi.cn', 'canary.graph.microsoft.com'
-        }
+        ]
     ) -> None:
         """[summary]
 

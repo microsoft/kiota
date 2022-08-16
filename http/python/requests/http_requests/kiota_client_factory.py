@@ -4,6 +4,7 @@ import requests
 
 from .middleware import MiddlewarePipeline, ParametersNameDecodingHandler, RetryHandler
 
+
 class KiotaClientFactory:
     DEFAULT_CONNECTION_TIMEOUT: int = 30
     DEFAULT_REQUEST_TIMEOUT: int = 100

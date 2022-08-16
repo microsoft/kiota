@@ -13,9 +13,20 @@ aiohttp = {version="3.8.1", index="pypi"}
 azure-core = {version="1.21.1", index="pypi"}
 kiota-abstractions = {version="*", index="testpypi"}
 
+
 [dev-packages]
+azure-identity = {version="1.8.0", index="pypi"}
 flit = {version="3.5.1", index="pypi"}
 pylint = {version="2.12.2", index="pypi"}
 mypy = {version="0.910", index="pypi"}
 yapf = {version="0.31.0", index="pypi"}
 isort = {version="5.10.1", index="pypi"}
+toml = {version="0.10.2", index="pypi"}
+pytest = {version="7.1.2", index="pypi"}
+pytest-asyncio = {version="0.19.0", index="pypi"}
+pytest-cov = {version="3.0.0", index="pypi"}
+pytest-mock = {version="3.8.2", index="pypi"}
+asyncmock = {version="0.4.2", index="pypi"}
+responses = {version="0.21.0", index="pypi"}
+types-requests = {version="*", index="pypi"}
+uritemplate = "==4.1.1"

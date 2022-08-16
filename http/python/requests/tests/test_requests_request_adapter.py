@@ -1,3 +1,4 @@
+import json
 import pytest
 import requests
 import responses
@@ -5,7 +6,9 @@ from responses import matchers
 from asyncmock import AsyncMock
 
 from kiota.abstractions.authentication import AnonymousAuthenticationProvider
+from kiota.abstractions.method import Method
 from kiota.abstractions.request_information import RequestInformation
+
 
 from serialization_json.json_parse_node import JsonParseNode
 from serialization_json.json_parse_node_factory import JsonParseNodeFactory
@@ -38,7 +41,7 @@ def request_info_mock():
     
 @pytest.fixture
 @responses.activate
-def simple_response(request_adapter):
+def simple_response():
     responses.add(
         responses.GET,
         url=BASE_URL,
@@ -204,6 +207,7 @@ def mock_no_content_response(mocker):
         responses.GET,
         url=BASE_URL,
         status=204,
+        json="Radom JSON",
         match=[
             matchers.header_matcher({"Content-Type": "application/json"}, strict_match=True)
         ]
@@ -245,8 +249,8 @@ def test_set_base_url_for_request_information(request_adapter, request_info):
     assert request_info.path_parameters["base_url"] == BASE_URL
     
 def test_get_request_from_request_information(request_adapter, request_info):
-    request_info.http_method = 'GET'
-    request_info.set_url(BASE_URL)
+    request_info.http_method = Method.GET
+    request_info.url = BASE_URL
     request_info.content = bytes('hello world', 'utf_8')
     req = request_adapter.get_request_from_request_information(request_info)
     assert isinstance(req, requests.PreparedRequest)
@@ -274,14 +278,14 @@ async def test_send_async(request_adapter, request_info, mock_user_response):
     assert resp.headers.get("content-type") == 'application/json'
     final_result = await request_adapter.send_async(request_info, User, None, {})
     assert isinstance(final_result, User)
-    assert final_result.get_display_name() == "Diego Siciliani"
-    assert final_result.get_office_location() == OfficeLocation.dunhill
-    assert final_result.get_business_phones() == ["+1 205 555 0108"]
-    assert final_result.get_age() == 21
-    assert final_result.get_gpa() == 3.2
-    assert final_result.get_is_active() == True
-    assert final_result.get_mobile_phone() == None
-    assert "@odata.context" in final_result.get_additional_data()
+    assert final_result.display_name == "Diego Siciliani"
+    assert final_result.office_location == OfficeLocation.Dunhill
+    assert final_result.business_phones == ["+1 205 555 0108"]
+    assert final_result.age == 21
+    assert final_result.gpa == 3.2
+    assert final_result.is_active == True
+    assert final_result.mobile_phone == None
+    assert "@odata.context" in final_result.additional_data
     
 @pytest.mark.asyncio
 @responses.activate
@@ -291,14 +295,14 @@ async def test_send_collection_async(request_adapter, request_info, mock_users_r
     assert resp.headers.get("content-type") == 'application/json'
     final_result = await request_adapter.send_collection_async(request_info, User, None, {})
     assert isinstance(final_result[0], User)
-    assert final_result[0].get_display_name() == "Adele Vance"
-    assert final_result[0].get_office_location() == OfficeLocation.dunhill
-    assert final_result[0].get_business_phones() == ["+1 425 555 0109"]
-    assert final_result[0].get_age() == 21
-    assert final_result[0].get_gpa() == 3.7
-    assert final_result[0].get_is_active() == True
-    assert final_result[0].get_mobile_phone() == None
-    assert "@odata.context" in final_result[0].get_additional_data()
+    assert final_result[0].display_name == "Adele Vance"
+    assert final_result[0].office_location == OfficeLocation.Dunhill
+    assert final_result[0].business_phones == ["+1 425 555 0109"]
+    assert final_result[0].age == 21
+    assert final_result[0].gpa == 3.7
+    assert final_result[0].is_active == True
+    assert final_result[0].mobile_phone == None
+    assert "@odata.context" in final_result[0].additional_data
     
 @pytest.mark.asyncio
 @responses.activate
