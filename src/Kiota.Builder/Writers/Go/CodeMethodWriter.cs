@@ -189,12 +189,6 @@ namespace Kiota.Builder.Writers.Go {
         }
         private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
             var backingStore = parentClass.GetBackingStoreProperty();
-            writer.WriteLine("if m == nil {");
-            writer.IncreaseIndent();
-            writer.WriteLine("return nil");
-            writer.DecreaseIndent();
-            writer.WriteLine("} else {");
-            writer.IncreaseIndent();
             if(backingStore == null || (codeElement.AccessedProperty?.IsOfKind(CodePropertyKind.BackingStore) ?? false))
                 writer.WriteLine($"return m.{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}");
             else 
@@ -210,8 +204,6 @@ namespace Kiota.Builder.Writers.Go {
                     writer.WriteLine("return value;");
                 } else
                     writer.WriteLine($"return m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
-            writer.CloseBlock();
-
         }
         private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
@@ -292,13 +284,10 @@ namespace Kiota.Builder.Writers.Go {
         }
         private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
             var backingStore = parentClass.GetBackingStoreProperty();
-            writer.WriteLine("if m != nil {");
-            writer.IncreaseIndent();
             if(backingStore == null)
                 writer.WriteLine($"m.{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value");
             else
                 writer.WriteLine($"m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value)");
-            writer.CloseBlock();
         }
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
