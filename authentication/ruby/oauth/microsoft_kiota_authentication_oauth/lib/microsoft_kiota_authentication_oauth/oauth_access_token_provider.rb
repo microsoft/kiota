@@ -21,13 +21,14 @@ module MicrosoftKiotaAuthenticationOAuth
     def initialize(token_request_context, allowed_hosts = [], scopes = [])
       raise StandardError, 'Parameter token_request_context cannot be nil.' if token_request_context.nil?
 
+      @token_request_context = token_request_context
+
       unless @token_request_context.is_a?(MicrosoftKiotaAuthenticationOAuth::OAuthContext)
         raise StandardError, 'Parameter token_request_context must be an instance of one of our grant flow context classes.'
       end
 
       @cached_token = nil 
 
-      @token_request_context = token_request_context
       @host_validator = if allowed_hosts.nil? || allowed_hosts.size.zero?
                           MicrsoftKiotaAbstractions::AllowedHostsValidator.new(['graph.microsoft.com', 'graph.microsoft.us', 'dod-graph.microsoft.us',
                                                      'graph.microsoft.de', 'microsoftgraph.chinacloudapi.cn',
@@ -36,8 +37,8 @@ module MicrosoftKiotaAuthenticationOAuth
                           MicrsoftKiotaAbstractions::AllocatedHostsValidator.new(allowed_hosts)
                         end
       
-      token_request_context.initialize_oauth_provider
-      token_request_context.initialize_scopes(scopes)
+      @token_request_context.initialize_oauth_provider
+      @token_request_context.initialize_scopes(scopes)
       
     end
 
@@ -53,7 +54,7 @@ module MicrosoftKiotaAuthenticationOAuth
 
       raise StandardError, 'Only https is supported' if parsed_url.scheme != 'https'
 
-      unless cached_token.nil?
+      unless @cached_token.nil?
         token = OAuth2::AccessToken.from_hash(@token_request_context.oauth_provider, @cached_token) 
         return token.token if !token.nil? && !token.expired?
 
