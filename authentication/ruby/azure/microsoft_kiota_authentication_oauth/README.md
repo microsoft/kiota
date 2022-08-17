@@ -1,6 +1,6 @@
 # MicrosoftKiotaAuthenticationOAuth
 
-![Ruby](https://github.com/microsoft/kiota/actions/workflows/authentication-ruby-json.yml/badge.svg)
+![Ruby](https://github.com/microsoft/kiota/actions/workflows/authentication-ruby-oauth.yml/badge.svg)
 
 ## Using the Authentication implementations
 
