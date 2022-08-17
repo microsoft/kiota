@@ -30,7 +30,7 @@ module MicrosoftKiotaAuthenticationOAuth
       @oauth_provider = nil
       @grant_type = 'authorization code'
 
-      if tenant_id.nil? || client_id.nil? || client_secret.nil? || tenant_id.empty? || client_id.empty? || client_secret.empty?
+      if @tenant_id.nil? || @client_id.nil? || @client_secret.nil? || @tenant_id.empty? || @client_id.empty? || @client_secret.empty?
         raise StandardError, 'tenant_id, client_id, and client_secret cannot be empty'
       end
     end
