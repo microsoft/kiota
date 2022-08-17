@@ -21,7 +21,7 @@ module MicrosoftKiotaAuthenticationOAuth
     def initialize(token_request_context, allowed_hosts = [], scopes = [])
       raise StandardError, 'Parameter token_request_context cannot be nil.' if token_request_context.nil?
 
-      if !@token_request_context.instance_of?(MicrosoftKiotaAuthenticationOAuth::OAuthContext)
+      unless @token_request_context.is_a?(MicrosoftKiotaAuthenticationOAuth::OAuthContext)
         raise StandardError, 'Parameter token_request_context must be an instance of one of our grant flow context classes.'
       end
 
@@ -65,7 +65,7 @@ module MicrosoftKiotaAuthenticationOAuth
       end
 
       token = nil
-      token = token_request_context.get_token
+      token = @token_request_context.get_token
 
       @cached_token = token.to_hash unless token.nil?
       token = token.token unless token.nil?
