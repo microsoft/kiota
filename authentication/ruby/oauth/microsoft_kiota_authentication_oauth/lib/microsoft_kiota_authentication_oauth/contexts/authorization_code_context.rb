@@ -53,7 +53,7 @@ module MicrosoftKiotaAuthenticationOAuth
       self.initialize_scopes(scopes)
       self.initialize_oauth_provider
 
-      parameters = { scope: scope_str, redirect_uri: @redirect_uri, access_type: 'offline', prompt: 'consent'}
+      parameters = { scope: @scopes, redirect_uri: @redirect_uri, access_type: 'offline', prompt: 'consent'}
       parameters = parameters.merge(additional_params)
       @oauth_provider.auth_code.authorize_url(parameters)
     end
