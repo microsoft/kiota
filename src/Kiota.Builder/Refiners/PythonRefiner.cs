@@ -16,7 +16,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         RemoveCancellationParameter(generatedCode);
         CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
         CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.__instance.create_backing_store()");
-        AddPropertiesAndMethodTypesImportsPython(generatedCode, true, true, true);           
+        AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);           
         AddParsableImplementsForModelClasses(generatedCode, "Parsable");
         ReplaceBinaryByNativeType(generatedCode, "bytes",null);
         ReplaceReservedNames(
@@ -164,55 +164,15 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     
     // Caters for QueryParameters and RequestConfiguration which are implemented as nested classes.
     // No imports required for nested classes in Python.
-    private static void AddPropertiesAndMethodTypesImportsPython(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration) {
-    if(current is CodeClass currentClass &&
-        currentClass.StartBlock is ClassDeclaration currentClassDeclaration) {
-        var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
-        var currentClassChildren = currentClass.GetChildElements(true);
-        var inheritTypes = currentClassDeclaration.Inherits?.AllTypes ?? Enumerable.Empty<CodeType>();
-        var propertiesTypes = currentClass
-                            .Properties
-                            .Where(x => !x.IsOfKind(CodePropertyKind.QueryParameters))
-                            .Select(x => x.Type)
-                            .Distinct();
-        var methods = currentClass.Methods;
-        var methodsReturnTypes = methods
-                            .Select(x => x.ReturnType)
-                            .Distinct();
-        var methodsParametersTypes = methods
-                            .SelectMany(x => x.Parameters)
-                            .Where(x => x.IsOfKind(CodeParameterKind.Custom, CodeParameterKind.RequestBody))
-                            .Select(x => x.Type)
-                            .Distinct();
-        var indexerTypes = currentClassChildren
-                            .OfType<CodeIndexer>()
-                            .Select(x => x.ReturnType)
-                            .Distinct();
-        var errorTypes = currentClassChildren
-                            .OfType<CodeMethod>()
-                            .Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor))
-                            .SelectMany(x => x.ErrorMappings)
-                            .Select(x => x.Value)
-                            .Distinct();
-        var usingsToAdd = propertiesTypes
-                            .Union(methodsParametersTypes)
-                            .Union(methodsReturnTypes)
-                            .Union(indexerTypes)
-                            .Union(inheritTypes)
-                            .Union(errorTypes)
-                            .Where(x => x != null)
-                            .SelectMany(x => x?.AllTypes?.Select(y => (type: y, ns: y?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
-                            .Where(x => x.ns != null && (includeCurrentNamespace || x.ns != currentClassNamespace))
-                            .Where(x => includeParentNamespaces || !currentClassNamespace.IsChildOf(x.ns))
-                            .Select(x => new CodeUsing { Name = x.ns.Name, Declaration = x.type })
-                            .Where(x => x.Declaration?.TypeDefinition != current)
-                            .Distinct(compareOnDeclaration ? usingComparerWithDeclarations : usingComparerWithoutDeclarations)
-                            .ToArray();
-        if(usingsToAdd.Any())
-            (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
-    }
-    CrawlTree(current, (x) => AddPropertiesAndMethodTypesImportsPython(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration));
-}
+    public static IEnumerable<CodeTypeBase> codeTypeFilter(IEnumerable<CodeTypeBase> usingsToAdd)
+        {
+            var nestedTypes = usingsToAdd.Where(
+                    codeTypeBase => codeTypeBase is CodeType codeType 
+                && codeType.TypeDefinition is CodeClass codeClass 
+                && codeClass.IsOfKind(CodeClassKind.RequestConfiguration,CodeClassKind.QueryParameters));
+
+            return usingsToAdd.Except(nestedTypes);
+        }
     
     private const string DateTimePackageName = "datetime";
     private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
