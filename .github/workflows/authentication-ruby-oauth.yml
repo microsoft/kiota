@@ -1,4 +1,4 @@
-name: Ruby serialization
+name: Ruby authentication
 
 on:
   workflow_dispatch:
