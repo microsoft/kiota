@@ -8,6 +8,7 @@ require_relative 'contexts/client_credential_context'
 require_relative 'contexts/authorization_code_context'
 require_relative 'contexts/on_behalf_of_context'
 require_relative 'contexts/oauth_context'
+require_relative 'contexts/oauth_custom_flow'
 
 module MicrosoftKiotaAuthenticationOAuth
   # Access Token Provider class implementation

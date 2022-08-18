@@ -31,8 +31,8 @@ RSpec.describe MicrosoftKiotaAuthenticationOAuth do
     expect  { MicrosoftKiotaAuthenticationOAuth::OnBehalfOfContext.new('tenant_id', 'client_id', 'client_secret', '') }.to raise_error(StandardError)
   end
 
-  it 'throws when Custom Context is not implemented' do
-    expect { MicrosoftKiotaAuthenticationOAuth::OAuthContext.new }.to raise_error(NotImplementedError)
+  it 'throws when OAuthContext is used, but a custom flow is not implemented' do
+    expect { MicrosoftKiotaAuthenticationOAuth::OAuthContext.get_token }.to raise_error(NoMethodError)
   end
 
   it 'recognizes contexts as an OAuthContext' do

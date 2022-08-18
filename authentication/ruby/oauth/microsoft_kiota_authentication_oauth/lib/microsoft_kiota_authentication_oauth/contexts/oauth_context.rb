@@ -1,32 +1,25 @@
 # frozen_string_literal: true
 
 require 'oauth2'
+require_relative './oauth_custom_flow'
 
 module MicrosoftKiotaAuthenticationOAuth
-    # Base class token request context and can be optionally implemented for 
-    # custom token grant flows.
+    # Base class for token request contexs.
     class OAuthContext
       attr_accessor :scopes
       attr_reader :oauth_provider
-
-      # oauth client
-      @oauth_provider 
-      # scopes
-      @scopes
-      def initialize
-        raise NotImplementedError.new
-      end
+      include MicrosoftKiotaAuthenticationOAuth::OAuthCustomFlow
 
       def get_token
-        raise NotImplementedError.new
+        OAuthCustomFlow.get_token
       end
 
       def initialize_scopes(scopes = [])
-        raise NotImplementedError.new
+        @scopes = OAuthCustomFlow.get_scopes
       end
 
       def initialize_oauth_provider
-        raise NotImplementedError.new
+        @oauth_provider = OAuthCustomFlow.get_oauth_provider
       end
 
       private 
