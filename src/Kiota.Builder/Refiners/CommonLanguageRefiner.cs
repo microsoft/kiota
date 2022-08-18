@@ -509,6 +509,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 .Union(indexerTypes)
                                 .Union(inheritTypes)
                                 .Union(errorTypes);
+                                .Where(static x => x != null)
             
             if (codeTypeFilter != default)
             {
