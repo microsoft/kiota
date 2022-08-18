@@ -159,8 +159,6 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                                             .Union(new CodeTypeBase[] { currentMethod.ReturnType})
                                             .ToArray());
     }
-    private static readonly CodeUsingComparer usingComparerWithDeclarations = new(true);
-    private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new(false);
     
     // Caters for QueryParameters and RequestConfiguration which are implemented as nested classes.
     // No imports required for nested classes in Python.
