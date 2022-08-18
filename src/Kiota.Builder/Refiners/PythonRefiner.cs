@@ -164,9 +164,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     // No imports required for nested classes in Python.
     public static IEnumerable<CodeTypeBase> codeTypeFilter(IEnumerable<CodeTypeBase> usingsToAdd)
         {
-            var nestedTypes = usingsToAdd.Where(
-                    codeTypeBase => codeTypeBase is CodeType codeType 
-                && codeType.TypeDefinition is CodeClass codeClass 
+            var nestedTypes = usingsToAdd.OfType<CodeType>().Where(
+                static codeType => codeType.TypeDefinition is CodeClass codeClass 
                 && codeClass.IsOfKind(CodeClassKind.RequestConfiguration,CodeClassKind.QueryParameters));
 
             return usingsToAdd.Except(nestedTypes);
