@@ -508,8 +508,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 .Union(methodsReturnTypes)
                                 .Union(indexerTypes)
                                 .Union(inheritTypes)
-                                .Union(errorTypes);
-                                .Where(static x => x != null)
+                                .Union(errorTypes)
+                                .Where(static x => x != null);
             
             if (codeTypeFilter != default)
             {
