@@ -78,35 +78,75 @@ namespace Kiota.Builder.Writers.Go {
             writer.CloseBlock();
         }
         private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer){
-            var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-            if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
-                writer.WriteLine($"if {parseNodeParameter.Name.ToFirstCharacterLowerCase()} != nil {{");
-                writer.IncreaseIndent();
+            var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
+            var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorBody && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
+            if(writeDiscriminatorValueRead) {
+                writer.StartBlock($"if {parseNodeParameter.Name.ToFirstCharacterLowerCase()} != nil {{");
                 writer.WriteLine($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")");
                 WriteReturnError(writer, codeElement.ReturnType.Name);
-                writer.WriteLine("if mappingValueNode != nil {");
-                writer.IncreaseIndent();
-                writer.WriteLines($"mappingValue, err := mappingValueNode.GetStringValue()");
+                writer.StartBlock("if mappingValueNode != nil {");
+                writer.WriteLines($"{DiscriminatorMappingVarName}, err := mappingValueNode.GetStringValue()");
                 WriteReturnError(writer, codeElement.ReturnType.Name);
-                writer.WriteLine("if mappingValue != nil {");
-                writer.IncreaseIndent();
-                writer.WriteLines("mappingStr := *mappingValue",
-                                    "switch mappingStr {");
-                writer.IncreaseIndent();
-                foreach(var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings) {
-                    writer.WriteLine($"case \"{mappedType.Key}\":");
-                    writer.IncreaseIndent();
-                    writer.WriteLine($"return {conventions.GetImportedStaticMethodName(mappedType.Value, codeElement.Parent)}(), nil");
-                    writer.DecreaseIndent();
-                }
-                writer.CloseBlock();
+                writer.StartBlock($"if {DiscriminatorMappingVarName} != nil {{");
+            }
+
+            if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
+                WriteFactoryMethodBodyForInheritedModel(codeElement, parentClass, writer);
+            else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+                WriteFactoryMethodBodyForUnionModel(codeElement, parentClass, parseNodeParameter, writer);
+            else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+                WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
+            else
+                writer.WriteLine($"return New{codeElement.Parent.Name.ToFirstCharacterUpperCase()}(), nil");
+
+            if(writeDiscriminatorValueRead) {
                 writer.CloseBlock();
                 writer.CloseBlock();
                 writer.CloseBlock();
             }
-
-            writer.WriteLine($"return New{codeElement.Parent.Name.ToFirstCharacterUpperCase()}(), nil");
+            
+            writer.WriteLine($"return New{codeElement.Parent.Name.ToFirstCharacterUpperCase()}(), nil"); //TODO remove or condition on inherited?
         }
+        private void WriteFactoryMethodBodyForInheritedModel(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
+            writer.StartBlock($"switch *{DiscriminatorMappingVarName} {{");
+            foreach(var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings) {
+                writer.WriteLine($"case \"{mappedType.Key}\":");
+                writer.IncreaseIndent();
+                writer.WriteLine($"return {conventions.GetImportedStaticMethodName(mappedType.Value, codeElement.Parent)}(), nil");
+                writer.DecreaseIndent();
+            }
+            writer.CloseBlock();
+        }
+        private void WriteFactoryMethodBodyForIntersectionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer) {
+        }
+        private const string ResultVarName = "result";
+        private const string DiscriminatorMappingVarName = "mappingValue";
+        private void WriteFactoryMethodBodyForUnionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer) {
+            writer.WriteLine($"{ResultVarName} := New{codeElement.Parent.Name.ToFirstCharacterUpperCase()}()");
+            var includeElse = false;
+            foreach(var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)){
+                                                // .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                                // .ThenBy(static x => x.Name)) {
+                if(property.Type is CodeType propertyType)
+                    if(propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection) {
+                        var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
+                        writer.WriteLine($"{(includeElse? "else " : string.Empty)}if strings.EqualFold(*{DiscriminatorMappingVarName}, \"{mappedType.Key}\") {{");
+                        writer.IncreaseIndent();
+                        writer.WriteLine($"{ResultVarName}.{property.Setter.Name.ToFirstCharacterUpperCase()}({conventions.GetImportedStaticMethodName(propertyType, codeElement)}())");
+                        writer.CloseBlock();
+                    } else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null) {
+                        var valueVarName = "val";
+                        writer.WriteLine($"{(includeElse? "else " : string.Empty)}if {valueVarName}, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, parentClass)}; {valueVarName} != nil {{");
+                        writer.IncreaseIndent();
+                        writer.WriteLine($"{ResultVarName}.{property.Setter.Name.ToFirstCharacterUpperCase()}({valueVarName})");
+                        writer.CloseBlock();   
+                    }
+                if(!includeElse)
+                    includeElse = true;
+            }
+            writer.WriteLine($"return {ResultVarName}, nil");
+        }
+
         private void WriteMethodDocumentation(CodeMethod code, string methodName, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(code.Description))
                 conventions.WriteShortDescription($"{methodName.ToFirstCharacterUpperCase()} {code.Description.ToFirstCharacterLowerCase()}", writer);
@@ -314,7 +354,7 @@ namespace Kiota.Builder.Writers.Go {
             writer.IncreaseIndent();
             var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
             var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
-            writer.WriteLine($"val, err := {deserializationMethodName}");
+            writer.WriteLine($"val, err := n.{deserializationMethodName}");
             WriteReturnError(writer);
             writer.WriteLine("if val != nil {");
             writer.IncreaseIndent();
@@ -504,21 +544,21 @@ namespace Kiota.Builder.Writers.Go {
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
-                        return $"n.GetCollectionOfPrimitiveValues(\"{propertyTypeName.ToFirstCharacterLowerCase()}\")";
+                        return $"GetCollectionOfPrimitiveValues(\"{propertyTypeName.ToFirstCharacterLowerCase()}\")";
                     else if (currentType.TypeDefinition is CodeEnum)
-                        return $"n.GetCollectionOfEnumValues({conventions.GetImportedStaticMethodName(propType, parentClass, "Parse")})";
+                        return $"GetCollectionOfEnumValues({conventions.GetImportedStaticMethodName(propType, parentClass, "Parse")})";
                     else
-                        return $"n.GetCollectionOfObjectValues({GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)})";
+                        return $"GetCollectionOfObjectValues({GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)})";
                 else if (currentType.TypeDefinition is CodeEnum currentEnum) {
-                    return $"n.GetEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({conventions.GetImportedStaticMethodName(propType, parentClass, "Parse")})";
+                    return $"GetEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({conventions.GetImportedStaticMethodName(propType, parentClass, "Parse")})";
                 }
             }
             return propertyTypeNameWithoutImportSymbol switch {
                 _ when conventions.IsPrimitiveType(propertyTypeNameWithoutImportSymbol) => 
-                    $"n.Get{propertyTypeNameWithoutImportSymbol.ToFirstCharacterUpperCase()}Value()",
+                    $"Get{propertyTypeNameWithoutImportSymbol.ToFirstCharacterUpperCase()}Value()",
                 _ when conventions.StreamTypeName.Equals(propertyTypeNameWithoutImportSymbol, StringComparison.OrdinalIgnoreCase) =>
-                    "n.GetByteArrayValue()",
-                _ => $"n.GetObjectValue({GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)})",
+                    "GetByteArrayValue()",
+                _ => $"GetObjectValue({GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)})",
             };
         }
         private string GetTypeFactory(CodeTypeBase propTypeBase, CodeClass parentClass, string propertyTypeName) {
