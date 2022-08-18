@@ -104,7 +104,7 @@ namespace Kiota.Builder.Writers.Shell
                     }
                 }
                 return (type, NormalizeToIdentifier(p.Name), p);
-            }).DistinctBy(p => p.Item2).ToList();
+            }).DistinctBy(static p => p.Item2).ToList();
             var availableOptions = WriteExecutableCommandOptions(writer, parameters);
 
             var isHandlerVoid = conventions.VoidTypeName.Equals(originalMethod.ReturnType.Name, StringComparison.OrdinalIgnoreCase);
