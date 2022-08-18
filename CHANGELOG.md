@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds python code generation support. [#1200](https://github.com/microsoft/kiota/issues/163)
 - Added native type support for Duration, Time Only, and Date Only in Ruby. [#1644](https://github.com/microsoft/kiota/issues/1644)
 - Added a `--additional-data` argument to generate the AdditionalData properties [#1772](https://github.com/microsoft/kiota/issues/1772)
+- Added CAE infrastructure in Ruby by adding an `--additional-properties` parameter to the authenticate method of AuthenticationProvider, the get access token method of the AccessTokenProvider in Ruby. [#1643](https://github.com/microsoft/kiota/issues/1643)
+- Added Kiota authentication library for Ruby. [#421](https://github.com/microsoft/kiota/issues/421)
 
 ### Changed
 
@@ -32,7 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where duplicate 'require' statements are generated for inner classes in the middle of the file (Ruby). [#1649](https://github.com/microsoft/kiota/issues/1649)
 - Split parsable interface and additional property/data interface in Ruby. [#1654](https://github.com/microsoft/kiota/issues/1654)
 - Changed format of datetimes in Go to be converted to ISO 8601 by default when place in path parameters(Go)
+- Defined the Access Token Provider Interface for Ruby authentication. [#1638](https://github.com/microsoft/kiota/issues/1638)
 - Reduce code verbosity on Go Getters and Setters. [G0#26][https://github.com/microsoftgraph/msgraph-sdk-go-core/issues/26]
+
 
 ## [0.3.0] - 2022-07-08
 
@@ -46,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for vendor specific content types(PHP) [#1464](https://github.com/microsoft/kiota/issues/1464)
 - Added support for accept request header (PHP) [#1616](https://github.com/microsoft/kiota/issues/1616)
 - Added Getting Started steps for PHP. [#1642](https://github.com/microsoft/kiota/pull/1642)
+- Defined the Access Token Provider interface (Ruby) [#1638](https://github.com/microsoft/kiota/issues/1638)
+- Added Continuous Access Evalution infrastructure (Ruby) [#1643](https://github.com/microsoft/kiota/issues/1643)
 
 ### Changed
 

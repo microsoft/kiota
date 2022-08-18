@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-require_relative "lib/microsoft_kiota_serialization/version"
+require_relative "lib/microsoft_kiota_authentication_oauth/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "microsoft_kiota_serialization"
-  spec.version       = MicrosoftKiotaSerialization::VERSION
-  spec.authors       = 'Microsoft Corporation'
-  spec.email         = 'graphsdkpub@microsoft.com'
-  spec.description   = 'Implementation of Kiota Serialization interfaces for JSON'
-  spec.summary       = 'Microsoft Kiota Serialization - Ruby serialization for building library agnostic http client'
+  spec.name = "microsoft_kiota_authentication_oauth"
+  spec.version = MicrosoftKiotaAuthenticationOauth::VERSION
+  spec.authors = 'Microsoft Corporation'
+  spec.email = 'graphsdkpub@microsoft.com'
+  spec.description   = 'Kiota Authentication implementation with oauth2'
+  spec.summary       = 'Microsoft Kiota Authentication OAuth - Kiota Ruby Authentication OAuth library'
   spec.homepage      = 'https://microsoft.github.io/kiota/'
   spec.license       = 'MIT'
   spec.metadata      = {
@@ -25,10 +25,12 @@ Gem::Specification.new do |spec|
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
     `git ls-files -z`.split("\x0").reject { |f| f.match(%r{\A(?:test|spec|features)/}) }
   end
-  spec.bindir        = 'bin'
+
+  spec.bindir = 'bin'
   spec.executables   = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
-
+  
+  spec.add_dependency 'concurrent-ruby', '~> 1.1', '>= 1.1.9'
   spec.add_dependency 'microsoft_kiota_abstractions'
-  spec.add_dependency 'uuidtools'
+  spec.add_dependency 'oauth2', '~> 2.0'
 end
