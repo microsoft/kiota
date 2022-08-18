@@ -473,7 +473,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new(false);
     protected readonly GenerationConfiguration _configuration;
 
-    protected static void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration) {
+    protected static void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration, Func<IEnumerable<CodeTypeBase>, IEnumerable<CodeTypeBase>> codeTypeFilter = default) {
         if(current is CodeClass currentClass &&
             currentClass.StartBlock is ClassDeclaration currentClassDeclaration) {
             var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
@@ -503,24 +503,33 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 .SelectMany(static x => x.ErrorMappings)
                                 .Select(static x => x.Value)
                                 .Distinct();
-            var usingsToAdd = propertiesTypes
+            var typesCollection = propertiesTypes
                                 .Union(methodsParametersTypes)
                                 .Union(methodsReturnTypes)
                                 .Union(indexerTypes)
                                 .Union(inheritTypes)
                                 .Union(errorTypes)
-                                .Where(static x => x != null)
-                                .SelectMany(static x => x?.AllTypes?.Select(static y => (type: y, ns: y?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
-                                .Where(x => x.ns != null && (includeCurrentNamespace || x.ns != currentClassNamespace))
-                                .Where(x => includeParentNamespaces || !currentClassNamespace.IsChildOf(x.ns))
-                                .Select(static x => new CodeUsing { Name = x.ns.Name, Declaration = x.type })
-                                .Where(x => x.Declaration?.TypeDefinition != current)
-                                .Distinct(compareOnDeclaration ? usingComparerWithDeclarations : usingComparerWithoutDeclarations)
-                                .ToArray();
+                                .Where(static x => x != null);
+            
+            if (codeTypeFilter != default)
+            {
+                typesCollection = codeTypeFilter?.Invoke(typesCollection);
+            }
+
+            var usingsToAdd = typesCollection.Where(static x => x != null)
+                            .SelectMany(static x => x?.AllTypes?.Select(static y => (type: y, ns: y?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
+                            .Where(x => x.ns != null && (includeCurrentNamespace || x.ns != currentClassNamespace))
+                            .Where(x => includeParentNamespaces || !currentClassNamespace.IsChildOf(x.ns))
+                            .Select(static x => new CodeUsing { Name = x.ns.Name, Declaration = x.type })
+                            .Where(x => x.Declaration?.TypeDefinition != current)
+                            .Distinct(compareOnDeclaration ? usingComparerWithDeclarations : usingComparerWithoutDeclarations)
+                            .ToArray();
+            
+                                
             if(usingsToAdd.Any())
                 (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
         }
-        CrawlTree(current, (x) => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration));
+        CrawlTree(current, (x) => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter));
     }
     protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function) {
         foreach(var childElement in currentElement.GetChildElements())

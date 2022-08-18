@@ -22,12 +22,12 @@ namespace Kiota.Builder.Writers.Ruby {
                 _ => "private",
             };
         }
-        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
         {
             var defaultValue = parameter.Optional ? $"={(parameter.DefaultValue ?? "nil")}" : string.Empty;
             return $"{parameter.Name}{defaultValue}";
         }
-        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
         {
             if (code is CodeType currentType) {
                 return $"{TranslateType(currentType)}";
