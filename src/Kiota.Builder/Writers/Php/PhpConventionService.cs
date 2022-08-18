@@ -39,7 +39,7 @@ namespace Kiota.Builder.Writers.Php
         internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval", "int", "double", "decimal", "bool"};
         
         internal readonly HashSet<string> CustomTypes = new(StringComparer.OrdinalIgnoreCase) {"Date", "DateTime", "StreamInterface", "Byte", "Time"};
-        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
         {
             if(code is CodeComposedTypeBase) 
                 throw new InvalidOperationException($"PHP does not support union types, the union type {code.Name} should have been filtered out by the refiner.");
@@ -85,7 +85,7 @@ namespace Kiota.Builder.Writers.Php
                 _ => $"${parameter.Name.ToFirstCharacterLowerCase()}"
             };
         }
-        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
         {
             var typeString = GetTypeString(parameter?.Type, parameter);
             var parameterSuffix = parameter?.Kind switch
