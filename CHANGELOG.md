@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fix issue with duplicate variable declaration in command handlers (Shell)
+- Update namespace qualification algorithm (helps in resolving when a type name appears in multiple namespaces) to use case insensitive string comparison (CSharp).
+
 ## [0.4.0] - 2022-08-18
 
 ### Added
