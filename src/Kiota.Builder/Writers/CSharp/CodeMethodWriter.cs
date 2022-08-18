@@ -121,7 +121,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             if(!includeElse)
                 includeElse = true;
         }
-        writer.WriteLine("return result;");
+        writer.WriteLine($"return {ResultVarName};");
     }
     private void WriteFactoryMethodBodyForIntersectionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer) {
         writer.WriteLine($"var {ResultVarName} = new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
@@ -133,8 +133,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             if(property.Type is CodeType propertyType) {
                 var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
                 var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
-                writer.WriteLine($"{(includeElse? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName}) {{");
-                writer.IncreaseIndent();
+                writer.StartBlock($"{(includeElse? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName}) {{");
                 writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
                 writer.CloseBlock();
             }
@@ -158,7 +157,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 writer.CloseBlock();
             }
         }
-        writer.WriteLine("return result;");
+        writer.WriteLine($"return {ResultVarName};");
     }
     private const string DiscriminatorMappingVarName = "mappingValue";
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer){
