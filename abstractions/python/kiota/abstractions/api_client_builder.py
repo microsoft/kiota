@@ -14,20 +14,18 @@ def register_default_serializer(factory_class: SerializationWriterFactory) -> No
     Args:
         factory_class (SerializationWriterFactory):the class of the factory to be registered.
     """
-    base_class = type(factory_class)
-    serializer = base_class()
+    serializer = factory_class()
     SerializationWriterFactoryRegistry().CONTENT_TYPE_ASSOCIATED_FACTORIES[
         serializer.get_valid_content_type()] = serializer
 
 
-def register_default_deserializer(self, factory_class: ParseNodeFactory) -> None:
+def register_default_deserializer(factory_class: ParseNodeFactory) -> None:
     """Registers the default deserializer to the registry.
 
     Args:
         factory_class (ParseNodeFactory):the class of the factory to be registered.
     """
-    base_class = type(factory_class)
-    deserializer = base_class()
+    deserializer = factory_class()
     ParseNodeFactoryRegistry().CONTENT_TYPE_ASSOCIATED_FACTORIES[
         deserializer.get_valid_content_type()] = deserializer
 

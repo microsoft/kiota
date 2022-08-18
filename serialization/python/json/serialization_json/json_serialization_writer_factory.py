@@ -1,5 +1,3 @@
-from pickletools import read_string1
-
 from kiota.abstractions.serialization import SerializationWriter, SerializationWriterFactory
 
 from .json_serialization_writer import JsonSerializationWriter

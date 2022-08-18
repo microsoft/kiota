@@ -49,5 +49,7 @@ class BaseMiddleware(HTTPAdapter):
 
     def send(self, request, **kwargs):
         if self.next is None:
+            # Remove request options. No longer needed.
+            del kwargs['request_options']
             return super().send(request, **kwargs)
         return self.next.send(request, **kwargs)

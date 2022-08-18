@@ -35,7 +35,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
         """
         self._json_node = node
 
-    def get_string_value(self) -> Optional[str]:
+    def get_str_value(self) -> Optional[str]:
         """Gets the string value from the json node
         Returns:
             str: The string value of the node
@@ -55,7 +55,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
             return JsonParseNode(self._json_node[identifier])
         return None
 
-    def get_boolean_value(self) -> Optional[bool]:
+    def get_bool_value(self) -> Optional[bool]:
         """Gets the boolean value of the json node
         Returns:
             bool: The boolean value of the node
@@ -91,12 +91,12 @@ class JsonParseNode(ParseNode, Generic[T, U]):
             return UUID(self._json_node)
         return None
 
-    def get_datetime_offset_value(self) -> Optional[datetime]:
-        """Gets the datetime offset value of the json node
+    def get_datetime_value(self) -> Optional[datetime]:
+        """Gets the datetime value of the json node
         Returns:
-            datetime: The datetime offset value of the node
+            datetime: The datetime value of the node
         """
-        datetime_str = self.get_string_value()
+        datetime_str = self.get_str_value()
         if datetime_str:
             datetime_obj = parser.parse(datetime_str)
             return datetime_obj
@@ -107,7 +107,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
         Returns:
             timedelta: The timedelta value of the node
         """
-        datetime_str = self.get_string_value()
+        datetime_str = self.get_str_value()
         if datetime_str:
             datetime_obj = parser.parse(datetime_str)
             return timedelta(
@@ -120,7 +120,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
         Returns:
             date: The datevalue of the node in terms on year, month, and day.
         """
-        datetime_str = self.get_string_value()
+        datetime_str = self.get_str_value()
         if datetime_str:
             datetime_obj = parser.parse(datetime_str)
             return datetime_obj.date()
@@ -131,25 +131,25 @@ class JsonParseNode(ParseNode, Generic[T, U]):
         Returns:
             time: The time value of the node in terms of hour, minute, and second.
         """
-        datetime_str = self.get_string_value()
+        datetime_str = self.get_str_value()
         if datetime_str:
             datetime_obj = parser.parse(datetime_str)
             return datetime_obj.time()
         return None
 
-    def get_collection_of_primitive_values(self) -> Optional[List[T]]:
+    def get_collection_of_primitive_values(self, primitive_type) -> Optional[List[T]]:
         """Gets the collection of primitive values of the node
         Returns:
             List[T]: The collection of primitive values
         """
 
-        def func(item):  # pylint: disable=too-many-return-statements
+        def func(item):
             generic_type = type(item)
             current_parse_node = JsonParseNode(item)
             if generic_type == bool:
-                return current_parse_node.get_boolean_value()
+                return current_parse_node.get_bool_value()
             if generic_type == str:
-                return current_parse_node.get_string_value()
+                return current_parse_node.get_str_value()
             if generic_type == int:
                 return current_parse_node.get_int_value()
             if generic_type == float:
@@ -157,7 +157,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
             if generic_type == UUID:
                 return current_parse_node.get_uuid_value()
             if generic_type == datetime:
-                return current_parse_node.get_datetime_offset_value()
+                return current_parse_node.get_datetime_value()
             if generic_type == timedelta:
                 return current_parse_node.get_timedelta_value()
             if generic_type == date:
@@ -177,8 +177,8 @@ class JsonParseNode(ParseNode, Generic[T, U]):
         """
         return list(
             map(
-                lambda x: JsonParseNode(json.dumps(x)).get_object_value(factory),  # type: ignore
-                json.loads(self._json_node)
+                lambda x: JsonParseNode(x).get_object_value(factory),  # type: ignore
+                self._json_node
             )
         )
 
@@ -187,7 +187,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
         Returns:
             List[K]: The collection of enum values
         """
-        raw_values = self.get_string_value()
+        raw_values = self.get_str_value()
         if not raw_values:
             return []
 
@@ -200,12 +200,14 @@ class JsonParseNode(ParseNode, Generic[T, U]):
         Returns:
             Optional[K]: The enum value of the node
         """
-        raw_key = self.get_string_value()
+        raw_key = self.get_str_value()
         if raw_key:
+            camel_case_key = raw_key[0].upper() + raw_key[1:]
+        if camel_case_key:
             try:
-                return enum_class[raw_key]  # type: ignore
+                return enum_class[camel_case_key]  # type: ignore
             except KeyError:
-                raise Exception(f'Invalid key: {raw_key} for enum {enum_class._name_}.')
+                raise Exception(f'Invalid key: {camel_case_key} for enum {enum_class}.')
         return None
 
     def get_object_value(self, factory: ParsableFactory) -> U:
@@ -213,7 +215,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
         Returns:
             Parsable: The model object value of the node
         """
-        result = factory.create(self)
+        result = factory.create_from_discriminator_value(self)
         if self.on_before_assign_field_values:
             self.on_before_assign_field_values(result)
         self._assign_field_values(result)
@@ -221,12 +223,12 @@ class JsonParseNode(ParseNode, Generic[T, U]):
             self.on_after_assign_field_values(result)
         return result
 
-    def get_byte_array_value(self) -> Optional[bytes]:
+    def get_bytes_value(self) -> Optional[bytes]:
         """Get a bytearray value from the nodes
         Returns:
             bytearray: The bytearray value from the nodes
         """
-        base64_string = self.get_string_value()
+        base64_string = self.get_str_value()
         if not base64_string:
             return None
         base64_bytes = base64_string.encode("utf-8")
@@ -264,15 +266,14 @@ class JsonParseNode(ParseNode, Generic[T, U]):
 
     def _assign_field_values(self, item: U) -> None:
         fields = item.get_field_deserializers()
-        item_additional_data: Optional[Dict[str, Any]] = None
-        if isinstance(item, AdditionalDataHolder) and item.get_additional_data():
-            item_additional_data = item.get_additional_data()
-        object_dict = json.loads(self._json_node)
+        if isinstance(item, AdditionalDataHolder):
+            item_additional_data = item.additional_data
+        object_dict = self._json_node
         for key, val in object_dict.items():
             snake_case_key = re.sub(r'(?<!^)(?=[A-Z])', '_', key).lower()
             deserializer = fields.get(snake_case_key)
             if deserializer:
                 deserializer(JsonParseNode(val))
             else:
-                if item_additional_data:
-                    item_additional_data[snake_case_key] = val
+                # if item_additional_data:
+                item_additional_data[snake_case_key] = val

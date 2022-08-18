@@ -25,7 +25,7 @@ class JsonSerializationWriter(SerializationWriter):
     def __init__(self):
         self.writer: Dict = {}
 
-    def write_string_value(self, key: Optional[str], value: Optional[str]) -> Optional[str]:
+    def write_str_value(self, key: Optional[str], value: Optional[str]) -> Optional[str]:
         """Writes the specified string value to the stream with an optional given key.
         Args:
             key (Optional[str]): The key to be used for the written value. May be null.
@@ -33,13 +33,11 @@ class JsonSerializationWriter(SerializationWriter):
         """
         if key and (value or value == ''):  #keeps empty strings as valid values
             self.writer[key] = value
-        elif key and not (value or value == ''):
-            self.write_null_value(key)
         elif (value or value == '') and not key:
             return value
         return None
 
-    def write_boolean_value(self, key: Optional[str], value: Optional[bool]) -> Optional[bool]:
+    def write_bool_value(self, key: Optional[str], value: Optional[bool]) -> Optional[bool]:
         """Writes the specified boolean value to the stream with an optional given key.
         Args:
             key (Optional[str]): The key to be used for the written value. May be null.
@@ -47,8 +45,6 @@ class JsonSerializationWriter(SerializationWriter):
         """
         if key and (value or value is False):  # Escape False value from null check
             self.writer[key] = value
-        elif key and not (value or value is False):
-            self.write_null_value(key)
         elif (value or value is False) and not key:
             return value
         return None
@@ -61,8 +57,6 @@ class JsonSerializationWriter(SerializationWriter):
         """
         if key and value:
             self.writer[key] = value
-        elif key and not value:
-            self.write_null_value(key)
         elif value and not key:
             return value
         return None
@@ -75,8 +69,6 @@ class JsonSerializationWriter(SerializationWriter):
         """
         if key and value:
             self.writer[key] = value
-        elif key and not value:
-            self.write_null_value(key)
         elif value and not key:
             return value
         return None
@@ -89,14 +81,11 @@ class JsonSerializationWriter(SerializationWriter):
         """
         if key and value:
             self.writer[key] = str(value)
-        elif key and not value:
-            self.write_null_value(key)
         elif value and not key:
             return str(value)
         return None
 
-    def write_datetime_offset_value(self, key: Optional[str],
-                                    value: Optional[datetime]) -> Optional[str]:
+    def write_datetime_value(self, key: Optional[str], value: Optional[datetime]) -> Optional[str]:
         """Writes the specified datetime offset value to the stream with an optional given key.
         Args:
             key (Optional[str]): The key to be used for the written value. May be null.
@@ -104,8 +93,6 @@ class JsonSerializationWriter(SerializationWriter):
         """
         if key and value:
             self.writer[key] = str(value.isoformat())
-        elif key and not value:
-            self.write_null_value(key)
         elif value and not key:
             return str(value.isoformat())
         return None
@@ -119,8 +106,6 @@ class JsonSerializationWriter(SerializationWriter):
         """
         if key and value:
             self.writer[key] = str(value)
-        elif key and not value:
-            self.write_null_value(key)
         elif value and not key:
             return str(value)
         return None
@@ -133,8 +118,6 @@ class JsonSerializationWriter(SerializationWriter):
         """
         if key and value:
             self.writer[key] = str(value)
-        elif key and not value:
-            self.write_null_value(key)
         elif value and not key:
             return str(value)
         return None
@@ -147,8 +130,6 @@ class JsonSerializationWriter(SerializationWriter):
         """
         if key and value:
             self.writer[key] = str(value)
-        elif key and not value:
-            self.write_null_value(key)
         elif value and not key:
             return str(value)
         return None
@@ -163,14 +144,13 @@ class JsonSerializationWriter(SerializationWriter):
         """
         if key and (values or values == []):  # Empty list is meaningful
             self.writer[key] = list(map(lambda x: self.write_any_value(None, x), values))
-        elif key and not (values or values == []):
-            self.write_null_value(key)
         elif (values or values == []) and not key:
             return list(map(lambda x: self.write_any_value(None, x), values))
         return None
 
-    def write_collection_of_object_values(self, key: Optional[str],
-                                          values: Optional[List[U]]) -> Optional[List[Dict]]:
+    def write_collection_of_object_values(
+        self, key: Optional[str], values: Optional[List[U]]
+    ) -> Optional[List[Optional[Dict]]]:
         """Writes the specified collection of model objects to the stream with an optional
         given key.
         Args:
@@ -178,13 +158,13 @@ class JsonSerializationWriter(SerializationWriter):
             values (Optional[List[U]]): The collection of model objects to be written.
         """
         if key and (values or values == []):
-            self.writer[key] = list(
-                map(lambda x: self.write_object_value(None, x), values)
-            )  # type: ignore
-        elif key and not (values or values == []):
-            self.write_null_value(key)
+            obj_list = list(map(lambda x: self.write_object_value(None, x), values))  # type: ignore
+            if obj_list != [None]:
+                self.writer[key] = obj_list
         elif (values or values == []) and not key:
-            return list(map(lambda x: self.write_object_value(None, x), values))  # type: ignore
+            obj_list = list(map(lambda x: self.write_object_value(None, x), values))  # type: ignore
+            if obj_list != [None]:
+                return obj_list
         return None
 
     def write_collection_of_enum_values(self, key: Optional[str],
@@ -198,15 +178,13 @@ class JsonSerializationWriter(SerializationWriter):
             self.writer[key] = ','.join(
                 list(map(lambda x: self.write_enum_value(None, x), values))  # type: ignore
             )
-        elif key and not (values or values == []):
-            self.write_null_value(key)
         elif (values or values == []) and key:
             return ','.join(
                 list(map(lambda x: self.write_enum_value(None, x), values))  # type: ignore
             )
         return None
 
-    def write_bytearray_value(self, key: Optional[str], value: bytes) -> Optional[str]:
+    def write_bytes_value(self, key: Optional[str], value: bytes) -> Optional[str]:
         """Writes the specified byte array as a base64 string to the stream with an optional
         given key.
         Args:
@@ -217,8 +195,6 @@ class JsonSerializationWriter(SerializationWriter):
             base64_bytes = base64.b64encode(value)
             base64_string = base64_bytes.decode('utf-8')
             self.writer['key'] = base64_string
-        elif key and not value:
-            self.write_null_value(key)
         elif value and not key:
             base64_bytes = base64.b64encode(value)
             base64_string = base64_bytes.decode('utf-8')
@@ -242,8 +218,6 @@ class JsonSerializationWriter(SerializationWriter):
             if self._on_after_object_serialization:
                 self._on_after_object_serialization(value)
             self.writer[key] = temp_writer.writer
-        elif key and not value:
-            self.write_null_value(key)
         elif value and not key:
             if self._on_before_object_serialization:
                 self._on_before_object_serialization(value)
@@ -264,8 +238,6 @@ class JsonSerializationWriter(SerializationWriter):
         """
         if key and value:
             self.writer[key] = value.name
-        elif key and not value:
-            self.write_null_value(key)
         elif value and not key:
             return value.name
         return None
@@ -361,13 +333,11 @@ class JsonSerializationWriter(SerializationWriter):
         """
         if key and value:
             self.writer[key] = value.__dict__
-        elif key and not value:
-            self.write_null_value(key)
         elif value and not key:
             return value.__dict__
         return None
 
-    def write_any_value(self, key: Optional[str], value: Any) -> Any:  # pylint: disable=too-many-return-statements,too-many-branches
+    def write_any_value(self, key: Optional[str], value: Any) -> Any:
         """Writes the specified value to the stream with an optional given key.
         Args:
             key (Optional[str]): The key to be used for the written value. May be null.
@@ -376,9 +346,9 @@ class JsonSerializationWriter(SerializationWriter):
         if key and value:
             value_type = type(value)
             if value_type == bool:
-                self.write_boolean_value(key, value)
+                self.write_bool_value(key, value)
             elif value_type == str:
-                self.write_string_value(key, value)
+                self.write_str_value(key, value)
             elif value_type == int:
                 self.write_int_value(key, value)
             elif value_type == float:
@@ -386,7 +356,7 @@ class JsonSerializationWriter(SerializationWriter):
             elif value_type == UUID:
                 self.write_uuid_value(key, value)
             elif value_type == datetime:
-                self.write_datetime_offset_value(key, value)
+                self.write_datetime_value(key, value)
             elif value_type == timedelta:
                 self.write_timedelta_value(key, value)
             elif value_type == date:
@@ -402,15 +372,12 @@ class JsonSerializationWriter(SerializationWriter):
             else:
                 raise Exception(f"Encountered an unknown type during serialization {value_type}")
 
-        elif key and not value:
-            self.write_null_value(key)
-
         elif value and not key:
             value_type = type(value)
             if value_type == bool:
-                return self.write_boolean_value(None, value)
+                return self.write_bool_value(None, value)
             if value_type == str:
-                return self.write_string_value(None, value)
+                return self.write_str_value(None, value)
             if value_type == int:
                 return self.write_int_value(None, value)
             if value_type == float:
@@ -418,7 +385,7 @@ class JsonSerializationWriter(SerializationWriter):
             if value_type == UUID:
                 return self.write_uuid_value(None, value)
             if value_type == datetime:
-                return self.write_datetime_offset_value(None, value)
+                return self.write_datetime_value(None, value)
             if value_type == timedelta:
                 return self.write_timedelta_value(None, value)
             if value_type == date:

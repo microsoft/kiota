@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Updated test suite and tooling for python abstractions and core packages. [#1761](https://github.com/microsoft/kiota/issues/367)
 - Added support for no-content responses in python abstractions and http packages. [#1630](https://github.com/microsoft/kiota/issues/1459)
 - Added support for vendor-specific content types in python. [#1631](https://github.com/microsoft/kiota/issues/1463)
 - Simplified field deserializers for json in Python. [#1632](https://github.com/microsoft/kiota/issues/1492)
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where duplicate 'require' statements are generated for inner classes in the middle of the file (Ruby). [#1649](https://github.com/microsoft/kiota/issues/1649)
 - Split parsable interface and additional property/data interface in Ruby. [#1654](https://github.com/microsoft/kiota/issues/1654)
 - Changed format of datetimes in Go to be converted to ISO 8601 by default when place in path parameters(Go)
+- Reduce code verbosity on Go Getters and Setters. [G0#26][https://github.com/microsoftgraph/msgraph-sdk-go-core/issues/26]
 
 ## [0.3.0] - 2022-07-08
 

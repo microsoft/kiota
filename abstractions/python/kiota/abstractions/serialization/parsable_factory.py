@@ -9,7 +9,7 @@ class ParsableFactory(Parsable):
     """
 
     @staticmethod
-    def create(parse_node: Optional[ParseNode]) -> U:
+    def create_from_discriminator_value(parse_node: Optional[ParseNode]) -> U:
         """Create a new parsable object from the given serialized data.
 
         Args:

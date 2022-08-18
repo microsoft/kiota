@@ -12,24 +12,24 @@ from ..helpers import OfficeLocation, User
 @pytest.fixture
 def user_1():
     user = User()
-    user.set_age(31)
-    user.set_is_active(True)
-    user.set_display_name("Jane Doe")
+    user.age = 31
+    user.is_active = True
+    user.display_name = "Jane Doe"
     return user
 
 
 @pytest.fixture
 def user_2():
     user = User()
-    user.set_age(32)
-    user.set_is_active(False)
-    user.set_display_name("John Doe")
+    user.age = 32
+    user.is_active = False
+    user.display_name = "John Doe"
     return user
 
 
-def test_write_string_value():
+def test_write_str_value():
     json_serialization_writer = JsonSerializationWriter()
-    json_serialization_writer.write_string_value("displayName", "Adele Vance")
+    json_serialization_writer.write_str_value("displayName", "Adele Vance")
     stream = json_serialization_writer.get_serialized_content()
     content = stream.read()
     content_string = content.decode('utf-8')
@@ -38,13 +38,13 @@ def test_write_string_value():
 
 def test_write_string_value_no_key():
     json_serialization_writer = JsonSerializationWriter()
-    value = json_serialization_writer.write_string_value(None, "Adele Vance")
+    value = json_serialization_writer.write_str_value(None, "Adele Vance")
     assert value == "Adele Vance"
 
 
-def test_write_boolean_value():
+def test_write_bool_value():
     json_serialization_writer = JsonSerializationWriter()
-    json_serialization_writer.write_boolean_value("isActive", True)
+    json_serialization_writer.write_bool_value("isActive", True)
     stream = json_serialization_writer.get_serialized_content()
     content = stream.read()
     content_string = content.decode('utf-8')
@@ -78,9 +78,9 @@ def test_write_uuid_value():
     assert content_string == '{"id": "8f841f30-e6e3-439a-a812-ebd369559c36"}'
 
 
-def test_write_datetime_offset_value():
+def test_write_datetime_value():
     json_serialization_writer = JsonSerializationWriter()
-    json_serialization_writer.write_datetime_offset_value(
+    json_serialization_writer.write_datetime_value(
         "updatedAt", parser.parse('2022-01-27T12:59:45.596117')
     )
     stream = json_serialization_writer.get_serialized_content()
@@ -139,18 +139,18 @@ def test_write_collection_of_object_values(user_1, user_2):
     stream = json_serialization_writer.get_serialized_content()
     content = stream.read()
     content_string = content.decode('utf-8')
-    assert content_string == '{"users": [{"id": null, "display_name": "Jane Doe", "office_location": null, "updated_at": null, "birthday": null, "business_phones": null, "mobile_phone": null, "is_active": true, "age": 31, "gpa": null}, {"id": null, "display_name": "John Doe", "office_location": null, "updated_at": null, "birthday": null, "business_phones": null, "mobile_phone": null, "is_active": null, "age": 32, "gpa": null}]}'
+    assert content_string == '{"users": [{"display_name": "Jane Doe", "is_active": true, "age": 31}, {"display_name": "John Doe", "is_active": false, "age": 32}]}'
 
 
 def test_write_collection_of_enum_values():
     json_serialization_writer = JsonSerializationWriter()
     json_serialization_writer.write_collection_of_enum_values(
-        "officeLocation", [OfficeLocation.dunhill, OfficeLocation.oval]
+        "officeLocation", [OfficeLocation.Dunhill, OfficeLocation.Oval]
     )
     stream = json_serialization_writer.get_serialized_content()
     content = stream.read()
     content_string = content.decode('utf-8')
-    assert content_string == '{"officeLocation": "dunhill,oval"}'
+    assert content_string == '{"officeLocation": "Dunhill,Oval"}'
 
 
 def test_write_object_value(user_1):
@@ -159,16 +159,16 @@ def test_write_object_value(user_1):
     stream = json_serialization_writer.get_serialized_content()
     content = stream.read()
     content_string = content.decode('utf-8')
-    assert content_string == '{"user1": {"id": null, "display_name": "Jane Doe", "office_location": null, "updated_at": null, "birthday": null, "business_phones": null, "mobile_phone": null, "is_active": true, "age": 31, "gpa": null}}'
+    assert content_string == '{"user1": {"display_name": "Jane Doe", "is_active": true, "age": 31}}'
 
 
 def test_write_enum_value():
     json_serialization_writer = JsonSerializationWriter()
-    json_serialization_writer.write_enum_value("officeLocation", OfficeLocation.dunhill)
+    json_serialization_writer.write_enum_value("officeLocation", OfficeLocation.Dunhill)
     stream = json_serialization_writer.get_serialized_content()
     content = stream.read()
     content_string = content.decode('utf-8')
-    assert content_string == '{"officeLocation": "dunhill"}'
+    assert content_string == '{"officeLocation": "Dunhill"}'
 
 
 def test_write_null_value():

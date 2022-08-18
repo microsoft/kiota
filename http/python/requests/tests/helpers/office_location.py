@@ -2,5 +2,5 @@ from enum import Enum
 
 
 class OfficeLocation(Enum):
-    dunhill = 'dunhill towers'
-    oval = 'the oval'
+    Dunhill = 'dunhill towers'
+    Oval = 'the oval'
