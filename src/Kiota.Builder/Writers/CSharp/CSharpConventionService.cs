@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -143,7 +143,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 var rootNs = ns?.GetRootNamespace();
                 while (ns is not null && ns != rootNs && !hasChildWithName)
                 {
-                    hasChildWithName = ns.GetChildElements(true).OfType<CodeClass>().Any(c => c.Name?.Equals(typeName) == true);
+                    hasChildWithName = ns.GetChildElements(true).OfType<CodeClass>().Any(c => c.Name?.Equals(typeName, StringComparison.OrdinalIgnoreCase) == true);
                     ns = ns.Parent is CodeNamespace n ? n : (ns.GetImmediateParentOfType<CodeNamespace>());
                 }
             }
