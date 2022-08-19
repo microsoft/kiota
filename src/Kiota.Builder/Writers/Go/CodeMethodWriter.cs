@@ -394,7 +394,55 @@ namespace Kiota.Builder.Writers.Go {
                 (idParameter.Type, codeElement.OriginalIndexer.SerializationName, "id"));
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, urlTemplateVarName: conventions.TempDictionaryVarName);
         }
-        private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
+        private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits)
+        {
+            if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+                WriteDeserializerBodyForUnionModel(codeElement, parentClass, writer);
+            else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+                WriteDeserializerBodyForIntersectionModel(codeElement, parentClass, writer);
+            else
+                WriteDeserializerBodyForInheritedModel(codeElement, parentClass, writer, inherits);
+        }
+        private static void WriteDeserializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
+        {
+            var includeElse = false;
+            foreach (var otherProp in parentClass
+                                            .Properties
+                                            .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                            .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
+                                            .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                            .ThenBy(static x => x.Name))
+            {
+                writer.StartBlock($"{(includeElse? "else " : string.Empty)}if m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}() != nil {{");
+                writer.WriteLine($"return m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}().{method.Name.ToFirstCharacterUpperCase()}()");
+                writer.CloseBlock();
+                if(!includeElse)
+                    includeElse = true;
+            }
+            writer.WriteLine($"return make({method.ReturnType.Name})");
+        }
+        private void WriteDeserializerBodyForIntersectionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
+        {
+            var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                                .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
+                                                .ToArray();
+            if(complexProperties.Any()) {
+                var propertiesNames = complexProperties
+                                    .Select(static x => x.Getter.Name.ToFirstCharacterUpperCase())
+                                    .OrderBy(static x => x)
+                                    .ToArray();
+                var propertiesNamesAsConditions = propertiesNames
+                                    .Select(static x => $"m.{x}() != nil")
+                                    .Aggregate(static (x, y) => $"{x} || {y}");
+                writer.StartBlock($"if {propertiesNamesAsConditions} {{");
+                var propertiesNamesAsArgument = propertiesNames
+                                    .Aggregate(static (x, y) => $"m.{x}(), m.{y}()");
+                writer.WriteLine($"return {conventions.SerializationHash}.MergeDeserializersForIntersectionWrapper({propertiesNamesAsArgument})");//TODO: import in refiner
+                writer.CloseBlock();
+            }
+            writer.WriteLine($"return make({method.ReturnType.Name})");
+        }
+        private void WriteDeserializerBodyForInheritedModel(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType);
             if(inherits)
                 writer.WriteLine($"res := m.{parentClass.StartBlock.Inherits.Name.ToFirstCharacterUpperCase()}.{codeElement.Name.ToFirstCharacterUpperCase()}()");
@@ -403,7 +451,7 @@ namespace Kiota.Builder.Writers.Go {
             if(fieldToSerialize.Any()) {
                 var parsableImportSymbol = GetConversionHelperMethodImport(parentClass, "ParseNode");
                 fieldToSerialize
-                        .OrderBy(x => x.Name)
+                        .OrderBy(static x => x.Name)
                         .ToList()
                         .ForEach(x => WriteFieldDeserializer(x, writer, parentClass, parsableImportSymbol));
             }

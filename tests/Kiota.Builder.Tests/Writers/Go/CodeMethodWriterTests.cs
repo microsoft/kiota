@@ -935,6 +935,46 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesUnionDeSerializerBody() {
+        var wrapper = AddUnionTypeWrapper();
+        var deserializationMethod = wrapper.AddMethod(new CodeMethod{
+            Name = "GetFieldDeserializers",
+            Kind = CodeMethodKind.Deserializer,
+            IsAsync = false,
+            ReturnType = new CodeType {
+                Name = "map[string, func (ParseNode) (error)]",
+            },
+        }).First();
+        writer.Write(deserializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("res :=", result);
+        Assert.Contains("m.GetComplexType1Value() != nil", result);
+        Assert.Contains("return m.GetComplexType1Value().GetFieldDeserializers()", result);
+        Assert.Contains("make(map[string, func (ParseNode) (error)])", result);
+        AssertExtensions.Before("return m.GetComplexType1Value().GetFieldDeserializers()", "make(map[string, func (ParseNode) (error)])", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesIntersectionDeSerializerBody() {
+        var wrapper = AddIntersectionTypeWrapper();
+        var deserializationMethod = wrapper.AddMethod(new CodeMethod{
+            Name = "GetFieldDeserializers",
+            Kind = CodeMethodKind.Deserializer,
+            IsAsync = false,
+            ReturnType = new CodeType {
+                Name = "map[string, func (ParseNode) (error)]",
+            },
+        }).First();
+        writer.Write(deserializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("res :=", result);
+        Assert.Contains("m.GetComplexType1Value() != nil || m.GetComplexType3Value() != nil", result);
+        Assert.Contains($"return {new GoConventionService().SerializationHash}.MergeDeserializersForIntersectionWrapper(m.GetComplexType1Value(), m.GetComplexType3Value())", result);
+        Assert.Contains("make(map[string, func (ParseNode) (error)])", result);
+        AssertExtensions.Before($"return {new GoConventionService().SerializationHash}.MergeDeserializersForIntersectionWrapper(m.GetComplexType1Value(), m.GetComplexType3Value())", "make(map[string, func (ParseNode) (error)])", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesInheritedSerializerBody() {
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;

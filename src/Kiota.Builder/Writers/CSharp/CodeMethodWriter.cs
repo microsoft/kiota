@@ -258,7 +258,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
             WriteDeserializerBodyForUnionModel(codeElement, parentClass, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
-            WriteDeserializerBodyForIntersectionModel(codeElement, parentClass, writer);
+            WriteDeserializerBodyForIntersectionModel(parentClass, writer);
         else
             WriteDeserializerBodyForInheritedModel(shouldHide, codeElement, parentClass, writer);
     }
@@ -280,7 +280,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         }
         writer.WriteLine($"return {DefaultDeserializerValue}();");
     }
-    private void WriteDeserializerBodyForIntersectionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
+    private void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
     {
         var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
