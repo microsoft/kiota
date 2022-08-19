@@ -79,7 +79,7 @@ namespace Kiota.Builder.Writers.Go {
         }
         private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer){
             var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
-            if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+            if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType || parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
                 writer.WriteLine($"{ResultVarName} := New{codeElement.Parent.Name.ToFirstCharacterUpperCase()}()");
             writer.StartBlock($"if {parseNodeParameter.Name.ToFirstCharacterLowerCase()} != nil {{");
             var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorBody && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
@@ -106,8 +106,9 @@ namespace Kiota.Builder.Writers.Go {
                 writer.CloseBlock();
             }
 
-            if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType) {
-                WriteFactoryMethodBodyForUnionModelForUnDiscriminatedTypes(parentClass, parseNodeParameter, writer);
+            if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType || parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType) {
+                if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+                    WriteFactoryMethodBodyForUnionModelForUnDiscriminatedTypes(parentClass, parseNodeParameter, writer);
                 writer.CloseBlock();
                 writer.WriteLine($"return {ResultVarName}, nil");
             } else {
@@ -126,6 +127,44 @@ namespace Kiota.Builder.Writers.Go {
             writer.CloseBlock();
         }
         private void WriteFactoryMethodBodyForIntersectionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer) {
+            var includeElse = false;
+            foreach(var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                                .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
+                                                .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
+                                                .ThenBy(static x => x.Name)) {
+                if(property.Type is CodeType propertyType) {
+                    var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
+                    var valueVarName = "val";
+                    writer.StartBlock($"{(includeElse? "else " : string.Empty)}if {valueVarName}, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, parentClass)}; {valueVarName} != nil {{");
+                    if(propertyType.IsCollection) {
+                        var isInterfaceType = propertyType.TypeDefinition is CodeInterface;
+                        var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
+                        WriteCollectionCast(propertyTypeImportName, valueVarName, "cast", writer, isInterfaceType ? string.Empty : "*", !isInterfaceType);
+                        valueVarName = "cast";
+                    }
+                    writer.WriteLine($"{ResultVarName}.{property.Setter.Name.ToFirstCharacterUpperCase()}({valueVarName})");
+                    writer.CloseBlock();
+                }
+                if(!includeElse)
+                    includeElse = true;
+            }
+            var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                                .Select(static x => new Tuple<CodeProperty, CodeType>(x, x.Type as CodeType))
+                                                .Where(static x => x.Item2.TypeDefinition is CodeClass && !x.Item2.IsCollection)
+                                                .ToArray();
+            if(complexProperties.Any()) {
+                if(includeElse) {
+                    writer.WriteLine("else {");
+                    writer.IncreaseIndent();
+                }
+                foreach(var property in complexProperties) {
+                    var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(property.Item2.Name, StringComparison.OrdinalIgnoreCase));
+                    writer.WriteLine($"{ResultVarName}.{property.Item1.Setter.Name.ToFirstCharacterUpperCase()}({conventions.GetImportedStaticMethodName(property.Item2, codeElement)}())");
+                }
+                if(includeElse) {
+                    writer.CloseBlock();
+                }
+            }
         }
         private const string ResultVarName = "result";
         private const string DiscriminatorMappingVarName = "mappingValue";

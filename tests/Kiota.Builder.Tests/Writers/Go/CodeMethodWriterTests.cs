@@ -317,22 +317,70 @@ public class CodeMethodWriterTests : IDisposable {
         intersectionTypeWrapper.AddProperty(new CodeProperty {
             Name = "ComplexType1Value",
             Type = cType1,
-            Kind = CodePropertyKind.Custom
+            Kind = CodePropertyKind.Custom,
+            Setter = new CodeMethod {
+                Name = "SetComplexType1Value",
+                ReturnType = new CodeType {
+                    Name = "void"
+                },
+                Kind = CodeMethodKind.Setter,
+            },
+            Getter = new CodeMethod {
+                Name = "GetComplexType1Value",
+                ReturnType = cType1,
+                Kind = CodeMethodKind.Getter,
+            }
         });
         intersectionTypeWrapper.AddProperty(new CodeProperty {
             Name = "ComplexType2Value",
             Type = cType2,
-            Kind = CodePropertyKind.Custom
+            Kind = CodePropertyKind.Custom,
+            Setter = new CodeMethod {
+                Name = "SetComplexType2Value",
+                ReturnType = new CodeType {
+                    Name = "void"
+                },
+                Kind = CodeMethodKind.Setter,
+            },
+            Getter = new CodeMethod {
+                Name = "GetComplexType2Value",
+                ReturnType = cType2,
+                Kind = CodeMethodKind.Getter,
+            }
         });
         intersectionTypeWrapper.AddProperty(new CodeProperty {
             Name = "ComplexType3Value",
             Type = cType3,
-            Kind = CodePropertyKind.Custom
+            Kind = CodePropertyKind.Custom,
+            Setter = new CodeMethod {
+                Name = "SetComplexType3Value",
+                ReturnType = new CodeType {
+                    Name = "void"
+                },
+                Kind = CodeMethodKind.Setter,
+            },
+            Getter = new CodeMethod {
+                Name = "GetComplexType3Value",
+                ReturnType = cType3,
+                Kind = CodeMethodKind.Getter,
+            }
         });
         intersectionTypeWrapper.AddProperty(new CodeProperty {
             Name = "StringValue",
             Type = sType,
-            Kind = CodePropertyKind.Custom
+            Kind = CodePropertyKind.Custom,
+            Setter = new CodeMethod {
+                Name = "SetStringValue",
+                ReturnType = new CodeType {
+                    Name = "void"
+                },
+                Kind = CodeMethodKind.Setter,
+            },
+            Getter = new CodeMethod {
+                Name = "GetStringValue",
+                ReturnType = sType,
+                Kind = CodeMethodKind.Getter,
+            }
         });
         return intersectionTypeWrapper;
     }
@@ -570,6 +618,48 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.OutsideOfBlock("else if val, err := parseNode.GetCollectionOfObjectValues(CreateComplexType2FromDiscriminatorValue); val != ni", "mappingValue != nil", result);
         AssertExtensions.OutsideOfBlock("return result, nil", "mappingValueNode != nil", result);
         AssertExtensions.OutsideOfBlock("result := NewUnionTypeWrapper()", "mappingValueNode != nil", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesModelFactoryBodyForIntersectionModels() {
+        var wrapper = AddIntersectionTypeWrapper();
+        var factoryMethod = wrapper.AddMethod(new CodeMethod{
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType {
+                Name = "IntersectionTypeWrapper",
+                TypeDefinition = wrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType {
+                Name = "ParseNode"
+            }
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("mappingValueNode, err := parseNode.GetChildNode(\"@odata.type\")", result);
+        Assert.DoesNotContain("if mappingValueNode != nil {", result);
+        Assert.DoesNotContain("mappingValue, err := mappingValueNode.GetStringValue()", result);
+        Assert.DoesNotContain("if mappingValue != nil {", result);
+        Assert.DoesNotContain("switch *mappingValue {", result);
+        Assert.DoesNotContain("case \"ns.childmodel\":", result);
+        Assert.Contains("result := NewIntersectionTypeWrapper()", result);
+        Assert.DoesNotContain("if strings.EqualFold(*mappingValue, \"#kiota.complexType1\") {", result);
+        Assert.Contains("result.SetComplexType1Value(NewComplexType1())", result);
+        Assert.Contains("result.SetComplexType3Value(NewComplexType3())", result);
+        Assert.Contains("if val, err := parseNode.GetStringValue(); val != nil {", result);
+        Assert.Contains("result.SetStringValue(val)", result);
+        Assert.Contains("else if val, err := parseNode.GetCollectionOfObjectValues(CreateComplexType2FromDiscriminatorValue); val != nil {", result);
+        Assert.Contains("cast := make([]ComplexType2, len(val))", result);
+        Assert.Contains("for i, v := range val", result);
+        Assert.Contains("cast[i] = *(v.(*ComplexType2))", result);
+        Assert.Contains("result.SetComplexType2Value(cast)", result);
+        Assert.Contains("return result, nil", result);
+        Assert.DoesNotContain("return NewUnionTypeWrapper(), nil", result);
+        AssertExtensions.Before("parseNode.GetStringValue()", "GetCollectionOfObjectValues(CreateComplexType2FromDiscriminatorValue)", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
