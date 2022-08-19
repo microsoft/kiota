@@ -556,13 +556,20 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("result := NewUnionTypeWrapper()", result);
         Assert.Contains("if strings.EqualFold(*mappingValue, \"#kiota.complexType1\") {", result);
         Assert.Contains("result.SetComplexType1Value(NewComplexType1())", result);
-        Assert.Contains("else if val, err := parseNode.GetStringValue(); val != nil {", result);//TODO this should be out of the mappingValueNode block
+        Assert.Contains("if val, err := parseNode.GetStringValue(); val != nil {", result);
         Assert.Contains("result.SetStringValue(val)", result);
-        Assert.Contains("else if val, err := parseNode.GetCollectionOfObjectValues(CreateComplexType2FromDiscriminatorValue); val != nil {", result);//TODO this should be out of the mappingValueNode block
-        Assert.Contains("result.SetComposedType3(cast)", result);//TODO test the collection cast is present
-        Assert.Contains("return result, nil", result);//TODO this should be out of the mappingValueNode block
+        Assert.Contains("else if val, err := parseNode.GetCollectionOfObjectValues(CreateComplexType2FromDiscriminatorValue); val != nil {", result);
+        Assert.Contains("cast := make([]ComplexType2, len(val))", result);
+        Assert.Contains("for i, v := range val", result);
+        Assert.Contains("cast[i] = *(v.(*ComplexType2))", result);
+        Assert.Contains("result.SetComplexType2Value(cast)", result);
+        Assert.Contains("return result, nil", result);
         Assert.DoesNotContain("return NewUnionTypeWrapper(), nil", result);
         AssertExtensions.Before("parseNode.GetStringValue()", "GetCollectionOfObjectValues(CreateComplexType2FromDiscriminatorValue)", result);
+        AssertExtensions.OutsideOfBlock("if val, err := parseNode.GetStringValue(); val != nil", "mappingValue != nil", result);
+        AssertExtensions.OutsideOfBlock("else if val, err := parseNode.GetCollectionOfObjectValues(CreateComplexType2FromDiscriminatorValue); val != ni", "mappingValue != nil", result);
+        AssertExtensions.OutsideOfBlock("return result, nil", "mappingValueNode != nil", result);
+        AssertExtensions.OutsideOfBlock("result := NewUnionTypeWrapper()", "mappingValueNode != nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

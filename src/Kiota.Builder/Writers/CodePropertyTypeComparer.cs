@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kiota.Builder.Writers.CSharp;
+namespace Kiota.Builder.Writers;
 
 internal class CodePropertyTypeComparer : IComparer<CodeProperty>
 {

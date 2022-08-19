@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Kiota.Builder.Writers.CSharp;
+namespace Kiota.Builder.Writers;
 internal class CodeTypeComparer : IComparer<CodeTypeBase>
 {
     private readonly bool OrderByDesc;
