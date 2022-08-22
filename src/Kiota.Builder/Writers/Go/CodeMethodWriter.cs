@@ -129,14 +129,16 @@ namespace Kiota.Builder.Writers.Go {
         }
         private void WriteFactoryMethodBodyForIntersectionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer) {
             var includeElse = false;
-            foreach(var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
-                                                .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
-                                                .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
-                                                .ThenBy(static x => x.Name)) {
+            var otherProps = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                        .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
+                                        .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
+                                        .ThenBy(static x => x.Name)
+                                        .ToArray();
+            foreach(var property in otherProps) {
                 if(property.Type is CodeType propertyType) {
                     var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
                     var valueVarName = "val";
-                    writer.StartBlock($"{(includeElse? "else " : string.Empty)}if {valueVarName}, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, parentClass)}; {valueVarName} != nil {{");
+                    writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if {valueVarName}, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, parentClass)}; {valueVarName} != nil {{");
                     if(propertyType.IsCollection) {
                         var isInterfaceType = propertyType.TypeDefinition is CodeInterface;
                         var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
@@ -155,7 +157,7 @@ namespace Kiota.Builder.Writers.Go {
                                                 .ToArray();
             if(complexProperties.Any()) {
                 if(includeElse) {
-                    writer.WriteLine("else {");
+                    writer.WriteLine("} else {");
                     writer.IncreaseIndent();
                 }
                 foreach(var property in complexProperties) {
@@ -165,7 +167,8 @@ namespace Kiota.Builder.Writers.Go {
                 if(includeElse) {
                     writer.CloseBlock();
                 }
-            }
+            } else if (otherProps.Any())
+                writer.CloseBlock(decreaseIndent: false);
         }
         private const string ResultVarName = "result";
         private const string DiscriminatorMappingVarName = "mappingValue";
@@ -173,28 +176,34 @@ namespace Kiota.Builder.Writers.Go {
         private static readonly CodePropertyTypeComparer CodePropertyTypeBackwardComparer = new(true);
         private void WriteFactoryMethodBodyForUnionModelForDiscriminatedTypes(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
             var includeElse = false;
-            foreach(var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
-                                                .Where(static x => x.Type is CodeType xType && !xType.IsCollection && (xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeInterface))
-                                                .OrderBy(static x => x, CodePropertyTypeForwardComparer)
-                                                .ThenBy(static x => x.Name)) {
+            var otherProps = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                        .Where(static x => x.Type is CodeType xType && !xType.IsCollection && (xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeInterface))
+                                        .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                        .ThenBy(static x => x.Name)
+                                        .ToArray();
+            foreach(var property in otherProps) {
                 var propertyType = property.Type as CodeType;
                 var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-                writer.StartBlock($"{(includeElse? "else " : string.Empty)}if strings.EqualFold(*{DiscriminatorMappingVarName}, \"{mappedType.Key}\") {{");
+                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if strings.EqualFold(*{DiscriminatorMappingVarName}, \"{mappedType.Key}\") {{");
                 writer.WriteLine($"{ResultVarName}.{property.Setter.Name.ToFirstCharacterUpperCase()}({conventions.GetImportedStaticMethodName(propertyType, codeElement)}())");
-                writer.CloseBlock();
+                writer.DecreaseIndent();
                 if(!includeElse)
                     includeElse = true;
             }
+            if(otherProps.Any())
+                writer.CloseBlock(decreaseIndent: false);
         }
         private void WriteFactoryMethodBodyForUnionModelForUnDiscriminatedTypes(CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer) {
             var includeElse = false;
-            foreach(var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
-                                                .Where(static x => x.Type is CodeType xType && (xType.IsCollection || xType.TypeDefinition is null || xType.TypeDefinition is CodeEnum))
-                                                .OrderBy(static x => x, CodePropertyTypeForwardComparer)
-                                                .ThenBy(static x => x.Name)) {
+            var otherProps = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                        .Where(static x => x.Type is CodeType xType && (xType.IsCollection || xType.TypeDefinition is null || xType.TypeDefinition is CodeEnum))
+                                        .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                        .ThenBy(static x => x.Name)
+                                        .ToArray();
+            foreach(var property in otherProps) {
                 var valueVarName = "val";
                 var propertyType = property.Type as CodeType;
-                writer.StartBlock($"{(includeElse? "else " : string.Empty)}if {valueVarName}, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, parentClass)}; {valueVarName} != nil {{");
+                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if {valueVarName}, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, parentClass)}; {valueVarName} != nil {{");
                 if(propertyType.IsCollection) {
                     var isInterfaceType = propertyType.TypeDefinition is CodeInterface;
                     var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
@@ -202,10 +211,12 @@ namespace Kiota.Builder.Writers.Go {
                     valueVarName = "cast";
                 }
                 writer.WriteLine($"{ResultVarName}.{property.Setter.Name.ToFirstCharacterUpperCase()}({valueVarName})");
-                writer.CloseBlock();   
+                writer.DecreaseIndent();
                 if(!includeElse)
                     includeElse = true;
             }
+            if(otherProps.Any())
+                writer.CloseBlock(decreaseIndent: false);
         }
 
         private void WriteMethodDocumentation(CodeMethod code, string methodName, LanguageWriter writer) {
@@ -258,32 +269,38 @@ namespace Kiota.Builder.Writers.Go {
         private void WriteSerializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer)
         {
             var includeElse = false;
-            foreach (var otherProp in parentClass
-                                            .Properties
-                                            .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
-                                            .OrderBy(static x => x, CodePropertyTypeForwardComparer)
-                                            .ThenBy(static x => x.Name))
+            var otherProps = parentClass
+                                    .Properties
+                                    .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                    .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                    .ThenBy(static x => x.Name)
+                                    .ToArray();
+            foreach (var otherProp in otherProps)
             {
-                writer.StartBlock($"{(includeElse? "else " : string.Empty)}if m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}() != nil {{");
+                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}() != nil {{");
                 WriteSerializationMethodCall(otherProp.Type, parentClass, string.Empty, $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", true, writer);
-                writer.CloseBlock();
+                writer.DecreaseIndent();
                 if(!includeElse)
                     includeElse = true;
             }
+            if(otherProps.Any())
+                writer.CloseBlock(decreaseIndent: false);
         }
         private void WriteSerializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
         {
             var includeElse = false;
-            foreach (var otherProp in parentClass
-                                            .Properties
-                                            .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
-                                            .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
-                                            .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
-                                            .ThenBy(static x => x.Name))
+            var otherProps = parentClass
+                                    .Properties
+                                    .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                    .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
+                                    .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
+                                    .ThenBy(static x => x.Name)
+                                    .ToArray();
+            foreach (var otherProp in otherProps)
             {
-                writer.StartBlock($"{(includeElse? "else " : string.Empty)}if m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}() != nil {{");
+                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}() != nil {{");
                 WriteSerializationMethodCall(otherProp.Type, parentClass, string.Empty, $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", true, writer);
-                writer.CloseBlock();
+                writer.DecreaseIndent();
                 if(!includeElse)
                     includeElse = true;
             }
@@ -292,7 +309,7 @@ namespace Kiota.Builder.Writers.Go {
                                                 .ToArray();
             if(complexProperties.Any()) {
                 if(includeElse) {
-                    writer.WriteLine("else {");
+                    writer.WriteLine("} else {");
                     writer.IncreaseIndent();
                 }
                 var propertiesNames = complexProperties
@@ -303,6 +320,8 @@ namespace Kiota.Builder.Writers.Go {
                 if(includeElse) {
                     writer.CloseBlock();
                 }
+            } else if(otherProps.Any()) {
+                writer.CloseBlock(decreaseIndent: false);
             }
         }
         private static string errorVarDeclaration(bool shouldDeclareErrorVar) => shouldDeclareErrorVar ? ":" : string.Empty;
@@ -465,19 +484,23 @@ namespace Kiota.Builder.Writers.Go {
         private static void WriteDeserializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
         {
             var includeElse = false;
-            foreach (var otherProp in parentClass
-                                            .Properties
-                                            .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
-                                            .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
-                                            .OrderBy(static x => x, CodePropertyTypeForwardComparer)
-                                            .ThenBy(static x => x.Name))
+            var otherProps = parentClass
+                                    .Properties
+                                    .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                    .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
+                                    .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                    .ThenBy(static x => x.Name)
+                                    .ToArray();
+            foreach (var otherProp in otherProps)
             {
-                writer.StartBlock($"{(includeElse? "else " : string.Empty)}if m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}() != nil {{");
+                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}() != nil {{");
                 writer.WriteLine($"return m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}().{method.Name.ToFirstCharacterUpperCase()}()");
-                writer.CloseBlock();
+                writer.DecreaseIndent();
                 if(!includeElse)
                     includeElse = true;
             }
+            if(otherProps.Any())
+                writer.CloseBlock(decreaseIndent: false);
             writer.WriteLine($"return make({method.ReturnType.Name})");
         }
         private void WriteDeserializerBodyForIntersectionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
