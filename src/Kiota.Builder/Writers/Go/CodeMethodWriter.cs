@@ -81,7 +81,8 @@ namespace Kiota.Builder.Writers.Go {
             var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
             if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType || parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
                 writer.WriteLine($"{ResultVarName} := New{codeElement.Parent.Name.ToFirstCharacterUpperCase()}()");
-            writer.StartBlock($"if {parseNodeParameter.Name.ToFirstCharacterLowerCase()} != nil {{");
+            if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorBody)
+                writer.StartBlock($"if {parseNodeParameter.Name.ToFirstCharacterLowerCase()} != nil {{");
             var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorBody && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
             if(writeDiscriminatorValueRead) {
                 writer.WriteLine($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")");
@@ -98,8 +99,6 @@ namespace Kiota.Builder.Writers.Go {
                 WriteFactoryMethodBodyForUnionModelForDiscriminatedTypes(codeElement, parentClass, writer);
             else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
                 WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
-            else
-                writer.WriteLine($"return New{codeElement.Parent.Name.ToFirstCharacterUpperCase()}(), nil");
 
             if(writeDiscriminatorValueRead) {
                 writer.CloseBlock();
@@ -109,10 +108,12 @@ namespace Kiota.Builder.Writers.Go {
             if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType || parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType) {
                 if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
                     WriteFactoryMethodBodyForUnionModelForUnDiscriminatedTypes(parentClass, parseNodeParameter, writer);
-                writer.CloseBlock();
+                if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorBody)
+                    writer.CloseBlock();
                 writer.WriteLine($"return {ResultVarName}, nil");
             } else {
-                writer.CloseBlock();
+                if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorBody)
+                    writer.CloseBlock();
                 writer.WriteLine($"return New{codeElement.Parent.Name.ToFirstCharacterUpperCase()}(), nil");
             }
         }
