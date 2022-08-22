@@ -18,16 +18,17 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
             var importSegments = codeElement
                                 .Usings
                                 .Where(x => !x.Declaration.IsExternal && !x.Name.Equals(ns.Name, StringComparison.OrdinalIgnoreCase))
-                                .Select(x => x.GetInternalNamespaceImport())
-                                .Select(x => new Tuple<string, string>(x.GetNamespaceImportSymbol(), x))
+                                .Where(x => x.Declaration.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>() != ns)
+                                .Select(static x => x.GetInternalNamespaceImport())
+                                .Select(static x => new Tuple<string, string>(x.GetNamespaceImportSymbol(), x))
                                 .Distinct()
                                 .Union(codeElement
                                     .Usings
-                                    .Where(x => x.Declaration.IsExternal)
-                                    .Select(x => new Tuple<string, string>(x.Name.StartsWith("*") ? x.Name[1..] : x.Declaration.Name.GetNamespaceImportSymbol(), x.Declaration.Name))
+                                    .Where(static x => x.Declaration.IsExternal)
+                                    .Select(static x => new Tuple<string, string>(x.Name.StartsWith("*") ? x.Name[1..] : x.Declaration.Name.GetNamespaceImportSymbol(), x.Declaration.Name))
                                     .Distinct())
-                                .OrderBy(x => x.Item2.Count(y => y == '/'))
-                                .ThenBy(x => x)
+                                .OrderBy(static x => x.Item2.Count(static y => y == '/'))
+                                .ThenBy(static x => x)
                                 .ToList();
             if (importSegments.Any())
             {
