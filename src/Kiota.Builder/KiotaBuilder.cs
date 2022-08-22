@@ -966,7 +966,7 @@ public class KiotaBuilder
     private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
     {
         CodeTypeBase type = GetPrimitiveType(schema?.Items, string.Empty);
-        if (type == null || string.IsNullOrEmpty(type.Name))
+        if (string.IsNullOrEmpty(type?.Name))
         {
             var targetNamespace = schema?.Items == null ? codeNamespace : GetShortestNamespace(codeNamespace, schema.Items);
             type = CreateModelDeclarations(currentNode, schema?.Items, operation, targetNamespace, default , typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody);
