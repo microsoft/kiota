@@ -228,23 +228,81 @@ namespace Kiota.Builder.Writers.Go {
             conventions.AddRequestBuilderBody(parentClass, importSymbol, writer, pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
         private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer, bool inherits) {
-            var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
-            var shouldDeclareErrorVar = !inherits;
-            if(inherits) {
-                writer.WriteLine($"err := m.{parentClass.StartBlock.Inherits.Name.ToFirstCharacterUpperCase()}.Serialize(writer)");
-                WriteReturnError(writer);
-            }
-            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType)) {
-                WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase(), $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", shouldDeclareErrorVar, writer);
-            }
-            if(additionalDataProperty != null) {
-                writer.WriteLine("{");
-                writer.IncreaseIndent();
+            if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+                WriteSerializerBodyForUnionModel(parentClass, writer);
+            else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+                WriteSerializerBodyForIntersectionModel(parentClass, writer);
+            else
+                WriteSerializerBodyForInheritedModel(inherits, parentClass, writer);
+
+            if (parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty) {
+                var shouldDeclareErrorVar = !inherits;
+                writer.StartBlock();
                 writer.WriteLine($"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.WriteAdditionalData(m.Get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}())");
                 WriteReturnError(writer);
                 writer.CloseBlock();
             }
             writer.WriteLine("return nil");
+        }
+        private void WriteSerializerBodyForInheritedModel(bool inherits, CodeClass parentClass, LanguageWriter writer)
+        {
+            if(inherits) {
+                writer.WriteLine($"err := m.{parentClass.StartBlock.Inherits.Name.ToFirstCharacterUpperCase()}.Serialize(writer)");
+                WriteReturnError(writer);
+            }
+            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType)) {
+                WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase(), $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", !inherits, writer);
+            }
+        }
+        private void WriteSerializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer)
+        {
+            var includeElse = false;
+            foreach (var otherProp in parentClass
+                                            .Properties
+                                            .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                            .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                            .ThenBy(static x => x.Name))
+            {
+                writer.StartBlock($"{(includeElse? "else " : string.Empty)}if m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}() != nil {{");
+                WriteSerializationMethodCall(otherProp.Type, parentClass, string.Empty, $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", true, writer);
+                writer.CloseBlock();
+                if(!includeElse)
+                    includeElse = true;
+            }
+        }
+        private void WriteSerializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
+        {
+            var includeElse = false;
+            foreach (var otherProp in parentClass
+                                            .Properties
+                                            .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                            .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
+                                            .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
+                                            .ThenBy(static x => x.Name))
+            {
+                writer.StartBlock($"{(includeElse? "else " : string.Empty)}if m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}() != nil {{");
+                WriteSerializationMethodCall(otherProp.Type, parentClass, string.Empty, $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", true, writer);
+                writer.CloseBlock();
+                if(!includeElse)
+                    includeElse = true;
+            }
+            var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                                .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
+                                                .ToArray();
+            if(complexProperties.Any()) {
+                if(includeElse) {
+                    writer.WriteLine("else {");
+                    writer.IncreaseIndent();
+                }
+                var propertiesNames = complexProperties
+                                    .Select(static x => $"m.{x.Getter.Name.ToFirstCharacterUpperCase()}()")
+                                    .OrderBy(static x => x)
+                                    .Aggregate(static (x, y) => $"{x}, {y}");
+                WriteSerializationMethodCall(complexProperties.First().Type, parentClass, string.Empty, propertiesNames, true, writer);
+                if(includeElse) {
+                    writer.CloseBlock();
+                }
+            }
         }
         private static string errorVarDeclaration(bool shouldDeclareErrorVar) => shouldDeclareErrorVar ? ":" : string.Empty;
         private static readonly CodeParameterOrderComparer parameterOrderComparer = new();

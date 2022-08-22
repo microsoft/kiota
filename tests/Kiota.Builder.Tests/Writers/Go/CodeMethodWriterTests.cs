@@ -986,6 +986,66 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesUnionSerializerBody() {
+        var wrapper = AddUnionTypeWrapper();
+        var serializationMethod = wrapper.AddMethod(new CodeMethod{
+            Name = "factory",
+            Kind = CodeMethodKind.Serializer,
+            IsAsync = false,
+            ReturnType = new CodeType {
+                Name = "void",
+            },
+        }).First();
+        serializationMethod.AddParameter(new CodeParameter {
+            Name = "writer",
+            Kind = CodeParameterKind.Serializer,
+            Type = new CodeType {
+                Name = "SerializationWriter"
+            }
+        });
+        writer.Write(serializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("Serialize(writer)", result);
+        Assert.Contains("if m.GetComplexType1Value() != nil {", result);
+        Assert.Contains("err := writer.WriteObjectValue(\"\", m.GetComplexType1Value())", result);
+        Assert.Contains("m.GetStringValue() != nil", result);
+        Assert.Contains("writer.WriteStringValue(\"\", m.GetStringValue())", result);
+        Assert.Contains("m.GetComplexType2Value() != nil", result);
+        Assert.Contains("err := writer.WriteCollectionOfObjectValues(\"\", cast)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesIntersectionSerializerBody() {
+        var wrapper = AddIntersectionTypeWrapper();
+        var serializationMethod = wrapper.AddMethod(new CodeMethod{
+            Name = "factory",
+            Kind = CodeMethodKind.Serializer,
+            IsAsync = false,
+            ReturnType = new CodeType {
+                Name = "void",
+            },
+        }).First();
+        serializationMethod.AddParameter(new CodeParameter {
+            Name = "writer",
+            Kind = CodeParameterKind.Serializer,
+            Type = new CodeType {
+                Name = "SerializationWriter"
+            }
+        });
+        writer.Write(serializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("Serialize(writer)", result);
+        Assert.DoesNotContain("if m.GetComplexType1Value() != nil {", result);
+        Assert.Contains("err := writer.WriteObjectValue(\"\", m.GetComplexType1Value(), m.GetComplexType3Value())", result);
+        Assert.Contains("m.GetStringValue() != nil", result);
+        Assert.Contains("writer.WriteStringValue(\"\", m.GetStringValue())", result);
+        Assert.Contains("m.GetComplexType2Value() != nil", result);
+        Assert.Contains("writer.WriteCollectionOfObjectValues(\"\", cast)", result);
+        AssertExtensions.Before("writer.WriteStringValue(\"\", m.GetStringValue())", "writer.WriteObjectValue(\"\", m.GetComplexType1Value(), m.GetComplexType3Value())", result);
+        AssertExtensions.Before("writer.WriteCollectionOfObjectValues(\"\", cast)", "writer.WriteObjectValue(\"\", m.GetComplexType1Value(), m.GetComplexType3Value())", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesSerializerBody() {
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
