@@ -70,7 +70,7 @@ namespace Kiota.Builder.Extensions {
         }
         private static bool IsSemanticallyMeaningful(this OpenApiSchema schema)
         {
-            return schema.Properties.Any() || schema.Items != null || !string.IsNullOrEmpty(schema.Type) || !string.IsNullOrEmpty(schema.Format);
+            return schema.Properties.Any() || schema.Items != null || !string.IsNullOrEmpty(schema.Type) || !string.IsNullOrEmpty(schema.Format) || !string.IsNullOrEmpty(schema.Reference?.Id);
         }
         public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
             visitedSchemas ??= new();            
