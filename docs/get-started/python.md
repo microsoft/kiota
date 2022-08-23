@@ -36,7 +36,7 @@ py get github.com/microsoft/kiota-authentication-azure-python
 py get github.com/Azure/azure-sdk-for-python/sdk/azidentity
 ```
 
-Only the first package, `github.com/microsoft/kiota-abstractions-python`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
+Only the first package, `github.com/microsoft/microsoft-kiota-abstractions-python`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
 
 ## Generating the SDK
 
