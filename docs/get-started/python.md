@@ -28,12 +28,12 @@ py someCommand
 Create a file named **getuser.py** and add the following code.
 
 ```bash
-go get github.com/microsoft/kiota-abstractions-python
-go get github.com/microsoft/kiota-http-python
-go get github.com/microsoft/kiota-serialization-json-python
-go get github.com/microsoft/kiota-serialization-text-python
-go get github.com/microsoft/kiota-authentication-azure-python
-go get github.com/Azure/azure-sdk-for-go/sdk/azidentity
+py get github.com/microsoft/kiota-abstractions-python
+py get github.com/microsoft/kiota-http-python
+py get github.com/microsoft/kiota-serialization-json-python
+py get github.com/microsoft/kiota-serialization-text-python
+py get github.com/microsoft/kiota-authentication-azure-python
+py get github.com/Azure/azure-sdk-for-python/sdk/azidentity
 ```
 
 Only the first package, `github.com/microsoft/kiota-abstractions-python`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
@@ -56,7 +56,7 @@ Follow the instructions in [Register an application for Microsoft identity platf
 
 ## Creating the client application
 
-Create a file in the root of the project named **getuser.go** and add the following code. Replace `YOUR_CLIENT_ID` with the client ID from your app registration.
+Create a file in the root of the project named **getuser.py** and add the following code. Replace `YOUR_CLIENT_ID` with the client ID from your app registration.
 
 ```python
 code goes here
@@ -78,5 +78,5 @@ go run .
 
 ## See also
 
-- [kiota-samples repository](https://github.com/microsoft/kiota-samples/tree/main/get-started/go) contains the code from this guide.
+- [kiota-samples repository](https://github.com/microsoft/kiota-samples/tree/main/get-started/python) contains the code from this guide.
 - [ToDoItem Sample API](https://github.com/microsoft/kiota-samples/tree/main/sample-api) implements a sample OpenAPI in ASP.NET Core and sample clients in multiple languages.
