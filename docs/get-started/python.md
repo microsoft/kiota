@@ -11,7 +11,7 @@ parent: Get started
 
 ## Target project requirements
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](link here), [authentication](link here), [http](link here), [serialization JSON](link here), and [serialization Text](link here) packages.
+Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota-abstractions-python), [authentication](https://github.com/microsoft/kiota-authentication-azure-python), [http](https://github.com/microsoft/kiota-http-python), [serialization JSON](https://github.com/microsoft/kiota-serialization-json-python), and [serialization Text](https://github.com/microsoft/kiota-serialization-text-python) packages.
 
 ## Creating target projects
 
@@ -28,15 +28,15 @@ py someCommand
 Create a file named **getuser.py** and add the following code.
 
 ```bash
-go get github.com/microsoft/kiota-abstractions-go
-go get github.com/microsoft/kiota-http-go
-go get github.com/microsoft/kiota-serialization-json-go
-go get github.com/microsoft/kiota-serialization-text-go
-go get github.com/microsoft/kiota-authentication-azure-go
+go get github.com/microsoft/kiota-abstractions-python
+go get github.com/microsoft/kiota-http-python
+go get github.com/microsoft/kiota-serialization-json-python
+go get github.com/microsoft/kiota-serialization-text-python
+go get github.com/microsoft/kiota-authentication-azure-python
 go get github.com/Azure/azure-sdk-for-go/sdk/azidentity
 ```
 
-Only the first package, `github.com/microsoft/kiota-abstractions-go`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
+Only the first package, `github.com/microsoft/kiota-abstractions-python`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
 
 ## Generating the SDK
 
