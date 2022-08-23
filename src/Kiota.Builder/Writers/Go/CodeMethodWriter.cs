@@ -81,7 +81,7 @@ namespace Kiota.Builder.Writers.Go {
             var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
             if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType || parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
                 writer.WriteLine($"{ResultVarName} := New{codeElement.Parent.Name.ToFirstCharacterUpperCase()}()");
-            if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorBody)
+            if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck)
                 writer.StartBlock($"if {parseNodeParameter.Name.ToFirstCharacterLowerCase()} != nil {{");
             var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorBody && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
             if(writeDiscriminatorValueRead) {
@@ -108,11 +108,11 @@ namespace Kiota.Builder.Writers.Go {
             if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType || parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType) {
                 if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
                     WriteFactoryMethodBodyForUnionModelForUnDiscriminatedTypes(parentClass, parseNodeParameter, writer);
-                if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorBody)
+                if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck)
                     writer.CloseBlock();
                 writer.WriteLine($"return {ResultVarName}, nil");
             } else {
-                if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorBody)
+                if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck)
                     writer.CloseBlock();
                 writer.WriteLine($"return New{codeElement.Parent.Name.ToFirstCharacterUpperCase()}(), nil");
             }
@@ -139,14 +139,15 @@ namespace Kiota.Builder.Writers.Go {
                     var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
                     var valueVarName = "val";
                     writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if {valueVarName}, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, parentClass)}; {valueVarName} != nil {{");
+                    var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
+                    WriteReturnError(writer, propertyTypeImportName);
                     if(propertyType.IsCollection) {
                         var isInterfaceType = propertyType.TypeDefinition is CodeInterface;
-                        var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
                         WriteCollectionCast(propertyTypeImportName, valueVarName, "cast", writer, isInterfaceType ? string.Empty : "*", !isInterfaceType);
                         valueVarName = "cast";
                     }
                     writer.WriteLine($"{ResultVarName}.{property.Setter.Name.ToFirstCharacterUpperCase()}({valueVarName})");
-                    writer.CloseBlock();
+                    writer.DecreaseIndent();
                 }
                 if(!includeElse)
                     includeElse = true;
@@ -156,17 +157,14 @@ namespace Kiota.Builder.Writers.Go {
                                                 .Where(static x => x.Item2.TypeDefinition is CodeClass && !x.Item2.IsCollection)
                                                 .ToArray();
             if(complexProperties.Any()) {
-                if(includeElse) {
-                    writer.WriteLine("} else {");
-                    writer.IncreaseIndent();
-                }
+                if(includeElse)
+                    writer.StartBlock("} else {");
                 foreach(var property in complexProperties) {
                     var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(property.Item2.Name, StringComparison.OrdinalIgnoreCase));
                     writer.WriteLine($"{ResultVarName}.{property.Item1.Setter.Name.ToFirstCharacterUpperCase()}({conventions.GetImportedStaticMethodName(property.Item2, codeElement)}())");
                 }
-                if(includeElse) {
+                if(includeElse)
                     writer.CloseBlock();
-                }
             } else if (otherProps.Any())
                 writer.CloseBlock(decreaseIndent: false);
         }
@@ -204,9 +202,10 @@ namespace Kiota.Builder.Writers.Go {
                 var valueVarName = "val";
                 var propertyType = property.Type as CodeType;
                 writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if {valueVarName}, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, parentClass)}; {valueVarName} != nil {{");
+                var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
+                WriteReturnError(writer, propertyTypeImportName);
                 if(propertyType.IsCollection) {
                     var isInterfaceType = propertyType.TypeDefinition is CodeInterface;
-                    var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
                     WriteCollectionCast(propertyTypeImportName, valueVarName, "cast", writer, isInterfaceType ? string.Empty : "*", !isInterfaceType);
                     valueVarName = "cast";
                 }
@@ -278,7 +277,7 @@ namespace Kiota.Builder.Writers.Go {
             foreach (var otherProp in otherProps)
             {
                 writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}() != nil {{");
-                WriteSerializationMethodCall(otherProp.Type, parentClass, string.Empty, $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", true, writer);
+                WriteSerializationMethodCall(otherProp.Type, parentClass, string.Empty, $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", true, writer, false);
                 writer.DecreaseIndent();
                 if(!includeElse)
                     includeElse = true;
@@ -299,7 +298,7 @@ namespace Kiota.Builder.Writers.Go {
             foreach (var otherProp in otherProps)
             {
                 writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}() != nil {{");
-                WriteSerializationMethodCall(otherProp.Type, parentClass, string.Empty, $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", true, writer);
+                WriteSerializationMethodCall(otherProp.Type, parentClass, string.Empty, $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", true, writer, false);
                 writer.DecreaseIndent();
                 if(!includeElse)
                     includeElse = true;
@@ -756,17 +755,17 @@ namespace Kiota.Builder.Writers.Go {
                 return $"{conventions.GetImportedStaticMethodName(propType, parentClass, "Create", "FromDiscriminatorValue", "able")}";
             else return GetTypeFactory(propTypeBase.AllTypes.First(), parentClass, propertyTypeName);
         }
-        private void WriteSerializationMethodCall(CodeTypeBase propType, CodeElement parentBlock, string serializationKey, string valueGet, bool shouldDeclareErrorVar, LanguageWriter writer) {
+        private void WriteSerializationMethodCall(CodeTypeBase propType, CodeElement parentBlock, string serializationKey, string valueGet, bool shouldDeclareErrorVar, LanguageWriter writer, bool addBlockForErrorScope = true) {
             serializationKey = $"\"{serializationKey}\"";
             var errorPrefix = $"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.";
             var isEnum = propType is CodeType eType && eType.TypeDefinition is CodeEnum;
             var isComplexType = propType is CodeType cType && (cType.TypeDefinition is CodeClass || cType.TypeDefinition is CodeInterface);
             var isInterface = propType is CodeType iType && iType.TypeDefinition is CodeInterface;
-            if(isEnum || propType.IsCollection)
-                writer.WriteLine($"if {valueGet} != nil {{");
-            else
-                writer.WriteLine("{");// so the err var scope is limited
-            writer.IncreaseIndent();
+            if(addBlockForErrorScope)
+                if(isEnum || propType.IsCollection)
+                    writer.StartBlock($"if {valueGet} != nil {{");
+                else
+                    writer.StartBlock();// so the err var scope is limited
             if(isEnum && !propType.IsCollection)
                 writer.WriteLine($"cast := (*{valueGet}).String()");
             else if(isComplexType && propType.IsCollection) {
@@ -801,7 +800,8 @@ namespace Kiota.Builder.Writers.Go {
                 propertyTypeName = "ByteArray";
             writer.WriteLine($"{errorPrefix}Write{collectionPrefix}{propertyTypeName}Value{collectionSuffix}({serializationKey}, {reference})");
             WriteReturnError(writer);
-            writer.CloseBlock();
+            if(addBlockForErrorScope)
+                writer.CloseBlock();
         }
         private string GetConversionHelperMethodImport(CodeElement parentBlock, string name) {
             var conversionMethodType = new CodeType { Name = name, IsExternal = true };

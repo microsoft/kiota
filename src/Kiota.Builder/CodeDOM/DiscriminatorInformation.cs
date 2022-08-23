@@ -64,7 +64,8 @@ public class DiscriminatorInformation : CodeElement, ICloneable
     public bool ShouldWriteDiscriminatorForInheritedType => HasBasicDiscriminatorInformation && IsComplexType;
     public bool ShouldWriteDiscriminatorForUnionType => IsUnionType; // if union of scalar types, then we don't always get discriminator information
     public bool ShouldWriteDiscriminatorForIntersectionType => IsIntersectionType; // if intersection of scalar types, then we don't always get discriminator information
-    public bool ShouldWriteDiscriminatorBody => ShouldWriteDiscriminatorForInheritedType || ShouldWriteDiscriminatorForUnionType || ShouldWriteDiscriminatorForIntersectionType;
+    public bool ShouldWriteParseNodeCheck => ShouldWriteDiscriminatorForInheritedType || ShouldWriteDiscriminatorForUnionType || ShouldWriteDiscriminatorForIntersectionType;
+    public bool ShouldWriteDiscriminatorBody => ShouldWriteParseNodeCheck && HasBasicDiscriminatorInformation;
     private bool IsUnionType => Is<CodeUnionType>();
     private bool IsIntersectionType => Is<CodeIntersectionType>();
     private bool IsComplexType => Parent is CodeClass currentClass && currentClass.OriginalComposedType is null ||
