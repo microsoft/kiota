@@ -28,10 +28,10 @@ py someCommand
 Create a file named **getuser.py** and add the following code.
 
 ```bash
-py get github.com/microsoft/kiota-abstractions-python
-py get github.com/microsoft/kiota-http-python
-py get github.com/microsoft/kiota-serialization-json-python
-py get github.com/microsoft/kiota-serialization-text-python
+py get github.com/microsoft/microsoft-kiota-abstractions-python
+py get github.com/microsoft/microsoft-kiota-http-python
+py get github.com/microsoft/microsoft-kiota-serialization-json-python
+py get github.com/microsoft/microsoft-kiota-serialization-text-python
 py get github.com/microsoft/kiota-authentication-azure-python
 py get github.com/Azure/azure-sdk-for-python/sdk/azidentity
 ```
