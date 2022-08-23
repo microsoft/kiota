@@ -28,15 +28,15 @@ py someCommand
 Create a file named **getuser.py** and add the following code.
 
 ```bash
-py get github.com/microsoft/microsoft-kiota-abstractions-python
-py get github.com/microsoft/microsoft-kiota-http-python
-py get github.com/microsoft/microsoft-kiota-serialization-json-python
-py get github.com/microsoft/microsoft-kiota-serialization-text-python
-py get github.com/microsoft/kiota-authentication-azure-python
-py get github.com/Azure/azure-sdk-for-python/sdk/azidentity
+py get microsoft-kiota-abstractions
+py get microsoft-kiota-http
+py get microsoft-kiota-serialization-json
+py get microsoft-kiota-serialization-text
+py get microsoft-kiota-authentication-azure
+py get azure-identity
 ```
 
-Only the first package, `github.com/microsoft/microsoft-kiota-abstractions-python`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
+Only the first package, `microsoft-kiota-abstractions`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
 
 ## Generating the SDK
 
