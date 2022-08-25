@@ -830,6 +830,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         var insertValue = new CodeInterface {
                     Name = interfaceName,
                     Kind = CodeInterfaceKind.Model,
+                    OriginalClass = modelClass,
         };
         var inter = shouldInsertUnderParentClass ? 
                         parentClass.AddInnerInterface(insertValue).First() :

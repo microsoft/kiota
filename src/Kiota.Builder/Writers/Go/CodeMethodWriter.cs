@@ -181,6 +181,13 @@ namespace Kiota.Builder.Writers.Go {
                                         .ToArray();
             foreach(var property in otherProps) {
                 var propertyType = property.Type as CodeType;
+                if (propertyType.TypeDefinition is CodeInterface typeInterface && typeInterface.OriginalClass != null)
+                    propertyType = new CodeType {
+                        Name = typeInterface.OriginalClass.Name,
+                        TypeDefinition = typeInterface.OriginalClass,
+                        CollectionKind = propertyType.CollectionKind,
+                        IsNullable = propertyType.IsNullable,
+                    };
                 var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
                 writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if {conventions.StringsHash}.EqualFold(*{DiscriminatorMappingVarName}, \"{mappedType.Key}\") {{");
                 writer.WriteLine($"{ResultVarName}.{property.Setter.Name.ToFirstCharacterUpperCase()}({conventions.GetImportedStaticMethodName(propertyType, codeElement)}())");
