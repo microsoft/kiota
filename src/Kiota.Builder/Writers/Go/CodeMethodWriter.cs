@@ -426,7 +426,11 @@ namespace Kiota.Builder.Writers.Go {
                 var defaultValueReference = propWithDefault.DefaultValue;
                 if(defaultValueReference.StartsWith("\"")) {
                     defaultValueReference = $"{propWithDefault.SymbolName.ToFirstCharacterLowerCase()}Value";
-                    writer.WriteLine($"{defaultValueReference} := {propWithDefault.DefaultValue};");
+                    var defaultValue = propWithDefault.DefaultValue;
+                    if(propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition) {
+                        defaultValue = $"{defaultValue.Trim('"').ToUpperInvariant()}_{enumDefinition.Name.ToUpperInvariant()}";
+                    }
+                    writer.WriteLine($"{defaultValueReference} := {defaultValue};");
                     defaultValueReference = $"&{defaultValueReference}";    
                 }
                 var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterUpperCase() ?? $"Set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
