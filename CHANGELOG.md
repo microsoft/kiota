@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Fixed a bug to properly add request headers to Nethttp requests in Ruby. 
+- Fixed a bug to properly reject invalid URLs in Ruby.
 
 ## [0.4.0] - 2022-08-18
 
