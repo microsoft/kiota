@@ -602,7 +602,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.DoesNotContain("switch *mappingValue {", result);
         Assert.DoesNotContain("case \"ns.childmodel\":", result);
         Assert.Contains("result := NewUnionTypeWrapper()", result);
-        Assert.Contains("if strings.EqualFold(*mappingValue, \"#kiota.complexType1\") {", result);
+        Assert.Contains("if ie967d16dae74a49b5e0e051225c5dac0d76e5e38f13dd1628028cbce108c25b6.EqualFold(*mappingValue, \"#kiota.complexType1\") {", result);
         Assert.Contains("result.SetComplexType1Value(NewComplexType1())", result);
         Assert.Contains("if val, err := parseNode.GetStringValue(); val != nil {", result);
         Assert.Contains("result.SetStringValue(val)", result);
@@ -647,7 +647,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.DoesNotContain("switch *mappingValue {", result);
         Assert.DoesNotContain("case \"ns.childmodel\":", result);
         Assert.Contains("result := NewIntersectionTypeWrapper()", result);
-        Assert.DoesNotContain("if strings.EqualFold(*mappingValue, \"#kiota.complexType1\") {", result);
+        Assert.DoesNotContain("if ie967d16dae74a49b5e0e051225c5dac0d76e5e38f13dd1628028cbce108c25b6.EqualFold(*mappingValue, \"#kiota.complexType1\") {", result);
         Assert.Contains("result.SetComplexType1Value(NewComplexType1())", result);
         Assert.Contains("result.SetComplexType3Value(NewComplexType3())", result);
         Assert.Contains("if val, err := parseNode.GetStringValue(); val != nil {", result);

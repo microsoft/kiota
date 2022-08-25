@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
@@ -108,6 +108,9 @@ public class GoRefiner : CommonLanguageRefiner
         AddParsableImplementsForModelClasses(
             generatedCode,
             "Parsable"
+        );
+        RenameInnerModelsToAppended(
+            generatedCode
         );
         CopyModelClassesAsInterfaces(
             generatedCode,
@@ -264,6 +267,8 @@ public class GoRefiner : CommonLanguageRefiner
                                             (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
                                             @class.StartBlock.Implements.Any(x => KiotaBuilder.AdditionalHolderInterface.Equals(x.Name, StringComparison.OrdinalIgnoreCase))),
             "github.com/microsoft/kiota-abstractions-go/serialization", "AdditionalDataHolder"),
+        new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeUnionType unionType && unionType.Types.Any(static y => !y.IsExternal),
+            "strings", "EqualFold"),
         new(x => x is CodeMethod method && (method.IsOfKind(CodeMethodKind.RequestExecutor) || method.IsOfKind(CodeMethodKind.RequestGenerator)), "context","*context"),
     };//TODO add backing store types once we have them defined
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
@@ -359,5 +364,27 @@ public class GoRefiner : CommonLanguageRefiner
             } else
                 CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
+    }
+    /// <summary>
+    /// Go doesn't support the concept of an inner type, so we're writing them at the same level as the parent one. However that can result into conflicts with other existing models.
+    /// This method will correct the type names to avoid conflicts.
+    /// </summary>
+    /// <param name="currentElement">The current element to start the renaming from.</param>
+    private static void RenameInnerModelsToAppended(CodeElement currentElement) {
+        if(currentElement is CodeClass currentInnerClass &&
+            currentInnerClass.IsOfKind(CodeClassKind.Model) &&
+            currentInnerClass.Parent is CodeClass currentParentClass &&
+            currentParentClass.IsOfKind(CodeClassKind.Model))
+        {
+            var oldName = currentInnerClass.Name;
+            currentInnerClass.Name = $"{currentParentClass.Name.ToFirstCharacterUpperCase()}_{currentInnerClass.Name.ToFirstCharacterUpperCase()}";
+            foreach(var property in currentParentClass.Properties.Where(x => x.Type.Name.Equals(oldName, StringComparison.OrdinalIgnoreCase)))
+                property.Type.Name = currentInnerClass.Name;
+            foreach(var method in currentParentClass.Methods.Where(x => x.ReturnType.Name.Equals(oldName, StringComparison.OrdinalIgnoreCase)))
+                method.ReturnType.Name = currentInnerClass.Name;
+            foreach(var parameter in currentParentClass.Methods.SelectMany(static x => x.Parameters).Where(x => x.Type.Name.Equals(oldName, StringComparison.OrdinalIgnoreCase)))
+                parameter.Type.Name = currentInnerClass.Name;
+        }
+        CrawlTree(currentElement, RenameInnerModelsToAppended);
     }
 }

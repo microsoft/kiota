@@ -95,7 +95,7 @@ namespace Kiota.Builder.Writers.Go {
 
             if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
                 WriteFactoryMethodBodyForInheritedModel(codeElement, parentClass, writer);
-            else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+            else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType && parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation)
                 WriteFactoryMethodBodyForUnionModelForDiscriminatedTypes(codeElement, parentClass, writer);
             else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
                 WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
@@ -182,7 +182,7 @@ namespace Kiota.Builder.Writers.Go {
             foreach(var property in otherProps) {
                 var propertyType = property.Type as CodeType;
                 var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if strings.EqualFold(*{DiscriminatorMappingVarName}, \"{mappedType.Key}\") {{");
+                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if {conventions.StringsHash}.EqualFold(*{DiscriminatorMappingVarName}, \"{mappedType.Key}\") {{");
                 writer.WriteLine($"{ResultVarName}.{property.Setter.Name.ToFirstCharacterUpperCase()}({conventions.GetImportedStaticMethodName(propertyType, codeElement)}())");
                 writer.DecreaseIndent();
                 if(!includeElse)
