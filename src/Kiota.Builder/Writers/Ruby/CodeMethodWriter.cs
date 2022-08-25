@@ -172,7 +172,7 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.WriteLine(")");
             var isStream = conventions.StreamTypeName.Equals(StringComparison.OrdinalIgnoreCase);
             var genericTypeForSendMethod = GetSendRequestMethodName(isStream);
-            writer.WriteLine($"return @http_core.{genericTypeForSendMethod}(request_info, {returnType}, response_handler)");
+            writer.WriteLine($"return @request_adapter.{genericTypeForSendMethod}(request_info, {returnType}, response_handler)");
         }
 
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer) {
