@@ -49,6 +49,14 @@ module MicrosoftKiotaAbstractions
       @path_parameters ||= Hash.new
     end
 
+    def path_parameters=(value)
+      @path_parameters = value
+    end
+
+    def headers=(value)
+      @headers = value
+    end
+
     def set_stream_content(value = $stdin)
       @content = value
       self.headers[@@content_type_header] = @@binary_content_type
