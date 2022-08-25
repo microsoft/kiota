@@ -1,5 +1,4 @@
 require 'microsoft_kiota_abstractions'
-require 'microsoft_kiota_serialization'
 require 'net/https'
 require 'net/http'
 require 'concurrent'
