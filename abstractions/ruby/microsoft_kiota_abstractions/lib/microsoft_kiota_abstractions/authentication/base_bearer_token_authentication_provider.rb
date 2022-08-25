@@ -17,11 +17,12 @@ module MicrosoftKiotaAbstractions
     end 
 
     AUTHORIZATION_HEADER_KEY = 'Authorization'
-    def authenticate_request(request, additional_properties)
+    def authenticate_request(request, additional_properties = {})
+
       raise StandardError, 'Request cannot be null' if request.nil?
       return if request.headers.key?(AUTHORIZATION_HEADER_KEY)
 
-      token = @access_token_provider.get_authorization_token(request, additional_properties)
+      token = @access_token_provider.get_authorization_token(request.uri, additional_properties)
 
       request.headers[AUTHORIZATION_HEADER_KEY] = "Bearer #{token}" unless token.nil?
     end

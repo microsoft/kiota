@@ -1,4 +1,5 @@
 require 'microsoft_kiota_abstractions'
+require 'microsoft_kiota_serialization'
 require 'net/https'
 require 'net/http'
 require 'concurrent'
@@ -12,6 +13,7 @@ module MicrosoftKiotaNethttplibrary
     
     # TODO: When #478 is implemented then parse_node_factory and serialization_writer_factory should default to nil
     def initialize(authentication_provider, parse_node_factory, serialization_writer_factory, client = Net::HTTP)
+
       if !authentication_provider
         raise StandardError , 'authentication provider cannot be null'
       end
@@ -41,12 +43,17 @@ module MicrosoftKiotaNethttplibrary
         raise StandardError, 'requestInfo cannot be null'
       end
 
-      self.authentication_provider.await.authenticate_request(request_info)
+      request = self.get_request_from_request_info(request_info)
       uri = request_info.uri
+      @authentication_provider.await.authenticate_request(request_info)
+
       http = @client.new(uri.host, uri.port)
       http.use_ssl = true
       http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-      request = self.get_request_from_request_info(request_info)
+
+      request.add_field 'Authorization', request_info.headers['Authorization']
+      request.add_field 'Content-Type', 'application/json'
+      request.add_field 'Accept', 'application/json'
       response = http.request(request)
 
       if response_handler
@@ -54,7 +61,8 @@ module MicrosoftKiotaNethttplibrary
       else
         payload = response.body
         response_content_type = self.get_response_content_type(response);
-        if !response_content_type
+
+        unless response_content_type
           raise StandardError, 'no response content type found for deserialization'
         end
         root_node = @parse_node_factory.get_parse_node(response_content_type, payload)
