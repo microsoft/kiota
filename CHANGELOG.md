@@ -9,9 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added none output formatter to CLI commons. (Shell)
+
 ### Changed
 - Fixed a bug to properly add request headers to Nethttp requests in Ruby. 
 - Fixed a bug to properly reject invalid URLs in Ruby.
+
+- Fix issue with duplicate variable declaration in command handlers (Shell)
+- Update namespace qualification algorithm (helps in resolving when a type name appears in multiple namespaces) to use case insensitive string comparison (CSharp).
 
 ## [0.4.0] - 2022-08-18
 
