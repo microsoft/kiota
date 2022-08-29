@@ -52,7 +52,7 @@ namespace Kiota.Builder.CodeRenderers
             if (!string.IsNullOrEmpty(codeNamespace.Name) &&
                 !string.IsNullOrEmpty(root.Name) &&
                 _configuration.ShouldWriteNamespaceIndices &&
-                !_configuration.ClientNamespaceName.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase) &&
+                !_configuration.ClientNamespaceName.StartsWith(codeNamespace.Name, StringComparison.OrdinalIgnoreCase) &&
                 ShouldRenderNamespaceFile(codeNamespace))
             {
                 await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace), cancellationToken);

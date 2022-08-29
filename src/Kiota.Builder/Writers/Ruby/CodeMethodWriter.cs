@@ -192,10 +192,15 @@ namespace Kiota.Builder.Writers.Ruby {
                 var queryString = requestParams.QueryParameters;
                 var headers = requestParams.Headers;
                 // TODO add options handling
-                if(headers != null)
-                    writer.WriteLine($"request_info.set_headers_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
-                if(queryString != null)
-                    writer.WriteLines($"request_info.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
+                if(headers != null || queryString != null) {
+                    writer.WriteLine($"unless {requestParams.requestConfiguration.Name.ToSnakeCase()}.nil?"); 
+                    writer.IncreaseIndent();
+                    if(headers != null)
+                        writer.WriteLine($"request_info.set_headers_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
+                    if(queryString != null)
+                        writer.WriteLines($"request_info.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
+                    writer.CloseBlock("end");
+                }
                 if(requestParams.requestBody != null) {
                     if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                         writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name})");
