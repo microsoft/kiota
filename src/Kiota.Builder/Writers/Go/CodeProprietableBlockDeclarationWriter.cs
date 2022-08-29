@@ -24,6 +24,7 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
                                 .Distinct()
                                 .Union(codeElement
                                     .Usings
+                                    .Union(codeElement.Parent is CodeClass currentClass ? currentClass.InnerClasses.SelectMany(static x => x.Usings) : Enumerable.Empty<CodeUsing>())
                                     .Where(static x => x.Declaration.IsExternal)
                                     .Select(static x => new Tuple<string, string>(x.Name.StartsWith("*") ? x.Name[1..] : x.Declaration.Name.GetNamespaceImportSymbol(), x.Declaration.Name))
                                     .Distinct())
