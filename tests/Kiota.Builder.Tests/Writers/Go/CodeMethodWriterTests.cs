@@ -268,6 +268,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains($"\"5XX\": CreateError5XXFromDiscriminatorValue", result);
         Assert.Contains($"\"403\": CreateError403FromDiscriminatorValue", result);
         Assert.Contains("m.requestAdapter.SendAsync", result);
+        Assert.Contains("ctx context.Context,", result);
+        Assert.Contains("m.requestAdapter.SendAsync(ctx,", result);
         Assert.Contains("return res.(", result);
         Assert.Contains("err != nil", result);
         Assert.Contains("return nil, err", result);

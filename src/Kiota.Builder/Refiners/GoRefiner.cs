@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
 public class GoRefiner : CommonLanguageRefiner
 {
-    public GoRefiner(GenerationConfiguration configuration) : base(configuration) {}
+    public GoRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override void Refine(CodeNamespace generatedCode)
     {
         _configuration.NamespaceNameSeparator = "/";
@@ -55,7 +56,7 @@ public class GoRefiner : CommonLanguageRefiner
             CorrectMethodType,
             CorrectPropertyType,
             CorrectImplements);
-        InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
+        InsertOverrideMethodForBuildersAndConstructors(generatedCode);
         DisableActionOf(generatedCode, 
             CodeParameterKind.RequestConfiguration);
         AddGetterAndSetterMethods(
@@ -112,31 +113,63 @@ public class GoRefiner : CommonLanguageRefiner
             generatedCode,
             x => $"{x.Name}able"
         );
+        MoveResponseHandlerToStructs(generatedCode);
     }
-    private void InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(CodeElement currentElement) {
-        if(currentElement is CodeClass currentClass) {
-            var codeMethods = currentClass.Methods;
-            if(codeMethods.Any(x => x.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))) {
-                var originalExecutorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor)).ToList();
-                var executorMethodsToAdd = originalExecutorMethods
-                                    .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration, CodeParameterKind.ResponseHandler))
-                                    .Where(x => x != null)
-                                    .ToArray();//otherwise the name change also affects the clones
-                var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator)).ToList();
-                var generatorMethodsToAdd = originalGeneratorMethods
-                                    .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration))
-                                    .Where(x => x != null)
-                                    .ToArray();
-                originalExecutorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.RequestConfiguration)}And{nameof(CodeParameterKind.ResponseHandler)}");
-                originalGeneratorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.RequestConfiguration)}");
-                if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
-                    currentClass.AddMethod(executorMethodsToAdd
-                                            .Union(generatorMethodsToAdd)
-                                            .ToArray());
+
+    private void MoveResponseHandlerToStructs(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass)
+        {
+            // remove all response handlers from request builder param
+            if (currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+            {
+                var codeMethods = currentClass.Methods.Where(x => x.Kind == CodeMethodKind.RequestExecutor);
+                foreach (var codeMethod in codeMethods)
+                {
+                    codeMethod.RemoveParametersByKind(CodeParameterKind.ResponseHandler);
+                }
+            }
+            // add response handler to struct
+            if (currentClass.IsOfKind(CodeClassKind.RequestConfiguration))
+            {
+                currentClass.AddProperty(new CodeProperty
+                {
+                    Access = AccessModifier.Public,
+                    Description ="Response handler to use in place of the default response handling provided by the core service",
+                    Kind = CodePropertyKind.ResponseHandler,
+                    Name = "responseHandler",
+                    ReadOnly = false,
+                    Parent = currentClass.Parent,
+                    Type = new CodeType {
+                        IsNullable = false,
+                        Name = ((currentElement.Parent as CodeClass)?.StartBlock)?
+                            .Usings
+                            .Select(x => x.Name)
+                            .FirstOrDefault(x => "ResponseHandler".Equals(x,StringComparison.OrdinalIgnoreCase)),
+                    }
+                });
             }
         }
 
-        CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors);
+        CrawlTree(currentElement, MoveResponseHandlerToStructs);
+    }
+
+    private void InsertOverrideMethodForBuildersAndConstructors(CodeElement currentElement) {
+        if(currentElement is CodeClass currentClass) {
+            var codeMethods = currentClass.Methods;
+            if(codeMethods.Any(x => x.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))) {
+                var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator)).ToList();
+                var generatorMethodsToAdd = originalGeneratorMethods
+                    .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration))
+                    .Where(x => x != null)
+                    .ToArray();
+                originalGeneratorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.RequestConfiguration)}");
+                if(generatorMethodsToAdd.Any())
+                    currentClass.AddMethod(generatorMethodsToAdd.ToArray());
+            }
+        }
+
+        CrawlTree(currentElement, InsertOverrideMethodForBuildersAndConstructors);
     }
     private static void RemoveModelPropertiesThatDependOnSubNamespaces(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass && 
@@ -242,6 +275,7 @@ public class GoRefiner : CommonLanguageRefiner
                                             (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
                                             @class.StartBlock.Implements.Any(x => KiotaBuilder.AdditionalHolderInterface.Equals(x.Name, StringComparison.OrdinalIgnoreCase))),
             "github.com/microsoft/kiota-abstractions-go/serialization", "AdditionalDataHolder"),
+        new(x => x is CodeMethod method && (method.IsOfKind(CodeMethodKind.RequestExecutor) || method.IsOfKind(CodeMethodKind.RequestGenerator)), "context","*context"),
     };//TODO add backing store types once we have them defined
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
         block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");

@@ -33,7 +33,7 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
             {
                 writer.WriteLines(string.Empty, "import (");
                 writer.IncreaseIndent();
-                importSegments.ForEach(x => writer.WriteLine($"{x.Item1} \"{x.Item2}\""));
+                importSegments.ForEach(x => writer.WriteLine(x.Item1.Equals(x.Item2) ? $"\"{x.Item2}\"" : $"{x.Item1} \"{x.Item2}\""));
                 writer.DecreaseIndent();
                 writer.WriteLines(")", string.Empty);
             }

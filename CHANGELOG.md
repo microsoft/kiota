@@ -25,8 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update namespace qualification algorithm (helps in resolving when a type name appears in multiple namespaces) to use case insensitive string comparison (CSharp).
 - Fix an issue where namespace reserved name replacement would not include replacing import names in the declared areas in CSharp. [#1799](https://github.com/microsoft/kiota/issues/1799)
 - Removed Python abstractions, http, authentication and serialization packages
-- Fixed an issue with generating the incorrect serialized type name and require statement for get/post methods (Ruby). 
-- Fixed an issue with the require statements generated for entity superclass in Ruby.  
+- Fixed an issue with generating the incorrect serialized type name and require statement for get/post methods (Ruby).
+- Remove all overloads for GO request executors
+- Adds a context object in all GO requests
+- Remove all overloads for GO request executors and Adds a context object in all GO requests [GO#176](https://github.com/microsoftgraph/msgraph-sdk-go/issues/176)
+
 
 ## [0.4.0] - 2022-08-18
 

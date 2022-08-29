@@ -166,7 +166,17 @@ namespace Kiota.Builder.Writers.Go {
             };
             if(!writePrototypeOnly)
                 WriteMethodDocumentation(code, methodName, writer);
-            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, parentBlock)).ToList());
+
+            var codeParameters = new List<string>();
+            
+            if(code.Kind == CodeMethodKind.RequestExecutor) // default parameter for executors
+                codeParameters.Add($"{ContextVarName} {ContextVarTypeName}");
+            
+            codeParameters.AddRange(code.Parameters.OrderBy(x => x, parameterOrderComparer)
+                .Select(p => conventions.GetParameterSignature(p, parentBlock)).ToList());
+
+            var parameters = string.Join(", ", codeParameters);
+            
             var classType = conventions.GetTypeString(new CodeType { Name = parentBlock.Name, TypeDefinition = parentBlock }, parentBlock);
             var associatedTypePrefix = isConstructor ||code.IsStatic || writePrototypeOnly ? string.Empty : $"(m {classType}) ";
             var finalReturnType = isConstructor ? classType : $"{returnType}{returnTypeAsyncSuffix}";
@@ -363,7 +373,6 @@ namespace Kiota.Builder.Writers.Go {
             var isBinary = conventions.StreamTypeName.Equals(returnType.TrimStart('*'), StringComparison.OrdinalIgnoreCase);
             var isEnum = codeElement.ReturnType is CodeType collType && collType.TypeDefinition is CodeEnum;
             var sendMethodName = getSendMethodName(returnType, codeElement, isPrimitive, isBinary, isEnum);
-            var responseHandlerParam = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.ResponseHandler));
             var typeShortName = returnType.Split('.').Last().ToFirstCharacterUpperCase();
             var isVoid = string.IsNullOrEmpty(typeShortName);
             WriteGeneratorMethodCall(codeElement, requestParams, writer, $"{RequestInfoVarName}, err := ");
@@ -385,10 +394,17 @@ namespace Kiota.Builder.Writers.Go {
                 }
                 writer.CloseBlock();
             }
+            
+            writer.WriteLine($"var {ResponseHandlerVarName} {conventions.AbstractionsHash}.ResponseHandler = nil");
+            writer.WriteLine("if requestConfiguration != nil && requestConfiguration.ResponseHandler != nil {{");
+            writer.IncreaseIndent();
+            writer.WriteLine($"{ResponseHandlerVarName} = requestConfiguration.ResponseHandler");
+            writer.CloseBlock();
+            
             var assignmentPrefix = isVoid ?
                         "err =" :
                         "res, err :=";
-            writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}({RequestInfoVarName}, {constructorFunction}{responseHandlerParam?.Name ?? "nil"}, {errorMappingVarName})");
+            writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}({ContextVarName}, {RequestInfoVarName}, {constructorFunction}{ResponseHandlerVarName}, {errorMappingVarName})");
             WriteReturnError(writer, returnType);
             var valueVarName = string.Empty;
             if(codeElement.ReturnType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {
@@ -409,7 +425,7 @@ namespace Kiota.Builder.Writers.Go {
             };
             writer.WriteLine($"return {resultReturnCast}nil");
         }
-        private static void WriteMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeMethodKind kind, Func<string, string, string> template, int parametersPad = 0) {
+        private static void WriteMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeMethodKind kind, Func<string, string, string> template, int parametersPad = 0, string defaultParams = null) {
             var generatorMethodName = (codeElement.Parent as CodeClass)
                                                 .Methods
                                                 .OrderBy(x => x.IsOverload)
@@ -424,13 +440,20 @@ namespace Kiota.Builder.Writers.Go {
                                                 .ToList();
             var skipIndex = requestParams.requestBody == null ? 1 : 0;
             requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "nil"));
+            
             var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x,y) => $"{x}, {y}") : string.Empty;
+
+            if (!string.IsNullOrEmpty(defaultParams))
+                paramsCall = $"{defaultParams} {paramsCall}";
+            
             writer.WriteLine(template(generatorMethodName, paramsCall));
         }
-        private static void WriteExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer) {
+        private static void WriteExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer)
+        {
             WriteMethodCall(codeElement, requestParams, writer, CodeMethodKind.RequestExecutor, (name, paramsCall) => 
                 $"return m.{name}({paramsCall});",
-                1
+                1,
+                codeElement.Kind == CodeMethodKind.RequestExecutor ? $"{ContextVarName}," : null
             );
         }
         private static void WriteGeneratorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, string prefix) {
@@ -439,6 +462,9 @@ namespace Kiota.Builder.Writers.Go {
             );
         }
         private const string RequestInfoVarName = "requestInfo";
+        private const string ContextVarName = "ctx";
+        private const string ContextVarTypeName = "context.Context";
+        private const string ResponseHandlerVarName = "responseHandler";
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeClass parentClass) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             

@@ -640,12 +640,12 @@ public class GoLanguageRefinerTests {
         generator.AddParameter(executor.Parameters.Where(x => !x.IsOfKind(CodeParameterKind.ResponseHandler)).ToArray());
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         var childMethods = builder.Methods;
-        Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 1);//body only
+        Assert.DoesNotContain(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor)); // no executor overloads
         Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 1);//body only
         Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 3);// body + query + response handler
         Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 2);// body + query config
-        Assert.Equal(4, childMethods.Count());
-        Assert.Equal(2, childMethods.Count(x => x.IsOverload));
+        Assert.Equal(3, childMethods.Count());
+        Assert.Equal(1, childMethods.Count(x => x.IsOverload));
     }
     #endregion
 }
