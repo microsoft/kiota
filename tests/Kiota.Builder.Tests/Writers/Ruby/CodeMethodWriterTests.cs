@@ -208,7 +208,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             Assert.Contains("http_method = :GET", result);
             Assert.Contains("set_query_string_parameters_from_raw_object", result);
             Assert.Contains("set_content_from_parsable", result);
-            Assert.Contains("return request_info;", result);
+            Assert.Contains("return request_info", result);
         }
         [Fact]
         public void WritesInheritedDeSerializerBody() {
