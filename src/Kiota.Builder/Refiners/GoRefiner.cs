@@ -263,6 +263,14 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota-abstractions-go/serialization", "ParseNode", "Parsable"),
         new (x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
+        new (x => x is CodeMethod method && 
+                        method.IsOfKind(CodeMethodKind.RequestGenerator) &&
+                        method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) && 
+                                                    x.Type.IsCollection &&
+                                                    x.Type is CodeType pType &&
+                                                    (pType.TypeDefinition is CodeClass ||
+                                                    pType.TypeDefinition is CodeInterface)),
+            "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && 
                                             (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
                                             @class.StartBlock.Implements.Any(x => KiotaBuilder.AdditionalHolderInterface.Equals(x.Name, StringComparison.OrdinalIgnoreCase))),

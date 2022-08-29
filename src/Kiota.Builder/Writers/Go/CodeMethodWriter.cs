@@ -691,9 +691,13 @@ namespace Kiota.Builder.Writers.Go {
                 var bodyParamReference = $"{requestParams.requestBody.Name.ToFirstCharacterLowerCase()}";
                 if(requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({bodyParamReference})");
-                else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.TypeDefinition is CodeInterface))
+                else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.TypeDefinition is CodeInterface)) {
+                    if(bodyType.IsCollection) {
+                        WriteCollectionCast($"{conventions.SerializationHash}.Parsable", bodyParamReference, "cast", writer, string.Empty, false);
+                        bodyParamReference = "cast...";
+                    }
                     writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable(m.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
-                else
+                } else
                     writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar(m.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
             }
             if(requestParams.requestConfiguration != null) {
