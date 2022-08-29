@@ -145,8 +145,13 @@ namespace Kiota.Builder.Writers.Go {
                         var isInterfaceType = propertyType.TypeDefinition is CodeInterface;
                         WriteCollectionCast(propertyTypeImportName, valueVarName, "cast", writer, isInterfaceType ? string.Empty : "*", !isInterfaceType);
                         valueVarName = "cast";
+                    } else if (propertyType.TypeDefinition is CodeClass || propertyType.TypeDefinition is CodeInterface) {
+                        writer.StartBlock($"if {GetTypeAssertion(valueVarName, propertyTypeImportName, "cast", "ok")}; ok {{");
+                        valueVarName = "cast";
                     }
                     writer.WriteLine($"{ResultVarName}.{property.Setter.Name.ToFirstCharacterUpperCase()}({valueVarName})");
+                    if (!propertyType.IsCollection && (propertyType.TypeDefinition is CodeClass || propertyType.TypeDefinition is CodeInterface))
+                        writer.CloseBlock();
                     writer.DecreaseIndent();
                 }
                 if(!includeElse)
@@ -559,9 +564,9 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLine("if val != nil {");
             writer.IncreaseIndent();
             var (valueArgument, pointerSymbol, dereference) = (property.Type.AllTypes.First().TypeDefinition, property.Type.IsCollection) switch {
-                (CodeClass, false) or (CodeEnum, false) => ($"val.(*{propertyTypeImportName})", string.Empty, true),
+                (CodeClass, false) or (CodeEnum, false) => (GetTypeAssertion("val", $"*{propertyTypeImportName}"), string.Empty, true),
                 (CodeClass, true) or (CodeEnum, true) => ("res", "*", true),
-                (CodeInterface, false) => ($"val.({propertyTypeImportName})", string.Empty, false),
+                (CodeInterface, false) => (GetTypeAssertion("val", propertyTypeImportName), string.Empty, false),
                 (CodeInterface, true) => ("res", string.Empty, false),
                 (_, true) => ("res", "*", true),
                 _ => ("val", string.Empty, true),
@@ -573,13 +578,15 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLine("return nil");
             writer.CloseBlock();
         }
+        private static string GetTypeAssertion(string originalReference, string typeImportName, string assignVarName = default, string statusVarName = default) =>
+            $"{assignVarName}{(!string.IsNullOrEmpty(statusVarName) && !string.IsNullOrEmpty(assignVarName) ? ", ": string.Empty)}{statusVarName}{(string.IsNullOrEmpty(statusVarName) && string.IsNullOrEmpty(assignVarName) ? string.Empty : " := ")}{originalReference}.({typeImportName})";
         private static void WriteCollectionCast(string propertyTypeImportName, string sourceVarName, string targetVarName, LanguageWriter writer, string pointerSymbol = "*", bool dereference = true) {
             writer.WriteLines($"{targetVarName} := make([]{propertyTypeImportName}, len({sourceVarName}))",
                                 $"for i, v := range {sourceVarName} {{");
             writer.IncreaseIndent();
             var derefPrefix = dereference ? "*(" : string.Empty;
             var derefSuffix = dereference ? ")" : string.Empty;
-            writer.WriteLine($"{targetVarName}[i] = {derefPrefix}v.({pointerSymbol}{propertyTypeImportName}){derefSuffix}");
+            writer.WriteLine($"{targetVarName}[i] = {GetTypeAssertion(derefPrefix + "v", pointerSymbol + propertyTypeImportName)}{derefSuffix}");
             writer.CloseBlock();
         }
         private static string getSendMethodName(string returnType, CodeMethod codeElement, bool isPrimitive, bool isBinary, bool isEnum) {
@@ -644,7 +651,7 @@ namespace Kiota.Builder.Writers.Go {
             var resultReturnCast = isVoid switch {
                 true => string.Empty,
                 _ when !string.IsNullOrEmpty(valueVarName) => valueVarName,
-                _ => $"res.({returnType}), "
+                _ => $"{GetTypeAssertion("res", returnType)}, "
             };
             writer.WriteLine($"return {resultReturnCast}nil");
         }
@@ -693,7 +700,8 @@ namespace Kiota.Builder.Writers.Go {
                     writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({bodyParamReference})");
                 else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.TypeDefinition is CodeInterface)) {
                     if(bodyType.IsCollection) {
-                        WriteCollectionCast($"{conventions.SerializationHash}.Parsable", bodyParamReference, "cast", writer, string.Empty, false);
+                        var parsableSymbol = GetConversionHelperMethodImport(parentClass, "Parsable");
+                        WriteCollectionCast(parsableSymbol, bodyParamReference, "cast", writer, string.Empty, false);
                         bodyParamReference = "cast...";
                     }
                     writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable(m.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
@@ -789,7 +797,7 @@ namespace Kiota.Builder.Writers.Go {
                                 $"for i, v := range {valueGet} {{");
                 writer.IncreaseIndent();
                 if(isInterface)
-                    writer.WriteLine($"cast[i] = v.({parsableSymbol})");
+                    writer.WriteLine($"cast[i] = {GetTypeAssertion("v", parsableSymbol)}");
                 else
                     writer.WriteLines($"temp := v", // temporary creating a new reference to avoid pointers to the same object
                         $"cast[i] = {parsableSymbol}(&temp)");
