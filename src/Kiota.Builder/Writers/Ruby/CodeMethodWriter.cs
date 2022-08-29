@@ -185,6 +185,8 @@ namespace Kiota.Builder.Writers.Ruby {
                                 $"request_info.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
                                 $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}",
                                 $"request_info.http_method = :{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
+            if(codeElement.AcceptedResponseTypes.Any())
+                writer.WriteLine($"request_info.headers['Accept'] = '{string.Join(", ", codeElement.AcceptedResponseTypes)}'");
             if (requestParams.requestConfiguration != null)
             {
                 var queryString = requestParams.QueryParameters;
@@ -201,7 +203,7 @@ namespace Kiota.Builder.Writers.Ruby {
                         writer.WriteLine($"request_info.set_content_from_parsable(self.{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
                 }
             }
-            writer.WriteLine("return request_info;");
+            writer.WriteLine("return request_info");
         }
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"@{property.Name.ToSnakeCase()}";
         private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
