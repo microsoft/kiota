@@ -50,10 +50,10 @@ module Files
         ## 
         def get_field_deserializers() 
             return super.merge({
-                "categories" => lambda {|o, n| o.categories = n.get_collection_of_primitive_values(String) },
-                "changeKey" => lambda {|o, n| o.change_key = n.get_string_value() },
-                "createdDateTime" => lambda {|o, n| o.created_date_time = n.get_date_value() },
-                "lastModifiedDateTime" => lambda {|o, n| o.last_modified_date_time = n.get_date_value() },
+                "categories" => lambda {|n| @categories = n.get_collection_of_primitive_values(String) },
+                "changeKey" => lambda {|n| @change_key = n.get_string_value() },
+                "createdDateTime" => lambda {|n| @created_date_time = n.get_date_value() },
+                "lastModifiedDateTime" => lambda {|n| @last_modified_date_time = n.get_date_value() },
             })
         end
         ## 
