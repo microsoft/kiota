@@ -157,7 +157,7 @@ namespace Kiota.Builder.Refiners {
                         currentClass.AddUsing(new CodeUsing { 
                             Name = usingName,
                             Declaration = new CodeType {
-                                IsExternal = true,
+                                IsExternal = false,
                                 Name = $"{(string.IsNullOrEmpty(prefix) ? "./" : prefix)}{usingName}",
                             }
                         });
@@ -167,7 +167,7 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(current, c => AddNamespaceModuleImports(c, clientNamespaceName));
         }
         private static void CorrectImplements(ProprietableBlockDeclaration block) {
-            block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
+            block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = "MicrosoftKiotaAbstractions::AdditionalDataHolder"); 
             }
     }
 }

@@ -136,7 +136,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"return {{");
             writer.IncreaseIndent();
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-                writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\" => lambda {{|o, n| o.{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
+                writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\" => lambda {{|n| @{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
             }
             writer.DecreaseIndent();
             if(parentClass.StartBlock.Inherits != null)
@@ -172,7 +172,7 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.WriteLine(")");
             var isStream = conventions.StreamTypeName.Equals(StringComparison.OrdinalIgnoreCase);
             var genericTypeForSendMethod = GetSendRequestMethodName(isStream);
-            writer.WriteLine($"return @http_core.{genericTypeForSendMethod}(request_info, {returnType}, response_handler)");
+            writer.WriteLine($"return @request_adapter.{genericTypeForSendMethod}(request_info, {returnType}, response_handler)");
         }
 
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer) {
@@ -185,15 +185,22 @@ namespace Kiota.Builder.Writers.Ruby {
                                 $"request_info.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
                                 $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}",
                                 $"request_info.http_method = :{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
+            if(codeElement.AcceptedResponseTypes.Any())
+                writer.WriteLine($"request_info.headers['Accept'] = '{string.Join(", ", codeElement.AcceptedResponseTypes)}'");
             if (requestParams.requestConfiguration != null)
             {
                 var queryString = requestParams.QueryParameters;
                 var headers = requestParams.Headers;
                 // TODO add options handling
-                if(headers != null)
-                    writer.WriteLine($"request_info.set_headers_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
-                if(queryString != null)
-                    writer.WriteLines($"request_info.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
+                if(headers != null || queryString != null) {
+                    writer.WriteLine($"unless {requestParams.requestConfiguration.Name.ToSnakeCase()}.nil?"); 
+                    writer.IncreaseIndent();
+                    if(headers != null)
+                        writer.WriteLine($"request_info.set_headers_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
+                    if(queryString != null)
+                        writer.WriteLines($"request_info.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
+                    writer.CloseBlock("end");
+                }
                 if(requestParams.requestBody != null) {
                     if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                         writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name})");
@@ -201,7 +208,7 @@ namespace Kiota.Builder.Writers.Ruby {
                         writer.WriteLine($"request_info.set_content_from_parsable(self.{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
                 }
             }
-            writer.WriteLine("return request_info;");
+            writer.WriteLine("return request_info");
         }
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"@{property.Name.ToSnakeCase()}";
         private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {

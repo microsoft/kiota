@@ -49,10 +49,7 @@ module MicrosoftKiotaNethttplibrary
       http = @client.new(uri.host, uri.port)
       http.use_ssl = true
       http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-
-      request.add_field 'Authorization', request_info.headers['Authorization']
-      request.add_field 'Content-Type', 'application/json'
-      request.add_field 'Accept', 'application/json'
+      request.headers = request_info.headers
       response = http.request(request)
 
       if response_handler
