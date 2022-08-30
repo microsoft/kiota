@@ -35,8 +35,8 @@ module Files
         ## 
         def get_field_deserializers() 
             return {
-                "@odata.nextLink" => lambda {|o, n| o.next_link = n.get_string_value() },
-                "value" => lambda {|o, n| o.value = n.get_collection_of_object_values(Files::Message) },
+                "@odata.nextLink" => lambda {|n| @next_link = n.get_string_value() },
+                "value" => lambda {|n| @value = n.get_collection_of_object_values(Files::Message) },
             }
         end
         ## 

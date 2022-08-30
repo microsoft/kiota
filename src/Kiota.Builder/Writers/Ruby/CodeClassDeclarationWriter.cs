@@ -26,7 +26,9 @@ namespace  Kiota.Builder.Writers.Ruby {
                         
                 foreach (var relativePath in codeElement.Usings
                                             .Where(x => !x.IsExternal)
-                                            .Select(x => relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
+                                            .Select(x => x.Declaration?.Name?.StartsWith('.') ?? false ? 
+                                                (string.Empty, string.Empty, x.Declaration.Name) :
+                                                relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
                                             .Select(x => x.Item3)
                                             .Distinct()
                                             .OrderBy(x => x))

@@ -10,12 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added none output formatter to CLI commons. (Shell)
+- Added 'Accept' field of http request header in Ruby.  [#1660](https://github.com/microsoft/kiota/issues/1660)
 
 ### Changed
 
 - Fixed a bug where Go clients would panic in case of nil response value.
 - Fixed a bug to properly add request headers to Nethttp requests in Ruby.
 - Fixed a bug to properly reject invalid URLs in Ruby.
+- Fixed an issue with require statements being generated instead of require relative in Ruby. 
+- Updated AdditionDataHolder with the correct namespace. (Ruby)
+- Removed/fixed passing in the current instance to fields deserializers in Ruby. [#1663](https://github.com/microsoft/kiota/issues/1663)
 - Fix issue with duplicate variable declaration in command handlers (Shell)
 - Update namespace qualification algorithm (helps in resolving when a type name appears in multiple namespaces) to use case insensitive string comparison (CSharp).
 

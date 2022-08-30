@@ -98,7 +98,7 @@ module MicrosoftKiotaSerialization
       @current_node.each do |k, v|
         deserializer = fields[k]
         if deserializer
-          deserializer.call(item, JsonParseNode.new(v))
+          deserializer.call(JsonParseNode.new(v))
         elsif item.additional_data
           item.additional_data[k] = v
         else
