@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Python core libraries moved to dedicated repositories.
 - Fixed a bug where Go clients would panic in case of nil response value.
-- Fixed a bug to properly add request headers to Nethttp requests in Ruby.
+- Fixed a bug to properly add request headers to Nethttp requests in Ruby. 
 - Fixed a bug to properly reject invalid URLs in Ruby.
 - Fixed an issue with require statements being generated instead of require relative in Ruby. 
 - Updated AdditionDataHolder with the correct namespace. (Ruby)
