@@ -270,6 +270,9 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("m.requestAdapter.SendAsync", result);
         Assert.Contains("return res.(", result);
         Assert.Contains("err != nil", result);
+        Assert.Contains("return nil, err", result);
+        Assert.Contains("if res == nil", result);
+        Assert.Contains("return nil, nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -288,6 +291,9 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.DoesNotContain("m.requestAdapter.SendAsync", result);
         Assert.Contains("m.requestAdapter.SendEnumAsync", result);
         Assert.Contains("ParseSomeEnum", result);
+        Assert.Contains("return nil, err", result);
+        Assert.Contains("if res == nil", result);
+        Assert.Contains("return nil, nil", result);
         Assert.Contains("res.(*SomeEnum)", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
@@ -311,6 +317,9 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("ParseSomeEnum", result);
         Assert.DoesNotContain("val[i] = *(v.(*SomeEnum))", result);
         Assert.Contains("val[i] = v.(SomeEnum)", result);
+        Assert.Contains("return nil, err", result);
+        Assert.DoesNotContain("if res == nil", result);
+        Assert.DoesNotContain("return nil, nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
