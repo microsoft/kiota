@@ -396,7 +396,7 @@ namespace Kiota.Builder.Writers.Go {
             }
             
             writer.WriteLine($"var {ResponseHandlerVarName} {conventions.AbstractionsHash}.ResponseHandler = nil");
-            writer.WriteLine("if requestConfiguration != nil && requestConfiguration.ResponseHandler != nil {{");
+            writer.WriteLine("if requestConfiguration != nil && requestConfiguration.ResponseHandler != nil {");
             writer.IncreaseIndent();
             writer.WriteLine($"{ResponseHandlerVarName} = requestConfiguration.ResponseHandler");
             writer.CloseBlock();
