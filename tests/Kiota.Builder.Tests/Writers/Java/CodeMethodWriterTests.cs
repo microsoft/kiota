@@ -526,11 +526,10 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("final ParseNode mappingValueNode = parseNode.getChildNode(\"@odata.type\")", result);
         Assert.Contains("if (mappingValueNode != null) {", result);
         Assert.Contains("final String mappingValue = mappingValueNode.getStringValue()", result);
-        Assert.Contains("if mappingValue != null {", result);
         Assert.DoesNotContain("switch (mappingValue) {", result);
         Assert.DoesNotContain("case \"ns.childmodel\": return new ChildModel();", result);
-        Assert.Contains("final var result = new IntersectionTypeWrapper()", result);
-        Assert.DoesNotContain("if (mappingValue.equalsIgnoreCase(\"#kiota.complexType1\")) {", result);
+        Assert.Contains("final UnionTypeWrapper result = new UnionTypeWrapper()", result);
+        Assert.Contains("if (\"#kiota.complexType1\".equalsIgnoreCase(mappingValue)) {", result);
         Assert.Contains("result.setComplexType1Value(new ComplexType1())", result);
         Assert.Contains("if (parseNode.getStringValue() != null) {", result);
         Assert.Contains("result.setStringValue(parseNode.getStringValue())", result);
@@ -539,8 +538,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("return result", result);
         Assert.DoesNotContain("return new UnionTypeWrapper()", result);
         AssertExtensions.Before("parseNode.getStringValue()", "getCollectionOfObjectValues(ComplexType2::createFromDiscriminatorValue)", result);
-        AssertExtensions.OutsideOfBlock("if (parseNode.getStringValue() != null) ", "mappingValue != null", result);
-        AssertExtensions.OutsideOfBlock("else if (parseNode.getCollectionOfObjectValues(ComplexType2::createFromDiscriminatorValue) != null", "mappingValue != null", result);
+        AssertExtensions.OutsideOfBlock("if (parseNode.getStringValue() != null) ", "if (\"#kiota.complexType1\".equalsIgnoreCase(mappingValue))", result);
+        AssertExtensions.OutsideOfBlock("else if (parseNode.getCollectionOfObjectValues(ComplexType2::createFromDiscriminatorValue) != null", "if (\"#kiota.complexType1\".equalsIgnoreCase(mappingValue))", result);
         AssertExtensions.OutsideOfBlock("return result", "mappingValueNode != null", result);
         AssertExtensions.OutsideOfBlock("result = new UnionTypeWrapper()", "mappingValueNode != null", result);
         AssertExtensions.CurlyBracesAreClosed(result);
@@ -573,8 +572,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.DoesNotContain("if mappingValue != null {", result);
         Assert.DoesNotContain("switch (mappingValue) {", result);
         Assert.DoesNotContain("case \"ns.childmodel\": return new ChildModel();", result);
-        Assert.Contains("final var result = new IntersectionTypeWrapper()", result);
-        Assert.DoesNotContain("if (mappingValue.equalsIgnoreCase(\"#kiota.complexType1\")) {", result);
+        Assert.Contains("final IntersectionTypeWrapper result = new IntersectionTypeWrapper()", result);
+        Assert.DoesNotContain("if (\"#kiota.complexType1\".equalsIgnoreCase(mappingValue)) {", result);
         Assert.Contains("result.setComplexType1Value(new ComplexType1())", result);
         Assert.Contains("result.setComplexType3Value(new ComplexType3())", result);
         Assert.Contains("if (parseNode.getStringValue() != null) {", result);
