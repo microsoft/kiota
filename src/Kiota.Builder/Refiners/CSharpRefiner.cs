@@ -32,7 +32,7 @@ namespace Kiota.Builder.Refiners {
             );
             // Replace the reserved types and namespace segments
             ReplaceReservedModelTypes(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Object");
-            ReplaceReservedNamespaceTypeNames(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Namespace");
+            ReplaceReservedNamespaceTypeNames(generatedCode, new CSharpReservedTypesProvider(), static x => $"{x}Namespace");
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);

@@ -259,13 +259,13 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         // replace the using namespace segment names that are internally defined by the generator
         currentDeclaration.Usings
-            .Where(codeUsing => codeUsing is { IsExternal: false })
-            .Select(codeUsing => new Tuple<CodeUsing, string[]>(codeUsing, codeUsing.Name.Split('.')))
+            .Where(static codeUsing => codeUsing is { IsExternal: false })
+            .Select(static codeUsing => new Tuple<CodeUsing, string[]>(codeUsing, codeUsing.Name.Split('.')))
             .Where(tuple => tuple.Item2.Any(x => provider.ReservedNames.Contains(x)))
             .ToList()
             .ForEach(tuple => {
                 tuple.Item1.Name = tuple.Item2.Select(x => provider.ReservedNames.Contains(x) ? replacement.Invoke(x) : x)
-                                              .Aggregate((x, y) => $"{x}.{y}");
+                                              .Aggregate(static (x, y) => $"{x}.{y}");
             });
     }
             

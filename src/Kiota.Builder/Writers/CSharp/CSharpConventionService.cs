@@ -101,7 +101,7 @@ namespace Kiota.Builder.Writers.CSharp {
                     var duplicateMappingTypes = discriminatorMethod.DiscriminatorMappings.Select(x => x.Value).OfType<CodeType>()
                         .Where(x => !DoesTypeExistsInSameNamesSpaceAsTarget(x, targetElement))
                         .Select(x => x.Name)
-                        .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
+                        .GroupBy(static x => x, StringComparer.OrdinalIgnoreCase)
                         .Where(group => group.Count() > 1)
                         .Select(x => x.Key);
 
