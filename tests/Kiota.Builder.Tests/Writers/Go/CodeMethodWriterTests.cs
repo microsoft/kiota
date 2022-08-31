@@ -658,7 +658,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("cast[i] = *(v.(*ComplexType2))", result);
         Assert.Contains("result.SetComplexType2Value(cast)", result);
         Assert.Contains("return result, nil", result);
-        Assert.DoesNotContain("return NewUnionTypeWrapper(), nil", result);
+        Assert.DoesNotContain("return NewIntersectionTypeWrapper(), nil", result);
         AssertExtensions.Before("parseNode.GetStringValue()", "GetCollectionOfObjectValues(CreateComplexType2FromDiscriminatorValue)", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
