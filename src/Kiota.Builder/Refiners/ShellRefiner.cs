@@ -34,6 +34,7 @@ namespace Kiota.Builder.Refiners
             );
             // Replace the reserved types
             ReplaceReservedModelTypes(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Object");
+            ReplaceReservedNamespaceTypeNames(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Namespace");
             AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiException",

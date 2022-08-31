@@ -30,8 +30,9 @@ namespace Kiota.Builder.Refiners {
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
                 new HashSet<Type>{ typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum) }
             );
-            // Replace the reserved types
+            // Replace the reserved types and namespace segments
             ReplaceReservedModelTypes(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Object");
+            ReplaceReservedNamespaceTypeNames(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Namespace");
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);

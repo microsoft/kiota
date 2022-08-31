@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -165,7 +165,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
 
     protected static void ReplaceReservedModelTypes(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) => 
-        ReplaceReservedNames(current, provider, replacement, shouldReplaceCallback: (codeElement) => codeElement is CodeClass || codeElement is CodeMethod || codeElement is CodeProperty);
+        ReplaceReservedNames(current, provider, replacement,codeElementExceptions: new HashSet<Type>{typeof(CodeNamespace)} ,shouldReplaceCallback: (codeElement) => codeElement is CodeClass || codeElement is CodeMethod || codeElement is CodeProperty);
+    
+    protected static void ReplaceReservedNamespaceTypeNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) => 
+        ReplaceReservedNames(current, provider, replacement, shouldReplaceCallback: (codeElement) => codeElement is CodeNamespace || codeElement is CodeClass);
 
     protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type> codeElementExceptions = null, Func<CodeElement, bool> shouldReplaceCallback = null) {
         var shouldReplace = shouldReplaceCallback?.Invoke(current) ?? true;
@@ -174,7 +177,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             isNotInExceptions &&
             shouldReplace &&
             currentClass.StartBlock is ClassDeclaration currentDeclaration) {
-            ReplaceReservedCodeUsings(currentDeclaration, provider, replacement);
+            ReplaceReservedCodeUsingDeclarationNames(currentDeclaration, provider, replacement);
+            // if we are don't have a CodeNamespace exception, the namespace segments are also being replaced
+            // in the CodeNamespace if-block so we also need to update the using references
+            if (!codeElementExceptions?.Contains(typeof(CodeNamespace)) ?? true) 
+                ReplaceReservedCodeUsingNamespaceSegmentNames(currentDeclaration, provider, replacement);
             if(provider.ReservedNames.Contains(currentDeclaration.Inherits?.Name))
                 currentDeclaration.Inherits.Name = replacement(currentDeclaration.Inherits.Name);
         } else if(current is CodeNamespace currentNamespace &&
@@ -222,7 +229,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
             current.Name = replacement.Invoke(current.Name);
         }
-
+        
         CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
     }
     private static void ReplaceReservedEnumNames(CodeEnum currentEnum, IReservedNamesProvider provider, Func<string, string> replacement)
@@ -235,8 +242,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         x.Name = replacement.Invoke(x.Name);
                     });
     }
-    private static void ReplaceReservedCodeUsings(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
+    private static void ReplaceReservedCodeUsingDeclarationNames(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
     {
+        // replace the using declaration type names that are internally defined by the generator
         currentDeclaration.Usings
                         .Select(x => x.Declaration)
                         .Where(x => x != null && !x.IsExternal)
@@ -246,6 +254,22 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                             x.Name = replacement.Invoke(x.Name);
                         });
     }
+    
+    private static void ReplaceReservedCodeUsingNamespaceSegmentNames(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
+    {
+        // replace the using namespace segment names that are internally defined by the generator
+        currentDeclaration.Usings
+            .Where(codeUsing => codeUsing is { IsExternal: false })
+            .Select(codeUsing => new Tuple<CodeUsing, string[]>(codeUsing, codeUsing.Name.Split('.')))
+            .Where(tuple => tuple.Item2.Any(x => provider.ReservedNames.Contains(x)))
+            .ToList()
+            .ForEach(tuple => {
+                tuple.Item1.Name = tuple.Item2.Select(x => provider.ReservedNames.Contains(x) ? replacement.Invoke(x) : x)
+                                              .Aggregate((x, y) => $"{x}.{y}");
+            });
+    }
+            
+
     private static void ReplaceReservedNamespaceSegments(CodeNamespace currentNamespace, IReservedNamesProvider provider, Func<string, string> replacement)
     {
         var segments = currentNamespace.Name.Split('.');

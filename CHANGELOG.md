@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed/fixed passing in the current instance to fields deserializers in Ruby. [#1663](https://github.com/microsoft/kiota/issues/1663)
 - Fix issue with duplicate variable declaration in command handlers (Shell)
 - Update namespace qualification algorithm (helps in resolving when a type name appears in multiple namespaces) to use case insensitive string comparison (CSharp).
+- Fix an issue where namespace reserved name replacement would not include replacing import names in the declared areas in CSharp. [#1799](https://github.com/microsoft/kiota/issues/1799)
 
 ## [0.4.0] - 2022-08-18
 
