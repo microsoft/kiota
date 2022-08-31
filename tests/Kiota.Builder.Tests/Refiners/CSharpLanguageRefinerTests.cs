@@ -86,6 +86,45 @@ public class CSharpLanguageRefinerTests {
         Assert.DoesNotContain("@", property.Name); // classname will be capitalized
     }
     [Fact]
+    public void EscapesReservedKeywordsForReservedNamespaceNameSegments() {
+        var subNS = root.AddNamespace($"{root.Name}.task"); // otherwise the import gets trimmed
+        var requestBuilder = subNS.AddClass(new CodeClass {
+            Name = "tasksRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        
+        var indexerCodeType = new CodeType { Name = "taskItemRequestBuilder" };
+        var indexer = new CodeIndexer {
+            Name = "idx",
+            SerializationName = "id",
+            IndexType = new CodeType {
+                Name = "string",
+            },
+            ReturnType = indexerCodeType
+        };
+        requestBuilder.SetIndexer(indexer);
+
+        
+        var itemSubNamespace = root.AddNamespace($"{subNS.Name}.item"); // otherwise the import gets trimmed
+        var itemRequestBuilder = itemSubNamespace.AddClass(new CodeClass {
+            Name = "taskItemRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        
+        var requestExecutor = itemRequestBuilder.AddMethod(new CodeMethod() {
+            Name = "get",
+            Kind = CodeMethodKind.IndexerBackwardCompatibility,
+            ReturnType = new CodeType {
+                Name = "String"
+            },
+        }).First();
+
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        
+        Assert.Contains("TaskNamespace", subNS.Name);
+        Assert.Contains("TaskNamespace", itemSubNamespace.Name);
+    }
+    [Fact]
     public void ConvertsUnionTypesToWrapper() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
