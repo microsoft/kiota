@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -101,10 +101,10 @@ namespace Kiota.Builder.Writers.CSharp {
                     var duplicateMappingTypes = discriminatorMethod.DiscriminatorMappings.Select(x => x.Value).OfType<CodeType>()
                         .Where(x => !DoesTypeExistsInSameNamesSpaceAsTarget(x, targetElement))
                         .Select(x => x.Name)
-                        .GroupBy(x => x)
+                        .GroupBy(static x => x, StringComparer.OrdinalIgnoreCase)
                         .Where(group => group.Count() > 1)
                         .Select(x => x.Key);
-                    
+
                     parentElements.AddRange(duplicateMappingTypes);
                 }
             }
