@@ -15,7 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Python core libraries moved to dedicated repositories.
 - Fixed a bug where Go clients would panic in case of nil response value.
 - Fixed a bug to properly add request headers to Nethttp requests in Ruby. 
 - Fixed a bug to properly reject invalid URLs in Ruby.
@@ -26,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update namespace qualification algorithm (helps in resolving when a type name appears in multiple namespaces) to use case insensitive string comparison (CSharp).
 - Fix an issue where namespace reserved name replacement would not include replacing import names in the declared areas in CSharp. [#1799](https://github.com/microsoft/kiota/issues/1799)
 - Removed Python abstractions, http, authentication and serialization packages
+- Fixed an issue with generating the incorrect serialized type name and require statement for get/post methods (Ruby). 
+- Fixed an issue with the require statements generated for entity superclass in Ruby.  
 
 ## [0.4.0] - 2022-08-18
 
