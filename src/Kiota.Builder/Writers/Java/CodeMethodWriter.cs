@@ -36,7 +36,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 WriteSerializerBody(parentClass, codeElement, writer, inherits);
             break;
             case CodeMethodKind.Deserializer:
-                WriteDeserializerBody(codeElement, codeElement, parentClass, writer, inherits);
+                WriteDeserializerBody(codeElement, parentClass, writer, inherits);
             break;
             case CodeMethodKind.IndexerBackwardCompatibility:
                 WriteIndexerBody(codeElement, parentClass, writer, returnType);
@@ -126,10 +126,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                     .ToArray();
         foreach(var property in otherProps) {
             if(property.Type is CodeType propertyType) {
-                var typeName = conventions.GetTypeString(propertyType, codeElement, true);
                 var deserializationMethodName = $"{parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)}";
                 writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ({deserializationMethodName} != null) {{");
-                var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false);
                 writer.WriteLine($"{ResultVarName}.{property.Setter.Name.ToFirstCharacterLowerCase()}({deserializationMethodName});");
                 writer.DecreaseIndent();
             }
@@ -143,10 +141,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if(complexProperties.Any()) {
             if(includeElse)
                 writer.StartBlock("} else {");
-            foreach(var property in complexProperties) {
-                var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(property.Item2.Name, StringComparison.OrdinalIgnoreCase));
+            foreach(var property in complexProperties)
                 writer.WriteLine($"{ResultVarName}.{property.Item1.Setter.Name.ToFirstCharacterLowerCase()}(new {conventions.GetTypeString(property.Item2, codeElement, false)}());");
-            }
             if(includeElse)
                 writer.CloseBlock();
         } else if (otherProps.Any())
@@ -190,7 +186,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             var propertyType = property.Type as CodeType;
             var serializationMethodName = $"{parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, currentElement)}";
             writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ({serializationMethodName} != null) {{");
-            var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false);
             writer.WriteLine($"{ResultVarName}.{property.Setter.Name.ToFirstCharacterLowerCase()}({serializationMethodName});");
             writer.DecreaseIndent();
             if(!includeElse)
@@ -318,37 +313,38 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, "id"));
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
     }
-    private void WriteDeserializerBody(CodeMethod codeElement, CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool inherits) {
+    private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
             WriteDeserializerBodyForUnionModel(codeElement, parentClass, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
-            WriteDeserializerBodyForIntersectionModel(codeElement, parentClass, writer);
+            WriteDeserializerBodyForIntersectionModel(parentClass, writer);
         else
             WriteDeserializerBodyForInheritedModel(codeElement, parentClass, writer, inherits);
     }
     private static void WriteDeserializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
     {
         var includeElse = false;
-        var otherProps = parentClass
+        var otherPropGetters = parentClass
                                 .Properties
                                 .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
                                 .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
                                 .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                 .ThenBy(static x => x.Name)
+                                .Select(static x => x.Getter.Name.ToFirstCharacterLowerCase())
                                 .ToArray();
-        foreach (var otherProp in otherProps)
+        foreach (var otherPropGetter in otherPropGetters)
         {
-            writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if (this.{otherProp.Getter.Name.ToFirstCharacterLowerCase()}() != null) {{");
-            writer.WriteLine($"return this.{otherProp.Getter.Name.ToFirstCharacterLowerCase()}().{method.Name.ToFirstCharacterLowerCase()}();");
+            writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if (this.{otherPropGetter}() != null) {{");
+            writer.WriteLine($"return this.{otherPropGetter}().{method.Name.ToFirstCharacterLowerCase()}();");
             writer.DecreaseIndent();
             if(!includeElse)
                 includeElse = true;
         }
-        if(otherProps.Any())
+        if(otherPropGetters.Any())
             writer.CloseBlock(decreaseIndent: false);
         writer.WriteLine("return new HashMap<>();");
     }
-    private static void WriteDeserializerBodyForIntersectionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
+    private static void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
     {
         var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)

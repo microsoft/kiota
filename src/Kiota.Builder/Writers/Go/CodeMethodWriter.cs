@@ -136,7 +136,6 @@ namespace Kiota.Builder.Writers.Go {
                                         .ToArray();
             foreach(var property in otherProps) {
                 if(property.Type is CodeType propertyType) {
-                    var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
                     var valueVarName = "val";
                     writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if {valueVarName}, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, parentClass)}; {valueVarName} != nil {{");
                     var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
@@ -164,10 +163,8 @@ namespace Kiota.Builder.Writers.Go {
             if(complexProperties.Any()) {
                 if(includeElse)
                     writer.StartBlock("} else {");
-                foreach(var property in complexProperties) {
-                    var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(property.Item2.Name, StringComparison.OrdinalIgnoreCase));
+                foreach(var property in complexProperties)
                     writer.WriteLine($"{ResultVarName}.{property.Item1.Setter.Name.ToFirstCharacterUpperCase()}({conventions.GetImportedStaticMethodName(property.Item2, codeElement)}())");
-                }
                 if(includeElse)
                     writer.CloseBlock();
             } else if (otherProps.Any())
@@ -499,22 +496,23 @@ namespace Kiota.Builder.Writers.Go {
         private static void WriteDeserializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
         {
             var includeElse = false;
-            var otherProps = parentClass
+            var otherPropGetters = parentClass
                                     .Properties
                                     .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
                                     .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
                                     .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                     .ThenBy(static x => x.Name)
+                                    .Select(static x => x.Getter.Name.ToFirstCharacterUpperCase())
                                     .ToArray();
-            foreach (var otherProp in otherProps)
+            foreach (var otherPropGetter in otherPropGetters)
             {
-                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}() != nil {{");
-                writer.WriteLine($"return m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}().{method.Name.ToFirstCharacterUpperCase()}()");
+                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if m.{otherPropGetter}() != nil {{");
+                writer.WriteLine($"return m.{otherPropGetter}().{method.Name.ToFirstCharacterUpperCase()}()");
                 writer.DecreaseIndent();
                 if(!includeElse)
                     includeElse = true;
             }
-            if(otherProps.Any())
+            if(otherPropGetters.Any())
                 writer.CloseBlock(decreaseIndent: false);
             writer.WriteLine($"return make({method.ReturnType.Name})");
         }

@@ -149,10 +149,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 writer.WriteLine("else {");
                 writer.IncreaseIndent();
             }
-            foreach(var property in complexProperties) {
-                var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(property.Item2.Name, StringComparison.OrdinalIgnoreCase));
+            foreach(var property in complexProperties)
                 writer.WriteLine($"{ResultVarName}.{property.Item1.Name.ToFirstCharacterUpperCase()} = new {conventions.GetTypeString(property.Item2, codeElement)}();");
-            }
             if(includeElse) {
                 writer.CloseBlock();
             }
@@ -265,15 +263,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     private void WriteDeserializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
     {
         var includeElse = false;
-        foreach (var otherProp in parentClass
+        foreach (var otherPropName in parentClass
                                         .Properties
                                         .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
                                         .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
                                         .OrderBy(static x => x, CodePropertyTypeForwardComparer)
-                                        .ThenBy(static x => x.Name))
+                                        .ThenBy(static x => x.Name)
+                                        .Select(static x => x.Name.ToFirstCharacterUpperCase()))
         {
-            writer.StartBlock($"{(includeElse? "else " : string.Empty)}if({otherProp.Name.ToFirstCharacterUpperCase()} != null) {{");
-            writer.WriteLine($"return {otherProp.Name.ToFirstCharacterUpperCase()}.{method.Name.ToFirstCharacterUpperCase()}();");
+            writer.StartBlock($"{(includeElse? "else " : string.Empty)}if({otherPropName} != null) {{");
+            writer.WriteLine($"return {otherPropName}.{method.Name.ToFirstCharacterUpperCase()}();");
             writer.CloseBlock();
             if(!includeElse)
                 includeElse = true;
