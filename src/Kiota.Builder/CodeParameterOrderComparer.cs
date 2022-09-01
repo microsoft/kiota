@@ -4,7 +4,7 @@ namespace Kiota.Builder;
 public class CodeParameterOrderComparer : IComparer<CodeParameter>
 {
 
-    private List<string> parameterTypeOrders = new ();
+    private readonly List<string> parameterTypeOrders;
 
     public CodeParameterOrderComparer(List<string> defaultParamOrder)
     {
@@ -12,6 +12,7 @@ public class CodeParameterOrderComparer : IComparer<CodeParameter>
     }
     public CodeParameterOrderComparer()
     {
+        parameterTypeOrders = new List<string>();
     }
 
     public int Compare(CodeParameter x, CodeParameter y)
