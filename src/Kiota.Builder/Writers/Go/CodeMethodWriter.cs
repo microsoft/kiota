@@ -44,9 +44,6 @@ namespace Kiota.Builder.Writers.Go {
                 case CodeMethodKind.RequestExecutor when !codeElement.IsOverload:
                     WriteRequestExecutorBody(codeElement, requestParams, returnType, parentClass, writer);
                 break;
-                case CodeMethodKind.RequestExecutor when codeElement.IsOverload:
-                    WriteExecutorMethodCall(codeElement, requestParams, writer);
-                break;
                 case CodeMethodKind.Getter:
                     WriteGetterBody(codeElement, writer, parentClass);
                     break;
@@ -431,13 +428,7 @@ namespace Kiota.Builder.Writers.Go {
 
             writer.WriteLine(template(generatorMethodName, paramsCall));
         }
-        private static void WriteExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer)
-        {
-            WriteMethodCall(codeElement, requestParams, writer, CodeMethodKind.RequestExecutor, (name, paramsCall) => 
-                $"return m.{name}({paramsCall});",
-                1
-            );
-        }
+
         private static void WriteGeneratorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, string prefix) {
             WriteMethodCall(codeElement, requestParams, writer, CodeMethodKind.RequestGenerator, (name, paramsCall) => 
                 $"{prefix}m.{name}({paramsCall});"
