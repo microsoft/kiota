@@ -832,6 +832,46 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesUnionDeSerializerBody() {
+        var wrapper = AddUnionTypeWrapper();
+        var deserializationMethod = wrapper.AddMethod(new CodeMethod{
+            Name = "GetFieldDeserializers",
+            Kind = CodeMethodKind.Deserializer,
+            IsAsync = false,
+            ReturnType = new CodeType {
+                Name = "Map<String, Consumer<ParseNode>>",
+            },
+        }).First();
+        writer.Write(deserializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("final UnionTypeWrapper res =", result);
+        Assert.Contains("this.getComplexType1Value() != null", result);
+        Assert.Contains("return this.getComplexType1Value().getFieldDeserializers()", result);
+        Assert.Contains("new HashMap<>()", result);
+        AssertExtensions.Before("return this.getComplexType1Value().getFieldDeserializers()", "new HashMap<>", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesIntersectionDeSerializerBody() {
+        var wrapper = AddIntersectionTypeWrapper();
+        var deserializationMethod = wrapper.AddMethod(new CodeMethod{
+            Name = "GetFieldDeserializers",
+            Kind = CodeMethodKind.Deserializer,
+            IsAsync = false,
+            ReturnType = new CodeType {
+                Name = "Map<String, Consumer<ParseNode>>",
+            },
+        }).First();
+        writer.Write(deserializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("final IntersectionTypeWrapper res =", result);
+        Assert.Contains("this.getComplexType1Value() != null || this.getComplexType3Value() != null", result);
+        Assert.Contains("return ParseNodeHelper.MergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", result);
+        Assert.Contains("new HashMap<>()", result);
+        AssertExtensions.Before($"return ParseNodeHelper.MergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", "new HashMap<>()", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesInheritedDeSerializerBody() {
         method.Kind = CodeMethodKind.Deserializer;
         method.IsAsync = false;

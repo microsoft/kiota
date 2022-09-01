@@ -319,10 +319,61 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
     }
     private void WriteDeserializerBody(CodeMethod codeElement, CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool inherits) {
+        if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+            WriteDeserializerBodyForUnionModel(codeElement, parentClass, writer);
+        else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+            WriteDeserializerBodyForIntersectionModel(codeElement, parentClass, writer);
+        else
+            WriteDeserializerBodyForInheritedModel(codeElement, parentClass, writer, inherits);
+    }
+    private static void WriteDeserializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
+    {
+        var includeElse = false;
+        var otherProps = parentClass
+                                .Properties
+                                .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
+                                .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                .ThenBy(static x => x.Name)
+                                .ToArray();
+        foreach (var otherProp in otherProps)
+        {
+            writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if (this.{otherProp.Getter.Name.ToFirstCharacterLowerCase()}() != null) {{");
+            writer.WriteLine($"return this.{otherProp.Getter.Name.ToFirstCharacterLowerCase()}().{method.Name.ToFirstCharacterLowerCase()}();");
+            writer.DecreaseIndent();
+            if(!includeElse)
+                includeElse = true;
+        }
+        if(otherProps.Any())
+            writer.CloseBlock(decreaseIndent: false);
+        writer.WriteLine("return new HashMap<>();");
+    }
+    private static void WriteDeserializerBodyForIntersectionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
+    {
+        var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                            .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
+                                            .ToArray();
+        if(complexProperties.Any()) {
+            var propertiesNames = complexProperties
+                                .Select(static x => x.Getter.Name.ToFirstCharacterLowerCase())
+                                .OrderBy(static x => x)
+                                .ToArray();
+            var propertiesNamesAsConditions = propertiesNames
+                                .Select(static x => $"this.{x}() != null")
+                                .Aggregate(static (x, y) => $"{x} || {y}");
+            writer.StartBlock($"if ({propertiesNamesAsConditions}) {{");
+            var propertiesNamesAsArgument = propertiesNames
+                                .Aggregate(static (x, y) => $"this.{x}(), this.{y}()");
+            writer.WriteLine($"return ParseNodeHelper.MergeDeserializersForIntersectionWrapper({propertiesNamesAsArgument});");//TODO: import in refiner
+            writer.CloseBlock();
+        }
+        writer.WriteLine("return new HashMap<>();");
+    }
+    private void WriteDeserializerBodyForInheritedModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool inherits) {
         var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
         writer.WriteLines(
             $"final {parentClass.Name.ToFirstCharacterUpperCase()} currentObject = this;",
-            $"return new HashMap<>({(inherits ? "super." + codeElement.Name.ToFirstCharacterLowerCase()+ "()" : fieldToSerialize.Count())}) {{{{");
+            $"return new HashMap<>({(inherits ? "super." + method.Name.ToFirstCharacterLowerCase()+ "()" : fieldToSerialize.Count())}) {{{{");
         if(fieldToSerialize.Any()) {
             writer.IncreaseIndent();
             fieldToSerialize

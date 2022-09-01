@@ -534,7 +534,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.StartBlock($"if {propertiesNamesAsConditions} {{");
                 var propertiesNamesAsArgument = propertiesNames
                                     .Aggregate(static (x, y) => $"m.{x}(), m.{y}()");
-                writer.WriteLine($"return {conventions.SerializationHash}.MergeDeserializersForIntersectionWrapper({propertiesNamesAsArgument})");//TODO: import in refiner
+                writer.WriteLine($"return {conventions.SerializationHash}.MergeDeserializersForIntersectionWrapper({propertiesNamesAsArgument})");
                 writer.CloseBlock();
             }
             writer.WriteLine($"return make({method.ReturnType.Name})");
