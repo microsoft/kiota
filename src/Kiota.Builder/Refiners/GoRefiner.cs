@@ -121,7 +121,7 @@ public class GoRefiner : CommonLanguageRefiner
         {
             parameter.Name = "ctx";
             parameter.Description = "Pass a context parameter to the request";
-            parameter.Kind = CodeParameterKind.Custom;
+            parameter.Kind = CodeParameterKind.Cancellation;
             parameter.Optional = false;
             parameter.Type.Name = conventions.ContextVarTypeName;
             parameter.Type.IsNullable = false;

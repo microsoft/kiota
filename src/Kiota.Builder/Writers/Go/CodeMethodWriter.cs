@@ -150,7 +150,7 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLine("return nil");
         }
         private static string errorVarDeclaration(bool shouldDeclareErrorVar) => shouldDeclareErrorVar ? ":" : string.Empty;
-        private static readonly CodeParameterOrderComparer parameterOrderComparer = new(new List<string> { "context.Context" });
+        private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
         
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool writePrototypeOnly) {
             var parentBlock = code.Parent;
