@@ -364,6 +364,7 @@ namespace Kiota.Builder.Writers.Go {
             var isBinary = conventions.StreamTypeName.Equals(returnType.TrimStart('*'), StringComparison.OrdinalIgnoreCase);
             var isEnum = codeElement.ReturnType is CodeType collType && collType.TypeDefinition is CodeEnum;
             var sendMethodName = getSendMethodName(returnType, codeElement, isPrimitive, isBinary, isEnum);
+            var contextVarName = codeElement.Parameters.OfKind(CodeParameterKind.Cancellation)?.Name;
             var typeShortName = returnType.Split('.').Last().ToFirstCharacterUpperCase();
             var isVoid = string.IsNullOrEmpty(typeShortName);
             WriteGeneratorMethodCall(codeElement, requestParams, writer, $"{RequestInfoVarName}, err := ");
@@ -389,7 +390,7 @@ namespace Kiota.Builder.Writers.Go {
             var assignmentPrefix = isVoid ?
                         "err =" :
                         "res, err :=";
-            writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}({ContextVarName}, {RequestInfoVarName}, {constructorFunction}{errorMappingVarName})");
+            writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}({contextVarName}, {RequestInfoVarName}, {constructorFunction}{errorMappingVarName})");
             WriteReturnError(writer, returnType);
             var valueVarName = string.Empty;
             if(codeElement.ReturnType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {
@@ -410,7 +411,7 @@ namespace Kiota.Builder.Writers.Go {
             };
             writer.WriteLine($"return {resultReturnCast}nil");
         }
-        private static void WriteMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeMethodKind kind, Func<string, string, string> template, int parametersPad = 0, string defaultParams = null) {
+        private static void WriteMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeMethodKind kind, Func<string, string, string> template, int parametersPad = 0) {
             var generatorMethodName = (codeElement.Parent as CodeClass)
                                                 .Methods
                                                 .OrderBy(x => x.IsOverload)
@@ -428,17 +429,13 @@ namespace Kiota.Builder.Writers.Go {
             
             var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x,y) => $"{x}, {y}") : string.Empty;
 
-            if (!string.IsNullOrEmpty(defaultParams))
-                paramsCall = $"{defaultParams} {paramsCall}";
-            
             writer.WriteLine(template(generatorMethodName, paramsCall));
         }
         private static void WriteExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer)
         {
             WriteMethodCall(codeElement, requestParams, writer, CodeMethodKind.RequestExecutor, (name, paramsCall) => 
                 $"return m.{name}({paramsCall});",
-                1,
-                codeElement.Kind == CodeMethodKind.RequestExecutor ? $"{ContextVarName}," : null
+                1
             );
         }
         private static void WriteGeneratorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, string prefix) {
@@ -447,7 +444,6 @@ namespace Kiota.Builder.Writers.Go {
             );
         }
         private const string RequestInfoVarName = "requestInfo";
-        private const string ContextVarName = "ctx";
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeClass parentClass) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             

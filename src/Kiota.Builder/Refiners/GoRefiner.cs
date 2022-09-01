@@ -131,16 +131,12 @@ public class GoRefiner : CommonLanguageRefiner
     
     private void RemoveHandlerFromRequestBuilder(CodeElement currentElement)
     {
-        if (currentElement is CodeClass currentClass)
+        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
-            // remove all response handlers from request builder param
-            if (currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+            var codeMethods = currentClass.Methods.Where(x => x.Kind == CodeMethodKind.RequestExecutor);
+            foreach (var codeMethod in codeMethods)
             {
-                var codeMethods = currentClass.Methods.Where(x => x.Kind == CodeMethodKind.RequestExecutor);
-                foreach (var codeMethod in codeMethods)
-                {
-                    codeMethod.RemoveParametersByKind(CodeParameterKind.ResponseHandler);
-                }
+                codeMethod.RemoveParametersByKind(CodeParameterKind.ResponseHandler);
             }
         }
 
