@@ -65,7 +65,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         AddDiscriminatorMappingsUsingsToParentClasses(
             generatedCode,
             "ParseNode",
-            addUsings: false
+            addUsings: true
         );
     }
     private static void SetSetterParametersToNullable(CodeElement currentElement, params Tuple<CodeMethodKind, CodePropertyKind>[] accessorPairs) {
