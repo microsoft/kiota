@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added none output formatter to CLI commons. (Shell)
 - Added 'Accept' field of http request header in Ruby.  [#1660](https://github.com/microsoft/kiota/issues/1660)
+- Added support for text serialization in Python. #1406[](https://github.com/microsoft/kiota/issues/1406)
 
 ### Changed
 
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix issue with duplicate variable declaration in command handlers (Shell)
 - Update namespace qualification algorithm (helps in resolving when a type name appears in multiple namespaces) to use case insensitive string comparison (CSharp).
 - Fix an issue where namespace reserved name replacement would not include replacing import names in the declared areas in CSharp. [#1799](https://github.com/microsoft/kiota/issues/1799)
+- Removed Python abstractions, http, authentication and serialization packages
 
 ## [0.4.0] - 2022-08-18
 
