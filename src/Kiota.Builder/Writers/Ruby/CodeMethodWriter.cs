@@ -149,8 +149,8 @@ namespace Kiota.Builder.Writers.Ruby {
             {
                 if(codeElement.IsOfKind(CodeMethodKind.RequestExecutor))
                     returnType = "nil"; //generic type for the future
-            } else {
-                returnType = $"{codeElement?.Parent?.Parent.Name.NormalizeNameSpaceName("::")}::{returnType}";
+            } else if (codeElement.ReturnType is CodeType returnT && returnT.TypeDefinition is not null) {
+                returnType = $"{returnT.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name.NormalizeNameSpaceName("::")}::{returnType}";
             }
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             

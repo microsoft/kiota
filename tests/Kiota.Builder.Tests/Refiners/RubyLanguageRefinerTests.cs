@@ -109,23 +109,6 @@ namespace Kiota.Builder.Refiners.Tests {
             Assert.Equal("someInterface", declaration.Usings.First(usingDef => usingDef.Declaration != null).Declaration?.Name);
         }
         [Fact]
-        public void FixInheritedEntityType() {
-            var model = root.AddClass(new CodeClass {
-                Name = "model",
-                Kind = CodeClassKind.Model
-            }).First();
-            var entity = graphNS.AddClass(new CodeClass {
-                Name = "entity",
-                Kind = CodeClassKind.Model
-            }).First();
-            var declaration = model.StartBlock as ClassDeclaration;
-            declaration.Inherits = new (){
-                Name = "entity"
-            };
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-            Assert.Equal("Graph::Entity", declaration.Inherits.Name);
-        }
-        [Fact]
         public void ReplacesDateTimeOffsetByNativeType() {
             var model = root.AddClass(new CodeClass {
                 Name = "model",
