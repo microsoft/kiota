@@ -38,14 +38,16 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             generatedCode,
             defaultConfiguration.Serializers,
             new (StringComparer.OrdinalIgnoreCase) {
-                "kiota_serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory"
+                "kiota_serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory",
+                "kiota_serialization_text.text_serialization_writer_factory.TextSerializationWriterFactory"
             }
         );
         ReplaceDefaultDeserializationModules(
             generatedCode,
             defaultConfiguration.Deserializers,
             new (StringComparer.OrdinalIgnoreCase) {
-                "kiota_serialization_json.json_parse_node_factory.JsonParseNodeFactory"
+                "kiota_serialization_json.json_parse_node_factory.JsonParseNodeFactory",
+                "kiota_serialization_text.text_parse_node_factory.TextParseNodeFactory"
             }
         );
         AddSerializationModulesImport(generatedCode,
