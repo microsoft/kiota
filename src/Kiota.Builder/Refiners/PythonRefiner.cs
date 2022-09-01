@@ -38,14 +38,16 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             generatedCode,
             defaultConfiguration.Serializers,
             new (StringComparer.OrdinalIgnoreCase) {
-                "serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory"
+                "kiota_serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory",
+                "kiota_serialization_text.text_serialization_writer_factory.TextSerializationWriterFactory"
             }
         );
         ReplaceDefaultDeserializationModules(
             generatedCode,
             defaultConfiguration.Deserializers,
             new (StringComparer.OrdinalIgnoreCase) {
-                "serialization_json.json_parse_node_factory.JsonParseNodeFactory"
+                "kiota_serialization_json.json_parse_node_factory.JsonParseNodeFactory",
+                "kiota_serialization_text.text_parse_node_factory.TextParseNodeFactory"
             }
         );
         AddSerializationModulesImport(generatedCode,
@@ -57,14 +59,14 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         AddParentClassToErrorClasses(
                 generatedCode,
                 "APIError",
-                "kiota.abstractions.api_error"
+                $"{AbstractionsPackageName}.api_error"
         );
         AddQueryParameterMapperMethod(
             generatedCode
         );
     }
 
-    private const string AbstractionsPackageName = "kiota.abstractions";
+    private const string AbstractionsPackageName = "kiota_abstractions";
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
         new (x => x is CodeClass @class, "__future__", "annotations"),
         new (x => x is CodeClass @class, "typing", "Any, Callable, Dict, List, Optional, Union"),
