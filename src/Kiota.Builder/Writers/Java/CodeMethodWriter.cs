@@ -442,13 +442,86 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"{property.Name.ToFirstCharacterLowerCase()}";
     private void WriteSerializerBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer, bool inherits) {
+        if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+            WriteSerializerBodyForUnionModel(parentClass, method, writer);
+        else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+            WriteSerializerBodyForIntersectionModel(parentClass, method, writer);
+        else
+            WriteSerializerBodyForInheritedModel(method, inherits, parentClass, writer);
+        
         var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
+        
+        if(additionalDataProperty != null)
+            writer.WriteLine($"writer.writeAdditionalData(this.get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");
+    }
+    private void WriteSerializerBodyForUnionModel(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
+    {
+        var includeElse = false;
+        var otherProps = parentClass
+                                .Properties
+                                .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                .ThenBy(static x => x.Name)
+                                .ToArray();
+        foreach (var otherProp in otherProps)
+        {
+            writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if (this.{otherProp.Getter.Name.ToFirstCharacterLowerCase()}() != null) {{");
+            WriteSerializationMethodCall(otherProp, method, writer, "null");
+            writer.DecreaseIndent();
+            if(!includeElse)
+                includeElse = true;
+        }
+        if(otherProps.Any())
+            writer.CloseBlock(decreaseIndent: false);
+    }
+    private void WriteSerializerBodyForIntersectionModel(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
+    {
+        var includeElse = false;
+        var otherProps = parentClass
+                                .Properties
+                                .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
+                                .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
+                                .ThenBy(static x => x.Name)
+                                .ToArray();
+        foreach (var otherProp in otherProps)
+        {
+            writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if (this.{otherProp.Getter.Name.ToFirstCharacterLowerCase()}() != null) {{");
+            WriteSerializationMethodCall(otherProp, method, writer, "null");
+            writer.DecreaseIndent();
+            if(!includeElse)
+                includeElse = true;
+        }
+        var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                            .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
+                                            .ToArray();
+        if(complexProperties.Any()) {
+            if(includeElse) {
+                writer.WriteLine("} else {");
+                writer.IncreaseIndent();
+            }
+            var propertiesNames = complexProperties
+                                .Select(static x => $"this.{x.Getter.Name.ToFirstCharacterLowerCase()}()")
+                                .OrderBy(static x => x)
+                                .Aggregate(static (x, y) => $"{x}, {y}");
+            WriteSerializationMethodCall(complexProperties.First(), method, writer, "null", propertiesNames);
+            if(includeElse) {
+                writer.CloseBlock();
+            }
+        } else if(otherProps.Any()) {
+            writer.CloseBlock(decreaseIndent: false);
+        }
+    }
+    private void WriteSerializerBodyForInheritedModel(CodeMethod method, bool inherits, CodeClass parentClass, LanguageWriter writer) {
         if(inherits)
             writer.WriteLine("super.serialize(writer);");
         foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType))
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.{otherProp.Getter?.Name ?? "get" + otherProp.Name.ToFirstCharacterLowerCase()}());");
-        if(additionalDataProperty != null)
-            writer.WriteLine($"writer.writeAdditionalData(this.get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");
+            WriteSerializationMethodCall(otherProp, method, writer, $"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\"");
+    }
+    private void WriteSerializationMethodCall(CodeProperty otherProp, CodeMethod method, LanguageWriter writer, string serializationKey, string dataToSerialize = default) {
+        if(string.IsNullOrEmpty(dataToSerialize))
+            dataToSerialize = $"this.{otherProp.Getter?.Name?.ToFirstCharacterLowerCase() ?? "get" + otherProp.Name.ToFirstCharacterUpperCase()}()";
+        writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}({serializationKey}, {dataToSerialize});");
     }
     private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType) {
