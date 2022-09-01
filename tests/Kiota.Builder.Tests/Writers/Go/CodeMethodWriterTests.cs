@@ -260,6 +260,19 @@ public class CodeMethodWriterTests : IDisposable {
         method.AddErrorMapping("5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX});
         method.AddErrorMapping("403", new CodeType {Name = "Error403", TypeDefinition = error401});
         AddRequestBodyParameters();
+        method.AddParameter(new CodeParameter {
+            Name = "ctx",
+            Kind = CodeParameterKind.Cancellation,
+            Type = new CodeType {
+                Name = "context.Context",
+                TypeDefinition = new CodeClass {
+                    Name = "CancellationToken",
+                },
+                IsExternal = false,
+                IsNullable = false,
+            },
+            Optional = false,
+        });
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("requestInfo, err :=", result);

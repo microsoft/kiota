@@ -265,7 +265,7 @@ public class GoLanguageRefinerTests {
         Assert.Equal(factoryMethod, requestBuilderClass.StartBlock.Usings.First(x => x.Declaration.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
     }
     [Fact]
-    public void DoesNotKeepCancellationParametersInRequestExecutors()
+    public void RenamesCancellationParametersInRequestExecutors()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -291,8 +291,9 @@ public class GoLanguageRefinerTests {
         };
         method.AddParameter(cancellationParam);
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root); //using CSharp so the cancelletionToken doesn't get removed
-        Assert.False(method.Parameters.Any());
-        Assert.DoesNotContain(cancellationParam, method.Parameters);
+        Assert.True(method.Parameters.Any());
+        Assert.Contains(cancellationParam, method.Parameters);
+        Assert.Equal("ctx", cancellationParam.Name);
     }
     [Fact]
     public void ReplacesDateTimeOffsetByNativeType() {
