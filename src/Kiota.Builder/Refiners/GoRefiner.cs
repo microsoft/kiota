@@ -117,19 +117,14 @@ public class GoRefiner : CommonLanguageRefiner
     }
     
     protected static void RenameCancellationParameter(CodeElement currentElement){
-        if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
+        if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) && currentMethod.Parameters.OfKind(CodeParameterKind.Cancellation) is CodeParameter parameter)
         {
-            var parameter = currentMethod.Parameters.Where(x => x.Kind == CodeParameterKind.Cancellation).FirstOrDefault();
-
-            if (parameter != null)
-            {
-                parameter.Name = "ctx";
-                parameter.Description = "Pass a context parameter to the request";
-                parameter.Kind = CodeParameterKind.Custom;
-                parameter.Optional = false;
-                parameter.Type.Name = conventions.ContextVarTypeName;
-                parameter.Type.IsNullable = false;
-            }
+            parameter.Name = "ctx";
+            parameter.Description = "Pass a context parameter to the request";
+            parameter.Kind = CodeParameterKind.Custom;
+            parameter.Optional = false;
+            parameter.Type.Name = conventions.ContextVarTypeName;
+            parameter.Type.IsNullable = false;
         }
         CrawlTree(currentElement, RenameCancellationParameter);
     }
