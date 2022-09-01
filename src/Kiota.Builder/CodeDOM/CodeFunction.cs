@@ -30,7 +30,7 @@ public class CodeFunction : CodeBlock<BlockDeclaration, BlockEnd>
     }
     public CodeFunction(CodeMethod method)
     {
-        ArgumentNullException.ThrowIfNull(method, nameof(method));
+        ArgumentNullException.ThrowIfNull(method);
         if (!method.IsStatic) throw new InvalidOperationException("The original method must be static");
         if (method.Parent is CodeClass parentClass)
             OriginalMethodParentClass = parentClass;

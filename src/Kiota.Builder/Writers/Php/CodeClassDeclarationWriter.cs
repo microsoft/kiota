@@ -11,8 +11,8 @@ namespace Kiota.Builder.Writers.Php
 
         public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
         {
-            ArgumentNullException.ThrowIfNull(codeElement, nameof(codeElement));
-            ArgumentNullException.ThrowIfNull(writer, nameof(writer));
+            ArgumentNullException.ThrowIfNull(codeElement);
+            ArgumentNullException.ThrowIfNull(writer);
             conventions.WritePhpDocumentStart(writer);
             conventions.WriteNamespaceAndImports(codeElement, writer);
             var derivation = (codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +

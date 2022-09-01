@@ -10,8 +10,8 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
-            ArgumentNullException.ThrowIfNull(codeElement, nameof(codeElement));
-            ArgumentNullException.ThrowIfNull(writer, nameof(writer));
+            ArgumentNullException.ThrowIfNull(codeElement);
+            ArgumentNullException.ThrowIfNull(writer);
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
             var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
             WriteMethodDocumentation(codeElement, writer);

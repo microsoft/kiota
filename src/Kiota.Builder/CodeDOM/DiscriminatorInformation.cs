@@ -31,7 +31,7 @@ public class DiscriminatorInformation : CodeElement, ICloneable
 
     public void AddDiscriminatorMapping(string key, CodeTypeBase type)
     {
-        ArgumentNullException.ThrowIfNull(type, nameof(type));
+        ArgumentNullException.ThrowIfNull(type);
         if (string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
         discriminatorMappings.TryAdd(key, type);
     }
@@ -45,7 +45,7 @@ public class DiscriminatorInformation : CodeElement, ICloneable
     }
 
     public void RemoveDiscriminatorMapping(params string[] keys) {
-        ArgumentNullException.ThrowIfNull(keys, nameof(keys));
+        ArgumentNullException.ThrowIfNull(keys);
         foreach(var key in keys)
             discriminatorMappings.TryRemove(key, out var _);
     }

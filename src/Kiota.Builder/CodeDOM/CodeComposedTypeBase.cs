@@ -23,7 +23,7 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
             return _discriminatorInformation;
         } 
         set {
-            ArgumentNullException.ThrowIfNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             EnsureElementsAreChildren(value);
             _discriminatorInformation = value;
         }

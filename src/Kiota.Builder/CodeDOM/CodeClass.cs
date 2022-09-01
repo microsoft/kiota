@@ -37,7 +37,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     public CodeComposedTypeBase OriginalComposedType { get; set; }
     public void SetIndexer(CodeIndexer indexer)
     {
-        ArgumentNullException.ThrowIfNull(indexer, nameof(indexer));
+        ArgumentNullException.ThrowIfNull(indexer);
         if(InnerChildElements.Values.OfType<CodeIndexer>().Any() || InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility))) {
             var existingIndexer = InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
             if(existingIndexer != null) {
@@ -93,7 +93,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             return _discriminatorInformation;
         } 
         set {
-            ArgumentNullException.ThrowIfNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             EnsureElementsAreChildren(value);
             _discriminatorInformation = value;
         }
@@ -121,7 +121,7 @@ public class ClassDeclaration : ProprietableBlockDeclaration
     }
 
     public bool InheritsFrom(CodeClass candidate) {
-        ArgumentNullException.ThrowIfNull(candidate, nameof(candidate));
+        ArgumentNullException.ThrowIfNull(candidate);
 
         if (inherits is CodeType currentInheritsType &&
             currentInheritsType.TypeDefinition is CodeClass currentParentClass)

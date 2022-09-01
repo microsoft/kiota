@@ -8,8 +8,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
     public CodeEnumWriter(CSharpConventionService conventionService):base(conventionService) {}
     public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
     {
-        ArgumentNullException.ThrowIfNull(codeElement, nameof(codeElement));
-        ArgumentNullException.ThrowIfNull(writer, nameof(writer));
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if(!codeElement.Options.Any())
             return;
 

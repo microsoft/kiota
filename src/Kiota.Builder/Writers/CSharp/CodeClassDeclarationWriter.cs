@@ -9,8 +9,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
     public CodeClassDeclarationWriter(CSharpConventionService conventionService): base(conventionService) { }
     public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
     {
-        ArgumentNullException.ThrowIfNull(codeElement, nameof(codeElement));
-        ArgumentNullException.ThrowIfNull(writer, nameof(writer));
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if(codeElement.Parent?.Parent is CodeNamespace) {
             codeElement.Usings
                     .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder

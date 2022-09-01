@@ -8,8 +8,8 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
     protected CodeProprietableBlockDeclarationWriter(SwiftConventionService conventionService) : base(conventionService) {}
     public override void WriteCodeElement(T codeElement, LanguageWriter writer)
     {
-        ArgumentNullException.ThrowIfNull(codeElement, nameof(codeElement));
-        ArgumentNullException.ThrowIfNull(writer, nameof(writer));
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent?.Parent is CodeNamespace ns)
         {
             var importSegments = codeElement

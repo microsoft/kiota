@@ -41,7 +41,7 @@ public class OpenApiEnumValuesDescriptionExtension : IOpenApiExtension
 	/// <inheritdoc />
 	public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
 	{
-        ArgumentNullException.ThrowIfNull(writer, nameof(writer));
+        ArgumentNullException.ThrowIfNull(writer);
 		if((specVersion == OpenApiSpecVersion.OpenApi2_0 || specVersion == OpenApiSpecVersion.OpenApi3_0) &&
 			!string.IsNullOrEmpty(EnumName) &&
 			ValuesDescriptions.Any())

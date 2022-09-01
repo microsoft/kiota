@@ -204,7 +204,7 @@ public class KiotaBuilder
     /// <returns>Root node of the API URI space</returns>
     public OpenApiUrlTreeNode CreateUriSpace(OpenApiDocument doc)
     {
-        ArgumentNullException.ThrowIfNull(doc, nameof(doc));
+        ArgumentNullException.ThrowIfNull(doc);
         if(openApiDocument == null) openApiDocument = doc;
 
         var stopwatch = new Stopwatch();

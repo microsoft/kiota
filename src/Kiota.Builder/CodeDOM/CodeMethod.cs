@@ -74,8 +74,8 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
 {
     public static CodeMethod FromIndexer(CodeIndexer originalIndexer, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable)
     {
-        ArgumentNullException.ThrowIfNull(originalIndexer, nameof(originalIndexer));
-        ArgumentNullException.ThrowIfNull(indexerClass, nameof(indexerClass));
+        ArgumentNullException.ThrowIfNull(originalIndexer);
+        ArgumentNullException.ThrowIfNull(indexerClass);
         var method = new CodeMethod {
             IsAsync = false,
             IsStatic = false,
@@ -261,7 +261,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     }
     public void AddErrorMapping(string errorCode, CodeTypeBase type)
     {
-        ArgumentNullException.ThrowIfNull(type, nameof(type));
+        ArgumentNullException.ThrowIfNull(type);
         if(string.IsNullOrEmpty(errorCode)) throw new ArgumentNullException(nameof(errorCode));
         errorMappings.TryAdd(errorCode, type);
     }
