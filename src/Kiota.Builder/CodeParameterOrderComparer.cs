@@ -3,16 +3,33 @@ using System.Collections.Generic;
 namespace Kiota.Builder;
 public class CodeParameterOrderComparer : IComparer<CodeParameter>
 {
+
+    private List<string> parameterTypeOrders = new ();
+
+    public CodeParameterOrderComparer(List<string> defaultParamOrder)
+    {
+        parameterTypeOrders = defaultParamOrder;
+    }
+    public CodeParameterOrderComparer()
+    {
+    }
+
     public int Compare(CodeParameter x, CodeParameter y)
     {
         return (x, y) switch {
             (null, null) => 0,
             (null, _) => -1,
             (_, null) => 1,
-            _ => x.Optional.CompareTo(y.Optional) * optionalWeight +
-                getKindOrderHint(x.Kind).CompareTo(getKindOrderHint(y.Kind)) * kindWeight +
-                x.Name.CompareTo(y.Name) * nameWeight,
+            _ => getDefaultOrder(y.Type).CompareTo(getDefaultOrder(x.Type)) * defaultParamOrderWeight +
+                 x.Optional.CompareTo(y.Optional) * optionalWeight +
+                 getKindOrderHint(x.Kind).CompareTo(getKindOrderHint(y.Kind)) * kindWeight +
+                 x.Name.CompareTo(y.Name) * nameWeight,
         };
+    }
+    
+    private int getDefaultOrder(CodeTypeBase codeType)
+    {
+        return parameterTypeOrders.IndexOf(codeType.Name);
     }
     private static int getKindOrderHint(CodeParameterKind kind) {
         return kind switch {
@@ -31,6 +48,7 @@ public class CodeParameterOrderComparer : IComparer<CodeParameter>
             _ => 13,
         };
     }
+    private static readonly int defaultParamOrderWeight = 100000;
     private static readonly int optionalWeight = 10000;
     private static readonly int kindWeight = 100;
     private static readonly int nameWeight = 10;

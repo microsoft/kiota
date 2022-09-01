@@ -20,7 +20,7 @@ public class GoRefiner : CommonLanguageRefiner
             generatedCode,
             false,
             "ById");
-        RemoveCancellationParameter(generatedCode);
+        RenameCancellationParameter(generatedCode);
         RemoveDiscriminatorMappingsTargetingSubNamespaces(generatedCode);
         ReplaceRequestBuilderPropertiesByMethods(
             generatedCode
@@ -115,7 +115,25 @@ public class GoRefiner : CommonLanguageRefiner
         );
         RemoveHandlerFromRequestBuilder(generatedCode);
     }
+    
+    protected static void RenameCancellationParameter(CodeElement currentElement){
+        if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
+        {
+            var parameter = currentMethod.Parameters.Where(x => x.Kind == CodeParameterKind.Cancellation).FirstOrDefault();
 
+            if (parameter != null)
+            {
+                parameter.Name = "ctx";
+                parameter.Description = "Pass a context parameter to the request";
+                parameter.Kind = CodeParameterKind.Custom;
+                parameter.Optional = false;
+                parameter.Type.Name = conventions.ContextVarTypeName;
+                parameter.Type.IsNullable = false;
+            }
+        }
+        CrawlTree(currentElement, RenameCancellationParameter);
+    }
+    
     private void RemoveHandlerFromRequestBuilder(CodeElement currentElement)
     {
         if (currentElement is CodeClass currentClass)

@@ -150,7 +150,8 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLine("return nil");
         }
         private static string errorVarDeclaration(bool shouldDeclareErrorVar) => shouldDeclareErrorVar ? ":" : string.Empty;
-        private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
+        private static readonly CodeParameterOrderComparer parameterOrderComparer = new(new List<string> { "context.Context" });
+        
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool writePrototypeOnly) {
             var parentBlock = code.Parent;
             var returnTypeAsyncSuffix = code.IsAsync ? "error" : string.Empty;
@@ -166,17 +167,7 @@ namespace Kiota.Builder.Writers.Go {
             };
             if(!writePrototypeOnly)
                 WriteMethodDocumentation(code, methodName, writer);
-
-            var codeParameters = new List<string>();
-            
-            if(code.Kind == CodeMethodKind.RequestExecutor) // default parameter for executors
-                codeParameters.Add($"{ContextVarName} {ContextVarTypeName}");
-            
-            codeParameters.AddRange(code.Parameters.OrderBy(x => x, parameterOrderComparer)
-                .Select(p => conventions.GetParameterSignature(p, parentBlock)).ToList());
-
-            var parameters = string.Join(", ", codeParameters);
-            
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, parentBlock)).ToList());
             var classType = conventions.GetTypeString(new CodeType { Name = parentBlock.Name, TypeDefinition = parentBlock }, parentBlock);
             var associatedTypePrefix = isConstructor ||code.IsStatic || writePrototypeOnly ? string.Empty : $"(m {classType}) ";
             var finalReturnType = isConstructor ? classType : $"{returnType}{returnTypeAsyncSuffix}";
@@ -457,7 +448,6 @@ namespace Kiota.Builder.Writers.Go {
         }
         private const string RequestInfoVarName = "requestInfo";
         private const string ContextVarName = "ctx";
-        private const string ContextVarTypeName = "context.Context";
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeClass parentClass) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
