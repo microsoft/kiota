@@ -296,7 +296,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.StartBlock($"if({propertiesNamesAsConditions}) {{");
             var propertiesNamesAsArgument = propertiesNames
                                 .Aggregate(static (x, y) => $"{x}, {y}");
-            writer.WriteLine($"return ParseNodeHelper.MergeDeserializersForIntersectionWrapper({propertiesNamesAsArgument});");//TODO: import in refiner
+            writer.WriteLine($"return ParseNodeHelper.MergeDeserializersForIntersectionWrapper({propertiesNamesAsArgument});");
             writer.CloseBlock();
         }
         writer.WriteLine($"return {DefaultDeserializerValue}();");
