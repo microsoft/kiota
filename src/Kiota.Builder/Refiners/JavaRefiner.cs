@@ -138,6 +138,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             "java.math", "BigDecimal"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(prop.SerializationName),
                 "com.microsoft.kiota", "QueryParameter"),
+        new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
+            "com.microsoft.kiota.serialization", "ParseNodeHelper"),
     };
     private static void CorrectPropertyType(CodeProperty currentProperty) {
         if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
