@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added none output formatter to CLI commons. (Shell)
 - Added 'Accept' field of http request header in Ruby.  [#1660](https://github.com/microsoft/kiota/issues/1660)
-- Added support for text serialization in Python. #1406[](https://github.com/microsoft/kiota/issues/1406)
+- Added support for text serialization in Python. [#1406](https://github.com/microsoft/kiota/issues/1406)
 
 ### Changed
 
