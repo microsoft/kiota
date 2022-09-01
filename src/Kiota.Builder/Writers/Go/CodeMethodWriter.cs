@@ -395,16 +395,10 @@ namespace Kiota.Builder.Writers.Go {
                 writer.CloseBlock();
             }
             
-            writer.WriteLine($"var {ResponseHandlerVarName} {conventions.AbstractionsHash}.ResponseHandler = nil");
-            writer.WriteLine("if requestConfiguration != nil && requestConfiguration.ResponseHandler != nil {");
-            writer.IncreaseIndent();
-            writer.WriteLine($"{ResponseHandlerVarName} = requestConfiguration.ResponseHandler");
-            writer.CloseBlock();
-            
             var assignmentPrefix = isVoid ?
                         "err =" :
                         "res, err :=";
-            writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}({ContextVarName}, {RequestInfoVarName}, {constructorFunction}{ResponseHandlerVarName}, {errorMappingVarName})");
+            writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}({ContextVarName}, {RequestInfoVarName}, {constructorFunction}{errorMappingVarName})");
             WriteReturnError(writer, returnType);
             var valueVarName = string.Empty;
             if(codeElement.ReturnType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {
@@ -464,7 +458,6 @@ namespace Kiota.Builder.Writers.Go {
         private const string RequestInfoVarName = "requestInfo";
         private const string ContextVarName = "ctx";
         private const string ContextVarTypeName = "context.Context";
-        private const string ResponseHandlerVarName = "responseHandler";
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeClass parentClass) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             

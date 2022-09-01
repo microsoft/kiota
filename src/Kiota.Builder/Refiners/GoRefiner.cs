@@ -113,10 +113,10 @@ public class GoRefiner : CommonLanguageRefiner
             generatedCode,
             x => $"{x.Name}able"
         );
-        MoveResponseHandlerToStructs(generatedCode);
+        RemoveHandlerFromRequestBuilder(generatedCode);
     }
 
-    private void MoveResponseHandlerToStructs(CodeElement currentElement)
+    private void RemoveHandlerFromRequestBuilder(CodeElement currentElement)
     {
         if (currentElement is CodeClass currentClass)
         {
@@ -129,29 +129,9 @@ public class GoRefiner : CommonLanguageRefiner
                     codeMethod.RemoveParametersByKind(CodeParameterKind.ResponseHandler);
                 }
             }
-            // add response handler to struct
-            if (currentClass.IsOfKind(CodeClassKind.RequestConfiguration))
-            {
-                currentClass.AddProperty(new CodeProperty
-                {
-                    Access = AccessModifier.Public,
-                    Description ="Response handler to use in place of the default response handling provided by the core service",
-                    Kind = CodePropertyKind.ResponseHandler,
-                    Name = "responseHandler",
-                    ReadOnly = false,
-                    Parent = currentClass.Parent,
-                    Type = new CodeType {
-                        IsNullable = false,
-                        Name = ((currentElement.Parent as CodeClass)?.StartBlock)?
-                            .Usings
-                            .Select(x => x.Name)
-                            .FirstOrDefault(x => "ResponseHandler".Equals(x,StringComparison.OrdinalIgnoreCase)),
-                    }
-                });
-            }
         }
 
-        CrawlTree(currentElement, MoveResponseHandlerToStructs);
+        CrawlTree(currentElement, RemoveHandlerFromRequestBuilder);
     }
 
     private void InsertOverrideMethodForBuildersAndConstructors(CodeElement currentElement) {
