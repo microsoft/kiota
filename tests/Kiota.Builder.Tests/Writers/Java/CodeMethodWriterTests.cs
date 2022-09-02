@@ -866,9 +866,9 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.DoesNotContain("final IntersectionTypeWrapper res =", result);
         Assert.Contains("this.getComplexType1Value() != null || this.getComplexType3Value() != null", result);
-        Assert.Contains("return ParseNodeHelper.MergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", result);
+        Assert.Contains("return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", result);
         Assert.Contains("new HashMap<>()", result);
-        AssertExtensions.Before($"return ParseNodeHelper.MergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", "new HashMap<>()", result);
+        AssertExtensions.Before($"return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", "new HashMap<>()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

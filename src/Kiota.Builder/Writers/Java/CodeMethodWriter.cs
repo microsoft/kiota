@@ -364,7 +364,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             var propertiesNamesAsArgument = propertiesNames
                                 .Select(static x => $"this.{x}()")
                                 .Aggregate(static (x, y) => $"{x}, {y}");
-            writer.WriteLine($"return ParseNodeHelper.MergeDeserializersForIntersectionWrapper({propertiesNamesAsArgument});");
+            writer.WriteLine($"return ParseNodeHelper.mergeDeserializersForIntersectionWrapper({propertiesNamesAsArgument});");
             writer.CloseBlock();
         }
         writer.WriteLine("return new HashMap<>();");
