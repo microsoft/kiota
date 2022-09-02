@@ -15,11 +15,11 @@ Before you can compile and run the target project, you will need to initialize i
 ### Getting access to the packages
 > **Note:** This is a temporary requirement while Kiota is in preview.
 #### Install Bundler
-1. To install bundler, execute the following line:
+1. To install bundler, execute the following line in the root directory of your project:
 ````shell
 gem install bundler
 ````
-2. Create gemfile named **Gemfile** in the root directory of your project.
+2. Create a gemfile named **Gemfile** in the root directory of your project. 
 
 #### Getting your Personal Access Token
 1. Navigate to [New personal access token](https://github.com/settings/tokens/new) and generate a new token. (permissions: `package:read`, `repo`).
@@ -73,7 +73,7 @@ Follow the instructions in [Register an application for Microsoft identity platf
 
 1. Create a file in the root of the project named **get_user.rb** and add the following code. 
 
-    Replace the `tenant_id`, `client_is`, `client_secret`with your credentials from the previous step. 
+    Replace the `tenant_id`, `client_id`, `client_secret` with your credentials from the previous step. 
     
     See [Get access on behalf of a user](https://docs.microsoft.com/en-us/graph/auth-v2-user?context=graph%2Fapi%2F1.0&view=graph-rest-1.0) for details on how to get the `auth_code` and set the `redirect_uri`. 
     
