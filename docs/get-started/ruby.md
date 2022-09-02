@@ -40,7 +40,7 @@ gem install bundler
         gem "microsoft_kiota_nethttplibrary"
     end
     ```
-Only the first package, `microsoft_kiota_abstractions`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
+    Only the first package, `microsoft_kiota_abstractions`, is required. The other packages provide default implementations that you can choose to     replace with your own implementations if you wish.
 
 2. Use `bundler config` to globally specify the authentication information.
     Execute this line:
@@ -71,10 +71,11 @@ Follow the instructions in [Register an application for Microsoft identity platf
 
 ## Creating the client application
 
-1. Create a file in the root of the project named **get_user.rb** and add the following code. Replace the `tenant_id`, `client_is`, `client_secret`
-with your credentials from the previous step. See [Get access on behalf of a user](https://docs.microsoft.com/en-us/graph/auth-v2-user?context=graph%2Fapi%2F1.0&view=graph-rest-1.0) for details on
-how to get the `auth_code` and set the `redirect_uri`. 
-**Note:** If you need help generating the authorize url, the line ` puts token_request_context.generate_authorize_url(scopes)` (after you've initialized your `token_request_context` of course) will print out a corresponding authorization url, with which you can retrieve your authorization code. You can also re-set the `auth_code` after you've initialized the `token_request_context` like so: `token_request_context.auth_code = 'CODE'`.
+1. Create a file in the root of the project named **get_user.rb** and add the following code. 
+    Replace the `tenant_id`, `client_is`, `client_secret`
+    with your credentials from the previous step. See [Get access on behalf of a user](https://docs.microsoft.com/en-us/graph/auth-v2-user?context=graph%2Fapi%2F1.0&view=graph-rest-1.0) for details on
+    how to get the `auth_code` and set the `redirect_uri`. 
+    > **Note:** If you need help generating the authorize url, the line ` puts token_request_context.generate_authorize_url(scopes)` (after you've initialized your `token_request_context` of course) will print out a corresponding authorization url, with which you can retrieve your authorization code. You can also re-set the `auth_code` after you've initialized the `token_request_context` like so: `token_request_context.auth_code = 'CODE'`.
 
 ````ruby
 # frozen_string_literal: true
