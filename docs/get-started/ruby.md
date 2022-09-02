@@ -72,9 +72,11 @@ Follow the instructions in [Register an application for Microsoft identity platf
 ## Creating the client application
 
 1. Create a file in the root of the project named **get_user.rb** and add the following code. 
-    Replace the `tenant_id`, `client_is`, `client_secret`
-    with your credentials from the previous step. See [Get access on behalf of a user](https://docs.microsoft.com/en-us/graph/auth-v2-user?context=graph%2Fapi%2F1.0&view=graph-rest-1.0) for details on
-    how to get the `auth_code` and set the `redirect_uri`. 
+
+    Replace the `tenant_id`, `client_is`, `client_secret`with your credentials from the previous step. 
+    
+    See [Get access on behalf of a user](https://docs.microsoft.com/en-us/graph/auth-v2-user?context=graph%2Fapi%2F1.0&view=graph-rest-1.0) for details on how to get the `auth_code` and set the `redirect_uri`. 
+    
     > **Note:** If you need help generating the authorize url, the line ` puts token_request_context.generate_authorize_url(scopes)` (after you've initialized your `token_request_context` of course) will print out a corresponding authorization url, with which you can retrieve your authorization code. You can also re-set the `auth_code` after you've initialized the `token_request_context` like so: `token_request_context.auth_code = 'CODE'`.
 
 ````ruby
@@ -96,11 +98,19 @@ redirect_uri = 'REDIRECT_URI'
 # the allowed hosts, in this case Microsoft Graph
 allowed_hosts = ['graph.microsoft.com']
 graph_scopes = ['User.Read']
-token_request_context = MicrosoftKiotaAuthenticationOAuth::AuthorizationCodeContext.new(tenant_id, client_id, client_secret, redirect_uri, auth_code)
+token_request_context = MicrosoftKiotaAuthenticationOAuth::AuthorizationCodeContext.new(tenant_id, 
+                                                                                        client_id, 
+                                                                                        client_secret, 
+                                                                                        redirect_uri, 
+                                                                                        auth_code)
 
-auth_provider = MicrosoftKiotaAuthenticationOAuth::OAuthAuthenticationProvider.new(token_request_context, allowed_hosts, graph_scopes)
+auth_provider = MicrosoftKiotaAuthenticationOAuth::OAuthAuthenticationProvider.new(token_request_context, 
+                                                                                   allowed_hosts, 
+                                                                                   graph_scopes)
 
-request_adapter = MicrosoftKiotaNethttplibrary::NetHttpRequestAdapter.new(auth_provider, MicrosoftKiotaSerialization::JsonParseNodeFactory.new, MicrosoftKiotaSerialization::JsonSerializationWriterFactory.new)
+request_adapter = MicrosoftKiotaNethttplibrary::NetHttpRequestAdapter.new(auth_provider, 
+                                                                          MicrosoftKiotaSerialization::JsonParseNodeFactory.new, 
+                                                                          MicrosoftKiotaSerialization::JsonSerializationWriterFactory.new)
 
 client = Graph::ApiClient.new(request_adapter)
 
