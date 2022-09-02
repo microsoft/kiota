@@ -105,7 +105,6 @@ Follow the instructions in [Register an application for Microsoft identity platf
     require 'microsoft_kiota_nethttplibrary'
     require_relative './client/api_client'
 
-
     tenant_id = 'TENANT_ID'
     client_id = 'CLIENT_ID'
     client_secret = 'CLIENT_SECRET'
@@ -116,24 +115,14 @@ Follow the instructions in [Register an application for Microsoft identity platf
     # the allowed hosts, in this case Microsoft Graph
     allowed_hosts = ['graph.microsoft.com']
     graph_scopes = ['User.Read']
-    token_request_context = MicrosoftKiotaAuthenticationOAuth::AuthorizationCodeContext.new(tenant_id, 
-                                                                                            client_id, 
-                                                                                            client_secret, 
-                                                                                            redirect_uri, 
-                                                                                            auth_code)
+    token_request_context = MicrosoftKiotaAuthenticationOAuth::AuthorizationCodeContext.new(tenant_id, client_id, client_secret, redirect_uri, auth_code)
 
-    auth_provider = MicrosoftKiotaAuthenticationOAuth::OAuthAuthenticationProvider.new(token_request_context, 
-                                                                                       allowed_hosts, 
-                                                                                       graph_scopes)
+    auth_provider = MicrosoftKiotaAuthenticationOAuth::OAuthAuthenticationProvider.new(token_request_context, allowed_hosts, graph_scopes)
 
-    request_adapter = MicrosoftKiotaNethttplibrary::NetHttpRequestAdapter.new(auth_provider, 
-                                                                              MicrosoftKiotaSerialization::JsonParseNodeFactory.new, 
-                                                                              MicrosoftKiotaSerialization::JsonSerializationWriterFactory.new)
+    request_adapter = MicrosoftKiotaNethttplibrary::NetHttpRequestAdapter.new(auth_provider, MicrosoftKiotaSerialization::JsonParseNodeFactory.new, MicrosoftKiotaSerialization::JsonSerializationWriterFactory.new)
 
     client = Graph::ApiClient.new(request_adapter)
-
     me = client.me.get
-
     puts "Hi! My name is #{me.display_name}, and my ID is #{me.id}."
 
     ````
