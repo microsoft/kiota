@@ -90,7 +90,7 @@ Follow the instructions in [Register an application for Microsoft identity platf
     
     > **Note:** If you need help generating the authorize url, the line 
     >> ````ruby
-    >> puts token_request_context.generate_authorize_url(scopes)
+    >> puts token_request_context.generate_authorize_url(graph_scopes)
     >>  ```` 
     >  (after you've initialized your `token_request_context` of course) will print out a corresponding authorization url, with which you can retrieve your authorization code. You can also re-set the `auth_code` after you've initialized the `token_request_context` like so: 
     >>  ````ruby 
