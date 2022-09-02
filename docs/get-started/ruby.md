@@ -132,3 +132,5 @@ When ready to execute the application, execute the following command in your pro
 ````shell 
 ruby ./get_user.rb
 ````
+## See also
+- [kiota-samples repository](https://github.com/microsoft/kiota-samples/tree/main/get-started/ruby) contains the code from this guide.
