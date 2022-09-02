@@ -44,9 +44,6 @@ namespace Kiota.Builder.Writers.Go {
                 case CodeMethodKind.RequestExecutor when !codeElement.IsOverload:
                     WriteRequestExecutorBody(codeElement, requestParams, returnType, parentClass, writer);
                 break;
-                case CodeMethodKind.RequestExecutor when codeElement.IsOverload:
-                    WriteExecutorMethodCall(codeElement, requestParams, writer);
-                break;
                 case CodeMethodKind.Getter:
                     WriteGetterBody(codeElement, writer, parentClass);
                     break;
@@ -151,6 +148,7 @@ namespace Kiota.Builder.Writers.Go {
         }
         private static string errorVarDeclaration(bool shouldDeclareErrorVar) => shouldDeclareErrorVar ? ":" : string.Empty;
         private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
+        
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool writePrototypeOnly) {
             var parentBlock = code.Parent;
             var returnTypeAsyncSuffix = code.IsAsync ? "error" : string.Empty;
@@ -363,7 +361,7 @@ namespace Kiota.Builder.Writers.Go {
             var isBinary = conventions.StreamTypeName.Equals(returnType.TrimStart('*'), StringComparison.OrdinalIgnoreCase);
             var isEnum = codeElement.ReturnType is CodeType collType && collType.TypeDefinition is CodeEnum;
             var sendMethodName = getSendMethodName(returnType, codeElement, isPrimitive, isBinary, isEnum);
-            var responseHandlerParam = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.ResponseHandler));
+            var contextVarName = codeElement.Parameters.OfKind(CodeParameterKind.Cancellation)?.Name;
             var typeShortName = returnType.Split('.').Last().ToFirstCharacterUpperCase();
             var isVoid = string.IsNullOrEmpty(typeShortName);
             WriteGeneratorMethodCall(codeElement, requestParams, writer, $"{RequestInfoVarName}, err := ");
@@ -385,10 +383,11 @@ namespace Kiota.Builder.Writers.Go {
                 }
                 writer.CloseBlock();
             }
+            
             var assignmentPrefix = isVoid ?
                         "err =" :
                         "res, err :=";
-            writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}({RequestInfoVarName}, {constructorFunction}{responseHandlerParam?.Name ?? "nil"}, {errorMappingVarName})");
+            writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}({contextVarName}, {RequestInfoVarName}, {constructorFunction}{errorMappingVarName})");
             WriteReturnError(writer, returnType);
             var valueVarName = string.Empty;
             if(codeElement.ReturnType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {
@@ -424,15 +423,12 @@ namespace Kiota.Builder.Writers.Go {
                                                 .ToList();
             var skipIndex = requestParams.requestBody == null ? 1 : 0;
             requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "nil"));
+            
             var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x,y) => $"{x}, {y}") : string.Empty;
+
             writer.WriteLine(template(generatorMethodName, paramsCall));
         }
-        private static void WriteExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer) {
-            WriteMethodCall(codeElement, requestParams, writer, CodeMethodKind.RequestExecutor, (name, paramsCall) => 
-                $"return m.{name}({paramsCall});",
-                1
-            );
-        }
+
         private static void WriteGeneratorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, string prefix) {
             WriteMethodCall(codeElement, requestParams, writer, CodeMethodKind.RequestGenerator, (name, paramsCall) => 
                 $"{prefix}m.{name}({paramsCall});"
