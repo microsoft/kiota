@@ -166,8 +166,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "HashMap<String, Object>";
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "new HashMap<>()";
-        } else
-            CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        } 
+        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
         block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
