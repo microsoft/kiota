@@ -8,3 +8,4 @@ Your project will need a reference to the abstraction package to build and run, 
 - [Java](https://github.com/microsoft/kiota-java/tree/main/components/http/okHttp) : relies on [OkHttp](https://square.github.io/okhttp/).
 - [TypeScript](https://github.com/microsoft/kiota-typescript/tree/main/packages/http/fetch) : relies on [node-fetch](https://www.npmjs.com/package/cross-fetch) for node users and global browser fetch for browser applications.
 - [PHP](https://github.com/microsoft/kiota-http-guzzle-php) : relies on [Guzzle](http://guzzlephp.org/)
+- [Python](https://github.com/microsoft/kiota-http-python) : relies on [Httpx](https://www.python-httpx.org/).

@@ -101,10 +101,10 @@ namespace Kiota.Builder.Writers.CSharp {
                     var duplicateMappingTypes = discriminatorMethod.DiscriminatorMappings.Select(x => x.Value).OfType<CodeType>()
                         .Where(x => !DoesTypeExistsInSameNamesSpaceAsTarget(x, targetElement))
                         .Select(x => x.Name)
-                        .GroupBy(x => x)
+                        .GroupBy(static x => x, StringComparer.OrdinalIgnoreCase)
                         .Where(group => group.Count() > 1)
                         .Select(x => x.Key);
-                    
+
                     parentElements.AddRange(duplicateMappingTypes);
                 }
             }
@@ -143,7 +143,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 var rootNs = ns?.GetRootNamespace();
                 while (ns is not null && ns != rootNs && !hasChildWithName)
                 {
-                    hasChildWithName = ns.GetChildElements(true).OfType<CodeClass>().Any(c => c.Name?.Equals(typeName) == true);
+                    hasChildWithName = ns.GetChildElements(true).OfType<CodeClass>().Any(c => c.Name?.Equals(typeName, StringComparison.OrdinalIgnoreCase) == true);
                     ns = ns.Parent is CodeNamespace n ? n : (ns.GetImmediateParentOfType<CodeNamespace>());
                 }
             }

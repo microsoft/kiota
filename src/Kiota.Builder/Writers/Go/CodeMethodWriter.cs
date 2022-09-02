@@ -396,6 +396,11 @@ namespace Kiota.Builder.Writers.Go {
                 var isInterface = codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeInterface;
                 WriteCollectionCast(propertyTypeImportName, "res", "val", writer, isInterface || isEnum ? string.Empty : "*", !(isInterface || isEnum));
                 valueVarName = "val, ";
+            } else if (!isVoid) {
+                writer.WriteLine("if res == nil {");
+                writer.IncreaseIndent();
+                writer.WriteLine("return nil, nil");
+                writer.CloseBlock();
             }
             var resultReturnCast = isVoid switch {
                 true => string.Empty,

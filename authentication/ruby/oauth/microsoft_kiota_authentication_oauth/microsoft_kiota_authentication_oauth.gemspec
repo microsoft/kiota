@@ -4,7 +4,7 @@ require_relative "lib/microsoft_kiota_authentication_oauth/version"
 
 Gem::Specification.new do |spec|
   spec.name = "microsoft_kiota_authentication_oauth"
-  spec.version = MicrosoftKiotaAuthenticationOauth::VERSION
+  spec.version = MicrosoftKiotaAuthenticationOAuth::VERSION
   spec.authors = 'Microsoft Corporation'
   spec.email = 'graphsdkpub@microsoft.com'
   spec.description   = 'Kiota Authentication implementation with oauth2'

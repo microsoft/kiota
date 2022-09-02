@@ -10,7 +10,7 @@ namespace Kiota.Builder.Refiners {
         public override void Refine(CodeNamespace generatedCode)
         {
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
-            AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
+            AddPropertiesAndMethodTypesImports(generatedCode, false, false, true);
             RemoveCancellationParameter(generatedCode);
             AddParsableImplementsForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
             AddInheritedAndMethodTypesImports(generatedCode);
@@ -28,7 +28,6 @@ namespace Kiota.Builder.Refiners {
                 string.Empty);
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
-            FixInheritedEntityType(generatedCode);
             var defaultConfiguration = new GenerationConfiguration();
             ReplaceDefaultSerializationModules(
                 generatedCode,
@@ -121,30 +120,6 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, (x) => AddInheritedAndMethodTypesImports(x));
         }
 
-        protected static void FixInheritedEntityType(CodeElement currentElement, string prefix = ""){
-
-            var nameSpaceName = string.IsNullOrEmpty(prefix) ? FetchEntityNamespace(currentElement).NormalizeNameSpaceName("::") : prefix; 
-            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
-                && currentClass.StartBlock.Inherits != null 
-                && "entity".Equals(currentClass.StartBlock.Inherits.Name, StringComparison.OrdinalIgnoreCase)) {
-                currentClass.StartBlock.Inherits.Name = prefix + currentClass.StartBlock.Inherits.Name.ToFirstCharacterUpperCase();
-            }
-            CrawlTree(currentElement, (c) => FixInheritedEntityType(c, nameSpaceName));
-        }
-        protected static string FetchEntityNamespace(CodeElement currentElement){
-            Queue<CodeElement> children = new Queue<CodeElement>();
-            children.Enqueue(currentElement);
-            while(children.Count > 0){
-                foreach(var childElement in children.Dequeue().GetChildElements())
-                    if(childElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
-                    && "entity".Equals(currentClass?.Name, StringComparison.OrdinalIgnoreCase)) {
-                        return string.IsNullOrEmpty(currentClass?.Parent?.Name) ? string.Empty : currentClass?.Parent?.Name + "::";
-                    } else {
-                        children.Enqueue(childElement);
-                    }
-            }
-            return null;
-        }
         protected void AddNamespaceModuleImports(CodeElement current, string clientNamespaceName) {
             const string dot = ".";
             if(current is CodeClass currentClass) {
@@ -157,7 +132,7 @@ namespace Kiota.Builder.Refiners {
                         currentClass.AddUsing(new CodeUsing { 
                             Name = usingName,
                             Declaration = new CodeType {
-                                IsExternal = true,
+                                IsExternal = false,
                                 Name = $"{(string.IsNullOrEmpty(prefix) ? "./" : prefix)}{usingName}",
                             }
                         });
@@ -167,7 +142,7 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(current, c => AddNamespaceModuleImports(c, clientNamespaceName));
         }
         private static void CorrectImplements(ProprietableBlockDeclaration block) {
-            block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
+            block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = "MicrosoftKiotaAbstractions::AdditionalDataHolder"); 
             }
     }
 }
