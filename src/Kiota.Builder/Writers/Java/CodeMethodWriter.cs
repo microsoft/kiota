@@ -245,7 +245,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderBy(static x => x.Name)) {
             var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() ?? $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
-            writer.WriteLine($"this.{setterName}({propWithDefault.DefaultValue});");
+            var defaultValue = propWithDefault.DefaultValue;
+            if(propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition) {
+                defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}.forValue({defaultValue})";
+            }
+            writer.WriteLine($"this.{setterName}({defaultValue});");
         }
         if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
@@ -296,13 +300,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             if(!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
                 !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
                 !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
-                writer.WriteLines($"{conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement)} value = this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");",
-                    "if(value == null) {");
-                writer.IncreaseIndent();
+                writer.WriteLine($"{conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement)} value = this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");");
+                writer.StartBlock("if(value == null) {");
                 writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
                     $"this.set{codeElement.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}(value);");
-                writer.DecreaseIndent();
-                writer.WriteLines("}", "return value;");
+                writer.CloseBlock();
+                writer.WriteLine("return value;");
             } else
                 writer.WriteLine($"return this.get{backingStore.Name.ToFirstCharacterUpperCase()}().get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
 
