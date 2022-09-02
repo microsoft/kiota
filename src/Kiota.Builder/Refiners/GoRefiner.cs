@@ -247,23 +247,23 @@ public class GoRefiner : CommonLanguageRefiner
         "string"
     };
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "github.com/microsoft/kiota-abstractions-go", "RequestAdapter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             "github.com/microsoft/kiota-abstractions-go", "RequestInformation", "HttpMethod", "RequestOption"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "github.com/microsoft/kiota-abstractions-go", "ResponseHandler"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor) &&
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor) &&
                     method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) &&
                                             !typeToSkipStrConv.Contains(x.Type.Name)),
             "strconv", "FormatBool"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             "github.com/microsoft/kiota-abstractions-go/serialization", "SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             "github.com/microsoft/kiota-abstractions-go/serialization", "ParseNode", "Parsable"),
-        new (x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
+        new (static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
-        new (x => x is CodeMethod method && 
+        new (static x => x is CodeMethod method && 
                         method.IsOfKind(CodeMethodKind.RequestGenerator) &&
                         method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) && 
                                                     x.Type.IsCollection &&
@@ -271,13 +271,13 @@ public class GoRefiner : CommonLanguageRefiner
                                                     (pType.TypeDefinition is CodeClass ||
                                                     pType.TypeDefinition is CodeInterface)),
             "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && 
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && 
                                             (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
                                             @class.StartBlock.Implements.Any(x => KiotaBuilder.AdditionalHolderInterface.Equals(x.Name, StringComparison.OrdinalIgnoreCase))),
             "github.com/microsoft/kiota-abstractions-go/serialization", "AdditionalDataHolder"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeUnionType unionType && unionType.Types.Any(static y => !y.IsExternal) && unionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             "strings", "EqualFold"),
-        new(x => x is CodeMethod method && (method.IsOfKind(CodeMethodKind.RequestExecutor) || method.IsOfKind(CodeMethodKind.RequestGenerator)), "context","*context"),
+        new (static x => x is CodeMethod method && (method.IsOfKind(CodeMethodKind.RequestExecutor) || method.IsOfKind(CodeMethodKind.RequestGenerator)), "context","*context"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             "github.com/microsoft/kiota-abstractions-go/serialization", "MergeDeserializersForIntersectionWrapper"),
     };//TODO add backing store types once we have them defined
