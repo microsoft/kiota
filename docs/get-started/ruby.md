@@ -23,6 +23,7 @@ Before you can compile and run the target project, you will need to initialize i
     ````shell
     gem install bundler
     ````
+    
 2. Create a gemfile named **Gemfile** in the root directory of your project. 
 
 #### Getting your Personal Access Token
@@ -54,6 +55,7 @@ Before you can compile and run the target project, you will need to initialize i
     ````shell
     bundle config https://rubygems.pkg.github.com/microsoft/kiota USERNAME:TOKEN     
     ````
+    
 3. Finally, install your gems. Execute this line: 
     
     ````shell 
@@ -135,7 +137,9 @@ Follow the instructions in [Register an application for Microsoft identity platf
     puts "Hi! My name is #{me.display_name}, and my ID is #{me.id}."
 
     ````
+    
 2. Lastly, create a file called **graph.rb** in the `client` folder that was just created by Kiota.
+
 Please add the following code:
 
     ````ruby 
