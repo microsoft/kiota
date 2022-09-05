@@ -30,7 +30,6 @@
     <PackageReference Include="Microsoft.OpenApi" Version="1.4.0" />
     <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.4.0" />
 
-
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
 
