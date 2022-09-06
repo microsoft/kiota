@@ -135,35 +135,40 @@ public class OpenApiUrlTreeNodeExtensionsTests
                                 Required = true,
                                 Schema = new() {
                                     Type = "string"
-                                }
+                                },
+                                Style = ParameterStyle.Simple,
                             },
                             new (){
                                 Name = "$select",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
                                     Type = "string"
-                                }
+                                },
+                                Style = ParameterStyle.Simple,
                             },
                             new (){
                                 Name = "api-version",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
                                     Type = "string"
-                                }
+                                },
+                                Style = ParameterStyle.Simple,
                             },
                             new (){
                                 Name = "api~topic",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
                                     Type = "string"
-                                }
+                                },
+                                Style = ParameterStyle.Simple,
                             },
                             new (){
                                 Name = "api.encoding",
                                 In = ParameterLocation.Query,
                                 Schema = new () {
                                     Type = "string"
-                                }
+                                },
+                                Style = ParameterStyle.Simple,
                             }
                         }
                     }

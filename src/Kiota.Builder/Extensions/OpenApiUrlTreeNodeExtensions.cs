@@ -109,19 +109,19 @@ namespace Kiota.Builder.Extensions {
             {
                 var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
                 var parameters = pathItem.Parameters
-                                        .Where(x => x.In == ParameterLocation.Query)
+                                        .Where(static x => x.In == ParameterLocation.Query)
                                         .Union(
                                             pathItem.Operations
-                                                    .SelectMany(x => x.Value.Parameters)
-                                                    .Where(x => x.In == ParameterLocation.Query))
+                                                    .SelectMany(static x => x.Value.Parameters)
+                                                    .Where(static x => x.In == ParameterLocation.Query))
                                         .ToArray();
                 if(parameters.Any())
                     queryStringParameters = "{?" + 
-                                            parameters.Select(x => 
+                                            parameters.Select(static x => 
                                                                 x.Name.SanitizeParameterNameForUrlTemplate() +
                                                                 (x.Explode ? 
                                                                     "*" : string.Empty))
-                                                    .Aggregate((x, y) => $"{x},{y}") +
+                                                    .Aggregate(static (x, y) => $"{x},{y}") +
                                             '}';
             }
             return "{+baseurl}" + 
