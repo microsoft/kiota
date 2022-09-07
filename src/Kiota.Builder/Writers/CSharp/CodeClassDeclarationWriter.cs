@@ -21,8 +21,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
                     .OrderBy(static x => x)
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
-            writer.WriteLine($"namespace {codeElement.Parent.Parent.Name} {{");
-            writer.IncreaseIndent();
+            writer.StartBlock($"namespace {codeElement.Parent.Parent.Name} {{");
         }
 
         var derivedTypes = new List<string>{codeElement.Inherits?.Name}

@@ -674,7 +674,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentMethod.Parent is CodeClass parentClass &&
             parentClass.StartBlock is ClassDeclaration declaration) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Factory) &&
-                    parentClass.DiscriminatorInformation.DiscriminatorMappings != null) {
+                    (parentClass.DiscriminatorInformation?.HasBasicDiscriminatorInformation ?? false)) {
                         if(addUsings)
                             declaration.AddUsings(parentClass.DiscriminatorInformation.DiscriminatorMappings
                                 .Select(x => x.Value)
