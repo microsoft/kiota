@@ -211,6 +211,7 @@ public class GoLanguageRefinerTests {
                 TypeDefinition = parentModel,
             },
         }).First();
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "foo";
         parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
             Name = "childModel",
             TypeDefinition = childModel,

@@ -1048,19 +1048,20 @@ public class KiotaBuilder
     private static string GetDiscriminatorPropertyName(OpenApiSchema schema) {
         if(schema == null)
             return string.Empty;
-        if(schema.Discriminator?.Mapping == null)
-            if(schema.OneOf.Any())
-                return schema.OneOf.Select(static x => GetDiscriminatorPropertyName(x)).FirstOrDefault(static x => !string.IsNullOrEmpty(x));
-            else if (schema.AnyOf.Any())
-                return schema.AnyOf.Select(static x => GetDiscriminatorPropertyName(x)).FirstOrDefault(static x => !string.IsNullOrEmpty(x));
-            else if (schema.AllOf.Any())
-                return schema.AllOf.Last().Discriminator?.PropertyName;
-            else
-                return string.Empty;
 
-        return schema.Discriminator.PropertyName;
+        if (!string.IsNullOrEmpty(schema.Discriminator?.PropertyName))
+            return schema.Discriminator.PropertyName;
+        
+        if(schema.OneOf.Any())
+            return schema.OneOf.Select(static x => GetDiscriminatorPropertyName(x)).FirstOrDefault(static x => !string.IsNullOrEmpty(x));
+        else if (schema.AnyOf.Any())
+            return schema.AnyOf.Select(static x => GetDiscriminatorPropertyName(x)).FirstOrDefault(static x => !string.IsNullOrEmpty(x));
+        else if (schema.AllOf.Any())
+            return GetDiscriminatorPropertyName(schema.AllOf.Last());
+
+        return string.Empty;
     }
-    private static readonly Func<OpenApiSchema, bool> allOfEvaluator = static x => x.Discriminator?.Mapping.Any() ?? false;
+    private static readonly Func<OpenApiSchema, bool> allOfEvaluatorForMappings = static x => x.Discriminator?.Mapping.Any() ?? false;
     private IEnumerable<KeyValuePair<string, CodeTypeBase>> GetDiscriminatorMappings(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace currentNamespace, CodeClass baseClass) {
         if(schema == null)
             return Enumerable.Empty<KeyValuePair<string, CodeTypeBase>>();
@@ -1069,8 +1070,8 @@ public class KiotaBuilder
                 return schema.OneOf.SelectMany(x => GetDiscriminatorMappings(currentNode, x, currentNamespace, baseClass));
             else if (schema.AnyOf.Any())
                 return schema.AnyOf.SelectMany(x => GetDiscriminatorMappings(currentNode, x, currentNamespace, baseClass));
-            else if (schema.AllOf.Any(allOfEvaluator))
-                return GetDiscriminatorMappings(currentNode, schema.AllOf.Last(allOfEvaluator), currentNamespace, baseClass);
+            else if (schema.AllOf.Any(allOfEvaluatorForMappings))
+                return GetDiscriminatorMappings(currentNode, schema.AllOf.Last(allOfEvaluatorForMappings), currentNamespace, baseClass);
             else if (!string.IsNullOrEmpty(schema.Reference?.Id)) {
                 var result = GetAllInheritanceSchemaReferences(schema.Reference?.Id)
                             .Select(x => KeyValuePair.Create(x, GetCodeTypeForMapping(currentNode, x, currentNamespace, baseClass, schema)))
