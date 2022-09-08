@@ -568,6 +568,7 @@ public class KiotaBuilder
             Name = propertyName,
             Kind = kind,
             Description = typeSchema?.Description.CleanupDescription() ?? $"The {propertyName} property",
+            ReadOnly = typeSchema?.ReadOnly ?? false,
         };
         if(propertyName != childIdentifier)
             prop.SerializationName = childIdentifier;

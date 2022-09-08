@@ -1053,4 +1053,21 @@ public class CodeMethodWriterTests : IDisposable {
         method.Kind = CodeMethodKind.Setter;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
+    [Fact]
+    public void DoesntWriteReadOnlyPropertiesInSerializerBody() {
+        method.Kind = CodeMethodKind.Serializer;
+        AddSerializationProperties();
+        AddInheritanceClass();
+        parentClass.AddProperty(new CodeProperty {
+            Name = "ReadOnlyProperty",
+            ReadOnly = true,
+            Type = new CodeType {
+                Name = "string",
+            },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("ReadOnlyProperty", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
 }    

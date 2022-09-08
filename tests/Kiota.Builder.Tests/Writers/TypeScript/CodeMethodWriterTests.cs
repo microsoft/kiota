@@ -680,4 +680,21 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("case \"filter\": return \"%24filter\"", result);
         Assert.Contains("default: return originalName", result);
     }
+    [Fact]
+    public void DoesntWriteReadOnlyPropertiesInSerializerBody() {
+        method.Kind = CodeMethodKind.Serializer;
+        AddSerializationProperties();
+        AddInheritanceClass();
+        parentClass.AddProperty(new CodeProperty {
+            Name = "ReadOnlyProperty",
+            ReadOnly = true,
+            Type = new CodeType {
+                Name = "string",
+            },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("readOnlyProperty", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
 }

@@ -238,8 +238,8 @@ namespace Kiota.Builder.Writers.Php
                                      codeClass.IsOfKind(CodeClassKind.Model);
             if(inherits && implementsParsable)
                 writer.WriteLine($"parent::serialize({writerParameterName});");
-            var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
-            foreach(var otherProp in customProperties.Where(x => !x.ExistsInBaseType)) {
+            var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly);
+            foreach(var otherProp in customProperties) {
                 writer.WriteLine($"{writerParameterName}->{GetSerializationMethodName(otherProp.Type)}('{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}', $this->{otherProp.Name.ToFirstCharacterLowerCase()});");
             }
             if(additionalDataProperty != null)

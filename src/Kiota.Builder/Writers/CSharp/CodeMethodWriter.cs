@@ -264,8 +264,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     {
         var includeElse = false;
         foreach (var otherPropName in parentClass
-                                        .Properties
-                                        .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                        .GetPropertiesOfKind(CodePropertyKind.Custom)
+                                        .Where(static x => !x.ExistsInBaseType)
                                         .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
                                         .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                         .ThenBy(static x => x.Name)
@@ -305,8 +305,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var parentSerializationInfo = shouldHide ? $"(base.{codeElement.Name.ToFirstCharacterUpperCase()}())" : string.Empty;
         writer.StartBlock($"return {DefaultDeserializerValue}{parentSerializationInfo} {{");
         foreach (var otherProp in parentClass
-                                        .Properties
-                                        .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                        .GetPropertiesOfKind(CodePropertyKind.Custom)
+                                        .Where(static x => !x.ExistsInBaseType)
                                         .OrderBy(static x => x.Name))
         {
             writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
@@ -441,8 +441,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         if (shouldHide)
             writer.WriteLine("base.Serialize(writer);");
         foreach (var otherProp in parentClass
-                                        .Properties
-                                        .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                        .GetPropertiesOfKind(CodePropertyKind.Custom)
+                                        .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
                                         .OrderBy(static x => x.Name))
         {
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
@@ -452,8 +452,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     {
         var includeElse = false;
         foreach (var otherProp in parentClass
-                                        .Properties
-                                        .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                        .GetPropertiesOfKind(CodePropertyKind.Custom)
+                                        .Where(static x => !x.ExistsInBaseType)
                                         .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                         .ThenBy(static x => x.Name))
         {
@@ -469,8 +469,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     {
         var includeElse = false;
         foreach (var otherProp in parentClass
-                                        .Properties
-                                        .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                        .GetPropertiesOfKind(CodePropertyKind.Custom)
+                                        .Where(static x => !x.ExistsInBaseType)
                                         .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
                                         .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
                                         .ThenBy(static x => x.Name))
