@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [0.5.0] - 2022-09-08
+
+### Added
+
 - Added support for range (2XX) responses. [#1699](https://github.com/microsoft/kiota/issues/1699)
 - Added none output formatter to CLI commons. (Shell)
 - Added 'Accept' field of http request header in Ruby.  [#1660](https://github.com/microsoft/kiota/issues/1660)
@@ -16,7 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for composed types (union, intersection) in CSharp, Java and Go. [#1411](https://github.com/microsoft/kiota/issues/1411)
 - Added support for implicit discriminator mapping.
 - Added support for default values of enum properties in CSharp, Java and Go.
-
 
 ### Changed
 
