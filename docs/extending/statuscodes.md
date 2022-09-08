@@ -17,7 +17,7 @@ During the client generation, Kiota follows these rules to map status codes desc
 | 200, 203, 206 | no | stream |
 | 2XX | no | stream |
 
-> Note: for a schema to be considered present, it must be part of s structured content response ("application/json", "application/xml", "text/plain", "text/xml", "text/yaml").
+> Note: for a schema to be considered present, it must be part of a structured content response ("application/json", "application/xml", "text/plain", "text/xml", "text/yaml").
 
 ## Runtime
 
