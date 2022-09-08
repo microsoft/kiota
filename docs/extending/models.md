@@ -18,7 +18,7 @@ Models in an [AllOf](https://spec.openapis.org/oas/latest.html#composition-and-i
 
 ## Faceted implementation of oneOf
 
-oneOf specifies a type exclusion where the response can be of one of the specified child schemas. Kiota implements that specification by generating types for all the child schemas and using a union type for languages that support it or a wrapper type with one property per type in the union for languages that do not support union types.
+oneOf specifies a type union (exclusive) where the response can be of one of the specified child schemas. Kiota implements that specification by generating types for all the child schemas and using a union type for languages that support it or a wrapper type with one property per type in the union.
 
 The deserialized result will either be of the one of the types of the union or be of the wrapper type with only one of the properties being non null.
 
@@ -30,13 +30,11 @@ Nested oneOf keywords are only supported when the child schema uses a `$ref` to 
 
 ## Faceted implementation of anyOf
 
-anyOf specifies a type inclusion where the response can be of any of the specified child schemas. Kiota implements that specification by generating types for all the child schemas and using a union type for languages that support it or a wrapper type with one property per type in the union for languages that do not support union types.
+anyOf specifies a type intersection (inclusive union) where the response can be of any of the specified child schemas. Kiota implements that specification by generating types for all the child schemas and using a intersection type for languages that support it or a wrapper type with one property per type in the union.
 
-The deserialized result will either be of the one of the types of the union or be of the wrapper type with one or more of the properties being non null. 
-> To clarify:  How are we handling this in TypeScript? "one of the types of the union" seems wrong 
+The deserialized result will either intersection type or be of the wrapper type with one or more of the properties being non null.
 
-Where there are common properties in the child schemas, the corresponding value in the input will deserialized into only one of the child schemas.
-> To clarify:  Is it deterministic which property will get the value? The first?
+Where there are common properties in the child schemas, the corresponding value in the input will deserialized into first the child schemas with the common property.
 
 ## Heterogeneous collections
 
@@ -44,11 +42,66 @@ For any collection of items that rely on AllOf, AnyOf, or OneOf, it is possible 
 
 For example, think of an endpoint returning a collection of directory objects (abstract). Directory object is derived by User and Group, which each have their own set of properties. In this case the endpoint will be documented as returning a collection of directory objects and return in reality a mix of users and groups.
 
-Kiota supports discriminators by down-casting the returned object during deserialization.  
+Kiota supports discriminators by down-casting the returned object during deserialization. The down-casting is supported through the use of allOf and discriminator property. Kiota supports both implicit and explicit discriminator mappings (example 1). Using oneOf to constrain derived types is **not** supported (example 2) as it will be interpreted as an intersection type.
 
-> To clarify: Can we use a oneOf to constrain the supported derived types?
-> To clarify: If so, are we assuming the first type is the base Type?
-> To clarify: What about this scenario as an inline response schema?
+In case of inline schemas, the type will be named by conventions:
+
+- Endpoint name + Operation + RequestBody
+- Endpoint name + Operation + Response
+- Parent type name + member + id (sequential)
+
+### Example 1 - using allOf and discriminator
+
+```json
+{
+    "microsoft.graph.directoryObject": {
+      "allOf": [
+        { "$ref": "#/components/schemas/microsoft.graph.entity"},
+        {
+            "title": "directoryObject",
+            "required": [
+                "@odata.type"
+            ],
+            "type": "object",
+            "properties": {
+                "@odata.type": {
+                    "type": "string",
+                    "default": "#microsoft.graph.directoryObject"
+                }
+            }
+        }
+      ],
+      "discriminator": {
+            "propertyName": "@odata.type",
+            "mapping": {
+              "#microsoft.graph.user": "#/components/schemas/microsoft.graph.user",
+              "#microsoft.graph.group": "#/components/schemas/microsoft.graph.group"
+            }
+        }
+    },
+    "microsoft.graph.user": {
+      "allOf": [
+        { "$ref": "#/components/schemas/microsoft.graph.directoryObject"},
+        {
+            "title": "user",
+            "type": "object"
+        }
+      ]
+    },
+    "microsoft.graph.group": {
+      "allOf": [
+        { "$ref": "#/components/schemas/microsoft.graph.directoryObject"},
+        {
+            "title": "group",
+            "type": "object"
+        }
+      ]
+    },
+}
+```
+
+### Example 2 - using oneOf to constrain the derived types - not supported
+
 ```json
 {
     "type": "object",
@@ -66,7 +119,6 @@ Kiota supports discriminators by down-casting the returned object during deseria
     ]
 }
 ```
-
 
 ## Default members
 
