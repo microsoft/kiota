@@ -26,8 +26,7 @@ namespace Kiota.Builder
             }
         }
         public bool IsParentOf(CodeNamespace childNamespace) {
-            if(childNamespace == null)
-                throw new ArgumentNullException(nameof(childNamespace));
+            ArgumentNullException.ThrowIfNull(childNamespace);
             if(this == childNamespace)
                 return false;
             return childNamespace.Name.StartsWith(Name + ".", StringComparison.OrdinalIgnoreCase);
@@ -59,6 +58,7 @@ namespace Kiota.Builder
                 }
             return result;
         }
+        public CodeNamespace FindOrAddNamespace(string nsName) => FindNamespaceByName(nsName) ?? AddNamespace(nsName);
         public CodeNamespace AddNamespace(string namespaceName) {
             if(string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentNullException(nameof(namespaceName));
@@ -132,8 +132,7 @@ namespace Kiota.Builder
         }
         public NamespaceDifferentialTracker GetDifferential(CodeNamespace importNamespace, string namespacePrefix, char separator = '.')
         {
-            if(importNamespace == null)
-                throw new ArgumentNullException(nameof(importNamespace));
+            ArgumentNullException.ThrowIfNull(importNamespace);
             if(string.IsNullOrEmpty(namespacePrefix))
                 throw new ArgumentNullException(nameof(namespacePrefix));
             if (this == importNamespace || Name.Equals(importNamespace.Name, StringComparison.OrdinalIgnoreCase)) // we're in the same namespace

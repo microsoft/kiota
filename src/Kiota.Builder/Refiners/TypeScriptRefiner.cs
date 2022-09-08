@@ -70,17 +70,18 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             "ParseNode",
             addUsings: false
         );
-        Func<string, string> factoryNameCallbackFromTypeName = x => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+        Func<string, string> factoryNameCallbackFromTypeName = static x => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
         ReplaceLocalMethodsByGlobalFunctions(
             generatedCode,
             x => factoryNameCallbackFromTypeName(x.Parent.Name),
-            x => new List<CodeUsing>(x.DiscriminatorMappings
-                                    .Select(y => y.Value)
+            x => x.Parent is CodeClass parentClass ? new List<CodeUsing>(parentClass.DiscriminatorInformation
+                                    .DiscriminatorMappings
+                                    .Select(static y => y.Value)
                                     .OfType<CodeType>()
-                                    .Select(y => new CodeUsing { Name = y.Name, Declaration = y })) {
+                                    .Select(static y => new CodeUsing { Name = y.Name, Declaration = y })) {
                     new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
                     new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
-                }.ToArray(),
+                }.ToArray() : Array.Empty<CodeUsing>(),
             CodeMethodKind.Factory
         );
         Func<CodeType, string> factoryNameCallbackFromType = x => factoryNameCallbackFromTypeName(x.Name);
@@ -175,8 +176,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "Record<string, unknown>";
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
-        } else
-            CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        }
+        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
@@ -198,7 +199,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 urlTplParams.Type is CodeType originalType) {
                 originalType.Name = "Record<string, unknown>";
                 urlTplParams.Description = "The raw url or the Url template parameters for the request.";
-                var unionType = new CodeExclusionType {
+                var unionType = new CodeUnionType {
                     Name = "rawUrlOrTemplateParameters",
                     IsNullable = true,
                 };

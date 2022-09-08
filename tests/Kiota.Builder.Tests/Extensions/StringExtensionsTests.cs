@@ -67,6 +67,7 @@ namespace Kiota.Builder.Extensions.Tests {
         [InlineData("@odata.changed", "OdataChanged")]
         [InlineData("specialLast@", "specialLast")]
         [InlineData("kebab-cased", "kebabCased")]
+        [InlineData("123Spelled", "OneTwoThreeSpelled")]
         [Theory]
         public void CleansUpSymbolNames(string input, string expected) {
             Assert.Equal(expected, input.CleanupSymbolName());

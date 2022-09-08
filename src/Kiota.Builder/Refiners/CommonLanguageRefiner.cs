@@ -184,6 +184,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 ReplaceReservedCodeUsingNamespaceSegmentNames(currentDeclaration, provider, replacement);
             if(provider.ReservedNames.Contains(currentDeclaration.Inherits?.Name))
                 currentDeclaration.Inherits.Name = replacement(currentDeclaration.Inherits.Name);
+            if(currentClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
+                ReplaceMappingNames(currentClass.DiscriminatorInformation.DiscriminatorMappings, provider, replacement);
         } else if(current is CodeNamespace currentNamespace &&
             isNotInExceptions &&
             shouldReplace &&
@@ -200,8 +202,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 currentMethod.Name = replacement.Invoke(currentMethod.Name);
             if(currentMethod.ErrorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
                 ReplaceMappingNames(currentMethod.ErrorMappings, provider, replacement);
-            if(currentMethod.DiscriminatorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
-                ReplaceMappingNames(currentMethod.DiscriminatorMappings, provider, replacement);
             ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
         } else if (current is CodeProperty currentProperty &&
                 isNotInExceptions &&
@@ -360,50 +360,67 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, supportInnerClasses));
     }
-    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeUnionType, bool usesBackingStore, bool supportsInnerClasses = true)
+    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, bool supportsInnerClasses = true)
     {
-        if(codeClass == null) throw new ArgumentNullException(nameof(codeClass));
-        if(codeUnionType == null) throw new ArgumentNullException(nameof(codeUnionType));
+        ArgumentNullException.ThrowIfNull(codeClass);
+        ArgumentNullException.ThrowIfNull(codeComposedType);
         CodeClass newClass;
         var description =
-            $"Union type wrapper for classes {codeUnionType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}";
+            $"Composed type wrapper for classes {codeComposedType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}";
         if (!supportsInnerClasses)
         {
             var @namespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
             newClass = @namespace.AddClass(new CodeClass()
             {
-                Name = codeUnionType.Name,
+                Name = codeComposedType.Name,
                 Description = description
             }).Last();
-        }
-        else {
-            if(codeUnionType.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase))
-                codeUnionType.Name = $"{codeUnionType.Name}Wrapper";
+        } else if (codeComposedType.TargetNamespace is CodeNamespace targetNamespace) {
+            newClass = targetNamespace.AddClass(new CodeClass {
+                                    Name = codeComposedType.Name,
+                                    Description = description})
+                                .First();
+            newClass.AddUsing(codeClass.Usings
+                                        .Where(static x => x.IsExternal)
+                                        .Select(static x => x.Clone() as CodeUsing)
+                                        .ToArray());
+        } else {
+            if(codeComposedType.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase))
+                codeComposedType.Name = $"{codeComposedType.Name}Wrapper";
             newClass = codeClass.AddInnerClass(new CodeClass {
-            Name = codeUnionType.Name,
-            Description = description}).First();
+                                    Name = codeComposedType.Name,
+                                    Description = description})
+                                .First();
         }
-        newClass.AddProperty(codeUnionType
+        newClass.AddProperty(codeComposedType
                                 .Types
                                 .Select(x => new CodeProperty {
                                     Name = x.Name,
                                     Type = x,
-                                    Description = $"Union type representation for type {x.Name}"
+                                    Description = $"Composed type representation for type {x.Name}"
                                 }).ToArray());
-        if(codeUnionType.Types.All(static x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
+        if(codeComposedType.Types.All(static x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
                                 x.TypeDefinition is CodeEnum || x.TypeDefinition is null))
         {
             KiotaBuilder.AddSerializationMembers(newClass, true, usesBackingStore);
+            newClass.AddProperty(new CodeProperty {
+                Name = "serializationHint",
+                Type = new CodeType { Name = "string" },
+                Description = "Serialization hint for the current wrapper.",
+                Access = AccessModifier.Public,
+                Kind = CodePropertyKind.SerializationHint,
+            });
             newClass.Kind = CodeClassKind.Model;
         }
+        newClass.OriginalComposedType = codeComposedType;
         // Add the discriminator function to the wrapper as it will be referenced. 
-        KiotaBuilder.AddDiscriminatorMethod(newClass, default); //TODO map the discriminator prop name + type mapping + flag to union/exclusion once the vocabulary is available
+        KiotaBuilder.AddDiscriminatorMethod(newClass, codeComposedType.DiscriminatorInformation.DiscriminatorPropertyName, codeComposedType.DiscriminatorInformation.DiscriminatorMappings);
         return new CodeType {
             Name = newClass.Name,
             TypeDefinition = newClass,
-            CollectionKind = codeUnionType.CollectionKind,
-            IsNullable = codeUnionType.IsNullable,
-            ActionOf = codeUnionType.ActionOf,
+            CollectionKind = codeComposedType.CollectionKind,
+            IsNullable = codeComposedType.IsNullable,
+            ActionOf = codeComposedType.ActionOf,
         };
     }
     protected static void MoveClassesWithNamespaceNamesUnderNamespace(CodeElement currentElement) {
@@ -657,9 +674,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentMethod.Parent is CodeClass parentClass &&
             parentClass.StartBlock is ClassDeclaration declaration) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Factory) &&
-                    currentMethod.DiscriminatorMappings != null) {
+                    (parentClass.DiscriminatorInformation?.HasBasicDiscriminatorInformation ?? false)) {
                         if(addUsings)
-                            declaration.AddUsings(currentMethod.DiscriminatorMappings
+                            declaration.AddUsings(parentClass.DiscriminatorInformation.DiscriminatorMappings
                                 .Select(x => x.Value)
                                 .OfType<CodeType>()
                                 .Where(x => x.TypeDefinition != null)
@@ -813,6 +830,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         var insertValue = new CodeInterface {
                     Name = interfaceName,
                     Kind = CodeInterfaceKind.Model,
+                    OriginalClass = modelClass,
         };
         var inter = shouldInsertUnderParentClass ? 
                         parentClass.AddInnerInterface(insertValue).First() :
@@ -967,9 +985,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if (currentElement is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.Factory) &&
             currentMethod.Parent is CodeClass currentClass &&
-            currentMethod.DiscriminatorMappings.Any()) {
+            currentClass.DiscriminatorInformation.DiscriminatorMappings.Any()) {
                 var currentNamespace = currentMethod.GetImmediateParentOfType<CodeNamespace>();
-                var keysToRemove = currentMethod.DiscriminatorMappings
+                var keysToRemove = currentClass.DiscriminatorInformation.DiscriminatorMappings
                                                 .Where(x => x.Value is CodeType mappingType &&
                                                             mappingType.TypeDefinition is CodeClass mappingClass &&
                                                             mappingClass.Parent is CodeNamespace mappingNamespace &&
@@ -978,7 +996,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                 .Select(x => x.Key)
                                                 .ToArray();
                 if(keysToRemove.Any())
-                    currentMethod.RemoveDiscriminatorMapping(keysToRemove);
+                    currentClass.DiscriminatorInformation.RemoveDiscriminatorMapping(keysToRemove);
             }
         CrawlTree(currentElement, RemoveDiscriminatorMappingsTargetingSubNamespaces);
     }

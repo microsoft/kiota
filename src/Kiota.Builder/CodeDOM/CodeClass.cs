@@ -27,13 +27,17 @@ public enum CodeClassKind {
 /// <summary>
 /// CodeClass represents an instance of a Class to be generated in source code
 /// </summary>
-public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition
+public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition, IDiscriminatorInformationHolder
 {
     public bool IsErrorDefinition { get; set; }
+
+    /// <summary>
+    /// Original composed type this class was generated for.
+    /// </summary>
+    public CodeComposedTypeBase OriginalComposedType { get; set; }
     public void SetIndexer(CodeIndexer indexer)
     {
-        if(indexer == null)
-            throw new ArgumentNullException(nameof(indexer));
+        ArgumentNullException.ThrowIfNull(indexer);
         if(InnerChildElements.Values.OfType<CodeIndexer>().Any() || InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility))) {
             var existingIndexer = InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
             if(existingIndexer != null) {
@@ -80,6 +84,20 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         else
             return parentClass.GetGreatestGrandparent(startClassToSkip);
     }
+    private DiscriminatorInformation _discriminatorInformation;
+    /// <inheritdoc />
+    public DiscriminatorInformation DiscriminatorInformation { 
+        get {
+            if (_discriminatorInformation == null)
+                DiscriminatorInformation = new DiscriminatorInformation();
+            return _discriminatorInformation;
+        } 
+        set {
+            ArgumentNullException.ThrowIfNull(value);
+            EnsureElementsAreChildren(value);
+            _discriminatorInformation = value;
+        }
+    }
 }
 public class ClassDeclaration : ProprietableBlockDeclaration
 {
@@ -103,7 +121,7 @@ public class ClassDeclaration : ProprietableBlockDeclaration
     }
 
     public bool InheritsFrom(CodeClass candidate) {
-        ArgumentNullException.ThrowIfNull(candidate, nameof(candidate));
+        ArgumentNullException.ThrowIfNull(candidate);
 
         if (inherits is CodeType currentInheritsType &&
             currentInheritsType.TypeDefinition is CodeClass currentParentClass)

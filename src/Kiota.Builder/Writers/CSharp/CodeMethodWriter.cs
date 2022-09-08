@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionService>
@@ -9,9 +10,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     public CodeMethodWriter(CSharpConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
-        if (codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+        ArgumentNullException.ThrowIfNull(codeElement);
         if (codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
-        if (writer == null) throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(writer);
         if (!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
@@ -49,7 +50,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
                 break;
             case CodeMethodKind.RequestExecutor:
-                WriteRequestExecutorBody(codeElement, requestParams, isVoid, returnType, returnTypeWithoutCollectionInformation, writer);
+                WriteRequestExecutorBody(codeElement, requestParams, isVoid, returnTypeWithoutCollectionInformation, writer);
                 break;
             case CodeMethodKind.Deserializer:
                 WriteDeserializerBody(inherits, codeElement, parentClass, writer);
@@ -77,26 +78,99 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 WriteCommandBuilderBody(codeElement, requestParams, isVoid, returnType, writer);
                 break;
             case CodeMethodKind.Factory:
-                WriteFactoryMethodBody(codeElement, writer);
+                WriteFactoryMethodBody(codeElement, parentClass, writer);
                 break;
             default:
                 writer.WriteLine("return null;");
                 break;
         }
     }
-    private void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
-        var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-        if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
-            writer.WriteLine($"var mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{codeElement.DiscriminatorPropertyName}\");");
-            writer.WriteLines($"var mappingValue = mappingValueNode?.GetStringValue();");
-            writer.WriteLine("return mappingValue switch {");
-            writer.IncreaseIndent();
-            foreach(var mappedType in codeElement.DiscriminatorMappings) {
-                writer.WriteLine($"\"{mappedType.Key}\" => new {conventions.GetTypeString(mappedType.Value.AllTypes.First() ,codeElement)}(),");
+    private static readonly CodePropertyTypeComparer CodePropertyTypeForwardComparer = new();
+    private static readonly CodePropertyTypeComparer CodePropertyTypeBackwardComparer = new(true);
+    private void WriteFactoryMethodBodyForInheritedModel(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
+        writer.WriteLine($"return {DiscriminatorMappingVarName} switch {{");
+        writer.IncreaseIndent();
+        foreach(var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings) {
+            writer.WriteLine($"\"{mappedType.Key}\" => new {conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}(),");
+        }
+        writer.WriteLine($"_ => new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}(),");
+        writer.CloseBlock("};");
+    }
+    private const string ResultVarName = "result";
+    private void WriteFactoryMethodBodyForUnionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer) {
+        writer.WriteLine($"var {ResultVarName} = new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
+        var includeElse = false;
+        foreach(var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                            .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                            .ThenBy(static x => x.Name)) {
+            if(property.Type is CodeType propertyType)
+                if(propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection) {
+                    var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
+                    writer.WriteLine($"{(includeElse? "else " : string.Empty)}if(\"{mappedType.Key}\".Equals({DiscriminatorMappingVarName}, StringComparison.OrdinalIgnoreCase)) {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = new {conventions.GetTypeString(propertyType, codeElement)}();");
+                    writer.CloseBlock();
+                } else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum) {
+                    var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
+                    var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
+                    writer.WriteLine($"{(includeElse? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName}) {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
+                    writer.CloseBlock();   
+                }
+            if(!includeElse)
+                includeElse = true;
+        }
+        writer.WriteLine($"return {ResultVarName};");
+    }
+    private void WriteFactoryMethodBodyForIntersectionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer) {
+        writer.WriteLine($"var {ResultVarName} = new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
+        var includeElse = false;
+        foreach(var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                            .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
+                                            .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
+                                            .ThenBy(static x => x.Name)) {
+            if(property.Type is CodeType propertyType) {
+                var typeName = conventions.GetTypeString(propertyType, codeElement, true, false);
+                var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
+                writer.StartBlock($"{(includeElse? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName}) {{");
+                writer.WriteLine($"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
+                writer.CloseBlock();
             }
-            writer.WriteLine($"_ => new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}(),");
-            writer.CloseBlock("};");
-        } else 
+            if(!includeElse)
+                includeElse = true;
+        }
+        var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                            .Select(static x => new Tuple<CodeProperty, CodeType>(x, x.Type as CodeType))
+                                            .Where(static x => x.Item2.TypeDefinition is CodeClass && !x.Item2.IsCollection)
+                                            .ToArray();
+        if(complexProperties.Any()) {
+            if(includeElse) {
+                writer.WriteLine("else {");
+                writer.IncreaseIndent();
+            }
+            foreach(var property in complexProperties)
+                writer.WriteLine($"{ResultVarName}.{property.Item1.Name.ToFirstCharacterUpperCase()} = new {conventions.GetTypeString(property.Item2, codeElement)}();");
+            if(includeElse) {
+                writer.CloseBlock();
+            }
+        }
+        writer.WriteLine($"return {ResultVarName};");
+    }
+    private const string DiscriminatorMappingVarName = "mappingValue";
+    private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer){
+        var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
+        
+        if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorBody && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+            writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")?.GetStringValue();");
+        
+        if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
+            WriteFactoryMethodBodyForInheritedModel(codeElement, parentClass, writer);
+        else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+            WriteFactoryMethodBodyForUnionModel(codeElement, parentClass, parseNodeParameter, writer);
+        else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+            WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
+        else
             writer.WriteLine($"return new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
     }
     private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
@@ -128,10 +202,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     {
         foreach (var propWithDefault in parentClass
                                         .Properties
-                                        .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                        .OrderByDescending(x => x.Kind)
-                                        .ThenBy(x => x.Name)) {
-            writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {propWithDefault.DefaultValue};");
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        .OrderByDescending(static x => x.Kind)
+                                        .ThenBy(static x => x.Name)) {
+            var defaultValue = propWithDefault.DefaultValue;
+            if(propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition) {
+                defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}.{defaultValue.Trim('"').ToFirstCharacterUpperCase()}";
+            }
+            writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {defaultValue};");
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
@@ -172,11 +250,60 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = {parameter.Name};");
         }
     }
+    private string DefaultDeserializerValue => $"new Dictionary<string, Action<{conventions.ParseNodeInterfaceName}>>";
     private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
+        if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+            WriteDeserializerBodyForUnionModel(codeElement, parentClass, writer);
+        else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+            WriteDeserializerBodyForIntersectionModel(parentClass, writer);
+        else
+            WriteDeserializerBodyForInheritedModel(shouldHide, codeElement, parentClass, writer);
+    }
+    private void WriteDeserializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
+    {
+        var includeElse = false;
+        foreach (var otherPropName in parentClass
+                                        .Properties
+                                        .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                        .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
+                                        .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                        .ThenBy(static x => x.Name)
+                                        .Select(static x => x.Name.ToFirstCharacterUpperCase()))
+        {
+            writer.StartBlock($"{(includeElse? "else " : string.Empty)}if({otherPropName} != null) {{");
+            writer.WriteLine($"return {otherPropName}.{method.Name.ToFirstCharacterUpperCase()}();");
+            writer.CloseBlock();
+            if(!includeElse)
+                includeElse = true;
+        }
+        writer.WriteLine($"return {DefaultDeserializerValue}();");
+    }
+    private void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
+    {
+        var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                            .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
+                                            .ToArray();
+        if(complexProperties.Any()) {
+            var propertiesNames = complexProperties
+                                .Select(static x => x.Name.ToFirstCharacterUpperCase())
+                                .OrderBy(static x => x)
+                                .ToArray();
+            var propertiesNamesAsConditions = propertiesNames
+                                .Select(static x => $"{x} != null")
+                                .Aggregate(static (x, y) => $"{x} || {y}");
+            writer.StartBlock($"if({propertiesNamesAsConditions}) {{");
+            var propertiesNamesAsArgument = propertiesNames
+                                .Aggregate(static (x, y) => $"{x}, {y}");
+            writer.WriteLine($"return ParseNodeHelper.MergeDeserializersForIntersectionWrapper({propertiesNamesAsArgument});");
+            writer.CloseBlock();
+        }
+        writer.WriteLine($"return {DefaultDeserializerValue}();");
+    }
+    private void WriteDeserializerBodyForInheritedModel(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
         var parentSerializationInfo = shouldHide ? $"(base.{codeElement.Name.ToFirstCharacterUpperCase()}())" : string.Empty;
-        writer.WriteLine($"return new Dictionary<string, Action<{conventions.ParseNodeInterfaceName}>>{parentSerializationInfo} {{");
-        writer.IncreaseIndent();
+        writer.StartBlock($"return {DefaultDeserializerValue}{parentSerializationInfo} {{");
         foreach (var otherProp in parentClass
                                         .Properties
                                         .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
@@ -184,8 +311,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
         }
-        writer.DecreaseIndent();
-        writer.WriteLine("};");
+        writer.CloseBlock("};");
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method)
     {
@@ -194,7 +320,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         if (propType is CodeType currentType)
         {
             if (isCollection) {
-                var collectionMethod = propType.IsArray ? ".ToArray()" : ".ToList()";
+                var collectionMethod = propType.IsArray ? "?.ToArray()" : "?.ToList()";
                 if (currentType.TypeDefinition == null)
                     return $"GetCollectionOfPrimitiveValues<{propertyType}>(){collectionMethod}";
                 else if (currentType.TypeDefinition is CodeEnum enumType)
@@ -211,7 +337,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             _ => $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType}.CreateFromDiscriminatorValue)",
         };
     }
-    protected void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, string returnTypeWithoutCollectionInformation, LanguageWriter writer)
+    protected void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnTypeWithoutCollectionInformation, LanguageWriter writer)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
@@ -243,7 +369,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             (_, true) => "var collectionResult = ",
             (_, _ ) => "return ",
         };
-        writer.WriteLine($"{prefix}await RequestAdapter.{GetSendRequestMethodName(isVoid, codeElement.Parent, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, responseHandler, {errorMappingVarName}, cancellationToken);");
+        writer.WriteLine($"{prefix}await RequestAdapter.{GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, responseHandler, {errorMappingVarName}, cancellationToken);");
         if (codeElement.ReturnType.IsCollection)
             writer.WriteLine("return collectionResult.ToList();");
     }
@@ -300,7 +426,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"{property.Name.ToFirstCharacterUpperCase()}";
     private void WriteSerializerBody(bool shouldHide, CodeMethod method, CodeClass parentClass, LanguageWriter writer)
     {
-        var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
+        if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+            WriteSerializerBodyForUnionModel(method, parentClass, writer);
+        else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+            WriteSerializerBodyForIntersectionModel(method, parentClass, writer);
+        else
+            WriteSerializerBodyForInheritedModel(shouldHide, method, parentClass, writer);
+
+        if (parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
+            writer.WriteLine($"writer.WriteAdditionalData({additionalDataProperty.Name});");
+    }
+    private void WriteSerializerBodyForInheritedModel(bool shouldHide, CodeMethod method, CodeClass parentClass, LanguageWriter writer)
+    {
         if (shouldHide)
             writer.WriteLine("base.Serialize(writer);");
         foreach (var otherProp in parentClass
@@ -310,8 +447,58 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
         }
-        if (additionalDataProperty != null)
-            writer.WriteLine($"writer.WriteAdditionalData({additionalDataProperty.Name});");
+    }
+    private void WriteSerializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
+    {
+        var includeElse = false;
+        foreach (var otherProp in parentClass
+                                        .Properties
+                                        .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                        .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                                        .ThenBy(static x => x.Name))
+        {
+            writer.WriteLine($"{(includeElse? "else " : string.Empty)}if({otherProp.Name.ToFirstCharacterUpperCase()} != null) {{");
+            writer.IncreaseIndent();
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {otherProp.Name.ToFirstCharacterUpperCase()});");
+            writer.CloseBlock();
+            if(!includeElse)
+                includeElse = true;
+        }
+    }
+    private void WriteSerializerBodyForIntersectionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
+    {
+        var includeElse = false;
+        foreach (var otherProp in parentClass
+                                        .Properties
+                                        .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                        .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
+                                        .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
+                                        .ThenBy(static x => x.Name))
+        {
+            writer.WriteLine($"{(includeElse? "else " : string.Empty)}if({otherProp.Name.ToFirstCharacterUpperCase()} != null) {{");
+            writer.IncreaseIndent();
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {otherProp.Name.ToFirstCharacterUpperCase()});");
+            writer.CloseBlock();
+            if(!includeElse)
+                includeElse = true;
+        }
+        var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                            .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
+                                            .ToArray();
+        if(complexProperties.Any()) {
+            if(includeElse) {
+                writer.WriteLine("else {");
+                writer.IncreaseIndent();
+            }
+            var propertiesNames = complexProperties
+                                .Select(static x => x.Name.ToFirstCharacterUpperCase())
+                                .OrderBy(static x => x)
+                                .Aggregate(static (x, y) => $"{x}, {y}");
+            writer.WriteLine($"writer.{GetSerializationMethodName(complexProperties.First().Type, method)}(null, {propertiesNames});");
+            if(includeElse) {
+                writer.CloseBlock();
+            }
+        }
     }
 
     protected virtual void WriteCommandBuilderBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)

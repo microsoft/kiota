@@ -127,7 +127,7 @@ public class PythonLanguageRefinerTests {
             },
             IsStatic = true,
         }).First();
-        factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });

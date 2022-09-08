@@ -18,5 +18,5 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
             OptionsInternal.Enqueue(option);
         }
     }
-    public IEnumerable<CodeEnumOption> Options => OptionsInternal.ToArray();
+    public IEnumerable<CodeEnumOption> Options => OptionsInternal;
 }

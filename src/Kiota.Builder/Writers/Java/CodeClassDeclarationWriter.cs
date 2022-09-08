@@ -2,35 +2,34 @@ using System;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder.Writers.Java {
-    public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, JavaConventionService>
+namespace Kiota.Builder.Writers.Java;
+public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, JavaConventionService>
+{
+    public CodeClassDeclarationWriter(JavaConventionService conventionService) : base(conventionService){}
+    public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
     {
-        public CodeClassDeclarationWriter(JavaConventionService conventionService) : base(conventionService){}
-        public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
-        {
-            if(codeElement?.Parent?.Parent is CodeNamespace ns) {
-                writer.WriteLine($"package {ns.Name};");
-                writer.WriteLine();
-                codeElement.Usings
-                    .Where(x => x.Declaration != null)
-                    .Where(x => x.Declaration.IsExternal || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
-                    .Select(x => x.Declaration.IsExternal ?
-                                     $"import {x.Declaration.Name}.{x.Name.ToFirstCharacterUpperCase()};" :
-                                     $"import {x.Name}.{x.Declaration.Name.ToFirstCharacterUpperCase()};")
-                    .Distinct()
-                    .GroupBy(x => x.Split('.').Last())
-                    .Where(x => x.Count() == 1) // we don't want to import the same symbol twice
-                    .SelectMany(x => x)
-                    .OrderBy(x => x)
-                    .ToList()
-                    .ForEach(x => writer.WriteLine(x));
-            }
-            var derivation = (codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +
-                            (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");
-            conventions.WriteShortDescription((codeElement.Parent as CodeClass)?.Description, writer);
-            writer.WriteLine($"public class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation} {{");
-            writer.IncreaseIndent();
+        if(codeElement?.Parent?.Parent is CodeNamespace ns) {
+            writer.WriteLine($"package {ns.Name};");
+            writer.WriteLine();
+            codeElement.Usings
+                .Union(codeElement.Parent is CodeClass cClass ? cClass.InnerClasses.SelectMany(static x => x.Usings) : Enumerable.Empty<CodeUsing>())
+                .Where(static x => x.Declaration != null)
+                .Where(x => x.Declaration.IsExternal || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
+                .Select(static x => x.Declaration.IsExternal ?
+                                    $"import {x.Declaration.Name}.{x.Name.ToFirstCharacterUpperCase()};" :
+                                    $"import {x.Name}.{x.Declaration.Name.ToFirstCharacterUpperCase()};")
+                .Distinct()
+                .GroupBy(static x => x.Split('.').Last(), StringComparer.OrdinalIgnoreCase)
+                .Select(static x => x.First()) // we don't want to import the same symbol twice
+                .OrderBy(static x => x)
+                .ToList()
+                .ForEach(x => writer.WriteLine(x));
         }
+        var derivation = (codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +
+                        (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");
+        conventions.WriteShortDescription((codeElement.Parent as CodeClass)?.Description, writer);
+        var innerClassStatic = codeElement.Parent is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) && currentClass.Parent is CodeClass ? "static " : string.Empty; //https://stackoverflow.com/questions/47541459/no-enclosing-instance-is-accessible-must-qualify-the-allocation-with-an-enclosi
+        writer.WriteLine($"public {innerClassStatic}class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation} {{");
+        writer.IncreaseIndent();
     }
-
 }
