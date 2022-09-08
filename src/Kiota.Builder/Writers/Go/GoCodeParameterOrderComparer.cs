@@ -1,12 +1,14 @@
-namespace Kiota.Builder.Writers.Python;
-public class PythonCodeParameterOrderComparer : BaseCodeParameterOrderComparer
+﻿namespace Kiota.Builder.Writers.Go;
+
+public class GoCodeParameterOrderComparer : BaseCodeParameterOrderComparer
 {
-    // Non-default parameters must come before parameters with defaults in python.
+    // Cancellation/context parameters must come before other parameters with defaults in Golang.
     protected override int GetKindOrderHint(CodeParameterKind kind) {
         return kind switch {
-            CodeParameterKind.RequestAdapter => 1,
+            CodeParameterKind.Cancellation => 0,
+            CodeParameterKind.PathParameters => 1,
             CodeParameterKind.RawUrl => 2,
-            CodeParameterKind.PathParameters => 3,
+            CodeParameterKind.RequestAdapter => 3,
             CodeParameterKind.Path => 4,
             CodeParameterKind.RequestConfiguration => 5,
             CodeParameterKind.RequestBody => 6,

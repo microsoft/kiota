@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where Java would skip duplicated imports instead of deduplicating them.
 - Fixed a bug where Java would not convert date types for query parameters.
 - Fixed a bug where Java doc comments could contain invalid characters.
-
+- Fixed a bug where function parameters would be reodered incorrectly in dotnet[#1822](https://github.com/microsoft/kiota/issues/1822)
 
 ## [0.4.0] - 2022-08-18
 

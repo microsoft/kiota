@@ -1,7 +1,8 @@
+using System;
 using System.Collections.Generic;
 
 namespace Kiota.Builder;
-public class CodeParameterOrderComparer : IComparer<CodeParameter>
+public class BaseCodeParameterOrderComparer : IComparer<CodeParameter>
 {
     public int Compare(CodeParameter x, CodeParameter y)
     {
@@ -10,13 +11,12 @@ public class CodeParameterOrderComparer : IComparer<CodeParameter>
             (null, _) => -1,
             (_, null) => 1,
             _ => x.Optional.CompareTo(y.Optional) * optionalWeight +
-                 getKindOrderHint(x.Kind).CompareTo(getKindOrderHint(y.Kind)) * kindWeight +
+                 GetKindOrderHint(x.Kind).CompareTo(GetKindOrderHint(y.Kind)) * kindWeight +
                  x.Name.CompareTo(y.Name) * nameWeight,
         };
     }
-    private static int getKindOrderHint(CodeParameterKind kind) {
+    protected virtual int GetKindOrderHint(CodeParameterKind kind) {
         return kind switch {
-            CodeParameterKind.Cancellation => 0,
             CodeParameterKind.PathParameters => 1,
             CodeParameterKind.RawUrl => 2,
             CodeParameterKind.RequestAdapter => 3,
