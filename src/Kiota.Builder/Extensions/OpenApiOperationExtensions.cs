@@ -6,14 +6,16 @@ using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions {
     public static class OpenApiOperationExtensions {
-        private static readonly HashSet<string> successCodes = new(StringComparer.OrdinalIgnoreCase) {"200", "201", "202"}; //204 excluded as it won't have a schema
+        private static readonly HashSet<string> successCodes = new(StringComparer.OrdinalIgnoreCase) {"200", "201", "202", "203", "2XX"}; //204 excluded as it won't have a schema
         /// <summary>
         /// cleans application/vnd.github.mercy-preview+json to application/json
         /// </summary>
         private static readonly Regex vendorSpecificCleanup = new(@"[^/]+\+", RegexOptions.Compiled);
         public static OpenApiSchema GetResponseSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
         {
+            // Return Schema that represents all the possible success responses!
             return operation.Responses.Where(r => successCodes.Contains(r.Key))
+                                .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
                                 .SelectMany(re => re.Value.Content.GetValidSchemas(structuredMimeTypes))
                                 .FirstOrDefault();
         }
