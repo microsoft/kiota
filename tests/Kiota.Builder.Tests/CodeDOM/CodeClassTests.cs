@@ -13,6 +13,10 @@ public class CodeClassTests {
         root.AddClass(codeClass);
         Assert.False(codeClass.IsOfKind((CodeClassKind[])null));
         Assert.False(codeClass.IsOfKind(Array.Empty<CodeClassKind>()));
+        Assert.Throws<ArgumentNullException>(() => codeClass.DiscriminatorInformation.AddDiscriminatorMapping(null, new CodeType{Name = "class"}));
+        Assert.Throws<ArgumentNullException>(() => codeClass.DiscriminatorInformation.AddDiscriminatorMapping("oin", null));
+        Assert.Throws<ArgumentNullException>(() => codeClass.DiscriminatorInformation.GetDiscriminatorMappingValue(null));
+        Assert.Null(codeClass.DiscriminatorInformation.GetDiscriminatorMappingValue("oin"));
 
         Assert.Null(codeClass.GetParentClass());
     }

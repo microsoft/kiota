@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
@@ -108,6 +108,9 @@ public class GoRefiner : CommonLanguageRefiner
         AddParsableImplementsForModelClasses(
             generatedCode,
             "Parsable"
+        );
+        RenameInnerModelsToAppended(
+            generatedCode
         );
         CopyModelClassesAsInterfaces(
             generatedCode,
@@ -244,27 +247,39 @@ public class GoRefiner : CommonLanguageRefiner
         "string"
     };
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "github.com/microsoft/kiota-abstractions-go", "RequestAdapter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             "github.com/microsoft/kiota-abstractions-go", "RequestInformation", "HttpMethod", "RequestOption"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "github.com/microsoft/kiota-abstractions-go", "ResponseHandler"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor) &&
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor) &&
                     method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) &&
                                             !typeToSkipStrConv.Contains(x.Type.Name)),
             "strconv", "FormatBool"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             "github.com/microsoft/kiota-abstractions-go/serialization", "SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             "github.com/microsoft/kiota-abstractions-go/serialization", "ParseNode", "Parsable"),
-        new (x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
+        new (static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && 
+        new (static x => x is CodeMethod method && 
+                        method.IsOfKind(CodeMethodKind.RequestGenerator) &&
+                        method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) && 
+                                                    x.Type.IsCollection &&
+                                                    x.Type is CodeType pType &&
+                                                    (pType.TypeDefinition is CodeClass ||
+                                                    pType.TypeDefinition is CodeInterface)),
+            "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && 
                                             (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
                                             @class.StartBlock.Implements.Any(x => KiotaBuilder.AdditionalHolderInterface.Equals(x.Name, StringComparison.OrdinalIgnoreCase))),
             "github.com/microsoft/kiota-abstractions-go/serialization", "AdditionalDataHolder"),
-        new(x => x is CodeMethod method && (method.IsOfKind(CodeMethodKind.RequestExecutor) || method.IsOfKind(CodeMethodKind.RequestGenerator)), "context","*context"),
+        new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeUnionType unionType && unionType.Types.Any(static y => !y.IsExternal) && unionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
+            "strings", "EqualFold"),
+        new (static x => x is CodeMethod method && (method.IsOfKind(CodeMethodKind.RequestExecutor) || method.IsOfKind(CodeMethodKind.RequestGenerator)), "context","*context"),
+        new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
+            "github.com/microsoft/kiota-abstractions-go/serialization", "MergeDeserializersForIntersectionWrapper"),
     };//TODO add backing store types once we have them defined
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
         block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");
@@ -356,8 +371,30 @@ public class GoRefiner : CommonLanguageRefiner
                 currentProperty.Type.IsNullable = false;
                 currentProperty.Type.Name = "RequestOption";
                 currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
-            } else
-                CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+            }
+            CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
+    }
+    /// <summary>
+    /// Go doesn't support the concept of an inner type, so we're writing them at the same level as the parent one. However that can result into conflicts with other existing models.
+    /// This method will correct the type names to avoid conflicts.
+    /// </summary>
+    /// <param name="currentElement">The current element to start the renaming from.</param>
+    private static void RenameInnerModelsToAppended(CodeElement currentElement) {
+        if(currentElement is CodeClass currentInnerClass &&
+            currentInnerClass.IsOfKind(CodeClassKind.Model) &&
+            currentInnerClass.Parent is CodeClass currentParentClass &&
+            currentParentClass.IsOfKind(CodeClassKind.Model))
+        {
+            var oldName = currentInnerClass.Name;
+            currentInnerClass.Name = $"{currentParentClass.Name.ToFirstCharacterUpperCase()}_{currentInnerClass.Name.ToFirstCharacterUpperCase()}";
+            foreach(var property in currentParentClass.Properties.Where(x => x.Type.Name.Equals(oldName, StringComparison.OrdinalIgnoreCase)))
+                property.Type.Name = currentInnerClass.Name;
+            foreach(var method in currentParentClass.Methods.Where(x => x.ReturnType.Name.Equals(oldName, StringComparison.OrdinalIgnoreCase)))
+                method.ReturnType.Name = currentInnerClass.Name;
+            foreach(var parameter in currentParentClass.Methods.SelectMany(static x => x.Parameters).Where(x => x.Type.Name.Equals(oldName, StringComparison.OrdinalIgnoreCase)))
+                parameter.Type.Name = currentInnerClass.Name;
+        }
+        CrawlTree(currentElement, RenameInnerModelsToAppended);
     }
 }

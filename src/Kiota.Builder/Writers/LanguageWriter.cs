@@ -28,7 +28,7 @@ namespace Kiota.Builder.Writers
         /// </summary>
         /// <param name="writer"></param>
         /// <remarks>Passing this to the constructor is problematic because for writing to files, an instance of this
-        /// class is needed to get the file suffix to be able to create the filestream to create the writer.
+        /// class is needed to get the file suffix to be able to create the file stream to create the writer.
         /// By making this a separate step, we can instantiate the LanguageWriter, then get the suffix, then create the writer.</remarks>
         public void SetTextWriter(TextWriter writer)
         {
@@ -66,6 +66,12 @@ namespace Kiota.Builder.Writers
             foreach(var line in lines) {
                 WriteLine(line, true);
             }
+        }
+        internal void StartBlock(string symbol = "{", bool increaseIndent = true)
+        {
+            WriteLine(symbol);
+            if (increaseIndent)
+                IncreaseIndent();
         }
         internal void CloseBlock(string symbol = "}", bool decreaseIndent = true)
         {

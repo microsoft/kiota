@@ -162,6 +162,9 @@ public class CSharpLanguageRefinerTests {
         Assert.True(parameter.Type is CodeType);
         Assert.True(method.ReturnType is CodeType);
         Assert.True(indexer.ReturnType is CodeType);
+        var resultingWrapper = root.FindChildByName<CodeClass>("union");
+        Assert.NotNull(resultingWrapper);
+        Assert.NotNull(resultingWrapper.OriginalComposedType);
     }
     [Fact]
     public void MovesClassesWithNamespaceNamesUnderNamespace() {

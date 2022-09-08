@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
@@ -80,7 +81,11 @@ public class JavaConventionService : CommonLanguageConventionService
         if(!string.IsNullOrEmpty(description))
             writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
-    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
+    private static readonly Regex nonAsciiReplaceRegex = new (@"[^\u0000-\u007F]+", RegexOptions.Compiled);
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => 
+        string.IsNullOrEmpty(originalDescription) ? 
+            originalDescription :
+            nonAsciiReplaceRegex.Replace(originalDescription.Replace("\\", "/").Replace("*/", string.Empty), string.Empty);
     #pragma warning disable CA1822 // Method should be static
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);

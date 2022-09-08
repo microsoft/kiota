@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Extensions;
@@ -11,8 +10,8 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
-            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
-            if(writer == null) throw new ArgumentNullException(nameof(writer));
+            ArgumentNullException.ThrowIfNull(codeElement);
+            ArgumentNullException.ThrowIfNull(writer);
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
             var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
             WriteMethodDocumentation(codeElement, writer);

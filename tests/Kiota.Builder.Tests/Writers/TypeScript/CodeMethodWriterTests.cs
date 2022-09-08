@@ -228,11 +228,11 @@ public class CodeMethodWriterTests : IDisposable {
                 TypeDefinition = parentModel,
             },
         }).First();
-        factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        factoryMethod.DiscriminatorPropertyName = "@odata.type";
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,

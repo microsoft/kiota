@@ -21,7 +21,9 @@ namespace Kiota.Builder.Refiners
             );
             AddConstructorsForDefaultValues(generatedCode, true);
             RemoveCancellationParameter(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode, false, false);
+            ConvertUnionTypesToWrapper(generatedCode, 
+                _configuration.UsesBackingStore,
+                false);
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",

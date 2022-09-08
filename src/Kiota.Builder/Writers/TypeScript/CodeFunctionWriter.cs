@@ -14,9 +14,9 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     public override void WriteCodeElement(CodeFunction codeElement, LanguageWriter writer)
     {
-        if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+        ArgumentNullException.ThrowIfNull(codeElement);
         if(codeElement.OriginalLocalMethod == null) throw new InvalidOperationException($"{nameof(codeElement.OriginalLocalMethod)} should not be null");
-        if(writer == null) throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(writer);
         if(codeElement.Parent is not CodeNamespace) throw new InvalidOperationException("the parent of a function should be a namespace");
 
         var returnType = conventions.GetTypeString(codeElement.OriginalLocalMethod.ReturnType, codeElement);
@@ -30,8 +30,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     private static void WriteFactoryMethodBody(CodeFunction codeElement, string returnType, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.OriginalLocalMethod.Parameters.OfKind(CodeParameterKind.ParseNode);
-        if(codeElement.OriginalLocalMethod.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
-            writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.OriginalLocalMethod.DiscriminatorPropertyName}\");",
+        if(codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
+            writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorPropertyName}\");",
                                 $"if (mappingValueNode) {{");
             writer.IncreaseIndent();
             writer.WriteLines($"const mappingValue = mappingValueNode.getStringValue();",
@@ -40,7 +40,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
             writer.WriteLine($"switch (mappingValue) {{");
             writer.IncreaseIndent();
-            foreach(var mappedType in codeElement.OriginalLocalMethod.DiscriminatorMappings) {
+            foreach(var mappedType in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings) {
                 writer.WriteLine($"case \"{mappedType.Key}\":");
                 writer.IncreaseIndent();
                 writer.WriteLine($"return new {mappedType.Value.Name.ToFirstCharacterUpperCase()}();");

@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added none output formatter to CLI commons. (Shell)
 - Added 'Accept' field of http request header in Ruby.  [#1660](https://github.com/microsoft/kiota/issues/1660)
 - Added support for text serialization in Python. [#1406](https://github.com/microsoft/kiota/issues/1406)
+- Added support for composed types (union, intersection) in CSharp, Java and Go. [#1411](https://github.com/microsoft/kiota/issues/1411)
+- Added support for implicit discriminator mapping.
+- Added support for default values of enum properties in CSharp, Java and Go.
+
 
 ### Changed
 
@@ -30,6 +34,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove all overloads for GO request executors
 - Adds a context object in all GO requests
 - Remove all overloads for GO request executors and Adds a context object in all GO requests [GO#176](https://github.com/microsoftgraph/msgraph-sdk-go/issues/176)
+- Fixed a bug where the Hashing method for type names differentiation could lock the process.
+- Fixed a bug where CSharp declaration writer would add usings for inner classes.
+- Fixed a bug with inline schema class naming.
+- Fixed a bug where symbols starting with a number would be invalid.
+- Fixed a bug where classes could end up with duplicated methods.
+- Fixed a bug where Go writer would try to import multiple times the same symbol.
+- Fixed a bug where the core generator engine would fail to recognize meaningful schemas.
+- Fixed a bug where Go and Java inner class imports would be missing.
+- Fixed a bug where Go and Java collection bodies would not generate properly.
+- Aligns request options types in Java with other collections type.
+- Fixed a bug where Java would skip duplicated imports instead of deduplicating them.
+- Fixed a bug where Java would not convert date types for query parameters.
+- Fixed a bug where Java doc comments could contain invalid characters.
 
 
 ## [0.4.0] - 2022-08-18

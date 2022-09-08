@@ -16,7 +16,9 @@ namespace Kiota.Builder.Refiners
             AddDefaultImports(generatedCode, additionalUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
+            ConvertUnionTypesToWrapper(generatedCode, 
+                _configuration.UsesBackingStore
+            );
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddInnerClasses(generatedCode, false);
             AddParsableImplementsForModelClasses(generatedCode, "IParsable");

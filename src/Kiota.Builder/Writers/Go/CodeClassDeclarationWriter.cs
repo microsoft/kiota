@@ -9,8 +9,7 @@ public class CodeClassDeclarationWriter : CodeProprietableBlockDeclarationWriter
         var className = codeElement.Name.ToFirstCharacterUpperCase();
         var currentClass = codeElement.Parent as CodeClass;
         conventions.WriteShortDescription($"{className} {currentClass.Description.ToFirstCharacterLowerCase()}", writer);
-        writer.WriteLine($"type {className} struct {{");
-        writer.IncreaseIndent();
+        writer.StartBlock($"type {className} struct {{");
         if(codeElement.Inherits?.AllTypes?.Any() ?? false) {
             var parentTypeName = conventions.GetTypeString(codeElement.Inherits.AllTypes.First(), currentClass, true, false);
             writer.WriteLine($"{parentTypeName}");

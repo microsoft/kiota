@@ -806,11 +806,11 @@ namespace Kiota.Builder.Writers.Php.Tests
                 },
                 IsStatic = true,
             }).First();
-            factoryMethod.AddDiscriminatorMapping("childModel", new CodeType {
+            parentModel.DiscriminatorInformation.AddDiscriminatorMapping("childModel", new CodeType {
                 Name = "childModel",
                 TypeDefinition = childModel,
             });
-            factoryMethod.DiscriminatorPropertyName = "@odata.type";
+            parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
             factoryMethod.AddParameter(new CodeParameter {
                 Name = "ParseNode",
                 Kind = CodeParameterKind.ParseNode,
