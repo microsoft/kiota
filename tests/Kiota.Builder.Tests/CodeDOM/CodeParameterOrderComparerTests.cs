@@ -71,13 +71,19 @@ namespace Kiota.Builder.Tests {
             Assert.Equal(-110, comparer.Compare(param1, param2));
             Assert.Equal(0, comparer.Compare(param2, param2));
         }
-        [Fact]
-        public void CancellationParameterIsBeforeRequestConfigurationForGolang() {
+        [Theory]
+        [InlineData(CodeParameterKind.Path)]
+        [InlineData(CodeParameterKind.RequestConfiguration)]
+        [InlineData(CodeParameterKind.Serializer)]
+        [InlineData(CodeParameterKind.SetterValue)]
+        [InlineData(CodeParameterKind.ParseNode)]
+        [InlineData(CodeParameterKind.Custom)]
+        public void CancellationParameterIsBeforeOthersForGolang(CodeParameterKind testKind) {
             var comparer = new GoCodeParameterOrderComparer();
             Assert.NotNull(comparer);
             var param1 =  new CodeParameter {
                 Name = "param1",
-                Kind = CodeParameterKind.RequestConfiguration,
+                Kind = testKind,
             };
             var param2 =  new CodeParameter {
                 Name = "param2",
@@ -85,8 +91,6 @@ namespace Kiota.Builder.Tests {
             };
             var parameters = new List<CodeParameter> { param1, param2 };
             Assert.Equal("param2",parameters.OrderBy(x => x, comparer).First().Name);
-            Assert.Equal(-90, comparer.Compare(param2, param1));
-            Assert.Equal(90, comparer.Compare(param1, param2));
             Assert.Equal(0, comparer.Compare(param2, param2));
         }
     }
