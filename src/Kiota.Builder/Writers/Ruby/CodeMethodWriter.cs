@@ -220,7 +220,7 @@ namespace Kiota.Builder.Writers.Ruby {
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.Name.ToSnakeCase()})");
         }
-        private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
+        private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer) {
             var methodName = (code.Kind switch {
                 CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => $"initialize",

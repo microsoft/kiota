@@ -174,7 +174,7 @@ namespace Kiota.Builder.Writers.Php
             };
         }
         
-        private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
+        private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodsAndParameters(CodeMethod codeMethod, LanguageWriter writer, IReadOnlyList<string> orNullReturn, bool isConstructor = false)
         {
             var methodParameters = string.Join(", ", codeMethod.Parameters

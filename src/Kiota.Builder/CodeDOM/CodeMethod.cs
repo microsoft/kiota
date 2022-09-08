@@ -137,7 +137,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         parameters.Clear();
     }
-    private readonly CodeParameterOrderComparer parameterOrderComparer = new ();
+    private readonly BaseCodeParameterOrderComparer parameterOrderComparer = new ();
     public IEnumerable<CodeParameter> Parameters { get => parameters.Values.OrderBy(static x => x, parameterOrderComparer); }
     public bool IsStatic {get;set;} = false;
     public bool IsAsync {get;set;} = true;

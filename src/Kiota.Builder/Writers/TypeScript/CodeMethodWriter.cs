@@ -357,7 +357,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             writer.WriteLine(localConventions.DocCommentEnd);
         }
     }
-    private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
+    private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
         WriteMethodPrototypeInternal(code, writer, returnType, isVoid, localConventions, false);
     }

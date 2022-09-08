@@ -333,7 +333,7 @@ namespace Kiota.Builder.Writers.Go {
             }
         }
         private static string errorVarDeclaration(bool shouldDeclareErrorVar) => shouldDeclareErrorVar ? ":" : string.Empty;
-        private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
+        private static readonly GoCodeParameterOrderComparer ParameterOrderComparer = new();
         
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool writePrototypeOnly) {
             var parentBlock = code.Parent;
@@ -350,7 +350,7 @@ namespace Kiota.Builder.Writers.Go {
             };
             if(!writePrototypeOnly)
                 WriteMethodDocumentation(code, methodName, writer);
-            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, parentBlock)).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, ParameterOrderComparer).Select(p => conventions.GetParameterSignature(p, parentBlock)).ToList());
             var classType = conventions.GetTypeString(new CodeType { Name = parentBlock.Name, TypeDefinition = parentBlock }, parentBlock);
             var associatedTypePrefix = isConstructor ||code.IsStatic || writePrototypeOnly ? string.Empty : $"(m {classType}) ";
             var finalReturnType = isConstructor ? classType : $"{returnType}{returnTypeAsyncSuffix}";

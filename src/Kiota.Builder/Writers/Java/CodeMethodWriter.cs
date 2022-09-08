@@ -576,7 +576,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             dataToSerialize = $"this.{otherProp.Getter?.Name?.ToFirstCharacterLowerCase() ?? "get" + otherProp.Name.ToFirstCharacterUpperCase()}()";
         writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}({serializationKey}, {dataToSerialize});");
     }
-    private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
+    private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType) {
         var accessModifier = conventions.GetAccessModifier(code.Access);
         var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
