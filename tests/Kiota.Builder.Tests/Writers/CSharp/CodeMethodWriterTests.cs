@@ -75,6 +75,12 @@ public class CodeMethodWriterTests : IDisposable {
         dummyProp.Type = new CodeType {
             Name = "string"
         };
+        var dummyUCaseProp = parentClass.AddProperty(new CodeProperty {
+            Name = "DummyUCaseProp",
+        }).First();
+        dummyUCaseProp.Type = new CodeType {
+            Name = "string"
+        };
         var dummyCollectionProp = parentClass.AddProperty(new CodeProperty {
             Name = "dummyColl",
         }).First();
@@ -758,6 +764,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("GetCollectionOfObjectValues", result);
         Assert.Contains("GetEnumValue", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("{\"DummyUCaseProp", result);
+        Assert.Contains("{\"dummyProp", result);
     }
     [Fact]
     public void WritesInheritedSerializerBody() {
@@ -842,6 +850,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("WriteCollectionOfObjectValues", result);
         Assert.Contains("WriteEnumValue", result);
         Assert.Contains("WriteAdditionalData(additionalData);", result);
+        Assert.Contains("WriteStringValue(\"dummyProp\"", result);
+        Assert.Contains("WriteStringValue(\"DummyUCaseProp\"", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
