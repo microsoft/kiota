@@ -1407,4 +1407,21 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("SetSelect", result);
         Assert.DoesNotContain("SetSelect_escaped", result);
     }
+    [Fact]
+    public void DoesntWriteReadOnlyPropertiesInSerializerBody() {
+        method.Kind = CodeMethodKind.Serializer;
+        AddSerializationProperties();
+        AddInheritanceClass();
+        parentClass.AddProperty(new CodeProperty {
+            Name = "ReadOnlyProperty",
+            ReadOnly = true,
+            Type = new CodeType {
+                Name = "string",
+            },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("ReadOnlyProperty", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
 }

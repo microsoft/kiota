@@ -134,7 +134,7 @@ namespace Kiota.Builder.Writers.Ruby {
             else
                 writer.WriteLine($"return {{");
             writer.IncreaseIndent();
-            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
+            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType)) {
                 writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\" => lambda {{|n| @{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
             }
             writer.DecreaseIndent();
@@ -214,7 +214,7 @@ namespace Kiota.Builder.Writers.Ruby {
             var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
             if(parentClass.StartBlock.Inherits != null)
                 writer.WriteLine("super");
-            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
+            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly)) {
                 writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", @{otherProp.Name.ToSnakeCase()})");
             }
             if(additionalDataProperty != null)

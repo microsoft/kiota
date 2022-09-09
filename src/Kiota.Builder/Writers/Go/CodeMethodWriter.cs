@@ -270,7 +270,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"err := m.{parentClass.StartBlock.Inherits.Name.ToFirstCharacterUpperCase()}.Serialize(writer)");
                 WriteReturnError(writer);
             }
-            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType)) {
+            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly)) {
                 WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase(), $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", !inherits, writer);
             }
         }
@@ -278,8 +278,8 @@ namespace Kiota.Builder.Writers.Go {
         {
             var includeElse = false;
             var otherProps = parentClass
-                                    .Properties
-                                    .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                    .GetPropertiesOfKind(CodePropertyKind.Custom)
+                                    .Where(static x => !x.ExistsInBaseType)
                                     .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                     .ThenBy(static x => x.Name)
                                     .ToArray();
@@ -298,8 +298,8 @@ namespace Kiota.Builder.Writers.Go {
         {
             var includeElse = false;
             var otherProps = parentClass
-                                    .Properties
-                                    .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                    .GetPropertiesOfKind(CodePropertyKind.Custom)
+                                    .Where(static x => !x.ExistsInBaseType)
                                     .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
                                     .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
                                     .ThenBy(static x => x.Name)
@@ -497,8 +497,8 @@ namespace Kiota.Builder.Writers.Go {
         {
             var includeElse = false;
             var otherPropGetters = parentClass
-                                    .Properties
-                                    .Where(static x => !x.ExistsInBaseType && x.IsOfKind(CodePropertyKind.Custom))
+                                    .GetPropertiesOfKind(CodePropertyKind.Custom)
+                                    .Where(static x => !x.ExistsInBaseType)
                                     .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
                                     .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                     .ThenBy(static x => x.Name)

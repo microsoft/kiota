@@ -208,7 +208,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
         writer.WriteLine("fields = {");
             writer.IncreaseIndent();
-            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
+            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType)) {
                 writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToSnakeCase()}\": lambda n : setattr(self, '{otherProp.Name.ToSnakeCase()}', n.{GetDeserializationMethodName(otherProp.Type, codeElement)}),");
             }
             writer.DecreaseIndent();
@@ -301,7 +301,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
         if(inherits)
             writer.WriteLine("super().serialize(writer)");
-        foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
+        foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly)) {
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name}\", self.{otherProp.Name.ToSnakeCase()})");
         }
         if(additionalDataProperty != null)
