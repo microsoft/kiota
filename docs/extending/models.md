@@ -16,25 +16,109 @@ All models declared inline with an operation will be generated under the namespa
 
 Models in an [AllOf](https://spec.openapis.org/oas/latest.html#composition-and-inheritance-polymorphism) schema declaration will inherit from each other. Where the uppermost type in the collection is the greatest ancestor of the chain.
 
-## Faceted implementation of OneOf
+## Faceted implementation of oneOf
 
-OneOf specifies a type exclusion where the response can be of One of the specified schemas. Kiota implements that specification by generating all the target types and using a union type for languages that support it or a wrapper type with one property per type in the union for languages that do not support union types.
+oneOf specifies a type union (exclusive) where the response can be of one of the specified child schemas. Kiota implements that specification by generating types for all the child schemas and using a union type for languages that support it or a wrapper type with one property per type in the union.
 
 The deserialized result will either be of the one of the types of the union or be of the wrapper type with only one of the properties being non null.
 
-## Faceted implementation of AnyOf
+When a oneOf keyword has at least one child schema that is of type object then the OpenApi discriminator keyword MUST be provided to identify the applicable schema.  
 
-OneOf specifies a type inclusion where the response can be of Any of the specified schemas. Kiota implements that specification by generating all the target types and using a union type for languages that support it or a wrapper type with one property per type in the union for languages that do not support union types.
+Child schemas that are arrays or primitives will use the equivalent type language parser to attempt to interpret the input value. The first primitive schema that does not fail to parse will be used to deserialize the input.  
 
-The deserialized result will either be of the one of the types of the union or be of the wrapper type with one or more of the properties being non null.
+Nested oneOf keywords are only supported when the child schema uses a `$ref` to enable naming the nested type.
+
+## Faceted implementation of anyOf
+
+anyOf specifies a type intersection (inclusive union) where the response can be of any of the specified child schemas. Kiota implements that specification by generating types for all the child schemas and using a intersection type for languages that support it or a wrapper type with one property per type in the union.
+
+The deserialized result will either intersection type or be of the wrapper type with one or more of the properties being non null.
+
+Where there are common properties in the child schemas, the corresponding value in the input will deserialized into first the child schemas with the common property.
 
 ## Heterogeneous collections
 
-For any collection of items that rely on AllOf, AnyOf, or OneOf, it is possible the result will contain multiple types of objects.
+For any collection of items that rely on allOf, anyOf, or oneOf, it is possible the result will contain multiple types of objects.
 
 For example, think of an endpoint returning a collection of directory objects (abstract). Directory object is derived by User and Group, which each have their own set of properties. In this case the endpoint will be documented as returning a collection of directory objects and return in reality a mix of users and groups.
 
-Kiota [has plans](https://github.com/microsoft/kiota/issues/648) to support discriminators, down-casting the returned object during deserialization, however the work on this aspect is currently blocked by work required in dependencies. Kiota will currently return everything as the described type. Properties from the child types can be accessed from the additional data property.
+Kiota supports discriminators by down-casting the returned object during deserialization. The down-casting is supported through the use of allOf and discriminator property. Kiota supports both implicit and explicit discriminator mappings (example 1). Using oneOf to constrain derived types is **not** supported (example 2) as it will be interpreted as an intersection type.
+
+In case of inline schemas, the type will be named by conventions:
+
+- Last segment name + Operation + RequestBody
+- Last segment name + Operation + Response
+- Parent type name + member + id (sequential)
+
+### Example 1 - using allOf and discriminator
+
+```json
+{
+    "microsoft.graph.directoryObject": {
+      "allOf": [
+        { "$ref": "#/components/schemas/microsoft.graph.entity"},
+        {
+            "title": "directoryObject",
+            "required": [
+                "@odata.type"
+            ],
+            "type": "object",
+            "properties": {
+                "@odata.type": {
+                    "type": "string",
+                    "default": "#microsoft.graph.directoryObject"
+                }
+            }
+        }
+      ],
+      "discriminator": {
+            "propertyName": "@odata.type",
+            "mapping": {
+              "#microsoft.graph.user": "#/components/schemas/microsoft.graph.user",
+              "#microsoft.graph.group": "#/components/schemas/microsoft.graph.group"
+            }
+        }
+    },
+    "microsoft.graph.user": {
+      "allOf": [
+        { "$ref": "#/components/schemas/microsoft.graph.directoryObject"},
+        {
+            "title": "user",
+            "type": "object"
+        }
+      ]
+    },
+    "microsoft.graph.group": {
+      "allOf": [
+        { "$ref": "#/components/schemas/microsoft.graph.directoryObject"},
+        {
+            "title": "group",
+            "type": "object"
+        }
+      ]
+    }
+}
+```
+
+### Example 2 - using oneOf to constrain the derived types - not supported
+
+```json
+{
+    "type": "object",
+    "title": "directoryObject",
+    "oneOf": [
+        {
+            "type": "object",
+            "title": "user"
+        },
+        {
+            "type": "object",
+            "title": "group"
+        }
+
+    ]
+}
+```
 
 ## Default members
 
