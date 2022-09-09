@@ -187,7 +187,7 @@ namespace Kiota.Builder.Refiners
                 method.ReturnType.Name = "array";
             }
             CorrectDateTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
-                .Select(x => x.Type)
+                .Select(static x => x.Type)
                 .Union(new CodeTypeBase[] { method.ReturnType})
                 .ToArray());
         }

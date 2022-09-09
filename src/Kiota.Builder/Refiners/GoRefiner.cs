@@ -306,12 +306,16 @@ public class GoRefiner : CommonLanguageRefiner
             if(rawUrlParam != null)
                 rawUrlParam.Type.IsNullable = false;
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter))
-                .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
+                .Where(static x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                 .ToList()
-                .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+                .ForEach(static x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
         } else if(currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.RequestBuilderBackwardCompatibility, CodeMethodKind.Factory)) {
             currentMethod.ReturnType.IsNullable = true;
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ParseNode)).ToList().ForEach(x => x.Type.IsNullable = false);
+            if (currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam) {
+                parseNodeParam.Type.IsNullable = false;
+                parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
+            }
+
             if(currentMethod.IsOfKind(CodeMethodKind.Factory))
                 currentMethod.ReturnType = new CodeType { Name = "Parsable", IsNullable = false, IsExternal = true };
         }
