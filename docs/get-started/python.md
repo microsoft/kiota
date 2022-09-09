@@ -6,8 +6,9 @@ parent: Get started
 
 ## Required tools
 
-- [Python 3.10.4](https://www.python.org/)
-- [pip 20.0.2](https://pip.pypa.io/en/stable/)
+- [Python 3.6+](https://www.python.org/)
+- [pip 20.0+](https://pip.pypa.io/en/stable/)
+- [Asyncio/any other supported async envronment e.g AnyIO, Trio.](https://docs.python.org/3/library/asyncio.html)
 
 ## Target project requirements
 
@@ -17,24 +18,23 @@ Before you can compile and run the target project, you will need to initialize i
 
 > **Note:** you can use an existing project if you have one, in that case, you can skip the following section.
 
-Execute the following commands in the directory where you want to create a new project.
-
-```bash
-py someCommand
-```
+Create a directory that will contain the new project.
 
 ## Adding dependencies
-
-Create a file named **getuser.py** and add the following code.
+In your project directory, run the following commands on the terminal to install required dependencies
+using `pip`:
 
 ```bash
-py get microsoft-kiota-abstractions
-py get microsoft-kiota-http
-py get microsoft-kiota-serialization-json
-py get microsoft-kiota-serialization-text
-py get microsoft-kiota-authentication-azure
-py get azure-identity
+pip install microsoft-kiota-abstractions
+pip install microsoft-kiota-authentication-azure
+pip install azure-identity
+pip install microsoft-kiota-serialization-json
+pip install microsoft-kiota-serialization-text
+pip install microsoft-kiota-http
 ```
+
+> **Note:** It is recommended to use a package manager/virtual environment to avoid installing packages
+system wide. Read more [here](https://packaging.python.org/en/latest/).
 
 Only the first package, `microsoft-kiota-abstractions`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
 
@@ -45,7 +45,7 @@ Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** a
 You can then use the Kiota command line tool to generate the SDK classes.
 
 ```shell
-kiota -l py -d ../getme.yml -c GraphApiClient -n getuser/client -o ./client
+kiota -l python -d ../getme.yml -c GetUserApiClient -n getuser/client -o ./client
 ```
 
 ## Creating an application registration
@@ -56,10 +56,37 @@ Follow the instructions in [Register an application for Microsoft identity platf
 
 ## Creating the client application
 
-Create a file in the root of the project named **getuser.py** and add the following code. Replace `YOUR_CLIENT_ID` with the client ID from your app registration.
+Create a file in the root of the project named **get_user.py** and add the following code. Replace `YOUR_CLIENT_ID` with the client ID from your app registration.
 
-```python
-code goes here
+```py
+import asyncio
+from azure.identity.aio import DefaultAzureCredential
+
+from kiota_authentication_azure.azure_identity_authentication_provider import AzureIdentityAuthenticationProvider
+from kiota_http.httpx_request_adapter import HttpxRequestAdapter
+from kiota_serialization_json.json_parse_node_factory import JsonParseNodeFactory
+from kiota_serialization_json.json_serialization_writer_factory import JsonSerializationWriterFactory
+
+from client.get_user_api_client import GetUserApiClient
+
+# You may need this if your're using AsyncIO on windows
+# See: https://stackoverflow.com/questions/63860576/asyncio-event-loop-is-closed-when-using-asyncio-run
+asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+credential = DefaultAzureCredential()
+# The auth provider will only authorize requests to
+# the allowed hosts, in this case Microsoft Graph
+
+allowed_hosts = ['graph.microsoft.com']
+graph_scopes = ['https://graph.microsoft.com/.default']
+auth_provider = AzureIdentityAuthenticationProvider(credential, None, graph_scopes, allowed_hosts)
+
+
+request_adapter = HttpxRequestAdapter(auth_provider)
+client = GetUserApiClient(request_adapter)
+
+me = asyncio.run(client.me().get())
+print(f"Hello {me.displayName}, your ID is {me.id}")
 ```
 
 > **Note:**
@@ -73,7 +100,7 @@ code goes here
 When ready to execute the application, execute the following command in your project directory.
 
 ```shell
-py run .
+python get_user.py
 ```
 
 ## See also
