@@ -38,7 +38,7 @@ Where there are common properties in the child schemas, the corresponding value 
 
 ## Heterogeneous collections
 
-For any collection of items that rely on AllOf, AnyOf, or OneOf, it is possible the result will contain multiple types of objects.
+For any collection of items that rely on allOf, anyOf, or oneOf, it is possible the result will contain multiple types of objects.
 
 For example, think of an endpoint returning a collection of directory objects (abstract). Directory object is derived by User and Group, which each have their own set of properties. In this case the endpoint will be documented as returning a collection of directory objects and return in reality a mix of users and groups.
 
