@@ -46,8 +46,8 @@ Kiota supports discriminators by down-casting the returned object during deseria
 
 In case of inline schemas, the type will be named by conventions:
 
-- Endpoint name + Operation + RequestBody
-- Endpoint name + Operation + Response
+- Last segment name + Operation + RequestBody
+- Last segment name + Operation + Response
 - Parent type name + member + id (sequential)
 
 ### Example 1 - using allOf and discriminator
