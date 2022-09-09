@@ -96,7 +96,7 @@ In case of inline schemas, the type will be named by conventions:
             "type": "object"
         }
       ]
-    },
+    }
 }
 ```
 
