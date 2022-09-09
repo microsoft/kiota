@@ -45,6 +45,8 @@ namespace Kiota.Builder.Refiners {
                                         new [] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
         }
         private static void CorrectMethodType(CodeMethod currentMethod) {
+            if(currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
+                parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
             CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                         .Select(x => x.Type)
                                         .Union(new CodeTypeBase[] { currentMethod.ReturnType})

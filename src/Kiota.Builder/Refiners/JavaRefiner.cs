@@ -199,7 +199,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
             if(urlTplParams != null)
                 urlTplParams.Type.Name = "HashMap<String, Object>";
-        }
+        } else if(currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
+            parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
         CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new CodeTypeBase[] { currentMethod.ReturnType})

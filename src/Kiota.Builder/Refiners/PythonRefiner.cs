@@ -136,9 +136,9 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentMethod.ReturnType.Name = $"Dict[str, Callable[[ParseNode], None]]";
         else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.Factory)) {
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore, CodeParameterKind.ParseNode))
-                .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
+                .Where(static x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                 .ToList()
-                .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+                .ForEach(static x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
             if(urlTplParams != null &&
                 urlTplParams.Type is CodeType originalType) {
