@@ -1737,6 +1737,172 @@ components:
         Assert.Contains("microsoft.graph.user", directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Key));
         Assert.Empty(userClass.DiscriminatorInformation.DiscriminatorMappings);
     }
+    
+    [Fact]
+    public void AddsDiscriminatorMappingsAllOfImplicitWithParentHavingMappingsWhileChildDoesNot(){
+        var entitySchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                },
+                {
+                    "@odata.type", new OpenApiSchema {
+                        Type = "string",
+                        Default = new OpenApiString("#microsoft.graph.entity")
+                    }
+                }
+            },
+            Required = new HashSet<string> {
+                "@odata.type"
+            },
+            Discriminator = new() {
+                PropertyName = "@odata.type",
+                Mapping = new Dictionary<string, string>
+                {
+                    {
+                        "microsoft.graph.directoryObject", "#/components/schemas/microsoft.graph.directoryObject"
+                    },
+                    {
+                        "microsoft.graph.user", "#/components/schemas/microsoft.graph.user"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.entity",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var directoryObjectSchema = new OpenApiSchema {
+            Type = "object",
+            AllOf = new List<OpenApiSchema> {
+                entitySchema,
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, OpenApiSchema> {
+                        {
+                            "tenant", new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        {   "@odata.type", new OpenApiSchema {
+                                Type = "string",
+                                Default = new OpenApiString("microsoft.graph.directoryObject")
+                            }
+                        }
+                    },
+                    Required = new HashSet<string> {
+                        "@odata.type"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.directoryObject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var userSchema = new OpenApiSchema {
+            Type = "object",
+            AllOf = new List<OpenApiSchema> {
+                directoryObjectSchema,
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, OpenApiSchema> {
+                        {
+                            "firstName", new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        {   "@odata.type", new OpenApiSchema {
+                                Type = "string",
+                                Default = new OpenApiString("microsoft.graph.firstName")
+                            }
+                        }
+                    },
+                    Required = new HashSet<string> {
+                        "@odata.type"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.user",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var directoryObjects = new OpenApiResponse()
+        {
+            Content =
+            {
+                ["application/json"] = new OpenApiMediaType()
+                {
+                    Schema = directoryObjectSchema
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.directoryObjects",
+                Type = ReferenceType.Response
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["objects"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = directoryObjects,
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new OpenApiComponents() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "microsoft.graph.entity", entitySchema
+                    },
+                    {
+                        "microsoft.graph.directoryObject", directoryObjectSchema
+                    },
+                    {
+                        "microsoft.graph.user", userSchema
+                    }
+                },
+                Responses = new Dictionary<string, OpenApiResponse> {
+                    {
+                        "microsoft.graph.directoryObjects", directoryObjects
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var config = new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
+        var builder = new KiotaBuilder(mockLogger.Object, config);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        builder.ApplyLanguageRefinement(config, codeModel);
+        var entityClass = codeModel.FindChildByName<CodeClass>("entity", true);
+        var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject", true);
+        var userClass = codeModel.FindChildByName<CodeClass>("user", true);
+        Assert.NotNull(entityClass);
+        Assert.NotNull(directoryObjectClass);
+        Assert.NotNull(userClass);
+        var factoryMethod = entityClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
+        Assert.NotNull(factoryMethod);
+        Assert.Equal("@odata.type", entityClass.DiscriminatorInformation.DiscriminatorPropertyName);
+        Assert.Equal(2, entityClass.DiscriminatorInformation.DiscriminatorMappings.Count());
+        Assert.Contains("microsoft.graph.directoryObject", entityClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Key));
+        Assert.Contains("microsoft.graph.user", entityClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Key));
+        var doFactoryMethod = directoryObjectClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.Factory));
+        Assert.NotNull(doFactoryMethod);
+        Assert.Single(directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings);
+        Assert.Contains("microsoft.graph.user", directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Key));
+        Assert.Empty(userClass.DiscriminatorInformation.DiscriminatorMappings);
+    }
     [Fact]
     public void UnionOfPrimitiveTypesWorks() {
         var simpleObjet = new OpenApiSchema {
