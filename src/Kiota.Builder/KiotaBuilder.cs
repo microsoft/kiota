@@ -1043,7 +1043,14 @@ public class KiotaBuilder
         if(inheritsFrom != null)
             newClass.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
         CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass); // order matters since we might be recursively generating ancestors for discriminator mappings and duplicating additional data/backing store properties
-        AddDiscriminatorMethod(newClass, GetDiscriminatorPropertyName(schema), GetDiscriminatorMappings(currentNode, schema, currentNamespace, newClass));
+        
+        var mappings = GetDiscriminatorMappings(currentNode, schema, currentNamespace, newClass)
+                        .Where(x => x.Value is CodeType type && 
+                                    type.TypeDefinition != null &&
+                                    type.TypeDefinition is CodeClass definition &&
+                                    definition.DerivesFrom(newClass)); // only the mappings that derive from the current class
+
+        AddDiscriminatorMethod(newClass, GetDiscriminatorPropertyName(schema), mappings);
         return newClass;
     }
     private static string GetDiscriminatorPropertyName(OpenApiSchema schema) {
