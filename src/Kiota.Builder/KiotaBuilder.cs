@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1071,7 +1071,8 @@ public class KiotaBuilder
                 return schema.OneOf.SelectMany(x => GetDiscriminatorMappings(currentNode, x, currentNamespace, baseClass));
             else if (schema.AnyOf.Any())
                 return schema.AnyOf.SelectMany(x => GetDiscriminatorMappings(currentNode, x, currentNamespace, baseClass));
-            else if (schema.AllOf.Any(allOfEvaluatorForMappings))
+            else if (schema.AllOf.Any(allOfEvaluatorForMappings) && schema.AllOf.Last().Equals(schema.AllOf.Last(allOfEvaluatorForMappings)))
+                // ensure the matched AllOf entry is the last in the list
                 return GetDiscriminatorMappings(currentNode, schema.AllOf.Last(allOfEvaluatorForMappings), currentNamespace, baseClass);
             else if (!string.IsNullOrEmpty(schema.Reference?.Id)) {
                 var result = GetAllInheritanceSchemaReferences(schema.Reference?.Id)
