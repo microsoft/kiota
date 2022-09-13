@@ -41,7 +41,7 @@ namespace Kiota.Builder.CodeDOM
         }
         public bool IsChildOf(CodeElement codeElement, bool immediateOnly = false)
         {
-            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+            ArgumentNullException.ThrowIfNull(codeElement);
             if(this.Parent == codeElement) return true;
             if(immediateOnly || this.Parent == null) return false;
             return this.Parent.IsChildOf(codeElement, immediateOnly);
