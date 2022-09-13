@@ -130,20 +130,38 @@ public class GoRefiner : CommonLanguageRefiner
                 x => $"{x.Name}able"
             );
             RemoveHandlerFromRequestBuilder(generatedCode);
+            AddContextParameterToGeneratorMethods(generatedCode);
         }, cancellationToken);
     }
     
     protected static void RenameCancellationParameter(CodeElement currentElement){
         if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) && currentMethod.Parameters.OfKind(CodeParameterKind.Cancellation) is CodeParameter parameter)
         {
-            parameter.Name = "ctx";
-            parameter.Description = "Pass a context parameter to the request";
+            parameter.Name = ContextParameterName;
+            parameter.Description = ContextVarDescription;
             parameter.Kind = CodeParameterKind.Cancellation;
             parameter.Optional = false;
             parameter.Type.Name = conventions.ContextVarTypeName;
             parameter.Type.IsNullable = false;
         }
         CrawlTree(currentElement, RenameCancellationParameter);
+    }
+    private const string ContextParameterName = "ctx";
+    private const string ContextVarDescription = "Pass a context parameter to the request";
+    private static void AddContextParameterToGeneratorMethods(CodeElement currentElement) {
+        if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestGenerator) &&
+            currentMethod.Parameters.OfKind(CodeParameterKind.Cancellation) is null)
+            currentMethod.AddParameter(new CodeParameter {
+                Name = ContextParameterName,
+                Type = new CodeType {
+                    Name = conventions.ContextVarTypeName,
+                    IsNullable = false,
+                },
+                Kind = CodeParameterKind.Cancellation,
+                Optional = false,
+                Description = ContextVarDescription,
+            });
+        CrawlTree(currentElement, AddContextParameterToGeneratorMethods);
     }
     
     private void RemoveHandlerFromRequestBuilder(CodeElement currentElement)
