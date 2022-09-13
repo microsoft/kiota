@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Kiota.Builder {
+using Kiota.Builder.CodeDOM;
+
+namespace Kiota.Builder.PathSegmenters {
     public abstract class CommonPathSegmenter : IPathSegmenter {
         protected CommonPathSegmenter(string rootPath, string clientNamespaceName)
         {

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Writers;
 internal class CodeTypeComparer : IComparer<CodeTypeBase>
 {
@@ -18,15 +20,14 @@ internal class CodeTypeComparer : IComparer<CodeTypeBase>
                 (CodeClass or CodeInterface or CodeEnum, true) => 13,
                 (_, _) => 17,
             };
-        else if(obj is CodeType type2 && OrderByDesc)
+        if(obj is CodeType type2 && OrderByDesc)
             return (type2.TypeDefinition, type2.IsCollection) switch {
                 (null, false) => 7,
                 (CodeClass or CodeInterface or CodeEnum, true) => 13,
                 (CodeClass or CodeInterface or CodeEnum, false) => 11,
                 (_, _) => 17,
             };
-        else 
-            return 23;
+        return 23;
     }
     public int Compare(CodeTypeBase x, CodeTypeBase y)
     {

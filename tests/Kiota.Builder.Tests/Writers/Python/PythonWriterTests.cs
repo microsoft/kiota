@@ -1,7 +1,10 @@
 using System;
+
+using Kiota.Builder.Writers.Python;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Python.Tests;
+namespace Kiota.Builder.Tests.Writers.Python;
 public class PythonWriterTests {
     [Fact]
     public void Instantiates() {

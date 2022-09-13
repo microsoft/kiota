@@ -1,9 +1,12 @@
 using System;
 using System.IO;
-using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Python.Tests;
+namespace Kiota.Builder.Tests.Writers.Python;
 
 public class CodeNameSpaceWriterTests : IDisposable
 {

@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 
 public enum CodeClassKind {
     Custom,
@@ -81,8 +82,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         if(parentClass == null)
             return startClassToSkip != null && startClassToSkip == this ? null : this;
         // we don't want to return the current class if this is the start node in the inheritance tree and doesn't have parent
-        else
-            return parentClass.GetGreatestGrandparent(startClassToSkip);
+        return parentClass.GetGreatestGrandparent(startClassToSkip);
     }
     private DiscriminatorInformation _discriminatorInformation;
     /// <inheritdoc />
@@ -116,8 +116,7 @@ public class ClassDeclaration : ProprietableBlockDeclaration
                 return currentProperty;
             else
                 return currentParentClass.StartBlock.GetOriginalPropertyDefinedFromBaseType(propertyName);
-        else
-            return default;
+        return default;
     }
 
     public bool InheritsFrom(CodeClass candidate) {
@@ -129,8 +128,7 @@ public class ClassDeclaration : ProprietableBlockDeclaration
                 return true;
             else
                 return currentParentClass.StartBlock.InheritsFrom(candidate);
-        else
-            return false;
+        return false;
     }
 }
 

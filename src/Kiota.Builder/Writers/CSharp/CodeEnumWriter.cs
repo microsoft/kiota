@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp;
@@ -30,6 +32,6 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
         if(codeNamespace != null)
             writer.CloseBlock();
     }
-    private static readonly Func<int, string> GetEnumFlag = static (idx) => 
+    private static readonly Func<int, string> GetEnumFlag = static idx => 
         (idx == 0 ? 1 : Math.Pow(2, idx)).ToString();
 }

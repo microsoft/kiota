@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 
 public enum CodeMethodKind
 {
@@ -139,7 +139,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     }
     private readonly BaseCodeParameterOrderComparer parameterOrderComparer = new ();
     public IEnumerable<CodeParameter> Parameters { get => parameters.Values.OrderBy(static x => x, parameterOrderComparer); }
-    public bool IsStatic {get;set;} = false;
+    public bool IsStatic {get;set;}
     public bool IsAsync {get;set;} = true;
     public string Description {get; set;}
 

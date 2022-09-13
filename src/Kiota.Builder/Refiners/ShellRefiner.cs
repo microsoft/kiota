@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners
@@ -161,7 +161,7 @@ namespace Kiota.Builder.Refiners
             return codeMethod;
         }
 
-        private static readonly AdditionalUsingEvaluator[] additionalUsingEvaluators = new AdditionalUsingEvaluator[] {
+        private static readonly AdditionalUsingEvaluator[] additionalUsingEvaluators = {
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "System.CommandLine",  "Command", "RootCommand", "IConsole"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),

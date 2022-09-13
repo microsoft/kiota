@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Writers.Swift;
 public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWriter<T, SwiftConventionService> 
     where T : ProprietableBlockDeclaration

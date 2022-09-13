@@ -1,4 +1,4 @@
-using System.ComponentModel;
+using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Writers.Go;
 using Kiota.Builder.Writers.Java;
@@ -6,9 +6,10 @@ using Kiota.Builder.Writers.Php;
 using Kiota.Builder.Writers.Python;
 using Kiota.Builder.Writers.Ruby;
 using Kiota.Builder.Writers.TypeScript;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Tests {
+namespace Kiota.Builder.Tests.Writers {
     public class LanguageWriterTests {
         private const string DefaultPath = "./";
         private const string DefaultName = "name";

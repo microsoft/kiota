@@ -1,7 +1,9 @@
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Refiners;
+
 using Xunit;
 
-namespace Kiota.Builder.Tests {
+namespace Kiota.Builder.Tests.CodeDOM {
     public class CodeUsingComparerTests {
         [Fact]
         public void ComparesWithDeclaration() {

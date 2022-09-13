@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+
 using Xunit;
 
 namespace Kiota.Builder.Tests;
@@ -20,9 +21,8 @@ public static class AssertExtensions {
         var closingBlockIndex = generatedCode.IndexOf(blockClosingSymbol, startupLookupIndex, comparison);
         if(closingBlockIndex == -1)
             throw new ArgumentException("The generated code does not contain a closing block symbol");
-        else if (generatedCode[startupLookupIndex..closingBlockIndex].Contains(blockOpeningSymbol, comparison))
+        if (generatedCode[startupLookupIndex..closingBlockIndex].Contains(blockOpeningSymbol, comparison))
             return GetClosingBlockIndex(generatedCode, closingBlockIndex + 1, blockOpeningSymbol, blockClosingSymbol, comparison);
-        else
-            return closingBlockIndex;
+        return closingBlockIndex;
     }
 }

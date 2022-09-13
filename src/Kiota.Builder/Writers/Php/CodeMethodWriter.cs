@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.Php
 {
@@ -282,7 +283,8 @@ namespace Kiota.Builder.Writers.Php
         private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = conventions.GetTypeString(propType, method, false);
-            if(propType is CodeType currentType) {
+            if(propType is CodeType currentType)
+            {
                 if(isCollection)
                     return currentType.TypeDefinition switch
                     {
@@ -291,7 +293,7 @@ namespace Kiota.Builder.Writers.Php
                             $"$n->getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
                         _ => $"$n->getCollectionOfObjectValues(array({conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'))"
                     };
-                else if (currentType.TypeDefinition is CodeEnum)
+                if (currentType.TypeDefinition is CodeEnum)
                     return $"$n->getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
             }
 
@@ -303,7 +305,7 @@ namespace Kiota.Builder.Writers.Php
                 "number" => "$n->getIntegerValue()",
                 "decimal" or "double" => "$n->getFloatValue()",
                 "streaminterface" => "$n->getBinaryContent()",
-                "byte" => $"$n->getByteValue()",
+                "byte" => "$n->getByteValue()",
                 _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"$n->get{propertyType.ToFirstCharacterUpperCase()}Value()",
                 _ => $"$n->getObjectValue(array({propertyType.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'))",
             };
@@ -427,7 +429,7 @@ namespace Kiota.Builder.Writers.Php
                 .FirstOrDefault(x =>
                     x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
             var generatorMethodName = generatorMethod?.Name.ToFirstCharacterLowerCase();
-            var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration }
+            var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
                 .Select(x => x).Where(x => x?.Name != null);
             var infoParameters = requestInfoParameters as CodeParameter[] ?? requestInfoParameters.ToArray();
             var callParams = infoParameters.Select(x => conventions.GetParameterName(x));
@@ -511,13 +513,13 @@ namespace Kiota.Builder.Writers.Php
         protected string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
         {
             if (isVoid) return "sendNoContentAsync";
-            else if (isStream || conventions.PrimitiveTypes.Contains(returnType.ToLowerInvariant()))
+            if (isStream || conventions.PrimitiveTypes.Contains(returnType.ToLowerInvariant()))
                 if (isCollection)
-                    return $"sendPrimitiveCollectionAsync";
+                    return "sendPrimitiveCollectionAsync";
                 else
-                    return $"sendPrimitiveAsync";
-            else if (isCollection) return $"sendCollectionAsync";
-            else return $"sendAsync";
+                    return "sendPrimitiveAsync";
+            if (isCollection) return "sendCollectionAsync";
+            return "sendAsync";
         }
         
         private static void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer){

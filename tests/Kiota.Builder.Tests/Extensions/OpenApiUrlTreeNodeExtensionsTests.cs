@@ -1,22 +1,26 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.Extensions;
+
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
+
 using Xunit;
 
-namespace Kiota.Builder.Extensions.Tests;
+namespace Kiota.Builder.Tests.Extensions;
 public class OpenApiUrlTreeNodeExtensionsTests
 {
     [Fact]
     public void Defensive()
     {
         Assert.False(OpenApiUrlTreeNodeExtensions.IsComplexPathWithAnyNumberOfParameters(null));
-        Assert.False(OpenApiUrlTreeNodeExtensions.IsPathSegmentWithSingleSimpleParameter((OpenApiUrlTreeNode)null));
+        Assert.False(OpenApiUrlTreeNodeExtensions.IsPathSegmentWithSingleSimpleParameter(null));
         Assert.False(OpenApiUrlTreeNodeExtensions.DoesNodeBelongToItemSubnamespace(null));
         Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, null));
         Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, Label));
-        Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(OpenApiUrlTreeNode.Create(), null));
-        Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(OpenApiUrlTreeNode.Create(), Label));
+        Assert.Null(OpenApiUrlTreeNode.Create().GetPathItemDescription(null));
+        Assert.Null(OpenApiUrlTreeNode.Create().GetPathItemDescription(Label));
     }
     private const string Label = "default";
     [Fact]
@@ -40,7 +44,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
         {
             Paths = new(),
         };
-        doc.Paths.Add("function()", new() { });
+        doc.Paths.Add("function()", new());
         var node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.False(node.IsComplexPathWithAnyNumberOfParameters());
         Assert.True(node.Children.First().Value.IsComplexPathWithAnyNumberOfParameters());
@@ -52,7 +56,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
         {
             Paths = new(),
         };
-        doc.Paths.Add("{param}", new() { });
+        doc.Paths.Add("{param}", new());
         var node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.False(node.IsPathSegmentWithSingleSimpleParameter());
         Assert.True(node.Children.First().Value.IsPathSegmentWithSingleSimpleParameter());
@@ -64,7 +68,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
         {
             Paths = new(),
         };
-        doc.Paths.Add("{param}", new() { });
+        doc.Paths.Add("{param}", new());
         var node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.False(node.DoesNodeBelongToItemSubnamespace());
         Assert.True(node.Children.First().Value.DoesNodeBelongToItemSubnamespace());
@@ -73,7 +77,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
         {
             Paths = new(),
         };
-        doc.Paths.Add("param}", new() { });
+        doc.Paths.Add("param}", new());
         node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.False(node.Children.First().Value.DoesNodeBelongToItemSubnamespace());
 
@@ -81,7 +85,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
         {
             Paths = new(),
         };
-        doc.Paths.Add("{param", new() { });
+        doc.Paths.Add("{param", new());
         node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.False(node.Children.First().Value.DoesNodeBelongToItemSubnamespace());
     }
@@ -92,7 +96,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
         {
             Paths = new(),
         };
-        doc.Paths.Add("\\users\\messages", new() { });
+        doc.Paths.Add("\\users\\messages", new());
         var node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.Equal("graph.users.messages", node.Children.First().Value.GetNodeNamespaceFromPath("graph"));
         Assert.Equal("users.messages", node.Children.First().Value.GetNodeNamespaceFromPath(null));
@@ -104,7 +108,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
         {
             Paths = new(),
         };
-        doc.Paths.Add("\\deviceManagement\\microsoft.graph.getRoleScopeTagsByIds(ids=@ids)", new() { });
+        doc.Paths.Add("\\deviceManagement\\microsoft.graph.getRoleScopeTagsByIds(ids=@ids)", new());
         var node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.Equal("graph.deviceManagement.getRoleScopeTagsByIdsWithIds", node.Children.First().Value.GetNodeNamespaceFromPath("graph"));
     }

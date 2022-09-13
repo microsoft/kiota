@@ -1,9 +1,11 @@
 using System;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers.Go;
-using Moq;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Go.Tests {
+namespace Kiota.Builder.Tests.Writers.Go {
     public class GoConventionServiceTests {
         private readonly GoConventionService instance = new();
         [Fact]

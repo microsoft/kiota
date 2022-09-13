@@ -1,10 +1,13 @@
-using Kiota.Builder.Writers.CSharp;
-using Xunit;
-using Moq;
 using System;
 
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers.CSharp;
 
-namespace Kiota.Builder.Writers.Tests {
+using Moq;
+
+using Xunit;
+
+namespace Kiota.Builder.Tests.Writers {
     public class CommonLanguageConventionServiceTests {
         [Fact]
         public void TranslatesType() {

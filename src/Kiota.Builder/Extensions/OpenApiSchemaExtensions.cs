@@ -1,30 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions {
     public static class OpenApiSchemaExtensions {
-        private static readonly Func<OpenApiSchema, IList<OpenApiSchema>> classNamesFlattener = (x) =>
+        private static readonly Func<OpenApiSchema, IList<OpenApiSchema>> classNamesFlattener = x =>
         (x.AnyOf ?? Enumerable.Empty<OpenApiSchema>()).Union(x.AllOf).Union(x.OneOf).ToList();
-        public static IEnumerable<string> GetSchemaNames(this OpenApiSchema schema) {
+        public static IEnumerable<string> GetSchemaNames(this OpenApiSchema schema)
+        {
             if(schema == null)
                 return Enumerable.Empty<string>();
-            else if(schema.Items != null)
+            if(schema.Items != null)
                 return schema.Items.GetSchemaNames();
-            else if(!string.IsNullOrEmpty(schema.Reference?.Id))
-                return new string[] {schema.Reference.Id.Split('/').Last().Split('.').Last()};
-            else if(schema.AnyOf.Any())
+            if(!string.IsNullOrEmpty(schema.Reference?.Id))
+                return new[] {schema.Reference.Id.Split('/').Last().Split('.').Last()};
+            if(schema.AnyOf.Any())
                 return schema.AnyOf.FlattenIfRequired(classNamesFlattener);
-            else if(schema.AllOf.Any())
+            if(schema.AllOf.Any())
                 return schema.AllOf.FlattenIfRequired(classNamesFlattener);
-            else if(schema.OneOf.Any())
+            if(schema.OneOf.Any())
                 return schema.OneOf.FlattenIfRequired(classNamesFlattener);
-            else if(!string.IsNullOrEmpty(schema.Title))
-                return new string[] { schema.Title };
-            else if(!string.IsNullOrEmpty(schema.Xml?.Name))
-                return new string[] {schema.Xml.Name};
-            else return Enumerable.Empty<string>();
+            if(!string.IsNullOrEmpty(schema.Title))
+                return new[] { schema.Title };
+            if(!string.IsNullOrEmpty(schema.Xml?.Name))
+                return new[] {schema.Xml.Name};
+            return Enumerable.Empty<string>();
         }
         private static IEnumerable<string> FlattenIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter) {
             var resultSet = schemas;
@@ -93,8 +95,9 @@ namespace Kiota.Builder.Extensions {
                 if(subSchemaReferences.Any())
                     result.AddRange(subSchemaReferences);
                 return result.Distinct();
-            } else 
-                return Enumerable.Empty<string>();
+            }
+
+            return Enumerable.Empty<string>();
         }
         internal static IList<OpenApiSchema> FlattenEmptyEntries(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter, int? maxDepth = default) {
             if(schemas == null) return default;

@@ -7,12 +7,14 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Kiota.Builder;
 using Kiota.Builder.Extensions;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Kiota;
+namespace kiota;
 
 internal class KiotaCommandHandler : ICommandHandler
 {
@@ -59,7 +61,7 @@ internal class KiotaCommandHandler : ICommandHandler
         if(deserializer?.Any() ?? false)
             Configuration.Deserializers = deserializer.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if(structuredMimeTypes?.Any() ?? false)
-            Configuration.StructuredMimeTypes = structuredMimeTypes.SelectMany(x => x.Split(new char[] {' '}))
+            Configuration.StructuredMimeTypes = structuredMimeTypes.SelectMany(x => x.Split(new[] {' '}))
                                                             .Select(x => x.TrimQuotes())
                                                             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -71,7 +73,7 @@ internal class KiotaCommandHandler : ICommandHandler
         Configuration.OutputPath = GetAbsolutePath(Configuration.OutputPath);
         Configuration.CleanOutput = cleanOutput;
 
-        using var loggerFactory = LoggerFactory.Create((builder) => {
+        using var loggerFactory = LoggerFactory.Create(builder => {
             builder
                 .AddConsole()
 #if DEBUG

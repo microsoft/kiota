@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kiota.Builder
+namespace Kiota.Builder.CodeDOM
 {
     /// <summary>
     /// 
     /// </summary>
     public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     {
-        private CodeNamespace():base() {}
+        private CodeNamespace()
+        {}
         public static CodeNamespace InitRootNamespace() {
             return new() {
                 Name = string.Empty,
@@ -40,9 +41,10 @@ namespace Kiota.Builder
             return AddRange(codeClasses);
         }
         private static readonly char namespaceNameSeparator = '.';
-        public CodeNamespace GetRootNamespace() {
+        public CodeNamespace GetRootNamespace()
+        {
             if (Parent is CodeNamespace parentNS) return parentNS.GetRootNamespace();
-            else return this;
+            return this;
         }
         public IEnumerable<CodeNamespace> Namespaces => InnerChildElements.Values.OfType<CodeNamespace>();
         public IEnumerable<CodeClass> Classes => InnerChildElements.Values.OfType<CodeClass>();
@@ -69,10 +71,8 @@ namespace Kiota.Builder
                 var segmentNameSpace = lastPresentSegmentNamespace.FindNamespaceByName(namespaceNameSegments.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
                 if(segmentNameSpace == null)
                     break;
-                else {
-                    lastPresentSegmentNamespace = segmentNameSpace;
-                    lastPresentSegmentIndex++;
-                }
+                lastPresentSegmentNamespace = segmentNameSpace;
+                lastPresentSegmentIndex++;
             }
             foreach(var childSegment in namespaceNameSegments.Skip(lastPresentSegmentIndex))
                 lastPresentSegmentNamespace = lastPresentSegmentNamespace
@@ -86,18 +86,17 @@ namespace Kiota.Builder
         }
         private const string ItemNamespaceName = "item";
         public bool IsItemNamespace { get; private set; }
-        public CodeNamespace EnsureItemNamespace() { 
+        public CodeNamespace EnsureItemNamespace()
+        {
             if (IsItemNamespace) return this;
-            else if(string.IsNullOrEmpty(Name))
+            if(string.IsNullOrEmpty(Name))
                 throw new InvalidOperationException("adding an item namespace at the root is not supported");
-            else {
-                var childNamespace = InnerChildElements.Values.OfType<CodeNamespace>().FirstOrDefault(x => x.IsItemNamespace);
-                if(childNamespace == null) {
-                    childNamespace = AddNamespace($"{Name}.{ItemNamespaceName}");
-                    childNamespace.IsItemNamespace = true;
-                }
-                return childNamespace;
-            } 
+            var childNamespace = InnerChildElements.Values.OfType<CodeNamespace>().FirstOrDefault(x => x.IsItemNamespace);
+            if(childNamespace == null) {
+                childNamespace = AddNamespace($"{Name}.{ItemNamespaceName}");
+                childNamespace.IsItemNamespace = true;
+            }
+            return childNamespace;
         }
         public IEnumerable<CodeEnum> AddEnum(params CodeEnum[] enumDeclarations)
         {
@@ -108,9 +107,10 @@ namespace Kiota.Builder
             return AddRange(enumDeclarations);
         }
         public int Depth { 
-            get {
+            get
+            {
                 if (Parent is CodeNamespace n) return n.Depth + 1;
-                else return 0;
+                return 0;
             }
         }
 

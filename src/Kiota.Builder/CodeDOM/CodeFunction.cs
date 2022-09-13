@@ -1,7 +1,6 @@
 using System;
-using System.Linq;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 
 /// <summary>
 /// Represents global functions for languages that support both local functions to classes and global functions like TypeScript for instance.

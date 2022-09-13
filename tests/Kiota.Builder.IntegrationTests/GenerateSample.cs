@@ -1,8 +1,10 @@
 ﻿using System.Threading.Tasks;
+
 using Microsoft.Extensions.Logging;
+
 using Xunit;
 
-namespace Kiota.Builder.Integrationtests;
+namespace Kiota.Builder.IntegrationTests;
 public class GenerateSample
 {
     [InlineData(GenerationLanguage.CSharp, false)]
@@ -16,7 +18,7 @@ public class GenerateSample
     [InlineData(GenerationLanguage.TypeScript, true)]
     [Theory]
     public async Task GeneratesTodo(GenerationLanguage language, bool backingStore) {
-        var logger = LoggerFactory.Create((builder) => {
+        var logger = LoggerFactory.Create(builder => {
         }).CreateLogger<KiotaBuilder>();
 
         var backingStoreSuffix = backingStore ? string.Empty : "BackingStore";
@@ -41,7 +43,7 @@ public class GenerateSample
     [Theory]
     public async Task GeneratesModelWithDictionary(GenerationLanguage language, bool backingStore)
     {
-        var logger = LoggerFactory.Create((builder) => {
+        var logger = LoggerFactory.Create(builder => {
         }).CreateLogger<KiotaBuilder>();
 
         var backingStoreSuffix = backingStore ? "BackingStore" : string.Empty;
@@ -66,7 +68,7 @@ public class GenerateSample
     [Theory]
     public async Task GeneratesResponseWithMultipleReturnFormats(GenerationLanguage language, bool backingStore)
     {
-        var logger = LoggerFactory.Create((builder) => {
+        var logger = LoggerFactory.Create(builder => {
         }).CreateLogger<KiotaBuilder>();
 
         var backingStoreSuffix = backingStore ? "BackingStore" : string.Empty;

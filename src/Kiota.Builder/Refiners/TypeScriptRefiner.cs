@@ -1,7 +1,9 @@
-﻿using System.Linq;
-using System;
-using Kiota.Builder.Extensions;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -126,7 +128,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, AliasUsingsWithSameSymbol);
     }
     private const string AbstractionsPackageName = "@microsoft/kiota-abstractions";
-    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             AbstractionsPackageName, "RequestAdapter"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
@@ -187,7 +189,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
         else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
-            currentMethod.ReturnType.Name = $"Record<string, (node: ParseNode) => void>";
+            currentMethod.ReturnType.Name = "Record<string, (node: ParseNode) => void>";
         else if (currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
         {
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore))
@@ -214,7 +216,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
         CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
-                                                .Union(new CodeTypeBase[] { currentMethod.ReturnType})
+                                                .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
     }
     private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {

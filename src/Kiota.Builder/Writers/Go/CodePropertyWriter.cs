@@ -1,4 +1,6 @@
 using System;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go {

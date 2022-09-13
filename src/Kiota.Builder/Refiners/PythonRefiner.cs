@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
@@ -67,7 +69,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
 
     private const string AbstractionsPackageName = "kiota_abstractions";
-    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
         new (x => x is CodeClass @class, "__future__", "annotations"),
         new (x => x is CodeClass @class, "typing", "Any, Callable, Dict, List, Optional, Union"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
@@ -133,7 +135,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
         else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
-            currentMethod.ReturnType.Name = $"Dict[str, Callable[[ParseNode], None]]";
+            currentMethod.ReturnType.Name = "Dict[str, Callable[[ParseNode], None]]";
         else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.Factory)) {
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore, CodeParameterKind.ParseNode))
                 .Where(static x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
@@ -158,7 +160,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                             .Select(x => x.Type)
-                                            .Union(new CodeTypeBase[] { currentMethod.ReturnType})
+                                            .Union(new[] { currentMethod.ReturnType})
                                             .ToArray());
     }
     

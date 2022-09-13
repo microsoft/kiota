@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners {
@@ -49,7 +51,7 @@ namespace Kiota.Builder.Refiners {
                 parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
             CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                         .Select(x => x.Type)
-                                        .Union(new CodeTypeBase[] { currentMethod.ReturnType})
+                                        .Union(new[] { currentMethod.ReturnType})
                                         .ToArray());
         }
         private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
@@ -91,7 +93,7 @@ namespace Kiota.Builder.Refiners {
             CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
             
         }
-        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 "microsoft_kiota_abstractions", "RequestAdapter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -119,7 +121,7 @@ namespace Kiota.Builder.Refiners {
                 && currentClass.StartBlock.Inherits != null) {
                 currentClass.AddUsing(new CodeUsing { Name = currentClass.StartBlock.Inherits.Name, Declaration = currentClass.StartBlock.Inherits});
             }
-            CrawlTree(currentElement, (x) => AddInheritedAndMethodTypesImports(x));
+            CrawlTree(currentElement, x => AddInheritedAndMethodTypesImports(x));
         }
 
         protected void AddNamespaceModuleImports(CodeElement current, string clientNamespaceName) {

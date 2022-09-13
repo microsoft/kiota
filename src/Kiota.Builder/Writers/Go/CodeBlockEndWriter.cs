@@ -1,3 +1,5 @@
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Writers.Go {
     public class CodeBlockEndWriter : ICodeElementWriter<BlockEnd>
     {

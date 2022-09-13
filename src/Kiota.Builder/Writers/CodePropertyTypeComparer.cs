@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Writers;
 
 internal class CodePropertyTypeComparer : IComparer<CodeProperty>
@@ -12,6 +14,6 @@ internal class CodePropertyTypeComparer : IComparer<CodeProperty>
     public int Compare(CodeProperty x, CodeProperty y)
     {
         if (x == null && y == null) return 0;
-        else return TypeComparer.Compare(x?.Type, y?.Type);
+        return TypeComparer.Compare(x?.Type, y?.Type);
     }
 }

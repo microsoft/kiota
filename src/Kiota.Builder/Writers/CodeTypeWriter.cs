@@ -1,3 +1,5 @@
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Writers {
     public class CodeTypeWriter : BaseElementWriter<CodeType, ILanguageConventionService>
     {

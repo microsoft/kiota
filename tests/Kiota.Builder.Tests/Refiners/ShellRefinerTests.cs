@@ -1,8 +1,11 @@
-using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Refiners;
+
 using Xunit;
 
-namespace Kiota.Builder.Refiners.Tests;
+namespace Kiota.Builder.Tests.Refiners;
 
 public class ShellRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
@@ -24,7 +27,7 @@ public class ShellRefinerTests {
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
         
-        var declaration = requestBuilder.StartBlock as ClassDeclaration;
+        var declaration = requestBuilder.StartBlock;
 
         Assert.Contains("System.CommandLine", declaration.Usings.Select(x => x.Declaration?.Name));
     }

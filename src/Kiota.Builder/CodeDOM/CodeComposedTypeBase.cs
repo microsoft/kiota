@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 /// <summary>
 /// The base class for composed types like union or exclusion.
 /// </summary>

@@ -1,9 +1,13 @@
 using System;
 using System.IO;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Tests {
+namespace Kiota.Builder.Tests.Writers {
     public class CodeTypeWriterTests: IDisposable {
         private const string DefaultPath = "./";
         private const string DefaultName = "name";

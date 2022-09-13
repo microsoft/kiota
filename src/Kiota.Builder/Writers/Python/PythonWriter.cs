@@ -1,3 +1,5 @@
+using Kiota.Builder.PathSegmenters;
+
 namespace Kiota.Builder.Writers.Python;
 public class PythonWriter : LanguageWriter
 {

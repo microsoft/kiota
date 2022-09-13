@@ -1,15 +1,19 @@
 using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
+
 using Xunit;
 
-namespace Kiota.Builder.Tests {
+namespace Kiota.Builder.Tests.CodeDOM {
     public class CodeMethodTests {
         [Fact]
         public void Defensive() {
             var method = new CodeMethod {
                 Name = "class",
             };
-            Assert.False(method.IsOfKind((CodeMethodKind[])null));
+            Assert.False(method.IsOfKind(null));
             Assert.False(method.IsOfKind(Array.Empty<CodeMethodKind>()));
             Assert.Throws<ArgumentNullException>(() => method.AddErrorMapping(null, new CodeType{Name = "class"}));
             Assert.Throws<ArgumentNullException>(() => method.AddErrorMapping("oin", null));

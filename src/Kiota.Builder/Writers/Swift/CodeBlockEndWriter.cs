@@ -1,3 +1,5 @@
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Writers.Swift;
 public class CodeBlockEndWriter : ICodeElementWriter<BlockEnd>
 {

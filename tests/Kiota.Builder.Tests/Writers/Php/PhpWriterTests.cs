@@ -1,10 +1,12 @@
 ﻿using System;
 using System.IO;
+
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Php;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Php.Tests
+namespace Kiota.Builder.Tests.Writers.Php
 {
     public class PhpWriterTests: IDisposable
     {

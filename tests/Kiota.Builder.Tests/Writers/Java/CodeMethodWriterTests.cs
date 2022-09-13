@@ -1,12 +1,16 @@
 using System;
 using System.IO;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
-using Kiota.Builder.Tests;
+using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.Java;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Java.Tests;
+namespace Kiota.Builder.Tests.Writers.Java;
 public class CodeMethodWriterTests : IDisposable {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -595,7 +599,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -645,7 +649,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -675,7 +679,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -868,7 +872,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("this.getComplexType1Value() != null || this.getComplexType3Value() != null", result);
         Assert.Contains("return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", result);
         Assert.Contains("new HashMap<>()", result);
-        AssertExtensions.Before($"return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", "new HashMap<>()", result);
+        AssertExtensions.Before("return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", "new HashMap<>()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1219,7 +1223,7 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains($"this.{propName} = {defaultValue}", result);
-        Assert.Contains($"urlTplParams.put(\"request-raw-url\", rawUrl);", result);
+        Assert.Contains("urlTplParams.put(\"request-raw-url\", rawUrl);", result);
     }
     [Fact]
     public void WritesApiConstructor() {
