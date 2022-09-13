@@ -66,7 +66,6 @@ public class GoRefiner : CommonLanguageRefiner
                 CorrectPropertyType,
                 CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
-            InsertOverrideMethodForBuildersAndConstructors(generatedCode);
             DisableActionOf(generatedCode, 
                 CodeParameterKind.RequestConfiguration);
             AddGetterAndSetterMethods(
@@ -178,23 +177,6 @@ public class GoRefiner : CommonLanguageRefiner
         CrawlTree(currentElement, RemoveHandlerFromRequestBuilder);
     }
 
-    private void InsertOverrideMethodForBuildersAndConstructors(CodeElement currentElement) {
-        if(currentElement is CodeClass currentClass) {
-            var codeMethods = currentClass.Methods;
-            if(codeMethods.Any(x => x.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))) {
-                var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator)).ToList();
-                var generatorMethodsToAdd = originalGeneratorMethods
-                    .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration))
-                    .Where(x => x != null)
-                    .ToArray();
-                originalGeneratorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.RequestConfiguration)}");
-                if(generatorMethodsToAdd.Any())
-                    currentClass.AddMethod(generatorMethodsToAdd.ToArray());
-            }
-        }
-
-        CrawlTree(currentElement, InsertOverrideMethodForBuildersAndConstructors);
-    }
     private static void RemoveModelPropertiesThatDependOnSubNamespaces(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass && 
             currentClass.IsOfKind(CodeClassKind.Model) &&
