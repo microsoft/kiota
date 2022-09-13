@@ -1,9 +1,14 @@
 using System;
 using System.IO;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.CSharp;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.CSharp.Tests {
+namespace Kiota.Builder.Tests.Writers.CSharp {
     public class CodeClassEndWriterTests: IDisposable {
         private const string DefaultPath = "./";
         private const string DefaultName = "name";
@@ -31,13 +36,13 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             var child = parentClass.AddInnerClass(new CodeClass {
                 Name = "child"
             }).First();
-            codeElementWriter.WriteCodeElement(child.EndBlock as BlockEnd, writer);
+            codeElementWriter.WriteCodeElement(child.EndBlock, writer);
             var result = tw.ToString();
             Assert.Equal(1, result.Count(x => x == '}'));
         }
         [Fact]
         public void ClosesNonNestedClasses() {
-            codeElementWriter.WriteCodeElement(parentClass.EndBlock as BlockEnd, writer);
+            codeElementWriter.WriteCodeElement(parentClass.EndBlock, writer);
             var result = tw.ToString();
             Assert.Equal(2, result.Count(x => x == '}'));
         }

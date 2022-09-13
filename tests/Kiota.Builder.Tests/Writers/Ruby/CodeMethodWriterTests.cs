@@ -1,11 +1,15 @@
 using System;
 using System.IO;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Tests;
+using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.Ruby;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Ruby.Tests;
+namespace Kiota.Builder.Tests.Writers.Ruby;
 public class CodeMethodWriterTests : IDisposable {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -111,7 +115,7 @@ public class CodeMethodWriterTests : IDisposable {
         };
     }
     private void AddInheritanceClass() {
-        (parentClass.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        parentClass.StartBlock.Inherits = new CodeType {
             Name = "someParentClass"
         };
     }

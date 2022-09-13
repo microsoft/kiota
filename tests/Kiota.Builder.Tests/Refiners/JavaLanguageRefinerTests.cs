@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Refiners;
+
 using Xunit;
 
-namespace Kiota.Builder.Refiners.Tests;
+namespace Kiota.Builder.Tests.Refiners;
 public class JavaLanguageRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLanguageRefinerTests
@@ -30,7 +34,7 @@ public class JavaLanguageRefinerTests {
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
 
-        var declaration = model.StartBlock as ClassDeclaration;
+        var declaration = model.StartBlock;
 
         Assert.Contains("ApiException", declaration.Usings.Select(x => x.Name));
         Assert.Equal("ApiException", declaration.Inherits.Name);
@@ -42,7 +46,7 @@ public class JavaLanguageRefinerTests {
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var declaration = model.StartBlock as ClassDeclaration;
+        var declaration = model.StartBlock;
         declaration.Inherits = new CodeType {
             Name = "SomeOtherModel"
         };
@@ -73,7 +77,7 @@ public class JavaLanguageRefinerTests {
                     });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
 
-        var declaration = requestBuilder.StartBlock as ClassDeclaration;
+        var declaration = requestBuilder.StartBlock;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
@@ -325,7 +329,7 @@ public class JavaLanguageRefinerTests {
             }
         });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.NotEmpty((model.StartBlock as ClassDeclaration).Usings.Where(x => "EnumSet".Equals(x.Name)));
+        Assert.NotEmpty(model.StartBlock.Usings.Where(x => "EnumSet".Equals(x.Name)));
     }
     [Fact]
     public void CorrectsCoreType() {
@@ -360,7 +364,8 @@ public class JavaLanguageRefinerTests {
         }, new () {
             Name = "headers",
             Kind = CodePropertyKind.Headers,
-            Type = new CodeType() {
+            Type = new CodeType
+            {
                 Name = headersDefaultName
             }
         });
@@ -383,7 +388,8 @@ public class JavaLanguageRefinerTests {
             },
             Kind = CodeMethodKind.Deserializer
         }).First();
-        executorMethod.AddParameter(new CodeParameter () {
+        executorMethod.AddParameter(new CodeParameter
+        {
             Name = "handler",
             Kind = CodeParameterKind.ResponseHandler,
             Type = new CodeType {

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners
@@ -188,7 +190,7 @@ namespace Kiota.Builder.Refiners
             }
             CorrectDateTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
                 .Select(static x => x.Type)
-                .Union(new CodeTypeBase[] { method.ReturnType})
+                .Union(new[] { method.ReturnType})
                 .ToArray());
         }
         private static void CorrectParameterType(CodeElement codeElement)

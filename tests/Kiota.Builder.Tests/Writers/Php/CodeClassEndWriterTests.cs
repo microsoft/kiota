@@ -1,9 +1,14 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.Php;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Php.Tests
+namespace Kiota.Builder.Tests.Writers.Php
 {
     public class CodeClassEndWriterTests: IDisposable {
         private const string DefaultPath = "./";
@@ -30,7 +35,7 @@ namespace Kiota.Builder.Writers.Php.Tests
         
         [Fact]
         public void ClosesNonNestedClasses() {
-            codeElementWriter.WriteCodeElement(parentClass.EndBlock as BlockEnd, writer);
+            codeElementWriter.WriteCodeElement(parentClass.EndBlock, writer);
             var result = tw.ToString();
             Assert.Equal(1, result.Count(x => x == '}'));
         }

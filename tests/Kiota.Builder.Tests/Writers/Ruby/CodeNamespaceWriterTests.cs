@@ -1,10 +1,14 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.Ruby;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Ruby.Tests {
+namespace Kiota.Builder.Tests.Writers.Ruby {
     public class CodeNamespaceWriterTests : IDisposable
     {
         private const string DefaultPath = "./";

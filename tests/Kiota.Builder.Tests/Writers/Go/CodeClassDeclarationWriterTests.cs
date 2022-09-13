@@ -1,8 +1,13 @@
 using System;
 using System.IO;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.Go;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Go.Tests;
+namespace Kiota.Builder.Tests.Writers.Go;
 public class CodeClassDeclarationWriterTests : IDisposable
 {
     private const string DefaultPath = "./";

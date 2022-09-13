@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kiota.Builder {
+namespace Kiota.Builder.CodeDOM {
     public abstract class CodeTypeBase: CodeTerminal, ICloneable {
         public enum CodeTypeCollectionKind {
             None,
@@ -15,7 +15,7 @@ namespace Kiota.Builder {
         /// Example: ActionOf:true parameterA: (y: typeA) => void
         /// Example: ActionOf:false parameterA: typeA
         /// </summary>
-        public bool ActionOf {get;set;} = false;
+        public bool ActionOf {get;set;}
         public bool IsNullable {get;set;} = true;
         public CodeTypeCollectionKind CollectionKind {get;set;} = CodeTypeCollectionKind.None;
         public bool IsCollection { get { return CollectionKind != CodeTypeCollectionKind.None; } }
@@ -33,13 +33,13 @@ namespace Kiota.Builder {
         public abstract object Clone();
 
         public IEnumerable<CodeType> AllTypes {
-            get {
+            get
+            {
                 if(this is CodeType currentType)
-                    return new CodeType[] { currentType };
-                else if (this is CodeComposedTypeBase currentUnion)
+                    return new[] { currentType };
+                if (this is CodeComposedTypeBase currentUnion)
                     return currentUnion.Types;
-                else
-                    return Enumerable.Empty<CodeType>();
+                return Enumerable.Empty<CodeType>();
             }
         }
     }

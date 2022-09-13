@@ -1,8 +1,11 @@
 using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+
 using Xunit;
 
-namespace Kiota.Builder.Tests;
+namespace Kiota.Builder.Tests.CodeDOM;
 public class CodeClassTests {
     [Fact]
     public void Defensive() {
@@ -11,7 +14,7 @@ public class CodeClassTests {
             Name = "class",
         };
         root.AddClass(codeClass);
-        Assert.False(codeClass.IsOfKind((CodeClassKind[])null));
+        Assert.False(codeClass.IsOfKind(null));
         Assert.False(codeClass.IsOfKind(Array.Empty<CodeClassKind>()));
         Assert.Throws<ArgumentNullException>(() => codeClass.DiscriminatorInformation.AddDiscriminatorMapping(null, new CodeType{Name = "class"}));
         Assert.Throws<ArgumentNullException>(() => codeClass.DiscriminatorInformation.AddDiscriminatorMapping("oin", null));
@@ -131,7 +134,7 @@ public class CodeClassTests {
             codeClass.AddInnerInterface(new CodeInterface[] {null});
         });
         Assert.Throws<ArgumentOutOfRangeException>(() => {
-            codeClass.AddInnerInterface(new CodeInterface[] {});
+            codeClass.AddInnerInterface();
         });
     }
     [Fact]
@@ -147,10 +150,10 @@ public class CodeClassTests {
         var childClass = child.AddClass(new CodeClass {
             Name = "child"
         }).First();
-        (childClass.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childClass.StartBlock.Inherits = new CodeType {
             TypeDefinition = parent,
         };
-        (parent.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        parent.StartBlock.Inherits = new CodeType {
             TypeDefinition = grandParent,
         };
         Assert.Equal(grandParent, parent.GetParentClass());

@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 public class DiscriminatorInformation : CodeElement, ICloneable
 {
     private ConcurrentDictionary<string, CodeTypeBase> discriminatorMappings = new(StringComparer.OrdinalIgnoreCase);

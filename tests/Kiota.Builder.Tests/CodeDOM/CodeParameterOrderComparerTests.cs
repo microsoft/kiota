@@ -1,11 +1,15 @@
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers.Go;
 using Kiota.Builder.Writers.Python;
-using Xunit;
+
 using Moq;
 
-namespace Kiota.Builder.Tests {
+using Xunit;
+
+namespace Kiota.Builder.Tests.CodeDOM {
     public class CodeParameterOrderComparerTests {
         [Fact]
         public void DefensiveProgramming() {

@@ -1,5 +1,7 @@
 using System.Linq;
 
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Writers;
 
 public static class CodeParameterExtensions {

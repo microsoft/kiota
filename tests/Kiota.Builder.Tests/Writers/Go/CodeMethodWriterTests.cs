@@ -1,13 +1,18 @@
 using System;
 using System.IO;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
-using Kiota.Builder.Tests;
+using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.Go;
+
 using Moq;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Go.Tests;
+namespace Kiota.Builder.Tests.Writers.Go;
 public class CodeMethodWriterTests : IDisposable {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -385,7 +390,7 @@ public class CodeMethodWriterTests : IDisposable {
         return intersectionTypeWrapper;
     }
     private void AddInheritanceClass() {
-        (parentClass.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        parentClass.StartBlock.Inherits = new CodeType {
             Name = "someParentClass"
         };
     }
@@ -504,9 +509,9 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.Contains("requestInfo, err :=", result);
         Assert.Contains($"errorMapping := {AbstractionsPackageHash}.ErrorMappings", result);
-        Assert.Contains($"\"4XX\": CreateError4XXFromDiscriminatorValue", result);
-        Assert.Contains($"\"5XX\": CreateError5XXFromDiscriminatorValue", result);
-        Assert.Contains($"\"403\": CreateError403FromDiscriminatorValue", result);
+        Assert.Contains("\"4XX\": CreateError4XXFromDiscriminatorValue", result);
+        Assert.Contains("\"5XX\": CreateError5XXFromDiscriminatorValue", result);
+        Assert.Contains("\"403\": CreateError403FromDiscriminatorValue", result);
         Assert.Contains("m.requestAdapter.SendAsync", result);
         Assert.Contains("ctx context.Context,", result);
         Assert.Contains("m.requestAdapter.SendAsync(ctx,", result);
@@ -672,7 +677,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -724,7 +729,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -754,7 +759,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -1310,8 +1315,8 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
-        Assert.Contains($"urlParams := make(map[string]string)", result);
-        Assert.Contains($"urlParams[\"request-raw-url\"] = rawUrl", result);
+        Assert.Contains("urlParams := make(map[string]string)", result);
+        Assert.Contains("urlParams[\"request-raw-url\"] = rawUrl", result);
     }
     [Fact]
     public void WritesInheritedConstructor() {

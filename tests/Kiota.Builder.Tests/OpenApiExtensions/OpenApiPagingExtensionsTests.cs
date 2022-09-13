@@ -1,9 +1,12 @@
 ﻿using System;
 using System.IO;
+
 using Kiota.Builder.OpenApiExtensions;
+
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Writers;
+
 using Xunit;
 
 namespace Kiota.Builder.Tests.OpenApiExtensions;

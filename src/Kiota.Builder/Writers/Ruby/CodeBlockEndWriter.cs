@@ -1,3 +1,5 @@
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Writers.Ruby {
     public class CodeBlockEndWriter : BaseElementWriter<BlockEnd, RubyConventionService>
     {

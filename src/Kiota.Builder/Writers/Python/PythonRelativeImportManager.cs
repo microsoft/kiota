@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder.Writers;
+namespace Kiota.Builder.Writers.Python;
 public class PythonRelativeImportManager: RelativeImportManager
 {
     private readonly string prefix;
@@ -38,12 +40,9 @@ public class PythonRelativeImportManager: RelativeImportManager
 
         if (typeDef == null)
             return (importSymbol, codeUsing.Alias, "."); // it's relative to the folder, with no declaration (default failsafe)
-        else
-        {
-            var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
-                                                    typeDef.GetImmediateParentOfType<CodeNamespace>());
-            return (importSymbol, codeUsing.Alias, importPath);
-        }
+        var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
+            typeDef.GetImmediateParentOfType<CodeNamespace>());
+        return (importSymbol, codeUsing.Alias, importPath);
     }
     protected new string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)
     {
@@ -62,7 +61,6 @@ public class PythonRelativeImportManager: RelativeImportManager
     {
         if (remainingSegments.Any())
             return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate((x, y) => $"{x}.{y}");
-        else
-            return string.Empty;
+        return string.Empty;
     }
 }

@@ -1,3 +1,5 @@
+using Kiota.Builder.PathSegmenters;
+
 namespace Kiota.Builder.Writers.Java
 {
     public class JavaWriter : LanguageWriter

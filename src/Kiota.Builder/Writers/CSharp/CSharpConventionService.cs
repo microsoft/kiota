@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using static Kiota.Builder.CodeTypeBase;
+
+using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.CSharp {
     public class CSharpConventionService : CommonLanguageConventionService {
@@ -72,7 +75,7 @@ namespace Kiota.Builder.Writers.CSharp {
         {
             if(code is CodeComposedTypeBase)
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
-            else if (code is CodeType currentType) {
+            if (code is CodeType currentType) {
                 var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
                 var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) && includeNullableInformation ? NullableMarkerAsString : string.Empty;
                 var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex && includeCollectionInformation ? "List<" : string.Empty;
@@ -83,10 +86,10 @@ namespace Kiota.Builder.Writers.CSharp {
                 };
                 if (currentType.ActionOf)
                     return $"Action<{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}>";
-                else
-                    return $"{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}";
+                return $"{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}";
             }
-            else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+
+            throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
         private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
         {
@@ -121,8 +124,7 @@ namespace Kiota.Builder.Writers.CSharp {
                     )
                 )
                 return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
-            else
-                return typeName;
+            return typeName;
         }
 
         private static bool DoesTypeExistsInSameNamesSpaceAsTarget(CodeType currentType, CodeElement targetElement)

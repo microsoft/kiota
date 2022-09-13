@@ -1,9 +1,12 @@
 using System;
 using System.IO;
-using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Python.Tests;
+namespace Kiota.Builder.Tests.Writers.Python;
 public class CodePropertyWriterTests: IDisposable {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -46,8 +49,8 @@ public class CodePropertyWriterTests: IDisposable {
         property.Description = "This is a request builder";
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains($"def property_name(", result);
-        Assert.Contains($"This is a request builder", result);
+        Assert.Contains("def property_name(", result);
+        Assert.Contains("This is a request builder", result);
         Assert.Contains($"return {TypeName.ToLower()}.{TypeName}(", result);
         Assert.Contains("self.request_adapter", result);
         Assert.Contains("self.path_parameters", result);

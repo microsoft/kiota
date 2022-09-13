@@ -1,10 +1,13 @@
 using System;
 using System.IO;
 using System.Linq;
-using Kiota.Builder.Tests;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.TypeScript.Tests;
+namespace Kiota.Builder.Tests.Writers.TypeScript;
 public class CodeFunctionWriterTests : IDisposable {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -49,7 +52,7 @@ public class CodeFunctionWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -102,7 +105,7 @@ public class CodeFunctionWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -143,7 +146,7 @@ public class CodeFunctionWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };

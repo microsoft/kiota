@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Go;
 
@@ -73,7 +75,7 @@ public class GoRefiner : CommonLanguageRefiner
             generatedCode,
             true,
             true,  //forcing add as constructors are required for by factories 
-            new CodeClassKind[] { CodeClassKind.RequestConfiguration });
+            new[] { CodeClassKind.RequestConfiguration });
         MakeModelPropertiesNullable(
             generatedCode);
         AddErrorImportForEnums(
@@ -93,8 +95,8 @@ public class GoRefiner : CommonLanguageRefiner
                 "github.com/microsoft/kiota-serialization-text-go.TextParseNodeFactory"});
         AddSerializationModulesImport(
             generatedCode,
-            new string[] {"github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer"},
-            new string[] {"github.com/microsoft/kiota-abstractions-go/serialization.ParseNodeFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultDeserializer"});
+            new[] {"github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer"},
+            new[] {"github.com/microsoft/kiota-abstractions-go/serialization.ParseNodeFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultDeserializer"});
         AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiError",
@@ -187,29 +189,29 @@ public class GoRefiner : CommonLanguageRefiner
         CrawlTree(currentElement, RemoveModelPropertiesThatDependOnSubNamespaces);
     }
     private static CodeNamespace FindFirstModelSubnamepaceWithClasses(CodeNamespace currentNamespace) {
-        if(currentNamespace != null) {
+        if(currentNamespace != null)
+        {
             if(currentNamespace.Classes.Any()) return currentNamespace;
-            else
-                foreach (var subNS in currentNamespace.Namespaces)
-                {
-                    var result = FindFirstModelSubnamepaceWithClasses(subNS);
-                    if (result != null) return result;
-                }
+            foreach (var subNS in currentNamespace.Namespaces)
+            {
+                var result = FindFirstModelSubnamepaceWithClasses(subNS);
+                if (result != null) return result;
+            }
         }
         return null;
     }
     private static CodeNamespace FindRootModelsNamespace(CodeNamespace currentNamespace) {
-        if(currentNamespace != null) {
+        if(currentNamespace != null)
+        {
             if(!string.IsNullOrEmpty(currentNamespace.Name) &&
-                currentNamespace.Name.EndsWith("Models", StringComparison.OrdinalIgnoreCase))
+               currentNamespace.Name.EndsWith("Models", StringComparison.OrdinalIgnoreCase))
                 return currentNamespace;
-            else
-                foreach(var subNS in currentNamespace.Namespaces)
-                {
-                    var result = FindRootModelsNamespace(subNS);
-                    if(result != null)
-                        return result;
-                }
+            foreach(var subNS in currentNamespace.Namespaces)
+            {
+                var result = FindRootModelsNamespace(subNS);
+                if(result != null)
+                    return result;
+            }
         }
         return null;
     }
@@ -246,7 +248,7 @@ public class GoRefiner : CommonLanguageRefiner
         "DateOnly",
         "string"
     };
-    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "github.com/microsoft/kiota-abstractions-go", "RequestAdapter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -321,7 +323,7 @@ public class GoRefiner : CommonLanguageRefiner
         }
         CorrectDateTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
-                                                .Union(new CodeTypeBase[] { currentMethod.ReturnType})
+                                                .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
     }
     private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {

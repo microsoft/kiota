@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
@@ -45,12 +47,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void ReplaceDefaultSerializationModules(CodeElement generatedCode, HashSet<string> defaultValues, HashSet<string> newModuleNames) {
         if(ReplaceSerializationModules(generatedCode, x => x.SerializerModules, (x, y) => x.SerializerModules = y, defaultValues, newModuleNames))
             return;
-        CrawlTree(generatedCode, (x) => ReplaceDefaultSerializationModules(x, defaultValues, newModuleNames));
+        CrawlTree(generatedCode, x => ReplaceDefaultSerializationModules(x, defaultValues, newModuleNames));
     }
     protected static void ReplaceDefaultDeserializationModules(CodeElement generatedCode, HashSet<string> defaultValues, HashSet<string> newModuleNames) {
         if(ReplaceSerializationModules(generatedCode, x => x.DeserializerModules, (x, y) => x.DeserializerModules = y, defaultValues, newModuleNames))
             return;
-        CrawlTree(generatedCode, (x) => ReplaceDefaultDeserializationModules(x, defaultValues, newModuleNames));
+        CrawlTree(generatedCode, x => ReplaceDefaultDeserializationModules(x, defaultValues, newModuleNames));
     }
     private static bool ReplaceSerializationModules(CodeElement generatedCode, Func<CodeMethod, HashSet<string>> propertyGetter, Action<CodeMethod, HashSet<string>> propertySetter, HashSet<string> initialNames, HashSet<string> moduleNames) {
         if(generatedCode is CodeMethod currentMethod &&
@@ -76,17 +78,19 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 backingStoreProperty.DefaultValue = defaultPropertyValue;
             
         }
-        CrawlTree(currentElement, (x) => CorrectCoreTypesForBackingStore(x, defaultPropertyValue));
+        CrawlTree(currentElement, x => CorrectCoreTypesForBackingStore(x, defaultPropertyValue));
     }
-    private static bool DoesAnyParentHaveAPropertyWithDefaultValue(CodeClass current) {
+    private static bool DoesAnyParentHaveAPropertyWithDefaultValue(CodeClass current)
+    {
         if(current.StartBlock is ClassDeclaration currentDeclaration &&
-            currentDeclaration.Inherits?.TypeDefinition is CodeClass parentClass) {
-                if(parentClass.Properties.Any(static x => !string.IsNullOrEmpty(x.DefaultValue)))
+           currentDeclaration.Inherits?.TypeDefinition is CodeClass parentClass)
+        {
+            if(parentClass.Properties.Any(static x => !string.IsNullOrEmpty(x.DefaultValue)))
                     return true;
-                else
-                    return DoesAnyParentHaveAPropertyWithDefaultValue(parentClass);
-        } else
-            return false;
+            return DoesAnyParentHaveAPropertyWithDefaultValue(parentClass);
+        }
+
+        return false;
     }
     protected void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix) {
         if(!(propertyKindsToAddAccessors?.Any() ?? true)) return;
@@ -165,10 +169,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
 
     protected static void ReplaceReservedModelTypes(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) => 
-        ReplaceReservedNames(current, provider, replacement,codeElementExceptions: new HashSet<Type>{typeof(CodeNamespace)} ,shouldReplaceCallback: (codeElement) => codeElement is CodeClass || codeElement is CodeMethod || codeElement is CodeProperty);
+        ReplaceReservedNames(current, provider, replacement,codeElementExceptions: new HashSet<Type>{typeof(CodeNamespace)} ,shouldReplaceCallback: codeElement => codeElement is CodeClass || codeElement is CodeMethod || codeElement is CodeProperty);
     
     protected static void ReplaceReservedNamespaceTypeNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) => 
-        ReplaceReservedNames(current, provider, replacement, shouldReplaceCallback: (codeElement) => codeElement is CodeNamespace || codeElement is CodeClass);
+        ReplaceReservedNames(current, provider, replacement, shouldReplaceCallback: codeElement => codeElement is CodeNamespace || codeElement is CodeClass);
 
     protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type> codeElementExceptions = null, Func<CodeElement, bool> shouldReplaceCallback = null) {
         var shouldReplace = shouldReplaceCallback?.Invoke(current) ?? true;
@@ -370,7 +374,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if (!supportsInnerClasses)
         {
             var @namespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
-            newClass = @namespace.AddClass(new CodeClass()
+            newClass = @namespace.AddClass(new CodeClass
             {
                 Name = codeComposedType.Name,
                 Description = description
@@ -570,7 +574,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if(usingsToAdd.Any())
                 (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
         }
-        CrawlTree(current, (x) => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter));
+        CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter));
     }
     protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function) {
         foreach(var childElement in currentElement.GetChildElements())
@@ -970,16 +974,18 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Description = "The original query parameter name in the class.",
                 });
             }
-        CrawlTree(currentElement, (x) => AddQueryParameterMapperMethod(x, methodName, parameterName));
+        CrawlTree(currentElement, x => AddQueryParameterMapperMethod(x, methodName, parameterName));
     }
-    protected static CodeMethod GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude) {
+    protected static CodeMethod GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude)
+    {
         if(currentMethod.Parameters.Any(x => x.IsOfKind(parameterTypesToExclude))) {
             var cloneMethod = currentMethod.Clone() as CodeMethod;
             cloneMethod.RemoveParametersByKind(parameterTypesToExclude);
             cloneMethod.OriginalMethod = currentMethod;
             return cloneMethod;
         }
-        else return null;
+
+        return null;
     }
     protected void RemoveDiscriminatorMappingsTargetingSubNamespaces(CodeElement currentElement) {
         if (currentElement is CodeMethod currentMethod &&

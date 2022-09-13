@@ -1,9 +1,12 @@
 using System;
 using System.IO;
-using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.TypeScript.Tests {
+namespace Kiota.Builder.Tests.Writers.TypeScript {
     public class CodePropertyWriterTests: IDisposable {
         private const string DefaultPath = "./";
         private const string DefaultName = "name";

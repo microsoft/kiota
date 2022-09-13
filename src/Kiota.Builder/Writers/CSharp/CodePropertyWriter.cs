@@ -1,7 +1,5 @@
-﻿using System;
-using System.Linq;
+﻿using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp;
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventionService>

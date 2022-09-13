@@ -1,4 +1,6 @@
-﻿namespace Kiota.Builder.Writers.Php
+﻿using Kiota.Builder.PathSegmenters;
+
+namespace Kiota.Builder.Writers.Php
 {
     public class PhpWriter: LanguageWriter
     {

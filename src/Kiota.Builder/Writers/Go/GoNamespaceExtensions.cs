@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go {
@@ -14,7 +16,7 @@ namespace Kiota.Builder.Writers.Go {
         public static string GetInternalNamespaceImport(this CodeElement ns) {
             if(ns == null) return string.Empty;
             var urlPrefixIndex = ns.Name.LastIndexOf('/') + 1;
-            return (ns.Name[0..urlPrefixIndex] + ns.Name[urlPrefixIndex..].Split('.', StringSplitOptions.RemoveEmptyEntries).Aggregate((x, y) => $"{x}/{y}")).ToLowerInvariant();
+            return (ns.Name[..urlPrefixIndex] + ns.Name[urlPrefixIndex..].Split('.', StringSplitOptions.RemoveEmptyEntries).Aggregate((x, y) => $"{x}/{y}")).ToLowerInvariant();
         }
         public static string GetNamespaceImportSymbol(this CodeElement ns) {
             if(ns == null) return string.Empty;

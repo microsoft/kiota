@@ -1,8 +1,12 @@
 using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Refiners;
+
 using Xunit;
 
-namespace Kiota.Builder.Refiners.Tests;
+namespace Kiota.Builder.Tests.Refiners;
 public class PythonLanguageRefinerTests {
     private readonly CodeNamespace root;
     private readonly CodeNamespace graphNS;
@@ -164,11 +168,13 @@ public class PythonLanguageRefinerTests {
     [Fact]
     public void CorrectsCoreType() {
 
-        var model = root.AddClass(new CodeClass () {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        model.AddProperty(new CodeProperty() {
+        model.AddProperty(new CodeProperty
+        {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
             Type = new CodeType {

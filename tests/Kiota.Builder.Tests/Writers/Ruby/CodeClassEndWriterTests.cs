@@ -2,9 +2,14 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.Ruby;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Ruby.Tests {
+namespace Kiota.Builder.Tests.Writers.Ruby {
     public class CodeClassEndWriterTests: IDisposable {
         private const string DefaultPath = "./";
         private const string DefaultName = "name";
@@ -33,13 +38,13 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             var child = parentClass.AddInnerClass(new CodeClass {
                 Name = "child"
             }).First();
-            codeElementWriter.WriteCodeElement(child.EndBlock as BlockEnd, writer);
+            codeElementWriter.WriteCodeElement(child.EndBlock, writer);
             var result = tw.ToString();
             Assert.Single(Regex.Matches(result, ".*end.*"));
         }
         [Fact]
         public void ClosesNonNestedClasses() {
-            codeElementWriter.WriteCodeElement(parentClass.EndBlock as BlockEnd, writer);
+            codeElementWriter.WriteCodeElement(parentClass.EndBlock, writer);
             var result = tw.ToString();
             Assert.Equal(2, Regex.Matches(result, ".*end.*").Count);
         }

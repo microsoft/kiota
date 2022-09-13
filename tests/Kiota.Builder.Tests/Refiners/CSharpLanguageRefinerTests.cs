@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Refiners;
+
 using Xunit;
 
-namespace Kiota.Builder.Refiners.Tests;
+namespace Kiota.Builder.Tests.Refiners;
 public class CSharpLanguageRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLanguageRefinerTests
@@ -15,7 +19,7 @@ public class CSharpLanguageRefinerTests {
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         
-        var declaration = model.StartBlock as ClassDeclaration;
+        var declaration = model.StartBlock;
 
         Assert.Contains("ApiException", declaration.Usings.Select(x => x.Name));
         Assert.Equal("ApiException", declaration.Inherits.Name);
@@ -27,7 +31,7 @@ public class CSharpLanguageRefinerTests {
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var declaration = model.StartBlock as ClassDeclaration;
+        var declaration = model.StartBlock;
         declaration.Inherits = new CodeType {
             Name = "SomeOtherModel"
         };
@@ -58,7 +62,7 @@ public class CSharpLanguageRefinerTests {
                     });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         
-        var declaration = requestBuilder.StartBlock as ClassDeclaration;
+        var declaration = requestBuilder.StartBlock;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
@@ -111,7 +115,8 @@ public class CSharpLanguageRefinerTests {
             Kind = CodeClassKind.RequestBuilder,
         }).First();
         
-        var requestExecutor = itemRequestBuilder.AddMethod(new CodeMethod() {
+        var requestExecutor = itemRequestBuilder.AddMethod(new CodeMethod
+        {
             Name = "get",
             Kind = CodeMethodKind.IndexerBackwardCompatibility,
             ReturnType = new CodeType {

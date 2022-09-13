@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners {
@@ -70,7 +72,7 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, MakeEnumPropertiesNullable);
         }
         
-        protected static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+        protected static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
             new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 "Microsoft.Kiota.Abstractions", "IRequestAdapter"),
             new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -131,7 +133,7 @@ namespace Kiota.Builder.Refiners {
         {
             CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                     .Select(x => x.Type)
-                                                    .Union(new CodeTypeBase[] { currentMethod.ReturnType })
+                                                    .Union(new[] { currentMethod.ReturnType })
                                                     .ToArray());
         }
 

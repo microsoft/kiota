@@ -1,10 +1,12 @@
-﻿using Xunit;
+﻿using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder.Extensions.Tests {
+using Xunit;
+
+namespace Kiota.Builder.Tests.Extensions {
     public class StringExtensionsTests {
         [Fact]
         public void Defensive() {
-            Assert.Equal(StringExtensions.GetNamespaceImportSymbol((string)null), string.Empty);
+            Assert.Equal(StringExtensions.GetNamespaceImportSymbol(null), string.Empty);
         }
         [Fact]
         public void ToLowerCase() {
