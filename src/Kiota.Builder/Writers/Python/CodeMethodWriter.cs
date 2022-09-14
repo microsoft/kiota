@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.Python;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionService>
@@ -215,7 +216,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.WriteLine("}");
             if (inherits) {
                 writer.WriteLine($"super_fields = super().{codeElement.Name.ToSnakeCase()}()");
-                writer.WriteLine($"fields.update(super_fields)");
+                writer.WriteLine("fields.update(super_fields)");
             }
             writer.WriteLine("return fields");
     }
@@ -228,7 +229,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                             ?.Name
                                             ?.ToSnakeCase();
         writer.WriteLine($"request_info = self.{generatorMethodName}(");
-        var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration }
+        var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
                                         .Select(x => x?.Name.ToSnakeCase()).Where(x => x != null);
         if(requestInfoParameters.Any()) {
             writer.IncreaseIndent();
@@ -248,11 +249,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         foreach(var errorMapping in codeElement.ErrorMappings) {
             writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": o_data_error.{errorMapping.Value.Name}.get_from_discriminator_value(),");
         }
-        writer.CloseBlock("}");
+        writer.CloseBlock();
     }
-    writer.WriteLine($"if not self.request_adapter:");
+    writer.WriteLine("if not self.request_adapter:");
     writer.IncreaseIndent();
-    writer.WriteLine($"raise Exception(\"Http core is null\") ");
+    writer.WriteLine("raise Exception(\"Http core is null\") ");
     writer.DecreaseIndent();
     writer.WriteLine($"return await self.request_adapter.{genericTypeForSendMethod}(request_info,{newFactoryParameter} response_handler, {errorMappingVarName})");
     }
@@ -317,7 +318,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             if(isDescriptionPresent)
                 writer.WriteLine($"{conventions.DocCommentPrefix}{PythonConventionService.RemoveInvalidDescriptionCharacters(code.Description)}");
             if(parametersWithDescription.Any()) {
-                writer.WriteLine($"Args:");
+                writer.WriteLine("Args:");
                 writer.IncreaseIndent();
                 
                 foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
@@ -364,10 +365,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var propertyType = conventions.TranslateType(propType);
         if (conventions.TypeExistInSameClassAsTarget(propType, codeElement))
             propertyType = codeElement.Parent.Name.ToFirstCharacterUpperCase();
-        if(propType is CodeType currentType) {
+        if(propType is CodeType currentType)
+        {
             if(currentType.TypeDefinition is CodeEnum currentEnum)
                 return $"get_{(currentEnum.Flags || isCollection ? "collection_of_enum_values" : "enum_value")}({propertyType.ToCamelCase()})";
-            else if(isCollection)
+            if(isCollection)
                 if(currentType.TypeDefinition == null)
                     return $"get_collection_of_primitive_values({propertyType.ToSnakeCase()})";
                 else
@@ -383,33 +385,38 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private string GetSerializationMethodName(CodeTypeBase propType) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = conventions.TranslateType(propType);
-        if(propType is CodeType currentType) {
+        if(propType is CodeType currentType)
+        {
             if(currentType.TypeDefinition is CodeEnum)
-                return $"write_enum_value";
-            else if(isCollection)
+                return "write_enum_value";
+            if(isCollection)
                 if(currentType.TypeDefinition == null)
-                    return $"write_collection_of_primitive_values";
+                    return "write_collection_of_primitive_values";
                 else
-                    return $"write_collection_of_object_values";
+                    return "write_collection_of_object_values";
         }
         return propertyType switch
         {
             "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"write_{propertyType.ToSnakeCase()}_value",
-            _ => $"write_object_value",
+            _ => "write_object_value",
         };
     }
-    private string GetTypeFactory(bool isVoid, bool isStream, string returnType) {
+    private string GetTypeFactory(bool isVoid, bool isStream, string returnType)
+    {
         if(isVoid) return string.Empty;
-        else if(isStream || conventions.IsPrimitiveType(returnType)) return $" \"{returnType}\",";
-        else return $" {returnType},";
+        if(isStream || conventions.IsPrimitiveType(returnType)) return $" \"{returnType}\",";
+        return $" {returnType},";
     }
-    private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType) {
+    private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
+    {
         if(isVoid) return "send_no_response_content_async";
-        else if(isCollection) {
-            if(conventions.IsPrimitiveType(returnType)) return $"send_collection_of_primitive_async";
-            else return $"send_collection_async({returnType})";
+        if(isCollection)
+        {
+            if(conventions.IsPrimitiveType(returnType)) return "send_collection_of_primitive_async";
+            return $"send_collection_async({returnType})";
         }
-        else if(isStream || conventions.IsPrimitiveType(returnType)) return $"send_primitive_async";
-        else return $"send_async";
+
+        if(isStream || conventions.IsPrimitiveType(returnType)) return "send_primitive_async";
+        return "send_async";
     }
 }

@@ -1,10 +1,13 @@
 using System;
 using System.IO;
 using System.Linq;
-using Kiota.Builder.Tests;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Ruby.Tests {
+namespace Kiota.Builder.Tests.Writers.Ruby {
     public class CodeEnumWriterTests :IDisposable {
         private const string DefaultPath = "./";
         private const string DefaultName = "name";
@@ -35,7 +38,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             currentEnum.AddOption(new CodeEnumOption { Name = optionName});
             writer.Write(currentEnum);
             var result = tw.ToString();
-            Assert.Contains($"= {{", result);
+            Assert.Contains("= {", result);
             Assert.Contains(optionName, result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }

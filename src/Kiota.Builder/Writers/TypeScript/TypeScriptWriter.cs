@@ -1,4 +1,6 @@
-﻿namespace Kiota.Builder.Writers.TypeScript
+﻿using Kiota.Builder.PathSegmenters;
+
+namespace Kiota.Builder.Writers.TypeScript
 {
     public class TypeScriptWriter : LanguageWriter
     {

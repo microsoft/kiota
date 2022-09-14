@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.Linq;
 using System.Text.RegularExpressions;
+
 using Kiota.Builder;
+
 using Microsoft.Extensions.Logging;
 
-namespace Kiota;
+namespace kiota;
 public class KiotaHost {
     public RootCommand GetRootCommand()
     {
@@ -106,7 +108,7 @@ public class KiotaHost {
     }
     private static void AddStringRegexValidator(Option<string> option, string pattern, string parameterName) {
         var validator = new Regex(pattern);
-        option.AddValidator((input) => {
+        option.AddValidator(input => {
             var value = input.GetValueForOption(option);
             if(string.IsNullOrEmpty(value) ||
                 !validator.IsMatch(value))
@@ -114,7 +116,7 @@ public class KiotaHost {
         });
     }
     private static void AddEnumValidator<T>(Option<T> option, string parameterName) where T: struct, Enum {
-        option.AddValidator((input) => {
+        option.AddValidator(input => {
             if(input.Tokens.Any() &&
                 !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _)) {
                     var validOptionsList = Enum.GetValues<T>().Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y);

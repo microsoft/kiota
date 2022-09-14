@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go;
@@ -34,7 +36,7 @@ public class GoConventionService : CommonLanguageConventionService
         var importSymbol = typeString == null || typeString.Length < 2 ? string.Empty : typeString.First() + dot;
         var methodName = typeString.Last().ToFirstCharacterUpperCase();
         if(!string.IsNullOrEmpty(trimEnd) && methodName.EndsWith(trimEnd, StringComparison.OrdinalIgnoreCase)) {
-            methodName = methodName[0..^trimEnd.Length];
+            methodName = methodName[..^trimEnd.Length];
         }
         return $"{importSymbol}{methodPrefix}{methodName}{methodSuffix}";
     }
@@ -44,27 +46,27 @@ public class GoConventionService : CommonLanguageConventionService
     {
         if(code is CodeComposedTypeBase) 
             throw new InvalidOperationException($"Go does not support union types, the union type {code.Name} should have been filtered out by the refiner");
-        else if (code is CodeType currentType) {
+        if (code is CodeType currentType) {
             var importSymbol = GetImportSymbol(code, targetElement);
             if(!string.IsNullOrEmpty(importSymbol))
                 importSymbol += ".";
             var typeName = TranslateType(currentType, true);
             var nullableSymbol = addPointerSymbol && 
-                                currentType.IsNullable &&
-                                currentType.TypeDefinition is not CodeInterface &&
-                                currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None &&
-                                !IsScalarType(currentType.Name) ? "*"
-                                : string.Empty;
+                                 currentType.IsNullable &&
+                                 currentType.TypeDefinition is not CodeInterface &&
+                                 currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None &&
+                                 !IsScalarType(currentType.Name) ? "*"
+                : string.Empty;
             var collectionPrefix = currentType.CollectionKind switch {
-                CodeType.CodeTypeCollectionKind.Array or CodeType.CodeTypeCollectionKind.Complex when includeCollectionInformation => "[]",
+                CodeTypeBase.CodeTypeCollectionKind.Array or CodeTypeBase.CodeTypeCollectionKind.Complex when includeCollectionInformation => "[]",
                 _ => string.Empty,
             };
             if (currentType.ActionOf)
                 return $"func (value {nullableSymbol}{collectionPrefix}{importSymbol}{typeName}) (err error)";
-            else
-                return $"{nullableSymbol}{collectionPrefix}{importSymbol}{typeName}";
+            return $"{nullableSymbol}{collectionPrefix}{importSymbol}{typeName}";
         }
-        else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+
+        throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
 
     public override string TranslateType(CodeType type) => throw new InvalidOperationException("use the overload instead.");
@@ -115,24 +117,25 @@ public class GoConventionService : CommonLanguageConventionService
     private string GetImportSymbol(CodeTypeBase currentBaseType, CodeElement targetElement) {
         if(currentBaseType == null || IsPrimitiveType(currentBaseType.Name)) return string.Empty;
         var targetNamespace = targetElement.GetImmediateParentOfType<CodeNamespace>();
-        if(currentBaseType is CodeType currentType) {
+        if(currentBaseType is CodeType currentType)
+        {
             if(currentType.TypeDefinition is IProprietableBlock currentTypDefinition &&
-                currentTypDefinition.Parent is CodeNamespace typeDefNS &&
-                targetNamespace != typeDefNS)
+               currentTypDefinition.Parent is CodeNamespace typeDefNS &&
+               targetNamespace != typeDefNS)
                     return typeDefNS.GetNamespaceImportSymbol();
-            else if(currentType.TypeDefinition is CodeEnum currentEnumDefinition &&
-                currentEnumDefinition.Parent is CodeNamespace enumNS &&
-                targetNamespace != enumNS)
-                    return enumNS.GetNamespaceImportSymbol();
-            else if(currentType.TypeDefinition is null &&
-                    targetElement is IProprietableBlock targetTypeDef) {
-                        var symbolUsing = ((targetTypeDef.Parent as CodeClass)?.StartBlock as BlockDeclaration ?? 
-                                            (targetTypeDef as CodeClass)?.StartBlock as BlockDeclaration ??
-                                            (targetTypeDef as CodeInterface)?.StartBlock as BlockDeclaration)
-                                                        .Usings
-                                                        .FirstOrDefault(x => currentBaseType.Name?.Equals(x.Name, StringComparison.OrdinalIgnoreCase) ?? false);
-                        return symbolUsing == null ? string.Empty : symbolUsing.Declaration.Name.GetNamespaceImportSymbol();
-                    }
+            if(currentType.TypeDefinition is CodeEnum currentEnumDefinition &&
+               currentEnumDefinition.Parent is CodeNamespace enumNS &&
+               targetNamespace != enumNS)
+                return enumNS.GetNamespaceImportSymbol();
+            if(currentType.TypeDefinition is null &&
+               targetElement is IProprietableBlock targetTypeDef) {
+                var symbolUsing = ((targetTypeDef.Parent as CodeClass)?.StartBlock as BlockDeclaration ?? 
+                                   (targetTypeDef as CodeClass)?.StartBlock as BlockDeclaration ??
+                                   (targetTypeDef as CodeInterface)?.StartBlock)
+                    .Usings
+                    .FirstOrDefault(x => currentBaseType.Name?.Equals(x.Name, StringComparison.OrdinalIgnoreCase) ?? false);
+                return symbolUsing == null ? string.Empty : symbolUsing.Declaration.Name.GetNamespaceImportSymbol();
+            }
         }
         return string.Empty;
     }

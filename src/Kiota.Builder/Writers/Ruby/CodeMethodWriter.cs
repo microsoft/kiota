@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.Ruby {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionService>
@@ -132,7 +133,7 @@ namespace Kiota.Builder.Writers.Ruby {
             if(parentClass.StartBlock.Inherits != null)
                 writer.WriteLine("return super.merge({");
             else
-                writer.WriteLine($"return {{");
+                writer.WriteLine("return {");
             writer.IncreaseIndent();
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType)) {
                 writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\" => lambda {{|n| @{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
@@ -160,7 +161,7 @@ namespace Kiota.Builder.Writers.Ruby {
                                                 ?.Name
                                                 ?.ToFirstCharacterLowerCase();
             writer.WriteLine($"request_info = self.{generatorMethodName.ToSnakeCase()}(");
-            var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration }
+            var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
                 .Where(x => x != null)
                 .Select(x => x.Name.ToSnakeCase());
             if(requestInfoParameters.Any()) {
@@ -223,7 +224,7 @@ namespace Kiota.Builder.Writers.Ruby {
         private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer) {
             var methodName = (code.Kind switch {
-                CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => $"initialize",
+                CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => "initialize",
                 CodeMethodKind.Getter => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
                 CodeMethodKind.Setter => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
                 _ => code.Name.ToSnakeCase()
@@ -252,22 +253,23 @@ namespace Kiota.Builder.Writers.Ruby {
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = conventions.TranslateType(propType);
-            if(propType is CodeType currentType) {
+            if(propType is CodeType currentType)
+            {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
                         return $"get_collection_of_primitive_values({TranslateObjectType(propertyType.ToFirstCharacterUpperCase())})";
                     else
                         return $"get_collection_of_object_values({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})";
-                else if(currentType.TypeDefinition is CodeEnum currentEnum)
+                if(currentType.TypeDefinition is CodeEnum currentEnum)
                     return $"get_enum_value{(currentEnum.Flags ? "s" : string.Empty)}({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})";
             }
             return propertyType switch
             {
                 "string" or "boolean" or "number" or "float" or "Guid" => $"get_{propertyType.ToSnakeCase()}_value()",
-                "DateTimeOffset" or "DateTime" => $"get_date_time_value()",
-                "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => $"get_duration_value()",
-                "DateOnly" or "Date" => $"get_date_value()",
-                "TimeOnly" or "Time" => $"get_time_value()",
+                "DateTimeOffset" or "DateTime" => "get_date_time_value()",
+                "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => "get_duration_value()",
+                "DateOnly" or "Date" => "get_date_value()",
+                "TimeOnly" or "Time" => "get_time_value()",
                 _ => $"get_object_value({(propType as CodeType).TypeDefinition?.Parent?.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})",
             };
         }
@@ -286,28 +288,30 @@ namespace Kiota.Builder.Writers.Ruby {
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = conventions.TranslateType(propType);
-            if(propType is CodeType currentType) {
+            if(propType is CodeType currentType)
+            {
                 if (isCollection)
                     if(currentType.TypeDefinition == null)
-                        return $"write_collection_of_primitive_values";
+                        return "write_collection_of_primitive_values";
                     else
-                        return $"write_collection_of_object_values";
-                else if(currentType.TypeDefinition is CodeEnum)
-                    return $"write_enum_value";
+                        return "write_collection_of_object_values";
+                if(currentType.TypeDefinition is CodeEnum)
+                    return "write_enum_value";
             }
             return propertyType switch
             {
                 "string" or "boolean" or "number" or "float" or "Guid" => $"write_{propertyType.ToSnakeCase()}_value",
-                "DateTimeOffset" or "DateTime" => $"write_date_time_value",
-                "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => $"write_duration_value",
-                "DateOnly" or "Date" => $"write_date_value",
-                "TimeOnly" or "Time" => $"write_time_value",
-                _ => $"write_object_value",
+                "DateTimeOffset" or "DateTime" => "write_date_time_value",
+                "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => "write_duration_value",
+                "DateOnly" or "Date" => "write_date_value",
+                "TimeOnly" or "Time" => "write_time_value",
+                _ => "write_object_value",
             };
         }
-        private static string GetSendRequestMethodName(bool isStream) {
-            if(isStream) return $"send_primitive_async";
-            else return $"send_async";
+        private static string GetSendRequestMethodName(bool isStream)
+        {
+            if(isStream) return "send_primitive_async";
+            return "send_async";
         }
     }
 }

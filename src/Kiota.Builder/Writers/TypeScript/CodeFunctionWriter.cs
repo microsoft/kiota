@@ -1,6 +1,8 @@
 
 
 using System;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript;
@@ -32,13 +34,13 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var parseNodeParameter = codeElement.OriginalLocalMethod.Parameters.OfKind(CodeParameterKind.ParseNode);
         if(codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
             writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorPropertyName}\");",
-                                $"if (mappingValueNode) {{");
+                                "if (mappingValueNode) {");
             writer.IncreaseIndent();
-            writer.WriteLines($"const mappingValue = mappingValueNode.getStringValue();",
+            writer.WriteLines("const mappingValue = mappingValueNode.getStringValue();",
                             "if (mappingValue) {");
             writer.IncreaseIndent();
 
-            writer.WriteLine($"switch (mappingValue) {{");
+            writer.WriteLine("switch (mappingValue) {");
             writer.IncreaseIndent();
             foreach(var mappedType in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings) {
                 writer.WriteLine($"case \"{mappedType.Key}\":");

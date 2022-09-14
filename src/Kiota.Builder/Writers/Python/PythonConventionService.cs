@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using static Kiota.Builder.CodeTypeBase;
+
+using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.Python;
 public class PythonConventionService : CommonLanguageConventionService
@@ -64,24 +67,24 @@ public class PythonConventionService : CommonLanguageConventionService
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "]";
         if(code is CodeUnionType currentUnion && currentUnion.Types.Any())
             return currentUnion.Types.Select(x => GetTypeString(x, targetElement, true, writer)).Aggregate((x, y) => $"Union[{x}, {y.ToFirstCharacterLowerCase()}]");
-        else if(code is CodeType currentType) {
+        if(code is CodeType currentType) {
             var typeName = GetTypeAlias(currentType, targetElement) ?? TranslateType(currentType);
             if (TypeExistInSameClassAsTarget(code, targetElement))
                 typeName = targetElement.Parent.Name.ToFirstCharacterUpperCase();
             if (code.ActionOf)
                 return WriteInlineDeclaration(currentType, targetElement, writer);
-            else
-                return $"{collectionPrefix}{typeName}{collectionSuffix}";
+            return $"{collectionPrefix}{typeName}{collectionSuffix}";
         }
-        else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+
+        throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
     #pragma warning restore CA1822 // Method should be static
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
-    public override string TranslateType(CodeType type) {
+    public override string TranslateType(CodeType type)
+    {
         if (type.IsExternal)
-            return TranslateExternalType(type);     
-        else
-            return TranslateInternalType(type);
+            return TranslateExternalType(type);
+        return TranslateInternalType(type);
     }
     private static string TranslateExternalType(CodeType type) {
         return type.Name switch  {
@@ -96,23 +99,23 @@ public class PythonConventionService : CommonLanguageConventionService
                 _ => type.Name.ToFirstCharacterUpperCase() ?? "object",
             };
     }
-    private static string TranslateInternalType(CodeType type) {
+    private static string TranslateInternalType(CodeType type)
+    {
         if (type.Name.Contains("RequestConfiguration"))
             return type.TypeDefinition?.Name.ToFirstCharacterUpperCase();
-        else if (type.Name.Contains("QueryParameters"))
+        if (type.Name.Contains("QueryParameters"))
             return type.Name;
-        else
-            return type.Name switch  {
-                "String" or "string" => "str",
-                "integer" or "int32" or "int64" or "byte" or "sbyte" => "int",
-                "decimal" or "double" => "float",
-                "Binary" or "binary" => "bytes",
-                "void" => "None",
-                "DateTimeOffset" => "datetime",
-                "boolean" => "bool",
-                "Object" or "object" or "float" or "bytes" or "datetime" or "timespan" => type.Name,
-                _ => $"{type.Name.ToSnakeCase()}.{type.Name.ToFirstCharacterUpperCase()}" ?? "object",
-            };
+        return type.Name switch  {
+            "String" or "string" => "str",
+            "integer" or "int32" or "int64" or "byte" or "sbyte" => "int",
+            "decimal" or "double" => "float",
+            "Binary" or "binary" => "bytes",
+            "void" => "None",
+            "DateTimeOffset" => "datetime",
+            "boolean" => "bool",
+            "Object" or "object" or "float" or "bytes" or "datetime" or "timespan" => type.Name,
+            _ => $"{type.Name.ToSnakeCase()}.{type.Name.ToFirstCharacterUpperCase()}" ?? "object",
+        };
     }
 
     #pragma warning disable CA1822 // Method should be static
@@ -148,8 +151,7 @@ public class PythonConventionService : CommonLanguageConventionService
         writer.DecreaseIndent();
         if(string.IsNullOrEmpty(innerDeclaration))
             return "object";
-        else
-            return $"{{{innerDeclaration}}}";
+        return $"{{{innerDeclaration}}}";
     }
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {

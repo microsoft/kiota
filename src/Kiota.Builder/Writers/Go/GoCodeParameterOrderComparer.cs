@@ -1,4 +1,6 @@
-﻿namespace Kiota.Builder.Writers.Go;
+﻿using Kiota.Builder.CodeDOM;
+
+namespace Kiota.Builder.Writers.Go;
 
 public class GoCodeParameterOrderComparer : BaseCodeParameterOrderComparer
 {

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Java;
 
@@ -90,7 +92,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, AddEnumSetImport);
     }
     private static readonly JavaConventionService conventionService = new();
-    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] {
+    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "com.microsoft.kiota", "RequestAdapter"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.PathParameters),
@@ -185,7 +187,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                     x.Type.Name = x.Type.Name[1..];
             });
         else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
-            currentMethod.ReturnType.Name = $"Map<String, Consumer<ParseNode>>";
+            currentMethod.ReturnType.Name = "Map<String, Consumer<ParseNode>>";
             currentMethod.Name = "getFieldDeserializers";
         }
         else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor)) {
@@ -203,7 +205,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
         CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
-                                                .Union(new CodeTypeBase[] { currentMethod.ReturnType})
+                                                .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
     }
     private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {

@@ -1,4 +1,6 @@
-﻿namespace Kiota.Builder.Refiners
+﻿using Kiota.Builder.CodeDOM;
+
+namespace Kiota.Builder.Refiners
 {
     public interface ILanguageRefiner
     {
@@ -33,8 +35,6 @@
                 case GenerationLanguage.Python:
                     new PythonRefiner(config).Refine(generatedCode);
                     break;
-                default:
-                    break; //Do nothing
             }
         }
     }

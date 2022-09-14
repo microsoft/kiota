@@ -1,4 +1,6 @@
-﻿namespace Kiota.Builder.Writers.CSharp
+﻿using Kiota.Builder.PathSegmenters;
+
+namespace Kiota.Builder.Writers.CSharp
 {
     public class CSharpWriter : LanguageWriter
     {

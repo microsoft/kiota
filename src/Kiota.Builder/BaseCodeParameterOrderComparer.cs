@@ -1,5 +1,6 @@
-using System;
 using System.Collections.Generic;
+
+using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder;
 public class BaseCodeParameterOrderComparer : IComparer<CodeParameter>

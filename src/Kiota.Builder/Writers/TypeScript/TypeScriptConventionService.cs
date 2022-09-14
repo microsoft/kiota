@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using static Kiota.Builder.CodeTypeBase;
+
+using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class TypeScriptConventionService : CommonLanguageConventionService
@@ -58,14 +61,14 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "[]";
         if(code is CodeComposedTypeBase currentUnion && currentUnion.Types.Any())
             return currentUnion.Types.Select(x => GetTypeString(x, targetElement)).Aggregate((x, y) => $"{x} | {y}") + collectionSuffix;
-        else if(code is CodeType currentType) {
+        if(code is CodeType currentType) {
             var typeName = GetTypeAlias(currentType, targetElement) ?? TranslateType(currentType);
             if (code.ActionOf)
                 return WriteInlineDeclaration(currentType, targetElement);
-            else
-                return $"{typeName}{collectionSuffix}";
+            return $"{typeName}{collectionSuffix}";
         }
-        else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+
+        throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement) {
         var parentBlock = targetElement.GetImmediateParentOfType<IBlock>();
@@ -96,8 +99,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         writer.DecreaseIndent();
         if(string.IsNullOrEmpty(innerDeclaration))
             return "object";
-        else
-            return $"{{{innerDeclaration}}}";
+        return $"{{{innerDeclaration}}}";
     }
 
     public override string TranslateType(CodeType type)

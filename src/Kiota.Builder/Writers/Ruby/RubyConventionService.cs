@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Ruby {
@@ -32,7 +34,8 @@ namespace Kiota.Builder.Writers.Ruby {
             if (code is CodeType currentType) {
                 return $"{TranslateType(currentType)}";
             }
-            else throw new InvalidOperationException();
+
+            throw new InvalidOperationException();
         }
         public override string TranslateType(CodeType type)
         {
@@ -50,12 +53,13 @@ namespace Kiota.Builder.Writers.Ruby {
             }
         }
         #pragma warning disable CA1822 // Method should be static
-        public string GetNormalizedNamespacePrefixForType(CodeTypeBase type) {
+        public string GetNormalizedNamespacePrefixForType(CodeTypeBase type)
+        {
             if(type is CodeType xType && 
-                (xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeEnum) &&
-                xType.TypeDefinition.Parent is CodeNamespace ns)
+               (xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeEnum) &&
+               xType.TypeDefinition.Parent is CodeNamespace ns)
                 return $"{ns.Name.NormalizeNameSpaceName("::")}::";
-            else return string.Empty;
+            return string.Empty;
         }
         #pragma warning restore CA1822 // Method should be static
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");

@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 
 /// <summary>
 /// 
@@ -13,7 +13,7 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
     public V StartBlock {get; set;}
     protected ConcurrentDictionary<string, CodeElement> InnerChildElements {get; private set;} = new (StringComparer.OrdinalIgnoreCase);
     public U EndBlock {get; set;}
-    public CodeBlock():base()
+    public CodeBlock()
     {
         StartBlock = new V { Parent = this };
         EndBlock = new U { Parent = this };
@@ -22,8 +22,7 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
     {
         if(innerOnly)
             return InnerChildElements.Values;
-        else
-            return new CodeElement[] { StartBlock, EndBlock }.Union(InnerChildElements.Values);
+        return new CodeElement[] { StartBlock, EndBlock }.Union(InnerChildElements.Values);
     }
     public void RemoveChildElement<T>(params T[] elements) where T: CodeElement {
         if(elements == null) return;
@@ -92,8 +91,9 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
             foreach(var childElement in InnerChildElements.Values.OfType<IBlock>())
                 result.AddRange(childElement.FindChildrenByName<T>(childName));
             return result;
-        } else
-            return Enumerable.Empty<T>();
+        }
+
+        return Enumerable.Empty<T>();
     }
     public T FindChildByName<T>(string childName, bool findInChildElements = true) where T: ICodeElement {
         if(string.IsNullOrEmpty(childName))
@@ -104,9 +104,9 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
 
         if(InnerChildElements.TryGetValue(childName, out var result) && result is T castResult)
             return castResult;
-        else if(findInChildElements)
+        if(findInChildElements)
             foreach(var childElement in InnerChildElements.Values.OfType<IBlock>()) {
-                var childResult = childElement.FindChildByName<T>(childName, true);
+                var childResult = childElement.FindChildByName<T>(childName);
                 if(childResult != null)
                     return childResult;
             }

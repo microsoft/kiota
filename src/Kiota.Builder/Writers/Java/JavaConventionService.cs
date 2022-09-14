@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
@@ -37,23 +39,23 @@ public class JavaConventionService : CommonLanguageConventionService
     {
         if(code is CodeComposedTypeBase) 
             throw new InvalidOperationException($"Java does not support union types, the union type {code.Name} should have been filtered out by the refiner");
-        else if (code is CodeType currentType) {
+        if (code is CodeType currentType) {
             var typeName = TranslateType(currentType);
             if(!currentType.IsExternal && IsSymbolDuplicated(typeName, targetElement))
                 typeName = $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
 
-            var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex && includeCollectionInformation ? "java.util.List<" : string.Empty;
+            var collectionPrefix = currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.Complex && includeCollectionInformation ? "java.util.List<" : string.Empty;
             var collectionSuffix = currentType.CollectionKind switch {
-                CodeType.CodeTypeCollectionKind.Complex when includeCollectionInformation => ">",
-                CodeType.CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
+                CodeTypeBase.CodeTypeCollectionKind.Complex when includeCollectionInformation => ">",
+                CodeTypeBase.CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
                 _ => string.Empty,
             };
             if (currentType.ActionOf)
                 return $"java.util.function.Consumer<{collectionPrefix}{typeName}{collectionSuffix}>";
-            else
-                return $"{collectionPrefix}{typeName}{collectionSuffix}";
+            return $"{collectionPrefix}{typeName}{collectionSuffix}";
         }
-        else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+
+        throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
     private static readonly CodeUsingDeclarationNameComparer usingDeclarationComparer = new();
     private static bool IsSymbolDuplicated(string symbol, CodeElement targetElement) {

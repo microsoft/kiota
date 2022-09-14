@@ -1,5 +1,4 @@
-using System;
-using System.Linq;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Java;

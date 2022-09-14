@@ -1,7 +1,10 @@
+using Kiota.Builder.Extensions;
+
 using Microsoft.OpenApi.Models;
+
 using Xunit;
 
-namespace Kiota.Builder.Extensions.Tests {
+namespace Kiota.Builder.Tests.Extensions {
     public class OpenApiReferenceExtensionsTests {
         [Fact]
         public void GetsClassName() {
@@ -12,8 +15,7 @@ namespace Kiota.Builder.Extensions.Tests {
         }
         [Fact]
         public void GetsClassNameDefensive() {
-            var reference = new OpenApiReference {
-            };
+            var reference = new OpenApiReference();
             Assert.Null(reference.GetClassName());
         }
     }

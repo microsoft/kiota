@@ -1,6 +1,6 @@
 ﻿using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 public enum CodePropertyKind
 {
     Custom,
@@ -48,23 +48,23 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     public CodeMethod Getter {get; set;}
     public CodeMethod Setter {get; set;}
     public CodeMethod GetterFromCurrentOrBaseType {
-        get {
+        get
+        {
             if (Getter != null)
                 return Getter;
-            else if (ExistsInBaseType)
+            if (ExistsInBaseType)
                 return OriginalPropertyFromBaseType.Getter;
-            else
-                return default;
+            return default;
         }
     }
     public CodeMethod SetterFromCurrentOrBaseType {
-        get {
+        get
+        {
             if (Setter != null)
                 return Setter;
-            else if (ExistsInBaseType)
+            if (ExistsInBaseType)
                 return OriginalPropertyFromBaseType.Setter;
-            else
-                return default;
+            return default;
         }
     }
     public CodeTypeBase Type {get => type ;set {

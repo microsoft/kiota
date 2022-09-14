@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.CSharp;
 
@@ -149,7 +151,7 @@ namespace Kiota.Builder.Writers.Shell
             // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
             WriteCommandHandlerBodyOutput(writer, originalMethod, isHandlerVoid);
             writer.DecreaseIndent();
-            writer.WriteLine($"}});");
+            writer.WriteLine("});");
             writer.WriteLine("return command;");
         }
 
@@ -213,7 +215,7 @@ namespace Kiota.Builder.Writers.Shell
         {
             if (isHandlerVoid)
             {
-                writer.WriteLine($"Console.WriteLine(\"Success\");");
+                writer.WriteLine("Console.WriteLine(\"Success\");");
             }
             else
             {
@@ -361,7 +363,7 @@ namespace Kiota.Builder.Writers.Shell
                     {
                         writer.WriteLine($"foreach (var cmd in builder.{method.Name}()) {{");
                         writer.IncreaseIndent();
-                        writer.WriteLine($"command.AddCommand(cmd);");
+                        writer.WriteLine("command.AddCommand(cmd);");
                         writer.CloseBlock();
                     }
                     else
@@ -380,7 +382,7 @@ namespace Kiota.Builder.Writers.Shell
             if (codeElement.OriginalMethod?.Kind == CodeMethodKind.ClientConstructor)
             {
                 var commandBuilderMethods = classMethods.Where(m => m.Kind == CodeMethodKind.CommandBuilder && m != codeElement).OrderBy(m => m.Name);
-                writer.WriteLine($"var command = new RootCommand();");
+                writer.WriteLine("var command = new RootCommand();");
                 WriteCommandDescription(codeElement, writer);
                 foreach (var method in commandBuilderMethods)
                 {
@@ -391,7 +393,7 @@ namespace Kiota.Builder.Writers.Shell
             }
             else if (codeElement.OriginalIndexer != null)
             {
-                writer.WriteLine($"var command = new Command(\"item\");");
+                writer.WriteLine("var command = new Command(\"item\");");
                 var targetClass = conventions.GetTypeString(codeElement.OriginalIndexer.ReturnType, codeElement);
                 var builderMethods = (codeElement.OriginalIndexer.ReturnType as CodeType).TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
                     .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
@@ -404,7 +406,7 @@ namespace Kiota.Builder.Writers.Shell
                     {
                         writer.WriteLine($"foreach (var cmd in builder.{method.Name}()) {{");
                         writer.IncreaseIndent();
-                        writer.WriteLine($"command.AddCommand(cmd);");
+                        writer.WriteLine("command.AddCommand(cmd);");
                         writer.CloseBlock();
                     }
                     else
@@ -452,7 +454,7 @@ namespace Kiota.Builder.Writers.Shell
                 }
             }
 
-            var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration }
+            var parametersList = new[] { requestParams.requestBody, requestParams.requestConfiguration }
                                 .Select(x => x?.Name).Where(x => x != null).DefaultIfEmpty().Aggregate((x, y) => $"{x}, {y}");
             var separator = string.IsNullOrWhiteSpace(parametersList) ? "" : ", ";
             WriteRequestInformation(writer, generatorMethod, parametersList, separator);
@@ -481,7 +483,7 @@ namespace Kiota.Builder.Writers.Shell
             {
                 writer.WriteLine($"var pagingData = new PageLinkData(requestInfo, null, itemName: \"{pageInfo.ItemName}\", nextLinkName: \"{pageInfo.NextLinkName}\");");
                 writer.WriteLine($"{(isVoid ? string.Empty : "var pageResponse = ")}await {pagingServiceParamName}.GetPagedDataAsync((info, handler, token) => RequestAdapter.{requestMethod}(info, cancellationToken: token, responseHandler: handler), pagingData, {allParamName}, {cancellationTokenParamName});");
-                writer.WriteLine($"var response = pageResponse?.Response;");
+                writer.WriteLine("var response = pageResponse?.Response;");
             }
             else
             {

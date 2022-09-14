@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Writers {
     public abstract class CommonLanguageConventionService : ILanguageConventionService {
         public abstract string StreamTypeName
@@ -28,13 +30,13 @@ namespace Kiota.Builder.Writers {
         public abstract string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null);
         public abstract string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null);
 
-        public string TranslateType(CodeTypeBase type) {
+        public string TranslateType(CodeTypeBase type)
+        {
             if(type is CodeType currentType)
                 return TranslateType(currentType);
-            else if(type is CodeComposedTypeBase currentUnionType)
+            if(type is CodeComposedTypeBase currentUnionType)
                 return TranslateType(currentUnionType.AllTypes.First());
-            else
-                throw new InvalidOperationException("Unknown type");
+            throw new InvalidOperationException("Unknown type");
         }
 
         public abstract string TranslateType(CodeType type);

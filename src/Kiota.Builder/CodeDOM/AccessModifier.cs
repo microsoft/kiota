@@ -1,4 +1,4 @@
-namespace Kiota.Builder {
+namespace Kiota.Builder.CodeDOM {
         public enum AccessModifier {
         Public = 2,
         Protected = 1,

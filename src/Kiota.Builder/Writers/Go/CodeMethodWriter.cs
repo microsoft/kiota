@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.Go {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionService>
@@ -751,7 +752,8 @@ namespace Kiota.Builder.Writers.Go {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyTypeName = conventions.GetTypeString(propType, parentClass, false, false);
             var propertyTypeNameWithoutImportSymbol = conventions.TranslateType(propType, false);
-            if(propType is CodeType currentType) {
+            if(propType is CodeType currentType)
+            {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
                         return $"GetCollectionOfPrimitiveValues(\"{propertyTypeName.ToFirstCharacterLowerCase()}\")";
@@ -759,7 +761,7 @@ namespace Kiota.Builder.Writers.Go {
                         return $"GetCollectionOfEnumValues({conventions.GetImportedStaticMethodName(propType, parentClass, "Parse")})";
                     else
                         return $"GetCollectionOfObjectValues({GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)})";
-                else if (currentType.TypeDefinition is CodeEnum currentEnum) {
+                if (currentType.TypeDefinition is CodeEnum currentEnum) {
                     return $"GetEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({conventions.GetImportedStaticMethodName(propType, parentClass, "Parse")})";
                 }
             }
@@ -771,10 +773,11 @@ namespace Kiota.Builder.Writers.Go {
                 _ => $"GetObjectValue({GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)})",
             };
         }
-        private string GetTypeFactory(CodeTypeBase propTypeBase, CodeClass parentClass, string propertyTypeName) {
+        private string GetTypeFactory(CodeTypeBase propTypeBase, CodeClass parentClass, string propertyTypeName)
+        {
             if(propTypeBase is CodeType propType)
                 return $"{conventions.GetImportedStaticMethodName(propType, parentClass, "Create", "FromDiscriminatorValue", "able")}";
-            else return GetTypeFactory(propTypeBase.AllTypes.First(), parentClass, propertyTypeName);
+            return GetTypeFactory(propTypeBase.AllTypes.First(), parentClass, propertyTypeName);
         }
         private void WriteSerializationMethodCall(CodeTypeBase propType, CodeElement parentBlock, string serializationKey, string valueGet, bool shouldDeclareErrorVar, LanguageWriter writer, bool addBlockForErrorScope = true) {
             serializationKey = $"\"{serializationKey}\"";
@@ -797,7 +800,7 @@ namespace Kiota.Builder.Writers.Go {
                 if(isInterface)
                     writer.WriteLine($"cast[i] = {GetTypeAssertion("v", parsableSymbol)}");
                 else
-                    writer.WriteLines($"temp := v", // temporary creating a new reference to avoid pointers to the same object
+                    writer.WriteLines("temp := v", // temporary creating a new reference to avoid pointers to the same object
                         $"cast[i] = {parsableSymbol}(&temp)");
                 writer.CloseBlock();
             }
@@ -808,9 +811,9 @@ namespace Kiota.Builder.Writers.Go {
                                     .Last()
                                     .ToFirstCharacterUpperCase();
             var reference = (isEnum, isComplexType, propType.IsCollection) switch {
-                (true, false, false) => $"&cast",
+                (true, false, false) => "&cast",
                 (true, false, true) => $"{conventions.GetTypeString(propType, parentBlock, false, false).Replace(propertyTypeName, "Serialize" + propertyTypeName)}({valueGet})", //importSymbol.SerializeEnumName
-                (false, true, true) => $"cast",
+                (false, true, true) => "cast",
                 (_, _, _) => valueGet,
             };
             if(isComplexType)

@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+
 namespace Kiota.Builder.Refiners;
 public class SwiftRefiner : CommonLanguageRefiner
 {
@@ -38,7 +41,7 @@ public class SwiftRefiner : CommonLanguageRefiner
             CorrectPropertyType,
             CorrectImplements);
     }
-    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "MicrosoftKiotaAbstractions", "RequestAdapter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -73,7 +76,7 @@ public class SwiftRefiner : CommonLanguageRefiner
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
         else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
-            currentMethod.ReturnType.Name = $"[String:FieldDeserializer<T>][String:FieldDeserializer<T>]";
+            currentMethod.ReturnType.Name = "[String:FieldDeserializer<T>][String:FieldDeserializer<T>]";
             currentMethod.Name = "getFieldDeserializers";
         } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor)) {
             var rawUrlParam = currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl);
@@ -94,7 +97,7 @@ public class SwiftRefiner : CommonLanguageRefiner
         }
         CorrectDateTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
-                                                .Union(new CodeTypeBase[] { currentMethod.ReturnType})
+                                                .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
     }
     private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {

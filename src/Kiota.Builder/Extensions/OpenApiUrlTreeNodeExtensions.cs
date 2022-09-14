@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 
@@ -36,7 +37,7 @@ namespace Kiota.Builder.Extensions {
         private static readonly char requestParametersSectionChar = '(';
         private static readonly char requestParametersSectionEndChar = ')';
         private const string WithKeyword = "With";
-        private static readonly MatchEvaluator requestParametersMatchEvaluator = (match) => {
+        private static readonly MatchEvaluator requestParametersMatchEvaluator = match => {
             return WithKeyword + match.Groups["paramName"].Value.ToFirstCharacterUpperCase();
         };
         private static string CleanupParametersFromPath(string pathSegment) {

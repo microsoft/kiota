@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+
+using Kiota.Builder.Extensions;
+
 using Microsoft.OpenApi.Models;
+
 using Xunit;
 
-namespace Kiota.Builder.Extensions.Tests;
+namespace Kiota.Builder.Tests.Extensions;
 public class OpenApiOperationExtensionsTests {
     [Fact]
     public void GetsResponseSchema() {
@@ -48,7 +52,7 @@ public class OpenApiOperationExtensionsTests {
     [Fact]
     public void Defensive() {
         var source = new Dictionary<string, OpenApiMediaType>();
-        Assert.Empty(source.GetValidSchemas(new HashSet<string>() { "application/json" }));
+        Assert.Empty(source.GetValidSchemas(new HashSet<string> { "application/json" }));
         Assert.Throws<ArgumentNullException>(() => source.GetValidSchemas(new HashSet<string>()));
         Assert.Throws<ArgumentNullException>(() => source.GetValidSchemas(null));
     }

@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Refiners;
+
 using Xunit;
 
-namespace Kiota.Builder.Refiners.Tests;
+namespace Kiota.Builder.Tests.Refiners;
 public class GoLanguageRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLangRefinerTests
@@ -199,7 +203,7 @@ public class GoLanguageRefinerTests {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };

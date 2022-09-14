@@ -1,14 +1,17 @@
 using System;
+
+using Kiota.Builder.CodeDOM;
+
 using Xunit;
 
-namespace Kiota.Builder.Tests {
+namespace Kiota.Builder.Tests.CodeDOM {
     public class CodePropertyTests {
         [Fact]
         public void Defensive() {
             var property = new CodeProperty {
                 Name = "prop",
             };
-            Assert.False(property.IsOfKind((CodePropertyKind[])null));
+            Assert.False(property.IsOfKind(null));
             Assert.False(property.IsOfKind(Array.Empty<CodePropertyKind>()));
         }
         [Fact]

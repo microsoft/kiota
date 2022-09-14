@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System;
+
+using Kiota.Builder.CodeDOM;
 
 //methods are added here as they are only valuable for the writing process and no other steps
-namespace Kiota.Builder.Writers.Extensions {
+namespace Kiota.Builder.Writers {
     public static class CodeClassExtensions {
         public static IEnumerable<CodeProperty> GetPropertiesOfKind(this CodeClass parentClass, params CodePropertyKind[] kinds) {
             if(parentClass == null)

@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.Java;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionService>
@@ -415,14 +416,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.DecreaseIndent();
         writer.WriteLine("}");
     }
-    private string GetSendRequestMethodName(bool isCollection, string returnType) {
+    private string GetSendRequestMethodName(bool isCollection, string returnType)
+    {
         if(conventions.PrimitiveTypes.Contains(returnType)) 
             if(isCollection)
                 return "sendPrimitiveCollectionAsync";
             else
-                return $"sendPrimitiveAsync";
-        else if(isCollection) return $"sendCollectionAsync";
-        else return $"sendAsync";
+                return "sendPrimitiveAsync";
+        if(isCollection) return "sendCollectionAsync";
+        return "sendAsync";
     }
     private const string RequestInfoVarName = "requestInfo";
     private const string RequestConfigVarName = "requestConfig";
@@ -432,7 +434,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                             .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                             ?.Name
                                             ?.ToFirstCharacterLowerCase();
-        var paramsList = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration };
+        var paramsList = new[] { requestParams.requestBody, requestParams.requestConfiguration };
         var requestInfoParameters = paramsList.Where(x => x != null)
                                             .Select(x => x.Name)
                                             .ToList();
@@ -618,7 +620,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = conventions.GetTypeString(propType, method, false);
-        if(propType is CodeType currentType) {
+        if(propType is CodeType currentType)
+        {
             if(isCollection)
                 if(currentType.TypeDefinition == null)
                     return $"getCollectionOfPrimitiveValues({propertyType.ToFirstCharacterUpperCase()}.class)";
@@ -626,7 +629,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                     return $"getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}.class)";
                 else
                     return $"getCollectionOfObjectValues({propertyType.ToFirstCharacterUpperCase()}::{FactoryMethodName})";
-            else if (currentType.TypeDefinition is CodeEnum currentEnum)
+            if (currentType.TypeDefinition is CodeEnum currentEnum)
                 return $"getEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({propertyType.ToFirstCharacterUpperCase()}.class)";
         }
         return propertyType switch
@@ -639,22 +642,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = conventions.GetTypeString(propType, method, false);
-        if(propType is CodeType currentType) {
+        if(propType is CodeType currentType)
+        {
             if(isCollection)
                 if(currentType.TypeDefinition == null)
-                    return $"writeCollectionOfPrimitiveValues";
+                    return "writeCollectionOfPrimitiveValues";
                 else if(currentType.TypeDefinition is CodeEnum)
-                    return $"writeCollectionOfEnumValues";
+                    return "writeCollectionOfEnumValues";
                 else
-                    return $"writeCollectionOfObjectValues";
-            else if (currentType.TypeDefinition is CodeEnum currentEnum)
+                    return "writeCollectionOfObjectValues";
+            if (currentType.TypeDefinition is CodeEnum currentEnum)
                 return $"writeEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value";
         }
         return propertyType switch
         {
             "byte[]" => "writeByteArrayValue",
             _ when conventions.PrimitiveTypes.Contains(propertyType) => $"write{propertyType}Value",
-            _ => $"writeObjectValue",
+            _ => "writeObjectValue",
         };
     }
 }

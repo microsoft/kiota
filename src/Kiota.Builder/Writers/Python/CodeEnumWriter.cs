@@ -1,4 +1,6 @@
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Python;
@@ -9,7 +11,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PythonConventionServic
     {
         if(!codeElement.Options.Any())
             return;
-        writer.WriteLine($"from enum import Enum");
+        writer.WriteLine("from enum import Enum");
         writer.WriteLine();
         writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}(Enum):");
         writer.IncreaseIndent();

@@ -1,7 +1,10 @@
 using System;
+
+using Kiota.Builder.Writers.CSharp;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.CSharp.Tests {
+namespace Kiota.Builder.Tests.Writers.CSharp {
     public class CSharpWriterTests {
         [Fact]
         public void Instanciates() {
