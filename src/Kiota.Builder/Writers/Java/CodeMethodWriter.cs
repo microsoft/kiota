@@ -87,7 +87,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType || parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             writer.WriteLine($"final {codeElement.Parent.Name.ToFirstCharacterUpperCase()} {ResultVarName} = new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
-        var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorBody && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
+        var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
         if(writeDiscriminatorValueRead) {
             writer.WriteLine($"final ParseNode mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\");");
             writer.StartBlock("if (mappingValueNode != null) {");

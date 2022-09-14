@@ -76,6 +76,15 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     public CodeClass GetParentClass() {
         return StartBlock.Inherits?.TypeDefinition as CodeClass;
     }
+    public bool DerivesFrom(CodeClass codeClass) {
+        ArgumentNullException.ThrowIfNull(codeClass);
+        var parent = GetParentClass();
+        if (parent == null)
+            return false;
+        if (parent == codeClass)
+            return true;
+        return parent.DerivesFrom(codeClass);
+    }
     
     public CodeClass GetGreatestGrandparent(CodeClass startClassToSkip = null) {
         var parentClass = GetParentClass();

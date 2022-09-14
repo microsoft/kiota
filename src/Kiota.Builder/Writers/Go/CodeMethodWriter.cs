@@ -84,7 +84,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"{ResultVarName} := New{codeElement.Parent.Name.ToFirstCharacterUpperCase()}()");
             if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck)
                 writer.StartBlock($"if {parseNodeParameter.Name.ToFirstCharacterLowerCase()} != nil {{");
-            var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorBody && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
+            var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
             if(writeDiscriminatorValueRead) {
                 writer.WriteLine($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")");
                 WriteReturnError(writer, codeElement.ReturnType.Name);
@@ -107,10 +107,10 @@ namespace Kiota.Builder.Writers.Go {
             }
 
             if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType || parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType) {
-                if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
-                    WriteFactoryMethodBodyForUnionModelForUnDiscriminatedTypes(parentClass, parseNodeParameter, writer);
                 if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck)
                     writer.CloseBlock();
+                if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+                    WriteFactoryMethodBodyForUnionModelForUnDiscriminatedTypes(parentClass, parseNodeParameter, writer);
                 writer.WriteLine($"return {ResultVarName}, nil");
             } else {
                 if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck)
