@@ -201,7 +201,7 @@ Any valid MIME type which will match a request body type or a response type in t
 ## Examples
 
 ```shell
-kiota.exe -d ./mail.yml --language csharp -o ../somepath -n Contoso.ApiClient
+kiota --structured-mime-types application/json
 ```
 
 ## Adding an SDK to a project
