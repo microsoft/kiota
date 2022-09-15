@@ -70,6 +70,14 @@ namespace Kiota.Builder.Extensions {
         {
             return schema?.OneOf?.Count(IsSemanticallyMeaningful) > 1;
         }
+        public static bool IsEnum(this OpenApiSchema schema)
+        {
+            return schema?.Enum?.Any() ?? false;
+        }
+        public static bool IsComposedEnum(this OpenApiSchema schema)
+        {
+            return ((schema.IsAnyOf() && schema.AnyOf.Any(x => x.IsEnum())) || (schema.IsOneOf() && schema.OneOf.Any(x => x.IsEnum())));
+        }
         private static bool IsSemanticallyMeaningful(this OpenApiSchema schema)
         {
             return schema.Properties.Any() || schema.Items != null || !string.IsNullOrEmpty(schema.Type) || !string.IsNullOrEmpty(schema.Format) || !string.IsNullOrEmpty(schema.Reference?.Id);

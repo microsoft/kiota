@@ -2986,6 +2986,187 @@ components:
         Assert.Null(modelsNS.FindChildByName<CodeClass>("With", false));
     }
     [Fact]
+    public void HandlesCollectionOfEnumSchemasInAnyOfWithNullable(){
+        var enumSchema = new OpenApiSchema
+        {
+            Title = "riskLevel",
+            Enum = new List<IOpenApiAny>
+            {
+                new OpenApiString("low"),
+                new OpenApiString("medium"),
+                new OpenApiString("high"),
+                new OpenApiString("hidden"),
+                new OpenApiString("none"),
+                new OpenApiString("unknownFutureValue")
+            },
+            Type = "string"
+        };
+        var myObjectSchema = new OpenApiSchema {
+            Title = "conditionalAccessConditionSet",
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "signInRiskLevels", new OpenApiSchema {
+                        Type = "array",
+                        Items = new OpenApiSchema
+                        {
+                            AnyOf = new List<OpenApiSchema>
+                            {
+                                enumSchema,
+                                new OpenApiSchema
+                                {
+                                    Type = "object",
+                                    Nullable = true
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    },
+                    {
+                        "riskLevel", enumSchema
+                    }
+                },
+                
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
+        Assert.NotNull(modelsNS);
+        var responseClass = modelsNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model) && x.Name.Equals("myobject", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(responseClass);
+        var property = responseClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("signInRiskLevels", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.NotEmpty(property.Type.Name);
+        var codeType = property.Type as CodeType;
+        Assert.NotNull(codeType);
+        Assert.IsType<CodeEnum>(codeType.TypeDefinition);// Ensure the collection is a codeEnum
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex,codeType.CollectionKind);// Ensure the collection is a codeEnum
+    }
+    [Fact]
+    public void HandlesCollectionOfEnumSchemas(){
+        var enumSchema = new OpenApiSchema
+        {
+            Title = "riskLevel",
+            Enum = new List<IOpenApiAny>
+            {
+                new OpenApiString("low"),
+                new OpenApiString("medium"),
+                new OpenApiString("high"),
+                new OpenApiString("hidden"),
+                new OpenApiString("none"),
+                new OpenApiString("unknownFutureValue")
+            },
+            Type = "string"
+        };
+        var myObjectSchema = new OpenApiSchema {
+            Title = "conditionalAccessConditionSet",
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "signInRiskLevels", new OpenApiSchema {
+                        Type = "array",
+                        Items = enumSchema
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    },
+                    {
+                        "riskLevel", enumSchema
+                    }
+                },
+                
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
+        Assert.NotNull(modelsNS);
+        var responseClass = modelsNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model) && x.Name.Equals("myobject", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(responseClass);
+        var property = responseClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("signInRiskLevels", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.NotEmpty(property.Type.Name);
+        var codeType = property.Type as CodeType;
+        Assert.NotNull(codeType);
+        Assert.IsType<CodeEnum>(codeType.TypeDefinition);// Ensure the collection is a codeEnum
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex,codeType.CollectionKind);// Ensure the collection is a codeEnum
+    }
+    [Fact]
     public void InlinePropertiesGenerateTypes(){
         var myObjectSchema = new OpenApiSchema {
             Type = "object",

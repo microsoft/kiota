@@ -602,7 +602,7 @@ public class KiotaBuilder
         var typeName = typeNames.FirstOrDefault(static x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
         
         var isExternal = false;
-        if (typeSchema?.Items?.Enum?.Any() ?? false)
+        if (typeSchema?.Items?.IsEnum() ?? false)
             typeName = childType;
         else {
             var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
@@ -961,7 +961,7 @@ public class KiotaBuilder
             return CreateComposedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody);
         }
 
-        if(schema.IsObject() || schema.Properties.Any() || schema.Enum.Any() || !string.IsNullOrEmpty(schema.AdditionalProperties?.Type)) {
+        if(schema.IsObject() || schema.Properties.Any() || schema.IsEnum() || !string.IsNullOrEmpty(schema.AdditionalProperties?.Type)) {
             // no inheritance or union type, often empty definitions with only additional properties are used as property bags.
             return CreateModelDeclarationAndType(currentNode, schema, operation, codeNamespace, suffix, response: responseValue, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody);
         }
@@ -980,7 +980,10 @@ public class KiotaBuilder
     private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
     {
         CodeTypeBase type = GetPrimitiveType(schema?.Items, string.Empty);
-        if (string.IsNullOrEmpty(type?.Name))
+        bool isEnumOrComposedCollectionType =    (schema?.Items.IsEnum() ?? false) //the collection could be an enum type so override with strong type instead of string type.
+                                    || ((schema?.Items.IsComposedEnum() ?? false) && string.IsNullOrEmpty(schema?.Items.Format));//the collection could be a composed type with an enum type so override with strong type instead of string type.
+        if (   string.IsNullOrEmpty(type?.Name) 
+               || isEnumOrComposedCollectionType)
         {
             var targetNamespace = schema?.Items == null ? codeNamespace : GetShortestNamespace(codeNamespace, schema.Items);
             type = CreateModelDeclarations(currentNode, schema?.Items, operation, targetNamespace, default , typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody);
@@ -1002,7 +1005,7 @@ public class KiotaBuilder
         var existingDeclaration = GetExistingDeclaration(currentNamespace, currentNode, declarationName);
         if(existingDeclaration == null) // we can find it in the components
         {
-            if(schema.Enum.Any()) {
+            if(schema.IsEnum()) {
                 var newEnum = new CodeEnum { 
                     Name = declarationName,//TODO set the flag property
                     Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel),
