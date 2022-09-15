@@ -324,8 +324,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 var collectionMethod = propType.IsArray ? "?.ToArray()" : "?.ToList()";
                 if (currentType.TypeDefinition == null)
                     return $"GetCollectionOfPrimitiveValues<{propertyType}>(){collectionMethod}";
-                else if (currentType.TypeDefinition is CodeEnum enumType)
-                    return $"GetCollectionOfEnumValues<{enumType.Name.ToFirstCharacterUpperCase()}>(){collectionMethod}";
+                else if (currentType.TypeDefinition is CodeEnum)
+                    return $"GetCollectionOfEnumValues<{propertyType.TrimEnd('?')}>(){collectionMethod}";
                 else
                     return $"GetCollectionOfObjectValues<{propertyType}>({propertyType}.CreateFromDiscriminatorValue){collectionMethod}";
             } else if (currentType.TypeDefinition is CodeEnum enumType)
@@ -567,8 +567,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             if (isCollection)
                 if (currentType.TypeDefinition == null)
                     return $"WriteCollectionOfPrimitiveValues<{propertyType}>";
-                else if (currentType.TypeDefinition is CodeEnum enumType)
-                    return $"WriteCollectionOfEnumValues<{enumType.Name.ToFirstCharacterUpperCase()}>";
+                else if (currentType.TypeDefinition is CodeEnum)
+                    return $"WriteCollectionOfEnumValues<{propertyType.TrimEnd('?')}>";
                 else
                     return $"WriteCollectionOfObjectValues<{propertyType}>";
             else if (currentType.TypeDefinition is CodeEnum enumType)

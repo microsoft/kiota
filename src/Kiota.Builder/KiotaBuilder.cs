@@ -980,7 +980,10 @@ public class KiotaBuilder
     private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
     {
         CodeTypeBase type = GetPrimitiveType(schema?.Items, string.Empty);
-        if (string.IsNullOrEmpty(type?.Name))
+        bool isEnumCollectionType =    (schema?.Items.Enum.Any() ?? false) //the collection could be an enum type so override with strong type instead of string type.
+                                    || ((schema?.Items.IsAnyOf() ?? false) || (schema?.Items.IsOneOf() ?? false)) && string.IsNullOrEmpty(schema?.Items.Format);//the collection could be a composed type with an enum type so override with strong type instead of string type.
+        if (   string.IsNullOrEmpty(type?.Name) 
+               || isEnumCollectionType)
         {
             var targetNamespace = schema?.Items == null ? codeNamespace : GetShortestNamespace(codeNamespace, schema.Items);
             type = CreateModelDeclarations(currentNode, schema?.Items, operation, targetNamespace, default , typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody);
