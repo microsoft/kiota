@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using static Kiota.Builder.CodeTypeBase;
+
+using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.CSharp {
     public class CSharpConventionService : CommonLanguageConventionService {
@@ -52,28 +55,29 @@ namespace Kiota.Builder.Writers.CSharp {
             if(_namespaceSegmentsNames == null) {
                 lock(_namespaceSegmentsNamesLock) {
                     var rootNamespace = currentElement.GetImmediateParentOfType<CodeNamespace>().GetRootNamespace();
-                    var names = new List<string>(GetNamespaceNameSegments(rootNamespace).Distinct(StringComparer.OrdinalIgnoreCase));
-                    _namespaceSegmentsNames = new (names, StringComparer.OrdinalIgnoreCase);
+                    _namespaceSegmentsNames = GetNamespaceNameSegments(rootNamespace).ToHashSet(StringComparer.OrdinalIgnoreCase);
                     _namespaceSegmentsNames.Add("keyvaluepair"); //workaround as System.Collections.Generic imports keyvalue pair
                 }
             }
             return _namespaceSegmentsNames;
         }
         private static IEnumerable<string> GetNamespaceNameSegments(CodeNamespace ns) {
-            if(!string.IsNullOrEmpty(ns.Name))
-                foreach(var segment in ns.Name.Split('.', StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.OrdinalIgnoreCase))
-                    yield return segment;
-            foreach(var childNs in ns.Namespaces)
-                foreach(var segment in GetNamespaceNameSegments(childNs))
-                    yield return segment;
+            return (string.IsNullOrEmpty(ns.Name) ? Enumerable.Empty<string>() :
+                                                    ns.Name.Split('.', StringSplitOptions.RemoveEmptyEntries))
+                    .Union(ns.Namespaces.SelectMany(static x => GetNamespaceNameSegments(x)))
+                    .Distinct(StringComparer.OrdinalIgnoreCase);
         }
-        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
+        {
+            return GetTypeString(code, targetElement, includeCollectionInformation, true);
+        }
+        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool includeNullableInformation)
         {
             if(code is CodeComposedTypeBase)
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
-            else if (code is CodeType currentType) {
+            if (code is CodeType currentType) {
                 var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
-                var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) ? NullableMarkerAsString : string.Empty;
+                var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) && includeNullableInformation ? NullableMarkerAsString : string.Empty;
                 var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex && includeCollectionInformation ? "List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind switch {
                     CodeTypeCollectionKind.Complex when includeCollectionInformation => ">",
@@ -82,29 +86,29 @@ namespace Kiota.Builder.Writers.CSharp {
                 };
                 if (currentType.ActionOf)
                     return $"Action<{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}>";
-                else
-                    return $"{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}";
+                return $"{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}";
             }
-            else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+
+            throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
         private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
         {
             var parentElements = new List<string>();
             if (targetElement.Parent is CodeClass parentClass)
             {
-                parentElements.AddRange(parentClass.Methods.Select(x => x.Name).Union(parentClass.Properties.Select(x => x.Name)));
+                parentElements.AddRange(parentClass.Methods.Select(static x => x.Name).Union(parentClass.Properties.Select(static x => x.Name)));
                 
                 if (targetElement is CodeMethod discriminatorMethod && discriminatorMethod.IsOfKind(CodeMethodKind.Factory))
                 {
                     // Get the discriminator mappings that refer to types  are in a different namespace that are have the same name
                     // E.g. DataSource from Microsoft.Graph.Beta.Models.Ediscovery and DataSource from Microsoft.Graph.Beta.Models.Security will need to be disambiguated.
-                    var duplicateMappingTypes = discriminatorMethod.DiscriminatorMappings.Select(x => x.Value).OfType<CodeType>()
+                    var duplicateMappingTypes = parentClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Value).OfType<CodeType>()
                         .Where(x => !DoesTypeExistsInSameNamesSpaceAsTarget(x, targetElement))
-                        .Select(x => x.Name)
-                        .GroupBy(x => x)
-                        .Where(group => group.Count() > 1)
-                        .Select(x => x.Key);
-                    
+                        .Select(static x => x.Name)
+                        .GroupBy(static x => x, StringComparer.OrdinalIgnoreCase)
+                        .Where(static group => group.Count() > 1)
+                        .Select(static x => x.Key);
+
                     parentElements.AddRange(duplicateMappingTypes);
                 }
             }
@@ -120,8 +124,7 @@ namespace Kiota.Builder.Writers.CSharp {
                     )
                 )
                 return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
-            else
-                return typeName;
+            return typeName;
         }
 
         private static bool DoesTypeExistsInSameNamesSpaceAsTarget(CodeType currentType, CodeElement targetElement)
@@ -143,7 +146,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 var rootNs = ns?.GetRootNamespace();
                 while (ns is not null && ns != rootNs && !hasChildWithName)
                 {
-                    hasChildWithName = ns.GetChildElements(true).OfType<CodeClass>().Any(c => c.Name?.Equals(typeName) == true);
+                    hasChildWithName = ns.GetChildElements(true).OfType<CodeClass>().Any(c => c.Name?.Equals(typeName, StringComparison.OrdinalIgnoreCase) == true);
                     ns = ns.Parent is CodeNamespace n ? n : (ns.GetImmediateParentOfType<CodeNamespace>());
                 }
             }
@@ -170,7 +173,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 _ => false,
             };
         }
-        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
         {
             var parameterType = GetTypeString(parameter.Type, targetElement);
             var defaultValue = parameter switch {

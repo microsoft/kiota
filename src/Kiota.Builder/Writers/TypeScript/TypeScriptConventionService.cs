@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using static Kiota.Builder.CodeTypeBase;
+
+using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class TypeScriptConventionService : CommonLanguageConventionService
@@ -47,25 +50,25 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
-    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
     {
         var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
         return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {GetTypeString(parameter.Type, targetElement)}{(parameter.Type.IsNullable ? " | undefined": string.Empty)}{defaultValueSuffix}";
     }
-    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true) {
+    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null) {
         if(code is null)
             return null;
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "[]";
         if(code is CodeComposedTypeBase currentUnion && currentUnion.Types.Any())
             return currentUnion.Types.Select(x => GetTypeString(x, targetElement)).Aggregate((x, y) => $"{x} | {y}") + collectionSuffix;
-        else if(code is CodeType currentType) {
+        if(code is CodeType currentType) {
             var typeName = GetTypeAlias(currentType, targetElement) ?? TranslateType(currentType);
             if (code.ActionOf)
                 return WriteInlineDeclaration(currentType, targetElement);
-            else
-                return $"{typeName}{collectionSuffix}";
+            return $"{typeName}{collectionSuffix}";
         }
-        else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+
+        throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement) {
         var parentBlock = targetElement.GetImmediateParentOfType<IBlock>();
@@ -96,8 +99,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         writer.DecreaseIndent();
         if(string.IsNullOrEmpty(innerDeclaration))
             return "object";
-        else
-            return $"{{{innerDeclaration}}}";
+        return $"{{{innerDeclaration}}}";
     }
 
     public override string TranslateType(CodeType type)

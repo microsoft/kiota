@@ -1,6 +1,8 @@
+using Kiota.Builder.CodeDOM;
+
 using Xunit;
 
-namespace Kiota.Builder.Tests {
+namespace Kiota.Builder.Tests.CodeDOM {
     public class CodeIndexerTests {
         [Fact]
         public void IndexerInits() {
@@ -8,8 +10,8 @@ namespace Kiota.Builder.Tests {
                 Name = "idx",
                 Description = "some description"
             };
-            indexer.IndexType = new CodeType {};
-            indexer.ReturnType = new CodeType {};
+            indexer.IndexType = new CodeType();
+            indexer.ReturnType = new CodeType();
         }
     }
     

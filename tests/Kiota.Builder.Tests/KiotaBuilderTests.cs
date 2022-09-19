@@ -3,13 +3,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
+
 using Moq;
+
 using Xunit;
 
 namespace Kiota.Builder.Tests;
@@ -18,9 +24,9 @@ public class KiotaBuilderTests
     [Fact]
     public async Task ThrowsOnMissingServer() {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await File.WriteAllLinesAsync(tempFilePath, new string[] {"openapi: 3.0.0", "info:", "  title: \"Todo API\"", "  version: \"1.0.0\""});
+        await File.WriteAllLinesAsync(tempFilePath, new[] {"openapi: 3.0.0", "info:", "  title: \"Todo API\"", "  version: \"1.0.0\""});
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
         await Assert.ThrowsAsync<InvalidOperationException>(() => builder.GenerateSDK(new()));
         File.Delete(tempFilePath);
     }
@@ -72,7 +78,7 @@ components:
           - value: Standard_RAGRS
           - value: Premium_LRS");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
         using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = builder.CreateOpenApiDocument(fs);
         var node = builder.CreateUriSpace(document);
@@ -90,9 +96,9 @@ components:
     [Fact]
     public async Task DoesntThrowOnMissingServerForV2() {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await File.WriteAllLinesAsync(tempFilePath, new string[] {"swagger: 2.0", "title: \"Todo API\"", "version: \"1.0.0\"", "host: mytodos.doesntexit", "basePath: v2", "schemes:", " - https"," - http"});
+        await File.WriteAllLinesAsync(tempFilePath, new[] {"swagger: 2.0", "title: \"Todo API\"", "version: \"1.0.0\"", "host: mytodos.doesntexit", "basePath: v2", "schemes:", " - https"," - http"});
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
         await builder.GenerateSDK(new());
         File.Delete(tempFilePath);
     }
@@ -101,7 +107,7 @@ components:
     {
         var node = OpenApiUrlTreeNode.Create();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var codeModel = builder.CreateSourceModel(node);
 
         Assert.Single(codeModel.GetChildElements(true));
@@ -110,16 +116,18 @@ components:
     public void Single_path_with_get_collection()
     {
         var node = OpenApiUrlTreeNode.Create();
-        node.Attach("tasks", new OpenApiPathItem() {
+        node.Attach("tasks", new OpenApiPathItem
+        {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation() { 
+                [OperationType.Get] = new OpenApiOperation
+                { 
                     Responses = new OpenApiResponses
                     {
-                        ["200"] = new OpenApiResponse()
+                        ["200"] = new OpenApiResponse
                         {
                             Content =
                             {
-                                ["application/json"] = new OpenApiMediaType()
+                                ["application/json"] = new OpenApiMediaType
                                 {
                                     Schema = new OpenApiSchema
                                     {
@@ -137,7 +145,7 @@ components:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var codeModel = builder.CreateSourceModel(node);
 
         var rootNamespace = codeModel.GetChildElements(true).Single();
@@ -150,18 +158,71 @@ components:
         Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, returnType.CollectionKind);
     }
     [Fact]
-    public void OData_doubles_as_any_of(){
+    public void OData_doubles_as_one_of(){
         var node = OpenApiUrlTreeNode.Create();
-        node.Attach("tasks", new OpenApiPathItem() {
+        node.Attach("tasks", new OpenApiPathItem
+        {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation() { 
+                [OperationType.Get] = new OpenApiOperation
+                { 
                     Responses = new OpenApiResponses
                     {
-                        ["200"] = new OpenApiResponse()
+                        ["200"] = new OpenApiResponse
                         {
                             Content =
                             {
-                                ["application/json"] = new OpenApiMediaType()
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema
+                                    {
+                                        Type = "object",
+                                        Properties = new Dictionary<string, OpenApiSchema> {
+                                            {
+                                                "progress", new OpenApiSchema{
+                                                    OneOf = new List<OpenApiSchema>{
+                                                        new OpenApiSchema{
+                                                            Type = "number"
+                                                        },
+                                                        new OpenApiSchema{
+                                                            Type = "string"
+                                                        },
+                                                        new OpenApiSchema {
+                                                            Enum = new List<IOpenApiAny> { new OpenApiString("-INF"), new OpenApiString("INF"), new OpenApiString("NaN") }
+                                                        }
+                                                    },
+                                                    Format = "double"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } 
+        }, "default");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var codeModel = builder.CreateSourceModel(node);
+        var progressProp = codeModel.FindChildByName<CodeProperty>("progress");
+        Assert.Equal("double", progressProp.Type.Name);
+    }
+    [Fact]
+    public void OData_doubles_as_any_of(){
+        var node = OpenApiUrlTreeNode.Create();
+        node.Attach("tasks", new OpenApiPathItem
+        {
+            Operations = {
+                [OperationType.Get] = new OpenApiOperation
+                { 
+                    Responses = new OpenApiResponses
+                    {
+                        ["200"] = new OpenApiResponse
+                        {
+                            Content =
+                            {
+                                ["application/json"] = new OpenApiMediaType
                                 {
                                     Schema = new OpenApiSchema
                                     {
@@ -193,9 +254,9 @@ components:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var codeModel = builder.CreateSourceModel(node);
-        var progressProp = codeModel.FindChildByName<CodeProperty>("progress", true);
+        var progressProp = codeModel.FindChildByName<CodeProperty>("progress");
         Assert.Equal("double", progressProp.Type.Name);
     }
     [Fact]
@@ -214,20 +275,27 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference() {
+            Reference = new OpenApiReference
+            {
                 Id = "#/components/schemas/microsoft.graph.user"
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["users/{id}"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["users/{id}"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
                             Responses = new OpenApiResponses {
-                                ["200"] = new OpenApiResponse() {
+                                ["200"] = new OpenApiResponse
+                                {
                                     Content = {
-                                        ["application/json"] = new OpenApiMediaType() {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchema {
                                                 Type = "object",
                                                 Properties = new Dictionary<string, OpenApiSchema> {
@@ -247,7 +315,8 @@ components:
                     }
                 },
             },
-            Components = new OpenApiComponents() {
+            Components = new OpenApiComponents
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "microsoft.graph.user", userSchema
@@ -257,7 +326,7 @@ components:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         builder.CreateUriSpace(document);//needed so the component index exists
         var codeModel = builder.CreateSourceModel(node);
         var userClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("user");
@@ -265,15 +334,21 @@ components:
     }
     [Fact]
     public void TextPlainEndpointsAreSupported() {
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["users/$count"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["users/$count"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
                             Responses = new OpenApiResponses {
-                                ["200"] = new OpenApiResponse() {
+                                ["200"] = new OpenApiResponse
+                                {
                                     Content = {
-                                        ["text/plain"] = new OpenApiMediaType() {
+                                        ["text/plain"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchema {
                                                 Type = "number",
                                                 Format = "int32",
@@ -289,7 +364,7 @@ components:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         builder.CreateUriSpace(document);//needed so the component index exists
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderClass = codeModel.FindChildByName<CodeClass>("CountRequestBuilder");
@@ -325,7 +400,7 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference()
+            Reference = new OpenApiReference
             {
                 Id = "#/components/schemas/microsoft.graph.resourceAction"
             },
@@ -346,20 +421,21 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference()
+            Reference = new OpenApiReference
             {
                 Id = "#/components/schemas/microsoft.graph.rolePermission"
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument()
+        var document = new OpenApiDocument
         {
-            Paths = new OpenApiPaths()
+            Paths = new OpenApiPaths
             {
-                ["/deviceManagement/microsoft.graph.getEffectivePermissions(scope='{scope}')"] = new OpenApiPathItem()
+                ["/deviceManagement/microsoft.graph.getEffectivePermissions(scope='{scope}')"] = new OpenApiPathItem
                 {
                     Parameters = {
-                        new OpenApiParameter() {
+                        new OpenApiParameter
+                        {
                             Name = "scope",
                             In = ParameterLocation.Path,
                             Required = true,
@@ -369,11 +445,14 @@ components:
                         }
                     },
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
                             Responses = new OpenApiResponses {
-                                ["200"] = new OpenApiResponse() {
+                                ["200"] = new OpenApiResponse
+                                {
                                     Content = {
-                                        ["application/json"] = new OpenApiMediaType() {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchema {
                                                 Type = "array",
                                                 Items = new OpenApiSchema {
@@ -390,7 +469,7 @@ components:
                     }
                 },
             },
-            Components = new OpenApiComponents()
+            Components = new OpenApiComponents
             {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     { "microsoft.graph.rolePermission", permissionSchema },
@@ -400,7 +479,7 @@ components:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         builder.CreateUriSpace(document);//needed so the component index exists
         var codeModel = builder.CreateSourceModel(node);
         var deviceManagementNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement");
@@ -443,7 +522,7 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference()
+            Reference = new OpenApiReference
             {
                 Id = "#/components/schemas/microsoft.graph.resourceAction"
             },
@@ -464,20 +543,21 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference()
+            Reference = new OpenApiReference
             {
                 Id = "#/components/schemas/microsoft.graph.rolePermission"
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument()
+        var document = new OpenApiDocument
         {
-            Paths = new OpenApiPaths()
+            Paths = new OpenApiPaths
             {
-                ["/deviceManagement/microsoft.graph.getEffectivePermissions(scope='{scope}')"] = new OpenApiPathItem()
+                ["/deviceManagement/microsoft.graph.getEffectivePermissions(scope='{scope}')"] = new OpenApiPathItem
                 {
                     Parameters = {
-                        new OpenApiParameter() {
+                        new OpenApiParameter
+                        {
                             Name = "scope",
                             In = ParameterLocation.Path,
                             Required = true,
@@ -485,7 +565,7 @@ components:
                                 Type = "string"
                             }
                         },
-                        new OpenApiParameter()
+                        new OpenApiParameter
                         {
                             Name = "select",
                             In = ParameterLocation.Query,
@@ -494,7 +574,7 @@ components:
                                 Type = "string"
                             },
                         },
-                        new OpenApiParameter()
+                        new OpenApiParameter
                         {
                             Name = "If-Match",
                             In = ParameterLocation.Header,
@@ -504,7 +584,7 @@ components:
                                 Type = "string"
                             },
                         },
-                        new OpenApiParameter()
+                        new OpenApiParameter
                         {
                             Name = "ConsistencyLevel",
                             In = ParameterLocation.Header,
@@ -516,11 +596,14 @@ components:
                         }
                     },
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
                             Responses = new OpenApiResponses {
-                                ["200"] = new OpenApiResponse() {
+                                ["200"] = new OpenApiResponse
+                                {
                                     Content = {
-                                        ["application/json"] = new OpenApiMediaType() {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchema {
                                                 Type = "array",
                                                 Items = new OpenApiSchema {
@@ -537,7 +620,7 @@ components:
                     }
                 },
             },
-            Components = new OpenApiComponents()
+            Components = new OpenApiComponents
             {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     { "microsoft.graph.rolePermission", permissionSchema },
@@ -547,7 +630,7 @@ components:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = GenerationLanguage.Shell });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = GenerationLanguage.Shell });
         builder.CreateUriSpace(document);//needed so the component index exists
         var codeModel = builder.CreateSourceModel(node);
         var deviceManagementNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement");
@@ -585,20 +668,27 @@ components:
                     }
                 }
             },
-            Reference = new OpenApiReference() {
+            Reference = new OpenApiReference
+            {
                 Id = "resource"
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["resource/{id}"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["resource/{id}"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
                             Responses = new OpenApiResponses {
-                                ["200"] = new OpenApiResponse() {
+                                ["200"] = new OpenApiResponse
+                                {
                                     Content = {
-                                        ["application/json"] = new OpenApiMediaType() {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchema {
                                                 Type = "object",
                                                 Properties = new Dictionary<string, OpenApiSchema> {
@@ -634,7 +724,8 @@ components:
                     }
                 },
             },
-            Components = new OpenApiComponents() {
+            Components = new OpenApiComponents
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "#/components/resource", resourceSchema
@@ -644,8 +735,9 @@ components:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         builder.CreateUriSpace(document);//needed so the component index exists
+        builder.SetOpenApiDocument(document);
         var codeModel = builder.CreateSourceModel(node);
         var resourceClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("resource");
         var itemsNS = codeModel.FindNamespaceByName("ApiSdk.resource.item");
@@ -664,16 +756,18 @@ components:
     [Fact]
     public void MapsTime(){
         var node = OpenApiUrlTreeNode.Create();
-        node.Attach("tasks", new OpenApiPathItem() {
+        node.Attach("tasks", new OpenApiPathItem
+        {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation() { 
+                [OperationType.Get] = new OpenApiOperation
+                { 
                     Responses = new OpenApiResponses
                     {
-                        ["200"] = new OpenApiResponse()
+                        ["200"] = new OpenApiResponse
                         {
                             Content =
                             {
-                                ["application/json"] = new OpenApiMediaType()
+                                ["application/json"] = new OpenApiMediaType
                                 {
                                     Schema = new OpenApiSchema
                                     {
@@ -695,24 +789,26 @@ components:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var codeModel = builder.CreateSourceModel(node);
-        var progressProp = codeModel.FindChildByName<CodeProperty>("progress", true);
+        var progressProp = codeModel.FindChildByName<CodeProperty>("progress");
         Assert.Equal("TimeOnly", progressProp.Type.Name);
     }
     [Fact]
     public void MapsDate(){
         var node = OpenApiUrlTreeNode.Create();
-        node.Attach("tasks", new OpenApiPathItem() {
+        node.Attach("tasks", new OpenApiPathItem
+        {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation() { 
+                [OperationType.Get] = new OpenApiOperation
+                { 
                     Responses = new OpenApiResponses
                     {
-                        ["200"] = new OpenApiResponse()
+                        ["200"] = new OpenApiResponse
                         {
                             Content =
                             {
-                                ["application/json"] = new OpenApiMediaType()
+                                ["application/json"] = new OpenApiMediaType
                                 {
                                     Schema = new OpenApiSchema
                                     {
@@ -734,24 +830,26 @@ components:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var codeModel = builder.CreateSourceModel(node);
-        var progressProp = codeModel.FindChildByName<CodeProperty>("progress", true);
+        var progressProp = codeModel.FindChildByName<CodeProperty>("progress");
         Assert.Equal("DateOnly", progressProp.Type.Name);
     }
     [Fact]
     public void MapsDuration(){
         var node = OpenApiUrlTreeNode.Create();
-        node.Attach("tasks", new OpenApiPathItem() {
+        node.Attach("tasks", new OpenApiPathItem
+        {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation() { 
+                [OperationType.Get] = new OpenApiOperation
+                { 
                     Responses = new OpenApiResponses
                     {
-                        ["200"] = new OpenApiResponse()
+                        ["200"] = new OpenApiResponse
                         {
                             Content =
                             {
-                                ["application/json"] = new OpenApiMediaType()
+                                ["application/json"] = new OpenApiMediaType
                                 {
                                     Schema = new OpenApiSchema
                                     {
@@ -773,24 +871,26 @@ components:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var codeModel = builder.CreateSourceModel(node);
-        var progressProp = codeModel.FindChildByName<CodeProperty>("progress", true);
+        var progressProp = codeModel.FindChildByName<CodeProperty>("progress");
         Assert.Equal("TimeSpan", progressProp.Type.Name);
     }
     [Fact]
     public void AddsErrorMapping(){
         var node = OpenApiUrlTreeNode.Create();
-        node.Attach("tasks", new OpenApiPathItem() {
+        node.Attach("tasks", new OpenApiPathItem
+        {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation() { 
+                [OperationType.Get] = new OpenApiOperation
+                { 
                     Responses = new OpenApiResponses
                     {
-                        ["200"] = new OpenApiResponse()
+                        ["200"] = new OpenApiResponse
                         {
                             Content =
                             {
-                                ["application/json"] = new OpenApiMediaType()
+                                ["application/json"] = new OpenApiMediaType
                                 {
                                     Schema = new OpenApiSchema
                                     {
@@ -806,11 +906,11 @@ components:
                                 }
                             }
                         },
-                        ["4XX"] = new OpenApiResponse()
+                        ["4XX"] = new OpenApiResponse
                         {
                             Content =
                             {
-                                ["application/json"] = new OpenApiMediaType()
+                                ["application/json"] = new OpenApiMediaType
                                 {
                                     Schema = new OpenApiSchema
                                     {
@@ -826,11 +926,11 @@ components:
                                 }
                             }
                         },
-                        ["5XX"] = new OpenApiResponse()
+                        ["5XX"] = new OpenApiResponse
                         {
                             Content =
                             {
-                                ["application/json"] = new OpenApiMediaType()
+                                ["application/json"] = new OpenApiMediaType
                                 {
                                     Schema = new OpenApiSchema
                                     {
@@ -846,11 +946,11 @@ components:
                                 }
                             }
                         },
-                        ["401"] = new OpenApiResponse()
+                        ["401"] = new OpenApiResponse
                         {
                             Content =
                             {
-                                ["application/json"] = new OpenApiMediaType()
+                                ["application/json"] = new OpenApiMediaType
                                 {
                                     Schema = new OpenApiSchema
                                     {
@@ -871,41 +971,43 @@ components:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var codeModel = builder.CreateSourceModel(node);
-        var executorMethod = codeModel.FindChildByName<CodeMethod>("get", true);
+        var executorMethod = codeModel.FindChildByName<CodeMethod>("get");
         Assert.NotNull(executorMethod);
         Assert.NotEmpty(executorMethod.ErrorMappings);
         var keys = executorMethod.ErrorMappings.Select(x => x.Key).ToHashSet();
         Assert.Contains("4XX", keys);
         Assert.Contains("401", keys);
         Assert.Contains("5XX", keys);
-        var errorType401 = codeModel.FindChildByName<CodeClass>("tasks401Error", true);
+        var errorType401 = codeModel.FindChildByName<CodeClass>("tasks401Error");
         Assert.NotNull(errorType401);
         Assert.True(errorType401.IsErrorDefinition);
-        Assert.NotNull(errorType401.FindChildByName<CodeProperty>("authenticationRealm", true));
-        var errorType4XX = codeModel.FindChildByName<CodeClass>("tasks4XXError", true);
+        Assert.NotNull(errorType401.FindChildByName<CodeProperty>("authenticationRealm"));
+        var errorType4XX = codeModel.FindChildByName<CodeClass>("tasks4XXError");
         Assert.NotNull(errorType4XX);
         Assert.True(errorType4XX.IsErrorDefinition);
-        Assert.NotNull(errorType4XX.FindChildByName<CodeProperty>("errorId", true));
-        var errorType5XX = codeModel.FindChildByName<CodeClass>("tasks5XXError", true);
+        Assert.NotNull(errorType4XX.FindChildByName<CodeProperty>("errorId"));
+        var errorType5XX = codeModel.FindChildByName<CodeClass>("tasks5XXError");
         Assert.NotNull(errorType5XX);
         Assert.True(errorType5XX.IsErrorDefinition);
-        Assert.NotNull(errorType5XX.FindChildByName<CodeProperty>("serviceErrorId", true));
+        Assert.NotNull(errorType5XX.FindChildByName<CodeProperty>("serviceErrorId"));
     }
     [Fact]
     public void IgnoresErrorCodesWithNoSchema(){
         var node = OpenApiUrlTreeNode.Create();
-        node.Attach("tasks", new OpenApiPathItem() {
+        node.Attach("tasks", new OpenApiPathItem
+        {
             Operations = {
-                [OperationType.Get] = new OpenApiOperation() { 
+                [OperationType.Get] = new OpenApiOperation
+                { 
                     Responses = new OpenApiResponses
                     {
-                        ["200"] = new OpenApiResponse()
+                        ["200"] = new OpenApiResponse
                         {
                             Content =
                             {
-                                ["application/json"] = new OpenApiMediaType()
+                                ["application/json"] = new OpenApiMediaType
                                 {
                                     Schema = new OpenApiSchema
                                     {
@@ -921,21 +1023,21 @@ components:
                                 }
                             }
                         },
-                        ["4XX"] = new OpenApiResponse()
+                        ["4XX"] = new OpenApiResponse
                         {
                             Content =
                             {
                                 ["application/json"] = new OpenApiMediaType()
                             }
                         },
-                        ["5XX"] = new OpenApiResponse()
+                        ["5XX"] = new OpenApiResponse
                         {
                             Content =
                             {
                                 ["application/json"] = new OpenApiMediaType()
                             }
                         },
-                        ["401"] = new OpenApiResponse()
+                        ["401"] = new OpenApiResponse
                         {
                             Content =
                             {
@@ -947,9 +1049,9 @@ components:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var codeModel = builder.CreateSourceModel(node);
-        var executorMethod = codeModel.FindChildByName<CodeMethod>("get", true);
+        var executorMethod = codeModel.FindChildByName<CodeMethod>("get");
         Assert.NotNull(executorMethod);
         Assert.Empty(executorMethod.ErrorMappings);
     }
@@ -970,11 +1072,11 @@ components:
             },
             UnresolvedReference = false
         };
-        var errorResponse = new OpenApiResponse()
+        var errorResponse = new OpenApiResponse
         {
             Content =
             {
-                ["application/json"] = new OpenApiMediaType()
+                ["application/json"] = new OpenApiMediaType
                 {
                     Schema = errorSchema
                 }
@@ -985,18 +1087,22 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["tasks"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["tasks"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse()
+                                ["200"] = new OpenApiResponse
                                 {
                                     Content =
                                     {
-                                        ["application/json"] = new OpenApiMediaType()
+                                        ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchema
                                             {
@@ -1020,7 +1126,8 @@ components:
                     } 
                 }
             },
-            Components = new OpenApiComponents() {
+            Components = new OpenApiComponents
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "microsoft.graph.error", errorSchema
@@ -1035,23 +1142,24 @@ components:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        builder.SetOpenApiDocument(document);
         var codeModel = builder.CreateSourceModel(node);
-        var executorMethod = codeModel.FindChildByName<CodeMethod>("get", true);
+        var executorMethod = codeModel.FindChildByName<CodeMethod>("get");
         Assert.NotNull(executorMethod);
         Assert.NotEmpty(executorMethod.ErrorMappings);
         var keys = executorMethod.ErrorMappings.Select(x => x.Key).ToHashSet();
         Assert.Contains("4XX", keys);
         Assert.Contains("401", keys);
         Assert.Contains("5XX", keys);
-        var errorType = codeModel.FindChildByName<CodeClass>("Error", true);
+        var errorType = codeModel.FindChildByName<CodeClass>("Error");
         Assert.NotNull(errorType);
         Assert.True(errorType.IsErrorDefinition);
-        Assert.NotNull(errorType.FindChildByName<CodeProperty>("errorId", true));
+        Assert.NotNull(errorType.FindChildByName<CodeProperty>("errorId"));
         
-        Assert.Null(codeModel.FindChildByName<CodeClass>("tasks401Error", true));
-        Assert.Null(codeModel.FindChildByName<CodeClass>("tasks4XXError", true));
-        Assert.Null(codeModel.FindChildByName<CodeClass>("tasks5XXError", true));
+        Assert.Null(codeModel.FindChildByName<CodeClass>("tasks401Error"));
+        Assert.Null(codeModel.FindChildByName<CodeClass>("tasks4XXError"));
+        Assert.Null(codeModel.FindChildByName<CodeClass>("tasks5XXError"));
     }
     [Fact]
     public void DoesntAddPropertyHolderOnNonAdditionalModels(){
@@ -1078,11 +1186,11 @@ components:
             },
             UnresolvedReference = false
         };
-        var forecastResponse = new OpenApiResponse()
+        var forecastResponse = new OpenApiResponse
         {
             Content =
             {
-                ["application/json"] = new OpenApiMediaType()
+                ["application/json"] = new OpenApiMediaType
                 {
                     Schema = weatherForecastSchema
                 }
@@ -1093,11 +1201,15 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["weatherforecast"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["weatherforecast"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = forecastResponse
@@ -1106,7 +1218,8 @@ components:
                     } 
                 }
             },
-            Components = new OpenApiComponents() {
+            Components = new OpenApiComponents
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "weatherForecast", weatherForecastSchema
@@ -1121,9 +1234,10 @@ components:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        builder.SetOpenApiDocument(document);
         var codeModel = builder.CreateSourceModel(node);
-        var weatherType = codeModel.FindChildByName<CodeClass>("WeatherForecast", true);
+        var weatherType = codeModel.FindChildByName<CodeClass>("WeatherForecast");
         Assert.NotNull(weatherType);
         Assert.Empty(weatherType.StartBlock.Implements.Where(x => x.Name.Equals("IAdditionalDataHolder", StringComparison.OrdinalIgnoreCase)));
         Assert.Empty(weatherType.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)));
@@ -1153,17 +1267,24 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["createUploadSession"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["createUploadSession"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse() {
+                                ["200"] = new OpenApiResponse
+                                {
                                     Content = new Dictionary<string, OpenApiMediaType> {
-                                        ["application/json"] = new OpenApiMediaType() {
-                                            Schema = new OpenApiSchema() {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 Nullable = true,
                                                 AnyOf = new List<OpenApiSchema> {
                                                     uploadSessionSchema
@@ -1177,7 +1298,8 @@ components:
                     } 
                 }
             },
-            Components = new OpenApiComponents() {
+            Components = new OpenApiComponents
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "microsoft.graph.uploadSession", uploadSessionSchema
@@ -1187,18 +1309,19 @@ components:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        builder.SetOpenApiDocument(document);
         var codeModel = builder.CreateSourceModel(node);
-        var responseClass = codeModel.FindChildByName<CodeClass>("CreateUploadSessionResponse", true);
+        var responseClass = codeModel.FindChildByName<CodeClass>("CreateUploadSessionResponse");
         Assert.Null(responseClass);
-        var sessionClass = codeModel.FindChildByName<CodeClass>("UploadSession", true);
+        var sessionClass = codeModel.FindChildByName<CodeClass>("UploadSession");
         Assert.NotNull(sessionClass);
-        var requestBuilderClass = codeModel.FindChildByName<CodeClass>("createUploadSessionRequestBuilder", true);
+        var requestBuilderClass = codeModel.FindChildByName<CodeClass>("createUploadSessionRequestBuilder");
         Assert.NotNull(requestBuilderClass);
         var executorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executorMethod);
         Assert.True(executorMethod.ReturnType is CodeType); // not union
-        Assert.Null(codeModel.FindChildByName<CodeClass>("createUploadSessionResponseMember1", true));
+        Assert.Null(codeModel.FindChildByName<CodeClass>("createUploadSessionResponseMember1"));
     }
     [Fact]
     public void SquishesLonelyNullablesBothAnyOf(){
@@ -1225,17 +1348,24 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["createUploadSession"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["createUploadSession"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse() {
+                                ["200"] = new OpenApiResponse
+                                {
                                     Content = new Dictionary<string, OpenApiMediaType> {
-                                        ["application/json"] = new OpenApiMediaType() {
-                                            Schema = new OpenApiSchema() {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 AnyOf = new List<OpenApiSchema> {
                                                     uploadSessionSchema,
                                                     new OpenApiSchema {
@@ -1251,7 +1381,8 @@ components:
                     } 
                 }
             },
-            Components = new OpenApiComponents() {
+            Components = new OpenApiComponents
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "microsoft.graph.uploadSession", uploadSessionSchema
@@ -1261,18 +1392,19 @@ components:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        builder.SetOpenApiDocument(document);
         var codeModel = builder.CreateSourceModel(node);
-        var responseClass = codeModel.FindChildByName<CodeClass>("CreateUploadSessionResponse", true);
+        var responseClass = codeModel.FindChildByName<CodeClass>("CreateUploadSessionResponse");
         Assert.Null(responseClass);
-        var sessionClass = codeModel.FindChildByName<CodeClass>("UploadSession", true);
+        var sessionClass = codeModel.FindChildByName<CodeClass>("UploadSession");
         Assert.NotNull(sessionClass);
-        var requestBuilderClass = codeModel.FindChildByName<CodeClass>("createUploadSessionRequestBuilder", true);
+        var requestBuilderClass = codeModel.FindChildByName<CodeClass>("createUploadSessionRequestBuilder");
         Assert.NotNull(requestBuilderClass);
         var executorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executorMethod);
         Assert.True(executorMethod.ReturnType is CodeType); // not union
-        Assert.Null(codeModel.FindChildByName<CodeClass>("createUploadSessionResponseMember1", true));
+        Assert.Null(codeModel.FindChildByName<CodeClass>("createUploadSessionResponseMember1"));
     }
 
     [Fact]
@@ -1332,6 +1464,157 @@ components:
             },
             UnresolvedReference = false
         };
+        var directoryObjects = new OpenApiResponse
+        {
+            Content =
+            {
+                ["application/json"] = new OpenApiMediaType
+                {
+                    Schema = entitySchema
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.directoryObjects",
+                Type = ReferenceType.Response
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["objects"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = directoryObjects,
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "microsoft.graph.entity", entitySchema
+                    },
+                    {
+                        "microsoft.graph.directoryObject", directoryObjectSchema
+                    }
+                },
+                Responses = new Dictionary<string, OpenApiResponse> {
+                    {
+                        "microsoft.graph.directoryObjects", directoryObjects
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var entityClass = codeModel.FindChildByName<CodeClass>("entity");
+        var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject");
+        Assert.NotNull(entityClass);
+        var factoryMethod = entityClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
+        Assert.NotNull(factoryMethod);
+        Assert.Equal("@odata.type", entityClass.DiscriminatorInformation.DiscriminatorPropertyName);
+        Assert.Single(entityClass.DiscriminatorInformation.DiscriminatorMappings);
+        var doFactoryMethod = directoryObjectClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
+        Assert.NotNull(doFactoryMethod);
+        Assert.Empty(directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings);
+        if(entityClass.DiscriminatorInformation?.GetDiscriminatorMappingValue("#microsoft.graph.directoryObject") is not CodeType castType)
+            throw new InvalidOperationException("Discriminator mapping value is not a CodeType");
+        Assert.NotNull(castType.TypeDefinition);
+        Assert.Equal(directoryObjectClass, castType.TypeDefinition);
+        var doTypeProperty = directoryObjectClass.Properties.First(x => x.Name.Equals("ODataType", StringComparison.OrdinalIgnoreCase));
+        Assert.True(doTypeProperty.ExistsInBaseType);
+        Assert.Equal("\"#microsoft.graph.directoryObject\"", doTypeProperty.DefaultValue);
+    }
+    [Fact]
+    public void DoesntAddDiscriminatorMappingsOfNonDerivedTypes(){
+        var entitySchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                },
+                {
+                    "@odata.type", new OpenApiSchema {
+                        Type = "string",
+                        Default = new OpenApiString("#microsoft.graph.entity")
+                    }
+                }
+            },
+            Required = new HashSet<string> {
+                "@odata.type"
+            },
+            Discriminator = new() {
+                PropertyName = "@odata.type",
+                Mapping = new Dictionary<string, string> {
+                    {
+                        "#microsoft.graph.directoryObject", "#/components/schemas/microsoft.graph.directoryObject"
+                    },
+                    {
+                        "#microsoft.graph.file", "#/components/schemas/microsoft.graph.file"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.entity",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var directoryObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "tenant", new OpenApiSchema {
+                        Type = "string"
+                    }
+                },
+                {   "@odata.type", new OpenApiSchema {
+                        Type = "string",
+                        Default = new OpenApiString("#microsoft.graph.directoryObject")
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.directoryObject",
+                Type = ReferenceType.Schema
+            },
+            AllOf = new List<OpenApiSchema> {
+                entitySchema
+            },
+            UnresolvedReference = false
+        };
+        var fileSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "tenant", new OpenApiSchema {
+                        Type = "string"
+                    }
+                },
+                {   "@odata.type", new OpenApiSchema {
+                        Type = "string",
+                        Default = new OpenApiString("#microsoft.graph.file")
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.file",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
         var directoryObjects = new OpenApiResponse()
         {
             Content =
@@ -1367,6 +1650,9 @@ components:
                     },
                     {
                         "microsoft.graph.directoryObject", directoryObjectSchema
+                    },
+                    {
+                        "microsoft.graph.file", fileSchema
                     }
                 },
                 Responses = new Dictionary<string, OpenApiResponse> {
@@ -1385,18 +1671,474 @@ components:
         Assert.NotNull(entityClass);
         var factoryMethod = entityClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(factoryMethod);
-        Assert.Equal("@odata.type", factoryMethod.DiscriminatorPropertyName);
-        Assert.NotEmpty(factoryMethod.DiscriminatorMappings);
-        var doFactoryMethod = directoryObjectClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
+        Assert.Equal("@odata.type", entityClass.DiscriminatorInformation.DiscriminatorPropertyName);
+        Assert.Single(entityClass.DiscriminatorInformation.DiscriminatorMappings);
+    }
+    [Fact]
+    public void AddsDiscriminatorMappingsOneOfImplicit(){
+        var entitySchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                },
+                {
+                    "@odata.type", new OpenApiSchema {
+                        Type = "string",
+                        Default = new OpenApiString("microsoft.graph.entity")
+                    }
+                }
+            },
+            Required = new HashSet<string> {
+                "@odata.type"
+            },
+            Discriminator = new() {
+                PropertyName = "@odata.type",
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.entity",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var directoryObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "tenant", new OpenApiSchema {
+                        Type = "string"
+                    }
+                },
+                {   "@odata.type", new OpenApiSchema {
+                        Type = "string",
+                        Default = new OpenApiString("microsoft.graph.directoryObject")
+                    }
+                }
+            },
+            Required = new HashSet<string> {
+                "@odata.type"
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.directoryObject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var directoryObjectsResponse = new OpenApiSchema {
+            Type = "object",
+            OneOf = new List<OpenApiSchema> {
+                entitySchema,
+                directoryObjectSchema
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.directoryObjects",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false,
+        };
+        var directoryObjects = new OpenApiResponse
+        {
+            Content =
+            {
+                ["application/json"] = new OpenApiMediaType
+                {
+                    Schema = directoryObjectsResponse
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.directoryObjects",
+                Type = ReferenceType.Response
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["objects"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = directoryObjects,
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "microsoft.graph.entity", entitySchema
+                    },
+                    {
+                        "microsoft.graph.directoryObject", directoryObjectSchema
+                    },
+                    {
+                        "microsoft.graph.directoryObjects", directoryObjectsResponse
+                    }
+                },
+                Responses = new Dictionary<string, OpenApiResponse> {
+                    {
+                        "microsoft.graph.directoryObjects", directoryObjects
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
+        var builder = new KiotaBuilder(mockLogger.Object, config);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        builder.ApplyLanguageRefinement(config, codeModel);
+        var entityClass = codeModel.FindChildByName<CodeClass>("entity");
+        var directoryObjectsClass = codeModel.FindChildByName<CodeClass>("directoryObjects");
+        Assert.NotNull(entityClass);
+        Assert.NotNull(directoryObjectsClass);
+        var factoryMethod = entityClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
+        Assert.NotNull(factoryMethod);
+        Assert.Equal("@odata.type", entityClass.DiscriminatorInformation.DiscriminatorPropertyName);
+        Assert.Empty(entityClass.DiscriminatorInformation.DiscriminatorMappings);
+        var doFactoryMethod = directoryObjectsClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(doFactoryMethod);
-        Assert.Empty(doFactoryMethod.DiscriminatorMappings);
-        if(factoryMethod.GetDiscriminatorMappingValue("#microsoft.graph.directoryObject") is not CodeType castType)
-            throw new InvalidOperationException("Discriminator mapping value is not a CodeType");
-        Assert.NotNull(castType.TypeDefinition);
-        Assert.Equal(directoryObjectClass, castType.TypeDefinition);
-        var doTypeProperty = directoryObjectClass.Properties.First(x => x.Name.Equals("ODataType", StringComparison.OrdinalIgnoreCase));
-        Assert.True(doTypeProperty.ExistsInBaseType);
-        Assert.Equal("\"#microsoft.graph.directoryObject\"", doTypeProperty.DefaultValue);
+        Assert.Equal(2, directoryObjectsClass.DiscriminatorInformation.DiscriminatorMappings.Count());
+    }
+    [Fact]
+    public void AddsDiscriminatorMappingsAllOfImplicit(){
+        var entitySchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                },
+                {
+                    "@odata.type", new OpenApiSchema {
+                        Type = "string",
+                        Default = new OpenApiString("#microsoft.graph.entity")
+                    }
+                }
+            },
+            Required = new HashSet<string> {
+                "@odata.type"
+            },
+            Discriminator = new() {
+                PropertyName = "@odata.type",
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.entity",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var directoryObjectSchema = new OpenApiSchema {
+            Type = "object",
+            AllOf = new List<OpenApiSchema> {
+                entitySchema,
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, OpenApiSchema> {
+                        {
+                            "tenant", new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        {   "@odata.type", new OpenApiSchema {
+                                Type = "string",
+                                Default = new OpenApiString("microsoft.graph.directoryObject")
+                            }
+                        }
+                    },
+                    Required = new HashSet<string> {
+                        "@odata.type"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.directoryObject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var userSchema = new OpenApiSchema {
+            Type = "object",
+            AllOf = new List<OpenApiSchema> {
+                directoryObjectSchema,
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, OpenApiSchema> {
+                        {
+                            "firstName", new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        {   "@odata.type", new OpenApiSchema {
+                                Type = "string",
+                                Default = new OpenApiString("microsoft.graph.firstName")
+                            }
+                        }
+                    },
+                    Required = new HashSet<string> {
+                        "@odata.type"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.user",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var directoryObjects = new OpenApiResponse
+        {
+            Content =
+            {
+                ["application/json"] = new OpenApiMediaType
+                {
+                    Schema = directoryObjectSchema
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.directoryObjects",
+                Type = ReferenceType.Response
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["objects"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = directoryObjects,
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "microsoft.graph.entity", entitySchema
+                    },
+                    {
+                        "microsoft.graph.directoryObject", directoryObjectSchema
+                    },
+                    {
+                        "microsoft.graph.user", userSchema
+                    }
+                },
+                Responses = new Dictionary<string, OpenApiResponse> {
+                    {
+                        "microsoft.graph.directoryObjects", directoryObjects
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
+        var builder = new KiotaBuilder(mockLogger.Object, config);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        builder.ApplyLanguageRefinement(config, codeModel);
+        var entityClass = codeModel.FindChildByName<CodeClass>("entity");
+        var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject");
+        var userClass = codeModel.FindChildByName<CodeClass>("user");
+        Assert.NotNull(entityClass);
+        Assert.NotNull(directoryObjectClass);
+        Assert.NotNull(userClass);
+        var factoryMethod = entityClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
+        Assert.NotNull(factoryMethod);
+        Assert.Equal("@odata.type", entityClass.DiscriminatorInformation.DiscriminatorPropertyName);
+        Assert.Equal(2, entityClass.DiscriminatorInformation.DiscriminatorMappings.Count());
+        Assert.Contains("microsoft.graph.directoryObject", entityClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Key));
+        Assert.Contains("microsoft.graph.user", entityClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Key));
+        var doFactoryMethod = directoryObjectClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.Factory));
+        Assert.NotNull(doFactoryMethod);
+        Assert.Single(directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings);
+        Assert.Contains("microsoft.graph.user", directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Key));
+        Assert.Empty(userClass.DiscriminatorInformation.DiscriminatorMappings);
+    }
+    
+    [Fact]
+    public void AddsDiscriminatorMappingsAllOfImplicitWithParentHavingMappingsWhileChildDoesNot(){
+        var entitySchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                },
+                {
+                    "@odata.type", new OpenApiSchema {
+                        Type = "string",
+                        Default = new OpenApiString("#microsoft.graph.entity")
+                    }
+                }
+            },
+            Required = new HashSet<string> {
+                "@odata.type"
+            },
+            Discriminator = new() {
+                PropertyName = "@odata.type",
+                Mapping = new Dictionary<string, string>
+                {
+                    {
+                        "microsoft.graph.directoryObject", "#/components/schemas/microsoft.graph.directoryObject"
+                    },
+                    {
+                        "microsoft.graph.user", "#/components/schemas/microsoft.graph.user"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.entity",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var directoryObjectSchema = new OpenApiSchema {
+            Type = "object",
+            AllOf = new List<OpenApiSchema> {
+                entitySchema,
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, OpenApiSchema> {
+                        {
+                            "tenant", new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        {   "@odata.type", new OpenApiSchema {
+                                Type = "string",
+                                Default = new OpenApiString("microsoft.graph.directoryObject")
+                            }
+                        }
+                    },
+                    Required = new HashSet<string> {
+                        "@odata.type"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.directoryObject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var userSchema = new OpenApiSchema {
+            Type = "object",
+            AllOf = new List<OpenApiSchema> {
+                directoryObjectSchema,
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, OpenApiSchema> {
+                        {
+                            "firstName", new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        {   "@odata.type", new OpenApiSchema {
+                                Type = "string",
+                                Default = new OpenApiString("microsoft.graph.firstName")
+                            }
+                        }
+                    },
+                    Required = new HashSet<string> {
+                        "@odata.type"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.user",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var directoryObjects = new OpenApiResponse
+        {
+            Content =
+            {
+                ["application/json"] = new OpenApiMediaType
+                {
+                    Schema = directoryObjectSchema
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.directoryObjects",
+                Type = ReferenceType.Response
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["objects"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = directoryObjects,
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "microsoft.graph.entity", entitySchema
+                    },
+                    {
+                        "microsoft.graph.directoryObject", directoryObjectSchema
+                    },
+                    {
+                        "microsoft.graph.user", userSchema
+                    }
+                },
+                Responses = new Dictionary<string, OpenApiResponse> {
+                    {
+                        "microsoft.graph.directoryObjects", directoryObjects
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
+        var builder = new KiotaBuilder(mockLogger.Object, config);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        builder.ApplyLanguageRefinement(config, codeModel);
+        var entityClass = codeModel.FindChildByName<CodeClass>("entity");
+        var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject");
+        var userClass = codeModel.FindChildByName<CodeClass>("user");
+        Assert.NotNull(entityClass);
+        Assert.NotNull(directoryObjectClass);
+        Assert.NotNull(userClass);
+        var factoryMethod = entityClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
+        Assert.NotNull(factoryMethod);
+        Assert.Equal("@odata.type", entityClass.DiscriminatorInformation.DiscriminatorPropertyName);
+        Assert.Equal(2, entityClass.DiscriminatorInformation.DiscriminatorMappings.Count());
+        Assert.Contains("microsoft.graph.directoryObject", entityClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Key));
+        Assert.Contains("microsoft.graph.user", entityClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Key));
+        var doFactoryMethod = directoryObjectClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.Factory));
+        Assert.NotNull(doFactoryMethod);
+        Assert.Single(directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings);
+        Assert.Contains("microsoft.graph.user", directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Key));
+        Assert.Empty(userClass.DiscriminatorInformation.DiscriminatorMappings);
     }
     [Fact]
     public void UnionOfPrimitiveTypesWorks() {
@@ -1415,11 +2157,15 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["unionType"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["unionType"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -1441,7 +2187,8 @@ components:
                     } 
                 }
             },
-            Components = new OpenApiComponents() {
+            Components = new OpenApiComponents
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "subNS.simpleObject", simpleObjet
@@ -1450,7 +2197,7 @@ components:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.unionType");
@@ -1459,7 +2206,7 @@ components:
         Assert.NotNull(requestBuilderClass);
         var requestExecutorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(requestExecutorMethod);
-        var executorReturnType = requestExecutorMethod.ReturnType as CodeComposedTypeBase;
+        var executorReturnType = requestExecutorMethod.ReturnType as CodeUnionType;
         Assert.NotNull(executorReturnType);
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -1483,11 +2230,15 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["unionType"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["unionType"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -1516,7 +2267,8 @@ components:
                     } 
                 }
             },
-            Components = new OpenApiComponents() {
+            Components = new OpenApiComponents
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "subNS.simpleObject", simpleObjet
@@ -1525,7 +2277,7 @@ components:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.unionType");
@@ -1534,7 +2286,160 @@ components:
         Assert.NotNull(requestBuilderClass);
         var requestExecutorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(requestExecutorMethod);
-        var executorReturnType = requestExecutorMethod.ReturnType as CodeComposedTypeBase;
+        var executorReturnType = requestExecutorMethod.ReturnType as CodeUnionType;
+        Assert.NotNull(executorReturnType);
+        Assert.Equal(2, executorReturnType.Types.Count());
+        var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("simpleObject", typeNames);
+        Assert.Contains("unionTypeResponseMember1", typeNames);
+    }
+    [Fact]
+    public void IntersectionOfPrimitiveTypesWorks() {
+        var simpleObjet = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "subNS.simpleObject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["unionType"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = new OpenApiSchema {
+                                                AnyOf = new List<OpenApiSchema> {
+                                                    simpleObjet,
+                                                    new OpenApiSchema {
+                                                        Type = "number"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "subNS.simpleObject", simpleObjet
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.unionType");
+        Assert.NotNull(requestBuilderNS);
+        var requestBuilderClass = requestBuilderNS.FindChildByName<CodeClass>("unionTypeRequestBuilder", false);
+        Assert.NotNull(requestBuilderClass);
+        var requestExecutorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(requestExecutorMethod);
+        var executorReturnType = requestExecutorMethod.ReturnType as CodeIntersectionType;
+        Assert.NotNull(executorReturnType);
+        Assert.Equal(2, executorReturnType.Types.Count());
+        var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("simpleObject", typeNames);
+        Assert.Contains("int64", typeNames);
+    }
+    [Fact]
+    public void IntersectionOfInlineSchemasWorks() {
+        var simpleObjet = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "subNS.simpleObject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["unionType"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = new OpenApiSchema {
+                                                AnyOf = new List<OpenApiSchema> {
+                                                    simpleObjet,
+                                                    new OpenApiSchema {
+                                                        Type = "object",
+                                                        Properties = new Dictionary<string, OpenApiSchema> {
+                                                            {
+                                                                "name", new OpenApiSchema {
+                                                                    Type = "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "subNS.simpleObject", simpleObjet
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.unionType");
+        Assert.NotNull(requestBuilderNS);
+        var requestBuilderClass = requestBuilderNS.FindChildByName<CodeClass>("unionTypeRequestBuilder", false);
+        Assert.NotNull(requestBuilderClass);
+        var requestExecutorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(requestExecutorMethod);
+        var executorReturnType = requestExecutorMethod.ReturnType as CodeIntersectionType;
         Assert.NotNull(executorReturnType);
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -1621,11 +2526,15 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["derivedType"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["derivedType"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -1640,7 +2549,8 @@ components:
                     } 
                 }
             },
-            Components = new OpenApiComponents() {
+            Components = new OpenApiComponents
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "subNS.baseObject", baseObjet
@@ -1655,7 +2565,7 @@ components:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.derivedType");
@@ -1667,12 +2577,12 @@ components:
         var executorReturnType = requestExecutorMethod.ReturnType as CodeType;
         Assert.NotNull(executorReturnType);
         Assert.Contains("DerivedObject", requestExecutorMethod.ReturnType.Name);
-        var secondLevelDerivedClass = codeModel.FindChildByName<CodeClass>("derivedObject", true);
+        var secondLevelDerivedClass = codeModel.FindChildByName<CodeClass>("derivedObject");
         Assert.NotNull(secondLevelDerivedObject);
         var factoryMethod = secondLevelDerivedClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(factoryMethod);
-        Assert.Equal("kind", factoryMethod.DiscriminatorPropertyName);
-        Assert.NotEmpty(factoryMethod.DiscriminatorMappings);
+        Assert.Equal("kind", secondLevelDerivedClass.DiscriminatorInformation.DiscriminatorPropertyName);
+        Assert.NotEmpty(secondLevelDerivedClass.DiscriminatorInformation.DiscriminatorMappings);
     }
     [InlineData("string", "", "string")]// https://spec.openapis.org/registry/format/
     [InlineData("string", "commonmark", "string")]
@@ -1703,11 +2613,15 @@ components:
     [InlineData("file", null, "binary")]
     [Theory]
     public void MapsPrimitiveFormats(string type, string format, string expected){
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["primitive"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -1727,10 +2641,10 @@ components:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        var requestBuilder = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilder", true);
+        var requestBuilder = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilder");
         Assert.NotNull(requestBuilder);
         var method = requestBuilder.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(method);
@@ -1766,11 +2680,15 @@ components:
     [InlineData("file", null, "binary")]
     [Theory]
     public void MapsQueryParameterTypes(string type, string format, string expected){
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["primitive"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Parameters = new List<OpenApiParameter> {
                                 new OpenApiParameter {
                                     Name = "query",
@@ -1783,7 +2701,7 @@ components:
                             },
                             Responses = new OpenApiResponses
                             {
-                                ["204"] = new OpenApiResponse {}
+                                ["204"] = new OpenApiResponse()
                             }
                         }
                     } 
@@ -1791,10 +2709,10 @@ components:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters", true);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters");
         Assert.NotNull(queryParameters);
         var property = queryParameters.Properties.First(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(property);
@@ -1813,11 +2731,15 @@ components:
             Type = "array",
             Items = baseSchema
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["primitive"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Parameters = new List<OpenApiParameter> {
                                 new OpenApiParameter {
                                     Name = "query",
@@ -1827,7 +2749,7 @@ components:
                             },
                             Responses = new OpenApiResponses
                             {
-                                ["204"] = new OpenApiResponse {}
+                                ["204"] = new OpenApiResponse()
                             }
                         }
                     } 
@@ -1835,10 +2757,10 @@ components:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters", true);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters");
         Assert.NotNull(queryParameters);
         var property = queryParameters.Properties.First(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(property);
@@ -1848,11 +2770,15 @@ components:
     }
     [Fact]
     public void DefaultsQueryParametersWithNoSchemaToString(){
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["primitive"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Parameters = new List<OpenApiParameter> {
                                 new OpenApiParameter {
                                     Name = "query",
@@ -1861,7 +2787,7 @@ components:
                             },
                             Responses = new OpenApiResponses
                             {
-                                ["204"] = new OpenApiResponse {}
+                                ["204"] = new OpenApiResponse()
                             }
                         }
                     } 
@@ -1869,10 +2795,10 @@ components:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters", true);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters");
         Assert.NotNull(queryParameters);
         var property = queryParameters.Properties.First(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(property);
@@ -1896,11 +2822,15 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["answer"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -1924,7 +2854,7 @@ components:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
@@ -1951,11 +2881,15 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["answer"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -1979,7 +2913,7 @@ components:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
@@ -2006,11 +2940,15 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["answers/{id}"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answers/{id}"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -2034,7 +2972,7 @@ components:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.Null(codeModel.FindChildByName<CodeClass>("With"));
@@ -2046,6 +2984,187 @@ components:
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
         Assert.NotNull(modelsNS);
         Assert.Null(modelsNS.FindChildByName<CodeClass>("With", false));
+    }
+    [Fact]
+    public void HandlesCollectionOfEnumSchemasInAnyOfWithNullable(){
+        var enumSchema = new OpenApiSchema
+        {
+            Title = "riskLevel",
+            Enum = new List<IOpenApiAny>
+            {
+                new OpenApiString("low"),
+                new OpenApiString("medium"),
+                new OpenApiString("high"),
+                new OpenApiString("hidden"),
+                new OpenApiString("none"),
+                new OpenApiString("unknownFutureValue")
+            },
+            Type = "string"
+        };
+        var myObjectSchema = new OpenApiSchema {
+            Title = "conditionalAccessConditionSet",
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "signInRiskLevels", new OpenApiSchema {
+                        Type = "array",
+                        Items = new OpenApiSchema
+                        {
+                            AnyOf = new List<OpenApiSchema>
+                            {
+                                enumSchema,
+                                new OpenApiSchema
+                                {
+                                    Type = "object",
+                                    Nullable = true
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    },
+                    {
+                        "riskLevel", enumSchema
+                    }
+                },
+                
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
+        Assert.NotNull(modelsNS);
+        var responseClass = modelsNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model) && x.Name.Equals("myobject", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(responseClass);
+        var property = responseClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("signInRiskLevels", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.NotEmpty(property.Type.Name);
+        var codeType = property.Type as CodeType;
+        Assert.NotNull(codeType);
+        Assert.IsType<CodeEnum>(codeType.TypeDefinition);// Ensure the collection is a codeEnum
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex,codeType.CollectionKind);// Ensure the collection is a codeEnum
+    }
+    [Fact]
+    public void HandlesCollectionOfEnumSchemas(){
+        var enumSchema = new OpenApiSchema
+        {
+            Title = "riskLevel",
+            Enum = new List<IOpenApiAny>
+            {
+                new OpenApiString("low"),
+                new OpenApiString("medium"),
+                new OpenApiString("high"),
+                new OpenApiString("hidden"),
+                new OpenApiString("none"),
+                new OpenApiString("unknownFutureValue")
+            },
+            Type = "string"
+        };
+        var myObjectSchema = new OpenApiSchema {
+            Title = "conditionalAccessConditionSet",
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "signInRiskLevels", new OpenApiSchema {
+                        Type = "array",
+                        Items = enumSchema
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    },
+                    {
+                        "riskLevel", enumSchema
+                    }
+                },
+                
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
+        Assert.NotNull(modelsNS);
+        var responseClass = modelsNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model) && x.Name.Equals("myobject", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(responseClass);
+        var property = responseClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("signInRiskLevels", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.NotEmpty(property.Type.Name);
+        var codeType = property.Type as CodeType;
+        Assert.NotNull(codeType);
+        Assert.IsType<CodeEnum>(codeType.TypeDefinition);// Ensure the collection is a codeEnum
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex,codeType.CollectionKind);// Ensure the collection is a codeEnum
     }
     [Fact]
     public void InlinePropertiesGenerateTypes(){
@@ -2067,11 +3186,15 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["answer"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -2095,7 +3218,7 @@ components:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
@@ -2123,13 +3246,17 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["answer"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
                     Description = "some path item description",
                     Summary = "some path item summary",
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Description = "some operation description",
                             Summary = "some operation summary",
                             Responses = new OpenApiResponses
@@ -2155,7 +3282,7 @@ components:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
@@ -2183,11 +3310,15 @@ components:
             Description = @"	some description with invalid characters: 
 ",
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["answer"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -2211,7 +3342,7 @@ components:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
@@ -2241,11 +3372,15 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["answer"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -2269,7 +3404,7 @@ components:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -2282,13 +3417,17 @@ components:
     }
     [Fact]
     public void ModelsUseDescriptionWhenAvailable(){
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["answer"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
                     Description = "some path item description",
                     Summary = "some path item summary",
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Description = "some operation description",
                             Summary = "some operation summary",
                             Responses = new OpenApiResponses
@@ -2316,7 +3455,7 @@ components:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsSubNS = codeModel.FindNamespaceByName("TestSdk.answer");
@@ -2324,11 +3463,24 @@ components:
         var responseClass = modelsSubNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model));
         Assert.NotNull(responseClass);
         Assert.Equal("some description", responseClass.Description);
+    
     }
+    [InlineData("application/json", "206", true, "default", "binary")]
+    [InlineData("application/json", "206", false, "default", "binary")]
+    [InlineData("application/json", "205", true, "default", "void")]
+    [InlineData("application/json", "205", false, "default", "void")]
     [InlineData("application/json", "204", true, "default", "void")]
     [InlineData("application/json", "204", false, "default", "void")]
+    [InlineData("application/json", "203", true, "default", "Myobject")]
+    [InlineData("application/json", "203", false, "default", "binary")]
+    [InlineData("application/json", "202", true, "default", "Myobject")]
+    [InlineData("application/json", "202", false, "default", "void")]
+    [InlineData("application/json", "201", true, "default", "Myobject")]
+    [InlineData("application/json", "201", false, "default", "void")]
     [InlineData("application/json", "200", true, "default", "Myobject")]
     [InlineData("application/json", "200", false, "default", "binary")]
+    [InlineData("application/json", "2XX", true, "default", "Myobject")]
+    [InlineData("application/json", "2XX", false, "default", "binary")]
     [InlineData("application/xml", "204", true, "default", "void")]
     [InlineData("application/xml", "204", false, "default", "void")]
     [InlineData("application/xml", "200", true, "default", "Myobject")]
@@ -2382,11 +3534,15 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["answer"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 [statusCode] = new OpenApiResponse {
@@ -2412,7 +3568,8 @@ components:
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(
             mockLogger.Object,
-            new GenerationConfiguration() {
+            new GenerationConfiguration
+            {
                 ClientClassName = "TestClient",
                 ClientNamespaceName = "TestSdk",
                 ApiRootUrl = "https://localhost",
@@ -2429,6 +3586,227 @@ components:
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
         Assert.Equal(returnType, executor.ReturnType.Name);
+    }
+    [Fact]
+    public void Considers200WithSchemaOver2XXWithSchema() {
+        var myObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var myOtherObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myotherobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["2XX"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myOtherObjectSchema
+                                        }
+                                    }
+                                },
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    { "myobject", myObjectSchema },
+                    { "myotherobject", myOtherObjectSchema },
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration
+            {
+                ClientClassName = "TestClient",
+                ClientNamespaceName = "TestSdk",
+                ApiRootUrl = "https://localhost",
+                StructuredMimeTypes = new GenerationConfiguration().StructuredMimeTypes
+        });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
+        Assert.NotNull(rbNS);
+        var rbClass = rbNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.RequestBuilder));
+        Assert.NotNull(rbClass);
+        var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(executor);
+        Assert.Equal("Myobject", executor.ReturnType.Name);
+    }
+    [Fact]
+    public void Considers2XXWithSchemaOver204WithNoSchema() {
+        var myObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["2XX"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                                ["204"] = new OpenApiResponse(),
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration
+            {
+                ClientClassName = "TestClient",
+                ClientNamespaceName = "TestSdk",
+                ApiRootUrl = "https://localhost",
+                StructuredMimeTypes = new GenerationConfiguration().StructuredMimeTypes
+        });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
+        Assert.NotNull(rbNS);
+        var rbClass = rbNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.RequestBuilder));
+        Assert.NotNull(rbClass);
+        var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(executor);
+        Assert.Equal("Myobject", executor.ReturnType.Name);
+    }
+    [Fact]
+    public void Considers204WithNoSchemaOver206WithNoSchema() {
+        var myObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["206"] = new OpenApiResponse(),
+                                ["204"] = new OpenApiResponse(),
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration
+            {
+                ClientClassName = "TestClient",
+                ClientNamespaceName = "TestSdk",
+                ApiRootUrl = "https://localhost",
+                StructuredMimeTypes = new GenerationConfiguration().StructuredMimeTypes
+        });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
+        Assert.NotNull(rbNS);
+        var rbClass = rbNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.RequestBuilder));
+        Assert.NotNull(rbClass);
+        var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(executor);
+        Assert.Equal("void", executor.ReturnType.Name);
     }
     [InlineData("application/json", true, "default", "Myobject")]
     [InlineData("application/json", false, "default", "binary")]
@@ -2467,11 +3845,15 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["answer"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Post] = new OpenApiOperation() {
+                        [OperationType.Post] = new OpenApiOperation
+                        {
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
                                     [contentType] = new OpenApiMediaType {
@@ -2481,7 +3863,7 @@ components:
                             },
                             Responses = new OpenApiResponses
                             {
-                                ["204"] = new OpenApiResponse {},
+                                ["204"] = new OpenApiResponse(),
                             }
                         }
                     } 
@@ -2498,7 +3880,8 @@ components:
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(
             mockLogger.Object,
-            new GenerationConfiguration() {
+            new GenerationConfiguration
+            {
                 ClientClassName = "TestClient",
                 ClientNamespaceName = "TestSdk",
                 ApiRootUrl = "https://localhost",
@@ -2533,11 +3916,15 @@ components:
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["answer"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -2547,7 +3934,7 @@ components:
                                         }
                                     }
                                 },
-                                ["204"] = new OpenApiResponse {},
+                                ["204"] = new OpenApiResponse(),
                             }
                         }
                     } 
@@ -2562,7 +3949,7 @@ components:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -2574,13 +3961,14 @@ components:
         Assert.NotNull(executor);
         Assert.NotEqual("void", executor.ReturnType.Name);
     }
-    [InlineData(new string[] {"microsoft.graph.user", "microsoft.graph.termstore.term"}, "microsoft.graph")]
-    [InlineData(new string[] {"microsoft.graph.user", "odata.errors.error"}, "")]
+    [InlineData(new[] {"microsoft.graph.user", "microsoft.graph.termstore.term"}, "microsoft.graph")]
+    [InlineData(new[] {"microsoft.graph.user", "odata.errors.error"}, "")]
     [InlineData(new string[] {}, "")]
     [Theory]
     public void StripsCommonModelsPrefix(string[] componentNames, string stripPrefix) {
         var paths = new OpenApiPaths();
-        var components = new OpenApiComponents() {
+        var components = new OpenApiComponents
+        {
             Schemas = new Dictionary<string, OpenApiSchema>()
         };
         foreach(var componentName in componentNames) {
@@ -2599,9 +3987,11 @@ components:
                 },
                 UnresolvedReference = false
             };
-            paths.Add($"answer{componentName}", new OpenApiPathItem() {
+            paths.Add($"answer{componentName}", new OpenApiPathItem
+            {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation
+                        { 
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -2617,7 +4007,8 @@ components:
                 });
             components.Schemas.Add(componentName, myObjectSchema);
         }
-        var document = new OpenApiDocument() {
+        var document = new OpenApiDocument
+        {
             Paths = paths,
             Components = components,
         };
@@ -2641,16 +4032,21 @@ components:
             },
             UnresolvedReference = false,
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["answer(ids={ids}"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer(ids={ids}"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
                             Parameters = new List<OpenApiParameter> {
                                 new OpenApiParameter {
                                     Name = "ids",
                                     In = ParameterLocation.Path,
-                                    Content = new Dictionary<string, OpenApiMediaType>() {
+                                    Content = new Dictionary<string, OpenApiMediaType>
+                                    {
                                         { "application/json",
                                         new OpenApiMediaType {
                                             Schema = new OpenApiSchema {
@@ -2687,7 +4083,7 @@ components:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var answersNS = codeModel.FindNamespaceByName("TestSdk.answerWithIds");
@@ -2699,7 +4095,7 @@ components:
         var idsParam = ctorMethod.Parameters.FirstOrDefault(x => x.Name.Equals("ids", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(idsParam);
         Assert.Equal("string", idsParam.Type.Name);
-        Assert.Equal(CodeType.CodeTypeCollectionKind.None, idsParam.Type.CollectionKind);
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.None, idsParam.Type.CollectionKind);
     }
     
     [Fact]
@@ -2719,11 +4115,15 @@ components:
             },
             UnresolvedReference = false,
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["users"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["users"] = new OpenApiPathItem
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
                             Extensions = new Dictionary<string, IOpenApiExtension> {
                                 { OpenApiPagingExtension.Name, new OpenApiPagingExtension { NextLinkName = "@odata.nextLink" } }
                             },
@@ -2750,7 +4150,7 @@ components:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var answersNS = codeModel.FindNamespaceByName("TestSdk.users");
@@ -2760,5 +4160,65 @@ components:
         var executorMethod = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get);
         Assert.NotNull(executorMethod);
         Assert.Equal("@odata.nextLink", executorMethod.PagingInformation?.NextLinkName);
+    }
+    [InlineData(true)]
+    [InlineData(false)]
+    [Theory]
+    public void SetsReadonlyProperties(bool isReadonly){
+        var myObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = "string",
+                        ReadOnly = isReadonly,
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false,
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["users"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var objectClass = codeModel.FindChildByName<CodeClass>("myobject");
+        Assert.NotNull(objectClass);
+        var nameProperty = objectClass.Properties.First(static x => "name".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(isReadonly, nameProperty.ReadOnly);
     }
 }

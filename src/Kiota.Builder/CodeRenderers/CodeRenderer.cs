@@ -1,9 +1,10 @@
 ﻿using System;
-using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
 
 namespace Kiota.Builder.CodeRenderers
@@ -52,7 +53,7 @@ namespace Kiota.Builder.CodeRenderers
             if (!string.IsNullOrEmpty(codeNamespace.Name) &&
                 !string.IsNullOrEmpty(root.Name) &&
                 _configuration.ShouldWriteNamespaceIndices &&
-                !_configuration.ClientNamespaceName.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase) &&
+                !_configuration.ClientNamespaceName.StartsWith(codeNamespace.Name, StringComparison.OrdinalIgnoreCase) &&
                 ShouldRenderNamespaceFile(codeNamespace))
             {
                 await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace), cancellationToken);

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Ruby {
@@ -22,17 +24,18 @@ namespace Kiota.Builder.Writers.Ruby {
                 _ => "private",
             };
         }
-        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
         {
             var defaultValue = parameter.Optional ? $"={(parameter.DefaultValue ?? "nil")}" : string.Empty;
             return $"{parameter.Name}{defaultValue}";
         }
-        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
         {
             if (code is CodeType currentType) {
                 return $"{TranslateType(currentType)}";
             }
-            else throw new InvalidOperationException();
+
+            throw new InvalidOperationException();
         }
         public override string TranslateType(CodeType type)
         {
@@ -50,12 +53,13 @@ namespace Kiota.Builder.Writers.Ruby {
             }
         }
         #pragma warning disable CA1822 // Method should be static
-        public string GetNormalizedNamespacePrefixForType(CodeTypeBase type) {
+        public string GetNormalizedNamespacePrefixForType(CodeTypeBase type)
+        {
             if(type is CodeType xType && 
-                (xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeEnum) &&
-                xType.TypeDefinition.Parent is CodeNamespace ns)
+               (xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeEnum) &&
+               xType.TypeDefinition.Parent is CodeNamespace ns)
                 return $"{ns.Name.NormalizeNameSpaceName("::")}::";
-            else return string.Empty;
+            return string.Empty;
         }
         #pragma warning restore CA1822 // Method should be static
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");

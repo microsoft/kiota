@@ -1,3 +1,5 @@
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Writers {
     public interface ILanguageConventionService
     {
@@ -7,9 +9,9 @@ namespace Kiota.Builder.Writers {
         string DocCommentPrefix {get; }
         string ParseNodeInterfaceName {get; }
         string TempDictionaryVarName {get;}
-        string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true);
+        string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null);
         string TranslateType(CodeType type);
-        string GetParameterSignature(CodeParameter parameter, CodeElement targetElement);
+        string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null);
         void WriteShortDescription(string description, LanguageWriter writer);
     }
 }

@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+
+using Kiota.Builder.Extensions;
+
 using Microsoft.OpenApi.Models;
+
 using Xunit;
 
-namespace Kiota.Builder.Extensions.Tests;
+namespace Kiota.Builder.Tests.Extensions;
 public class OpenApiSchemaExtensionsTests {
     [Fact]
     public void Defensive() {
@@ -158,8 +162,7 @@ public class OpenApiSchemaExtensionsTests {
     }
     [Fact]
     public void GetSchemaNameEmpty() {
-        var schema = new OpenApiSchema {
-        };
+        var schema = new OpenApiSchema();
         var names = schema.GetSchemaNames();
         Assert.Empty(names);
         Assert.Null(schema.GetSchemaName());
@@ -274,8 +277,7 @@ public class OpenApiSchemaExtensionsTests {
     }
     [Fact]
     public void GetReferenceIdsEmpty() {
-        var schema = new OpenApiSchema {
-        };
+        var schema = new OpenApiSchema();
         var names = schema.GetSchemaReferenceIds();
         Assert.Empty(names);
     }

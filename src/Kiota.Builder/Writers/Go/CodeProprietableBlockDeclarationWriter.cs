@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go;
@@ -10,30 +12,32 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
 
     public override void WriteCodeElement(T codeElement, LanguageWriter writer)
     {
-        if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
-        if(writer == null) throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent?.Parent is CodeNamespace ns)
         {
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty)}");
             var importSegments = codeElement
                                 .Usings
                                 .Where(x => !x.Declaration.IsExternal && !x.Name.Equals(ns.Name, StringComparison.OrdinalIgnoreCase))
-                                .Select(x => x.GetInternalNamespaceImport())
-                                .Select(x => new Tuple<string, string>(x.GetNamespaceImportSymbol(), x))
+                                .Where(x => x.Declaration.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>() != ns)
+                                .Select(static x => x.GetInternalNamespaceImport())
+                                .Select(static x => new Tuple<string, string>(x.GetNamespaceImportSymbol(), x))
                                 .Distinct()
                                 .Union(codeElement
                                     .Usings
-                                    .Where(x => x.Declaration.IsExternal)
-                                    .Select(x => new Tuple<string, string>(x.Name.StartsWith("*") ? x.Name[1..] : x.Declaration.Name.GetNamespaceImportSymbol(), x.Declaration.Name))
+                                    .Union(codeElement.Parent is CodeClass currentClass ? currentClass.InnerClasses.SelectMany(static x => x.Usings) : Enumerable.Empty<CodeUsing>())
+                                    .Where(static x => x.Declaration.IsExternal)
+                                    .Select(static x => new Tuple<string, string>(x.Name.StartsWith("*") ? x.Name[1..] : x.Declaration.Name.GetNamespaceImportSymbol(), x.Declaration.Name))
                                     .Distinct())
-                                .OrderBy(x => x.Item2.Count(y => y == '/'))
-                                .ThenBy(x => x)
+                                .OrderBy(static x => x.Item2.Count(static y => y == '/'))
+                                .ThenBy(static x => x)
                                 .ToList();
             if (importSegments.Any())
             {
                 writer.WriteLines(string.Empty, "import (");
                 writer.IncreaseIndent();
-                importSegments.ForEach(x => writer.WriteLine($"{x.Item1} \"{x.Item2}\""));
+                importSegments.ForEach(x => writer.WriteLine(x.Item1.Equals(x.Item2) ? $"\"{x.Item2}\"" : $"{x.Item1} \"{x.Item2}\""));
                 writer.DecreaseIndent();
                 writer.WriteLines(")", string.Empty);
             }

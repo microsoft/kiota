@@ -1,9 +1,14 @@
 ﻿using System;
 using System.IO;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Refiners;
+using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.Php;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Php.Tests
+namespace Kiota.Builder.Tests.Writers.Php
 {
     public class CodeClassDeclarationWriterTests : IDisposable
     {
@@ -18,7 +23,7 @@ namespace Kiota.Builder.Writers.Php.Tests
             codeElementWriter = new CodeClassDeclarationWriter(new PhpConventionService());
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName);
             tw = new StringWriter();
-            _refiner = new PhpRefiner(new GenerationConfiguration() {Language = GenerationLanguage.PHP});
+            _refiner = new PhpRefiner(new GenerationConfiguration {Language = GenerationLanguage.PHP});
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
             root.Name = "Microsoft\\Graph";
@@ -33,13 +38,13 @@ namespace Kiota.Builder.Writers.Php.Tests
         }
         [Fact]
         public void WritesSimpleDeclaration() {
-            codeElementWriter.WriteCodeElement(parentClass.StartBlock as ClassDeclaration, writer);
+            codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
             var result = tw.ToString();
             Assert.Contains("class ParentClass", result);
         }
         [Fact]
         public void WritesImplementation() {
-            var declaration = parentClass.StartBlock as ClassDeclaration;
+            var declaration = parentClass.StartBlock;
             declaration.AddImplements(new CodeType {
                 Name = "\\Stringable"
             });
@@ -49,7 +54,7 @@ namespace Kiota.Builder.Writers.Php.Tests
         }
         [Fact]
         public void WritesInheritance() {
-            var declaration = parentClass.StartBlock as ClassDeclaration;
+            var declaration = parentClass.StartBlock;
             declaration.Inherits = new (){
                 Name = "someInterface"
             };
@@ -59,7 +64,7 @@ namespace Kiota.Builder.Writers.Php.Tests
         }
         [Fact]
         public void WritesImports() {
-            var declaration = parentClass.StartBlock as ClassDeclaration;
+            var declaration = parentClass.StartBlock;
             declaration.AddUsings(new () {
                 Name = "Promise",
                 Declaration = new() {
@@ -80,7 +85,7 @@ namespace Kiota.Builder.Writers.Php.Tests
         }
         [Fact]
         public void RemovesImportWithClassName() {
-            var declaration = parentClass.StartBlock as ClassDeclaration;
+            var declaration = parentClass.StartBlock;
             declaration.AddUsings(new CodeUsing {
                 Name = "Microsoft\\Graph\\Models",
                 Declaration = new() {
@@ -96,7 +101,7 @@ namespace Kiota.Builder.Writers.Php.Tests
         public void ImportRequiredClassesWhenContainsRequestExecutor()
         {
             var declaration = parentClass;
-            declaration?.AddMethod(new CodeMethod()
+            declaration?.AddMethod(new CodeMethod
             {
                 Name = "get",
                 Access = AccessModifier.Public,
@@ -108,7 +113,7 @@ namespace Kiota.Builder.Writers.Php.Tests
                     Parent = declaration
                 }
             });
-            var dec = declaration?.StartBlock as ClassDeclaration;
+            var dec = declaration?.StartBlock;
             var namespaces = declaration?.Parent as CodeNamespace;
             _refiner.Refine(namespaces);
             codeElementWriter.WriteCodeElement(dec, writer);
@@ -122,12 +127,12 @@ namespace Kiota.Builder.Writers.Php.Tests
         [Fact]
         public void ExtendABaseClass()
         {
-            var currentClass = parentClass.StartBlock as ClassDeclaration;
+            var currentClass = parentClass.StartBlock;
             if (currentClass != null)
             {
-                currentClass.Inherits = new CodeType()
+                currentClass.Inherits = new CodeType
                 {
-                    TypeDefinition = new CodeClass() {Name = "Model", Kind = CodeClassKind.Custom}
+                    TypeDefinition = new CodeClass {Name = "Model", Kind = CodeClassKind.Custom}
                 };
             }
 

@@ -1,5 +1,7 @@
 using System.Linq;
 
+using Kiota.Builder.CodeDOM;
+
 namespace  Kiota.Builder.Writers.Swift {
     public class CodeNamespaceWriter : BaseElementWriter<CodeNamespace, SwiftConventionService>
     {

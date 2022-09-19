@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace  Kiota.Builder.Writers.Ruby {
@@ -13,8 +15,8 @@ namespace  Kiota.Builder.Writers.Ruby {
         
         public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
         {
-            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
-            if(writer == null) throw new ArgumentNullException(nameof(writer));
+            ArgumentNullException.ThrowIfNull(codeElement);
+            ArgumentNullException.ThrowIfNull(writer);
             var currentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
             if(codeElement?.Parent?.Parent is not CodeClass) {
                 foreach (var codeUsing in codeElement.Usings
@@ -26,7 +28,9 @@ namespace  Kiota.Builder.Writers.Ruby {
                         
                 foreach (var relativePath in codeElement.Usings
                                             .Where(x => !x.IsExternal)
-                                            .Select(x => relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
+                                            .Select(x => x.Declaration?.Name?.StartsWith('.') ?? false ? 
+                                                (string.Empty, string.Empty, x.Declaration.Name) :
+                                                relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
                                             .Select(x => x.Item3)
                                             .Distinct()
                                             .OrderBy(x => x))

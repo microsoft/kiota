@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kiota.Builder
+namespace Kiota.Builder.CodeDOM
 {
     /// <summary>
     /// Abstract element of some piece of source code to be generated
@@ -27,23 +27,24 @@ namespace Kiota.Builder
             foreach(var element in elements.Where(x => x != null && (x.Parent == null || x.Parent != this)))
                 element.Parent = this;
         }
-        public T GetImmediateParentOfType<T>(CodeElement item = null) {
+        public T GetImmediateParentOfType<T>(CodeElement item = null)
+        {
             if(item == null)
                 return GetImmediateParentOfType<T>(this);
-            else if (item is T p)
+            if (item is T p)
                 return p;
-            else if (item.Parent == null)
+            if (item.Parent == null)
                 throw new InvalidOperationException($"item {item.Name} of type {item.GetType()} does not have a parent");
-            else if(item.Parent is T p2)
+            if(item.Parent is T p2)
                 return p2;
-            else
-                return GetImmediateParentOfType<T>(item.Parent);
+            return GetImmediateParentOfType<T>(item.Parent);
         }
-        public bool IsChildOf(CodeElement codeElement, bool immediateOnly = false) {
-            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
-            else if(this.Parent == codeElement) return true;
-            else if(immediateOnly || this.Parent == null) return false;
-            else return this.Parent.IsChildOf(codeElement, immediateOnly);
+        public bool IsChildOf(CodeElement codeElement, bool immediateOnly = false)
+        {
+            ArgumentNullException.ThrowIfNull(codeElement);
+            if(this.Parent == codeElement) return true;
+            if(immediateOnly || this.Parent == null) return false;
+            return this.Parent.IsChildOf(codeElement, immediateOnly);
         }
     }
 }

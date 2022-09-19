@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript
@@ -31,22 +29,19 @@ namespace Kiota.Builder.Writers.TypeScript
 
             if (typeDef == null)
                 return (importSymbol, codeUsing.Alias, "./"); // it's relative to the folder, with no declaration (default failsafe)
-            else
-            {
-                var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
+            var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
                 typeDef.GetImmediateParentOfType<CodeNamespace>());
-                var isCodeUsingAModel = codeUsing.Declaration?.TypeDefinition is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model);
-                if (importPath == "./" && isCodeUsingAModel)
-                {
-                    importPath += "index";
-                }
-                else if (string.IsNullOrEmpty(importPath))
-                    importPath += codeUsing.Name;
-                else if (!isCodeUsingAModel) {
-                    importPath += (codeUsing.Declaration.TypeDefinition?.Name ?? codeUsing.Declaration.Name).ToFirstCharacterLowerCase();
-                }
-                return (importSymbol, codeUsing.Alias, importPath);
+            var isCodeUsingAModel = codeUsing.Declaration?.TypeDefinition is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model);
+            if (importPath == "./" && isCodeUsingAModel)
+            {
+                importPath += "index";
             }
+            else if (string.IsNullOrEmpty(importPath))
+                importPath += codeUsing.Name;
+            else if (!isCodeUsingAModel) {
+                importPath += (codeUsing.Declaration.TypeDefinition?.Name ?? codeUsing.Declaration.Name).ToFirstCharacterLowerCase();
+            }
+            return (importSymbol, codeUsing.Alias, importPath);
         }
     }
 }

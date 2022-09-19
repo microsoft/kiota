@@ -1,8 +1,12 @@
 using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Refiners;
+
 using Xunit;
 
-namespace Kiota.Builder.Refiners.Tests;
+namespace Kiota.Builder.Tests.Refiners;
 public class TypeScriptLanguageRefinerTests {
     private readonly CodeNamespace root;
     private readonly CodeNamespace graphNS;
@@ -171,7 +175,7 @@ public class TypeScriptLanguageRefinerTests {
             },
             IsStatic = true,
         }).First();
-        factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
@@ -202,11 +206,13 @@ public class TypeScriptLanguageRefinerTests {
     [Fact]
     public void CorrectsCoreType() {
 
-        var model = root.AddClass(new CodeClass () {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        model.AddProperty(new CodeProperty() {
+        model.AddProperty(new CodeProperty
+        {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
             Type = new CodeType {

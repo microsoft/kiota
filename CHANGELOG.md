@@ -8,11 +8,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+- Fixed a bug where CSharp serialization/deserialization names for properties would always be lowercased. [#1830](https://github.com/microsoft/kiota/issues/1830)
+- Fixed a regression where the incorrect schema would be selected in an AllOf collection to generate incorrect type inheritance.
+- Fixed a bug where discriminator information could contain non-derived types. [#1833](https://github.com/microsoft/kiota/issues/1833)
+- Fixes a bug where mapping value would be missing from factories. [#1833](https://github.com/microsoft/kiota/issues/1833)
+
+## [0.5.1] - 2022-09-09
+
+### Added
+
+- Exempts read only properties from being serialized and sent to the service. [#1828](https://github.com/microsoft/kiota/issues/1828)
+
+### Changed
+
+- Fixed a regression where parse node parameter type for factories would be incorrect in Go, Ruby, Swift, Java and TypeScript.
+
+## [0.5.0] - 2022-09-08
+
+### Added
+
+- Added support for range (2XX) responses. [#1699](https://github.com/microsoft/kiota/issues/1699)
+- Added none output formatter to CLI commons. (Shell)
+- Added 'Accept' field of http request header in Ruby.  [#1660](https://github.com/microsoft/kiota/issues/1660)
+- Added support for text serialization in Python. [#1406](https://github.com/microsoft/kiota/issues/1406)
+- Added support for composed types (union, intersection) in CSharp, Java and Go. [#1411](https://github.com/microsoft/kiota/issues/1411)
+- Added support for implicit discriminator mapping.
+- Added support for default values of enum properties in CSharp, Java and Go.
+
+### Changed
+
+- Fixed a bug where Go clients would panic in case of nil response value.
+- Fixed a bug to properly add request headers to Nethttp requests in Ruby. 
+- Fixed a bug to properly reject invalid URLs in Ruby.
+- Fixed an issue with require statements being generated instead of require relative in Ruby. 
+- Updated AdditionDataHolder with the correct namespace. (Ruby)
+- Removed/fixed passing in the current instance to fields deserializers in Ruby. [#1663](https://github.com/microsoft/kiota/issues/1663)
+- Fix issue with duplicate variable declaration in command handlers (Shell)
+- Update namespace qualification algorithm (helps in resolving when a type name appears in multiple namespaces) to use case insensitive string comparison (CSharp).
+- Fix an issue where namespace reserved name replacement would not include replacing import names in the declared areas in CSharp. [#1799](https://github.com/microsoft/kiota/issues/1799)
+- Removed Python abstractions, http, authentication and serialization packages
+- Fixed an issue with generating the incorrect serialized type name and require statement for get/post methods (Ruby).
+- Remove all overloads for GO request executors
+- Adds a context object in all GO requests
+- Remove all overloads for GO request executors and Adds a context object in all GO requests [GO#176](https://github.com/microsoftgraph/msgraph-sdk-go/issues/176)
+- Fixed a bug where the Hashing method for type names differentiation could lock the process.
+- Fixed a bug where CSharp declaration writer would add usings for inner classes.
+- Fixed a bug with inline schema class naming.
+- Fixed a bug where symbols starting with a number would be invalid.
+- Fixed a bug where classes could end up with duplicated methods.
+- Fixed a bug where Go writer would try to import multiple times the same symbol.
+- Fixed a bug where the core generator engine would fail to recognize meaningful schemas.
+- Fixed a bug where Go and Java inner class imports would be missing.
+- Fixed a bug where Go and Java collection bodies would not generate properly.
+- Aligns request options types in Java with other collections type.
+- Fixed a bug where Java would skip duplicated imports instead of deduplicating them.
+- Fixed a bug where Java would not convert date types for query parameters.
+- Fixed a bug where Java doc comments could contain invalid characters.
+- Fixed a bug where function parameters would be reodered incorrectly in dotnet[#1822](https://github.com/microsoft/kiota/issues/1822)
+
+## [0.4.0] - 2022-08-18
+
+### Added
+
+- Updated test suite and tooling for python abstractions and core packages. [#1761](https://github.com/microsoft/kiota/issues/367)
 - Added support for no-content responses in python abstractions and http packages. [#1630](https://github.com/microsoft/kiota/issues/1459)
 - Added support for vendor-specific content types in python. [#1631](https://github.com/microsoft/kiota/issues/1463)
 - Simplified field deserializers for json in Python. [#1632](https://github.com/microsoft/kiota/issues/1492)
+- Adds python code generation support. [#1200](https://github.com/microsoft/kiota/issues/163)
 - Added native type support for Duration, Time Only, and Date Only in Ruby. [#1644](https://github.com/microsoft/kiota/issues/1644)
 - Added a `--additional-data` argument to generate the AdditionalData properties [#1772](https://github.com/microsoft/kiota/issues/1772)
+- Added CAE infrastructure in Ruby by adding an `--additional-properties` parameter to the authenticate method of AuthenticationProvider, the get access token method of the AccessTokenProvider in Ruby. [#1643](https://github.com/microsoft/kiota/issues/1643)
+- Added Kiota authentication library for Ruby. [#421](https://github.com/microsoft/kiota/issues/421)
 
 ### Changed
 
@@ -23,6 +92,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where duplicate 'require' statements are generated for inner classes in the middle of the file (Ruby). [#1649](https://github.com/microsoft/kiota/issues/1649)
 - Split parsable interface and additional property/data interface in Ruby. [#1654](https://github.com/microsoft/kiota/issues/1654)
 - Changed format of datetimes in Go to be converted to ISO 8601 by default when place in path parameters(Go)
+- Defined the Access Token Provider Interface for Ruby authentication. [#1638](https://github.com/microsoft/kiota/issues/1638)
+- Reduce code verbosity on Go Getters and Setters. [G0#26][https://github.com/microsoftgraph/msgraph-sdk-go-core/issues/26]
+
 
 ## [0.3.0] - 2022-07-08
 
@@ -36,6 +108,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for vendor specific content types(PHP) [#1464](https://github.com/microsoft/kiota/issues/1464)
 - Added support for accept request header (PHP) [#1616](https://github.com/microsoft/kiota/issues/1616)
 - Added Getting Started steps for PHP. [#1642](https://github.com/microsoft/kiota/pull/1642)
+- Defined the Access Token Provider interface (Ruby) [#1638](https://github.com/microsoft/kiota/issues/1638)
+- Added Continuous Access Evalution infrastructure (Ruby) [#1643](https://github.com/microsoft/kiota/issues/1643)
 
 ### Changed
 

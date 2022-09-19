@@ -1,9 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder {
+namespace Kiota.Builder.PathSegmenters {
     public class TypeScriptPathSegmenter : CommonPathSegmenter
     {
         public TypeScriptPathSegmenter(string rootPath, string clientNamespaceName) : base (rootPath, clientNamespaceName) { }
@@ -21,7 +22,7 @@ namespace Kiota.Builder {
         {
             return currentElement switch
             {
-                CodeNamespace => new string[] { GetDefaultFileName(currentElement) },// We put barrels inside namespace folders
+                CodeNamespace => new[] { GetDefaultFileName(currentElement) },// We put barrels inside namespace folders
                 _ => Enumerable.Empty<string>(),
             };
         }

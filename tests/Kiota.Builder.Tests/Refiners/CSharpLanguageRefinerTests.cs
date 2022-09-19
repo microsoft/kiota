@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Refiners;
+
 using Xunit;
 
-namespace Kiota.Builder.Refiners.Tests;
+namespace Kiota.Builder.Tests.Refiners;
 public class CSharpLanguageRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLanguageRefinerTests
@@ -15,7 +19,7 @@ public class CSharpLanguageRefinerTests {
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         
-        var declaration = model.StartBlock as ClassDeclaration;
+        var declaration = model.StartBlock;
 
         Assert.Contains("ApiException", declaration.Usings.Select(x => x.Name));
         Assert.Equal("ApiException", declaration.Inherits.Name);
@@ -27,7 +31,7 @@ public class CSharpLanguageRefinerTests {
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var declaration = model.StartBlock as ClassDeclaration;
+        var declaration = model.StartBlock;
         declaration.Inherits = new CodeType {
             Name = "SomeOtherModel"
         };
@@ -58,7 +62,7 @@ public class CSharpLanguageRefinerTests {
                     });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         
-        var declaration = requestBuilder.StartBlock as ClassDeclaration;
+        var declaration = requestBuilder.StartBlock;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
@@ -84,6 +88,46 @@ public class CSharpLanguageRefinerTests {
         Assert.DoesNotContain("@", model.Name); // classname will be capitalized
         Assert.Equal("alias", property.Name);
         Assert.DoesNotContain("@", property.Name); // classname will be capitalized
+    }
+    [Fact]
+    public void EscapesReservedKeywordsForReservedNamespaceNameSegments() {
+        var subNS = root.AddNamespace($"{root.Name}.task"); // otherwise the import gets trimmed
+        var requestBuilder = subNS.AddClass(new CodeClass {
+            Name = "tasksRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        
+        var indexerCodeType = new CodeType { Name = "taskItemRequestBuilder" };
+        var indexer = new CodeIndexer {
+            Name = "idx",
+            SerializationName = "id",
+            IndexType = new CodeType {
+                Name = "string",
+            },
+            ReturnType = indexerCodeType
+        };
+        requestBuilder.SetIndexer(indexer);
+
+        
+        var itemSubNamespace = root.AddNamespace($"{subNS.Name}.item"); // otherwise the import gets trimmed
+        var itemRequestBuilder = itemSubNamespace.AddClass(new CodeClass {
+            Name = "taskItemRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        
+        var requestExecutor = itemRequestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "get",
+            Kind = CodeMethodKind.IndexerBackwardCompatibility,
+            ReturnType = new CodeType {
+                Name = "String"
+            },
+        }).First();
+
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        
+        Assert.Contains("TaskNamespace", subNS.Name);
+        Assert.Contains("TaskNamespace", itemSubNamespace.Name);
     }
     [Fact]
     public void ConvertsUnionTypesToWrapper() {
@@ -123,6 +167,9 @@ public class CSharpLanguageRefinerTests {
         Assert.True(parameter.Type is CodeType);
         Assert.True(method.ReturnType is CodeType);
         Assert.True(indexer.ReturnType is CodeType);
+        var resultingWrapper = root.FindChildByName<CodeClass>("union");
+        Assert.NotNull(resultingWrapper);
+        Assert.NotNull(resultingWrapper.OriginalComposedType);
     }
     [Fact]
     public void MovesClassesWithNamespaceNamesUnderNamespace() {

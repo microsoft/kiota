@@ -39,8 +39,8 @@ module Files
         ## 
         def get_field_deserializers() 
             return {
-                "address" => lambda {|o, n| o.address = n.get_string_value() },
-                "name" => lambda {|o, n| o.name = n.get_string_value() },
+                "address" => lambda {|n| @address = n.get_string_value() },
+                "name" => lambda {|n| @name = n.get_string_value() },
             }
         end
         ## 

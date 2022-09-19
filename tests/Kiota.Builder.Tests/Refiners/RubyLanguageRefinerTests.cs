@@ -1,7 +1,11 @@
 ﻿using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Refiners;
+
 using Xunit;
 
-namespace Kiota.Builder.Refiners.Tests {
+namespace Kiota.Builder.Tests.Refiners {
     public class RubyLanguageRefinerTests {
 
         private readonly CodeNamespace graphNS;
@@ -101,29 +105,12 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "model",
                 Kind = CodeClassKind.Model
             }).First();
-            var declaration = model.StartBlock as ClassDeclaration;
+            var declaration = model.StartBlock;
             declaration.Inherits = new (){
                 Name = "someInterface"
             };
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
             Assert.Equal("someInterface", declaration.Usings.First(usingDef => usingDef.Declaration != null).Declaration?.Name);
-        }
-        [Fact]
-        public void FixInheritedEntityType() {
-            var model = root.AddClass(new CodeClass {
-                Name = "model",
-                Kind = CodeClassKind.Model
-            }).First();
-            var entity = graphNS.AddClass(new CodeClass {
-                Name = "entity",
-                Kind = CodeClassKind.Model
-            }).First();
-            var declaration = model.StartBlock as ClassDeclaration;
-            declaration.Inherits = new (){
-                Name = "entity"
-            };
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-            Assert.Equal("Graph::Entity", declaration.Inherits.Name);
         }
         [Fact]
         public void ReplacesDateTimeOffsetByNativeType() {
@@ -191,13 +178,14 @@ namespace Kiota.Builder.Refiners.Tests {
         }
         [Fact]
         public void AddNamespaceModuleImports() {
-            var declaration = parentClass.StartBlock as ClassDeclaration;
+            var declaration = parentClass.StartBlock;
             var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
             var messageClassDef = new CodeClass {
                 Name = "Message",
             };
             subNS.AddClass(messageClassDef);
-            declaration.AddUsings(new CodeUsing() {
+            declaration.AddUsings(new CodeUsing
+            {
                 Name = messageClassDef.Name,
                 Declaration = new() {
                     Name = messageClassDef.Name,

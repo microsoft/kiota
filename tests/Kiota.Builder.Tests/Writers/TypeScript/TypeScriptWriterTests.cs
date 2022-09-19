@@ -1,7 +1,10 @@
 using System;
+
+using Kiota.Builder.Writers.TypeScript;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.TypeScript.Tests {
+namespace Kiota.Builder.Tests.Writers.TypeScript {
     public class TypeScriptWriterTests {
         [Fact]
         public void Instanciates() {

@@ -1,3 +1,5 @@
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Writers;
 public record RequestParams(CodeParameter requestBody, CodeParameter requestConfiguration)
 {

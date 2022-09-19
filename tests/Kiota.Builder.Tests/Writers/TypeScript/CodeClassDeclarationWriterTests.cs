@@ -1,8 +1,13 @@
 using System;
 using System.IO;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.TypeScript;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.TypeScript.Tests {
+namespace Kiota.Builder.Tests.Writers.TypeScript {
     public class CodeClassDeclarationWriterTests : IDisposable
     {
         private const string DefaultPath = "./";
@@ -30,13 +35,13 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesSimpleDeclaration() {
-            codeElementWriter.WriteCodeElement(parentClass.StartBlock as ClassDeclaration, writer);
+            codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
             var result = tw.ToString();
             Assert.Contains("export class", result);
         }
         [Fact]
         public void WritesImplementation() {
-            var declaration = parentClass.StartBlock as ClassDeclaration;
+            var declaration = parentClass.StartBlock;
             declaration.AddImplements(new CodeType {
                 Name = "someInterface"
             });
@@ -46,7 +51,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesInheritance() {
-            var declaration = parentClass.StartBlock as ClassDeclaration;
+            var declaration = parentClass.StartBlock;
             declaration.Inherits = new () {
                 Name = "someInterface"
             };
@@ -56,7 +61,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesImports() {
-            var declaration = parentClass.StartBlock as ClassDeclaration;
+            var declaration = parentClass.StartBlock;
             declaration.AddUsings(new CodeUsing {
                 Name = "Objects",
                 Declaration = new () {

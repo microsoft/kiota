@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 
@@ -36,7 +37,7 @@ namespace Kiota.Builder.Extensions {
         private static readonly char requestParametersSectionChar = '(';
         private static readonly char requestParametersSectionEndChar = ')';
         private const string WithKeyword = "With";
-        private static readonly MatchEvaluator requestParametersMatchEvaluator = (match) => {
+        private static readonly MatchEvaluator requestParametersMatchEvaluator = match => {
             return WithKeyword + match.Groups["paramName"].Value.ToFirstCharacterUpperCase();
         };
         private static string CleanupParametersFromPath(string pathSegment) {
@@ -64,10 +65,10 @@ namespace Kiota.Builder.Extensions {
         ///<summary>
         /// Returns the class name for the node with more or less precision depending on the provided arguments
         ///</summary>
-        public static string GetClassName(this OpenApiUrlTreeNode currentNode, HashSet<string> structuredMimeTypes, string suffix = default, string prefix = default, OpenApiOperation operation = default, OpenApiResponse response = default, OpenApiSchema schema = default) {
+        public static string GetClassName(this OpenApiUrlTreeNode currentNode, HashSet<string> structuredMimeTypes, string suffix = default, string prefix = default, OpenApiOperation operation = default, OpenApiResponse response = default, OpenApiSchema schema = default, bool requestBody = false) {
             var rawClassName = schema?.Reference?.GetClassName() ??
-                                response?.GetResponseSchema(structuredMimeTypes)?.Reference?.GetClassName() ??
-                                operation?.GetResponseSchema(structuredMimeTypes)?.Reference?.GetClassName() ?? 
+                                (requestBody ? null : response?.GetResponseSchema(structuredMimeTypes)?.Reference?.GetClassName()) ??
+                                (requestBody ? operation?.GetRequestSchema(structuredMimeTypes) : operation?.GetResponseSchema(structuredMimeTypes))?.Reference?.GetClassName() ?? 
                                 CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier();
             if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName)) {
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
@@ -109,19 +110,19 @@ namespace Kiota.Builder.Extensions {
             {
                 var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
                 var parameters = pathItem.Parameters
-                                        .Where(x => x.In == ParameterLocation.Query)
+                                        .Where(static x => x.In == ParameterLocation.Query)
                                         .Union(
                                             pathItem.Operations
-                                                    .SelectMany(x => x.Value.Parameters)
-                                                    .Where(x => x.In == ParameterLocation.Query))
+                                                    .SelectMany(static x => x.Value.Parameters)
+                                                    .Where(static x => x.In == ParameterLocation.Query))
                                         .ToArray();
                 if(parameters.Any())
                     queryStringParameters = "{?" + 
-                                            parameters.Select(x => 
+                                            parameters.Select(static x => 
                                                                 x.Name.SanitizeParameterNameForUrlTemplate() +
                                                                 (x.Explode ? 
                                                                     "*" : string.Empty))
-                                                    .Aggregate((x, y) => $"{x},{y}") +
+                                                    .Aggregate(static (x, y) => $"{x},{y}") +
                                             '}';
             }
             return "{+baseurl}" + 

@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.CompilerServices;
+
 using Kiota.Builder.Extensions;
+
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
@@ -48,8 +49,7 @@ internal class OpenApiPagingExtension : IOpenApiExtension
     /// <inheritdoc />
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
     {
-        if (writer == null)
-            throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStartObject();
         if (!string.IsNullOrEmpty(NextLinkName))
         {

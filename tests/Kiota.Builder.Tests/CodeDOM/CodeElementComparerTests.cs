@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+
+using Kiota.Builder.CodeDOM;
+
 using Xunit;
 
-namespace Kiota.Builder.Tests {
+namespace Kiota.Builder.Tests.CodeDOM {
     public class CodeElementComparerTests {
         [Fact]
         public void OrdersWithMethodWithinClass() {

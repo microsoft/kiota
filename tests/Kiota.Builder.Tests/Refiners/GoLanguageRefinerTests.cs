@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Refiners;
+
 using Xunit;
 
-namespace Kiota.Builder.Refiners.Tests;
+namespace Kiota.Builder.Tests.Refiners;
 public class GoLanguageRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLangRefinerTests
@@ -34,10 +38,10 @@ public class GoLanguageRefinerTests {
                 TypeDefinition = baseModel,
             },
         }).First();
-        factoryMethod.DiscriminatorPropertyName = "Discriminator";
-        factoryMethod.AddDiscriminatorMapping("DerivedModel", new CodeType{ Name = derivedModel.Name, TypeDefinition = derivedModel });
+        baseModel.DiscriminatorInformation.DiscriminatorPropertyName = "Discriminator";
+        baseModel.DiscriminatorInformation.AddDiscriminatorMapping("DerivedModel", new CodeType{ Name = derivedModel.Name, TypeDefinition = derivedModel });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Empty(factoryMethod.DiscriminatorMappings);
+        Assert.Empty(baseModel.DiscriminatorInformation.DiscriminatorMappings);
         Assert.Empty(baseModel.Usings.Where(x => x.Name.Equals("models.sub", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
@@ -199,7 +203,7 @@ public class GoLanguageRefinerTests {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -211,7 +215,8 @@ public class GoLanguageRefinerTests {
                 TypeDefinition = parentModel,
             },
         }).First();
-        factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "foo";
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
             Name = "childModel",
             TypeDefinition = childModel,
         });
@@ -243,7 +248,7 @@ public class GoLanguageRefinerTests {
                 TypeDefinition = parentModel,
             },
         }).First();
-        factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
             Name = "childModel",
             TypeDefinition = childModel,
         });
@@ -265,7 +270,7 @@ public class GoLanguageRefinerTests {
         Assert.Equal(factoryMethod, requestBuilderClass.StartBlock.Usings.First(x => x.Declaration.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
     }
     [Fact]
-    public void DoesNotKeepCancellationParametersInRequestExecutors()
+    public void RenamesCancellationParametersInRequestExecutors()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -291,8 +296,9 @@ public class GoLanguageRefinerTests {
         };
         method.AddParameter(cancellationParam);
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root); //using CSharp so the cancelletionToken doesn't get removed
-        Assert.False(method.Parameters.Any());
-        Assert.DoesNotContain(cancellationParam, method.Parameters);
+        Assert.True(method.Parameters.Any());
+        Assert.Contains(cancellationParam, method.Parameters);
+        Assert.Equal("ctx", cancellationParam.Name);
     }
     [Fact]
     public void ReplacesDateTimeOffsetByNativeType() {
@@ -640,12 +646,12 @@ public class GoLanguageRefinerTests {
         generator.AddParameter(executor.Parameters.Where(x => !x.IsOfKind(CodeParameterKind.ResponseHandler)).ToArray());
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         var childMethods = builder.Methods;
-        Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 1);//body only
+        Assert.DoesNotContain(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor)); // no executor overloads
         Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 1);//body only
-        Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 3);// body + query + response handler
+        Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 2);// body + query
         Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 2);// body + query config
-        Assert.Equal(4, childMethods.Count());
-        Assert.Equal(2, childMethods.Count(x => x.IsOverload));
+        Assert.Equal(3, childMethods.Count());
+        Assert.Equal(1, childMethods.Count(x => x.IsOverload));
     }
     #endregion
 }

@@ -5,6 +5,7 @@ using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Kiota.Builder.Extensions {
     public static class StringExtensions {
@@ -67,14 +68,14 @@ namespace Kiota.Builder.Extensions {
             string.IsNullOrEmpty(original) ? 
                 original :
                 original?.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
-        private static readonly HashAlgorithm sha = SHA256.Create();
+        private static readonly ThreadLocal<HashAlgorithm> sha = new(() => SHA256.Create()); // getting safe handle null exception from BCrypt on concurrent multi-threaded access
         public static string GetNamespaceImportSymbol(this string importName, string prefix = "i") {
             if(string.IsNullOrEmpty(importName)) return string.Empty;
             return prefix + HashString(importName).ToLowerInvariant();
         }
         private static string HashString(string input) {
-            var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
-            return hash.Select(b => b.ToString("x2")).Aggregate((x, y) => x + y);
+                var hash = sha.Value.ComputeHash(Encoding.UTF8.GetBytes(input));
+                return hash.Select(b => b.ToString("x2")).Aggregate((x, y) => x + y);
         }
         /// <summary>
         /// For Php strings, having double quotes around strings might cause an issue
@@ -117,11 +118,27 @@ namespace Kiota.Builder.Extensions {
                                                     x.Groups[CleanupGroupName].Value.ToFirstCharacterUpperCase() :
                                                     string.Empty); //strip out any invalid characters, and replace any following one by its uppercase version
 
-            if(int.TryParse(result, out var _)) // in most languages a number is not a valid symbol name
-                result = $"{original.ToString().GetNamespaceImportSymbol()}_{result}";
+            if(result.Any() && int.TryParse(result.AsSpan(0, 1), out var _)) // in most languages a number or starting with a number is not a valid symbol name
+                result = NumbersSpellingRegex.Replace(result, static x => x.Groups["number"]
+                                                                        .Value
+                                                                        .Select(static x => SpelledOutNumbers[x])
+                                                                        .Aggregate(static (z,y) => z + y));
 
             return result;
         }
+        private static readonly Regex NumbersSpellingRegex = new(@"^(?<number>\d+)", RegexOptions.Compiled);
+        private static readonly Dictionary<char, string> SpelledOutNumbers = new() {
+            {'0', "Zero"},
+            {'1', "One"},
+            {'2', "Two"},
+            {'3', "Three"},
+            {'4', "Four"},
+            {'5', "Five"},
+            {'6', "Six"},
+            {'7', "Seven"},
+            {'8', "Eight"},
+            {'9', "Nine"},
+        };
 
         /// <summary>
         /// Cleanup the XML string

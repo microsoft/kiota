@@ -1,14 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+
 using Xunit;
 
-namespace Kiota.Builder.Tests {
+namespace Kiota.Builder.Tests.CodeDOM {
     public class CodeBlockTests {
         [Fact]
         public void Defensive() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = new NeverBlock() {
+            var child = new NeverBlock
+            {
                 Parent = root,
             };
             child.AddRange();
@@ -18,8 +22,6 @@ namespace Kiota.Builder.Tests {
         {
             public void AddRange() {
                 base.AddRange((CodeClass[]) null);
-            }
-            public NeverBlock() : base(){
             }
 
             public override string Name

@@ -1,7 +1,9 @@
-﻿using System.Linq;
-using System;
-using Kiota.Builder.Extensions;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -70,17 +72,18 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             "ParseNode",
             addUsings: false
         );
-        Func<string, string> factoryNameCallbackFromTypeName = x => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+        Func<string, string> factoryNameCallbackFromTypeName = static x => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
         ReplaceLocalMethodsByGlobalFunctions(
             generatedCode,
             x => factoryNameCallbackFromTypeName(x.Parent.Name),
-            x => new List<CodeUsing>(x.DiscriminatorMappings
-                                    .Select(y => y.Value)
+            x => x.Parent is CodeClass parentClass ? new List<CodeUsing>(parentClass.DiscriminatorInformation
+                                    .DiscriminatorMappings
+                                    .Select(static y => y.Value)
                                     .OfType<CodeType>()
-                                    .Select(y => new CodeUsing { Name = y.Name, Declaration = y })) {
+                                    .Select(static y => new CodeUsing { Name = y.Name, Declaration = y })) {
                     new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
                     new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
-                }.ToArray(),
+                }.ToArray() : Array.Empty<CodeUsing>(),
             CodeMethodKind.Factory
         );
         Func<CodeType, string> factoryNameCallbackFromType = x => factoryNameCallbackFromTypeName(x.Name);
@@ -125,7 +128,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, AliasUsingsWithSameSymbol);
     }
     private const string AbstractionsPackageName = "@microsoft/kiota-abstractions";
-    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             AbstractionsPackageName, "RequestAdapter"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
@@ -175,8 +178,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "Record<string, unknown>";
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
-        } else
-            CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        }
+        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
@@ -186,7 +189,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
         else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
-            currentMethod.ReturnType.Name = $"Record<string, (node: ParseNode) => void>";
+            currentMethod.ReturnType.Name = "Record<string, (node: ParseNode) => void>";
         else if (currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
         {
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore))
@@ -198,7 +201,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 urlTplParams.Type is CodeType originalType) {
                 originalType.Name = "Record<string, unknown>";
                 urlTplParams.Description = "The raw url or the Url template parameters for the request.";
-                var unionType = new CodeExclusionType {
+                var unionType = new CodeUnionType {
                     Name = "rawUrlOrTemplateParameters",
                     IsNullable = true,
                 };
@@ -209,10 +212,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 });
                 urlTplParams.Type = unionType;
             }
-        }
+        } else if(currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
+            parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
         CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
-                                                .Union(new CodeTypeBase[] { currentMethod.ReturnType})
+                                                .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
     }
     private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {

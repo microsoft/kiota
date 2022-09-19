@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Swift;
@@ -53,11 +55,11 @@ public class SwiftConventionService : CommonLanguageConventionService
             _ => throw new NotImplementedException(),
         };
     }
-    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
+    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
     {
         if(code is CodeComposedTypeBase)
             throw new InvalidOperationException($"Swift does not support union types, the union type {code.Name} should have been filtered out by the refiner");
-        else if (code is CodeType currentType) {
+        if (code is CodeType currentType) {
             var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
             var nullableSuffix = code.IsNullable ? NullableMarkerAsString : string.Empty;
             var collectionPrefix = currentType.IsCollection && includeCollectionInformation ? "[" : string.Empty;
@@ -67,18 +69,17 @@ public class SwiftConventionService : CommonLanguageConventionService
 
             if (currentType.ActionOf)
                 return $"({collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}>) -> Void";
-            else
-                return $"{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}";
+            return $"{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}";
         }
-        else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+
+        throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
     private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
     {
         var typeName = TranslateType(currentType);
         if(currentType.TypeDefinition != null)
             return $"{GetNamesInUseByNamespaceSegments(currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>(), targetElement)}{typeName}";
-        else
-            return typeName;
+        return typeName;
     }
     public override string TranslateType(CodeType type)
     {
@@ -96,7 +97,7 @@ public class SwiftConventionService : CommonLanguageConventionService
             _ => type.Name?.ToFirstCharacterUpperCase() ?? "object",
         };
     }
-    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
     {
         var parameterType = GetTypeString(parameter.Type, targetElement);
         var defaultValue = parameter switch {

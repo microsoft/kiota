@@ -1,3 +1,4 @@
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp;
@@ -12,9 +13,7 @@ public class CodeIndexerWriter : BaseElementWriter<CodeIndexer, CSharpConvention
         conventions.WriteShortDescription(codeElement.Description, writer);
         writer.WriteLine($"public {returnType} this[{conventions.GetTypeString(codeElement.IndexType, codeElement)} position] {{ get {{");
         writer.IncreaseIndent();
-        conventions.AddParametersAssignment(writer, pathParametersProp.Type, pathParametersProp.Name.ToFirstCharacterUpperCase(), new (CodeTypeBase, string, string)[] {
-            (codeElement.IndexType, codeElement.SerializationName, "position")
-        });
+        conventions.AddParametersAssignment(writer, pathParametersProp.Type, pathParametersProp.Name.ToFirstCharacterUpperCase(), (codeElement.IndexType, codeElement.SerializationName, "position"));
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, "return ");
         writer.DecreaseIndent();
         writer.WriteLine("} }");

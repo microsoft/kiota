@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners
@@ -21,7 +23,9 @@ namespace Kiota.Builder.Refiners
             );
             AddConstructorsForDefaultValues(generatedCode, true);
             RemoveCancellationParameter(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode, false, false);
+            ConvertUnionTypesToWrapper(generatedCode, 
+                _configuration.UsesBackingStore,
+                false);
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",
@@ -185,8 +189,8 @@ namespace Kiota.Builder.Refiners
                 method.ReturnType.Name = "array";
             }
             CorrectDateTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
-                .Select(x => x.Type)
-                .Union(new CodeTypeBase[] { method.ReturnType})
+                .Select(static x => x.Type)
+                .Union(new[] { method.ReturnType})
                 .ToArray());
         }
         private static void CorrectParameterType(CodeElement codeElement)

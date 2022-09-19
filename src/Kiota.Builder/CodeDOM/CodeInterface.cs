@@ -1,4 +1,4 @@
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 
 public enum CodeInterfaceKind {
     Custom,
@@ -7,6 +7,7 @@ public enum CodeInterfaceKind {
 
 public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDeclaration>, ITypeDefinition
 {
+    public CodeClass OriginalClass { get; set; }
 }
 public class InterfaceDeclaration : ProprietableBlockDeclaration
 {

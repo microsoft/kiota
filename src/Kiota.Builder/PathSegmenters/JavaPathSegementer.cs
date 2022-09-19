@@ -1,8 +1,7 @@
-using System;
-using System.Collections.Generic;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder {
+namespace Kiota.Builder.PathSegmenters {
     public class JavaPathSegmenter : CommonPathSegmenter
     {
         public JavaPathSegmenter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName) { }

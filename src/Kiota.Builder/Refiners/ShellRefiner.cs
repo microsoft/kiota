@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners
@@ -16,14 +16,15 @@ namespace Kiota.Builder.Refiners
             AddDefaultImports(generatedCode, additionalUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
+            ConvertUnionTypesToWrapper(generatedCode, 
+                _configuration.UsesBackingStore
+            );
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddInnerClasses(generatedCode, false);
             AddParsableImplementsForModelClasses(generatedCode, "IParsable");
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);
-            CreateCommandBuilders(generatedCode);
             /* Exclude the following as their names will be capitalized making the change unnecessary in this case sensitive language
              * code classes, class declarations, property names, using declarations, namespace names
              * Exclude CodeMethod as the return type will also be capitalized (excluding the CodeType is not enough since this is evaluated at the code method level)
@@ -31,11 +32,24 @@ namespace Kiota.Builder.Refiners
             ReplaceReservedNames(
                 generatedCode,
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
-                new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod) }
+                new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum) }
+            );
+            // Replace the reserved types
+            ReplaceReservedModelTypes(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Object");
+            ReplaceReservedNamespaceTypeNames(generatedCode, new CSharpReservedTypesProvider(), static x => $"{x}Namespace");
+            AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiException",
+                "Microsoft.Kiota.Abstractions"
+            );
+            AddDiscriminatorMappingsUsingsToParentClasses(
+                generatedCode,
+                "IParseNode"
             );
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);
+            CreateCommandBuilders(generatedCode);
         }
 
         private static void CreateCommandBuilders(CodeElement currentElement)
@@ -147,7 +161,7 @@ namespace Kiota.Builder.Refiners
             return codeMethod;
         }
 
-        private static readonly AdditionalUsingEvaluator[] additionalUsingEvaluators = new AdditionalUsingEvaluator[] {
+        private static readonly AdditionalUsingEvaluator[] additionalUsingEvaluators = {
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "System.CommandLine",  "Command", "RootCommand", "IConsole"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
