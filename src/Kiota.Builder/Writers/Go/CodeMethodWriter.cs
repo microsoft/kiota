@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -553,30 +554,30 @@ namespace Kiota.Builder.Writers.Go {
             }
             writer.WriteLine("return res");
         }
-        private void WriteFieldDeserializer(CodeProperty property, LanguageWriter writer, CodeClass parentClass, string parsableImportSymbol) {
+
+        private void WriteFieldDeserializer(CodeProperty property, LanguageWriter writer, CodeClass parentClass,string parsableImportSymbol)
+        {
             writer.WriteLine($"res[\"{property.SerializationName ?? property.Name.ToFirstCharacterLowerCase()}\"] = func (n {parsableImportSymbol}) error {{");
             writer.IncreaseIndent();
-            var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
-            var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
-            writer.WriteLine($"val, err := n.{deserializationMethodName}");
-            WriteReturnError(writer);
-            writer.WriteLine("if val != nil {");
-            writer.IncreaseIndent();
-            var (valueArgument, pointerSymbol, dereference) = (property.Type.AllTypes.First().TypeDefinition, property.Type.IsCollection) switch {
-                (CodeClass, false) or (CodeEnum, false) => (GetTypeAssertion("val", $"*{propertyTypeImportName}"), string.Empty, true),
-                (CodeClass, true) or (CodeEnum, true) => ("res", "*", true),
-                (CodeInterface, false) => (GetTypeAssertion("val", propertyTypeImportName), string.Empty, false),
-                (CodeInterface, true) => ("res", string.Empty, false),
-                (_, true) => ("res", "*", true),
-                _ => ("val", string.Empty, true),
+            var (sourceName, sourceArgument) = GetDeserializationMethodNameAndFactory(property.Type, parentClass);
+            
+            var utilitySetter = (property.Type.AllTypes.First().TypeDefinition, property.Type.IsCollection) switch
+            {
+                (CodeClass, false) => "SetValue",
+                (CodeEnum, false) => "SetReferencedEnumValue",
+                (CodeClass, true) => "SetCollectionValue",
+                (CodeEnum, true) => "SetCollectionOfReferencedEnumValue",
+                (CodeInterface, false) => "SetObjectValue",
+                (CodeInterface, true) => "SetCollectionValue",
+                (_, true) => "SetCollectionOfReferencedPrimitiveValue",
+                _ => "SetValue",
             };
-            if(property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
-                WriteCollectionCast(propertyTypeImportName, "val", "res", writer, pointerSymbol, dereference);
-            writer.WriteLine($"m.{property.Setter.Name.ToFirstCharacterUpperCase()}({valueArgument})");
-            writer.CloseBlock();
-            writer.WriteLine("return nil");
+
+            var methodFactory = sourceArgument == String.Empty ? "" : $", {sourceArgument} ";
+            writer.WriteLine($"return core.{utilitySetter}(n.{sourceName} {methodFactory}, m.{property.Setter.Name.ToFirstCharacterUpperCase()})");
             writer.CloseBlock();
         }
+        
         private static string GetTypeAssertion(string originalReference, string typeImportName, string assignVarName = default, string statusVarName = default) =>
             $"{assignVarName}{(!string.IsNullOrEmpty(statusVarName) && !string.IsNullOrEmpty(assignVarName) ? ", ": string.Empty)}{statusVarName}{(string.IsNullOrEmpty(statusVarName) && string.IsNullOrEmpty(assignVarName) ? string.Empty : " := ")}{originalReference}.({typeImportName})";
         private static void WriteCollectionCast(string propertyTypeImportName, string sourceVarName, string targetVarName, LanguageWriter writer, string pointerSymbol = "*", bool dereference = true) {
@@ -773,6 +774,35 @@ namespace Kiota.Builder.Writers.Go {
                 _ => $"GetObjectValue({GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)})",
             };
         }
+
+        private (string, string) GetDeserializationMethodNameAndFactory(CodeTypeBase propType, CodeClass parentClass)
+        {
+            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+            var propertyTypeName = conventions.GetTypeString(propType, parentClass, false, false);
+            var propertyTypeNameWithoutImportSymbol = conventions.TranslateType(propType, false);
+            if(propType is CodeType currentType)
+            {
+                if(isCollection)
+                    if(currentType.TypeDefinition == null)
+                        return ("GetCollectionOfPrimitiveValues" , $"{propertyTypeName.ToFirstCharacterLowerCase()}");
+                    else if (currentType.TypeDefinition is CodeEnum)
+                        return ("GetCollectionOfEnumValues",
+                            conventions.GetImportedStaticMethodName(propType, parentClass, "Parse"));
+                    else
+                        return ("GetCollectionOfObjectValues", GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol));
+                if (currentType.TypeDefinition is CodeEnum currentEnum) {
+                    return ($"GetEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value" , conventions.GetImportedStaticMethodName(propType, parentClass, "Parse"));
+                }
+            }
+            return propertyTypeNameWithoutImportSymbol switch {
+                _ when conventions.IsPrimitiveType(propertyTypeNameWithoutImportSymbol) => 
+                    ($"Get{propertyTypeNameWithoutImportSymbol.ToFirstCharacterUpperCase()}Value", String.Empty),
+                _ when conventions.StreamTypeName.Equals(propertyTypeNameWithoutImportSymbol, StringComparison.OrdinalIgnoreCase) =>
+                    ("GetByteArrayValue", String.Empty),
+                _ => ("GetObjectValue", GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)),
+            };
+        }
+
         private string GetTypeFactory(CodeTypeBase propTypeBase, CodeClass parentClass, string propertyTypeName)
         {
             if(propTypeBase is CodeType propType)
