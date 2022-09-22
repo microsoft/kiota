@@ -574,7 +574,7 @@ namespace Kiota.Builder.Writers.Go {
             };
 
             var methodFactory = sourceArgument == String.Empty ? "" : $", {sourceArgument} ";
-            writer.WriteLine($"return core.{utilitySetter}(n.{sourceName} {methodFactory}, m.{property.Setter.Name.ToFirstCharacterUpperCase()})");
+            writer.WriteLine($"return {conventions.AbstractionsHash}.{utilitySetter}(n.{sourceName} {methodFactory}, m.{property.Setter.Name.ToFirstCharacterUpperCase()})");
             writer.CloseBlock();
         }
         

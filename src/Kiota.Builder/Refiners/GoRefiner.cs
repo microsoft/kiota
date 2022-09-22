@@ -266,7 +266,7 @@ public class GoRefiner : CommonLanguageRefiner
         new (static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer),
-            "github.com/microsoftgraph/msgraph-sdk-go-core", "*core"),
+            "github.com/microsoft/kiota-abstractions-go", ""),
         new (static x => x is CodeMethod method && 
                         method.IsOfKind(CodeMethodKind.RequestGenerator) &&
                         method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) && 
