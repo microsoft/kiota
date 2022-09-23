@@ -75,6 +75,7 @@ public class JavaConventionService : CommonLanguageConventionService
             "decimal" => "BigDecimal",
             "void" or "boolean" when !type.IsNullable => type.Name, //little casing hack
             "binary" => "byte[]",
+            _ when type.Name.Contains('.') => type.Name, // casing
             _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",
         };
     }
