@@ -486,7 +486,7 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("final RequestInformation requestInfo", result);
-        Assert.Contains("final HashMap<String, ParsableFactory<? extends Parsable>> errorMapping = new HashMap<>", result);
+        Assert.Contains("final HashMap<String, ParsableFactory<? extends Parsable>> errorMapping = new HashMap<String, ParsableFactory<? extends Parsable>>", result);
         Assert.Contains("put(\"4XX\", Error4XX::createFromDiscriminatorValue);", result);
         Assert.Contains("put(\"5XX\", Error5XX::createFromDiscriminatorValue);", result);
         Assert.Contains("put(\"403\", Error403::createFromDiscriminatorValue);", result);
@@ -851,8 +851,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.DoesNotContain("final UnionTypeWrapper res =", result);
         Assert.Contains("this.getComplexType1Value() != null", result);
         Assert.Contains("return this.getComplexType1Value().getFieldDeserializers()", result);
-        Assert.Contains("new HashMap<>()", result);
-        AssertExtensions.Before("return this.getComplexType1Value().getFieldDeserializers()", "new HashMap<>", result);
+        Assert.Contains("new HashMap<String, Consumer<ParseNode>>()", result);
+        AssertExtensions.Before("return this.getComplexType1Value().getFieldDeserializers()", "new HashMap<String, Consumer<ParseNode>>", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -871,8 +871,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.DoesNotContain("final IntersectionTypeWrapper res =", result);
         Assert.Contains("this.getComplexType1Value() != null || this.getComplexType3Value() != null", result);
         Assert.Contains("return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", result);
-        Assert.Contains("new HashMap<>()", result);
-        AssertExtensions.Before("return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", "new HashMap<>()", result);
+        Assert.Contains("new HashMap<String, Consumer<ParseNode>>()", result);
+        AssertExtensions.Before("return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", "new HashMap<String, Consumer<ParseNode>>()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
