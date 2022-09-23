@@ -932,10 +932,10 @@ public class CodeMethodWriterTests : IDisposable {
         AddSerializationProperties();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("GetStringValue", result);
-        Assert.Contains("GetCollectionOfPrimitiveValues", result);
-        Assert.Contains("GetCollectionOfObjectValues", result);
-        Assert.Contains("GetEnumValue", result);
+        Assert.Contains("SetCollectionOfPrimitiveValues(\"string\" , m.SetDummyColl)", result);
+        Assert.Contains("SetCollectionOfObjectValues(CreateComplexFromDiscriminatorValue , m.SetDummyComplexColl)", result);
+        Assert.Contains("SetEnumValue(ParseSomeEnum , m.SetDummyEnumCollection)", result);
+        Assert.Contains("SetStringValue(m.SetDummyProp)", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
