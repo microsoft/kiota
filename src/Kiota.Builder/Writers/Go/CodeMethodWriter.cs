@@ -557,25 +557,30 @@ namespace Kiota.Builder.Writers.Go {
 
         private void WriteFieldDeserializer(CodeProperty property, LanguageWriter writer, CodeClass parentClass,string parsableImportSymbol)
         {
-            writer.WriteLine($"res[\"{property.SerializationName ?? property.Name.ToFirstCharacterLowerCase()}\"] = func (n {parsableImportSymbol}) error {{");
-            writer.IncreaseIndent();
-            var (sourceName, sourceArgument) = GetDeserializationMethodNameAndFactory(property.Type, parentClass);
-            
+            var (_, sourceArgument) = GetDeserializationMethodNameAndFactory(property.Type, parentClass);
+
             var utilitySetter = (property.Type.AllTypes.First().TypeDefinition, property.Type.IsCollection) switch
             {
-                (CodeClass, false) => "SetValue",
-                (CodeEnum, false) => "SetReferencedEnumValue",
-                (CodeClass, true) => "SetCollectionValue",
-                (CodeEnum, true) => "SetCollectionOfReferencedEnumValue",
+                (CodeClass, false) => "SetObjectValue",
+                (CodeClass, true) => "SetCollectionOfObjectValues",
+                (CodeEnum, false) => "SetEnumValue",
+                (CodeEnum, true) => "SetCollectionOfEnumValues",
                 (CodeInterface, false) => "SetObjectValue",
-                (CodeInterface, true) => "SetCollectionValue",
-                (_, true) => "SetCollectionOfReferencedPrimitiveValue",
-                _ => "SetValue",
+                (CodeInterface, true) => "SetCollectionOfObjectValues",
+                (_, true) => "SetCollectionOfPrimitiveValues",
+                _ => $"Set{getSerializerTypeName(property)}Value",
             };
 
-            var methodFactory = sourceArgument == String.Empty ? "" : $", {sourceArgument} ";
-            writer.WriteLine($"return {conventions.AbstractionsHash}.{utilitySetter}(n.{sourceName} {methodFactory}, m.{property.Setter.Name.ToFirstCharacterUpperCase()})");
-            writer.CloseBlock();
+            var methodFactory = sourceArgument == String.Empty ? "" : $"{sourceArgument} , ";
+            writer.WriteLine($"res[\"{property.SerializationName ?? property.Name.ToFirstCharacterLowerCase()}\"] = utils.{utilitySetter}({methodFactory}m.{property.Setter.Name.ToFirstCharacterUpperCase()})");
+        }
+
+        private string getSerializerTypeName(CodeProperty property) {
+            var typeName = conventions.GetTypeString(property.Type, property.Parent, true, false, false);
+            if (typeName.Contains("[]")) {
+                typeName = $"{typeName.Replace("[]", "")}Array";
+            }
+            return typeName.ToFirstCharacterUpperCase();
         }
         
         private static string GetTypeAssertion(string originalReference, string typeImportName, string assignVarName = default, string statusVarName = default) =>
@@ -784,7 +789,7 @@ namespace Kiota.Builder.Writers.Go {
             {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
-                        return ("GetCollectionOfPrimitiveValues" , $"{propertyTypeName.ToFirstCharacterLowerCase()}");
+                        return ("GetCollectionOfPrimitiveValues" , $"\"{propertyTypeName.ToFirstCharacterLowerCase()}\"");
                     else if (currentType.TypeDefinition is CodeEnum)
                         return ("GetCollectionOfEnumValues",
                             conventions.GetImportedStaticMethodName(propType, parentClass, "Parse"));
