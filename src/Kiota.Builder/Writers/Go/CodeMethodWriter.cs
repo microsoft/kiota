@@ -571,7 +571,7 @@ namespace Kiota.Builder.Writers.Go {
                 _ => $"Set{getSerializerTypeName(property)}Value",
             };
 
-            var methodFactory = sourceArgument == String.Empty ? "" : $"{sourceArgument} , ";
+            var methodFactory = string.IsNullOrEmpty(sourceArgument) ? string.Empty : $"{sourceArgument} , ";
             writer.WriteLine($"res[\"{property.SerializationName ?? property.Name.ToFirstCharacterLowerCase()}\"] = utils.{utilitySetter}({methodFactory}m.{property.Setter.Name.ToFirstCharacterUpperCase()})");
         }
 
@@ -586,13 +586,8 @@ namespace Kiota.Builder.Writers.Go {
         private static string GetTypeAssertion(string originalReference, string typeImportName, string assignVarName = default, string statusVarName = default) =>
             $"{assignVarName}{(!string.IsNullOrEmpty(statusVarName) && !string.IsNullOrEmpty(assignVarName) ? ", ": string.Empty)}{statusVarName}{(string.IsNullOrEmpty(statusVarName) && string.IsNullOrEmpty(assignVarName) ? string.Empty : " := ")}{originalReference}.({typeImportName})";
         private static void WriteCollectionCast(string propertyTypeImportName, string sourceVarName, string targetVarName, LanguageWriter writer, string pointerSymbol = "*", bool dereference = true) {
-            writer.WriteLines($"{targetVarName} := make([]{propertyTypeImportName}, len({sourceVarName}))",
-                                $"for i, v := range {sourceVarName} {{");
-            writer.IncreaseIndent();
-            var derefPrefix = dereference ? "*(" : string.Empty;
-            var derefSuffix = dereference ? ")" : string.Empty;
-            writer.WriteLine($"{targetVarName}[i] = {GetTypeAssertion(derefPrefix + "v", pointerSymbol + propertyTypeImportName)}{derefSuffix}");
-            writer.CloseBlock();
+            var castFunc = dereference ? "CollectionValueCast" : "CollectionCast";
+            writer.WriteLine($"{targetVarName} := utils.{castFunc}[{propertyTypeImportName}]({sourceVarName})");
         }
         private static string getSendMethodName(string returnType, CodeMethod codeElement, bool isPrimitive, bool isBinary, bool isEnum) {
             return returnType switch {
@@ -829,15 +824,9 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"cast := (*{valueGet}).String()");
             else if(isComplexType && propType.IsCollection) {
                 var parsableSymbol = GetConversionHelperMethodImport(parentBlock, "Parsable");
-                writer.WriteLines($"cast := make([]{parsableSymbol}, len({valueGet}))",
-                                $"for i, v := range {valueGet} {{");
-                writer.IncreaseIndent();
-                if(isInterface)
-                    writer.WriteLine($"cast[i] = {GetTypeAssertion("v", parsableSymbol)}");
-                else
-                    writer.WriteLines("temp := v", // temporary creating a new reference to avoid pointers to the same object
-                        $"cast[i] = {parsableSymbol}(&temp)");
-                writer.CloseBlock();
+
+                var collectionUtilityFunc = isInterface ? "CollectionCast" : "CollectionStructCast";
+                writer.WriteLines($"cast := utils.{collectionUtilityFunc}[{parsableSymbol}]({valueGet})");
             }
             var collectionPrefix = propType.IsCollection ? "CollectionOf" : string.Empty;
             var collectionSuffix = propType.IsCollection ? "s" : string.Empty;
