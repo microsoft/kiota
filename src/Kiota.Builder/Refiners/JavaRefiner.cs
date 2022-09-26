@@ -131,7 +131,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             "com.microsoft.kiota.store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
-            "java.util", "Collections", "List"),
+            "java.util", "Collections"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             "java.util", "HashMap"),
         new (static x => x is CodeProperty prop && "decimal".Equals(prop.Type.Name, StringComparison.OrdinalIgnoreCase) ||
@@ -151,7 +151,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
         else if (currentProperty.IsOfKind(CodePropertyKind.Options)) {
-            currentProperty.Type.Name = "List<RequestOption>";
+            currentProperty.Type.Name = "java.util.List<RequestOption>"; //fully qualified name to avoid conflict with generated types
             currentProperty.DefaultValue = "Collections.emptyList()";
         } else if (currentProperty.IsOfKind(CodePropertyKind.Headers)) {
             currentProperty.Type.Name = "HashMap<String, String>";
