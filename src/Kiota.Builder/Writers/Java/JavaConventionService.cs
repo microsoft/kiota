@@ -100,7 +100,7 @@ public class JavaConventionService : CommonLanguageConventionService
     internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
         if(pathParametersType == null) return;
         var mapTypeName = pathParametersType.Name;
-        writer.WriteLine($"var {TempDictionaryVarName} = new {mapTypeName}({pathParametersReference});");
+        writer.WriteLine($"final {mapTypeName} {TempDictionaryVarName} = new {mapTypeName}({pathParametersReference});");
         if(parameters.Any())
             writer.WriteLines(parameters.Select(p =>
                 $"{TempDictionaryVarName}.put(\"{p.Item2}\", {p.Item3});"

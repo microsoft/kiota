@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added Java 8 generation support.
+
 ### Changed
 
 - Fixed a bug where CSharp serialization/deserialization names for properties would always be lowercased. [#1830](https://github.com/microsoft/kiota/issues/1830)

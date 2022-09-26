@@ -325,6 +325,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         else
             WriteDeserializerBodyForInheritedModel(codeElement, parentClass, writer, inherits);
     }
+    private const string DeserializerReturnType = "HashMap<String, Consumer<ParseNode>>";
     private static void WriteDeserializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
     {
         var includeElse = false;
@@ -346,7 +347,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         }
         if(otherPropGetters.Any())
             writer.CloseBlock(decreaseIndent: false);
-        writer.WriteLine("return new HashMap<>();");
+        writer.WriteLine($"return new {DeserializerReturnType}();");
     }
     private static void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
     {
@@ -368,13 +369,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             writer.WriteLine($"return ParseNodeHelper.mergeDeserializersForIntersectionWrapper({propertiesNamesAsArgument});");
             writer.CloseBlock();
         }
-        writer.WriteLine("return new HashMap<>();");
+        writer.WriteLine($"return new {DeserializerReturnType}();");
     }
     private void WriteDeserializerBodyForInheritedModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool inherits) {
         var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
         writer.WriteLines(
             $"final {parentClass.Name.ToFirstCharacterUpperCase()} currentObject = this;",
-            $"return new HashMap<>({(inherits ? "super." + method.Name.ToFirstCharacterLowerCase()+ "()" : fieldToSerialize.Count())}) {{{{");
+            $"return new {DeserializerReturnType}({(inherits ? "super." + method.Name.ToFirstCharacterLowerCase()+ "()" : fieldToSerialize.Count())}) {{{{");
         if(fieldToSerialize.Any()) {
             writer.IncreaseIndent();
             fieldToSerialize
@@ -400,7 +401,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var errorMappingVarName = "null";
         if(codeElement.ErrorMappings.Any()) {
             errorMappingVarName = "errorMapping";
-            writer.WriteLine($"final HashMap<String, ParsableFactory<? extends Parsable>> {errorMappingVarName} = new HashMap<>({codeElement.ErrorMappings.Count()}) {{{{");
+            writer.WriteLine($"final HashMap<String, ParsableFactory<? extends Parsable>> {errorMappingVarName} = new HashMap<String, ParsableFactory<? extends Parsable>>({codeElement.ErrorMappings.Count()}) {{{{");
             writer.IncreaseIndent();
             foreach(var errorMapping in codeElement.ErrorMappings) {
                 writer.WriteLine($"put(\"{errorMapping.Key.ToUpperInvariant()}\", {errorMapping.Value.Name.ToFirstCharacterUpperCase()}::{FactoryMethodName});");
