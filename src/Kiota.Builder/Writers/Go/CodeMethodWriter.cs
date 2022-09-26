@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -143,7 +144,7 @@ namespace Kiota.Builder.Writers.Go {
                     WriteReturnError(writer, propertyTypeImportName);
                     if(propertyType.IsCollection) {
                         var isInterfaceType = propertyType.TypeDefinition is CodeInterface;
-                        WriteCollectionCast(propertyTypeImportName, valueVarName, "cast", writer, isInterfaceType ? string.Empty : "*", !isInterfaceType);
+                        WriteCollectionCast(propertyTypeImportName, valueVarName, "cast", writer, !isInterfaceType);
                         valueVarName = "cast";
                     } else if (propertyType.TypeDefinition is CodeClass || propertyType.TypeDefinition is CodeInterface) {
                         writer.StartBlock($"if {GetTypeAssertion(valueVarName, propertyTypeImportName, "cast", "ok")}; ok {{");
@@ -216,7 +217,7 @@ namespace Kiota.Builder.Writers.Go {
                 WriteReturnError(writer, propertyTypeImportName);
                 if(propertyType.IsCollection) {
                     var isInterfaceType = propertyType.TypeDefinition is CodeInterface;
-                    WriteCollectionCast(propertyTypeImportName, valueVarName, "cast", writer, isInterfaceType ? string.Empty : "*", !isInterfaceType);
+                    WriteCollectionCast(propertyTypeImportName, valueVarName, "cast", writer, !isInterfaceType);
                     valueVarName = "cast";
                 }
                 writer.WriteLine($"{ResultVarName}.{property.Setter.Name.ToFirstCharacterUpperCase()}({valueVarName})");
@@ -545,48 +546,47 @@ namespace Kiota.Builder.Writers.Go {
             else
                 writer.WriteLine($"res := make({codeElement.ReturnType.Name})");
             if(fieldToSerialize.Any()) {
-                var parsableImportSymbol = GetConversionHelperMethodImport(parentClass, "ParseNode");
                 fieldToSerialize
                         .OrderBy(static x => x.Name)
                         .ToList()
-                        .ForEach(x => WriteFieldDeserializer(x, writer, parentClass, parsableImportSymbol));
+                        .ForEach(x => WriteFieldDeserializer(x, writer, parentClass));
             }
             writer.WriteLine("return res");
         }
-        private void WriteFieldDeserializer(CodeProperty property, LanguageWriter writer, CodeClass parentClass, string parsableImportSymbol) {
-            writer.WriteLine($"res[\"{property.SerializationName ?? property.Name.ToFirstCharacterLowerCase()}\"] = func (n {parsableImportSymbol}) error {{");
-            writer.IncreaseIndent();
-            var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
-            var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
-            writer.WriteLine($"val, err := n.{deserializationMethodName}");
-            WriteReturnError(writer);
-            writer.WriteLine("if val != nil {");
-            writer.IncreaseIndent();
-            var (valueArgument, pointerSymbol, dereference) = (property.Type.AllTypes.First().TypeDefinition, property.Type.IsCollection) switch {
-                (CodeClass, false) or (CodeEnum, false) => (GetTypeAssertion("val", $"*{propertyTypeImportName}"), string.Empty, true),
-                (CodeClass, true) or (CodeEnum, true) => ("res", "*", true),
-                (CodeInterface, false) => (GetTypeAssertion("val", propertyTypeImportName), string.Empty, false),
-                (CodeInterface, true) => ("res", string.Empty, false),
-                (_, true) => ("res", "*", true),
-                _ => ("val", string.Empty, true),
+
+        private void WriteFieldDeserializer(CodeProperty property, LanguageWriter writer, CodeClass parentClass)
+        {
+            var (_, sourceArgument) = GetDeserializationMethodNameAndFactory(property.Type, parentClass);
+
+            var utilitySetter = (property.Type.AllTypes.First().TypeDefinition, property.Type.IsCollection) switch
+            {
+                (CodeClass, false) => "SetObjectValue",
+                (CodeClass, true) => "SetCollectionOfObjectValues",
+                (CodeEnum, false) => "SetEnumValue",
+                (CodeEnum, true) => "SetCollectionOfEnumValues",
+                (CodeInterface, false) => "SetObjectValue",
+                (CodeInterface, true) => "SetCollectionOfObjectValues",
+                (_, true) => "SetCollectionOfPrimitiveValues",
+                _ => $"Set{getSerializerTypeName(property)}Value",
             };
-            if(property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
-                WriteCollectionCast(propertyTypeImportName, "val", "res", writer, pointerSymbol, dereference);
-            writer.WriteLine($"m.{property.Setter.Name.ToFirstCharacterUpperCase()}({valueArgument})");
-            writer.CloseBlock();
-            writer.WriteLine("return nil");
-            writer.CloseBlock();
+
+            var methodFactory = string.IsNullOrEmpty(sourceArgument) ? string.Empty : $"{sourceArgument} , ";
+            writer.WriteLine($"res[\"{property.SerializationName ?? property.Name.ToFirstCharacterLowerCase()}\"] = {conventions.AbstractionsHash}.{utilitySetter}({methodFactory}m.{property.Setter.Name.ToFirstCharacterUpperCase()})");
         }
+
+        private string getSerializerTypeName(CodeProperty property) {
+            var typeName = conventions.GetTypeString(property.Type, property.Parent, true, false, false);
+            if (typeName.Contains("[]")) {
+                typeName = $"{typeName.Replace("[]", "")}Array";
+            }
+            return typeName.ToFirstCharacterUpperCase();
+        }
+        
         private static string GetTypeAssertion(string originalReference, string typeImportName, string assignVarName = default, string statusVarName = default) =>
             $"{assignVarName}{(!string.IsNullOrEmpty(statusVarName) && !string.IsNullOrEmpty(assignVarName) ? ", ": string.Empty)}{statusVarName}{(string.IsNullOrEmpty(statusVarName) && string.IsNullOrEmpty(assignVarName) ? string.Empty : " := ")}{originalReference}.({typeImportName})";
-        private static void WriteCollectionCast(string propertyTypeImportName, string sourceVarName, string targetVarName, LanguageWriter writer, string pointerSymbol = "*", bool dereference = true) {
-            writer.WriteLines($"{targetVarName} := make([]{propertyTypeImportName}, len({sourceVarName}))",
-                                $"for i, v := range {sourceVarName} {{");
-            writer.IncreaseIndent();
-            var derefPrefix = dereference ? "*(" : string.Empty;
-            var derefSuffix = dereference ? ")" : string.Empty;
-            writer.WriteLine($"{targetVarName}[i] = {GetTypeAssertion(derefPrefix + "v", pointerSymbol + propertyTypeImportName)}{derefSuffix}");
-            writer.CloseBlock();
+        private void WriteCollectionCast(string propertyTypeImportName, string sourceVarName, string targetVarName, LanguageWriter writer, bool dereference = true) {
+            var castFunc = dereference ? "CollectionValueCast" : "CollectionCast";
+            writer.WriteLine($"{targetVarName} := {conventions.AbstractionsHash}.{castFunc}[{propertyTypeImportName}]({sourceVarName})");
         }
         private static string getSendMethodName(string returnType, CodeMethod codeElement, bool isPrimitive, bool isBinary, bool isEnum) {
             return returnType switch {
@@ -639,7 +639,7 @@ namespace Kiota.Builder.Writers.Go {
             if(codeElement.ReturnType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {
                 var propertyTypeImportName = conventions.GetTypeString(codeElement.ReturnType, parentClass, false, false);
                 var isInterface = codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeInterface;
-                WriteCollectionCast(propertyTypeImportName, "res", "val", writer, isInterface || isEnum ? string.Empty : "*", !(isInterface || isEnum));
+                WriteCollectionCast(propertyTypeImportName, "res", "val", writer, !(isInterface || isEnum));
                 valueVarName = "val, ";
             } else if (!isVoid) {
                 writer.WriteLine("if res == nil {");
@@ -700,7 +700,7 @@ namespace Kiota.Builder.Writers.Go {
                 else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.TypeDefinition is CodeInterface)) {
                     if(bodyType.IsCollection) {
                         var parsableSymbol = GetConversionHelperMethodImport(parentClass, "Parsable");
-                        WriteCollectionCast(parsableSymbol, bodyParamReference, "cast", writer, string.Empty, false);
+                        WriteCollectionCast(parsableSymbol, bodyParamReference, "cast", writer, false);
                         bodyParamReference = "cast...";
                     }
                     writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable(m.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
@@ -773,6 +773,35 @@ namespace Kiota.Builder.Writers.Go {
                 _ => $"GetObjectValue({GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)})",
             };
         }
+
+        private (string, string) GetDeserializationMethodNameAndFactory(CodeTypeBase propType, CodeClass parentClass)
+        {
+            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+            var propertyTypeName = conventions.GetTypeString(propType, parentClass, false, false);
+            var propertyTypeNameWithoutImportSymbol = conventions.TranslateType(propType, false);
+            if(propType is CodeType currentType)
+            {
+                if(isCollection)
+                    if(currentType.TypeDefinition == null)
+                        return ("GetCollectionOfPrimitiveValues" , $"\"{propertyTypeName.ToFirstCharacterLowerCase()}\"");
+                    else if (currentType.TypeDefinition is CodeEnum)
+                        return ("GetCollectionOfEnumValues",
+                            conventions.GetImportedStaticMethodName(propType, parentClass, "Parse"));
+                    else
+                        return ("GetCollectionOfObjectValues", GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol));
+                if (currentType.TypeDefinition is CodeEnum currentEnum) {
+                    return ($"GetEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value" , conventions.GetImportedStaticMethodName(propType, parentClass, "Parse"));
+                }
+            }
+            return propertyTypeNameWithoutImportSymbol switch {
+                _ when conventions.IsPrimitiveType(propertyTypeNameWithoutImportSymbol) => 
+                    ($"Get{propertyTypeNameWithoutImportSymbol.ToFirstCharacterUpperCase()}Value", String.Empty),
+                _ when conventions.StreamTypeName.Equals(propertyTypeNameWithoutImportSymbol, StringComparison.OrdinalIgnoreCase) =>
+                    ("GetByteArrayValue", String.Empty),
+                _ => ("GetObjectValue", GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)),
+            };
+        }
+
         private string GetTypeFactory(CodeTypeBase propTypeBase, CodeClass parentClass, string propertyTypeName)
         {
             if(propTypeBase is CodeType propType)
@@ -794,15 +823,9 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"cast := (*{valueGet}).String()");
             else if(isComplexType && propType.IsCollection) {
                 var parsableSymbol = GetConversionHelperMethodImport(parentBlock, "Parsable");
-                writer.WriteLines($"cast := make([]{parsableSymbol}, len({valueGet}))",
-                                $"for i, v := range {valueGet} {{");
-                writer.IncreaseIndent();
-                if(isInterface)
-                    writer.WriteLine($"cast[i] = {GetTypeAssertion("v", parsableSymbol)}");
-                else
-                    writer.WriteLines("temp := v", // temporary creating a new reference to avoid pointers to the same object
-                        $"cast[i] = {parsableSymbol}(&temp)");
-                writer.CloseBlock();
+
+                var collectionUtilityFunc = isInterface ? "CollectionCast" : "CollectionStructCast";
+                writer.WriteLines($"cast := {conventions.AbstractionsHash}.{collectionUtilityFunc}[{parsableSymbol}]({valueGet})");
             }
             var collectionPrefix = propType.IsCollection ? "CollectionOf" : string.Empty;
             var collectionSuffix = propType.IsCollection ? "s" : string.Empty;

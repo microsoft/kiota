@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a regression where the incorrect schema would be selected in an AllOf collection to generate incorrect type inheritance.
 - Fixed a bug where discriminator information could contain non-derived types. [#1833](https://github.com/microsoft/kiota/issues/1833)
 - Fixes a bug where mapping value would be missing from factories. [#1833](https://github.com/microsoft/kiota/issues/1833)
+- Update go serializers and deserializers to use abstractions utils
 
 ## [0.5.1] - 2022-09-09
 

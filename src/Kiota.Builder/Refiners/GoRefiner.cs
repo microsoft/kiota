@@ -4,6 +4,7 @@ using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
@@ -265,6 +266,9 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota-abstractions-go/serialization", "ParseNode", "Parsable"),
         new (static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer)
+            && method.Parent is CodeClass codeClass && codeClass.GetPropertiesOfKind(CodePropertyKind.Custom).Any(static x => !x.ExistsInBaseType),
+            "github.com/microsoft/kiota-abstractions-go", ""),
         new (static x => x is CodeMethod method && 
                         method.IsOfKind(CodeMethodKind.RequestGenerator) &&
                         method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) && 
