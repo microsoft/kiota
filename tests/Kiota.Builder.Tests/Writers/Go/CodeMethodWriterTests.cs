@@ -563,7 +563,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("m.requestAdapter.SendEnumCollectionAsync", result);
         Assert.Contains("ParseSomeEnum", result);
         Assert.DoesNotContain("val[i] = *(v.(*SomeEnum))", result);
-        Assert.Contains("val[i] = v.(SomeEnum)", result);
+        Assert.Contains("val := utils.CollectionCast[SomeEnum](res)", result);
         Assert.Contains("return nil, err", result);
         Assert.DoesNotContain("if res == nil", result);
         Assert.DoesNotContain("return nil, nil", result);
@@ -612,9 +612,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("if val, err := parseNode.GetStringValue(); val != nil {", result);
         Assert.Contains("result.SetStringValue(val)", result);
         Assert.Contains("else if val, err := parseNode.GetCollectionOfObjectValues(CreateComplexType2FromDiscriminatorValue); val != nil {", result);
-        Assert.Contains("cast := make([]ComplexType2, len(val))", result);
-        Assert.Contains("for i, v := range val", result);
-        Assert.Contains("cast[i] = *(v.(*ComplexType2))", result);
+        Assert.Contains("cast := utils.CollectionValueCast[ComplexType2](val)", result);
+        Assert.DoesNotContain("for i, v := range val", result);
         Assert.Contains("result.SetComplexType2Value(cast)", result);
         Assert.Contains("return result, nil", result);
         Assert.DoesNotContain("return NewUnionTypeWrapper(), nil", result);
@@ -658,9 +657,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("if val, err := parseNode.GetStringValue(); val != nil {", result);
         Assert.Contains("result.SetStringValue(val)", result);
         Assert.Contains("else if val, err := parseNode.GetCollectionOfObjectValues(CreateComplexType2FromDiscriminatorValue); val != nil {", result);
-        Assert.Contains("cast := make([]ComplexType2, len(val))", result);
-        Assert.Contains("for i, v := range val", result);
-        Assert.Contains("cast[i] = *(v.(*ComplexType2))", result);
+        Assert.Contains("cast := utils.CollectionValueCast[ComplexType2](val)", result);
+        Assert.DoesNotContain("for i, v := range val", result);
         Assert.Contains("result.SetComplexType2Value(cast)", result);
         Assert.Contains("return result, nil", result);
         Assert.DoesNotContain("return NewIntersectionTypeWrapper(), nil", result);
