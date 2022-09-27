@@ -9,10 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the ability to cancel the refinement process.
 - Added Java 8 generation support.
 
 ### Changed
 
+- Fixed a bug where OData primitive types would result in composed types.
+- Fixed a concurrency issue with imports management.
 - Fixed a bug where Java request options type could conflict with generated types.
 - Fixed a bug where CSharp serialization/deserialization names for properties would always be lowercased. [#1830](https://github.com/microsoft/kiota/issues/1830)
 - Fixed a regression where the incorrect schema would be selected in an AllOf collection to generate incorrect type inheritance.
