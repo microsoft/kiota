@@ -519,6 +519,13 @@ namespace Kiota.Builder.Tests.Writers.Php
                     Name = "array"
                 }
             };
+            parentClass.AddProperty(new CodeProperty{
+                Name = "noAccessors",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
             parentClass.AddMethod(deserializerMethod);
             parentClass.AddProperty(property);
             _refiner.Refine(parentClass.Parent as CodeNamespace);

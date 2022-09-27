@@ -548,6 +548,7 @@ namespace Kiota.Builder.Writers.Go {
             if(fieldToSerialize.Any()) {
                 fieldToSerialize
                         .OrderBy(static x => x.Name)
+                        .Where(static x => x.Setter != null)
                         .ToList()
                         .ForEach(x => WriteFieldDeserializer(x, writer, parentClass));
             }

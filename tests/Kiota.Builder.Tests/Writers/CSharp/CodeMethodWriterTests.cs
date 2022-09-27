@@ -73,12 +73,19 @@ public class CodeMethodWriterTests : IDisposable {
         addData.Type = new CodeType {
             Name = "string"
         };
-        var dummyProp = parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty {
             Name = "dummyProp",
-        }).First();
-        dummyProp.Type = new CodeType {
-            Name = "string"
-        };
+            Type = new CodeType {
+                Name = "string"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty{
+            Name = "noAccessors",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType {
+                Name = "string"
+            }
+        });
         var dummyUCaseProp = parentClass.AddProperty(new CodeProperty {
             Name = "DummyUCaseProp",
         }).First();

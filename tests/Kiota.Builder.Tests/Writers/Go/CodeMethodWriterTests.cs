@@ -98,6 +98,13 @@ public class CodeMethodWriterTests : IDisposable {
                 Name = "SetDummyProp",
             },
         });
+        parentClass.AddProperty(new CodeProperty{
+            Name = "noAccessors",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType {
+                Name = "string"
+            }
+        });
         parentClass.AddProperty(new CodeProperty {
             Name = "dummyColl",
             Type = new CodeType {

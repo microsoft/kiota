@@ -404,8 +404,8 @@ namespace Kiota.Builder.Writers.Php
             if(fieldToSerialize.Any()) {
                 writer.IncreaseIndent();
                 fieldToSerialize
-                    .Where(x => !x.ExistsInBaseType)
-                    .OrderBy(x => x.Name)
+                    .Where(static x => !x.ExistsInBaseType && x.Setter != null)
+                    .OrderBy(static x => x.Name)
                     .Select(x => 
                         $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => function (ParseNode $n) use ({currentObjectName}) {{ {currentObjectName}->{x.Setter.Name.ToFirstCharacterLowerCase()}({GetDeserializationMethodName(x.Type, method)}); }},")
                     .ToList()
