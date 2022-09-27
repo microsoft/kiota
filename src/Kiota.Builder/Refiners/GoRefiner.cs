@@ -278,7 +278,7 @@ public class GoRefiner : CommonLanguageRefiner
         new (static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer)
-            && method.Parent is CodeClass codeClass && codeClass.GetPropertiesOfKind(CodePropertyKind.Custom).Any(static x => !x.ExistsInBaseType),
+            && method.Parent is CodeClass codeClass && codeClass.GetPropertiesOfKind(CodePropertyKind.Custom).Any(static x => !x.ExistsInBaseType && x.Setter != null),
             "github.com/microsoft/kiota-abstractions-go", ""),
         new (static x => x is CodeMethod method && 
                         method.IsOfKind(CodeMethodKind.RequestGenerator) &&
