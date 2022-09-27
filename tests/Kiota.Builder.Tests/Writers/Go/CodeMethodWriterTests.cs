@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
-
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
@@ -848,9 +848,7 @@ public class CodeMethodWriterTests : IDisposable {
     }
     private const string AbstractionsPackageHash = "i2ae4187f7daee263371cb1c977df639813ab50ffa529013b7437480d1ec0158f";
     [Fact]
-    public void WritesRequestGeneratorBodyForScalar() {
-        var configurationMock = new Mock<GenerationConfiguration>();
-        var refiner = new GoRefiner(configurationMock.Object);
+    public async Task WritesRequestGeneratorBodyForScalar() {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         var executor = parentClass.AddMethod(new CodeMethod {
@@ -865,7 +863,7 @@ public class CodeMethodWriterTests : IDisposable {
         AddRequestBodyParameters(executor);
         AddRequestBodyParameters();
         AddRequestProperties();
-        refiner.Refine(parentClass.Parent as CodeNamespace);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go}, parentClass.Parent as CodeNamespace);
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
@@ -884,9 +882,7 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesRequestGeneratorBodyForParsable() {
-        var configurationMock = new Mock<GenerationConfiguration>();
-        var refiner = new GoRefiner(configurationMock.Object);
+    public async Task WritesRequestGeneratorBodyForParsable() {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         var executor = parentClass.AddMethod(new CodeMethod {
@@ -901,7 +897,7 @@ public class CodeMethodWriterTests : IDisposable {
         AddRequestBodyParameters(executor, true);
         AddRequestBodyParameters(useComplexTypeForBody: true);
         AddRequestProperties();
-        refiner.Refine(parentClass.Parent as CodeNamespace);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go}, parentClass.Parent as CodeNamespace);
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
@@ -1388,7 +1384,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("EnableBackingStore", result);
     }
     [Fact]
-    public void AccessorsTargetingEscapedPropertiesAreNotEscapedThemselves() {
+    public async Task AccessorsTargetingEscapedPropertiesAreNotEscapedThemselves() {
         var model = root.AddClass(new CodeClass {
             Name = "SomeClass",
             Kind = CodeClassKind.Model
@@ -1400,7 +1396,7 @@ public class CodeMethodWriterTests : IDisposable {
             Kind = CodePropertyKind.Custom,
         });
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         var getter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Getter));
         var setter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Setter));
         var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);

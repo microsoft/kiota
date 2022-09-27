@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading;
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Java;
@@ -10,67 +11,76 @@ namespace Kiota.Builder.Refiners;
 public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public JavaRefiner(GenerationConfiguration configuration) : base(configuration) {}
-    public override void Refine(CodeNamespace generatedCode)
+    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        LowerCaseNamespaceNames(generatedCode);
-        AddInnerClasses(generatedCode, false, string.Empty);
-        InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
-        ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
-        RemoveCancellationParameter(generatedCode);
-        ConvertUnionTypesToWrapper(generatedCode, 
-            _configuration.UsesBackingStore
-        );
-        AddRawUrlConstructorOverload(generatedCode);
-        CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
-        ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
-        AddGetterAndSetterMethods(generatedCode,
-            new() {
-                CodePropertyKind.Custom,
-                CodePropertyKind.AdditionalData,
-                CodePropertyKind.BackingStore,
-            },
-            _configuration.UsesBackingStore,
-            true,
-            "get",
-            "set"
-        );
-        ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
-        AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-        AddDefaultImports(generatedCode, defaultUsingEvaluators);
-        AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-        AddEnumSetImport(generatedCode);
-        SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
-        AddConstructorsForDefaultValues(generatedCode, true);
-        CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
-        var defaultConfiguration = new GenerationConfiguration();
-        ReplaceDefaultSerializationModules(
-            generatedCode,
-            defaultConfiguration.Serializers,
-            new (StringComparer.OrdinalIgnoreCase) {
-                "com.microsoft.kiota.serialization.JsonSerializationWriterFactory",
-                "com.microsoft.kiota.serialization.TextSerializationWriterFactory"}
-        );
-        ReplaceDefaultDeserializationModules(
-            generatedCode,
-            defaultConfiguration.Deserializers,
-            new (StringComparer.OrdinalIgnoreCase) {
-                "com.microsoft.kiota.serialization.JsonParseNodeFactory",
-                "com.microsoft.kiota.serialization.TextParseNodeFactory"}
-        );
-        AddSerializationModulesImport(generatedCode,
-                                    new [] { "com.microsoft.kiota.ApiClientBuilder",
-                                            "com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry" },
-                                    new [] { "com.microsoft.kiota.serialization.ParseNodeFactoryRegistry" });
-        AddParentClassToErrorClasses(
+        return Task.Run(() => {
+            cancellationToken.ThrowIfCancellationRequested();
+            LowerCaseNamespaceNames(generatedCode);
+            AddInnerClasses(generatedCode, false, string.Empty);
+            InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
+            cancellationToken.ThrowIfCancellationRequested();
+            RemoveCancellationParameter(generatedCode);
+            ConvertUnionTypesToWrapper(generatedCode, 
+                _configuration.UsesBackingStore
+            );
+            AddRawUrlConstructorOverload(generatedCode);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
+            AddGetterAndSetterMethods(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.BackingStore,
+                },
+                _configuration.UsesBackingStore,
+                true,
+                "get",
+                "set"
+            );
+            ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
+            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
+            cancellationToken.ThrowIfCancellationRequested();
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            AddParsableImplementsForModelClasses(generatedCode, "Parsable");
+            AddEnumSetImport(generatedCode);
+            cancellationToken.ThrowIfCancellationRequested();
+            SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
+            AddConstructorsForDefaultValues(generatedCode, true);
+            CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
+            var defaultConfiguration = new GenerationConfiguration();
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceDefaultSerializationModules(
                 generatedCode,
-                "ApiException",
-                "com.microsoft.kiota"
-        );
-        AddDiscriminatorMappingsUsingsToParentClasses(
-            generatedCode,
-            "ParseNode",
-            addUsings: true
-        );
+                defaultConfiguration.Serializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "com.microsoft.kiota.serialization.JsonSerializationWriterFactory",
+                    "com.microsoft.kiota.serialization.TextSerializationWriterFactory"}
+            );
+            ReplaceDefaultDeserializationModules(
+                generatedCode,
+                defaultConfiguration.Deserializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "com.microsoft.kiota.serialization.JsonParseNodeFactory",
+                    "com.microsoft.kiota.serialization.TextParseNodeFactory"}
+            );
+            AddSerializationModulesImport(generatedCode,
+                                        new [] { "com.microsoft.kiota.ApiClientBuilder",
+                                                "com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry" },
+                                        new [] { "com.microsoft.kiota.serialization.ParseNodeFactoryRegistry" });
+            cancellationToken.ThrowIfCancellationRequested();
+            AddParentClassToErrorClasses(
+                    generatedCode,
+                    "ApiException",
+                    "com.microsoft.kiota"
+            );
+            AddDiscriminatorMappingsUsingsToParentClasses(
+                generatedCode,
+                "ParseNode",
+                addUsings: true
+            );
+        }, cancellationToken);
     }
     private static void SetSetterParametersToNullable(CodeElement currentElement, params Tuple<CodeMethodKind, CodePropertyKind>[] accessorPairs) {
         if(currentElement is CodeMethod method &&

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
@@ -17,13 +17,11 @@ namespace Kiota.Builder.Tests.Writers.Php
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeEnum currentEnum;
-        private readonly ILanguageRefiner _languageRefiner;
         private const string EnumName = "someEnum";
         private readonly CodeEnumWriter _codeEnumWriter;
         public CodeEnumWriterTests(){
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName);
             tw = new StringWriter();
-            _languageRefiner = new PhpRefiner(new GenerationConfiguration {Language = GenerationLanguage.PHP});
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
             root.Name = "Microsoft\\Graph";
@@ -37,12 +35,12 @@ namespace Kiota.Builder.Tests.Writers.Php
             GC.SuppressFinalize(this);
         }
         [Fact]
-        public void WritesEnum()
+        public async Task WritesEnum()
         {
             var declaration = currentEnum.Parent as CodeNamespace;
             const string optionName = "option1";
             currentEnum.AddOption(new CodeEnumOption { Name = optionName});
-            _languageRefiner.Refine(declaration);
+            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, declaration);
             _codeEnumWriter.WriteCodeElement(currentEnum, writer);
             var result = tw.ToString();
             Assert.Contains("<?php", result);

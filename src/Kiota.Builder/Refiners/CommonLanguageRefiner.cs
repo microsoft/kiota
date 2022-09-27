@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading;
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -11,7 +12,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected CommonLanguageRefiner(GenerationConfiguration configuration) {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
-    public abstract void Refine(CodeNamespace generatedCode);
+    public abstract Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken);
     /// <summary>
     ///     This method adds the imports for the default serializers and deserializers to the api client class.
     ///     It also updates the module names to replace the fully qualified class name by the class name without the namespace.

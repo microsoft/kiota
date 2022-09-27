@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
@@ -18,7 +18,6 @@ namespace Kiota.Builder.Tests.Writers.Php
         private readonly CodePropertyWriter propertyWriter;
         private readonly LanguageWriter languageWriter;
         private readonly StringWriter stringWriter;
-        private readonly ILanguageRefiner _refiner;
         private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
 
         public CodePropertyWriterTests()
@@ -31,7 +30,6 @@ namespace Kiota.Builder.Tests.Writers.Php
                 Name = "ParentClass", Description = "This is an amazing class", Kind = CodeClassKind.Model
             };
             root.AddClass(parentClass);
-            _refiner = new PhpRefiner(new() {Language = GenerationLanguage.PHP});
             propertyWriter = new CodePropertyWriter(new PhpConventionService());
         }
         [Fact]
@@ -77,7 +75,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         }
 
         [Fact]
-        public void WriteCollectionKindProperty()
+        public async Task WriteCollectionKindProperty()
         {
             var property = new CodeProperty
             {
@@ -89,7 +87,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             };
             parentClass.Kind = CodeClassKind.Model;
             parentClass.AddProperty(property);
-            _refiner.Refine(root);
+            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
             propertyWriter.WriteCodeElement(property, languageWriter);
             var result = stringWriter.ToString();
             Assert.Contains("private array $additionalData;", result);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Kiota.Builder.CodeDOM;
@@ -1675,7 +1676,7 @@ components:
         Assert.Single(entityClass.DiscriminatorInformation.DiscriminatorMappings);
     }
     [Fact]
-    public void AddsDiscriminatorMappingsOneOfImplicit(){
+    public async Task AddsDiscriminatorMappingsOneOfImplicit(){
         var entitySchema = new OpenApiSchema {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -1795,7 +1796,7 @@ components:
         var builder = new KiotaBuilder(mockLogger.Object, config);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        builder.ApplyLanguageRefinement(config, codeModel);
+        await builder.ApplyLanguageRefinement(config, codeModel, CancellationToken.None);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectsClass = codeModel.FindChildByName<CodeClass>("directoryObjects");
         Assert.NotNull(entityClass);
@@ -1809,7 +1810,7 @@ components:
         Assert.Equal(2, directoryObjectsClass.DiscriminatorInformation.DiscriminatorMappings.Count());
     }
     [Fact]
-    public void AddsDiscriminatorMappingsAllOfImplicit(){
+    public async Task AddsDiscriminatorMappingsAllOfImplicit(){
         var entitySchema = new OpenApiSchema {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -1950,7 +1951,7 @@ components:
         var builder = new KiotaBuilder(mockLogger.Object, config);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        builder.ApplyLanguageRefinement(config, codeModel);
+        await builder.ApplyLanguageRefinement(config, codeModel, CancellationToken.None);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject");
         var userClass = codeModel.FindChildByName<CodeClass>("user");
@@ -1971,7 +1972,7 @@ components:
     }
     
     [Fact]
-    public void AddsDiscriminatorMappingsAllOfImplicitWithParentHavingMappingsWhileChildDoesNot(){
+    public async Task AddsDiscriminatorMappingsAllOfImplicitWithParentHavingMappingsWhileChildDoesNot(){
         var entitySchema = new OpenApiSchema {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -2121,7 +2122,7 @@ components:
         var builder = new KiotaBuilder(mockLogger.Object, config);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        builder.ApplyLanguageRefinement(config, codeModel);
+        await builder.ApplyLanguageRefinement(config, codeModel, CancellationToken.None);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject");
         var userClass = codeModel.FindChildByName<CodeClass>("user");

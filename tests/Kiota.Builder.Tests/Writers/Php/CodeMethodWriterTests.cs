@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
@@ -360,7 +360,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         }
 
         [Fact]
-        public void WriteIndexerBody()
+        public async Task WriteIndexerBody()
         {
             parentClass.AddProperty(
                 new CodeProperty
@@ -439,7 +439,7 @@ namespace Kiota.Builder.Tests.Writers.Php
 
             parentClass.AddMethod(codeMethod);
             
-            _refiner.Refine(parentClass.Parent as CodeNamespace);
+            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, parentClass.Parent as CodeNamespace);
             languageWriter.Write(codeMethod);
             var result = stringWriter.ToString();
 
@@ -504,7 +504,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         
         [Theory]
         [MemberData(nameof(DeserializerProperties))]
-        public void WriteDeserializer(CodeProperty property, string expected)
+        public async Task WriteDeserializer(CodeProperty property, string expected)
         {
             parentClass.Kind = CodeClassKind.Model;
             var deserializerMethod = new CodeMethod
@@ -528,7 +528,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             });
             parentClass.AddMethod(deserializerMethod);
             parentClass.AddProperty(property);
-            _refiner.Refine(parentClass.Parent as CodeNamespace);
+            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, parentClass.Parent as CodeNamespace);
             languageWriter.Write(deserializerMethod);
             if (property.ExistsInBaseType)
                 Assert.DoesNotContain(expected, stringWriter.ToString());
@@ -537,7 +537,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         }
 
         [Fact]
-        public void WriteDeserializerMergeWhenHasParent()
+        public async Task WriteDeserializerMergeWhenHasParent()
         {
             var currentClass = parentClass;
             currentClass.Kind = CodeClassKind.Model;
@@ -578,7 +578,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             };
             currentClass.AddMethod(deserializerMethod);
             
-            _refiner.Refine(parentClass.Parent as CodeNamespace);
+            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, parentClass.Parent as CodeNamespace);
             _codeMethodWriter.WriteCodeElement(deserializerMethod, languageWriter);
             var result = stringWriter.ToString();
             Assert.Contains("array_merge(parent::getFieldDeserializers()", result);
@@ -802,7 +802,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         }
         
         [Fact]
-        public void WriteFactoryMethod()
+        public async void WriteFactoryMethod()
         {
             var parentModel = root.AddClass(new CodeClass {
                 Name = "parentModel",
@@ -842,14 +842,14 @@ namespace Kiota.Builder.Tests.Writers.Php
                 },
                 Optional = false,
             });
-            _refiner.Refine(parentClass.Parent as CodeNamespace);
+            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, parentClass.Parent as CodeNamespace);
             languageWriter.Write(factoryMethod);
             var result = stringWriter.ToString();
             Assert.Contains("case 'childModel': return new ChildModel();", result);
             Assert.Contains("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\");", result);
         }
         [Fact]
-        public void WriteApiConstructor()
+        public async void WriteApiConstructor()
         {
             parentClass.AddProperty(new CodeProperty
             {
@@ -882,7 +882,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             codeMethod.DeserializerModules = new() {"Microsoft\\Kiota\\Serialization\\Deserializer"};
             codeMethod.SerializerModules = new() {"Microsoft\\Kiota\\Serialization\\Serializer"};
             parentClass.AddMethod(codeMethod);
-            _refiner.Refine(parentClass.Parent as CodeNamespace);
+            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, parentClass.Parent as CodeNamespace);
             languageWriter.Write(codeMethod);
             var result = stringWriter.ToString();
             Assert.Contains("$this->requestAdapter = $requestAdapter", result);

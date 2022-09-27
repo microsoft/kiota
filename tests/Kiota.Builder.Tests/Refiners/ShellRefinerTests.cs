@@ -1,5 +1,5 @@
 using System.Linq;
-
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Refiners;
 
@@ -11,7 +11,7 @@ public class ShellRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
 
     [Fact]
-    public void AddsUsingsForCommandTypesUsedInCommandBuilder() {
+    public async Task AddsUsingsForCommandTypesUsedInCommandBuilder() {
         var requestBuilder = root.AddClass(new CodeClass {
             Name = "somerequestbuilder",
             Kind = CodeClassKind.RequestBuilder,
@@ -25,7 +25,7 @@ public class ShellRefinerTests {
                 IsExternal = true
             }
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
         
         var declaration = requestBuilder.StartBlock;
 
@@ -33,7 +33,7 @@ public class ShellRefinerTests {
     }
 
     [Fact]
-    public void CreatesCommandBuilders() {
+    public async Task CreatesCommandBuilders() {
         var requestBuilder = root.AddClass(new CodeClass {
             Name = "somerequestbuilder",
             Kind = CodeClassKind.RequestBuilder,
@@ -74,7 +74,7 @@ public class ShellRefinerTests {
             SerializerModules = new() {"com.microsoft.kiota.serialization.Serializer"}
         });
 
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
 
         var methods = root.GetChildElements().OfType<CodeClass>().SelectMany(c => c.GetChildElements().OfType<CodeMethod>());
         var methodNames = methods.Select(m => m.Name);

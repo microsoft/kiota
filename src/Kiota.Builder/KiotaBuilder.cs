@@ -89,7 +89,7 @@ public class KiotaBuilder
 
         // Step 5 - RefineByLanguage
         sw.Start();
-        ApplyLanguageRefinement(config, generatedCode);
+        await ApplyLanguageRefinement(config, generatedCode, cancellationToken);
         StopLogAndReset(sw, "step 5 - refine by language - took");
 
         // Step 6 - Write language source 
@@ -254,12 +254,13 @@ public class KiotaBuilder
     /// </summary>
     /// <param name="config"></param>
     /// <param name="generatedCode"></param>
-    public void ApplyLanguageRefinement(GenerationConfiguration config, CodeNamespace generatedCode)
+    /// <param name="token"></param>
+    public async Task ApplyLanguageRefinement(GenerationConfiguration config, CodeNamespace generatedCode, CancellationToken token)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
 
-        ILanguageRefiner.Refine(config, generatedCode);
+        await ILanguageRefiner.Refine(config, generatedCode, token);
 
         stopwatch.Stop();
         logger.LogDebug("{timestamp}ms: Language refinement applied", stopwatch.ElapsedMilliseconds);

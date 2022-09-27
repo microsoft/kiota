@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Refiners;
 
@@ -11,13 +11,13 @@ public class CSharpLanguageRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLanguageRefinerTests
     [Fact]
-    public void AddsExceptionInheritanceOnErrorClasses() {
+    public async Task AddsExceptionInheritanceOnErrorClasses() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         
         var declaration = model.StartBlock;
 
@@ -25,7 +25,7 @@ public class CSharpLanguageRefinerTests {
         Assert.Equal("ApiException", declaration.Inherits.Name);
     }
     [Fact]
-    public void FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
+    public async Task FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
             Kind = CodeClassKind.Model,
@@ -35,10 +35,10 @@ public class CSharpLanguageRefinerTests {
         declaration.Inherits = new CodeType {
             Name = "SomeOtherModel"
         };
-        Assert.Throws<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root));
     }
     [Fact]
-    public void AddsUsingsForErrorTypesForRequestExecutor() {
+    public async Task AddsUsingsForErrorTypesForRequestExecutor() {
         var requestBuilder = root.AddClass(new CodeClass {
             Name = "somerequestbuilder",
             Kind = CodeClassKind.RequestBuilder,
@@ -60,14 +60,14 @@ public class CSharpLanguageRefinerTests {
                         Name = "Error4XX",
                         TypeDefinition = errorClass,
                     });
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         
         var declaration = requestBuilder.StartBlock;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
     [Fact]
-    public void DoesNotEscapesReservedKeywordsForClassOrPropertyKind() {
+    public async Task DoesNotEscapesReservedKeywordsForClassOrPropertyKind() {
         // Arrange
         var model = root.AddClass(new CodeClass {
             Name = "break", // this a keyword
@@ -82,7 +82,7 @@ public class CSharpLanguageRefinerTests {
             }
         }).First();
         // Act
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         // Assert
         Assert.Equal("break", model.Name);
         Assert.DoesNotContain("@", model.Name); // classname will be capitalized
@@ -90,7 +90,7 @@ public class CSharpLanguageRefinerTests {
         Assert.DoesNotContain("@", property.Name); // classname will be capitalized
     }
     [Fact]
-    public void EscapesReservedKeywordsForReservedNamespaceNameSegments() {
+    public async Task EscapesReservedKeywordsForReservedNamespaceNameSegments() {
         var subNS = root.AddNamespace($"{root.Name}.task"); // otherwise the import gets trimmed
         var requestBuilder = subNS.AddClass(new CodeClass {
             Name = "tasksRequestBuilder",
@@ -124,13 +124,13 @@ public class CSharpLanguageRefinerTests {
             },
         }).First();
 
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         
         Assert.Contains("TaskNamespace", subNS.Name);
         Assert.Contains("TaskNamespace", itemSubNamespace.Name);
     }
     [Fact]
-    public void ConvertsUnionTypesToWrapper() {
+    public async Task ConvertsUnionTypesToWrapper() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -162,7 +162,7 @@ public class CSharpLanguageRefinerTests {
         };
         model.SetIndexer(indexer);
         method.AddParameter(parameter);
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the indexer doesn't get removed
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the indexer doesn't get removed
         Assert.True(property.Type is CodeType);
         Assert.True(parameter.Type is CodeType);
         Assert.True(method.ReturnType is CodeType);
@@ -172,21 +172,21 @@ public class CSharpLanguageRefinerTests {
         Assert.NotNull(resultingWrapper.OriginalComposedType);
     }
     [Fact]
-    public void MovesClassesWithNamespaceNamesUnderNamespace() {
+    public async Task MovesClassesWithNamespaceNamesUnderNamespace() {
         var graphNS = root.AddNamespace("graph");
         var modelNS = graphNS.AddNamespace("graph.model");
         var model = graphNS.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         Assert.Single(root.GetChildElements(true));
         Assert.Single(graphNS.GetChildElements(true));
         Assert.Single(modelNS.GetChildElements(true));
         Assert.Equal(modelNS, model.Parent);
     }
     [Fact]
-    public void KeepsCancellationParametersInRequestExecutors()
+    public async Task KeepsCancellationParametersInRequestExecutors()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -210,14 +210,14 @@ public class CSharpLanguageRefinerTests {
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the cancelletionToken doesn't get removed
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the cancelletionToken doesn't get removed
         Assert.True(method.Parameters.Any());
         Assert.Contains(cancellationParam, method.Parameters);
     }
     #endregion
     #region CSharp
     [Fact]
-    public void DisambiguatePropertiesWithClassNames() {
+    public async Task DisambiguatePropertiesWithClassNames() {
         var model = root.AddClass(new CodeClass {
             Name = "Model",
             Kind = CodeClassKind.Model
@@ -228,12 +228,12 @@ public class CSharpLanguageRefinerTests {
                 Name = "string"
             }
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         Assert.Equal("model_prop", propToAdd.Name);
         Assert.Equal("model", propToAdd.SerializationName);
     }
     [Fact]
-    public void DisambiguatePropertiesWithClassNames_DoesntReplaceSerializationName() {
+    public async Task DisambiguatePropertiesWithClassNames_DoesntReplaceSerializationName() {
         var serializationName = "serializationName";
         var model = root.AddClass(new CodeClass {
             Name = "Model",
@@ -246,11 +246,11 @@ public class CSharpLanguageRefinerTests {
             },
             SerializationName = serializationName,
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         Assert.Equal(serializationName, propToAdd.SerializationName);
     }
     [Fact]
-    public void ReplacesDateOnlyByNativeType()
+    public async Task ReplacesDateOnlyByNativeType()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -265,12 +265,12 @@ public class CSharpLanguageRefinerTests {
                 Name = "DateOnly"
             },
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Date", method.ReturnType.Name);
     }
     [Fact]
-    public void ReplacesTimeOnlyByNativeType()
+    public async Task ReplacesTimeOnlyByNativeType()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -285,7 +285,7 @@ public class CSharpLanguageRefinerTests {
                 Name = "TimeOnly"
             },
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Time", method.ReturnType.Name);
     }
