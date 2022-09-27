@@ -210,6 +210,57 @@ components:
         Assert.Equal("double", progressProp.Type.Name);
     }
     [Fact]
+    public void OData_doubles_as_one_of_format_inside(){
+        var node = OpenApiUrlTreeNode.Create();
+        node.Attach("tasks", new OpenApiPathItem
+        {
+            Operations = {
+                [OperationType.Get] = new OpenApiOperation
+                { 
+                    Responses = new OpenApiResponses
+                    {
+                        ["200"] = new OpenApiResponse
+                        {
+                            Content =
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema
+                                    {
+                                        Type = "object",
+                                        Properties = new Dictionary<string, OpenApiSchema> {
+                                            {
+                                                "progress", new OpenApiSchema{
+                                                    OneOf = new List<OpenApiSchema>{
+                                                        new OpenApiSchema{
+                                                            Type = "number",
+                                                            Format = "double"
+                                                        },
+                                                        new OpenApiSchema{
+                                                            Type = "string"
+                                                        },
+                                                        new OpenApiSchema {
+                                                            Enum = new List<IOpenApiAny> { new OpenApiString("-INF"), new OpenApiString("INF"), new OpenApiString("NaN") }
+                                                        }
+                                                    },
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } 
+        }, "default");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var codeModel = builder.CreateSourceModel(node);
+        var progressProp = codeModel.FindChildByName<CodeProperty>("progress");
+        Assert.Equal("double", progressProp.Type.Name);
+    }
+    [Fact]
     public void OData_doubles_as_any_of(){
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem

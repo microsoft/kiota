@@ -70,13 +70,31 @@ namespace Kiota.Builder.Extensions {
         {
             return schema?.OneOf?.Count(IsSemanticallyMeaningful) > 1;
         }
+        private static readonly HashSet<string> oDataTypes = new() {
+            "number",
+            "integer",
+        };
+        public static bool IsODataPrimitiveType(this OpenApiSchema schema)
+        {
+            return schema.IsOneOf() &&
+                    schema.OneOf.Count == 3 &&
+                    schema.OneOf.Count(static x => x.Enum?.Any() ?? false) == 1 &&
+                    schema.OneOf.Count(static x => oDataTypes.Contains(x.Type)) == 1 &&
+                    schema.OneOf.Count(static x => "string".Equals(x.Type, StringComparison.OrdinalIgnoreCase)) == 1
+                    ||
+                schema.IsAnyOf() &&
+                    schema.AnyOf.Count == 3 &&
+                    schema.AnyOf.Count(static x => x.Enum?.Any() ?? false) == 1 &&
+                    schema.AnyOf.Count(static x => oDataTypes.Contains(x.Type)) == 1 &&
+                    schema.AnyOf.Count(static x => "string".Equals(x.Type, StringComparison.OrdinalIgnoreCase)) == 1;
+        }
         public static bool IsEnum(this OpenApiSchema schema)
         {
             return schema?.Enum?.Any() ?? false;
         }
         public static bool IsComposedEnum(this OpenApiSchema schema)
         {
-            return ((schema.IsAnyOf() && schema.AnyOf.Any(x => x.IsEnum())) || (schema.IsOneOf() && schema.OneOf.Any(x => x.IsEnum())));
+            return (schema.IsAnyOf() && schema.AnyOf.Any(x => x.IsEnum())) || (schema.IsOneOf() && schema.OneOf.Any(x => x.IsEnum()));
         }
         private static bool IsSemanticallyMeaningful(this OpenApiSchema schema)
         {
