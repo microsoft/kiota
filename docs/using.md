@@ -24,6 +24,8 @@ kiota (--openapi | -d) <path>
       [(--deserializer | --ds) <classes>]
       [--clean-output | --co]
       [(--structured-mime-types | -m) <mime-types>]
+      [(--include-path | -i) <glob pattern>]
+      [(--exclude-path | -e) <glob pattern>]
 ```
 
 ## Mandatory parameters
@@ -127,6 +129,26 @@ The log level to use when logging events to the main output. Defaults to `warnin
 ```shell
 kiota --loglevel information
 ```
+
+### `--exclude-path (-e)`
+
+A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing.
+
+```shell
+kiota --exclude-path **/users/** --exclude-path **/groups/**
+```
+
+> Note: exclude pattern can be used in combination with the include pattern argument. A path item is include when (no include pattern is include OR it matches an include pattern) AND (no exclude pattern is include OR it doesn't match an exclude pattern).
+
+### `--include-path (-i)`
+
+A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything.
+
+```shell
+kiota --include-path **/users/** --include-path **/groups/**
+```
+
+> Note: include pattern can be used in combination with the exclude pattern argument. A path item is include when (no include pattern is include OR it matches an include pattern) AND (no exclude pattern is include OR it doesn't match an exclude pattern).
 
 ### `--namespace-name (-n)`
 

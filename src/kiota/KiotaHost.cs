@@ -76,13 +76,13 @@ public class KiotaHost {
         structuredMimeTypesOption.AddAlias("-m");
 
         var includePatterns = new Option<List<string>>(
-            "--include-paths",
+            "--include-path",
             () => defaultConfiguration.IncludePatterns.ToList(),
             "The paths to include in the generation. Glob patterns accepted. Accepts multiple values.");
         includePatterns.AddAlias("-i");
 
         var excludePatterns = new Option<List<string>>(
-            "--exclude-paths",
+            "--exclude-path",
             () => defaultConfiguration.ExcludePatterns.ToList(),
             "The paths to exclude from the generation. Glob patterns accepted. Accepts multiple values.");
         excludePatterns.AddAlias("-e");
