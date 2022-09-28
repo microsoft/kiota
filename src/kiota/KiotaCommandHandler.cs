@@ -46,6 +46,8 @@ internal class KiotaCommandHandler : ICommandHandler
         string namespaceName = context.ParseResult.GetValueForOption(NamespaceOption);
         List<string> serializer = context.ParseResult.GetValueForOption(SerializerOption);
         List<string> deserializer = context.ParseResult.GetValueForOption(DeserializerOption);
+        List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption);
+        List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption);
         bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
         List<string> structuredMimeTypes = context.ParseResult.GetValueForOption(StructuredMimeTypesOption);
         CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
@@ -60,6 +62,10 @@ internal class KiotaCommandHandler : ICommandHandler
             Configuration.Serializers = serializer.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if(deserializer?.Any() ?? false)
             Configuration.Deserializers = deserializer.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if(includePatterns?.Any() ?? false)
+            Configuration.IncludePatterns = includePatterns.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if(excludePatterns?.Any() ?? false)
+            Configuration.ExcludePatterns = excludePatterns.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if(structuredMimeTypes?.Any() ?? false)
             Configuration.StructuredMimeTypes = structuredMimeTypes.SelectMany(x => x.Split(new[] {' '}))
                                                             .Select(x => x.TrimQuotes())
@@ -103,6 +109,8 @@ internal class KiotaCommandHandler : ICommandHandler
             assignment.Invoke(Configuration, input);
     }
     private GenerationConfiguration Configuration { get => ConfigurationFactory.Value; }
+    public Option<List<string>> IncludePatternsOption { get; set; }
+    public Option<List<string>> ExcludePatternsOption { get; set; }
     private readonly Lazy<GenerationConfiguration> ConfigurationFactory = new (() => {
         var builder = new ConfigurationBuilder();
         var configuration = builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)

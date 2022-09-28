@@ -75,6 +75,18 @@ public class KiotaHost {
         "The MIME types to use for structured data model generation. Accepts multiple values.");
         structuredMimeTypesOption.AddAlias("-m");
 
+        var includePatterns = new Option<List<string>>(
+            "--include-paths",
+            () => defaultConfiguration.IncludePatterns.ToList(),
+            "The paths to include in the generation. Glob patterns accepted. Accepts multiple values.");
+        includePatterns.AddAlias("-i");
+
+        var excludePatterns = new Option<List<string>>(
+            "--exclude-paths",
+            () => defaultConfiguration.ExcludePatterns.ToList(),
+            "The paths to exclude from the generation. Glob patterns accepted. Accepts multiple values.");
+        excludePatterns.AddAlias("-e");
+
         var command = new RootCommand {
             descriptionOption,
             outputOption,
@@ -87,7 +99,9 @@ public class KiotaHost {
             serializerOption,
             deserializerOption,
             cleanOutputOption,
-            structuredMimeTypesOption
+            structuredMimeTypesOption,
+            includePatterns,
+            excludePatterns,
         };
         command.Description = "OpenAPI-based HTTP Client SDK code generator";
         command.Handler = new KiotaCommandHandler {
@@ -102,7 +116,9 @@ public class KiotaHost {
             SerializerOption = serializerOption,
             DeserializerOption = deserializerOption,
             CleanOutputOption = cleanOutputOption,
-            StructuredMimeTypesOption = structuredMimeTypesOption
+            StructuredMimeTypesOption = structuredMimeTypesOption,
+            IncludePatternsOption = includePatterns,
+            ExcludePatternsOption = excludePatterns,
         };
         return command;
     }
