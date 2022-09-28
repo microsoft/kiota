@@ -272,7 +272,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"err := m.{parentClass.StartBlock.Inherits.Name.ToFirstCharacterUpperCase()}.Serialize(writer)");
                 WriteReturnError(writer);
             }
-            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly)) {
+            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly && x.Getter != null)) {
                 WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase(), $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", !inherits, writer);
             }
         }
@@ -548,6 +548,7 @@ namespace Kiota.Builder.Writers.Go {
             if(fieldToSerialize.Any()) {
                 fieldToSerialize
                         .OrderBy(static x => x.Name)
+                        .Where(static x => x.Setter != null)
                         .ToList()
                         .ForEach(x => WriteFieldDeserializer(x, writer, parentClass));
             }

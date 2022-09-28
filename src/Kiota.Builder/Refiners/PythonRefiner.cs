@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading;
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -9,63 +10,72 @@ namespace Kiota.Builder.Refiners;
 public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public PythonRefiner(GenerationConfiguration configuration) : base(configuration) {}
-    public override void Refine(CodeNamespace generatedCode)
+    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        AddDefaultImports(generatedCode, defaultUsingEvaluators);
-        DisableActionOf(generatedCode, 
-        CodeParameterKind.RequestConfiguration);
-        ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
-        RemoveCancellationParameter(generatedCode);
-        CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
-        CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.__instance.create_backing_store()");
-        AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);           
-        AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-        ReplaceBinaryByNativeType(generatedCode, "bytes",null);
-        ReplaceReservedNames(
-            generatedCode,
-            new PythonReservedNamesProvider(), x => $"{x}_escaped"
-        );
-        AddGetterAndSetterMethods(generatedCode,
-            new() {
-                CodePropertyKind.Custom,
-                CodePropertyKind.AdditionalData,
-            },
-            _configuration.UsesBackingStore,
-            false,
-            string.Empty,
-            string.Empty);
-        AddConstructorsForDefaultValues(generatedCode, true);
-        var defaultConfiguration = new GenerationConfiguration();
-        ReplaceDefaultSerializationModules(
-            generatedCode,
-            defaultConfiguration.Serializers,
-            new (StringComparer.OrdinalIgnoreCase) {
-                "kiota_serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory",
-                "kiota_serialization_text.text_serialization_writer_factory.TextSerializationWriterFactory"
-            }
-        );
-        ReplaceDefaultDeserializationModules(
-            generatedCode,
-            defaultConfiguration.Deserializers,
-            new (StringComparer.OrdinalIgnoreCase) {
-                "kiota_serialization_json.json_parse_node_factory.JsonParseNodeFactory",
-                "kiota_serialization_text.text_parse_node_factory.TextParseNodeFactory"
-            }
-        );
-        AddSerializationModulesImport(generatedCode,
-        new[] { $"{AbstractionsPackageName}.api_client_builder.register_default_serializer", 
-                $"{AbstractionsPackageName}.api_client_builder.enable_backing_store_for_serialization_writer_factory",
-                $"{AbstractionsPackageName}.serialization.SerializationWriterFactoryRegistry"},
-        new[] { $"{AbstractionsPackageName}.api_client_builder.register_default_deserializer",
-                $"{AbstractionsPackageName}.serialization.ParseNodeFactoryRegistry" });
-        AddParentClassToErrorClasses(
+        return Task.Run(() => {
+            cancellationToken.ThrowIfCancellationRequested();
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            DisableActionOf(generatedCode, 
+            CodeParameterKind.RequestConfiguration);
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
+            RemoveCancellationParameter(generatedCode);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
+            cancellationToken.ThrowIfCancellationRequested();
+            CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.__instance.create_backing_store()");
+            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);           
+            AddParsableImplementsForModelClasses(generatedCode, "Parsable");
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceBinaryByNativeType(generatedCode, "bytes",null);
+            ReplaceReservedNames(
                 generatedCode,
-                "APIError",
-                $"{AbstractionsPackageName}.api_error"
-        );
-        AddQueryParameterMapperMethod(
-            generatedCode
-        );
+                new PythonReservedNamesProvider(), x => $"{x}_escaped"
+            );
+            cancellationToken.ThrowIfCancellationRequested();
+            AddGetterAndSetterMethods(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                },
+                _configuration.UsesBackingStore,
+                false,
+                string.Empty,
+                string.Empty);
+            AddConstructorsForDefaultValues(generatedCode, true);
+            var defaultConfiguration = new GenerationConfiguration();
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceDefaultSerializationModules(
+                generatedCode,
+                defaultConfiguration.Serializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "kiota_serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory",
+                    "kiota_serialization_text.text_serialization_writer_factory.TextSerializationWriterFactory"
+                }
+            );
+            ReplaceDefaultDeserializationModules(
+                generatedCode,
+                defaultConfiguration.Deserializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "kiota_serialization_json.json_parse_node_factory.JsonParseNodeFactory",
+                    "kiota_serialization_text.text_parse_node_factory.TextParseNodeFactory"
+                }
+            );
+            AddSerializationModulesImport(generatedCode,
+            new[] { $"{AbstractionsPackageName}.api_client_builder.register_default_serializer", 
+                    $"{AbstractionsPackageName}.api_client_builder.enable_backing_store_for_serialization_writer_factory",
+                    $"{AbstractionsPackageName}.serialization.SerializationWriterFactoryRegistry"},
+            new[] { $"{AbstractionsPackageName}.api_client_builder.register_default_deserializer",
+                    $"{AbstractionsPackageName}.serialization.ParseNodeFactoryRegistry" });
+            cancellationToken.ThrowIfCancellationRequested();
+            AddParentClassToErrorClasses(
+                    generatedCode,
+                    "APIError",
+                    $"{AbstractionsPackageName}.api_error"
+            );
+            AddQueryParameterMapperMethod(
+                generatedCode
+            );
+        }, cancellationToken);
     }
 
     private const string AbstractionsPackageName = "kiota_abstractions";

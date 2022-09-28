@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading;
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
@@ -11,115 +12,125 @@ namespace Kiota.Builder.Refiners;
 public class GoRefiner : CommonLanguageRefiner
 {
     public GoRefiner(GenerationConfiguration configuration) : base(configuration) { }
-    public override void Refine(CodeNamespace generatedCode)
+    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         _configuration.NamespaceNameSeparator = "/";
-        AddInnerClasses(
-            generatedCode,
-            true,
-            null);
-        ReplaceIndexersByMethodsWithParameter(
-            generatedCode,
-            generatedCode,
-            false,
-            "ById");
-        RenameCancellationParameter(generatedCode);
-        RemoveDiscriminatorMappingsTargetingSubNamespaces(generatedCode);
-        ReplaceRequestBuilderPropertiesByMethods(
-            generatedCode
-        );
-        ConvertUnionTypesToWrapper(
-            generatedCode,
-            _configuration.UsesBackingStore
-        );
-        AddRawUrlConstructorOverload(
-            generatedCode
-        );
-        RemoveModelPropertiesThatDependOnSubNamespaces(
-            generatedCode
-        );
-        ReplaceReservedNames(
-            generatedCode,
-            new GoReservedNamesProvider(),
-            x => $"{x}_escaped",
-            shouldReplaceCallback: x => x is not CodeProperty currentProp || 
-                                        !(currentProp.Parent is CodeClass parentClass &&
-                                        parentClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.ParameterSet) &&
-                                        currentProp.Access == AccessModifier.Public)); // Go reserved keywords are all lowercase and public properties are uppercased when we don't provide accessors (models)
-        AddPropertiesAndMethodTypesImports(
-            generatedCode,
-            true,
-            false,
-            true);
-        AddDefaultImports(
-            generatedCode,
-            defaultUsingEvaluators);
-        CorrectCoreType(
-            generatedCode,
-            CorrectMethodType,
-            CorrectPropertyType,
-            CorrectImplements);
-        InsertOverrideMethodForBuildersAndConstructors(generatedCode);
-        DisableActionOf(generatedCode, 
-            CodeParameterKind.RequestConfiguration);
-        AddGetterAndSetterMethods(
-            generatedCode, 
-            new () { 
-                CodePropertyKind.AdditionalData,
-                CodePropertyKind.Custom,
-                CodePropertyKind.BackingStore }, 
-            _configuration.UsesBackingStore,
-            false,
-            "Get",
-            "Set");
-        AddConstructorsForDefaultValues(
-            generatedCode,
-            true,
-            true,  //forcing add as constructors are required for by factories 
-            new[] { CodeClassKind.RequestConfiguration });
-        MakeModelPropertiesNullable(
-            generatedCode);
-        AddErrorImportForEnums(
-            generatedCode);
-        var defaultConfiguration = new GenerationConfiguration();
-        ReplaceDefaultSerializationModules(
-            generatedCode,
-            defaultConfiguration.Serializers,
-            new (StringComparer.OrdinalIgnoreCase) {
-                "github.com/microsoft/kiota-serialization-json-go.JsonSerializationWriterFactory",
-                "github.com/microsoft/kiota-serialization-text-go.TextSerializationWriterFactory"});
-        ReplaceDefaultDeserializationModules(
-            generatedCode,
-            defaultConfiguration.Deserializers,
-            new (StringComparer.OrdinalIgnoreCase) {
-                "github.com/microsoft/kiota-serialization-json-go.JsonParseNodeFactory",
-                "github.com/microsoft/kiota-serialization-text-go.TextParseNodeFactory"});
-        AddSerializationModulesImport(
-            generatedCode,
-            new[] {"github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer"},
-            new[] {"github.com/microsoft/kiota-abstractions-go/serialization.ParseNodeFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultDeserializer"});
-        AddParentClassToErrorClasses(
+        return Task.Run(() => {
+            cancellationToken.ThrowIfCancellationRequested();
+            AddInnerClasses(
                 generatedCode,
-                "ApiError",
-                "github.com/microsoft/kiota-abstractions-go"
-        );
-        AddDiscriminatorMappingsUsingsToParentClasses(
-            generatedCode,
-            "ParseNode",
-            true
-        );
-        AddParsableImplementsForModelClasses(
-            generatedCode,
-            "Parsable"
-        );
-        RenameInnerModelsToAppended(
-            generatedCode
-        );
-        CopyModelClassesAsInterfaces(
-            generatedCode,
-            x => $"{x.Name}able"
-        );
-        RemoveHandlerFromRequestBuilder(generatedCode);
+                true,
+                null);
+            ReplaceIndexersByMethodsWithParameter(
+                generatedCode,
+                generatedCode,
+                false,
+                "ById");
+            RenameCancellationParameter(generatedCode);
+            RemoveDiscriminatorMappingsTargetingSubNamespaces(generatedCode);
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceRequestBuilderPropertiesByMethods(
+                generatedCode
+            );
+            ConvertUnionTypesToWrapper(
+                generatedCode,
+                _configuration.UsesBackingStore
+            );
+            AddRawUrlConstructorOverload(
+                generatedCode
+            );
+            cancellationToken.ThrowIfCancellationRequested();
+            RemoveModelPropertiesThatDependOnSubNamespaces(
+                generatedCode
+            );
+            ReplaceReservedNames(
+                generatedCode,
+                new GoReservedNamesProvider(),
+                x => $"{x}_escaped",
+                shouldReplaceCallback: x => x is not CodeProperty currentProp || 
+                                            !(currentProp.Parent is CodeClass parentClass &&
+                                            parentClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.ParameterSet) &&
+                                            currentProp.Access == AccessModifier.Public)); // Go reserved keywords are all lowercase and public properties are uppercased when we don't provide accessors (models)
+            cancellationToken.ThrowIfCancellationRequested();
+            AddPropertiesAndMethodTypesImports(
+                generatedCode,
+                true,
+                false,
+                true);
+            AddDefaultImports(
+                generatedCode,
+                defaultUsingEvaluators);
+            CorrectCoreType(
+                generatedCode,
+                CorrectMethodType,
+                CorrectPropertyType,
+                CorrectImplements);
+            cancellationToken.ThrowIfCancellationRequested();
+            InsertOverrideMethodForBuildersAndConstructors(generatedCode);
+            DisableActionOf(generatedCode, 
+                CodeParameterKind.RequestConfiguration);
+            AddGetterAndSetterMethods(
+                generatedCode, 
+                new () { 
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.BackingStore }, 
+                _configuration.UsesBackingStore,
+                false,
+                "Get",
+                "Set");
+            AddConstructorsForDefaultValues(
+                generatedCode,
+                true,
+                true,  //forcing add as constructors are required for by factories 
+                new[] { CodeClassKind.RequestConfiguration });
+            cancellationToken.ThrowIfCancellationRequested();
+            MakeModelPropertiesNullable(
+                generatedCode);
+            AddErrorImportForEnums(
+                generatedCode);
+            var defaultConfiguration = new GenerationConfiguration();
+            ReplaceDefaultSerializationModules(
+                generatedCode,
+                defaultConfiguration.Serializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "github.com/microsoft/kiota-serialization-json-go.JsonSerializationWriterFactory",
+                    "github.com/microsoft/kiota-serialization-text-go.TextSerializationWriterFactory"});
+            ReplaceDefaultDeserializationModules(
+                generatedCode,
+                defaultConfiguration.Deserializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "github.com/microsoft/kiota-serialization-json-go.JsonParseNodeFactory",
+                    "github.com/microsoft/kiota-serialization-text-go.TextParseNodeFactory"});
+            AddSerializationModulesImport(
+                generatedCode,
+                new[] {"github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer"},
+                new[] {"github.com/microsoft/kiota-abstractions-go/serialization.ParseNodeFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultDeserializer"});
+            cancellationToken.ThrowIfCancellationRequested();
+            AddParentClassToErrorClasses(
+                    generatedCode,
+                    "ApiError",
+                    "github.com/microsoft/kiota-abstractions-go"
+            );
+            AddDiscriminatorMappingsUsingsToParentClasses(
+                generatedCode,
+                "ParseNode",
+                true
+            );
+            AddParsableImplementsForModelClasses(
+                generatedCode,
+                "Parsable"
+            );
+            RenameInnerModelsToAppended(
+                generatedCode
+            );
+            cancellationToken.ThrowIfCancellationRequested();
+            CopyModelClassesAsInterfaces(
+                generatedCode,
+                x => $"{x.Name}able"
+            );
+            RemoveHandlerFromRequestBuilder(generatedCode);
+        }, cancellationToken);
     }
     
     protected static void RenameCancellationParameter(CodeElement currentElement){

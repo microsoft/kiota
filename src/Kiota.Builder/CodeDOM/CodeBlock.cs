@@ -115,26 +115,28 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
 }
 public class BlockDeclaration : CodeTerminal
 {
-    private readonly List<CodeUsing> usings = new ();
-    public IEnumerable<CodeUsing> Usings => usings;
+    private readonly ConcurrentDictionary<CodeUsing, bool> usings = new (); // To avoid concurrent access issues
+    public IEnumerable<CodeUsing> Usings => usings.Keys;
     public void AddUsings(params CodeUsing[] codeUsings) {
-        if(codeUsings == null || codeUsings.Any(x => x == null))
+        if(codeUsings == null || codeUsings.Any(static x => x == null))
             throw new ArgumentNullException(nameof(codeUsings));
         EnsureElementsAreChildren(codeUsings);
-        usings.AddRange(codeUsings);
+        foreach (var codeUsing in codeUsings)
+            usings.TryAdd(codeUsing, true);
     }
     public void RemoveUsings(params CodeUsing[] codeUsings)
     {
-        if(codeUsings == null || codeUsings.Any(x => x == null))
+        if(codeUsings == null || codeUsings.Any(static x => x == null))
             throw new ArgumentNullException(nameof(codeUsings));
         foreach(var codeUsing in codeUsings)
-            usings.Remove(codeUsing);
+            usings.TryRemove(codeUsing, out var _);
     }
     public void RemoveUsingsByDeclarationName(params string[] names) {
         if(names == null || names.Any(x => string.IsNullOrEmpty(x)))
             throw new ArgumentNullException(nameof(names));
-        var namesAsHashset = names.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        usings.RemoveAll(x => namesAsHashset.Contains(x.Declaration?.Name));
+        var namesAsHashSet = names.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach(var usingToRemove in usings.Keys.Where(x => namesAsHashSet.Contains(x.Declaration?.Name)))
+            usings.TryRemove(usingToRemove, out var _);
     }
 }
 public class BlockEnd : CodeTerminal

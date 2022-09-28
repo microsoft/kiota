@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Kiota.Builder.CodeDOM;
@@ -191,6 +192,57 @@ components:
                                                         }
                                                     },
                                                     Format = "double"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } 
+        }, "default");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var codeModel = builder.CreateSourceModel(node);
+        var progressProp = codeModel.FindChildByName<CodeProperty>("progress");
+        Assert.Equal("double", progressProp.Type.Name);
+    }
+    [Fact]
+    public void OData_doubles_as_one_of_format_inside(){
+        var node = OpenApiUrlTreeNode.Create();
+        node.Attach("tasks", new OpenApiPathItem
+        {
+            Operations = {
+                [OperationType.Get] = new OpenApiOperation
+                { 
+                    Responses = new OpenApiResponses
+                    {
+                        ["200"] = new OpenApiResponse
+                        {
+                            Content =
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema
+                                    {
+                                        Type = "object",
+                                        Properties = new Dictionary<string, OpenApiSchema> {
+                                            {
+                                                "progress", new OpenApiSchema{
+                                                    OneOf = new List<OpenApiSchema>{
+                                                        new OpenApiSchema{
+                                                            Type = "number",
+                                                            Format = "double"
+                                                        },
+                                                        new OpenApiSchema{
+                                                            Type = "string"
+                                                        },
+                                                        new OpenApiSchema {
+                                                            Enum = new List<IOpenApiAny> { new OpenApiString("-INF"), new OpenApiString("INF"), new OpenApiString("NaN") }
+                                                        }
+                                                    },
                                                 }
                                             }
                                         }
@@ -1675,7 +1727,7 @@ components:
         Assert.Single(entityClass.DiscriminatorInformation.DiscriminatorMappings);
     }
     [Fact]
-    public void AddsDiscriminatorMappingsOneOfImplicit(){
+    public async Task AddsDiscriminatorMappingsOneOfImplicit(){
         var entitySchema = new OpenApiSchema {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -1795,7 +1847,7 @@ components:
         var builder = new KiotaBuilder(mockLogger.Object, config);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        builder.ApplyLanguageRefinement(config, codeModel);
+        await builder.ApplyLanguageRefinement(config, codeModel, CancellationToken.None);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectsClass = codeModel.FindChildByName<CodeClass>("directoryObjects");
         Assert.NotNull(entityClass);
@@ -1809,7 +1861,7 @@ components:
         Assert.Equal(2, directoryObjectsClass.DiscriminatorInformation.DiscriminatorMappings.Count());
     }
     [Fact]
-    public void AddsDiscriminatorMappingsAllOfImplicit(){
+    public async Task AddsDiscriminatorMappingsAllOfImplicit(){
         var entitySchema = new OpenApiSchema {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -1950,7 +2002,7 @@ components:
         var builder = new KiotaBuilder(mockLogger.Object, config);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        builder.ApplyLanguageRefinement(config, codeModel);
+        await builder.ApplyLanguageRefinement(config, codeModel, CancellationToken.None);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject");
         var userClass = codeModel.FindChildByName<CodeClass>("user");
@@ -1971,7 +2023,7 @@ components:
     }
     
     [Fact]
-    public void AddsDiscriminatorMappingsAllOfImplicitWithParentHavingMappingsWhileChildDoesNot(){
+    public async Task AddsDiscriminatorMappingsAllOfImplicitWithParentHavingMappingsWhileChildDoesNot(){
         var entitySchema = new OpenApiSchema {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -2121,7 +2173,7 @@ components:
         var builder = new KiotaBuilder(mockLogger.Object, config);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        builder.ApplyLanguageRefinement(config, codeModel);
+        await builder.ApplyLanguageRefinement(config, codeModel, CancellationToken.None);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject");
         var userClass = codeModel.FindChildByName<CodeClass>("user");

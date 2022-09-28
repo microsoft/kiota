@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
-
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
@@ -95,6 +95,13 @@ public class CodeMethodWriterTests : IDisposable {
             Setter = new CodeMethod {
                 Name = "SetDummyProp",
             },
+        });
+        parentClass.AddProperty(new CodeProperty{
+            Name = "noAccessors",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType {
+                Name = "string"
+            }
         });
         parentClass.AddProperty(new CodeProperty {
             Name = "dummyColl",
@@ -1281,7 +1288,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("enableBackingStore", result);
     }
     [Fact]
-    public void AccessorsTargetingEscapedPropertiesAreNotEscapedThemselves() {
+    public async Task AccessorsTargetingEscapedPropertiesAreNotEscapedThemselves() {
         var model = root.AddClass(new CodeClass {
             Name = "SomeClass",
             Kind = CodeClassKind.Model
@@ -1292,7 +1299,7 @@ public class CodeMethodWriterTests : IDisposable {
             Access = AccessModifier.Public,
             Kind = CodePropertyKind.Custom,
         });
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         var getter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Getter));
         var setter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Setter));
         var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);

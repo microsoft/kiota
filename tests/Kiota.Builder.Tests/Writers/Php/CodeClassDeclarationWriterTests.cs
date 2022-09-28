@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
@@ -18,12 +18,10 @@ namespace Kiota.Builder.Tests.Writers.Php
         private readonly LanguageWriter writer;
         private readonly CodeClassDeclarationWriter codeElementWriter;
         private readonly CodeClass parentClass;
-        private readonly ILanguageRefiner _refiner;
         public CodeClassDeclarationWriterTests() {
             codeElementWriter = new CodeClassDeclarationWriter(new PhpConventionService());
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName);
             tw = new StringWriter();
-            _refiner = new PhpRefiner(new GenerationConfiguration {Language = GenerationLanguage.PHP});
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
             root.Name = "Microsoft\\Graph";
@@ -98,7 +96,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         }
 
         [Fact]
-        public void ImportRequiredClassesWhenContainsRequestExecutor()
+        public async Task ImportRequiredClassesWhenContainsRequestExecutor()
         {
             var declaration = parentClass;
             declaration?.AddMethod(new CodeMethod
@@ -115,7 +113,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             });
             var dec = declaration?.StartBlock;
             var namespaces = declaration?.Parent as CodeNamespace;
-            _refiner.Refine(namespaces);
+            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, namespaces);
             codeElementWriter.WriteCodeElement(dec, writer);
             var result = tw.ToString();
             

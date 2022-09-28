@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading;
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -11,7 +12,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected CommonLanguageRefiner(GenerationConfiguration configuration) {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
-    public abstract void Refine(CodeNamespace generatedCode);
+    public abstract Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken);
     /// <summary>
     ///     This method adds the imports for the default serializers and deserializers to the api client class.
     ///     It also updates the module names to replace the fully qualified class name by the class name without the namespace.
@@ -120,31 +121,29 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 AccessedProperty = currentProperty,
             }).First();
             currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
-            if(!currentProperty.ReadOnly) {
-                var setter = parentClass.AddMethod(new CodeMethod {
-                    Name = $"set-{accessorName}",
-                    Access = AccessModifier.Public,
-                    IsAsync = false,
-                    Kind = CodeMethodKind.Setter,
-                    Description = $"Sets the {propertyOriginalName} property value. {currentProperty.Description}",
-                    AccessedProperty = currentProperty,
-                    ReturnType = new CodeType {
-                        Name = "void",
-                        IsNullable = false,
-                        IsExternal = true,
-                    },
-                }).First();
-                setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
-                currentProperty.Setter = setter;
-                
-                setter.AddParameter(new CodeParameter {
-                    Name = "value",
-                    Kind = CodeParameterKind.SetterValue,
-                    Description = $"Value to set for the {current.Name} property.",
-                    Optional = parameterAsOptional,
-                    Type = currentProperty.Type.Clone() as CodeTypeBase,
-                });
-            }
+            var setter = parentClass.AddMethod(new CodeMethod {
+                Name = $"set-{accessorName}",
+                Access = AccessModifier.Public,
+                IsAsync = false,
+                Kind = CodeMethodKind.Setter,
+                Description = $"Sets the {propertyOriginalName} property value. {currentProperty.Description}",
+                AccessedProperty = currentProperty,
+                ReturnType = new CodeType {
+                    Name = "void",
+                    IsNullable = false,
+                    IsExternal = true,
+                },
+            }).First();
+            setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
+            currentProperty.Setter = setter;
+            
+            setter.AddParameter(new CodeParameter {
+                Name = "value",
+                Kind = CodeParameterKind.SetterValue,
+                Description = $"Value to set for the {current.Name} property.",
+                Optional = parameterAsOptional,
+                Type = currentProperty.Type.Clone() as CodeTypeBase,
+            });
         }
         CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors, removeProperty, parameterAsOptional, getterPrefix, setterPrefix));
     }
