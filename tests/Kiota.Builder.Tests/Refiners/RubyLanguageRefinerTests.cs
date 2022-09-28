@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Refiners;
@@ -110,7 +111,7 @@ public class RubyLanguageRefinerTests {
             Name = "someInterface"
         };
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-        Assert.Equal("someInterface", declaration.Usings.First(usingDef => usingDef.Declaration != null).Declaration?.Name);
+        Assert.Single(declaration.Usings.Where(usingDef => "someInterface".Equals(usingDef.Declaration?.Name, StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
     public async Task ReplacesDateTimeOffsetByNativeType() {
@@ -193,8 +194,8 @@ public class RubyLanguageRefinerTests {
             }
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-        Assert.Equal("Message", declaration.Usings.First().Declaration.Name);
-        Assert.Equal("./graph", declaration.Usings.Last().Declaration.Name);
+        Assert.Single(declaration.Usings.Where(static x => "Message".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(declaration.Usings.Where(static x => "./graph".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase)));
     }
     #endregion
 }
