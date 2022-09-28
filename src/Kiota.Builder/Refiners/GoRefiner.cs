@@ -66,7 +66,6 @@ public class GoRefiner : CommonLanguageRefiner
                 CorrectPropertyType,
                 CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
-            InsertOverrideMethodForBuildersAndConstructors(generatedCode);
             DisableActionOf(generatedCode, 
                 CodeParameterKind.RequestConfiguration);
             AddGetterAndSetterMethods(
@@ -130,20 +129,38 @@ public class GoRefiner : CommonLanguageRefiner
                 x => $"{x.Name}able"
             );
             RemoveHandlerFromRequestBuilder(generatedCode);
+            AddContextParameterToGeneratorMethods(generatedCode);
         }, cancellationToken);
     }
     
     protected static void RenameCancellationParameter(CodeElement currentElement){
         if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) && currentMethod.Parameters.OfKind(CodeParameterKind.Cancellation) is CodeParameter parameter)
         {
-            parameter.Name = "ctx";
-            parameter.Description = "Pass a context parameter to the request";
+            parameter.Name = ContextParameterName;
+            parameter.Description = ContextVarDescription;
             parameter.Kind = CodeParameterKind.Cancellation;
             parameter.Optional = false;
             parameter.Type.Name = conventions.ContextVarTypeName;
             parameter.Type.IsNullable = false;
         }
         CrawlTree(currentElement, RenameCancellationParameter);
+    }
+    private const string ContextParameterName = "ctx";
+    private const string ContextVarDescription = "Pass a context parameter to the request";
+    private static void AddContextParameterToGeneratorMethods(CodeElement currentElement) {
+        if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestGenerator) &&
+            currentMethod.Parameters.OfKind(CodeParameterKind.Cancellation) is null)
+            currentMethod.AddParameter(new CodeParameter {
+                Name = ContextParameterName,
+                Type = new CodeType {
+                    Name = conventions.ContextVarTypeName,
+                    IsNullable = false,
+                },
+                Kind = CodeParameterKind.Cancellation,
+                Optional = false,
+                Description = ContextVarDescription,
+            });
+        CrawlTree(currentElement, AddContextParameterToGeneratorMethods);
     }
     
     private void RemoveHandlerFromRequestBuilder(CodeElement currentElement)
@@ -160,23 +177,6 @@ public class GoRefiner : CommonLanguageRefiner
         CrawlTree(currentElement, RemoveHandlerFromRequestBuilder);
     }
 
-    private void InsertOverrideMethodForBuildersAndConstructors(CodeElement currentElement) {
-        if(currentElement is CodeClass currentClass) {
-            var codeMethods = currentClass.Methods;
-            if(codeMethods.Any(x => x.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))) {
-                var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator)).ToList();
-                var generatorMethodsToAdd = originalGeneratorMethods
-                    .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration))
-                    .Where(x => x != null)
-                    .ToArray();
-                originalGeneratorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.RequestConfiguration)}");
-                if(generatorMethodsToAdd.Any())
-                    currentClass.AddMethod(generatorMethodsToAdd.ToArray());
-            }
-        }
-
-        CrawlTree(currentElement, InsertOverrideMethodForBuildersAndConstructors);
-    }
     private static void RemoveModelPropertiesThatDependOnSubNamespaces(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass && 
             currentClass.IsOfKind(CodeClassKind.Model) &&

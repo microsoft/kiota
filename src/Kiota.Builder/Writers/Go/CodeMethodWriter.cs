@@ -662,16 +662,16 @@ namespace Kiota.Builder.Writers.Go {
                                                 .FirstOrDefault(x => x.IsOfKind(kind) && x.HttpMethod == codeElement.HttpMethod)
                                                 ?.Name
                                                 ?.ToFirstCharacterUpperCase();
-            var paramsList = new List<CodeParameter> { requestParams.requestBody, requestParams.requestConfiguration };
+            var paramsList = new List<CodeParameter> { codeElement.Parameters.OfKind(CodeParameterKind.Cancellation), requestParams.requestBody, requestParams.requestConfiguration };
             if(parametersPad > 0)
                 paramsList.AddRange(Enumerable.Range(0, parametersPad).Select<int, CodeParameter>(x => null));
             var requestInfoParameters = paramsList.Where(x => x != null)
                                                 .Select(x => x.Name)
                                                 .ToList();
             var skipIndex = requestParams.requestBody == null ? 1 : 0;
-            requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "nil"));
+            requestInfoParameters.AddRange(paramsList.Where(static x => x == null).Skip(skipIndex).Select(static x => "nil"));
             
-            var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x,y) => $"{x}, {y}") : string.Empty;
+            var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate(static (x,y) => $"{x}, {y}") : string.Empty;
 
             writer.WriteLine(template(generatorMethodName, paramsCall));
         }
@@ -687,7 +687,8 @@ namespace Kiota.Builder.Writers.Go {
             
             var urlTemplateParamsProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var urlTemplateProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
-            var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            var requestAdapterPropertyName = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter)?.Name.ToFirstCharacterLowerCase();
+            var contextParameterName = codeElement.Parameters.OfKind(CodeParameterKind.Cancellation)?.Name.ToFirstCharacterLowerCase();
             writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformation()");
             writer.WriteLines($"{RequestInfoVarName}.UrlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")}",
                         $"{RequestInfoVarName}.PathParameters = {GetPropertyCall(urlTemplateParamsProperty, "\"\"")}",
@@ -704,9 +705,9 @@ namespace Kiota.Builder.Writers.Go {
                         WriteCollectionCast(parsableSymbol, bodyParamReference, "cast", writer, false);
                         bodyParamReference = "cast...";
                     }
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable(m.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
                 } else
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar(m.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
             }
             if(requestParams.requestConfiguration != null) {
                 var headers = requestParams.Headers;

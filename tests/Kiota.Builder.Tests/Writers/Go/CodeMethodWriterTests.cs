@@ -877,7 +877,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
-        Assert.Contains("requestInfo.SetContentFromScalar(m.requestAdapter", result);
+        Assert.Contains("requestInfo.SetContentFromScalar(ctx, m.requestAdapter", result);
         Assert.Contains("return requestInfo, nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
@@ -911,7 +911,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
-        Assert.Contains("requestInfo.SetContentFromParsable(m.requestAdapter", result);
+        Assert.Contains("requestInfo.SetContentFromParsable(ctx, m.requestAdapter", result);
         Assert.Contains("return requestInfo, nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
