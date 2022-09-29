@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added arguments to filter path items (include-path/exclude-path).
 - Added the ability to cancel the refinement process.
 - Added Java 8 generation support.
 - Added tracing support for Go. [#618](https://github.com/microsoft/kiota/issues/618)

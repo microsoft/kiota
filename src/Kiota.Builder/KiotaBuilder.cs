@@ -8,7 +8,7 @@ using System.Net.Http;
 using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
-
+using DotNet.Globbing;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.CodeRenderers;
 using Kiota.Builder.Exceptions;
@@ -51,7 +51,7 @@ public class KiotaBuilder
     public async Task GenerateSDK(CancellationToken cancellationToken)
     {
         var sw = new Stopwatch();
-        // Step 1 - Read input stream
+        // Read input stream
         string inputPath = config.OpenAPIFilePath;
 
         try {
@@ -63,39 +63,71 @@ public class KiotaBuilder
         }
         
         sw.Start();
+        var stepId = 0;
         using var input = await LoadStream(inputPath, cancellationToken);
         if(input == null)
             return;
-        StopLogAndReset(sw, "step 1 - reading the stream - took");
+        StopLogAndReset(sw, $"step {++stepId} - reading the stream - took");
 
-        // Step 2 - Parse OpenAPI
+        // Create patterns
+        sw.Start();
+        var pathPatterns = BuildGlobPatterns();
+        StopLogAndReset(sw, $"step {++stepId} - parsing URI patterns - took");
+
+        // Parse OpenAPI
         sw.Start();
         openApiDocument = CreateOpenApiDocument(input);
-        StopLogAndReset(sw, "step 2 - parsing the document - took");
+        StopLogAndReset(sw, $"step {++stepId} - parsing the document - took");
+
+        // filter paths
+        sw.Start();
+        FilterPathsByPatterns(openApiDocument, pathPatterns.Item1, pathPatterns.Item2);
+        StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
 
         SetApiRootUrl();
 
         modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
 
-        // Step 3 - Create Uri Space of API
+        // Create Uri Space of API
         sw.Start();
         var openApiTree = CreateUriSpace(openApiDocument);
-        StopLogAndReset(sw, "step 3 - create uri space - took");
+        StopLogAndReset(sw, $"step {++stepId} - create uri space - took");
 
-        // Step 4 - Create Source Model
+        // Create Source Model
         sw.Start();
         var generatedCode = CreateSourceModel(openApiTree);
-        StopLogAndReset(sw, "step 4 - create source model - took");
+        StopLogAndReset(sw, $"step {++stepId} - create source model - took");
 
-        // Step 5 - RefineByLanguage
+        // RefineByLanguage
         sw.Start();
         await ApplyLanguageRefinement(config, generatedCode, cancellationToken);
-        StopLogAndReset(sw, "step 5 - refine by language - took");
+        StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
 
-        // Step 6 - Write language source 
+        // Write language source 
         sw.Start();
         await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken);
-        StopLogAndReset(sw, "step 6 - writing files - took");
+        StopLogAndReset(sw, $"step {++stepId} - writing files - took");
+    }
+    public (List<Glob>, List<Glob>) BuildGlobPatterns() {
+        var includePatterns = new List<Glob>();
+        var excludePatterns = new List<Glob>();
+        if (config.IncludePatterns?.Any() ?? false) {
+            includePatterns.AddRange(config.IncludePatterns.Select(static x => Glob.Parse(x)));
+        }
+        if (config.ExcludePatterns?.Any() ?? false) {
+            excludePatterns.AddRange(config.ExcludePatterns.Select(static x => Glob.Parse(x)));
+        }
+        return (includePatterns, excludePatterns);
+    }
+    public void FilterPathsByPatterns(OpenApiDocument doc, List<Glob> includePatterns, List<Glob> excludePatterns) {
+        if (!includePatterns.Any() && !excludePatterns.Any()) return;
+
+        doc.Paths.Keys.Except(
+            doc.Paths.Keys.Where(x => (!includePatterns.Any() || includePatterns.Any(y => y.IsMatch(x))) && 
+                                (!excludePatterns.Any() || !excludePatterns.Any(y => y.IsMatch(x))))
+        )
+        .ToList()
+        .ForEach(x => doc.Paths.Remove(x));
     }
     private void SetApiRootUrl() {
         config.ApiRootUrl = openApiDocument.Servers.FirstOrDefault()?.Url.TrimEnd('/');

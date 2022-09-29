@@ -43,5 +43,9 @@ namespace Kiota.Builder {
             "text/xml",
             "text/yaml",
         };
+        public HashSet<string> IncludePatterns { get; set; } = new(StringComparer.OrdinalIgnoreCase) {
+        };
+        public HashSet<string> ExcludePatterns { get; set; } = new(StringComparer.OrdinalIgnoreCase) {
+        };
     }
 }
