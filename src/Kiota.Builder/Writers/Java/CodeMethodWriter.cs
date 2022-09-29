@@ -21,7 +21,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if(returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
         {
             if(codeElement.IsOfKind(CodeMethodKind.RequestExecutor))
-                returnType = "Void"; //generic type for the future
+            {
+                returnType = "Void"; //generic type for the future    
+                writer.WriteLine("@javax.annotation.Nonnull");
+            }
         } else if(!codeElement.IsAsync)
             writer.WriteLine(codeElement.ReturnType.IsNullable && !codeElement.IsAsync ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
         WriteMethodPrototype(codeElement, writer, returnType);
