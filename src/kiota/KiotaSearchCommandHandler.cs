@@ -44,19 +44,19 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private static void DisplayResults(IEnumerable<SearchResult> results){
-        if (results.Count() == 1) {
+    private static void DisplayResults(IDictionary<string, SearchResult> results){
+        if (results.Count == 1) {
             var result = results.First();
             Console.WriteLine($"Key: {result.Key}");
-            Console.WriteLine($"Title: {result.Title}");
-            Console.WriteLine($"Description: {result.Description}");
-            Console.WriteLine($"Service: {result.ServiceUrl}");
-            Console.WriteLine($"OpenAPI: {result.DescriptionUrl}");
+            Console.WriteLine($"Title: {result.Value.Title}");
+            Console.WriteLine($"Description: {result.Value.Description}");
+            Console.WriteLine($"Service: {result.Value.ServiceUrl}");
+            Console.WriteLine($"OpenAPI: {result.Value.DescriptionUrl}");
         }  else {
             var table = new ConsoleTable("key", "title", "description");
             Console.WriteLine();
             foreach (var result in results) {
-                table.AddRow(result.Key, result.Title, ShortenDescription(result.Description));
+                table.AddRow(result.Key, result.Value.Title, ShortenDescription(result.Value.Description));
             }
             table.Write();
             Console.WriteLine();

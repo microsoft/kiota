@@ -19,15 +19,20 @@ public class KiotaSearcher {
         this.logger = logger;
         this.config = config;
     }
-    public async Task<IEnumerable<SearchResult>> SearchAsync(CancellationToken cancellationToken) {
+    public async Task<IDictionary<string, SearchResult>> SearchAsync(CancellationToken cancellationToken) {
         if (string.IsNullOrEmpty(config.SearchTerm)) {
             logger.LogError("no search term provided");
-            return Enumerable.Empty<SearchResult>();
+            return new Dictionary<string, SearchResult>();
         }
         using var client = new HttpClient();
         var apiGurusSearchProvider = new APIsGuruSearchProvider(config.APIsGuruListUrl, client, logger, config.ClearCache);
         logger.LogDebug("searching for {searchTerm}", config.SearchTerm);
         logger.LogDebug("searching APIs.guru with url {url}", config.APIsGuruListUrl);
-        return await apiGurusSearchProvider.SearchAsync(config.SearchTerm, cancellationToken);
+        var providerPrefix = $"{apiGurusSearchProvider.ProviderKey}{ProviderSeparator}";
+        var results = await apiGurusSearchProvider.SearchAsync(config.SearchTerm.Replace(providerPrefix, string.Empty), cancellationToken);
+
+        return results.Select(x => ($"{providerPrefix}{x.Key}", x.Value))
+                    .ToDictionary(static x => x.Item1, static x => x.Value, StringComparer.OrdinalIgnoreCase);
     }
+    internal const string ProviderSeparator = "::";
 }

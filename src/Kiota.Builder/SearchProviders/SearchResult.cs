@@ -2,4 +2,4 @@ using System;
 
 namespace Kiota.Builder.SearchProviders;
 
-public record SearchResult(string Key, string Title, string Description, Uri ServiceUrl, Uri DescriptionUrl);
+public record SearchResult(string Title, string Description, Uri ServiceUrl, Uri DescriptionUrl);
