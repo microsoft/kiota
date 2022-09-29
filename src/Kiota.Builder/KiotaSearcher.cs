@@ -25,12 +25,7 @@ public class KiotaSearcher {
             return Enumerable.Empty<SearchResult>();
         }
         using var client = new HttpClient();
-        var apiGurusSearchProvider = new CachedGuruSearchProvider {
-            HttpClient = client,
-            SearchUri = config.APIsGuruListUrl,
-            Logger = logger,
-            ClearCache = config.ClearCache
-        };
+        var apiGurusSearchProvider = new APIsGuruSearchProvider(config.APIsGuruListUrl, client, logger, config.ClearCache);
         logger.LogDebug("searching for {searchTerm}", config.SearchTerm);
         logger.LogDebug("searching APIs.guru with url {url}", config.APIsGuruListUrl);
         return await apiGurusSearchProvider.SearchAsync(config.SearchTerm, cancellationToken);
