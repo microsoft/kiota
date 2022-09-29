@@ -148,7 +148,7 @@ A glob pattern to include paths from generation. Accepts multiple values. Defaul
 kiota --include-path **/users/** --include-path **/groups/**
 ```
 
-> Note: include pattern can be used in combination with the exclude pattern argument. A path item is include when (no include pattern is include OR it matches an include pattern) AND (no exclude pattern is include OR it doesn't match an exclude pattern).
+> Note: include pattern can be used in combination with the exclude pattern argument. A path item is included when (no include pattern is included OR it matches an include pattern) AND (no exclude pattern is included OR it doesn't match an exclude pattern).
 
 ### `--namespace-name (-n)`
 
