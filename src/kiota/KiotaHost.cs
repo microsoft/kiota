@@ -10,7 +10,28 @@ using Microsoft.Extensions.Logging;
 
 namespace kiota;
 public class KiotaHost {
-    public RootCommand GetRootCommand()
+    public RootCommand GetRootCommand() {
+        var rootCommand = new RootCommand();
+        rootCommand.AddCommand(GetGenerationCommand());
+        rootCommand.AddCommand(GetSearchCommand());
+        return rootCommand;
+    }
+    public Command GetSearchCommand() {
+        var searchTermArgument = new Argument<string>("searchTerm", "The term to search for.");
+        
+        var logLevelOption = GetLogLevelOption();
+
+        var searchCommand = new Command("search", "Searches for an OpenAPI description in multiple registries."){
+            searchTermArgument,
+            logLevelOption,
+        };
+        searchCommand.Handler = new KiotaSearchCommandHandler {
+            SearchTermArgument = searchTermArgument,
+            LogLevelOption = logLevelOption,
+        };
+        return searchCommand;
+    }
+    public Command GetGenerationCommand()
     {
         var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_CONTAINER");
         var defaultConfiguration = new GenerationConfiguration();
@@ -42,9 +63,7 @@ public class KiotaHost {
         namespaceOption.ArgumentHelpName = "name";
         AddStringRegexValidator(namespaceOption, @"^[\w][\w\._-]+", "namespace name");
 
-        var logLevelOption = new Option<LogLevel>("--log-level", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
-        logLevelOption.AddAlias("--ll");
-        AddEnumValidator(logLevelOption, "log level");
+        var logLevelOption = GetLogLevelOption();
 
         var backingStoreOption = new Option<bool>("--backing-store", () => defaultConfiguration.UsesBackingStore, "Enables backing store for models.");
         backingStoreOption.AddAlias("-b");
@@ -87,7 +106,7 @@ public class KiotaHost {
             "The paths to exclude from the generation. Glob patterns accepted. Accepts multiple values.");
         excludePatterns.AddAlias("-e");
 
-        var command = new RootCommand {
+        var command = new Command ("generate", "Generates a REST HTTP API client from an OpenAPI description file.") {
             descriptionOption,
             outputOption,
             languageOption,
@@ -103,8 +122,7 @@ public class KiotaHost {
             includePatterns,
             excludePatterns,
         };
-        command.Description = "OpenAPI-based HTTP Client SDK code generator";
-        command.Handler = new KiotaCommandHandler {
+        command.Handler = new KiotaGenerationCommandHandler {
             DescriptionOption = descriptionOption,
             OutputOption = outputOption,
             LanguageOption = languageOption,
@@ -121,6 +139,12 @@ public class KiotaHost {
             ExcludePatternsOption = excludePatterns,
         };
         return command;
+    }
+    private static Option<LogLevel> GetLogLevelOption() {
+        var logLevelOption = new Option<LogLevel>("--log-level", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
+        logLevelOption.AddAlias("--ll");
+        AddEnumValidator(logLevelOption, "log level");
+        return logLevelOption;
     }
     private static void AddStringRegexValidator(Option<string> option, string pattern, string parameterName) {
         var validator = new Regex(pattern);
