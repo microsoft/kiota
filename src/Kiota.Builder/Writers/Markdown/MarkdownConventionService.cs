@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using static Kiota.Builder.CodeDOM.CodeTypeBase;
 using static Kiota.Builder.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.Markdown {

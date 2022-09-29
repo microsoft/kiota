@@ -1,4 +1,6 @@
-﻿namespace Kiota.Builder.Writers.Markdown {
+﻿using Kiota.Builder.CodeDOM;
+
+namespace Kiota.Builder.Writers.Markdown {
     public class CodeBlockEndWriter : BaseElementWriter<BlockEnd, MarkdownConventionService>
     {
         public CodeBlockEndWriter(MarkdownConventionService conventionService):base(conventionService){}

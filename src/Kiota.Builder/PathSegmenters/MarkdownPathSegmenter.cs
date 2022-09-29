@@ -1,5 +1,7 @@
 ﻿using System;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder {
     public class MarkdownPathSegmenter : CommonPathSegmenter

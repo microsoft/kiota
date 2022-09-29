@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.Extensions;
+﻿using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Markdown;
 public class CodeIndexerWriter : BaseElementWriter<CodeIndexer, MarkdownConventionService>
