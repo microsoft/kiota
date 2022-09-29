@@ -47,4 +47,5 @@ public class GenerationConfiguration {
     };
     public HashSet<string> ExcludePatterns { get; set; } = new(StringComparer.OrdinalIgnoreCase) {
     };
+    public bool ClearCache { get; set; }
 }

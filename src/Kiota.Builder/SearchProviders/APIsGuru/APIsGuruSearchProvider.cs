@@ -5,6 +5,7 @@ using System.Net.Http;
 using System;
 using System.Text.Json;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.SearchProviders.APIsGuru;
 
@@ -12,7 +13,8 @@ public class APIsGuruSearchProvider : ISearchProvider
 {
     public Uri SearchUri { get; init; }
     public HttpClient HttpClient { get; init; }
-    protected async Task<string> GetAPIsList(CancellationToken token) {
+    public ILogger Logger { get; init; }
+    protected virtual async Task<string> GetAPIsList(CancellationToken token) {
         return await HttpClient.GetStringAsync(SearchUri, token);
     }
     public async Task<IEnumerable<SearchResult>> SearchAsync(string query, CancellationToken cancellationToken)

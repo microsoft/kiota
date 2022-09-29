@@ -18,16 +18,21 @@ public class KiotaHost {
     }
     public Command GetSearchCommand() {
         var searchTermArgument = new Argument<string>("searchTerm", "The term to search for.");
+        var defaultConfiguration = new SearchConfiguration();
         
         var logLevelOption = GetLogLevelOption();
+
+        var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
 
         var searchCommand = new Command("search", "Searches for an OpenAPI description in multiple registries."){
             searchTermArgument,
             logLevelOption,
+            clearCacheOption,
         };
         searchCommand.Handler = new KiotaSearchCommandHandler {
             SearchTermArgument = searchTermArgument,
             LogLevelOption = logLevelOption,
+            ClearCacheOption = clearCacheOption,
         };
         return searchCommand;
     }
@@ -106,6 +111,8 @@ public class KiotaHost {
             "The paths to exclude from the generation. Glob patterns accepted. Accepts multiple values.");
         excludePatterns.AddAlias("-e");
 
+        var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
+
         var command = new Command ("generate", "Generates a REST HTTP API client from an OpenAPI description file.") {
             descriptionOption,
             outputOption,
@@ -121,6 +128,7 @@ public class KiotaHost {
             structuredMimeTypesOption,
             includePatterns,
             excludePatterns,
+            clearCacheOption,
         };
         command.Handler = new KiotaGenerationCommandHandler {
             DescriptionOption = descriptionOption,
@@ -137,6 +145,7 @@ public class KiotaHost {
             StructuredMimeTypesOption = structuredMimeTypesOption,
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
+            ClearCacheOption = clearCacheOption,
         };
         return command;
     }
@@ -145,6 +154,11 @@ public class KiotaHost {
         logLevelOption.AddAlias("--ll");
         AddEnumValidator(logLevelOption, "log level");
         return logLevelOption;
+    }
+    private static Option<bool> GetClearCacheOption(bool defaultValue) {
+        var clearCacheOption = new Option<bool>("--clear-cache", () => defaultValue, "Clears any cached data for the current command.");
+        clearCacheOption.AddAlias("--cc");
+        return clearCacheOption;
     }
     private static void AddStringRegexValidator(Option<string> option, string pattern, string parameterName) {
         var validator = new Regex(pattern);

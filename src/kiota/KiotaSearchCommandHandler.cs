@@ -16,6 +16,7 @@ namespace kiota;
 internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
 {
     public Argument<string> SearchTermArgument { get; set; }
+    public Option<bool> ClearCacheOption { get; set; }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string searchTerm = context.ParseResult.GetValueForArgument(SearchTermArgument);
