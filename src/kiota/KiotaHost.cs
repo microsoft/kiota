@@ -24,15 +24,20 @@ public class KiotaHost {
 
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
 
+        var versionOption = new Option<string>("--version", () => string.Empty, "The version of the OpenAPI document to use.");
+        versionOption.AddAlias("-v");
+
         var searchCommand = new Command("search", "Searches for an OpenAPI description in multiple registries."){
             searchTermArgument,
             logLevelOption,
             clearCacheOption,
+            versionOption,
         };
         searchCommand.Handler = new KiotaSearchCommandHandler {
             SearchTermArgument = searchTermArgument,
             LogLevelOption = logLevelOption,
             ClearCacheOption = clearCacheOption,
+            VersionOption = versionOption,
         };
         return searchCommand;
     }

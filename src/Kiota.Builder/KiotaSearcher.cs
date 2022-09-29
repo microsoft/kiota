@@ -29,7 +29,7 @@ public class KiotaSearcher {
         logger.LogDebug("searching for {searchTerm}", config.SearchTerm);
         logger.LogDebug("searching APIs.guru with url {url}", config.APIsGuruListUrl);
         var providerPrefix = $"{apiGurusSearchProvider.ProviderKey}{ProviderSeparator}";
-        var results = await apiGurusSearchProvider.SearchAsync(config.SearchTerm.Replace(providerPrefix, string.Empty), cancellationToken);
+        var results = await apiGurusSearchProvider.SearchAsync(config.SearchTerm.Replace(providerPrefix, string.Empty), config.Version, cancellationToken);
 
         return results.Select(x => ($"{providerPrefix}{x.Key}", x.Value))
                     .ToDictionary(static x => x.Item1, static x => x.Value, StringComparer.OrdinalIgnoreCase);

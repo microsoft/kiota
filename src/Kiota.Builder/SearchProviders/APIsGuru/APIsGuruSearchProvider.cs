@@ -27,17 +27,19 @@ public class APIsGuruSearchProvider : ISearchProvider
         SearchUri = searchUri;
     }
     public string ProviderKey => "apisguru";
-    public async Task<IDictionary<string, SearchResult>> SearchAsync(string query, CancellationToken cancellationToken)
+    public async Task<IDictionary<string, SearchResult>> SearchAsync(string query, string queryVersion, CancellationToken cancellationToken)
     {
         if (SearchUri == null)
             return new Dictionary<string, SearchResult>();
         using var rawDocument = await cachingProvider.GetDocumentAsync(SearchUri, "search", "apisguru.json", cancellationToken);
         var apiEntries = JsonSerializer.Deserialize<Dictionary<string, APIEntry>>(rawDocument);
-        var results = apiEntries.Where(x => x.Key.Contains(query, StringComparison.OrdinalIgnoreCase))
-                                .Select(static x => x.Value.versions.TryGetValue(x.Value.preferred, out var version) ? (x.Key, version) : (x.Key, default))
+        var candidates = apiEntries.Where(x => x.Key.Contains(query, StringComparison.OrdinalIgnoreCase));
+        var singleCandidate = !string.IsNullOrEmpty(queryVersion) && candidates.Count() == 1;
+        var results = candidates
+                                .Select(x => x.Value.versions.TryGetValue(singleCandidate ? queryVersion : x.Value.preferred, out var version) ? (x.Key, version, x.Value.versions.Keys.ToList()) : (x.Key, default, default))
                                 .Where(static x => x.version is not null)
                                 .ToDictionary(static x => x.Key,
-                                            static x => new SearchResult(x.version.info?.title, x.version.info?.description, x.version.info?.contact?.url, x.version.info?.origin?.FirstOrDefault()?.url),
+                                            static x => new SearchResult(x.version.info?.title, x.version.info?.description, x.version.info?.contact?.url, x.version.info?.origin?.FirstOrDefault()?.url, x.Item3),
                                             StringComparer.OrdinalIgnoreCase);
         return results;
     }

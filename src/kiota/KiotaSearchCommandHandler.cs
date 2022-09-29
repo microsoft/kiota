@@ -17,12 +17,15 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
 {
     public Argument<string> SearchTermArgument { get; set; }
     public Option<bool> ClearCacheOption { get; set; }
+    public Option<string> VersionOption { get; set; }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string searchTerm = context.ParseResult.GetValueForArgument(SearchTermArgument);
+        string version = context.ParseResult.GetValueForOption(VersionOption);
         CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
 
         Configuration.Search.SearchTerm = searchTerm;
+        Configuration.Search.Version = version;
 
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaSearcher>(context);
@@ -53,10 +56,10 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             Console.WriteLine($"Service: {result.Value.ServiceUrl}");
             Console.WriteLine($"OpenAPI: {result.Value.DescriptionUrl}");
         }  else {
-            var table = new ConsoleTable("key", "title", "description");
+            var table = new ConsoleTable("key", "title", "description", "versions");
             Console.WriteLine();
             foreach (var result in results) {
-                table.AddRow(result.Key, result.Value.Title, ShortenDescription(result.Value.Description));
+                table.AddRow(result.Key, result.Value.Title, ShortenDescription(result.Value.Description), string.Join(", ", result.Value.VersionLabels));
             }
             table.Write();
             Console.WriteLine();
