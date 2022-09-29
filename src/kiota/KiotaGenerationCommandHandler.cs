@@ -34,6 +34,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         GenerationLanguage language = context.ParseResult.GetValueForOption(LanguageOption);
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption);
         bool backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
+        bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         bool includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
         string className = context.ParseResult.GetValueForOption(ClassOption);
         string namespaceName = context.ParseResult.GetValueForOption(NamespaceOption);
@@ -67,6 +68,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
         Configuration.Generation.OutputPath = GetAbsolutePath(Configuration.Generation.OutputPath);
         Configuration.Generation.CleanOutput = cleanOutput;
+        Configuration.Generation.ClearCache = clearCache;
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
         using (loggerFactory) {

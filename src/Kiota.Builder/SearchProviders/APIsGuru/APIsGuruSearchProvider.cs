@@ -27,13 +27,18 @@ public class APIsGuruSearchProvider : ISearchProvider
         SearchUri = searchUri;
     }
     public string ProviderKey => "apisguru";
+    public HashSet<string> KeysToExclude { get; set; } = new() {
+        "microsoft.com:graph"
+    };
     public async Task<IDictionary<string, SearchResult>> SearchAsync(string query, string queryVersion, CancellationToken cancellationToken)
     {
         if (SearchUri == null)
             return new Dictionary<string, SearchResult>();
         using var rawDocument = await cachingProvider.GetDocumentAsync(SearchUri, "search", "apisguru.json", cancellationToken);
         var apiEntries = JsonSerializer.Deserialize<Dictionary<string, APIEntry>>(rawDocument);
-        var candidates = apiEntries.Where(x => x.Key.Contains(query, StringComparison.OrdinalIgnoreCase));
+        var candidates = apiEntries
+                            .Where(x => !KeysToExclude.Contains(x.Key))
+                            .Where(x => x.Key.Contains(query, StringComparison.OrdinalIgnoreCase));
         var singleCandidate = !string.IsNullOrEmpty(queryVersion) && candidates.Count() == 1;
         var results = candidates
                                 .Select(x => x.Value.versions.TryGetValue(singleCandidate ? queryVersion : x.Value.preferred, out var version) ? (x.Key, version, x.Value.versions.Keys.ToList()) : (x.Key, default, default))

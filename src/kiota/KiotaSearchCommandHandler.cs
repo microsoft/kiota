@@ -22,10 +22,12 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
     {
         string searchTerm = context.ParseResult.GetValueForArgument(SearchTermArgument);
         string version = context.ParseResult.GetValueForOption(VersionOption);
+        bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
 
         Configuration.Search.SearchTerm = searchTerm;
         Configuration.Search.Version = version;
+        Configuration.Search.ClearCache = clearCache;
 
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaSearcher>(context);
@@ -34,7 +36,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
 
             try {
                 var results = await new KiotaSearcher(logger, Configuration.Search).SearchAsync(cancellationToken);
-                DisplayResults(results);
+                DisplayResults(results, searchTerm);
                 return 0;
             } catch (Exception ex) {
     #if DEBUG
@@ -47,8 +49,8 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private static void DisplayResults(IDictionary<string, SearchResult> results){
-        if (results.Count == 1) {
+    private static void DisplayResults(IDictionary<string, SearchResult> results, string searchTerm){
+        if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm)) {
             var result = results.First();
             Console.WriteLine($"Key: {result.Key}");
             Console.WriteLine($"Title: {result.Value.Title}");

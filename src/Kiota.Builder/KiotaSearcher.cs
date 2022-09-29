@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.SearchProviders;
 using Kiota.Builder.SearchProviders.APIsGuru;
+using Kiota.Builder.SearchProviders.MSGraph;
 using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder;
@@ -28,11 +29,17 @@ public class KiotaSearcher {
         var apiGurusSearchProvider = new APIsGuruSearchProvider(config.APIsGuruListUrl, client, logger, config.ClearCache);
         logger.LogDebug("searching for {searchTerm}", config.SearchTerm);
         logger.LogDebug("searching APIs.guru with url {url}", config.APIsGuruListUrl);
-        var providerPrefix = $"{apiGurusSearchProvider.ProviderKey}{ProviderSeparator}";
-        var results = await apiGurusSearchProvider.SearchAsync(config.SearchTerm.Replace(providerPrefix, string.Empty), config.Version, cancellationToken);
+        var msGraphProvider = new MSGraphSearchProvider();
+        var results = await Task.WhenAll(SearchProviderAsync(apiGurusSearchProvider, cancellationToken), SearchProviderAsync(msGraphProvider, cancellationToken));
+        return results.SelectMany(static x => x)
+                .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase);
+    }
+    private async Task<IDictionary<string, SearchResult>> SearchProviderAsync(ISearchProvider provider, CancellationToken cancellationToken) {
+        var providerPrefix = $"{provider.ProviderKey}{ProviderSeparator}";
+        var results = await provider.SearchAsync(config.SearchTerm.Replace(providerPrefix, string.Empty), config.Version, cancellationToken);
 
         return results.Select(x => ($"{providerPrefix}{x.Key}", x.Value))
                     .ToDictionary(static x => x.Item1, static x => x.Value, StringComparer.OrdinalIgnoreCase);
     }
-    internal const string ProviderSeparator = "::";
+    public const string ProviderSeparator = "::";
 }
