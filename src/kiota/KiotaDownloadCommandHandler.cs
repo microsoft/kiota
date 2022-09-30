@@ -99,10 +99,8 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
             Directory.CreateDirectory(Path.GetDirectoryName(path));
         
         using var client = new HttpClient();
-        var cacheProvider = new DocumentCachingProvider {
+        var cacheProvider = new DocumentCachingProvider(client, logger) {
             ClearCache = true,
-            HttpClient = client,
-            Logger = logger,
         };
         using var document = await cacheProvider.GetDocumentAsync(result.Value.DescriptionUrl, "download", Path.GetFileName(path), cancellationToken);
         using var fileStream = File.Create(path);

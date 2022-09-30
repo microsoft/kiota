@@ -38,4 +38,20 @@ public class KiotaSearcherTests {
         var results = await searcher.SearchAsync(new CancellationToken());
         Assert.Empty(results);
     }
+    [Fact]
+    public async Task GetsGithubFromApisGuru() {
+        var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, new SearchConfiguration(){
+            SearchTerm = "github",
+        });
+        var results = await searcher.SearchAsync(new CancellationToken());
+        Assert.NotEmpty(results);
+    }
+    [Fact]
+    public async Task GetsGithubFromApisGuruWithExactMatch() {
+        var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, new SearchConfiguration(){
+            SearchTerm = "apisguru::github.com:api.github.com",
+        });
+        var results = await searcher.SearchAsync(new CancellationToken());
+        Assert.Single(results);
+    }
 }

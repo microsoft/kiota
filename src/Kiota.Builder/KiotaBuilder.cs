@@ -152,10 +152,8 @@ public class KiotaBuilder
         if (inputPath.StartsWith("http"))
             try {
                 using var httpClient = new HttpClient();
-                var cachingProvider = new DocumentCachingProvider {
-                    HttpClient = httpClient,
+                var cachingProvider = new DocumentCachingProvider(httpClient, logger) {
                     ClearCache = config.ClearCache,
-                    Logger = logger,
                 };
                 var fileName = Path.GetFileName(inputPath) is string name && !string.IsNullOrEmpty(name) ? name : "description.yml";
                 input = await cachingProvider.GetDocumentAsync(new Uri(inputPath), "generation", fileName, cancellationToken);

@@ -19,9 +19,7 @@ public class APIsGuruSearchProvider : ISearchProvider
         ArgumentNullException.ThrowIfNull(searchUri);
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(logger);
-        cachingProvider = new DocumentCachingProvider{
-            HttpClient = httpClient,
-            Logger = logger,
+        cachingProvider = new DocumentCachingProvider(httpClient, logger) {
             ClearCache = clearCache,
         };
         SearchUri = searchUri;
