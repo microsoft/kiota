@@ -40,4 +40,8 @@ public class KiotaHostTests
     public async Task AcceptsSerializers() {
         await new KiotaHost().GetRootCommand().InvokeAsync(new[] { "generate", "-s", "Kiota.Tests.TestData.TestSerializer" });
     }
+    [Fact]
+    public async Task ThrowsOnInvalidSearchTerm() {
+        await new KiotaHost().GetRootCommand().InvokeAsync(new[] { "search" });
+    }
 }
