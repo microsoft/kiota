@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Kiota.Builder;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 using Microsoft.Extensions.Logging;

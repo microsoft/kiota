@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.Configuration;
 public class GenerationConfiguration {
     public string OpenAPIFilePath { get; set; } = "openapi.yaml";
     public string OutputPath { get; set; } = "./output";

@@ -36,7 +36,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
 
             try {
                 var results = await new KiotaSearcher(logger, Configuration.Search).SearchAsync(cancellationToken);
-                DisplayResults(results, searchTerm);
+                DisplayResults(results);
                 return 0;
             } catch (Exception ex) {
     #if DEBUG
@@ -49,7 +49,8 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private static void DisplayResults(IDictionary<string, SearchResult> results, string searchTerm){
+    private void DisplayResults(IDictionary<string, SearchResult> results){
+        var searchTerm = Configuration.Search.SearchTerm;
         if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm)) {
             var result = results.First();
             Console.WriteLine($"Key: {result.Key}");

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders;
 using Kiota.Builder.SearchProviders.APIsGuru;
 using Kiota.Builder.SearchProviders.MSGraph;

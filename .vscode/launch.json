@@ -53,7 +53,8 @@
                  "-o",
                  "${workspaceFolder}/samples/msgraph-mail/dotnet",
                  "-n",
-                 "Graphdotnetv4" ],
+                 "Graphdotnetv4",
+                 "--clear-cache" ],
             "cwd": "${workspaceFolder}/src/kiota",
             "console": "internalConsole",
             "stopAtEntry": false
@@ -163,6 +164,21 @@
             "program": "${workspaceFolder}/src/kiota/bin/Debug/net6.0/kiota.dll",
             "args": ["search",
                  "microsoft"
+                ],
+            "cwd": "${workspaceFolder}/src/kiota",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Launch Download",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/kiota/bin/Debug/net6.0/kiota.dll",
+            "args": ["download",
+                 "msgraph::microsoft-graph",
+                 "-o",
+                 "${workspaceFolder}/src/kiota/bin/Debug/net6.0/graphv1.yml"
                 ],
             "cwd": "${workspaceFolder}/src/kiota",
             "console": "internalConsole",
