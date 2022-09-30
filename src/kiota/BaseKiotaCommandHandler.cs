@@ -43,4 +43,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         var logger = loggerFactory.CreateLogger<T>();
         return (loggerFactory, logger);
     }
+    protected static string NormalizeSlashesInPath(string path) {
+        if (string.IsNullOrEmpty(path))
+            return path;
+        if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            return path.Replace('/', '\\');
+        return path.Replace('\\', '/');
+    }
 }

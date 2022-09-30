@@ -67,7 +67,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
                                                             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
-        Configuration.Generation.OutputPath = GetAbsolutePath(Configuration.Generation.OutputPath);
+        Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
         Configuration.Generation.CleanOutput = cleanOutput;
         Configuration.Generation.ClearCache = clearCache;
 
@@ -96,5 +96,5 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
     public Option<List<string>> IncludePatternsOption { get; set; }
     public Option<List<string>> ExcludePatternsOption { get; set; }
     public Option<bool> ClearCacheOption { get; set; }
-    private static string GetAbsolutePath(string source) => Path.IsPathRooted(source) || source.StartsWith("http") ? source : Path.Combine(Directory.GetCurrentDirectory(), source);
+    private static string GetAbsolutePath(string source) => Path.IsPathRooted(source) || source.StartsWith("http") ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
 }

@@ -35,6 +35,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         Configuration.Download.Version = version;
         Configuration.Download.ClearCache = clearCache;
         Configuration.Download.CleanOutput = cleanOutput;
+        Configuration.Download.OutputPath = NormalizeSlashesInPath(outputPath);
 
         Configuration.Search.SearchTerm = Configuration.Download.SearchTerm;
         Configuration.Search.Version = Configuration.Download.Version;
