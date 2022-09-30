@@ -9,13 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added arguments to filter path items (include-path/exclude-path).
+- Added a search command to find APIs.
+- Added a download command to download API descriptions.
+- Added arguments to filter path items during generation (include-path/exclude-path).
 - Added the ability to cancel the refinement process.
 - Added Java 8 generation support.
 - Added tracing support for Go. [#618](https://github.com/microsoft/kiota/issues/618)
 
 ### Changed
 
+- BREAKING: the generation command is now a sub command: `kiota generate ...` instead of `kiota ...`.
 - Fixed a bug where OData primitive types would result in composed types.
 - Fixed a concurrency issue with imports management.
 - Fixed a bug where Java request options type could conflict with generated types.
