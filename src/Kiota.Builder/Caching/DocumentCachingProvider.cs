@@ -25,9 +25,9 @@ public class DocumentCachingProvider {
         ArgumentNullException.ThrowIfNull(documentUri);
         if(string.IsNullOrEmpty(intermediateFolderName)) throw new ArgumentNullException(nameof(intermediateFolderName));
         if(string.IsNullOrEmpty(fileName)) throw new ArgumentNullException(nameof(fileName));
-        return GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, token, false);
+        return GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, false, token);
     }
-    private async Task<Stream> GetDocumentInternalAsync(Uri documentUri, string intermediateFolderName, string fileName, CancellationToken token, bool couldNotDelete) {
+    private async Task<Stream> GetDocumentInternalAsync(Uri documentUri, string intermediateFolderName, string fileName, bool couldNotDelete, CancellationToken token) {
         var hashedUrl = BitConverter.ToString(HashAlgorithm.Value.ComputeHash(Encoding.UTF8.GetBytes(documentUri.ToString()))).Replace("-", string.Empty);
         var target = Path.Combine(Path.GetTempPath(), "kiota", "cache", intermediateFolderName, hashedUrl, fileName);
         if(!File.Exists(target) || couldNotDelete) {
@@ -69,6 +69,6 @@ public class DocumentCachingProvider {
                 Logger.LogWarning("could not delete cache file {cacheFile}, reason: {reason}", target, ex.Message);
             }
         }
-        return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, token, couldNotDelete);
+        return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, token);
     }
 }
