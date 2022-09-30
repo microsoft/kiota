@@ -64,47 +64,50 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         if (!results.Any())
             Console.WriteLine("No matching result found, use the search command to find the right key");
         else if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm)) {
-            var result = results.First();
-            string path;
-            try {
-                if (Path.IsPathFullyQualified(Configuration.Download.OutputPath))
-                    path = Configuration.Download.OutputPath;
-                else
-                    path = Path.GetFullPath(Configuration.Download.OutputPath);
-                if (string.IsNullOrEmpty(Path.GetFileName(path))) {
-                    logger.LogCritical("The output path does not contain a file name: {path}", path);
-                    return 1;
-                }
-            } catch (Exception) {
-                logger.LogCritical("Invalid output path: {path}", Configuration.Download.OutputPath);
-                return 1;
-            }
-            if (File.Exists(path)) {
-                if(Configuration.Download.CleanOutput)
-                    File.Delete(path);
-                else {
-                    logger.LogCritical("Output path already exists and the clean output option was not specified: {path}", path);
-                    return 1;
-                }
-            }
-            if(!Directory.Exists(Path.GetDirectoryName(path)))
-                Directory.CreateDirectory(Path.GetDirectoryName(path));
-            
-            using var client = new HttpClient();
-            var cacheProvider = new DocumentCachingProvider {
-                ClearCache = true,
-                HttpClient = client,
-                Logger = logger,
-            };
-            using var document = await cacheProvider.GetDocumentAsync(result.Value.DescriptionUrl, "download", Path.GetFileName(path), cancellationToken);
-            using var fileStream = File.Create(path);
-            await document.CopyToAsync(fileStream, cancellationToken);
-            await fileStream.FlushAsync(cancellationToken);
+            var (path, statusCode) = await SaveResultAsync(results.First(), logger, cancellationToken);
             Console.WriteLine($"File successfully downloaded to {path}");
-
+            return statusCode;
         }  else 
             Console.WriteLine("Multiple matches found, use the key to select a specific description.");
 
         return 0;
+    }
+    private async Task<(string, int)> SaveResultAsync(KeyValuePair<string, SearchResult> result, ILogger logger, CancellationToken cancellationToken) {
+        string path;
+        try {
+            if (Path.IsPathFullyQualified(Configuration.Download.OutputPath))
+                path = Configuration.Download.OutputPath;
+            else
+                path = Path.GetFullPath(Configuration.Download.OutputPath);
+            if (string.IsNullOrEmpty(Path.GetFileName(path))) {
+                logger.LogCritical("The output path does not contain a file name: {path}", path);
+                return (path, 1);
+            }
+        } catch (Exception) {
+            logger.LogCritical("Invalid output path: {path}", Configuration.Download.OutputPath);
+            return (string.Empty, 1);
+        }
+        if (File.Exists(path)) {
+            if(Configuration.Download.CleanOutput)
+                File.Delete(path);
+            else {
+                logger.LogCritical("Output path already exists and the clean output option was not specified: {path}", path);
+                return (path, 1);
+            }
+        }
+        if(!Directory.Exists(Path.GetDirectoryName(path)))
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+        
+        using var client = new HttpClient();
+        var cacheProvider = new DocumentCachingProvider {
+            ClearCache = true,
+            HttpClient = client,
+            Logger = logger,
+        };
+        using var document = await cacheProvider.GetDocumentAsync(result.Value.DescriptionUrl, "download", Path.GetFileName(path), cancellationToken);
+        using var fileStream = File.Create(path);
+        await document.CopyToAsync(fileStream, cancellationToken);
+        await fileStream.FlushAsync(cancellationToken);
+        return (path, 0);
     }
 }

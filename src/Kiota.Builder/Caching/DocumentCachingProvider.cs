@@ -14,10 +14,13 @@ public class DocumentCachingProvider {
     public bool ClearCache { get; init; }
     public HttpClient HttpClient { get; init; }
     public ILogger Logger { get; init; }
-    public async Task<Stream> GetDocumentAsync(Uri documentUri, string intermediateFolderName, string fileName, CancellationToken token) {
+    public Task<Stream> GetDocumentAsync(Uri documentUri, string intermediateFolderName, string fileName, CancellationToken token) {
         ArgumentNullException.ThrowIfNull(documentUri);
         if(string.IsNullOrEmpty(intermediateFolderName)) throw new ArgumentNullException(nameof(intermediateFolderName));
         if(string.IsNullOrEmpty(fileName)) throw new ArgumentNullException(nameof(fileName));
+        return GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, token);
+    }
+    private async Task<Stream> GetDocumentInternalAsync(Uri documentUri, string intermediateFolderName, string fileName, CancellationToken token) {
         var hashedUrl = BitConverter.ToString(HashAlgorithm.Value.ComputeHash(Encoding.UTF8.GetBytes(documentUri.ToString()))).Replace("-", string.Empty);
         var target = Path.Combine(Path.GetTempPath(), "kiota", "cache", intermediateFolderName, hashedUrl, fileName);
         if(!File.Exists(target)) {
@@ -40,7 +43,8 @@ public class DocumentCachingProvider {
                 throw new InvalidOperationException($"Could not download the file at {documentUri}, reason: {ex.Message}", ex);
             } catch (IOException ex) {
                 Logger?.LogWarning("could not write to cache file {cacheFile}, reason: {reason}", target, ex.Message);
-                content.Position = 0;
+                if(content != null)
+                    content.Position = 0;
                 return content;
             }
         }
@@ -53,6 +57,6 @@ public class DocumentCachingProvider {
             Logger?.LogDebug("cache file {cacheFile} is out of date, downloading from {url}", target, documentUri);
             File.Delete(target);
         }
-        return await GetDocumentAsync(documentUri, intermediateFolderName, fileName, token);
+        return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, token);
     }
 }
