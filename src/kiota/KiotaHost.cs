@@ -15,7 +15,33 @@ public class KiotaHost {
         rootCommand.AddCommand(GetGenerateCommand());
         rootCommand.AddCommand(GetSearchCommand());
         rootCommand.AddCommand(GetDownloadCommand());
+        rootCommand.AddCommand(GetDisplayCommand());
         return rootCommand;
+    }
+    private static Command GetDisplayCommand() {
+        var defaultSearchConfiguration = new SearchConfiguration();
+        var defaultGenerationConfiguration = new GenerationConfiguration();
+        var descriptionOption = GetDescriptionOption(defaultGenerationConfiguration.OpenAPIFilePath);
+
+        var versionOption = GetVersionOption();
+        var logLevelOption = GetLogLevelOption();
+        var searchTermOption = new Option<string>("--search-term", () => string.Empty, "The term to search for.");
+        var maxDepthOption = new Option<uint>("--max-depth", () => 5, "The maximum depth of the tree to display");
+        var displayCommand = new Command("display", "Displays the API paths in a given description."){
+            searchTermOption,
+            logLevelOption,
+            versionOption,
+            descriptionOption,
+            maxDepthOption,
+        };
+        displayCommand.Handler = new KiotaDisplayCommandHandler {
+            SearchTermOption = searchTermOption,
+            LogLevelOption = logLevelOption,
+            VersionOption = versionOption,
+            DescriptionOption = descriptionOption,
+            MaxDepthOption = maxDepthOption,
+        };
+        return displayCommand;
     }
     private static Command GetDownloadCommand() {
         var searchTermArgument = new Argument<string>("searchTerm", "The term to search for.");
@@ -89,18 +115,22 @@ public class KiotaHost {
         outputOption.ArgumentHelpName = "path";
         return outputOption;
     }
-    private static Command GetGenerateCommand()
-    {
+    private static Option<string> GetDescriptionOption(string defaultValue) {
         var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_CONTAINER");
-        var defaultConfiguration = new GenerationConfiguration();
         var runsInContainer = !string.IsNullOrEmpty(kiotaInContainerRaw) && bool.TryParse(kiotaInContainerRaw, out var kiotaInContainer) && kiotaInContainer;
         var descriptionOption = new Option<string>("--openapi", "The path to the OpenAPI description file used to generate the code files.");
         if(runsInContainer)
-            descriptionOption.SetDefaultValue(defaultConfiguration.OpenAPIFilePath);
+            descriptionOption.SetDefaultValue(defaultValue);
         else
             descriptionOption.IsRequired = true;
         descriptionOption.AddAlias("-d");
         descriptionOption.ArgumentHelpName = "path";
+        return descriptionOption;
+    }
+    private static Command GetGenerateCommand()
+    {
+        var defaultConfiguration = new GenerationConfiguration();
+        var descriptionOption = GetDescriptionOption(defaultConfiguration.OpenAPIFilePath);
 
         var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);
         

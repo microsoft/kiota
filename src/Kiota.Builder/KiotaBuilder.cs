@@ -49,26 +49,18 @@ public class KiotaBuilder
             Directory.Delete(config.OutputPath, true);
         }
     }
-
-    public async Task GenerateSDK(CancellationToken cancellationToken)
-    {
+    public async Task<OpenApiUrlTreeNode> GetUrlTreeNodeAsync(CancellationToken cancellationToken) {
         var sw = new Stopwatch();
-        // Read input stream
         string inputPath = config.OpenAPIFilePath;
-
-        try {
-            CleanOutputDirectory();
-            // doing this verification at the beginning to give immediate feedback to the user
-            Directory.CreateDirectory(config.OutputPath);
-        } catch (Exception ex) {
-            throw new InvalidOperationException($"Could not open/create output directory {config.OutputPath}, reason: {ex.Message}", ex);
-        }
-        
-        sw.Start();
+        var (_, openApiTree) = await GetTreeNodeInternal(inputPath, sw, cancellationToken);
+        return openApiTree;
+    }
+    private async Task<(int, OpenApiUrlTreeNode)> GetTreeNodeInternal(string inputPath, Stopwatch sw, CancellationToken cancellationToken) {
         var stepId = 0;
+        sw.Start();
         using var input = await LoadStream(inputPath, cancellationToken);
         if(input == null)
-            return;
+            return (0, null);
         StopLogAndReset(sw, $"step {++stepId} - reading the stream - took");
 
         // Create patterns
@@ -95,6 +87,23 @@ public class KiotaBuilder
         var openApiTree = CreateUriSpace(openApiDocument);
         StopLogAndReset(sw, $"step {++stepId} - create uri space - took");
 
+        return (stepId, openApiTree);
+    }
+    public async Task GenerateSDK(CancellationToken cancellationToken)
+    {
+        var sw = new Stopwatch();
+        // Read input stream
+        string inputPath = config.OpenAPIFilePath;
+
+        try {
+            CleanOutputDirectory();
+            // doing this verification at the beginning to give immediate feedback to the user
+            Directory.CreateDirectory(config.OutputPath);
+        } catch (Exception ex) {
+            throw new InvalidOperationException($"Could not open/create output directory {config.OutputPath}, reason: {ex.Message}", ex);
+        }
+        var (stepId, openApiTree) = await GetTreeNodeInternal(inputPath, sw, cancellationToken);
+        
         // Create Source Model
         sw.Start();
         var generatedCode = CreateSourceModel(openApiTree);

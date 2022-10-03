@@ -170,6 +170,20 @@
             "stopAtEntry": false
         },
         {
+            "name": "Launch Display",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/kiota/bin/Debug/net6.0/kiota.dll",
+            "args": ["display",
+                 "-d",
+                 "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml"
+                ],
+            "cwd": "${workspaceFolder}/src/kiota",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
             "name": "Launch Download",
             "type": "coreclr",
             "request": "launch",
