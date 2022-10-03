@@ -47,7 +47,7 @@ Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** a
 You can then use the Kiota command line tool to generate the SDK classes.
 
 ```bash
-kiota -l typescript -d getme.yml -c GetUserApiClient -o ./client
+kiota generate -l typescript -d getme.yml -c GetUserApiClient -o ./client
 ```
 
 ## Creating an application registration

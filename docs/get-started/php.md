@@ -50,7 +50,7 @@ Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** a
 You can then use the Kiota command line tool to generate the SDK classes.
 
 ```shell
-kiota -l PHP -d ../getme.yml -c GraphApiClient -n GetUser\Client -o ./client
+kiota generate -l PHP -d ../getme.yml -c GraphApiClient -n GetUser\Client -o ./client
 ```
 
 To ensure the newly generated classes can be imported, update the autoload paths using:

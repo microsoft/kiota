@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Php;

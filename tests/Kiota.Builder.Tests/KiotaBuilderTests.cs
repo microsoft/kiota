@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 

@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-
+using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Logging;
 
 using Xunit;

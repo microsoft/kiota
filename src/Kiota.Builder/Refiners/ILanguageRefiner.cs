@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 
 namespace Kiota.Builder.Refiners;
 public interface ILanguageRefiner

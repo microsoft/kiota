@@ -9,8 +9,10 @@ using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNet.Globbing;
+using Kiota.Builder.Caching;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.CodeRenderers;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
@@ -150,7 +152,11 @@ public class KiotaBuilder
         if (inputPath.StartsWith("http"))
             try {
                 using var httpClient = new HttpClient();
-                input = await httpClient.GetStreamAsync(inputPath, cancellationToken);
+                var cachingProvider = new DocumentCachingProvider(httpClient, logger) {
+                    ClearCache = config.ClearCache,
+                };
+                var fileName = Path.GetFileName(inputPath) is string name && !string.IsNullOrEmpty(name) ? name : "description.yml";
+                input = await cachingProvider.GetDocumentAsync(new Uri(inputPath), "generation", fileName, cancellationToken);
             } catch (HttpRequestException ex) {
                 throw new InvalidOperationException($"Could not download the file at {inputPath}, reason: {ex.Message}", ex);
             }

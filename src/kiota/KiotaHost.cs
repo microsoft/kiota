@@ -5,12 +5,91 @@ using System.Linq;
 using System.Text.RegularExpressions;
 
 using Kiota.Builder;
-
+using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace kiota;
 public class KiotaHost {
-    public RootCommand GetRootCommand()
+    public RootCommand GetRootCommand() {
+        var rootCommand = new RootCommand();
+        rootCommand.AddCommand(GetGenerateCommand());
+        rootCommand.AddCommand(GetSearchCommand());
+        rootCommand.AddCommand(GetDownloadCommand());
+        return rootCommand;
+    }
+    private static Command GetDownloadCommand() {
+        var searchTermArgument = new Argument<string>("searchTerm", "The term to search for.");
+        var defaultConfiguration = new DownloadConfiguration();
+        
+        var logLevelOption = GetLogLevelOption();
+
+        var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
+
+        var cleanOutputOption = GetCleanOutputOption(defaultConfiguration.CleanOutput);
+
+        var versionOption = GetVersionOption();
+
+        var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);
+
+        var searchCommand = new Command("download", "Downloads an OpenAPI description from multiple registries."){
+            searchTermArgument,
+            logLevelOption,
+            clearCacheOption,
+            versionOption,
+            cleanOutputOption,
+            outputOption,
+        };
+        searchCommand.Handler = new KiotaDownloadCommandHandler {
+            SearchTermArgument = searchTermArgument,
+            LogLevelOption = logLevelOption,
+            ClearCacheOption = clearCacheOption,
+            VersionOption = versionOption,
+            CleanOutputOption = cleanOutputOption,
+            OutputPathOption = outputOption,
+        };
+        return searchCommand;
+    }
+    private static Option<string> GetVersionOption() {
+        var versionOption = new Option<string>("--version", () => string.Empty, "The version of the OpenAPI document to use.");
+        versionOption.AddAlias("-v");
+        return versionOption;
+    }
+    private static Command GetSearchCommand() {
+        var searchTermArgument = new Argument<string>("searchTerm", "The term to search for.");
+        var defaultConfiguration = new SearchConfiguration();
+        
+        var logLevelOption = GetLogLevelOption();
+
+        var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
+
+        var versionOption = GetVersionOption();
+
+        var searchCommand = new Command("search", "Searches for an OpenAPI description in multiple registries."){
+            searchTermArgument,
+            logLevelOption,
+            clearCacheOption,
+            versionOption,
+        };
+        searchCommand.Handler = new KiotaSearchCommandHandler {
+            SearchTermArgument = searchTermArgument,
+            LogLevelOption = logLevelOption,
+            ClearCacheOption = clearCacheOption,
+            VersionOption = versionOption,
+        };
+        return searchCommand;
+    }
+    private static Option<bool> GetCleanOutputOption(bool defaultValue) {
+        var cleanOutputOption = new Option<bool>("--clean-output", () => defaultValue, "Removes all files from the output directory before generating the code files.");
+        cleanOutputOption.AddAlias("--co");
+        return cleanOutputOption;
+    }
+    private static Option<string> GetOutputPathOption(string defaultValue) {
+        var outputOption = new Option<string>("--output", () => defaultValue, "The output directory path for the generated code files.");
+        outputOption.AddAlias("-o");
+        outputOption.ArgumentHelpName = "path";
+        return outputOption;
+    }
+    private static Command GetGenerateCommand()
     {
         var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_CONTAINER");
         var defaultConfiguration = new GenerationConfiguration();
@@ -23,9 +102,7 @@ public class KiotaHost {
         descriptionOption.AddAlias("-d");
         descriptionOption.ArgumentHelpName = "path";
 
-        var outputOption = new Option<string>("--output", () => defaultConfiguration.OutputPath, "The output directory path for the generated code files.");
-        outputOption.AddAlias("-o");
-        outputOption.ArgumentHelpName = "path";
+        var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);
         
         var languageOption = new Option<GenerationLanguage>("--language", "The target language for the generated code files.");
         languageOption.AddAlias("-l");
@@ -42,9 +119,7 @@ public class KiotaHost {
         namespaceOption.ArgumentHelpName = "name";
         AddStringRegexValidator(namespaceOption, @"^[\w][\w\._-]+", "namespace name");
 
-        var logLevelOption = new Option<LogLevel>("--log-level", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
-        logLevelOption.AddAlias("--ll");
-        AddEnumValidator(logLevelOption, "log level");
+        var logLevelOption = GetLogLevelOption();
 
         var backingStoreOption = new Option<bool>("--backing-store", () => defaultConfiguration.UsesBackingStore, "Enables backing store for models.");
         backingStoreOption.AddAlias("-b");
@@ -66,8 +141,7 @@ public class KiotaHost {
         deserializerOption.AddAlias("--ds");
         deserializerOption.ArgumentHelpName = "classes";
 
-        var cleanOutputOption = new Option<bool>("--clean-output", () => defaultConfiguration.CleanOutput, "Removes all files from the output directory before generating the code files.");
-        cleanOutputOption.AddAlias("--co");
+        var cleanOutputOption = GetCleanOutputOption(defaultConfiguration.CleanOutput);
 
         var structuredMimeTypesOption = new Option<List<string>>(
             "--structured-mime-types",
@@ -87,7 +161,9 @@ public class KiotaHost {
             "The paths to exclude from the generation. Glob patterns accepted. Accepts multiple values.");
         excludePatterns.AddAlias("-e");
 
-        var command = new RootCommand {
+        var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
+
+        var command = new Command ("generate", "Generates a REST HTTP API client from an OpenAPI description file.") {
             descriptionOption,
             outputOption,
             languageOption,
@@ -102,9 +178,9 @@ public class KiotaHost {
             structuredMimeTypesOption,
             includePatterns,
             excludePatterns,
+            clearCacheOption,
         };
-        command.Description = "OpenAPI-based HTTP Client SDK code generator";
-        command.Handler = new KiotaCommandHandler {
+        command.Handler = new KiotaGenerationCommandHandler {
             DescriptionOption = descriptionOption,
             OutputOption = outputOption,
             LanguageOption = languageOption,
@@ -119,8 +195,20 @@ public class KiotaHost {
             StructuredMimeTypesOption = structuredMimeTypesOption,
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
+            ClearCacheOption = clearCacheOption,
         };
         return command;
+    }
+    private static Option<LogLevel> GetLogLevelOption() {
+        var logLevelOption = new Option<LogLevel>("--log-level", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
+        logLevelOption.AddAlias("--ll");
+        AddEnumValidator(logLevelOption, "log level");
+        return logLevelOption;
+    }
+    private static Option<bool> GetClearCacheOption(bool defaultValue) {
+        var clearCacheOption = new Option<bool>("--clear-cache", () => defaultValue, "Clears any cached data for the current command.");
+        clearCacheOption.AddAlias("--cc");
+        return clearCacheOption;
     }
     private static void AddStringRegexValidator(Option<string> option, string pattern, string parameterName) {
         var validator = new Regex(pattern);
