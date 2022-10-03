@@ -22,10 +22,13 @@ public class KiotaHost {
         var defaultSearchConfiguration = new SearchConfiguration();
         var defaultGenerationConfiguration = new GenerationConfiguration();
         var descriptionOption = GetDescriptionOption(defaultGenerationConfiguration.OpenAPIFilePath);
+        descriptionOption.IsRequired = false; // can also use search approach
 
         var versionOption = GetVersionOption();
         var logLevelOption = GetLogLevelOption();
-        var searchTermOption = new Option<string>("--search-term", () => string.Empty, "The term to search for.");
+        var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultGenerationConfiguration.IncludePatterns, defaultGenerationConfiguration.ExcludePatterns);
+        var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
+        var searchTermOption = new Option<string>("--api-key", () => string.Empty, "The API key to display the description for. Use the search command to get the key.");
         var maxDepthOption = new Option<uint>("--max-depth", () => 5, "The maximum depth of the tree to display");
         var displayCommand = new Command("display", "Displays the API paths in a given description."){
             searchTermOption,
@@ -33,6 +36,9 @@ public class KiotaHost {
             versionOption,
             descriptionOption,
             maxDepthOption,
+            includePatterns,
+            excludePatterns,
+            clearCacheOption,
         };
         displayCommand.Handler = new KiotaDisplayCommandHandler {
             SearchTermOption = searchTermOption,
@@ -40,6 +46,9 @@ public class KiotaHost {
             VersionOption = versionOption,
             DescriptionOption = descriptionOption,
             MaxDepthOption = maxDepthOption,
+            IncludePatternsOption = includePatterns,
+            ExcludePatternsOption = excludePatterns,
+            ClearCacheOption = clearCacheOption,
         };
         return displayCommand;
     }
@@ -179,17 +188,7 @@ public class KiotaHost {
         "The MIME types to use for structured data model generation. Accepts multiple values.");
         structuredMimeTypesOption.AddAlias("-m");
 
-        var includePatterns = new Option<List<string>>(
-            "--include-path",
-            () => defaultConfiguration.IncludePatterns.ToList(),
-            "The paths to include in the generation. Glob patterns accepted. Accepts multiple values.");
-        includePatterns.AddAlias("-i");
-
-        var excludePatterns = new Option<List<string>>(
-            "--exclude-path",
-            () => defaultConfiguration.ExcludePatterns.ToList(),
-            "The paths to exclude from the generation. Glob patterns accepted. Accepts multiple values.");
-        excludePatterns.AddAlias("-e");
+        var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultConfiguration.IncludePatterns, defaultConfiguration.ExcludePatterns);
 
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
 
@@ -228,6 +227,20 @@ public class KiotaHost {
             ClearCacheOption = clearCacheOption,
         };
         return command;
+    }
+    private static (Option<List<string>>, Option<List<string>>) GetIncludeAndExcludeOptions(HashSet<string> defaultIncludePatterns, HashSet<string> defaultExcludePatterns) {
+        var includePatterns = new Option<List<string>>(
+            "--include-path",
+            () => defaultIncludePatterns.ToList(),
+            "The paths to include in the generation. Glob patterns accepted. Accepts multiple values.");
+        includePatterns.AddAlias("-i");
+
+        var excludePatterns = new Option<List<string>>(
+            "--exclude-path",
+            () => defaultExcludePatterns.ToList(),
+            "The paths to exclude from the generation. Glob patterns accepted. Accepts multiple values.");
+        excludePatterns.AddAlias("-e");
+        return (includePatterns, excludePatterns);
     }
     private static Option<LogLevel> GetLogLevelOption() {
         var logLevelOption = new Option<LogLevel>("--log-level", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
