@@ -7,18 +7,16 @@ using System.Text;
 
 namespace Kiota;
 
-internal class ConsoleTreeView<NodeType> : ContentView
+internal class ConsoleTreeView<NodeType> : ContentView<NodeType>
 {
-    private readonly NodeType _root;
     private readonly uint _maxDepth;
     private readonly Func<NodeType, string> _nodeNameGetter;
     private readonly Func<NodeType, IEnumerable<NodeType>> _childrenGetter;
 
-    public ConsoleTreeView(NodeType rootNode, Func<NodeType, string> nodeNameGetter, Func<NodeType, IEnumerable<NodeType>> childrenGetter, uint maxDepth = default)
+    public ConsoleTreeView(NodeType rootNode, Func<NodeType, string> nodeNameGetter, Func<NodeType, IEnumerable<NodeType>> childrenGetter, uint maxDepth = default):base(rootNode)
     {
         ArgumentNullException.ThrowIfNull(nodeNameGetter);
         ArgumentNullException.ThrowIfNull(childrenGetter);
-        _root = rootNode;
         _maxDepth = maxDepth;
         _nodeNameGetter = nodeNameGetter;
         _childrenGetter = childrenGetter;
@@ -29,19 +27,22 @@ internal class ConsoleTreeView<NodeType> : ContentView
     private const string Space = "   ";
     public override void Render(ConsoleRenderer renderer, Region region = null)
     {
-        var builder = new StringBuilder();
-        if (_root != null) {
-            RenderNode(_root, builder);
-        }
-        var content = new ContentSpan(builder.ToString());
-        renderer.RenderToRegion(content, region);
+        Span = new ContentSpan(GetTreeAsString());
+        base.Render(renderer, region);
     }
-    public string RenderAsString() {
+    private string GetTreeAsString(){
         var builder = new StringBuilder();
-        if (_root != null) {
-            RenderNode(_root, builder);
+        if (Value != null) {
+            RenderNode(Value, builder);
         }
         return builder.ToString();
+    }
+    public override Size Measure(ConsoleRenderer renderer, Size maxSize)
+    {
+        var stringValue = GetTreeAsString();
+        var width = stringValue.Split(Environment.NewLine).Max(static x => x.Length);
+        var height = stringValue.Count(static x => x == Environment.NewLine[0]) + 1;
+        return new Size(width, height);
     }
     private void RenderNode(NodeType node, StringBuilder builder, string indent = "", int nodeDepth = 0)
     {

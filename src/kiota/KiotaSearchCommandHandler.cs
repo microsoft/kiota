@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.CommandLine.IO;
+using System.CommandLine.Rendering;
+using System.CommandLine.Rendering.Views;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using ConsoleTables;
 using Kiota.Builder;
 using Kiota.Builder.SearchProviders;
 using Microsoft.Extensions.Logging;
@@ -59,12 +61,17 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             Console.WriteLine($"Service: {result.Value.ServiceUrl}");
             Console.WriteLine($"OpenAPI: {result.Value.DescriptionUrl}");
         }  else {
-            var table = new ConsoleTable("key", "title", "description", "versions");
-            Console.WriteLine();
-            foreach (var result in results) {
-                table.AddRow(result.Key, result.Value.Title, ShortenDescription(result.Value.Description), string.Join(", ", result.Value.VersionLabels));
-            }
-            table.Write();
+            var view = new TableView<KeyValuePair<string, SearchResult>>() {
+                Items = results.OrderBy(static x => x.Key).Select(static x => x).ToList(),
+            };
+            view.AddColumn(static x => x.Key, "Key");
+            view.AddColumn(static x => x.Value.Title, "Title");
+            view.AddColumn(static x => ShortenDescription(x.Value.Description), "Description");
+            view.AddColumn(static x => string.Join(", ", x.Value.VersionLabels), "Versions");
+            var console = new SystemConsole();
+            using var terminal = new SystemConsoleTerminal(console);
+            var layout = new StackLayoutView { view };
+            console.Append(layout);
             Console.WriteLine();
             Console.WriteLine("multiple matches found, use the key to select a specific description");
         }
