@@ -6,12 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder;
 using Microsoft.Extensions.Logging;
-using Kiota;
 using Microsoft.OpenApi.Services;
 using System.Collections.Generic;
-using System.CommandLine.IO;
-using System.CommandLine.Rendering;
-using System.CommandLine.Rendering.Views;
+using System.Text;
 
 namespace kiota;
 internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
@@ -57,12 +54,48 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             Configuration.Generation.ClearCache = clearCache;
             var urlTreeNode = await new KiotaBuilder(logger, Configuration.Generation).GetUrlTreeNodeAsync(cancellationToken);
 
-            var view = new ConsoleTreeView<OpenApiUrlTreeNode>(urlTreeNode, static x => x.Segment, static x => x.Children.Select(static y => y.Value), maxDepth);
-            var console = new SystemConsole();
-            using var terminal = new SystemConsoleTerminal(console);
-            var layout = new StackLayoutView { view };
-            console.Append(layout);
+            var builder = new StringBuilder();
+            RenderNode(urlTreeNode, maxDepth, builder);
+            var tree = builder.ToString();
+            Console.Write(tree);
         }
         return 0;
+    }
+    private const string Cross = " ├─";
+    private const string Corner = " └─";
+    private const string Vertical = " │ ";
+    private const string Space = "   ";
+    private static void RenderNode(OpenApiUrlTreeNode node, uint maxDepth, StringBuilder builder, string indent = "", int nodeDepth = 0)
+    {
+        builder.AppendLine(node.Segment);
+
+        var children = node.Children;
+        var numberOfChildren = children.Count;
+        for (var i = 0; i < numberOfChildren; i++)
+        {
+            var child = children.ElementAt(i);
+            var isLast = i == (numberOfChildren - 1);
+            RenderChildNode(child.Value, maxDepth, builder, indent, isLast, nodeDepth);
+        }
+    }
+
+    private static void RenderChildNode(OpenApiUrlTreeNode node, uint maxDepth, StringBuilder builder, string indent, bool isLast, int nodeDepth = 0)
+    {
+        if (nodeDepth >= maxDepth && maxDepth != 0)
+            return;
+        builder.Append(indent);
+
+        if (isLast)
+        {
+            builder.Append(Corner);
+            indent += Space;
+        }
+        else
+        {
+            builder.Append(Cross);
+            indent += Vertical;
+        }
+
+        RenderNode(node, maxDepth, builder, indent, ++nodeDepth);
     }
 }
