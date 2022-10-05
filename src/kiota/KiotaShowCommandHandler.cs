@@ -11,7 +11,7 @@ using Microsoft.OpenApi.Services;
 using System.Collections.Generic;
 
 namespace kiota;
-internal class KiotaDisplayCommandHandler : BaseKiotaCommandHandler
+internal class KiotaShowCommandHandler : BaseKiotaCommandHandler
 {
     public Option<string> DescriptionOption { get;set; }
     public Option<string> SearchTermOption { get; set; }

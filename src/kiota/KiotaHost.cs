@@ -28,9 +28,9 @@ public class KiotaHost {
         var logLevelOption = GetLogLevelOption();
         var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultGenerationConfiguration.IncludePatterns, defaultGenerationConfiguration.ExcludePatterns);
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
-        var searchTermOption = new Option<string>("--api-key", () => string.Empty, "The API key to display the description for. Use the search command to get the key.");
+        var searchTermOption = new Option<string>("--search-key", () => string.Empty, "The API search key to display the description for. Use the search command to get the key.");
         var maxDepthOption = new Option<uint>("--max-depth", () => 5, "The maximum depth of the tree to display");
-        var displayCommand = new Command("display", "Displays the API paths in a given description."){
+        var displayCommand = new Command("show", "Displays the API tree in a given description."){
             searchTermOption,
             logLevelOption,
             versionOption,
@@ -40,7 +40,7 @@ public class KiotaHost {
             excludePatterns,
             clearCacheOption,
         };
-        displayCommand.Handler = new KiotaDisplayCommandHandler {
+        displayCommand.Handler = new KiotaShowCommandHandler {
             SearchTermOption = searchTermOption,
             LogLevelOption = logLevelOption,
             VersionOption = versionOption,
