@@ -16,7 +16,7 @@ public class KiotaHost {
         rootCommand.AddCommand(GetGenerateCommand());
         rootCommand.AddCommand(GetSearchCommand());
         rootCommand.AddCommand(GetDownloadCommand());
-        rootCommand.AddCommand(GetDisplayCommand());
+        rootCommand.AddCommand(GetShowCommand());
         rootCommand.AddCommand(GetInfoCommand());
         return rootCommand;
     }
@@ -52,8 +52,7 @@ public class KiotaHost {
     private static Option<string> GetSearchTermOption() {
         return new Option<string>("--search-key", () => string.Empty, "The API search key to display the description for. Use the search command to get the key.");
     }
-    private static Command GetDisplayCommand() {
-        var defaultSearchConfiguration = new SearchConfiguration();
+    private static Command GetShowCommand() {
         var defaultGenerationConfiguration = new GenerationConfiguration();
         var descriptionOption = GetDescriptionOption(defaultGenerationConfiguration.OpenAPIFilePath);
         descriptionOption.IsRequired = false; // can also use search approach
@@ -296,16 +295,16 @@ public class KiotaHost {
                     input.ErrorMessage = $"{value} is not a valid {parameterName} for the client, the {parameterName} must conform to {pattern}";
         });
     }
-    private static void AddEnumValidator<T>(Option<T> option, string parameterName) where T: struct, Enum {
-        option.AddValidator(input => {
-            ValidateEnumValue<T>(input, parameterName);
-        });
-    }
     private static void ValidateEnumValue<T>(OptionResult input, string parameterName) where T: struct, Enum {
         if(input.Tokens.Any() && !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _)) {
             var validOptionsList = Enum.GetValues<T>().Select(static x => x.ToString()).Aggregate(static (x, y) => x + ", " + y);
             input.ErrorMessage = $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
         }
+    }
+    private static void AddEnumValidator<T>(Option<T> option, string parameterName) where T: struct, Enum {
+        option.AddValidator(input => {
+            ValidateEnumValue<T>(input, parameterName);
+        });
     }
     private static void AddEnumValidator<T>(Option<T?> option, string parameterName) where T: struct, Enum {
         option.AddValidator(input => {

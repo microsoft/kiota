@@ -12,10 +12,7 @@ public record LanguageInformation: IOpenApiSerializable {
     public List<LanguageDependency> Dependencies {get; set;} = new();
     public string DependencyInstallCommand {get; set;}
 
-    public void SerializeAsV2(IOpenApiWriter writer)
-    {
-        SerializeAsV3(writer);
-    }
+    public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
     public void SerializeAsV3(IOpenApiWriter writer)
     {
         writer.WriteStartObject();
@@ -45,10 +42,7 @@ public record LanguageInformation: IOpenApiSerializable {
 public record LanguageDependency: IOpenApiSerializable {
     public string Name {get; set;}
     public string Version {get; set;}
-    public void SerializeAsV2(IOpenApiWriter writer)
-    {
-        SerializeAsV3(writer);
-    }
+    public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
     public void SerializeAsV3(IOpenApiWriter writer)
     {
         writer.WriteStartObject();

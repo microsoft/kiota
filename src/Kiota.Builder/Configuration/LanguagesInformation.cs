@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Writers;
@@ -10,11 +9,7 @@ namespace Kiota.Builder.Configuration;
 
 public class LanguagesInformation : Dictionary<string, LanguageInformation>, IOpenApiSerializable
 {
-    public void SerializeAsV2(IOpenApiWriter writer)
-    {
-        SerializeAsV3(writer);
-    }
-
+    public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
     public void SerializeAsV3(IOpenApiWriter writer)
     {
         writer.WriteStartObject();

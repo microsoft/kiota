@@ -96,6 +96,6 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             indent += Vertical;
         }
 
-        RenderNode(node, maxDepth, builder, indent, ++nodeDepth);
+        RenderNode(node, maxDepth, builder, indent, nodeDepth + 1);
     }
 }
