@@ -19,7 +19,7 @@ public record LanguageInformation: IOpenApiSerializable {
     public void SerializeAsV3(IOpenApiWriter writer)
     {
         writer.WriteStartObject();
-        writer.WriteProperty(nameof(MaturityLevel).ToFirstCharacterLowerCase(), MaturityLevel);
+        writer.WriteProperty(nameof(MaturityLevel).ToFirstCharacterLowerCase(), MaturityLevel.ToString());
         writer.WriteProperty(nameof(DependencyInstallCommand).ToFirstCharacterLowerCase(), DependencyInstallCommand);
         writer.WriteOptionalCollection(nameof(Dependencies).ToFirstCharacterLowerCase(), Dependencies, (w, x) => x.SerializeAsV3(w));
         writer.WriteEndObject();

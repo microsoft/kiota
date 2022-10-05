@@ -16,9 +16,6 @@ public class OpenApiPagingExtensionsTests
     [Fact]
     public void ExtensionNameMatchesExpected()
     {
-        // Arrange
-        OpenApiPagingExtension extension = new();
-
         // Act
         string name = OpenApiPagingExtension.Name;
         var expectedName = "x-ms-pageable";
