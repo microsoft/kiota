@@ -90,7 +90,7 @@ public class KiotaBuilder
         return (stepId, openApiTree);
     }
 
-    public async Task<LanguagesInformation> GetLanguageInformation(CancellationToken cancellationToken)
+    public async Task<LanguagesInformation> GetLanguageInformationAsync(CancellationToken cancellationToken)
     {
         await GetTreeNodeInternal(config.OpenAPIFilePath, new Stopwatch(), cancellationToken);
         if (openApiDocument == null)
@@ -100,7 +100,7 @@ public class KiotaBuilder
         return null;
     }
 
-    public async Task GenerateSDK(CancellationToken cancellationToken)
+    public async Task GenerateClientAsync(CancellationToken cancellationToken)
     {
         var sw = new Stopwatch();
         // Read input stream

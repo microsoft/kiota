@@ -76,7 +76,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
             try {
-                await new KiotaBuilder(logger, Configuration.Generation).GenerateSDK(cancellationToken);
+                await new KiotaBuilder(logger, Configuration.Generation).GenerateClientAsync(cancellationToken);
                 return 0;
             } catch (Exception ex) {
     #if DEBUG

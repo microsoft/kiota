@@ -29,7 +29,7 @@ public class KiotaBuilderTests
         await File.WriteAllLinesAsync(tempFilePath, new[] {"openapi: 3.0.0", "info:", "  title: \"Todo API\"", "  version: \"1.0.0\""});
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
-        await Assert.ThrowsAsync<InvalidOperationException>(() => builder.GenerateSDK(new()));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => builder.GenerateClientAsync(new()));
         File.Delete(tempFilePath);
     }
     [Fact]
@@ -93,6 +93,89 @@ components:
         Assert.Equal("Standard_LRS", firstOption.SerializationName);
         Assert.Equal("StandardLocalRedundancy", firstOption.Name);
         Assert.NotEmpty(firstOption.Description);
+       
+        File.Delete(tempFilePath);
+    }
+    [Fact]
+    public async Task ParsesKiotaExtension() {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+x-ms-kiota-info:
+  languagesInformation:
+    CSharp:
+      maturityLevel: Experimental
+      dependencyInstallCommand: dotnet add {0} {1}
+      dependencies:
+        - name: Microsoft.Graph.Core
+          version: 3.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+        using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = builder.CreateOpenApiDocument(fs);
+        var node = builder.CreateUriSpace(document);
+        var extensionResult = await builder.GetLanguageInformationAsync(new CancellationToken());
+        Assert.NotNull(extensionResult);
+        Assert.True(extensionResult.TryGetValue("CSharp", out var csharpInfo));
+        Assert.Equal("Experimental", csharpInfo.MaturityLevel.ToString());
+        Assert.Equal("dotnet add {0} {1}", csharpInfo.DependencyInstallCommand);
+        Assert.Single(csharpInfo.Dependencies);
+        Assert.Equal("Microsoft.Graph.Core", csharpInfo.Dependencies.First().Name);
+        Assert.Equal("3.0.0", csharpInfo.Dependencies.First().Version);
+        
+        File.Delete(tempFilePath);
+    }
+    [Fact]
+    public async Task DoesntFailOnEmptyKiotaExtension() {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+        using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = builder.CreateOpenApiDocument(fs);
+        var node = builder.CreateUriSpace(document);
+        var extensionResult = await builder.GetLanguageInformationAsync(new CancellationToken());
+        Assert.Null(extensionResult);
+        
+        File.Delete(tempFilePath);
+    }
+    [Fact]
+    public async Task GetsUrlTreeNode() {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /enumeration:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+        var treeNode = await builder.GetUrlTreeNodeAsync(new CancellationToken());
+        Assert.NotNull(treeNode);
+        Assert.Equal("/", treeNode.Segment);
+        Assert.Equal("enumeration", treeNode.Children.First().Value.Segment);
+       
         File.Delete(tempFilePath);
     }
     [Fact]
@@ -101,7 +184,7 @@ components:
         await File.WriteAllLinesAsync(tempFilePath, new[] {"swagger: 2.0", "title: \"Todo API\"", "version: \"1.0.0\"", "host: mytodos.doesntexit", "basePath: v2", "schemes:", " - https"," - http"});
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
-        await builder.GenerateSDK(new());
+        await builder.GenerateClientAsync(new());
         File.Delete(tempFilePath);
     }
     [Fact]

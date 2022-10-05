@@ -52,7 +52,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler {
             var instructions = Configuration.Languages;
             if(!string.IsNullOrEmpty(openapi)) {
                 var builder = new KiotaBuilder(logger, Configuration.Generation);
-                var result = await builder.GetLanguageInformation(cancellationToken);
+                var result = await builder.GetLanguageInformationAsync(cancellationToken);
                 if (result != null)
                     instructions = result;
             }
