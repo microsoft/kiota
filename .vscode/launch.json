@@ -204,7 +204,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/src/kiota/bin/Debug/net6.0/kiota.dll",
-            "args": ["info"
+            "args": ["info",
+                    "-l",
+                    "CSharp"
                 ],
             "cwd": "${workspaceFolder}/src/kiota",
             "console": "internalConsole",
