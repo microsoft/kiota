@@ -96,5 +96,5 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
     public Option<List<string>> IncludePatternsOption { get; set; }
     public Option<List<string>> ExcludePatternsOption { get; set; }
     public Option<bool> ClearCacheOption { get; set; }
-    private static string GetAbsolutePath(string source) => Path.IsPathRooted(source) || source.StartsWith("http") ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
+    private static string GetAbsolutePath(string source) => Path.IsPathRooted(source) || (source?.StartsWith("http") ?? false) ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
 }
