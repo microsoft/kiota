@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.CommandLine;
+using System.CommandLine.Parsing;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -16,7 +17,40 @@ public class KiotaHost {
         rootCommand.AddCommand(GetSearchCommand());
         rootCommand.AddCommand(GetDownloadCommand());
         rootCommand.AddCommand(GetDisplayCommand());
+        rootCommand.AddCommand(GetInfoCommand());
         return rootCommand;
+    }
+    private static Command GetInfoCommand() {
+        var defaultGenerationConfiguration = new GenerationConfiguration();
+        var descriptionOption = GetDescriptionOption(defaultGenerationConfiguration.OpenAPIFilePath);
+        descriptionOption.IsRequired = false;
+        var versionOption = GetVersionOption();
+        var logLevelOption = GetLogLevelOption();
+        var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
+        var searchTermOption = GetSearchTermOption();
+        var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the dependencies instructions.");
+        languageOption.AddAlias("-l");
+        AddEnumValidator(languageOption, "language");
+        var infoCommand = new Command("info", "Displays information about the languages supported by kiota and dependencies to add in your project.") {
+            descriptionOption,
+            versionOption,
+            logLevelOption,
+            clearCacheOption,
+            searchTermOption,
+            languageOption,
+        };
+        infoCommand.Handler = new KiotaInfoCommandHandler {
+            DescriptionOption = descriptionOption,
+            VersionOption = versionOption,
+            LogLevelOption = logLevelOption,
+            ClearCacheOption = clearCacheOption,
+            SearchTermOption = searchTermOption,
+            GenerationLanguage = languageOption,
+        };
+        return infoCommand;
+    }
+    private static Option<string> GetSearchTermOption() {
+        return new Option<string>("--search-key", () => string.Empty, "The API search key to display the description for. Use the search command to get the key.");
     }
     private static Command GetDisplayCommand() {
         var defaultSearchConfiguration = new SearchConfiguration();
@@ -28,7 +62,7 @@ public class KiotaHost {
         var logLevelOption = GetLogLevelOption();
         var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultGenerationConfiguration.IncludePatterns, defaultGenerationConfiguration.ExcludePatterns);
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
-        var searchTermOption = new Option<string>("--search-key", () => string.Empty, "The API search key to display the description for. Use the search command to get the key.");
+        var searchTermOption = GetSearchTermOption();
         var maxDepthOption = new Option<uint>("--max-depth", () => 5, "The maximum depth of the tree to display");
         var displayCommand = new Command("show", "Displays the API tree in a given description."){
             searchTermOption,
@@ -264,11 +298,18 @@ public class KiotaHost {
     }
     private static void AddEnumValidator<T>(Option<T> option, string parameterName) where T: struct, Enum {
         option.AddValidator(input => {
-            if(input.Tokens.Any() &&
-                !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _)) {
-                    var validOptionsList = Enum.GetValues<T>().Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y);
-                    input.ErrorMessage = $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
-                }
+            ValidateEnumValue<T>(input, parameterName);
+        });
+    }
+    private static void ValidateEnumValue<T>(OptionResult input, string parameterName) where T: struct, Enum {
+        if(input.Tokens.Any() && !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _)) {
+            var validOptionsList = Enum.GetValues<T>().Select(static x => x.ToString()).Aggregate(static (x, y) => x + ", " + y);
+            input.ErrorMessage = $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
+        }
+    }
+    private static void AddEnumValidator<T>(Option<T?> option, string parameterName) where T: struct, Enum {
+        option.AddValidator(input => {
+            ValidateEnumValue<T>(input, parameterName);
         });
     }
 }

@@ -11,7 +11,7 @@ using Microsoft.OpenApi.Services;
 using System.Collections.Generic;
 
 namespace kiota;
-internal class KiotaShowCommandHandler : BaseKiotaCommandHandler
+internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
 {
     public Option<string> DescriptionOption { get;set; }
     public Option<string> SearchTermOption { get; set; }
@@ -59,23 +59,5 @@ internal class KiotaShowCommandHandler : BaseKiotaCommandHandler
             Console.Write(view.RenderAsString()); // temporary workaround because commandline rendering trims white spaces
         }
         return 0;
-    }
-    private async Task<(string, int?)> GetDescriptionFromSearch(string openapi, string searchTerm, ILoggerFactory loggerFactory, ILogger parentLogger, CancellationToken cancellationToken) {
-        if (string.IsNullOrEmpty(openapi) && !string.IsNullOrEmpty(searchTerm))
-        {
-            parentLogger.LogInformation("Searching for {searchTerm} in the OpenAPI description repository", searchTerm);
-            var searcher = new KiotaSearcher(loggerFactory.CreateLogger<KiotaSearcher>(), Configuration.Search);
-            var results = await searcher.SearchAsync(cancellationToken);
-            if (results.Count == 1)
-                return (results.First().Value.DescriptionUrl.ToString(), null);
-            else if(!results.Any()) {
-                Console.WriteLine("No results found for the search term, use the search command to locate the description");
-                return (string.Empty, 1);
-            } else {
-                Console.WriteLine("Multiple results found for the search term, use the search command to locate the description");
-                return (string.Empty, 1);
-            }
-        }
-        return (string.Empty, null);
     }
 }

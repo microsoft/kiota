@@ -199,6 +199,18 @@
             "stopAtEntry": false
         },
         {
+            "name": "Launch Info",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/kiota/bin/Debug/net6.0/kiota.dll",
+            "args": ["info"
+                ],
+            "cwd": "${workspaceFolder}/src/kiota",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
             "name": ".NET Core Attach",
             "type": "coreclr",
             "request": "attach",
