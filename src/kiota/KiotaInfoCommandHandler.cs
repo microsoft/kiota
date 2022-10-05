@@ -49,11 +49,14 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler {
             Configuration.Generation.ClearCache = clearCache;
             Configuration.Generation.Language = language.Value;
 
-            if(string.IsNullOrEmpty(openapi)) {
-                ShowLanguageInstructions(language.Value, Configuration.Languages);
-            } else {
-                //TODO get the value from the openapi file
+            var instructions = Configuration.Languages;
+            if(!string.IsNullOrEmpty(openapi)) {
+                var builder = new KiotaBuilder(logger, Configuration.Generation);
+                var result = await builder.GetLanguageInformation(cancellationToken);
+                if (result != null)
+                    instructions = result;
             }
+            ShowLanguageInformation(language.Value, instructions);
             return 0;
         }
     }
@@ -69,10 +72,10 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler {
         var layout = new StackLayoutView { view };
         console.Append(layout);
     }
-    private static void ShowLanguageInstructions(GenerationLanguage language, LanguagesInformation informationSource) {
+    private static void ShowLanguageInformation(GenerationLanguage language, LanguagesInformation informationSource) {
         if (informationSource.TryGetValue(language.ToString(), out var languageInformation)) {
             Console.WriteLine($"The language {language} is currently in {languageInformation.MaturityLevel} maturity level.");
-            Console.WriteLine("After generating code for this language, you need to install the following package:");
+            Console.WriteLine("After generating code for this language, you need to install the following packages:");
             foreach(var dependency in languageInformation.Dependencies) {
                 Console.WriteLine(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version);
             }

@@ -89,6 +89,17 @@ public class KiotaBuilder
 
         return (stepId, openApiTree);
     }
+
+    public async Task<LanguagesInformation> GetLanguageInformation(CancellationToken cancellationToken)
+    {
+        await GetTreeNodeInternal(config.OpenAPIFilePath, new Stopwatch(), cancellationToken);
+        if (openApiDocument == null)
+            return null;
+        if (openApiDocument.Extensions.TryGetValue(OpenApiKiotaExtension.Name, out var ext) && ext is OpenApiKiotaExtension kiotaExt)
+            return kiotaExt.LanguagesInformation;
+        return null;
+    }
+
     public async Task GenerateSDK(CancellationToken cancellationToken)
     {
         var sw = new Stopwatch();
@@ -202,6 +213,10 @@ public class KiotaBuilder
                 {
                     OpenApiEnumValuesDescriptionExtension.Name,
                     static (i, _ ) => OpenApiEnumValuesDescriptionExtension.Parse(i)
+                },
+                {
+                    OpenApiKiotaExtension.Name,
+                    static (i, _ ) => OpenApiKiotaExtension.Parse(i)
                 },
             }
         });
