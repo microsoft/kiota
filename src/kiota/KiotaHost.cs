@@ -27,7 +27,7 @@ public class KiotaHost {
         var versionOption = GetVersionOption();
         var logLevelOption = GetLogLevelOption();
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
-        var searchTermOption = GetSearchTermOption();
+        var searchTermOption = GetSearchKeyOption();
         var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the dependencies instructions.");
         languageOption.AddAlias("-l");
         AddEnumValidator(languageOption, "language");
@@ -49,8 +49,10 @@ public class KiotaHost {
         };
         return infoCommand;
     }
-    private static Option<string> GetSearchTermOption() {
-        return new Option<string>("--search-key", () => string.Empty, "The API search key to display the description for. Use the search command to get the key.");
+    private static Option<string> GetSearchKeyOption() {
+        var option = new Option<string>("--search-key", () => string.Empty, "The API search key to display the description for. Use the search command to get the key.");
+        option.AddAlias("-k");
+        return option;
     }
     private static Command GetShowCommand() {
         var defaultGenerationConfiguration = new GenerationConfiguration();
@@ -61,8 +63,9 @@ public class KiotaHost {
         var logLevelOption = GetLogLevelOption();
         var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultGenerationConfiguration.IncludePatterns, defaultGenerationConfiguration.ExcludePatterns);
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
-        var searchTermOption = GetSearchTermOption();
+        var searchTermOption = GetSearchKeyOption();
         var maxDepthOption = new Option<uint>("--max-depth", () => 5, "The maximum depth of the tree to display");
+        maxDepthOption.AddAlias("--m-d");
         var displayCommand = new Command("show", "Displays the API tree in a given description."){
             searchTermOption,
             logLevelOption,
