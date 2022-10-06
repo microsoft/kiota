@@ -102,15 +102,14 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         }
     }
     protected void DisplaySearchHint(string firstKey, string version) {
-        if (TutorialMode)
-            if(!string.IsNullOrEmpty(firstKey)) {
-                Console.WriteLine();
-                Console.WriteLine("Hint: multiple matches found, use the key as the search term to display the details of a specific description.");
-                if(string.IsNullOrEmpty(version))
-                    Console.WriteLine($"Example: kiota search {firstKey}");
-                else
-                    Console.WriteLine($"Example: kiota search {firstKey} -v {version}");
-            }
+        if (TutorialMode &&!string.IsNullOrEmpty(firstKey)) {
+            Console.WriteLine();
+            Console.WriteLine("Hint: multiple matches found, use the key as the search term to display the details of a specific description.");
+            if(string.IsNullOrEmpty(version))
+                Console.WriteLine($"Example: kiota search {firstKey}");
+            else
+                Console.WriteLine($"Example: kiota search {firstKey} -v {version}");
+        }
     }
     protected void DisplayGenerateHint(string path, IEnumerable<string> includedPaths, IEnumerable<string> excludedPaths) {
         if(TutorialMode) {
