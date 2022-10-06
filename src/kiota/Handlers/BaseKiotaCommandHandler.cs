@@ -47,7 +47,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         var logger = loggerFactory.CreateLogger<T>();
         return (loggerFactory, logger);
     }
-    protected static string GetAbsolutePath(string source) => Path.IsPathRooted(source) || (source?.StartsWith("http") ?? false) ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
+    protected static string GetAbsolutePath(string source) {
+        if (string.IsNullOrEmpty(source))
+            return string.Empty;
+        return Path.IsPathRooted(source) || source.StartsWith("http") ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
+    }
     protected static string NormalizeSlashesInPath(string path) {
         if (string.IsNullOrEmpty(path))
             return path;
@@ -122,6 +126,13 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
             Console.WriteLine();
             Console.WriteLine("Hint: use the info command to get the list of dependencies you need to add to your project.");
             Console.WriteLine($"Example: kiota info -d {path} -l {language}");
+        }
+    }
+    protected void DisplayInfoAdvanced() {
+        if(TutorialMode) {
+            Console.WriteLine();
+            Console.WriteLine("Hint: use the language argument to get the list of dependencies you need to add to your project.");
+            Console.WriteLine("Example: kiota info -l <language>");
         }
     }
 }

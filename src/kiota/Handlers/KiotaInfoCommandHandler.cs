@@ -34,6 +34,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler {
 
             if(!language.HasValue) {
                 ShowLanguagesTable();
+                DisplayInfoAdvanced();
                 return 0;
             }
 
