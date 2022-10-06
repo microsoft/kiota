@@ -60,6 +60,10 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             Console.WriteLine($"Description: {result.Value.Description}");
             Console.WriteLine($"Service: {result.Value.ServiceUrl}");
             Console.WriteLine($"OpenAPI: {result.Value.DescriptionUrl}");
+            Console.WriteLine();
+            DisplayDownloadHint(Configuration.Search.SearchTerm, Configuration.Search.Version);
+            Console.WriteLine();
+            DisplayShowHint(Configuration.Search.SearchTerm, Configuration.Search.Version);
         }  else {
             var view = new TableView<KeyValuePair<string, SearchResult>>() {
                 Items = results.OrderBy(static x => x.Key).Select(static x => x).ToList(),
@@ -73,7 +77,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             var layout = new StackLayoutView { view };
             console.Append(layout);
             Console.WriteLine();
-            Console.WriteLine("multiple matches found, use the key to select a specific description");
+            DisplaySearchHint(results.Keys.FirstOrDefault(), Configuration.Search.Version);
         }
     }
     private const int MaxDescriptionLength = 70;

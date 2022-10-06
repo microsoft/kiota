@@ -4,5 +4,5 @@ public class KiotaConfiguration {
     public GenerationConfiguration Generation { get; set; } = new();
     public SearchConfiguration Search { get; set; } = new();
     public DownloadConfiguration Download { get; set; } = new();
-    public LanguagesInformation Languages { get; set; }
+    public LanguagesInformation Languages { get; set; } = new();
 }

@@ -37,6 +37,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         Configuration.Search.Version = version;
         Configuration.Search.ClearCache = clearCache;
         using (loggerFactory) {
+            var descriptionProvided = !string.IsNullOrEmpty(openapi) && string.IsNullOrEmpty(searchTerm);
             var (searchResultDescription, statusCode) = await GetDescriptionFromSearch(openapi, searchTerm, loggerFactory, logger, cancellationToken);
             if (statusCode.HasValue) {
                 return statusCode.Value;
@@ -58,6 +59,13 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             RenderNode(urlTreeNode, maxDepth, builder);
             var tree = builder.ToString();
             Console.Write(tree);
+            Console.WriteLine();
+            if(descriptionProvided)
+                DisplayShowAdvancedHint(string.Empty, string.Empty, openapi);
+            else
+                DisplayShowAdvancedHint(searchTerm, version, openapi);
+            Console.WriteLine();
+            DisplayGenerateHint(openapi, includePatterns, excludePatterns);
         }
         return 0;
     }
