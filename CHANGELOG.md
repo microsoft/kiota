@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [0.6.0] - 2022-10-06
+
+### Added
+
 - Added a search command to find APIs.
 - Added a download command to download API descriptions.
 - Added a show command to display the API paths as a tree.
