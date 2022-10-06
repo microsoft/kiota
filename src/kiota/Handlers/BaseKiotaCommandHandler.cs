@@ -89,8 +89,8 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
                 Console.WriteLine($"Example: kiota show -k {searchTerm} -v {version}");
         }
     }
-    protected void DisplayShowAdvancedHint(string searchTerm, string version, string path = null) {
-        if(TutorialMode) {
+    protected void DisplayShowAdvancedHint(string searchTerm, string version, IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path = null) {
+        if(TutorialMode && !includePaths.Any() && !excludePaths.Any()) {
             Console.WriteLine();
             Console.WriteLine("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths displayed.");
             if(!string.IsNullOrEmpty(path))
@@ -118,6 +118,13 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
             var includedPathsSuffix = ((includedPaths?.Any() ?? false)? " -i " : string.Empty) + string.Join(" ", includedPaths);
             var excludedPathsSuffix = ((excludedPaths?.Any() ?? false)? " -e " : string.Empty) + string.Join(" ", excludedPaths);
             Console.WriteLine($"Example: kiota generate -l <language> -o <output path> -d {path}{includedPathsSuffix}{excludedPathsSuffix}");
+        }
+    }
+    protected void DisplayGenerateAdvancedHint(IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path) {
+        if(TutorialMode && !includePaths.Any() && !excludePaths.Any()) {
+            Console.WriteLine();
+            Console.WriteLine("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths generated.");
+            Console.WriteLine($"Example: kiota generate --include-path **/foo -d {path}");
         }
     }
     protected void DisplayInfoHint(GenerationLanguage language, string path) {

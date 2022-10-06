@@ -60,9 +60,9 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             var tree = builder.ToString();
             Console.Write(tree);
             if(descriptionProvided)
-                DisplayShowAdvancedHint(string.Empty, string.Empty, openapi);
+                DisplayShowAdvancedHint(string.Empty, string.Empty, includePatterns, excludePatterns, openapi);
             else
-                DisplayShowAdvancedHint(searchTerm, version, openapi);
+                DisplayShowAdvancedHint(searchTerm, version, includePatterns, excludePatterns, openapi);
             DisplayGenerateHint(openapi, includePatterns, excludePatterns);
         }
         return 0;
