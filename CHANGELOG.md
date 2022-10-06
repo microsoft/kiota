@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added a search command to find APIs.
 - Added a download command to download API descriptions.
+- Added a show command to display the API paths as a tree.
+- Added an info command to show languages maturity and dependencies.
+- Added hints to help people use and discover the commands.
 - Added arguments to filter path items during generation (include-path/exclude-path).
 - Added the ability to cancel the refinement process.
 - Added Java 8 generation support.
