@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Logging;
+using kiota.Handlers;
 
 namespace kiota;
 public class KiotaHost {

@@ -13,7 +13,7 @@ using Kiota.Builder.Caching;
 using Kiota.Builder.SearchProviders;
 using Microsoft.Extensions.Logging;
 
-namespace kiota;
+namespace kiota.Handlers;
 
 internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
 {

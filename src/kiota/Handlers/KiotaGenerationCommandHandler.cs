@@ -14,7 +14,7 @@ using Kiota.Builder.Extensions;
 
 using Microsoft.Extensions.Logging;
 
-namespace kiota;
+namespace kiota.Handlers;
 
 internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
 {

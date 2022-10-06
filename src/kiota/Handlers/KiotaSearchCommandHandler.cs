@@ -13,7 +13,7 @@ using Kiota.Builder;
 using Kiota.Builder.SearchProviders;
 using Microsoft.Extensions.Logging;
 
-namespace kiota;
+namespace kiota.Handlers;
 
 internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
 {

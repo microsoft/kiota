@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Kiota.Builder;
 using Microsoft.Extensions.Logging;
 
-namespace kiota;
+namespace kiota.Handlers;
 
 internal abstract class KiotaSearchBasedCommandHandler : BaseKiotaCommandHandler {
     protected async Task<(string, int?)> GetDescriptionFromSearch(string openapi, string searchTerm, ILoggerFactory loggerFactory, ILogger parentLogger, CancellationToken cancellationToken) {

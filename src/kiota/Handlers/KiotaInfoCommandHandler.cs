@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 
-namespace kiota;
+namespace kiota.Handlers;
 internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler {
     public Option<string> DescriptionOption { get;set; }
     public Option<bool> ClearCacheOption { get; set; }

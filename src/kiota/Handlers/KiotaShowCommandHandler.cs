@@ -10,7 +10,7 @@ using Microsoft.OpenApi.Services;
 using System.Collections.Generic;
 using System.Text;
 
-namespace kiota;
+namespace kiota.Handlers;
 internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
 {
     public Option<string> DescriptionOption { get;set; }
