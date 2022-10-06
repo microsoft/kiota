@@ -115,8 +115,8 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         if(TutorialMode) {
             Console.WriteLine();
             Console.WriteLine("Hint: use kiota generate to generate a client for the OpenAPI description.");
-            var includedPathsSuffix = ((includedPaths?.Any() ?? false)? " -i " : string.Empty) + string.Join(" ", includedPaths);
-            var excludedPathsSuffix = ((excludedPaths?.Any() ?? false)? " -e " : string.Empty) + string.Join(" ", excludedPaths);
+            var includedPathsSuffix = ((includedPaths?.Any() ?? false)? " -i " : string.Empty) + string.Join(" -i ", includedPaths);
+            var excludedPathsSuffix = ((excludedPaths?.Any() ?? false)? " -e " : string.Empty) + string.Join(" -e ", excludedPaths);
             Console.WriteLine($"Example: kiota generate -l <language> -o <output path> -d {path}{includedPathsSuffix}{excludedPathsSuffix}");
         }
     }
