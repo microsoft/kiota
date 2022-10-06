@@ -60,9 +60,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             Console.WriteLine($"Description: {result.Value.Description}");
             Console.WriteLine($"Service: {result.Value.ServiceUrl}");
             Console.WriteLine($"OpenAPI: {result.Value.DescriptionUrl}");
-            Console.WriteLine();
             DisplayDownloadHint(Configuration.Search.SearchTerm, Configuration.Search.Version);
-            Console.WriteLine();
             DisplayShowHint(Configuration.Search.SearchTerm, Configuration.Search.Version);
         }  else {
             var view = new TableView<KeyValuePair<string, SearchResult>>() {
@@ -76,7 +74,6 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             using var terminal = new SystemConsoleTerminal(console);
             var layout = new StackLayoutView { view };
             console.Append(layout);
-            Console.WriteLine();
             DisplaySearchHint(results.Keys.FirstOrDefault(), Configuration.Search.Version);
         }
     }

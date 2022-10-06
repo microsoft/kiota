@@ -65,6 +65,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     protected bool TutorialMode => tutorialMode.Value;
     protected void DisplayDownloadHint(string searchTerm, string version) {
         if(TutorialMode) {
+            Console.WriteLine();
             Console.WriteLine("Hint: use kiota download to download the OpenAPI description.");
             if(string.IsNullOrEmpty(version))
                 Console.WriteLine($"Example: kiota download {searchTerm} -o <output path>");
@@ -74,6 +75,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     }
     protected void DisplayShowHint(string searchTerm, string version, string path = null) {
         if(TutorialMode) {
+            Console.WriteLine();
             Console.WriteLine("Hint: use kiota show to display a tree of paths present in the OpenAPI description.");
             if(!string.IsNullOrEmpty(path))
                 Console.WriteLine($"Example: kiota show -d {path}");
@@ -85,6 +87,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     }
     protected void DisplayShowAdvancedHint(string searchTerm, string version, string path = null) {
         if(TutorialMode) {
+            Console.WriteLine();
             Console.WriteLine("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths displayed.");
             if(!string.IsNullOrEmpty(path))
                 Console.WriteLine($"Example: kiota show -d {path} --include-path **/foo");
@@ -97,6 +100,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     protected void DisplaySearchHint(string firstKey, string version) {
         if (TutorialMode)
             if(!string.IsNullOrEmpty(firstKey)) {
+                Console.WriteLine();
                 Console.WriteLine("Hint: multiple matches found, use the key as the search term to display the details of a specific description.");
                 if(string.IsNullOrEmpty(version))
                     Console.WriteLine($"Example: kiota search {firstKey}");
@@ -106,6 +110,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     }
     protected void DisplayGenerateHint(string path, IEnumerable<string> includedPaths, IEnumerable<string> excludedPaths) {
         if(TutorialMode) {
+            Console.WriteLine();
             Console.WriteLine("Hint: use kiota generate to generate a client for the OpenAPI description.");
             var includedPathsSuffix = ((includedPaths?.Any() ?? false)? " -i" : string.Empty) + string.Join(" ", includedPaths);
             var excludedPathsSuffix = ((excludedPaths?.Any() ?? false)? " -e" : string.Empty) + string.Join(" ", excludedPaths);
@@ -114,6 +119,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     }
     protected void DisplayInfoHint(GenerationLanguage language, string path) {
         if(TutorialMode) {
+            Console.WriteLine();
             Console.WriteLine("Hint: use the info command to get the list of dependencies you need to add to your project.");
             Console.WriteLine($"Example: kiota info -d {path} -l {language}");
         }

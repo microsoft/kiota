@@ -24,6 +24,6 @@ internal abstract class KiotaSearchBasedCommandHandler : BaseKiotaCommandHandler
                 return (string.Empty, 1);
             }
         }
-        return (string.Empty, null);
+        return (GetAbsolutePath(openapi), null);
     }
 }

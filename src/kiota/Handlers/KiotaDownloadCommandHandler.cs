@@ -66,9 +66,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         else if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm)) {
             var (path, statusCode) = await SaveResultAsync(results.First(), logger, cancellationToken);
             Console.WriteLine($"File successfully downloaded to {path}");
-            Console.WriteLine();
             DisplayShowHint(Configuration.Search.SearchTerm, Configuration.Search.Version, path);
-            Console.WriteLine();
             DisplayGenerateHint(path, Enumerable.Empty<string>(), Enumerable.Empty<string>());
             return statusCode;
         }  else 
