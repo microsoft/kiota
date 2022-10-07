@@ -29,7 +29,7 @@ public class GenerateSample
             OutputPath = $".\\Generated\\Todo\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
         };
-        await new KiotaBuilder(logger, configuration).GenerateSDK(new());
+        await new KiotaBuilder(logger, configuration).GenerateClientAsync(new());
     }
     [InlineData(GenerationLanguage.CSharp, false)]
     [InlineData(GenerationLanguage.Java, false)]
@@ -54,7 +54,7 @@ public class GenerateSample
             OutputPath = $".\\Generated\\ModelWithDictionary\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
         };
-        await new KiotaBuilder(logger, configuration).GenerateSDK(new());
+        await new KiotaBuilder(logger, configuration).GenerateClientAsync(new());
     }
     [InlineData(GenerationLanguage.CSharp, false)]
     [InlineData(GenerationLanguage.Java, false)]
@@ -79,6 +79,6 @@ public class GenerateSample
             OutputPath = $".\\Generated\\ResponseWithMultipleReturnFormats\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
         };
-        await new KiotaBuilder(logger, configuration).GenerateSDK(new());
+        await new KiotaBuilder(logger, configuration).GenerateClientAsync(new());
     }
 }

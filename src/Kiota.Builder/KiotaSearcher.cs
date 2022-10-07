@@ -31,7 +31,11 @@ public class KiotaSearcher {
         logger.LogDebug("searching for {searchTerm}", config.SearchTerm);
         logger.LogDebug("searching APIs.guru with url {url}", config.APIsGuruListUrl);
         var msGraphProvider = new MSGraphSearchProvider();
-        var results = await Task.WhenAll(SearchProviderAsync(apiGurusSearchProvider, cancellationToken), SearchProviderAsync(msGraphProvider, cancellationToken));
+        var oasProvider = new OpenApiSpecSearchProvider();
+        var results = await Task.WhenAll(
+                        SearchProviderAsync(apiGurusSearchProvider, cancellationToken),
+                        SearchProviderAsync(msGraphProvider, cancellationToken),
+                        SearchProviderAsync(oasProvider, cancellationToken));
         return results.SelectMany(static x => x)
                 .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase);
     }

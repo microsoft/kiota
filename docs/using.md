@@ -15,7 +15,9 @@ Kiota offers the following commands to help you build your API client:
 
 - **[search](#description-search)**: search for APIs and their description from various registries.
 - **[download](#description-download)**: download an API description.
+- **[show](#description-show)**: show the API paths tree for an API description.
 - **[generate](#client-generation)**: generate a client for any API from its description.
+- **[info](#language-information)**: show languages and runtime dependencies information.
 
 ## Description search
 
@@ -47,27 +49,16 @@ kiota search github
 Which will return the following display.
 
 ```shell
------------------------------------------------------------------------------------------------
- | key                                 | title              | description           | versions |
- -----------------------------------------------------------------------------------------------
- | apisguru::github.com                | GitHub v3 REST API | GitHub's v3 REST API. | 1.1.4    |
- -----------------------------------------------------------------------------------------------
- | apisguru::github.com:api.github.com | GitHub v3 REST API | GitHub's v3 REST API. | 1.1.4    |
- -----------------------------------------------------------------------------------------------
- | apisguru::github.com:ghes-2.18      | GitHub v3 REST API | GitHub's v3 REST API. | 1.1.4    |
- -----------------------------------------------------------------------------------------------
- | apisguru::github.com:ghes-2.19      | GitHub v3 REST API | GitHub's v3 REST API. | 1.1.4    |
- -----------------------------------------------------------------------------------------------
- | apisguru::github.com:ghes-2.20      | GitHub v3 REST API | GitHub's v3 REST API. | 1.1.4    |
- -----------------------------------------------------------------------------------------------
- | apisguru::github.com:ghes-2.21      | GitHub v3 REST API | GitHub's v3 REST API. | 1.1.4    |
- -----------------------------------------------------------------------------------------------
- | apisguru::github.com:ghes-2.22      | GitHub v3 REST API | GitHub's v3 REST API. | 1.1.4    |
- -----------------------------------------------------------------------------------------------
- | apisguru::github.com:ghes-3.0       | GitHub v3 REST API | GitHub's v3 REST API. | 1.1.4    |
- -----------------------------------------------------------------------------------------------
- | apisguru::github.com:ghes-3.1       | GitHub v3 REST API | GitHub's v3 REST API. | 1.1.4    |
- -----------------------------------------------------------------------------------------------
+Key                                  Title               Description            Versions
+apisguru::github.com                 GitHub v3 REST API  GitHub's v3 REST API.  1.1.4
+apisguru::github.com:api.github.com  GitHub v3 REST API  GitHub's v3 REST API.  1.1.4
+apisguru::github.com:ghes-2.18       GitHub v3 REST API  GitHub's v3 REST API.  1.1.4
+apisguru::github.com:ghes-2.19       GitHub v3 REST API  GitHub's v3 REST API.  1.1.4
+apisguru::github.com:ghes-2.20       GitHub v3 REST API  GitHub's v3 REST API.  1.1.4
+apisguru::github.com:ghes-2.21       GitHub v3 REST API  GitHub's v3 REST API.  1.1.4
+apisguru::github.com:ghes-2.22       GitHub v3 REST API  GitHub's v3 REST API.  1.1.4
+apisguru::github.com:ghes-3.0        GitHub v3 REST API  GitHub's v3 REST API.  1.1.4
+apisguru::github.com:ghes-3.1        GitHub v3 REST API  GitHub's v3 REST API.  1.1.4
 ```
 
 If the search term is an exact match with one of the results' key, the search command will display a detailed view of the result.
@@ -129,6 +120,52 @@ The download command accepts optional parameters commonly available on the other
 - **[--output](#output--o)**
 - **[--version](#version--v)**
 
+## Description show
+
+Kiota show accepts the following parameters when displaying the API paths tree for a description.
+
+```shell
+kiota show [(--openapi | -d) <path>]
+      [(--log-level | --ll) <level>]
+      [--clear-cache | --cc]
+      [(--version | -v) <version>]
+      [(--search-key | -k) <searchKey>]
+      [(--max-depth | --m-d) <maximumDepth>]
+      [(--include-path | -i) <glob pattern>]
+      [(--exclude-path | -e) <glob pattern>]
+```
+
+### Example
+
+The following command with the provided options will display the following result.
+
+```shell
+kiota show -d https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml -i **/messages
+```
+
+```shell
+/
+ └─users
+    └─{user-id}
+       ├─mailFolders
+       │  └─{mailFolder-id}
+       │     ├─childFolders
+       │     └─messages
+       └─messages
+```
+
+### Optional Parameters
+
+The show command accepts optional parameters commonly available on the other commands:
+
+- **[--openapi](#openapi--d)**
+- **[--clear-cache](#clear-cache---co)**
+- **[--log-level](#log-level---ll)**
+- **[--include-path](#include-path--i)**
+- **[--exclude-path](#exclude-path--e)**
+- **[--version](#version--v)**
+- **[--search-key](#search-key--k)**
+
 ## Client generation
 
 Kiota generate accepts the following parameters during the generation.
@@ -153,29 +190,8 @@ kiota generate (--openapi | -d) <path>
 
 ### Mandatory parameters
 
-#### `--openapi (-d)`
-
-The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path.
-
-#### `--language (-l)`
-
-The target language for the generated code files.
-
-##### Accepted values
-
-- `csharp`
-- `go`
-- `java`
-- `php`
-- `python`
-- `ruby`
-- `shell`
-- `swift`
-- `typescript`
-
-```shell
-kiota generate --language java
-```
+- **[openapi](#openapi--d)**
+- **[language](#language--l)**
 
 ### Optional parameters
 
@@ -318,13 +334,74 @@ Any valid MIME type which will match a request body type or a response type in t
 kiota generate --structured-mime-types application/json
 ```
 
+## Language information
+
+Kiota info accepts the following parameters when displaying language information like their maturity level or dependencies needed at runtime.
+
+```shell
+kiota info [(--openapi | -d) <path>]
+      [(--language | -l) <language>]
+      [(--log-level | --ll) <level>]
+      [--clear-cache | --cc]
+      [(--version | -v) <version>]
+      [(--search-key | -k) <searchKey>]
+```
+
+### Example - global
+
+The following command with the provided options will display the following result.
+
+```shell
+kiota info
+```
+
+```shell
+Language    Maturity Level
+CLI         Preview
+CSharp      Preview
+Go          Preview
+Java        Preview
+PHP         Preview
+Python      Experimental
+Ruby        Experimental
+Swift       Experimental
+TypeScript  Experimental
+```
+
+### Example - with language
+
+The following command with the provided options will display the following result.
+
+```shell
+kiota info -l CSharp
+```
+
+```shell
+The language CSharp is currently in Preview maturity level.
+After generating code for this language, you need to install the following packages:
+dotnet add package Microsoft.Kiota.Abstractions --version 1.0.0-preview.13 --prerelease
+dotnet add package Microsoft.Kiota.Http.HttpClientLibrary --version 1.0.0-preview.10 --prerelease
+dotnet add package Microsoft.Kiota.Serialization.Json --version 1.0.0-preview.7 --prerelease
+dotnet add package Microsoft.Kiota.Authentication.Azure --version 1.0.0-preview.4 --prerelease
+dotnet add package Microsoft.Kiota.Serialization.Text --version 1.0.0-preview.4 --prerelease
+```
+
+### Optional Parameters
+
+The info command accepts optional parameters commonly available on the other commands:
+
+- **[--openapi](#openapi--d)**
+- **[--clear-cache](#clear-cache---co)**
+- **[--log-level](#log-level---ll)**
+- **[--language](#language--l)**
+- **[--version](#version--v)**
+- **[--search-key](#search-key--k)**
+
 ## Common parameters
 
 The following parameters are available across multiple commands.
 
-### Optional parameters
-
-#### `--clean-output (--co)`
+### `--clean-output (--co)`
 
 Delete the output directory before generating the client. Defaults to false.
 
@@ -334,7 +411,7 @@ Available for commands: download, generate.
 kiota <command name> --clean-output
 ```
 
-#### `--clear-cache (--co)`
+### `--clear-cache (--co)`
 
 Clears the currently cached file for the command. Defaults to false.
 
@@ -344,13 +421,45 @@ Cached files are stored under `%TEMP%/kiota/cache` and valid for one (1) hour af
 kiota <command name> --clear-cache
 ```
 
-#### `--log-level (--ll)`
+### `--openapi (-d)`
+
+The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path.
+
+Available for commands: info, show, generate.
+
+```shell
+kiota <command name> --openapi https://description.url/description.yml
+```
+
+### `--language (-l)`
+
+The target language for the generated code files or for the information.
+
+Available for commands: info, generate.
+
+#### Accepted values
+
+- `csharp`
+- `go`
+- `java`
+- `php`
+- `python`
+- `ruby`
+- `shell`
+- `swift`
+- `typescript`
+
+```shell
+kiota <command name> --language java
+```
+
+### `--log-level (--ll)`
 
 The log level to use when logging events to the main output. Defaults to `warning`.
 
 Available for commands: all.
 
-##### Accepted values
+#### Accepted values
 
 - `critical`
 - `debug`
@@ -364,13 +473,13 @@ Available for commands: all.
 kiota <command name> --log-level information
 ```
 
-#### `--output (-o)`
+### `--output (-o)`
 
 The output directory or file path for the generated code files. Defaults to `./output` for generate and `./output/result.json` for download.
 
 Available for commands: download, generate.
 
-##### Accepted values
+#### Accepted values
 
 A valid path to a directory (generate) or a file (download).
 
@@ -378,7 +487,17 @@ A valid path to a directory (generate) or a file (download).
 kiota <command name> --output ./src/client
 ```
 
-#### `--version (-v)`
+### `--search-key (-k)`
+
+The search key to use to fetch the Open API description, can be used in combination with the version option. Should not be used in combination with the openapi option. Default empty.
+
+Available for commands: info, show.
+
+```shell
+kiota <command name> --search-key apisguru::github.com:api.github.com
+```
+
+### `--version (-v)`
 
 Select a specific version of the API description. No default value.
 

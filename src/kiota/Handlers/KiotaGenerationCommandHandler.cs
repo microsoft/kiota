@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -14,7 +13,7 @@ using Kiota.Builder.Extensions;
 
 using Microsoft.Extensions.Logging;
 
-namespace kiota;
+namespace kiota.Handlers;
 
 internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
 {
@@ -76,7 +75,9 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
             try {
-                await new KiotaBuilder(logger, Configuration.Generation).GenerateSDK(cancellationToken);
+                await new KiotaBuilder(logger, Configuration.Generation).GenerateClientAsync(cancellationToken);
+                DisplayInfoHint(language, Configuration.Generation.OpenAPIFilePath);
+                DisplayGenerateAdvancedHint(includePatterns, excludePatterns, Configuration.Generation.OpenAPIFilePath);
                 return 0;
             } catch (Exception ex) {
     #if DEBUG
@@ -96,5 +97,4 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
     public Option<List<string>> IncludePatternsOption { get; set; }
     public Option<List<string>> ExcludePatternsOption { get; set; }
     public Option<bool> ClearCacheOption { get; set; }
-    private static string GetAbsolutePath(string source) => Path.IsPathRooted(source) || source.StartsWith("http") ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
 }

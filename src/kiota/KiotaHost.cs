@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.CommandLine;
+using System.CommandLine.Parsing;
 using System.Linq;
 using System.Text.RegularExpressions;
 
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Logging;
+using kiota.Handlers;
 
 namespace kiota;
 public class KiotaHost {
@@ -15,7 +17,77 @@ public class KiotaHost {
         rootCommand.AddCommand(GetGenerateCommand());
         rootCommand.AddCommand(GetSearchCommand());
         rootCommand.AddCommand(GetDownloadCommand());
+        rootCommand.AddCommand(GetShowCommand());
+        rootCommand.AddCommand(GetInfoCommand());
         return rootCommand;
+    }
+    private static Command GetInfoCommand() {
+        var defaultGenerationConfiguration = new GenerationConfiguration();
+        var descriptionOption = GetDescriptionOption(defaultGenerationConfiguration.OpenAPIFilePath);
+        descriptionOption.IsRequired = false;
+        var versionOption = GetVersionOption();
+        var logLevelOption = GetLogLevelOption();
+        var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
+        var searchTermOption = GetSearchKeyOption();
+        var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the dependencies instructions.");
+        languageOption.AddAlias("-l");
+        AddEnumValidator(languageOption, "language");
+        var infoCommand = new Command("info", "Displays information about the languages supported by kiota and dependencies to add in your project.") {
+            descriptionOption,
+            versionOption,
+            logLevelOption,
+            clearCacheOption,
+            searchTermOption,
+            languageOption,
+        };
+        infoCommand.Handler = new KiotaInfoCommandHandler {
+            DescriptionOption = descriptionOption,
+            VersionOption = versionOption,
+            LogLevelOption = logLevelOption,
+            ClearCacheOption = clearCacheOption,
+            SearchTermOption = searchTermOption,
+            GenerationLanguage = languageOption,
+        };
+        return infoCommand;
+    }
+    private static Option<string> GetSearchKeyOption() {
+        var option = new Option<string>("--search-key", () => string.Empty, "The API search key to display the description for. Use the search command to get the key.");
+        option.AddAlias("-k");
+        return option;
+    }
+    private static Command GetShowCommand() {
+        var defaultGenerationConfiguration = new GenerationConfiguration();
+        var descriptionOption = GetDescriptionOption(defaultGenerationConfiguration.OpenAPIFilePath);
+        descriptionOption.IsRequired = false; // can also use search approach
+
+        var versionOption = GetVersionOption();
+        var logLevelOption = GetLogLevelOption();
+        var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultGenerationConfiguration.IncludePatterns, defaultGenerationConfiguration.ExcludePatterns);
+        var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
+        var searchTermOption = GetSearchKeyOption();
+        var maxDepthOption = new Option<uint>("--max-depth", () => 5, "The maximum depth of the tree to display");
+        maxDepthOption.AddAlias("--m-d");
+        var displayCommand = new Command("show", "Displays the API tree in a given description."){
+            searchTermOption,
+            logLevelOption,
+            versionOption,
+            descriptionOption,
+            maxDepthOption,
+            includePatterns,
+            excludePatterns,
+            clearCacheOption,
+        };
+        displayCommand.Handler = new KiotaShowCommandHandler {
+            SearchTermOption = searchTermOption,
+            LogLevelOption = logLevelOption,
+            VersionOption = versionOption,
+            DescriptionOption = descriptionOption,
+            MaxDepthOption = maxDepthOption,
+            IncludePatternsOption = includePatterns,
+            ExcludePatternsOption = excludePatterns,
+            ClearCacheOption = clearCacheOption,
+        };
+        return displayCommand;
     }
     private static Command GetDownloadCommand() {
         var searchTermArgument = new Argument<string>("searchTerm", "The term to search for.");
@@ -89,18 +161,22 @@ public class KiotaHost {
         outputOption.ArgumentHelpName = "path";
         return outputOption;
     }
-    private static Command GetGenerateCommand()
-    {
+    private static Option<string> GetDescriptionOption(string defaultValue) {
         var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_CONTAINER");
-        var defaultConfiguration = new GenerationConfiguration();
         var runsInContainer = !string.IsNullOrEmpty(kiotaInContainerRaw) && bool.TryParse(kiotaInContainerRaw, out var kiotaInContainer) && kiotaInContainer;
         var descriptionOption = new Option<string>("--openapi", "The path to the OpenAPI description file used to generate the code files.");
         if(runsInContainer)
-            descriptionOption.SetDefaultValue(defaultConfiguration.OpenAPIFilePath);
+            descriptionOption.SetDefaultValue(defaultValue);
         else
             descriptionOption.IsRequired = true;
         descriptionOption.AddAlias("-d");
         descriptionOption.ArgumentHelpName = "path";
+        return descriptionOption;
+    }
+    private static Command GetGenerateCommand()
+    {
+        var defaultConfiguration = new GenerationConfiguration();
+        var descriptionOption = GetDescriptionOption(defaultConfiguration.OpenAPIFilePath);
 
         var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);
         
@@ -149,17 +225,7 @@ public class KiotaHost {
         "The MIME types to use for structured data model generation. Accepts multiple values.");
         structuredMimeTypesOption.AddAlias("-m");
 
-        var includePatterns = new Option<List<string>>(
-            "--include-path",
-            () => defaultConfiguration.IncludePatterns.ToList(),
-            "The paths to include in the generation. Glob patterns accepted. Accepts multiple values.");
-        includePatterns.AddAlias("-i");
-
-        var excludePatterns = new Option<List<string>>(
-            "--exclude-path",
-            () => defaultConfiguration.ExcludePatterns.ToList(),
-            "The paths to exclude from the generation. Glob patterns accepted. Accepts multiple values.");
-        excludePatterns.AddAlias("-e");
+        var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultConfiguration.IncludePatterns, defaultConfiguration.ExcludePatterns);
 
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
 
@@ -199,6 +265,20 @@ public class KiotaHost {
         };
         return command;
     }
+    private static (Option<List<string>>, Option<List<string>>) GetIncludeAndExcludeOptions(HashSet<string> defaultIncludePatterns, HashSet<string> defaultExcludePatterns) {
+        var includePatterns = new Option<List<string>>(
+            "--include-path",
+            () => defaultIncludePatterns.ToList(),
+            "The paths to include in the generation. Glob patterns accepted. Accepts multiple values.");
+        includePatterns.AddAlias("-i");
+
+        var excludePatterns = new Option<List<string>>(
+            "--exclude-path",
+            () => defaultExcludePatterns.ToList(),
+            "The paths to exclude from the generation. Glob patterns accepted. Accepts multiple values.");
+        excludePatterns.AddAlias("-e");
+        return (includePatterns, excludePatterns);
+    }
     private static Option<LogLevel> GetLogLevelOption() {
         var logLevelOption = new Option<LogLevel>("--log-level", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
         logLevelOption.AddAlias("--ll");
@@ -219,13 +299,20 @@ public class KiotaHost {
                     input.ErrorMessage = $"{value} is not a valid {parameterName} for the client, the {parameterName} must conform to {pattern}";
         });
     }
+    private static void ValidateEnumValue<T>(OptionResult input, string parameterName) where T: struct, Enum {
+        if(input.Tokens.Any() && !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _)) {
+            var validOptionsList = Enum.GetValues<T>().Select(static x => x.ToString()).Aggregate(static (x, y) => x + ", " + y);
+            input.ErrorMessage = $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
+        }
+    }
     private static void AddEnumValidator<T>(Option<T> option, string parameterName) where T: struct, Enum {
         option.AddValidator(input => {
-            if(input.Tokens.Any() &&
-                !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _)) {
-                    var validOptionsList = Enum.GetValues<T>().Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y);
-                    input.ErrorMessage = $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
-                }
+            ValidateEnumValue<T>(input, parameterName);
+        });
+    }
+    private static void AddEnumValidator<T>(Option<T?> option, string parameterName) where T: struct, Enum {
+        option.AddValidator(input => {
+            ValidateEnumValue<T>(input, parameterName);
         });
     }
 }
