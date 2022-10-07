@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - BREAKING: the generation command is now a sub command: `kiota generate ...` instead of `kiota ...`.
+- BREAKING: docker image renamed from `mcr.microsoft.com/kiota/generator` to `mcr.microsoft.com/openapi/kiota`.
 - Fixed a bug where OData primitive types would result in composed types.
 - Fixed a concurrency issue with imports management.
 - Fixed a bug where Java request options type could conflict with generated types.
