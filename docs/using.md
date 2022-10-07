@@ -379,7 +379,7 @@ kiota info -l CSharp
 ```shell
 The language CSharp is currently in Preview maturity level.
 After generating code for this language, you need to install the following packages:
-dotnet add package Microsoft.Kiota.Abstractions --version 1.0.0-preview.12 --prerelease
+dotnet add package Microsoft.Kiota.Abstractions --version 1.0.0-preview.13 --prerelease
 dotnet add package Microsoft.Kiota.Http.HttpClientLibrary --version 1.0.0-preview.10 --prerelease
 dotnet add package Microsoft.Kiota.Serialization.Json --version 1.0.0-preview.7 --prerelease
 dotnet add package Microsoft.Kiota.Authentication.Azure --version 1.0.0-preview.4 --prerelease
