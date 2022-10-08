@@ -17,7 +17,7 @@ public class OpenApiSpecSearchProvider : ISearchProvider
         
         if (term.Split(new char[] {' ', '-'}, StringSplitOptions.RemoveEmptyEntries).Any(x => Keywords.Contains(x))) {
             return Task.FromResult<IDictionary<string, SearchResult>>(new Dictionary<string, SearchResult> {
-                { "petstore", new SearchResult(ApiTitle, ApiDescription, new Uri("http://petstore.swagger.io/v1"), new Uri("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.yaml"), new List<string> { "1.0.0" }) }
+                { "petstore", new SearchResult(ApiTitle, ApiDescription, new Uri("https://petstore.swagger.io/v1"), new Uri("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.yaml"), new List<string> { "1.0.0" }) }
             });
         }
         return Task.FromResult<IDictionary<string, SearchResult>>(new Dictionary<string, SearchResult>());
