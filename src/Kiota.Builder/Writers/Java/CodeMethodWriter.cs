@@ -397,7 +397,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.IncreaseIndent();
         WriteGeneratorMethodCall(codeElement, requestParams, writer, $"final RequestInformation {RequestInfoVarName} = ");
         var sendMethodName = GetSendRequestMethodName(codeElement.ReturnType.IsCollection, returnType);
-        var responseHandlerParam = codeElement.Parameters.OfKind(CodeParameterKind.ResponseHandler);
         var errorMappingVarName = "null";
         if(codeElement.ErrorMappings.Any()) {
             errorMappingVarName = "errorMapping";
@@ -409,7 +408,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             writer.CloseBlock("}};");
         }
         var factoryParameter = codeElement.ReturnType is CodeType returnCodeType && returnCodeType.TypeDefinition is CodeClass ? $"{returnType}::{FactoryMethodName}" : $"{returnType}.class";
-        writer.WriteLine($"return this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {responseHandlerParam?.Name ?? "null"}, {errorMappingVarName});");
+        writer.WriteLine($"return this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {errorMappingVarName});");
         writer.DecreaseIndent();
         writer.WriteLine("} catch (URISyntaxException ex) {");
         writer.IncreaseIndent();

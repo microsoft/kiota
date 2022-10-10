@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Removed response handler parameter from Java executor methods.
+
 ## [0.6.0] - 2022-10-06
 
 ### Added

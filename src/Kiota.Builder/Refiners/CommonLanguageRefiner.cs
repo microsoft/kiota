@@ -1006,4 +1006,17 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         CrawlTree(currentElement, RemoveDiscriminatorMappingsTargetingSubNamespaces);
     }
+    protected void RemoveHandlerFromRequestBuilder(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+        {
+            var codeMethods = currentClass.Methods.Where(x => x.Kind == CodeMethodKind.RequestExecutor);
+            foreach (var codeMethod in codeMethods)
+            {
+                codeMethod.RemoveParametersByKind(CodeParameterKind.ResponseHandler);
+            }
+        }
+
+        CrawlTree(currentElement, RemoveHandlerFromRequestBuilder);
+    }
 }

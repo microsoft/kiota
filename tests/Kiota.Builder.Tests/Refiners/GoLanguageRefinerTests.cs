@@ -466,7 +466,6 @@ public class GoLanguageRefinerTests {
                 Name = headersDefaultName
             }
         });
-        const string handlerDefaultName = "IResponseHandler";
         var executorMethod = model.AddMethod(new CodeMethod {
             Name = "executor",
             Kind = CodeMethodKind.RequestExecutor,
@@ -480,13 +479,6 @@ public class GoLanguageRefinerTests {
             },
             Kind = CodeMethodKind.Deserializer
         }).First();
-        executorMethod.AddParameter(new CodeParameter {
-            Name = "handler",
-            Kind = CodeParameterKind.ResponseHandler,
-            Type = new CodeType {
-                Name = handlerDefaultName,
-            }
-        });
         const string serializerDefaultName = "ISerializationWriter";
         var serializationMethod = model.AddMethod(new CodeMethod {
             Name = "serialization",
@@ -536,7 +528,6 @@ public class GoLanguageRefinerTests {
         Assert.Empty(model.Properties.Where(x => additionalDataDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => headersDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.Where(x => deserializeDefaultName.Equals(x.ReturnType.Name)));
-        Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
         Assert.Equal("make(map[string]string)", pathParamsProp.DefaultValue);
         Assert.Equal("map[string]string", pathParamsProp.Type.Name);
