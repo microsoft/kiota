@@ -19,7 +19,7 @@ You can download the latest version from the [releases page](https://github.com/
 
 ## Install as .NET tool
 
-If you have the [.NET SDK](https://dotnet.microsoft.com/download) installed, you can install Kiota as a [.NET tool](https://docs.microsoft.com/dotnet/core/tools/global-tools).
+If you have the [.NET SDK](https://dotnet.microsoft.com/download) installed, you can install Kiota as a [.NET tool](https://learn.microsoft.com/dotnet/core/tools/global-tools).
 
 ## Install the .NET tool
 
@@ -62,7 +62,7 @@ https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/open
 1. Navigate to the output directory (usually under `src/kiota/bin/Release/net6.0`).
 1. Run `kiota.exe ...`.
 
-> **Note:** refer to [.NET runtime identifier catalog](https://docs.microsoft.com/dotnet/core/rid-catalog) so select the appropriate runtime for your platform.
+> **Note:** refer to [.NET runtime identifier catalog](https://learn.microsoft.com/dotnet/core/rid-catalog) so select the appropriate runtime for your platform.
 
 ## Next steps
 
