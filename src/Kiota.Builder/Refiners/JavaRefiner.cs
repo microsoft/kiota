@@ -28,7 +28,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddRawUrlConstructorOverload(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
+            ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true, true);
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,

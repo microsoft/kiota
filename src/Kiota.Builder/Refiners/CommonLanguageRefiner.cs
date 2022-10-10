@@ -318,17 +318,19 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         CrawlTree(current, c => AddDefaultImports(c, evaluators));
     }
     private const string BinaryType = "binary";
-    protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false) {
+    protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false, bool isNullable = false) {
         if(currentElement is CodeMethod currentMethod) {
             var parentClass = currentMethod.Parent as CodeClass;
             var shouldInsertUsing = false;
             if(BinaryType.Equals(currentMethod.ReturnType?.Name)) {
                 currentMethod.ReturnType.Name = symbol;
+                currentMethod.ReturnType.IsNullable = isNullable;
                 shouldInsertUsing = !string.IsNullOrWhiteSpace(ns);
             }
-            var binaryParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type?.Name?.Equals(BinaryType) ?? false);
+            var binaryParameter = currentMethod.Parameters.FirstOrDefault(static x => x.Type?.Name?.Equals(BinaryType) ?? false);
             if(binaryParameter != null) {
                 binaryParameter.Type.Name = symbol;
+                binaryParameter.Type.IsNullable = isNullable;
                 shouldInsertUsing = !string.IsNullOrWhiteSpace(ns);
             }
             if(shouldInsertUsing) {
@@ -343,7 +345,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 parentClass.AddUsing(newUsing);
             }
         }
-        CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration));
+        CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration, isNullable));
     }
     protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, bool supportInnerClasses = true) {
         var parentClass = currentElement.Parent as CodeClass;

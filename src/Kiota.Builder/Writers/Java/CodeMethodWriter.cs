@@ -18,12 +18,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         WriteMethodDocumentation(codeElement, writer);
-        if(returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
-        {
-            if(codeElement.IsOfKind(CodeMethodKind.RequestExecutor))
-                returnType = "Void"; //generic type for the future
-        } else if(!codeElement.IsAsync)
-            writer.WriteLine(codeElement.ReturnType.IsNullable && !codeElement.IsAsync ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
+        if(codeElement.IsAsync &&
+            codeElement.IsOfKind(CodeMethodKind.RequestExecutor) &&
+            returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
+            returnType = "Void"; //generic type for the future
+        writer.WriteLine(codeElement.ReturnType.IsNullable && !codeElement.IsAsync ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
         WriteMethodPrototype(codeElement, writer, returnType);
         writer.IncreaseIndent();
         var parentClass = codeElement.Parent as CodeClass;
@@ -410,11 +409,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var factoryParameter = codeElement.ReturnType is CodeType returnCodeType && returnCodeType.TypeDefinition is CodeClass ? $"{returnType}::{FactoryMethodName}" : $"{returnType}.class";
         writer.WriteLine($"return this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {errorMappingVarName});");
         writer.DecreaseIndent();
-        writer.WriteLine("} catch (URISyntaxException ex) {");
-        writer.IncreaseIndent();
-        writer.WriteLine("return java.util.concurrent.CompletableFuture.failedFuture(ex);");
-        writer.DecreaseIndent();
-        writer.WriteLine("}");
+        writer.StartBlock("} catch (URISyntaxException ex) {");
+        writer.StartBlock($"return new java.util.concurrent.CompletableFuture<{returnType}>() {{{{");
+        writer.WriteLine("this.completeExceptionally(ex);");
+        writer.CloseBlock("}};");
+        writer.CloseBlock();
     }
     private string GetSendRequestMethodName(bool isCollection, string returnType)
     {
@@ -588,7 +587,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             _ when isConstructor => code.Parent.Name.ToFirstCharacterUpperCase(),
             _ => code.Name.ToFirstCharacterLowerCase()
         };
-        var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code)).ToList());
+        var parameters = string.Join(", ", code.Parameters.OrderBy(static x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code)));
         var throwableDeclarations = code.Kind switch {
             CodeMethodKind.RequestGenerator => "throws URISyntaxException ",
             _ => string.Empty
