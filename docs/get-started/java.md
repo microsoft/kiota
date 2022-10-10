@@ -37,15 +37,15 @@ gradle init --dsl groovy --test-framework junit --type java-application --projec
 
 Edit **./app/build.gradle** to add the following dependencies.
 
-> **Note:** Find current version numbers for Kiota packages at [GitHub](https://github.com/orgs/microsoft/packages?repo_name=kiota&ecosystem=maven).
+> **Note:** Find current version numbers for Kiota packages at [Nexus Repository Manager](https://oss.sonatype.org/).
 
 ```groovy
-implementation 'com.microsoft.kiota:microsoft-kiota-abstractions:0.0.1-SNAPSHOT'
-implementation 'com.microsoft.kiota:microsoft-kiota-authentication-azure:0.0.1-SNAPSHOT'
-implementation 'com.microsoft.kiota:microsoft-kiota-http-okHttp:0.0.1-SNAPSHOT'
-implementation 'com.microsoft.kiota:microsoft-kiota-serialization-json:0.0.1-SNAPSHOT'
-implementation 'com.microsoft.kiota:microsoft-kiota-serialization-text:0.0.1-SNAPSHOT'
-implementation 'com.azure:azure-identity:1.+'
+implementation 'com.microsoft.kiota:microsoft-kiota-abstractions:0.0.5-SNAPSHOT'
+implementation 'com.microsoft.kiota:microsoft-kiota-authentication-azure:0.0.2-SNAPSHOT'
+implementation 'com.microsoft.kiota:microsoft-kiota-http-okHttp:0.0.5-SNAPSHOT'
+implementation 'com.microsoft.kiota:microsoft-kiota-serialization-json:0.0.2-SNAPSHOT'
+implementation 'com.microsoft.kiota:microsoft-kiota-serialization-text:0.0.2-SNAPSHOT'
+implementation 'com.azure:azure-identity:1.6.1'
 ```
 
 Only the first package, `kiota-abstractions`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
