@@ -183,8 +183,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             writer.WriteLine($"this.{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
         }
         if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
-            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
+            if(currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+                currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam) {
                 localConventions.AddParametersAssignment(writer, 
                                                     pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),

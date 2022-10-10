@@ -152,8 +152,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.WriteLine();
         }
         if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
-            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
+            if(currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+            currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam) {
                 conventions.AddParametersAssignment(writer, 
                                                     pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
