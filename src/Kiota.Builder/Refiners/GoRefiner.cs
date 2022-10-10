@@ -163,20 +163,6 @@ public class GoRefiner : CommonLanguageRefiner
             });
         CrawlTree(currentElement, AddContextParameterToGeneratorMethods);
     }
-    
-    private void RemoveHandlerFromRequestBuilder(CodeElement currentElement)
-    {
-        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
-        {
-            var codeMethods = currentClass.Methods.Where(x => x.Kind == CodeMethodKind.RequestExecutor);
-            foreach (var codeMethod in codeMethods)
-            {
-                codeMethod.RemoveParametersByKind(CodeParameterKind.ResponseHandler);
-            }
-        }
-
-        CrawlTree(currentElement, RemoveHandlerFromRequestBuilder);
-    }
 
     private static void RemoveModelPropertiesThatDependOnSubNamespaces(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass && 
@@ -266,8 +252,6 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota-abstractions-go", "RequestAdapter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             "github.com/microsoft/kiota-abstractions-go", "RequestInformation", "HttpMethod", "RequestOption"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "github.com/microsoft/kiota-abstractions-go", "ResponseHandler"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor) &&
                     method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) &&
                                             !typeToSkipStrConv.Contains(x.Type.Name)),
@@ -304,15 +288,8 @@ public class GoRefiner : CommonLanguageRefiner
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         var parentClass = currentMethod.Parent as CodeClass;
-        if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
-            parentClass != null) {
-            if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => {
-                    x.Type.Name = "ResponseHandler";
-                    x.Type.IsNullable = false; //no pointers
-                });
-            else if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
-                currentMethod.ReturnType.IsNullable = true;
+        if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator)) {
+            currentMethod.ReturnType.IsNullable = true;
         }
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");

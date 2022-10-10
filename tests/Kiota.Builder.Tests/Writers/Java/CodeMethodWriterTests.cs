@@ -499,7 +499,9 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("put(\"5XX\", Error5XX::createFromDiscriminatorValue);", result);
         Assert.Contains("put(\"403\", Error403::createFromDiscriminatorValue);", result);
         Assert.Contains("sendAsync", result);
-        Assert.Contains("CompletableFuture.failedFuture(ex)", result);
+        Assert.Contains("return new java.util.concurrent.CompletableFuture<Somecustomtype>() {{", result);
+        Assert.Contains("this.completeExceptionally(ex);", result);
+        Assert.Contains("}};", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added compatibility all the way down to android API level 26 for Java.
+
 ### Changed
+
+- Removed response handler parameter from Java executor methods.
 
 ## [0.6.0] - 2022-10-06
 
