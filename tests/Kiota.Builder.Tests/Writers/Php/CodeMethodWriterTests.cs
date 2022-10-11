@@ -153,7 +153,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("$requestInfo = $this->createPostRequestInformation();", result);
             Assert.Contains("RejectedPromise", result);
             Assert.Contains("catch(Exception $ex)", result);
-            Assert.Contains("'403' => array(Error403::class, 'createFromDiscriminatorValue')", result);
+            Assert.Contains("'403' => [Error403::class, 'createFromDiscriminatorValue']", result);
             Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, StreamInterface::class, $responseHandler, $errorMappings);", result);
         }
         
@@ -488,7 +488,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                     {
                         Name = "EmailAddress", Kind = CodeClassKind.Model, Description = "Email", Parent = GetParentClassInStaticContext()
                     }, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
-                "'users' => fn(ParseNode $n) => $o->setUsers($n->getCollectionOfObjectValues(array(EmailAddress::class, 'createFromDiscriminatorValue'))),"
+                "'users' => fn(ParseNode $n) => $o->setUsers($n->getCollectionOfObjectValues([EmailAddress::class, 'createFromDiscriminatorValue'])),"
             },
             new object[] { new CodeProperty { Name = "years", Type = new CodeType { Name = "int", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
                 "'years' => fn(ParseNode $n) => $o->setYears($n->getCollectionOfPrimitiveValues())"
