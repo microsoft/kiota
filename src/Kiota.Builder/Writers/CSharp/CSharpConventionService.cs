@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -97,20 +98,6 @@ namespace Kiota.Builder.Writers.CSharp {
             if (targetElement.Parent is CodeClass parentClass)
             {
                 parentElements.AddRange(parentClass.Methods.Select(static x => x.Name).Union(parentClass.Properties.Select(static x => x.Name)));
-                
-                if (targetElement is CodeMethod discriminatorMethod && discriminatorMethod.IsOfKind(CodeMethodKind.Factory))
-                {
-                    // Get the discriminator mappings that refer to types  are in a different namespace that are have the same name
-                    // E.g. DataSource from Microsoft.Graph.Beta.Models.Ediscovery and DataSource from Microsoft.Graph.Beta.Models.Security will need to be disambiguated.
-                    var duplicateMappingTypes = parentClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Value).OfType<CodeType>()
-                        .Where(x => !DoesTypeExistsInSameNamesSpaceAsTarget(x, targetElement))
-                        .Select(static x => x.Name)
-                        .GroupBy(static x => x, StringComparer.OrdinalIgnoreCase)
-                        .Where(static group => group.Count() > 1)
-                        .Select(static x => x.Key);
-
-                    parentElements.AddRange(duplicateMappingTypes);
-                }
             }
             
             var parentElementsHash = new HashSet<string>(parentElements, StringComparer.OrdinalIgnoreCase);
@@ -121,6 +108,7 @@ namespace Kiota.Builder.Writers.CSharp {
                         GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) && !areElementsInSameNamesSpace         // match if elements are not in the same namespace and the type name is used in the namespace segments
                     ||  parentElementsHash.Contains(typeName)                                                                   // match if type name is used in the parent elements segments
                     ||  !areElementsInSameNamesSpace && DoesTypeExistsInTargetAncestorNamespace(currentType, targetElement)     // match if elements are not in the same namespace and the type exists in target ancestor namespace
+                    ||  !areElementsInSameNamesSpace && DoesModelTypeExistsInMultipleImportedNamespaces(currentType, targetElement)          // match if elements is not imported already by another namespace.
                     )
                 )
                 return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
@@ -152,6 +140,23 @@ namespace Kiota.Builder.Writers.CSharp {
             }
             return hasChildWithName;
         }
+        
+        private static bool DoesModelTypeExistsInMultipleImportedNamespaces(CodeType currentType, CodeElement targetElement)
+        {
+            if ( currentType.TypeDefinition is CodeClass { Parent: CodeNamespace currentTypeNamespace } codeClass)
+            {
+                var targetClass = targetElement.GetImmediateParentOfType<CodeClass>();
+                var importedNamespaces = targetClass.StartBlock.Usings
+                    .Where( codeUsing => !codeUsing.IsExternal                                                                      // 1. Are defined during generation(not external) 
+                                         && !codeUsing.Name.Equals(currentTypeNamespace.Name, StringComparison.OrdinalIgnoreCase))  // 2. Do not match the namespace of the current type
+                    .Select( codeUsing => codeUsing.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>())
+                    .DistinctBy( declaredNamespace => declaredNamespace.Name);
+
+                return importedNamespaces.Any(importedNamespace => importedNamespace.FindChildByName<CodeClass>(codeClass.Name,false) != null);
+            }
+            return false;
+        }
+        
         public override string TranslateType(CodeType type)
         {
             return type.Name switch
