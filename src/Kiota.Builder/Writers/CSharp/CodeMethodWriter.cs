@@ -214,9 +214,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
-            if (currentMethod.IsOfKind(CodeMethodKind.Constructor))
+            if (currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+                currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam)
             {
-                var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
                 conventions.AddParametersAssignment(writer,
                                                     pathParametersParam.Type,
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
@@ -226,10 +226,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                                                 .ToArray());
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
             }
-            else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor))
+            else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor) &&
+                    currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RawUrl)) is CodeParameter rawUrlParam)
             {
                 var pathParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-                var rawUrlParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RawUrl));
                 conventions.AddParametersAssignment(writer,
                                                     pathParametersProp.Type,
                                                     string.Empty,
