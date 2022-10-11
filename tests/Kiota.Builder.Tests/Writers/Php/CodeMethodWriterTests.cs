@@ -455,32 +455,32 @@ namespace Kiota.Builder.Tests.Writers.Php
             new object[]
             {
                 new CodeProperty { Name = "name", Type = new CodeType { Name = "string" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
-                "'name' => function (ParseNode $n) use ($o) { $o->setName($n->getStringValue()); },"
+                "'name' => fn(ParseNode $n) => $o->setName($n->getStringValue()),"
             },
             new object[]
             {
                 new CodeProperty { Name = "age", Type = new CodeType { Name = "int32" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
-                "'age' => function (ParseNode $n) use ($o) { $o->setAge($n->getIntegerValue()); },"
+                "'age' => fn(ParseNode $n) => $o->setAge($n->getIntegerValue()),"
             },
             new object[]
             {
                 new CodeProperty { Name = "height", Type = new CodeType { Name = "double" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
-                "'height' => function (ParseNode $n) use ($o) { $o->setHeight($n->getFloatValue()); },"
+                "'height' => fn(ParseNode $n) => $o->setHeight($n->getFloatValue()),"
             },
             new object[]
             {
                 new CodeProperty { Name = "height", Type = new CodeType { Name = "decimal" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
-                "'height' => function (ParseNode $n) use ($o) { $o->setHeight($n->getStringValue()); },"
+                "'height' => fn(ParseNode $n) => $o->setHeight($n->getStringValue()),"
             },
             new object[]
             {
                 new CodeProperty { Name = "DOB", Type = new CodeType { Name = "DateTimeOffset" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
-                "'dOB' => function (ParseNode $n) use ($o) { $o->setDOB($n->getDateTimeValue()); },"
+                "'dOB' => fn(ParseNode $n) => $o->setDOB($n->getDateTimeValue()),"
             },
             new object[]
             {
                 new CodeProperty { Name = "story", Type = new CodeType { Name = "binary" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
-                "'story' => function (ParseNode $n) use ($o) { $o->setStory($n->getBinaryContent()); },"
+                "'story' => fn(ParseNode $n) => $o->setStory($n->getBinaryContent()),"
             },
             new object[] { new CodeProperty { Name = "users", Type = new CodeType
                 {
@@ -488,10 +488,10 @@ namespace Kiota.Builder.Tests.Writers.Php
                     {
                         Name = "EmailAddress", Kind = CodeClassKind.Model, Description = "Email", Parent = GetParentClassInStaticContext()
                     }, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
-                "'users' => function (ParseNode $n) use ($o) { $o->setUsers($n->getCollectionOfObjectValues(array(EmailAddress::class, 'createFromDiscriminatorValue')));"
+                "'users' => fn(ParseNode $n) => $o->setUsers($n->getCollectionOfObjectValues(array(EmailAddress::class, 'createFromDiscriminatorValue'))),"
             },
             new object[] { new CodeProperty { Name = "years", Type = new CodeType { Name = "int", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
-                "'years' => function (ParseNode $n) use ($o) { $o->setYears($n->getCollectionOfPrimitiveValues())"
+                "'years' => fn(ParseNode $n) => $o->setYears($n->getCollectionOfPrimitiveValues())"
             },
             new object[] { new CodeProperty{ Name = "definedInParent", Type = new CodeType { Name = "string"}, OriginalPropertyFromBaseType = new CodeProperty() }, "'definedInParent' => function (ParseNode $n) use ($o) { $o->setDefinedInParent($n->getStringValue())"}
         };
