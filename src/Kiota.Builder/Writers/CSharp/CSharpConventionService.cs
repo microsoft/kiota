@@ -148,8 +148,8 @@ namespace Kiota.Builder.Writers.CSharp {
                 var importedNamespaces = targetClass.StartBlock.Usings
                     .Where( codeUsing => !codeUsing.IsExternal                                                                      // 1. Are defined during generation(not external) 
                                          && !codeUsing.Name.Equals(currentTypeNamespace.Name, StringComparison.OrdinalIgnoreCase))  // 2. Do not match the namespace of the current type
-                    .Select( codeUsing => codeUsing.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>())
-                    .DistinctBy( declaredNamespace => declaredNamespace.Name);
+                    .Select(static codeUsing => codeUsing.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>())
+                    .DistinctBy(static declaredNamespace => declaredNamespace.Name);
 
                 return importedNamespaces.Any(importedNamespace => importedNamespace.FindChildByName<CodeClass>(codeClass.Name,false) != null);
             }
