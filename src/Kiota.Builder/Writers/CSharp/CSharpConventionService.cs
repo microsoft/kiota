@@ -107,7 +107,7 @@ namespace Kiota.Builder.Writers.CSharp {
                         GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) && !areElementsInSameNamesSpace         // match if elements are not in the same namespace and the type name is used in the namespace segments
                     ||  parentElementsHash.Contains(typeName)                                                                   // match if type name is used in the parent elements segments
                     ||  !areElementsInSameNamesSpace && DoesTypeExistsInTargetAncestorNamespace(currentType, targetElement)     // match if elements are not in the same namespace and the type exists in target ancestor namespace
-                    ||  !areElementsInSameNamesSpace && DoesModelTypeExistsInMultipleImportedNamespaces(currentType, targetElement)          // match if elements is not imported already by another namespace.
+                    ||  !areElementsInSameNamesSpace && DoesTypeExistsInOtherImportedNamespaces(currentType, targetElement)          // match if elements is not imported already by another namespace.
                     )
                 )
                 return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
@@ -140,7 +140,7 @@ namespace Kiota.Builder.Writers.CSharp {
             return hasChildWithName;
         }
         
-        private static bool DoesModelTypeExistsInMultipleImportedNamespaces(CodeType currentType, CodeElement targetElement)
+        private static bool DoesTypeExistsInOtherImportedNamespaces(CodeType currentType, CodeElement targetElement)
         {
             if ( currentType.TypeDefinition is CodeClass { Parent: CodeNamespace currentTypeNamespace } codeClass)
             {
