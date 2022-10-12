@@ -395,7 +395,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.WriteLine("try {");
         writer.IncreaseIndent();
         WriteGeneratorMethodCall(codeElement, requestParams, writer, $"final RequestInformation {RequestInfoVarName} = ");
-        var sendMethodName = GetSendRequestMethodName(codeElement.ReturnType.IsCollection, returnType);
+        var sendMethodName = GetSendRequestMethodName(codeElement.ReturnType.IsCollection, returnType, codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeEnum);
         var errorMappingVarName = "null";
         if(codeElement.ErrorMappings.Any()) {
             errorMappingVarName = "errorMapping";
@@ -415,14 +415,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.CloseBlock("}};");
         writer.CloseBlock();
     }
-    private string GetSendRequestMethodName(bool isCollection, string returnType)
+    private string GetSendRequestMethodName(bool isCollection, string returnType, bool isEnum)
     {
         if(conventions.PrimitiveTypes.Contains(returnType)) 
             if(isCollection)
                 return "sendPrimitiveCollectionAsync";
             else
                 return "sendPrimitiveAsync";
-        if(isCollection) return "sendCollectionAsync";
+        else if (isEnum)
+            if(isCollection)
+                return "sendEnumCollectionAsync";
+            else
+                return "sendEnumAsync";
+        else if(isCollection) return "sendCollectionAsync";
         return "sendAsync";
     }
     private const string RequestInfoVarName = "requestInfo";
