@@ -1,21 +1,10 @@
-using System.Collections.Generic;
+using Kiota.Builder.CodeDOM;
 
-namespace Kiota.Builder;
-public class PythonCodeParameterOrderComparer : IComparer<CodeParameter>
+namespace Kiota.Builder.Writers.Python;
+public class PythonCodeParameterOrderComparer : BaseCodeParameterOrderComparer
 {
-    public int Compare(CodeParameter x, CodeParameter y)
-    {
-        return (x, y) switch {
-            (null, null) => 0,
-            (null, _) => -1,
-            (_, null) => 1,
-            _ => x.Optional.CompareTo(y.Optional) * optionalWeight +
-                getKindOrderHint(x.Kind).CompareTo(getKindOrderHint(y.Kind)) * kindWeight +
-                x.Name.CompareTo(y.Name) * nameWeight,
-        };
-    }
     // Non-default parameters must come before parameters with defaults in python.
-    private static int getKindOrderHint(CodeParameterKind kind) {
+    protected override int GetKindOrderHint(CodeParameterKind kind) {
         return kind switch {
             CodeParameterKind.RequestAdapter => 1,
             CodeParameterKind.RawUrl => 2,
@@ -32,7 +21,4 @@ public class PythonCodeParameterOrderComparer : IComparer<CodeParameter>
             _ => 13,
         };
     }
-    private static readonly int optionalWeight = 10000;
-    private static readonly int kindWeight = 100;
-    private static readonly int nameWeight = 10;
 }

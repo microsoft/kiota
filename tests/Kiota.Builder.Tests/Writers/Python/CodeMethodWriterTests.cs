@@ -1,10 +1,14 @@
 using System;
 using System.IO;
 using System.Linq;
-using Kiota.Builder.Tests;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.Python;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Python.Tests;
+namespace Kiota.Builder.Tests.Writers.Python;
 public class CodeMethodWriterTests : IDisposable {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -712,5 +716,22 @@ public class CodeMethodWriterTests : IDisposable {
             }
         });
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+    }
+    [Fact]
+    public void DoesntWriteReadOnlyPropertiesInSerializerBody() {
+        method.Kind = CodeMethodKind.Serializer;
+        AddSerializationProperties();
+        AddInheritanceClass();
+        parentClass.AddProperty(new CodeProperty {
+            Name = "ReadOnlyProperty",
+            ReadOnly = true,
+            Type = new CodeType {
+                Name = "string",
+            },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("ReadOnlyProperty", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
 }

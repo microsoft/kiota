@@ -1,0 +1,57 @@
+using System;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+
+namespace Kiota.Builder.Caching.Tests;
+
+public class DocumentCachingProviderTests {
+    [Fact]
+    public async Task DefensivePrograming() {
+        using var client = new HttpClient();
+        var mockLogger = new Mock<ILogger>().Object;
+
+        Assert.Throws<ArgumentNullException>(() => new DocumentCachingProvider(null, null));
+        Assert.Throws<ArgumentNullException>(() => new DocumentCachingProvider(client, null));
+        Assert.Throws<ArgumentNullException>(() => new DocumentCachingProvider(null, mockLogger));
+
+        var provider = new DocumentCachingProvider(client, mockLogger);
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await provider.GetDocumentAsync(null, null, null, new CancellationToken()));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await provider.GetDocumentAsync(new Uri("https://localhost"), null, null, new CancellationToken()));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await provider.GetDocumentAsync(new Uri("https://localhost"), "foo", null, new CancellationToken()));
+    }
+    [Fact]
+    public async Task GetsCached() {
+        using var client = new HttpClient();
+        var mockLogger = new Mock<ILogger>().Object;
+        var provider = new DocumentCachingProvider(client, mockLogger);
+        using var result = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
+        Assert.NotNull(result);
+        Assert.NotEqual(0, result.Length);
+    }
+    [Fact]
+    public async Task GetsWhenCacheIsOutdated() {
+        using var client = new HttpClient();
+        var mockLogger = new Mock<ILogger>().Object;
+        var provider = new DocumentCachingProvider(client, mockLogger);
+        using var result1 = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
+        provider.Duration = TimeSpan.FromMilliseconds(-1);
+        using var result2 = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
+        Assert.NotNull(result2);
+        Assert.NotEqual(0, result2.Length);
+    }
+    [Fact]
+    public async Task GetsWhenCacheIsCleared() {
+        using var client = new HttpClient();
+        var mockLogger = new Mock<ILogger>().Object;
+        var provider = new DocumentCachingProvider(client, mockLogger);
+        using var result1 = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
+        provider.ClearCache = true;
+        using var result2 = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
+        Assert.NotNull(result2);
+        Assert.NotEqual(0, result2.Length);
+    }
+}

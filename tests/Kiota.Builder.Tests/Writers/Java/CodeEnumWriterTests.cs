@@ -1,10 +1,13 @@
 using System;
 using System.IO;
 using System.Linq;
-using Kiota.Builder.Tests;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Java.Tests {
+namespace Kiota.Builder.Tests.Writers.Java {
     public class CodeEnumWriterTests :IDisposable {
         private const string DefaultPath = "./";
         private const string DefaultName = "name";
@@ -31,16 +34,16 @@ namespace Kiota.Builder.Writers.Java.Tests {
             currentEnum.AddOption(new CodeEnumOption { Name = optionName});
             writer.Write(currentEnum);
             var result = tw.ToString();
-            Assert.Contains($"public enum", result);
-            Assert.Contains($"implements ValuedEnum", result);
-            Assert.Contains($"public final String value", result);
-            Assert.Contains($"this.value = value", result);
-            Assert.Contains($"public String getValue()", result);
-            Assert.Contains($"return this.value", result);
-            Assert.Contains($"@javax.annotation.Nonnull", result);
-            Assert.Contains($"@javax.annotation.Nullable", result);
-            Assert.Contains($"forValue(@javax.annotation.Nonnull final String searchValue)", result);
-            Assert.Contains($"default: return null;", result);
+            Assert.Contains("public enum", result);
+            Assert.Contains("implements ValuedEnum", result);
+            Assert.Contains("public final String value", result);
+            Assert.Contains("this.value = value", result);
+            Assert.Contains("public String getValue()", result);
+            Assert.Contains("return this.value", result);
+            Assert.Contains("@javax.annotation.Nonnull", result);
+            Assert.Contains("@javax.annotation.Nullable", result);
+            Assert.Contains("forValue(@javax.annotation.Nonnull final String searchValue)", result);
+            Assert.Contains("default: return null;", result);
             AssertExtensions.CurlyBracesAreClosed(result);
             Assert.Contains(optionName, result);
         }

@@ -1,9 +1,12 @@
 ﻿using System;
 using System.IO;
-using Kiota.Builder.Tests;
+using System.Linq;
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.CSharp.Tests;
+namespace Kiota.Builder.Tests.Writers.CSharp;
 public class CodePropertyWriterTests: IDisposable {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -11,21 +14,27 @@ public class CodePropertyWriterTests: IDisposable {
     private readonly LanguageWriter writer;
     private readonly CodeProperty property;
     private readonly CodeClass parentClass;
+    private readonly CodeNamespace rootNamespace;
     private const string PropertyName = "PropertyName";
     private const string TypeName = "Somecustomtype";
     public CodePropertyWriterTests() {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
-        var root = CodeNamespace.InitRootNamespace();
+        rootNamespace = CodeNamespace.InitRootNamespace().AddNamespace("defaultNamespace");
         parentClass = new CodeClass {
             Name = "parentClass"
         };
-        root.AddClass(parentClass);
+        var derivedClass = rootNamespace.AddClass(new CodeClass {
+            Name = "SomeCustomClass"
+        }).First();
+            
+        rootNamespace.AddClass(parentClass);
         property = new CodeProperty {
             Name = PropertyName,
             Type = new CodeType {
-                Name = TypeName
+                Name = TypeName,
+                TypeDefinition = derivedClass
             },
         };
         parentClass.AddProperty(property, new() {
@@ -104,6 +113,53 @@ public class CodePropertyWriterTests: IDisposable {
         writer.Write(property);
         var result = tw.ToString();
         Assert.Empty(result);
+    }
+    
+    [Fact]
+    public void DisambiguateAmbiguousImportedTypes()
+    {
+        // Arrange : Adding a model with conflicting Types in properties from different namespaces.
+        var defaultNamespace = rootNamespace.AddNamespace("models");
+        var testModel = defaultNamespace.AddClass(
+            new CodeClass
+            {
+                Name = "ModelWithPropertiesWithConflictingTypes"
+            }).First();
+        testModel.AddProperty(property);
+        testModel.StartBlock.AddUsings(new CodeUsing
+        {
+            Name = defaultNamespace.Name,
+            Declaration = property.Type as CodeType
+        });
+        
+        var levelOneNameSpace = rootNamespace.AddNamespace("namespaceLevelOne");
+        var anotherderivedClass = levelOneNameSpace.AddClass(
+            new CodeClass {
+                Name = "SomeCustomClass"
+            }).First();
+        levelOneNameSpace.AddClass(anotherderivedClass);
+        var conflictingProperty = new CodeProperty {
+            Name = $"{PropertyName}2",
+            Type = new CodeType {
+                Name = TypeName,
+                TypeDefinition = anotherderivedClass
+            },
+        };
+        testModel.AddProperty(conflictingProperty);
+        testModel.StartBlock.AddUsings(new CodeUsing
+        {
+            Name = levelOneNameSpace.Name,
+            Declaration = conflictingProperty.Type as CodeType
+        });
+        
+        // Act : Write the properties
+        writer.Write(property);
+        writer.Write(conflictingProperty);
+        var result = tw.ToString();
+        
+        // Assert: properties types are disambiguated.
+        Assert.Contains("namespaceLevelOne.Somecustomtype",result);
+        Assert.Contains("defaultNamespace.Somecustomtype", result);
     }
 }
 

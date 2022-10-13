@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 
 /// <summary>
 /// Marker interface used for type searching.

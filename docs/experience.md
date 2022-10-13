@@ -202,14 +202,14 @@ components:
 
 ```
 
-## Heterogenous collection
+## Heterogeneous collection
 
-Kiota SDKs will automatically downcast heterogenous collection items (or single properties) to the target type if a discriminator is present in the description and if the response payload contains a matching mapping entry. This way SDK users can easily access the other properties available on the specialized type.
+Kiota SDKs will automatically downcast heterogeneous collection items (or single properties) to the target type if a discriminator is present in the description and if the response payload contains a matching mapping entry. This way SDK users can easily access the other properties available on the specialized type.
 
 ```yaml
 openapi: 3.0.3
 info:
-  title: Heterogenous collection
+  title: Heterogeneous collection
   version: 1.0.0
 servers:
   - url: https://example.org/

@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
@@ -36,23 +39,23 @@ public class JavaConventionService : CommonLanguageConventionService
     {
         if(code is CodeComposedTypeBase) 
             throw new InvalidOperationException($"Java does not support union types, the union type {code.Name} should have been filtered out by the refiner");
-        else if (code is CodeType currentType) {
+        if (code is CodeType currentType) {
             var typeName = TranslateType(currentType);
             if(!currentType.IsExternal && IsSymbolDuplicated(typeName, targetElement))
                 typeName = $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
 
-            var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex && includeCollectionInformation ? "java.util.List<" : string.Empty;
+            var collectionPrefix = currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.Complex && includeCollectionInformation ? "java.util.List<" : string.Empty;
             var collectionSuffix = currentType.CollectionKind switch {
-                CodeType.CodeTypeCollectionKind.Complex when includeCollectionInformation => ">",
-                CodeType.CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
+                CodeTypeBase.CodeTypeCollectionKind.Complex when includeCollectionInformation => ">",
+                CodeTypeBase.CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
                 _ => string.Empty,
             };
             if (currentType.ActionOf)
                 return $"java.util.function.Consumer<{collectionPrefix}{typeName}{collectionSuffix}>";
-            else
-                return $"{collectionPrefix}{typeName}{collectionSuffix}";
+            return $"{collectionPrefix}{typeName}{collectionSuffix}";
         }
-        else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+
+        throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
     private static readonly CodeUsingDeclarationNameComparer usingDeclarationComparer = new();
     private static bool IsSymbolDuplicated(string symbol, CodeElement targetElement) {
@@ -72,6 +75,7 @@ public class JavaConventionService : CommonLanguageConventionService
             "decimal" => "BigDecimal",
             "void" or "boolean" when !type.IsNullable => type.Name, //little casing hack
             "binary" => "byte[]",
+            _ when type.Name.Contains('.') => type.Name, // casing
             _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",
         };
     }
@@ -80,7 +84,11 @@ public class JavaConventionService : CommonLanguageConventionService
         if(!string.IsNullOrEmpty(description))
             writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
-    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
+    private static readonly Regex nonAsciiReplaceRegex = new (@"[^\u0000-\u007F]+", RegexOptions.Compiled);
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => 
+        string.IsNullOrEmpty(originalDescription) ? 
+            originalDescription :
+            nonAsciiReplaceRegex.Replace(originalDescription.Replace("\\", "/").Replace("*/", string.Empty), string.Empty);
     #pragma warning disable CA1822 // Method should be static
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
@@ -93,7 +101,7 @@ public class JavaConventionService : CommonLanguageConventionService
     internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
         if(pathParametersType == null) return;
         var mapTypeName = pathParametersType.Name;
-        writer.WriteLine($"var {TempDictionaryVarName} = new {mapTypeName}({pathParametersReference});");
+        writer.WriteLine($"final {mapTypeName} {TempDictionaryVarName} = new {mapTypeName}({pathParametersReference});");
         if(parameters.Any())
             writer.WriteLines(parameters.Select(p =>
                 $"{TempDictionaryVarName}.put(\"{p.Item2}\", {p.Item3});"

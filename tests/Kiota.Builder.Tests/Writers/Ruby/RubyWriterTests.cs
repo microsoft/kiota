@@ -1,7 +1,10 @@
 using System;
+
+using Kiota.Builder.Writers.Ruby;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Ruby.Tests {
+namespace Kiota.Builder.Tests.Writers.Ruby {
     public class RubyWriterTests {
         [Fact]
         public void Instanciates() {

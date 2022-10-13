@@ -37,8 +37,8 @@ module Files
         ## 
         def get_field_deserializers() 
             return {
-                "content" => lambda {|o, n| o.content = n.get_string_value() },
-                "contentType" => lambda {|o, n| o.content_type = n.get_enum_value(Files::BodyType) },
+                "content" => lambda {|n| @content = n.get_string_value() },
+                "contentType" => lambda {|n| @content_type = n.get_enum_value(Files::BodyType) },
             }
         end
         ## 

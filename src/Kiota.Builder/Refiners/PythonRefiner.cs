@@ -1,71 +1,86 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
 public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public PythonRefiner(GenerationConfiguration configuration) : base(configuration) {}
-    public override void Refine(CodeNamespace generatedCode)
+    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        AddDefaultImports(generatedCode, defaultUsingEvaluators);
-        DisableActionOf(generatedCode, 
-        CodeParameterKind.RequestConfiguration);
-        ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
-        RemoveCancellationParameter(generatedCode);
-        CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
-        CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.__instance.create_backing_store()");
-        AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);           
-        AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-        ReplaceBinaryByNativeType(generatedCode, "bytes",null);
-        ReplaceReservedNames(
-            generatedCode,
-            new PythonReservedNamesProvider(), x => $"{x}_escaped"
-        );
-        AddGetterAndSetterMethods(generatedCode,
-            new() {
-                CodePropertyKind.Custom,
-                CodePropertyKind.AdditionalData,
-            },
-            _configuration.UsesBackingStore,
-            false,
-            string.Empty,
-            string.Empty);
-        AddConstructorsForDefaultValues(generatedCode, true);
-        var defaultConfiguration = new GenerationConfiguration();
-        ReplaceDefaultSerializationModules(
-            generatedCode,
-            defaultConfiguration.Serializers,
-            new (StringComparer.OrdinalIgnoreCase) {
-                "serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory"
-            }
-        );
-        ReplaceDefaultDeserializationModules(
-            generatedCode,
-            defaultConfiguration.Deserializers,
-            new (StringComparer.OrdinalIgnoreCase) {
-                "serialization_json.json_parse_node_factory.JsonParseNodeFactory"
-            }
-        );
-        AddSerializationModulesImport(generatedCode,
-        new[] { $"{AbstractionsPackageName}.api_client_builder.register_default_serializer", 
-                $"{AbstractionsPackageName}.api_client_builder.enable_backing_store_for_serialization_writer_factory",
-                $"{AbstractionsPackageName}.serialization.SerializationWriterFactoryRegistry"},
-        new[] { $"{AbstractionsPackageName}.api_client_builder.register_default_deserializer",
-                $"{AbstractionsPackageName}.serialization.ParseNodeFactoryRegistry" });
-        AddParentClassToErrorClasses(
+        return Task.Run(() => {
+            cancellationToken.ThrowIfCancellationRequested();
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            DisableActionOf(generatedCode, 
+            CodeParameterKind.RequestConfiguration);
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
+            RemoveCancellationParameter(generatedCode);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
+            cancellationToken.ThrowIfCancellationRequested();
+            CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.__instance.create_backing_store()");
+            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);           
+            AddParsableImplementsForModelClasses(generatedCode, "Parsable");
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceBinaryByNativeType(generatedCode, "bytes",null);
+            ReplaceReservedNames(
                 generatedCode,
-                "APIError",
-                "kiota.abstractions.api_error"
-        );
-        AddQueryParameterMapperMethod(
-            generatedCode
-        );
+                new PythonReservedNamesProvider(), x => $"{x}_escaped"
+            );
+            cancellationToken.ThrowIfCancellationRequested();
+            AddGetterAndSetterMethods(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                },
+                _configuration.UsesBackingStore,
+                false,
+                string.Empty,
+                string.Empty);
+            AddConstructorsForDefaultValues(generatedCode, true);
+            var defaultConfiguration = new GenerationConfiguration();
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceDefaultSerializationModules(
+                generatedCode,
+                defaultConfiguration.Serializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "kiota_serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory",
+                    "kiota_serialization_text.text_serialization_writer_factory.TextSerializationWriterFactory"
+                }
+            );
+            ReplaceDefaultDeserializationModules(
+                generatedCode,
+                defaultConfiguration.Deserializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "kiota_serialization_json.json_parse_node_factory.JsonParseNodeFactory",
+                    "kiota_serialization_text.text_parse_node_factory.TextParseNodeFactory"
+                }
+            );
+            AddSerializationModulesImport(generatedCode,
+            new[] { $"{AbstractionsPackageName}.api_client_builder.register_default_serializer", 
+                    $"{AbstractionsPackageName}.api_client_builder.enable_backing_store_for_serialization_writer_factory",
+                    $"{AbstractionsPackageName}.serialization.SerializationWriterFactoryRegistry"},
+            new[] { $"{AbstractionsPackageName}.api_client_builder.register_default_deserializer",
+                    $"{AbstractionsPackageName}.serialization.ParseNodeFactoryRegistry" });
+            cancellationToken.ThrowIfCancellationRequested();
+            AddParentClassToErrorClasses(
+                    generatedCode,
+                    "APIError",
+                    $"{AbstractionsPackageName}.api_error"
+            );
+            AddQueryParameterMapperMethod(
+                generatedCode
+            );
+        }, cancellationToken);
     }
 
-    private const string AbstractionsPackageName = "kiota.abstractions";
-    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+    private const string AbstractionsPackageName = "kiota_abstractions";
+    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
         new (x => x is CodeClass @class, "__future__", "annotations"),
         new (x => x is CodeClass @class, "typing", "Any, Callable, Dict, List, Optional, Union"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
@@ -120,8 +135,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "Dict[str, Any]";
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
-        } else
-            CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        }
+        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
@@ -131,12 +146,12 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
         else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
-            currentMethod.ReturnType.Name = $"Dict[str, Callable[[ParseNode], None]]";
+            currentMethod.ReturnType.Name = "Dict[str, Callable[[ParseNode], None]]";
         else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.Factory)) {
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore, CodeParameterKind.ParseNode))
-                .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
+                .Where(static x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                 .ToList()
-                .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+                .ForEach(static x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
             if(urlTplParams != null &&
                 urlTplParams.Type is CodeType originalType) {
@@ -156,7 +171,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                             .Select(x => x.Type)
-                                            .Union(new CodeTypeBase[] { currentMethod.ReturnType})
+                                            .Union(new[] { currentMethod.ReturnType})
                                             .ToArray());
     }
     

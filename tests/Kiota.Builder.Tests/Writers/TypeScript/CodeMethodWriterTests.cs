@@ -1,10 +1,14 @@
 using System;
 using System.IO;
 using System.Linq;
-using Kiota.Builder.Tests;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.TypeScript;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.TypeScript.Tests;
+namespace Kiota.Builder.Tests.Writers.TypeScript;
 public class CodeMethodWriterTests : IDisposable {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -112,7 +116,7 @@ public class CodeMethodWriterTests : IDisposable {
         });
     }
     private void AddInheritanceClass() {
-        (parentClass.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        parentClass.StartBlock.Inherits = new CodeType {
             Name = "someParentClass"
         };
     }
@@ -216,7 +220,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -228,11 +232,11 @@ public class CodeMethodWriterTests : IDisposable {
                 TypeDefinition = parentModel,
             },
         }).First();
-        factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        factoryMethod.DiscriminatorPropertyName = "@odata.type";
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
@@ -679,5 +683,22 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("case \"expand\": return \"%24expand\"", result);
         Assert.Contains("case \"filter\": return \"%24filter\"", result);
         Assert.Contains("default: return originalName", result);
+    }
+    [Fact]
+    public void DoesntWriteReadOnlyPropertiesInSerializerBody() {
+        method.Kind = CodeMethodKind.Serializer;
+        AddSerializationProperties();
+        AddInheritanceClass();
+        parentClass.AddProperty(new CodeProperty {
+            Name = "ReadOnlyProperty",
+            ReadOnly = true,
+            Type = new CodeType {
+                Name = "string",
+            },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("readOnlyProperty", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
 }

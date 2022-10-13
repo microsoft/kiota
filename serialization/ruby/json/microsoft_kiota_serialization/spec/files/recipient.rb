@@ -27,7 +27,7 @@ module Files
         ## 
         def get_field_deserializers() 
             return {
-                "emailAddress" => lambda {|o, n| o.email_address = n.get_object_value(Files::EmailAddress) },
+                "emailAddress" => lambda {|n| @email_address = n.get_object_value(Files::EmailAddress) },
             }
         end
         ## 

@@ -1,9 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
+using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.Php;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Php.Tests
+namespace Kiota.Builder.Tests.Writers.Php
 {
     public class CodePropertyWriterTests
     {
@@ -13,7 +19,6 @@ namespace Kiota.Builder.Writers.Php.Tests
         private readonly CodePropertyWriter propertyWriter;
         private readonly LanguageWriter languageWriter;
         private readonly StringWriter stringWriter;
-        private readonly ILanguageRefiner _refiner;
         private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
 
         public CodePropertyWriterTests()
@@ -21,22 +26,21 @@ namespace Kiota.Builder.Writers.Php.Tests
             stringWriter = new StringWriter();
             languageWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName);
             languageWriter.SetTextWriter(stringWriter);
-            parentClass = new CodeClass()
+            parentClass = new CodeClass
             {
                 Name = "ParentClass", Description = "This is an amazing class", Kind = CodeClassKind.Model
             };
             root.AddClass(parentClass);
-            _refiner = new PhpRefiner(new() {Language = GenerationLanguage.PHP});
             propertyWriter = new CodePropertyWriter(new PhpConventionService());
         }
         [Fact]
         public void WritePropertyDocs()
         {
-            var property = new CodeProperty()
+            var property = new CodeProperty
             {
                 Name = "Email",
                 Access = AccessModifier.Private,
-                Type = new CodeType()
+                Type = new CodeType
                 {
                     Name = "emailAddress"
                 }
@@ -52,12 +56,12 @@ namespace Kiota.Builder.Writers.Php.Tests
         [Fact]
         public void WritePropertyRequestBuilder()
         {
-            var property = new CodeProperty()
+            var property = new CodeProperty
             {
                 Name = "message",
                 Access = AccessModifier.Public,
                 Description = "I can get your messages.",
-                Type = new CodeType()
+                Type = new CodeType
                 {
                     Name = "MessageRequestBuilder"
                 },
@@ -72,19 +76,19 @@ namespace Kiota.Builder.Writers.Php.Tests
         }
 
         [Fact]
-        public void WriteCollectionKindProperty()
+        public async Task WriteCollectionKindProperty()
         {
-            var property = new CodeProperty()
+            var property = new CodeProperty
             {
                 Description = "Additional data dictionary",
                 Name = "additionalData",
                 Kind = CodePropertyKind.AdditionalData,
                 Access = AccessModifier.Private,
-                Type = new CodeType() {Name = "array", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array}
+                Type = new CodeType {Name = "array", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array}
             };
             parentClass.Kind = CodeClassKind.Model;
             parentClass.AddProperty(property);
-            _refiner.Refine(root);
+            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
             propertyWriter.WriteCodeElement(property, languageWriter);
             var result = stringWriter.ToString();
             Assert.Contains("private array $additionalData;", result);
@@ -94,12 +98,12 @@ namespace Kiota.Builder.Writers.Php.Tests
         [Fact]
         public void WriteCollectionNonAdditionalData()
         {
-            var property = new CodeProperty()
+            var property = new CodeProperty
             {
                 Name = "recipients",
                 Kind = CodePropertyKind.Custom,
                 Access = AccessModifier.Private,
-                Type = new CodeType()
+                Type = new CodeType
                 {
                     Name = "recipient", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array
                 }
@@ -114,15 +118,15 @@ namespace Kiota.Builder.Writers.Php.Tests
         [Fact]
         public void WriteRequestAdapter()
         {
-            var adapter = new CodeProperty()
+            var adapter = new CodeProperty
             {
                 Name = "adapter",
-                Type = new CodeType() {Name = "requestAdapter", IsNullable = false},
+                Type = new CodeType {Name = "requestAdapter", IsNullable = false},
                 Access = AccessModifier.Private,
                 Kind = CodePropertyKind.RequestAdapter
             };
             parentClass.AddProperty(adapter);
-            parentClass.AddProperty(new CodeProperty()
+            parentClass.AddProperty(new CodeProperty
             {
                 Name = "pathSegment", 
                 Kind = CodePropertyKind.PathParameters
@@ -136,10 +140,10 @@ namespace Kiota.Builder.Writers.Php.Tests
         [Fact]
         public void WritePrimitiveFloatProperty()
         {
-            CodeProperty property = new CodeProperty()
+            CodeProperty property = new CodeProperty
             {
                 Name = "property",
-                Type = new CodeType()
+                Type = new CodeType
                 {
                     Name = "double"
                 },
@@ -148,7 +152,7 @@ namespace Kiota.Builder.Writers.Php.Tests
             parentClass.AddProperty(property);
             propertyWriter.WriteCodeElement(property, languageWriter);
             var result = stringWriter.ToString();
-            Assert.Contains($"protected ?float $property = null;", result);
+            Assert.Contains("protected ?float $property = null;", result);
         }
 
         public static IEnumerable<object[]> StringProperties => new List<object[]>
@@ -185,13 +189,13 @@ namespace Kiota.Builder.Writers.Php.Tests
         [Fact]
         public void WriteQueryParameter()
         {
-            var queryParameter = new CodeProperty()
+            var queryParameter = new CodeProperty
             {
                 Name = "select",
                 Kind = CodePropertyKind.QueryParameter,
                 SerializationName = "%24select",
                 Access = AccessModifier.Private,
-                Type = new CodeType()
+                Type = new CodeType
                 {
                     CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array, Name = "string"
                 }

@@ -105,7 +105,7 @@ RSpec.describe MicrosoftKiotaAbstractions do
     url1 = ahv.url_host_valid?("https://www.google.com")
     url2 = ahv.url_host_valid?("htts://google.com")
     url3 = ahv.url_host_valid?("cool/groovy/art")
-    url4 = ahv.url_host_valid?("http://example.com")
+    url4 = ahv.url_host_valid?("https://example.com")
     url5 = ahv.url_host_valid?('https%3A%2F%2Fwww.example.com')
     url6 = ahv.url_host_valid?('%3A%2F%2F')
     expect(url1).to eq(true)

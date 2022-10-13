@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+
+using Kiota.Builder.CodeDOM;
+
 using static System.StringComparison;
 
 namespace Kiota.Builder.Refiners {

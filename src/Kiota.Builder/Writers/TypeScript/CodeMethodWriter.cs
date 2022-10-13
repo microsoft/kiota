@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventionService>
@@ -15,9 +16,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
-        if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+        ArgumentNullException.ThrowIfNull(codeElement);
         if(codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
-        if(writer == null) throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(writer);
         if(codeElement.Parent is CodeFunction) return;
         if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
@@ -155,7 +156,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private CodePropertyKind[] SetterAccessProperties {
         get {
             if (_SetterAccessProperties == null) {
-                _SetterAccessProperties = new CodePropertyKind[] {
+                _SetterAccessProperties = new[] {
                     CodePropertyKind.AdditionalData, //additional data and custom properties need to use the accessors in case of backing store use
                     CodePropertyKind.Custom
                 }.Except(DirectAccessProperties)
@@ -182,8 +183,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             writer.WriteLine($"this.{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
         }
         if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
-            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
+            if(currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+                currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam) {
                 localConventions.AddParametersAssignment(writer, 
                                                     pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
@@ -255,7 +256,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                                             ?.Name
                                             ?.ToFirstCharacterLowerCase();
         writer.WriteLine($"const requestInfo = this.{generatorMethodName}(");
-        var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration }
+        var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
                                         .Select(x => x?.Name).Where(x => x != null);
         if(requestInfoParameters.Any()) {
             writer.IncreaseIndent();
@@ -329,7 +330,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
         if(inherits)
             writer.WriteLine("super.serialize(writer);");
-        foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType)) {
+        foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly)) {
             var isCollectionOfEnum = otherProp.Type is CodeType cType && cType.IsCollection && cType.TypeDefinition is CodeEnum;
             var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
             var otherPropName = otherProp.Name.ToFirstCharacterLowerCase();
@@ -357,7 +358,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             writer.WriteLine(localConventions.DocCommentEnd);
         }
     }
-    private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
+    private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
         WriteMethodPrototypeInternal(code, writer, returnType, isVoid, localConventions, false);
     }
@@ -388,10 +389,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private string GetDeserializationMethodName(CodeTypeBase propType) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = localConventions.TranslateType(propType);
-        if(propType is CodeType currentType) {
+        if(propType is CodeType currentType)
+        {
             if(currentType.TypeDefinition is CodeEnum currentEnum)
                 return $"getEnumValue{(currentEnum.Flags || isCollection ? "s" : string.Empty)}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
-            else if(isCollection)
+            if(isCollection)
                 if(currentType.TypeDefinition == null)
                     return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>()";
                 else
@@ -408,10 +410,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private string GetSerializationMethodName(CodeTypeBase propType) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = localConventions.TranslateType(propType);
-        if(propType is CodeType currentType) {
+        if(propType is CodeType currentType)
+        {
             if(currentType.TypeDefinition is CodeEnum currentEnum)
                 return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}>";
-            else if(isCollection)
+            if(isCollection)
                 if(currentType.TypeDefinition == null)
                     return $"writeCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
                 else
@@ -423,18 +426,22 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             _ => $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}>",
         };
     }
-    private string GetTypeFactory(bool isVoid, bool isStream, string returnType) {
+    private string GetTypeFactory(bool isVoid, bool isStream, string returnType)
+    {
         if(isVoid) return string.Empty;
-        else if(isStream || conventions.IsPrimitiveType(returnType)) return $" \"{returnType}\",";
-        else return $" {GetFactoryMethodName(returnType)},";
+        if(isStream || conventions.IsPrimitiveType(returnType)) return $" \"{returnType}\",";
+        return $" {GetFactoryMethodName(returnType)},";
     }
-    private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType) {
+    private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
+    {
         if(isVoid) return "sendNoResponseContentAsync";
-        else if(isCollection) {
+        if(isCollection)
+        {
             if(conventions.IsPrimitiveType(returnType)) return $"sendCollectionOfPrimitiveAsync<{returnType}>";
-            else return $"sendCollectionAsync<{returnType}>";
+            return $"sendCollectionAsync<{returnType}>";
         }
-        else if(isStream || conventions.IsPrimitiveType(returnType)) return $"sendPrimitiveAsync<{returnType}>";
-        else return $"sendAsync<{returnType}>";
+
+        if(isStream || conventions.IsPrimitiveType(returnType)) return $"sendPrimitiveAsync<{returnType}>";
+        return $"sendAsync<{returnType}>";
     }
 }

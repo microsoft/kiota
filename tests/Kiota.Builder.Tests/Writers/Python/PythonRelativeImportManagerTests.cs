@@ -1,6 +1,9 @@
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers.Python;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Tests;
+namespace Kiota.Builder.Tests.Writers.Python;
 public class PythonRelativeImportManagerTests {
     private readonly CodeNamespace root;
     private readonly CodeNamespace graphNS;
@@ -47,7 +50,8 @@ public class PythonRelativeImportManagerTests {
             Name = "Message",
         };
         subNS.AddClass(messageClassDef);
-        var nUsing = new CodeUsing() {
+        var nUsing = new CodeUsing
+        {
             Name = messageClassDef.Name.Clone() as string,
             Declaration = new() {
                 Name = messageClassDef.Name.Clone() as string,

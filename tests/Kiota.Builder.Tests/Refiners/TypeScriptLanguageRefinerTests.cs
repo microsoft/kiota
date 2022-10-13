@@ -1,8 +1,13 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
+using Kiota.Builder.Refiners;
+
 using Xunit;
 
-namespace Kiota.Builder.Refiners.Tests;
+namespace Kiota.Builder.Tests.Refiners;
 public class TypeScriptLanguageRefinerTests {
     private readonly CodeNamespace root;
     private readonly CodeNamespace graphNS;
@@ -17,7 +22,7 @@ public class TypeScriptLanguageRefinerTests {
     }
 #region commonrefiner
     [Fact]
-    public void AddsQueryParameterMapperMethod() {
+    public async Task AddsQueryParameterMapperMethod() {
         var model = graphNS.AddClass(new CodeClass {
             Name = "somemodel",
             Kind = CodeClassKind.QueryParameters,
@@ -33,11 +38,11 @@ public class TypeScriptLanguageRefinerTests {
 
         Assert.Empty(model.Methods);
 
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, graphNS);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, graphNS);
         Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
     }
     [Fact]
-    public void AddStaticMethodsUsingsForDeserializer() {
+    public async Task AddStaticMethodsUsingsForDeserializer() {
         var model = graphNS.AddClass(new CodeClass {
             Name = "somemodel",
             Kind = CodeClassKind.Model,
@@ -84,7 +89,7 @@ public class TypeScriptLanguageRefinerTests {
         Assert.Empty(graphNS.GetChildElements(true).OfType<CodeFunction>());
         Assert.Single(model.GetChildElements(true).OfType<CodeMethod>());
 
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, graphNS);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, graphNS);
         Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().Where(x => x.IsOfKind(CodeMethodKind.Factory)));
         Assert.Single(subNs.GetChildElements(true).OfType<CodeFunction>());
 
@@ -93,13 +98,13 @@ public class TypeScriptLanguageRefinerTests {
 
     }
     [Fact]
-    public void AddsExceptionInheritanceOnErrorClasses() {
+    public async Task AddsExceptionInheritanceOnErrorClasses() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
         var declaration = model.StartBlock;
 
@@ -107,7 +112,7 @@ public class TypeScriptLanguageRefinerTests {
         Assert.Equal("ApiError", declaration.Inherits.Name);
     }
     [Fact]
-    public void FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
+    public async Task FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
             Kind = CodeClassKind.Model,
@@ -117,10 +122,10 @@ public class TypeScriptLanguageRefinerTests {
         declaration.Inherits = new CodeType {
             Name = "SomeOtherModel"
         };
-        Assert.Throws<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root));
     }
     [Fact]
-    public void AddsUsingsForErrorTypesForRequestExecutor() {
+    public async Task AddsUsingsForErrorTypesForRequestExecutor() {
         var requestBuilder = root.AddClass(new CodeClass {
             Name = "somerequestbuilder",
             Kind = CodeClassKind.RequestBuilder,
@@ -142,14 +147,14 @@ public class TypeScriptLanguageRefinerTests {
                         Name = "Error4XX",
                         TypeDefinition = errorClass,
                     });
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
         var declaration = requestBuilder.StartBlock;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
     [Fact]
-    public void AddsUsingsForDiscriminatorTypes() {
+    public async Task AddsUsingsForDiscriminatorTypes() {
         var parentModel = root.AddClass(new CodeClass {
             Name = "parentModel",
             Kind = CodeClassKind.Model,
@@ -171,12 +176,12 @@ public class TypeScriptLanguageRefinerTests {
             },
             IsStatic = true,
         }).First();
-        factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
         Assert.False(factoryMethod.Parent is CodeFunction);
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.Equal(childModel, (factoryMethod.Parent as CodeFunction).StartBlock.Usings.First(x => x.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
     }
 #endregion
@@ -190,23 +195,25 @@ public class TypeScriptLanguageRefinerTests {
     private const string AddiationalDataDefaultName = "new Dictionary<string, object>()";
     private const string HandlerDefaultName = "IResponseHandler";
     [Fact]
-    public void EscapesReservedKeywords() {
+    public async Task EscapesReservedKeywords() {
         var model = root.AddClass(new CodeClass {
             Name = "break",
             Kind = CodeClassKind.Model
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.NotEqual("break", model.Name);
         Assert.Contains("escaped", model.Name);
     }
     [Fact]
-    public void CorrectsCoreType() {
+    public async Task CorrectsCoreType() {
 
-        var model = root.AddClass(new CodeClass () {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        model.AddProperty(new CodeProperty() {
+        model.AddProperty(new CodeProperty
+        {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
             Type = new CodeType {
@@ -275,7 +282,7 @@ public class TypeScriptLanguageRefinerTests {
                 Name = PathParametersDefaultName
             },
         });
-        ILanguageRefiner.Refine(new GenerationConfiguration{ Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration{ Language = GenerationLanguage.TypeScript }, root);
         Assert.Empty(model.Properties.Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => FactoryDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => DateTimeOffsetDefaultName.Equals(x.Type.Name)));
@@ -288,7 +295,7 @@ public class TypeScriptLanguageRefinerTests {
         Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeComposedTypeBase));
     }
     [Fact]
-    public void ReplacesDateTimeOffsetByNativeType() {
+    public async Task ReplacesDateTimeOffsetByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -299,12 +306,12 @@ public class TypeScriptLanguageRefinerTests {
                 Name = "DateTimeOffset"
             },
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Date", method.ReturnType.Name);
     }
     [Fact]
-    public void ReplacesDateOnlyByNativeType() {
+    public async Task ReplacesDateOnlyByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -315,12 +322,12 @@ public class TypeScriptLanguageRefinerTests {
                 Name = "DateOnly"
             },
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("DateOnly", method.ReturnType.Name);
     }
     [Fact]
-    public void ReplacesTimeOnlyByNativeType() {
+    public async Task ReplacesTimeOnlyByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -331,12 +338,12 @@ public class TypeScriptLanguageRefinerTests {
                 Name = "TimeOnly"
             },
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("TimeOnly", method.ReturnType.Name);
     }
     [Fact]
-    public void ReplacesDurationByNativeType() {
+    public async Task ReplacesDurationByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -347,12 +354,12 @@ public class TypeScriptLanguageRefinerTests {
                 Name = "TimeSpan"
             },
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Duration", method.ReturnType.Name);
     }
     [Fact]
-    public void AliasesDuplicateUsingSymbols() {
+    public async Task AliasesDuplicateUsingSymbols() {
         var model = graphNS.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -386,13 +393,13 @@ public class TypeScriptLanguageRefinerTests {
         };
         model.AddUsing(using1);
         model.AddUsing(using2);
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.NotEmpty(using1.Alias);
         Assert.NotEmpty(using2.Alias);
         Assert.NotEqual(using1.Alias, using2.Alias);
     }
     [Fact]
-    public void DoesNotKeepCancellationParametersInRequestExecutors()
+    public async Task DoesNotKeepCancellationParametersInRequestExecutors()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -417,7 +424,7 @@ public class TypeScriptLanguageRefinerTests {
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root); //using CSharp so the cancelletionToken doesn't get removed
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root); //using CSharp so the cancelletionToken doesn't get removed
         Assert.False(method.Parameters.Any());
         Assert.DoesNotContain(cancellationParam, method.Parameters);
     }

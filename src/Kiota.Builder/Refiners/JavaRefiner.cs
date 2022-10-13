@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Java;
 
@@ -8,65 +12,77 @@ namespace Kiota.Builder.Refiners;
 public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public JavaRefiner(GenerationConfiguration configuration) : base(configuration) {}
-    public override void Refine(CodeNamespace generatedCode)
+    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        LowerCaseNamespaceNames(generatedCode);
-        AddInnerClasses(generatedCode, false, string.Empty);
-        InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
-        ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
-        RemoveCancellationParameter(generatedCode);
-        ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
-        AddRawUrlConstructorOverload(generatedCode);
-        CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
-        ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
-        AddGetterAndSetterMethods(generatedCode,
-            new() {
-                CodePropertyKind.Custom,
-                CodePropertyKind.AdditionalData,
-                CodePropertyKind.BackingStore,
-            },
-            _configuration.UsesBackingStore,
-            true,
-            "get",
-            "set"
-        );
-        ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
-        AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-        AddDefaultImports(generatedCode, defaultUsingEvaluators);
-        AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-        AddEnumSetImport(generatedCode);
-        SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
-        AddConstructorsForDefaultValues(generatedCode, true);
-        CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
-        var defaultConfiguration = new GenerationConfiguration();
-        ReplaceDefaultSerializationModules(
-            generatedCode,
-            defaultConfiguration.Serializers,
-            new (StringComparer.OrdinalIgnoreCase) {
-                "com.microsoft.kiota.serialization.JsonSerializationWriterFactory",
-                "com.microsoft.kiota.serialization.TextSerializationWriterFactory"}
-        );
-        ReplaceDefaultDeserializationModules(
-            generatedCode,
-            defaultConfiguration.Deserializers,
-            new (StringComparer.OrdinalIgnoreCase) {
-                "com.microsoft.kiota.serialization.JsonParseNodeFactory",
-                "com.microsoft.kiota.serialization.TextParseNodeFactory"}
-        );
-        AddSerializationModulesImport(generatedCode,
-                                    new [] { "com.microsoft.kiota.ApiClientBuilder",
-                                            "com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry" },
-                                    new [] { "com.microsoft.kiota.serialization.ParseNodeFactoryRegistry" });
-        AddParentClassToErrorClasses(
+        return Task.Run(() => {
+            cancellationToken.ThrowIfCancellationRequested();
+            LowerCaseNamespaceNames(generatedCode);
+            AddInnerClasses(generatedCode, false, string.Empty);
+            InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
+            cancellationToken.ThrowIfCancellationRequested();
+            RemoveCancellationParameter(generatedCode);
+            ConvertUnionTypesToWrapper(generatedCode, 
+                _configuration.UsesBackingStore
+            );
+            AddRawUrlConstructorOverload(generatedCode);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true, true);
+            AddGetterAndSetterMethods(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.BackingStore,
+                },
+                _configuration.UsesBackingStore,
+                true,
+                "get",
+                "set"
+            );
+            ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
+            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
+            cancellationToken.ThrowIfCancellationRequested();
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            AddParsableImplementsForModelClasses(generatedCode, "Parsable");
+            AddEnumSetImport(generatedCode);
+            cancellationToken.ThrowIfCancellationRequested();
+            SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
+            AddConstructorsForDefaultValues(generatedCode, true);
+            CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
+            var defaultConfiguration = new GenerationConfiguration();
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceDefaultSerializationModules(
                 generatedCode,
-                "ApiException",
-                "com.microsoft.kiota"
-        );
-        AddDiscriminatorMappingsUsingsToParentClasses(
-            generatedCode,
-            "ParseNode",
-            addUsings: false
-        );
+                defaultConfiguration.Serializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "com.microsoft.kiota.serialization.JsonSerializationWriterFactory",
+                    "com.microsoft.kiota.serialization.TextSerializationWriterFactory"}
+            );
+            ReplaceDefaultDeserializationModules(
+                generatedCode,
+                defaultConfiguration.Deserializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "com.microsoft.kiota.serialization.JsonParseNodeFactory",
+                    "com.microsoft.kiota.serialization.TextParseNodeFactory"}
+            );
+            AddSerializationModulesImport(generatedCode,
+                                        new [] { "com.microsoft.kiota.ApiClientBuilder",
+                                                "com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry" },
+                                        new [] { "com.microsoft.kiota.serialization.ParseNodeFactoryRegistry" });
+            cancellationToken.ThrowIfCancellationRequested();
+            AddParentClassToErrorClasses(
+                    generatedCode,
+                    "ApiException",
+                    "com.microsoft.kiota"
+            );
+            AddDiscriminatorMappingsUsingsToParentClasses(
+                generatedCode,
+                "ParseNode",
+                addUsings: true
+            );
+            RemoveHandlerFromRequestBuilder(generatedCode);
+        }, cancellationToken);
     }
     private static void SetSetterParametersToNullable(CodeElement currentElement, params Tuple<CodeMethodKind, CodePropertyKind>[] accessorPairs) {
         if(currentElement is CodeMethod method &&
@@ -88,54 +104,54 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, AddEnumSetImport);
     }
     private static readonly JavaConventionService conventionService = new();
-    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] {
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "com.microsoft.kiota", "RequestAdapter"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.PathParameters),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.PathParameters),
             "java.util", "HashMap"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             "com.microsoft.kiota", "RequestInformation", "RequestOption", "HttpMethod"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             "java.net", "URISyntaxException"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             "java.util", "Collection", "Map"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "com.microsoft.kiota", "ResponseHandler"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             "com.microsoft.kiota.serialization", "Parsable"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
             "com.microsoft.kiota.serialization", "AdditionalDataHolder"),
-        new (x => x is CodeMethod method && method.Parameters.Any(x => !x.Optional),
+        new (static x => x is CodeMethod method && method.Parameters.Any(x => !x.Optional),
                 "java.util", "Objects"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) &&
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) &&
                     method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) &&
                                         x.Type.Name.Equals(conventionService.StreamTypeName, StringComparison.OrdinalIgnoreCase)),
             "java.io", "InputStream"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             "com.microsoft.kiota.serialization", "SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "com.microsoft.kiota.serialization", "ParseNode"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "com.microsoft.kiota.serialization", "Parsable", "ParsableFactory"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "java.util.function", "Consumer"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "java.util", "HashMap", "Map"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
             "com.microsoft.kiota.store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             "com.microsoft.kiota.store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
             "java.util", "Collections"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             "java.util", "HashMap"),
-        new (x => x is CodeProperty prop && "decimal".Equals(prop.Type.Name, StringComparison.OrdinalIgnoreCase) ||
+        new (static x => x is CodeProperty prop && "decimal".Equals(prop.Type.Name, StringComparison.OrdinalIgnoreCase) ||
                 x is CodeMethod method && "decimal".Equals(method.ReturnType.Name, StringComparison.OrdinalIgnoreCase) ||
                 x is CodeParameter para && "decimal".Equals(para.Type.Name, StringComparison.OrdinalIgnoreCase),
             "java.math", "BigDecimal"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(prop.SerializationName),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(prop.SerializationName),
                 "com.microsoft.kiota", "QueryParameter"),
+        new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
+            "com.microsoft.kiota.serialization", "ParseNodeHelper"),
     };
     private static void CorrectPropertyType(CodeProperty currentProperty) {
         if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
@@ -145,7 +161,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
         else if (currentProperty.IsOfKind(CodePropertyKind.Options)) {
-            currentProperty.Type.Name = "Collection<RequestOption>";
+            currentProperty.Type.Name = "java.util.List<RequestOption>"; //fully qualified name to avoid conflict with generated types
             currentProperty.DefaultValue = "Collections.emptyList()";
         } else if (currentProperty.IsOfKind(CodePropertyKind.Headers)) {
             currentProperty.Type.Name = "HashMap<String, String>";
@@ -162,18 +178,14 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "HashMap<String, Object>";
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "new HashMap<>()";
-        } else
-            CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        } 
+        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
         block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
-        if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
-            if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
-        }
-        else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
+        if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer)).ToList().ForEach(x => {
                 x.Optional = false;
                 x.Type.IsNullable = true;
@@ -181,7 +193,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                     x.Type.Name = x.Type.Name[1..];
             });
         else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
-            currentMethod.ReturnType.Name = $"Map<String, Consumer<ParseNode>>";
+            currentMethod.ReturnType.Name = "Map<String, Consumer<ParseNode>>";
             currentMethod.Name = "getFieldDeserializers";
         }
         else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor)) {
@@ -195,10 +207,11 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
             if(urlTplParams != null)
                 urlTplParams.Type.Name = "HashMap<String, Object>";
-        }
+        } else if(currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
+            parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
         CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
-                                                .Union(new CodeTypeBase[] { currentMethod.ReturnType})
+                                                .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
     }
     private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
@@ -237,9 +250,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             if(codeMethods.Any()) {
                 var originalExecutorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
                 var executorMethodsToAdd = originalExecutorMethods
-                                    .Select(x => GetMethodClone(x, CodeParameterKind.ResponseHandler))
                                     .Union(originalExecutorMethods
-                                            .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration, CodeParameterKind.ResponseHandler)))
+                                            .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration)))
                                     .Where(x => x != null);
                 var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator));
                 var generatorMethodsToAdd = originalGeneratorMethods

@@ -9,10 +9,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added compatibility all the way down to android API level 26 for Java.
+- Added support for enum and collection of enum return types for Java.
+
 ### Changed
 
+- Removed response handler parameter from Java executor methods.
+- Changed the generated PHP deserializer code to use `fn` instead of `function`. [#1880](https://github.com/microsoft/kiota/pull/1880)
+- Fixes compile errors due to type ambiguity in generated models in dotnet. [#1881](https://github.com/microsoft/kiota/issues/1881)
+
+## [0.6.0] - 2022-10-06
+
+### Added
+
+- Added a search command to find APIs.
+- Added a download command to download API descriptions.
+- Added a show command to display the API paths as a tree.
+- Added an info command to show languages maturity and dependencies.
+- Added hints to help people use and discover the commands.
+- Added arguments to filter path items during generation (include-path/exclude-path).
+- Added the ability to cancel the refinement process.
+- Added Java 8 generation support.
+- Added tracing support for Go. [#618](https://github.com/microsoft/kiota/issues/618)
+
+### Changed
+
+- BREAKING: the generation command is now a sub command: `kiota generate ...` instead of `kiota ...`.
+- BREAKING: docker image renamed from `mcr.microsoft.com/kiota/generator` to `mcr.microsoft.com/openapi/kiota`.
+- Fixed a bug where OData primitive types would result in composed types.
+- Fixed a concurrency issue with imports management.
+- Fixed a bug where Java request options type could conflict with generated types.
+- Fixed a bug where CSharp serialization/deserialization names for properties would always be lowercased. [#1830](https://github.com/microsoft/kiota/issues/1830)
+- Fixed a regression where the incorrect schema would be selected in an AllOf collection to generate incorrect type inheritance.
+- Fixed a bug where discriminator information could contain non-derived types. [#1833](https://github.com/microsoft/kiota/issues/1833)
+- Fixes a bug where mapping value would be missing from factories. [#1833](https://github.com/microsoft/kiota/issues/1833)
+- Update go serializers and deserializers to use abstractions utils
+
+## [0.5.1] - 2022-09-09
+
+### Added
+
+- Exempts read only properties from being serialized and sent to the service. [#1828](https://github.com/microsoft/kiota/issues/1828)
+
+### Changed
+
+- Fixed a regression where parse node parameter type for factories would be incorrect in Go, Ruby, Swift, Java and TypeScript.
+
+## [0.5.0] - 2022-09-08
+
+### Added
+
+- Added support for range (2XX) responses. [#1699](https://github.com/microsoft/kiota/issues/1699)
+- Added none output formatter to CLI commons. (Shell)
+- Added 'Accept' field of http request header in Ruby.  [#1660](https://github.com/microsoft/kiota/issues/1660)
+- Added support for text serialization in Python. [#1406](https://github.com/microsoft/kiota/issues/1406)
+- Added support for composed types (union, intersection) in CSharp, Java and Go. [#1411](https://github.com/microsoft/kiota/issues/1411)
+- Added support for implicit discriminator mapping.
+- Added support for default values of enum properties in CSharp, Java and Go.
+
+### Changed
+
+- Fixed a bug where Go clients would panic in case of nil response value.
+- Fixed a bug to properly add request headers to Nethttp requests in Ruby. 
+- Fixed a bug to properly reject invalid URLs in Ruby.
+- Fixed an issue with require statements being generated instead of require relative in Ruby. 
+- Updated AdditionDataHolder with the correct namespace. (Ruby)
+- Removed/fixed passing in the current instance to fields deserializers in Ruby. [#1663](https://github.com/microsoft/kiota/issues/1663)
 - Fix issue with duplicate variable declaration in command handlers (Shell)
 - Update namespace qualification algorithm (helps in resolving when a type name appears in multiple namespaces) to use case insensitive string comparison (CSharp).
+- Fix an issue where namespace reserved name replacement would not include replacing import names in the declared areas in CSharp. [#1799](https://github.com/microsoft/kiota/issues/1799)
+- Removed Python abstractions, http, authentication and serialization packages
+- Fixed an issue with generating the incorrect serialized type name and require statement for get/post methods (Ruby).
+- Remove all overloads for GO request executors
+- Adds a context object in all GO requests
+- Remove all overloads for GO request executors and Adds a context object in all GO requests [GO#176](https://github.com/microsoftgraph/msgraph-sdk-go/issues/176)
+- Fixed a bug where the Hashing method for type names differentiation could lock the process.
+- Fixed a bug where CSharp declaration writer would add usings for inner classes.
+- Fixed a bug with inline schema class naming.
+- Fixed a bug where symbols starting with a number would be invalid.
+- Fixed a bug where classes could end up with duplicated methods.
+- Fixed a bug where Go writer would try to import multiple times the same symbol.
+- Fixed a bug where the core generator engine would fail to recognize meaningful schemas.
+- Fixed a bug where Go and Java inner class imports would be missing.
+- Fixed a bug where Go and Java collection bodies would not generate properly.
+- Aligns request options types in Java with other collections type.
+- Fixed a bug where Java would skip duplicated imports instead of deduplicating them.
+- Fixed a bug where Java would not convert date types for query parameters.
+- Fixed a bug where Java doc comments could contain invalid characters.
+- Fixed a bug where function parameters would be reodered incorrectly in dotnet[#1822](https://github.com/microsoft/kiota/issues/1822)
 
 ## [0.4.0] - 2022-08-18
 

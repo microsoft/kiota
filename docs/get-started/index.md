@@ -36,7 +36,7 @@ You can run Kiota in our Docker container with one of the following commands.
 ```shell
 docker run -v /some/output/path:/app/output \
 -v /some/input/description.yml:/app/openapi.yml \
-mcr.microsoft.com/kiota/generator --language csharp -n samespaceprefix
+mcr.microsoft.com/openapi/kiota generate --language csharp -n samespaceprefix
 ```
 
 > **Note:** you can alternatively use the `--openapi` parameter with a URI instead of volume mapping.
@@ -44,8 +44,8 @@ mcr.microsoft.com/kiota/generator --language csharp -n samespaceprefix
 To generate a SDK from an online OpenAPI description and into the current directory:
 
 ```shell
-docker run -v ${PWD}:/app/output mcr.microsoft.com/kiota/generator \
---language typescript -n gfx -d \
+docker run -v ${PWD}:/app/output mcr.microsoft.com/openapi/kiota \
+generate --language typescript -n gfx -d \
 https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml
 ```
 

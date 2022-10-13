@@ -1,5 +1,4 @@
-using System;
-using System.Linq;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Java;
@@ -35,7 +34,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
                     returnType = $"EnumSet<{returnType}>";
                 if(codeElement.Access != AccessModifier.Private)
                     writer.WriteLine(codeElement.Type.IsNullable ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{(codeElement.ReadOnly ? " final " : " ")}{returnType} {codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{defaultValue};");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {returnType} {codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{defaultValue};");
             break;
         }
 

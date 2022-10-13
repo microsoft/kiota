@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers
@@ -39,16 +41,13 @@ namespace Kiota.Builder.Writers
 
             if (typeDef == null)
                 return (importSymbol, codeUsing.Alias, "./"); // it's relative to the folder, with no declaration (default failsafe)
+            var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
+                typeDef.GetImmediateParentOfType<CodeNamespace>());
+            if (string.IsNullOrEmpty(importPath))
+                importPath += codeUsing.Name;
             else
-            {
-                var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
-                                                        typeDef.GetImmediateParentOfType<CodeNamespace>());
-                if (string.IsNullOrEmpty(importPath))
-                    importPath += codeUsing.Name;
-                else
-                    importPath += codeUsing.Declaration.Name.ToFirstCharacterLowerCase();
-                return (importSymbol, codeUsing.Alias, importPath);
-            }
+                importPath += codeUsing.Declaration.Name.ToFirstCharacterLowerCase();
+            return (importSymbol, codeUsing.Alias, importPath);
         }
         protected string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)
         {
@@ -67,8 +66,7 @@ namespace Kiota.Builder.Writers
         {
             if (remainingSegments.Any())
                 return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate((x, y) => $"{x}/{y}") + '/';
-            else
-                return string.Empty;
+            return string.Empty;
         }
     }
 }

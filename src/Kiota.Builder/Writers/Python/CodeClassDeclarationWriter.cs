@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Python;
@@ -11,7 +13,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
     }
     public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
     {
-        ArgumentNullException.ThrowIfNull(codeElement, nameof(codeElement));
+        ArgumentNullException.ThrowIfNull(codeElement);
         if(writer == null) throw new ArgumentNullException(nameof(writer));
         var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
         WriteExternalImports(codeElement, writer); // external imports before internal imports
@@ -21,7 +23,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
         var abcClass = !codeElement.Implements.Any() ? string.Empty : $"{codeElement.Implements.Select(x => x.Name.ToFirstCharacterUpperCase()).Aggregate((x,y) => x + ", " + y)}";
         var derivation = inheritSymbol == null ? abcClass : $"{inheritSymbol}";
         if(codeElement.Parent?.Parent is CodeClass){
-            writer.WriteLine($"@dataclass");
+            writer.WriteLine("@dataclass");
         }
         writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}({derivation}):");
         writer.IncreaseIndent();
