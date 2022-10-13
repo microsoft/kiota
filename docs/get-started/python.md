@@ -45,7 +45,7 @@ Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** a
 You can then use the Kiota command line tool to generate the SDK classes.
 
 ```shell
-kiota -l python -d ../getme.yml -c GetUserApiClient -n getuser/client -o ./client
+kiota generate -l python -d ../getme.yml -c GetUserApiClient -n getuser/client -o ./client
 ```
 
 ## Creating an application registration
