@@ -126,9 +126,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     }
     private static readonly int MaxDiscriminatorsPerMethod = 500;
     private static void WriteSplitFactoryMethodBodyForInheritedModel(CodeClass parentClass, LanguageWriter writer) {
-        foreach(var otherMethod in parentClass.Methods.Where(static x => x.IsOverload && x.IsOfKind(CodeMethodKind.Factory)).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)) {
-            var varName = $"{otherMethod.Name}_result";
-            writer.WriteLine($"final {parentClass.Name.ToFirstCharacterUpperCase()} {varName} = {otherMethod.Name.ToFirstCharacterLowerCase()}({DiscriminatorMappingVarName});");
+        foreach(var otherMethodName in parentClass.Methods.Where(static x => x.IsOverload && x.IsOfKind(CodeMethodKind.Factory))
+                                                        .Select(static x => x.Name)
+                                                        .OrderBy(static x => x, StringComparer.OrdinalIgnoreCase)) {
+            var varName = $"{otherMethodName}_result";
+            writer.WriteLine($"final {parentClass.Name.ToFirstCharacterUpperCase()} {varName} = {otherMethodName.ToFirstCharacterLowerCase()}({DiscriminatorMappingVarName});");
             writer.StartBlock($"if ({varName} != null) {{");
             writer.WriteLine($"return {varName};");
             writer.CloseBlock();
