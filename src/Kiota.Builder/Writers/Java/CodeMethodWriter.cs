@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Text.RegularExpressions;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -72,8 +72,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 break;
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
-            case CodeMethodKind.Factory:
+            case CodeMethodKind.Factory when !codeElement.IsOverload:
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
+                break;
+            case CodeMethodKind.Factory when codeElement.IsOverload:
+                WriteFactoryOverloadMethod(codeElement, parentClass, writer);
                 break;
             default:
                 writer.WriteLine("return null;");
@@ -93,7 +96,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             writer.WriteLine($"final String {DiscriminatorMappingVarName} = mappingValueNode.getStringValue();");
         }
         if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
-            WriteFactoryMethodBodyForInheritedModel(parentClass, writer);
+            if(parentClass.DiscriminatorInformation.DiscriminatorMappings.Count() > MaxDiscriminatorsPerMethod)
+                WriteSplitFactoryMethodBodyForInheritedModel(parentClass, writer);
+            else
+                WriteFactoryMethodBodyForInheritedModel(parentClass.DiscriminatorInformation.DiscriminatorMappings, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType && parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation)
             WriteFactoryMethodBodyForUnionModelForDiscriminatedTypes(codeElement, parentClass, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
@@ -108,9 +114,31 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         } else
             writer.WriteLine($"return new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
     }
-    private static void WriteFactoryMethodBodyForInheritedModel(CodeClass parentClass, LanguageWriter writer) {
-        writer.StartBlock($"switch ({DiscriminatorMappingVarName}) {{");
-        foreach(var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings) {
+    private static readonly Regex factoryMethodIndexParser = new(@"_(?<idx>\d+)");
+    private static void WriteFactoryOverloadMethod(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
+        if(int.TryParse(factoryMethodIndexParser.Match(codeElement.Name).Groups["idx"].Value, out var currentDiscriminatorPageIndex) &&
+            codeElement.Parameters.FirstOrDefault() is CodeParameter parameter) {
+            var takeValue = Math.Min(MaxDiscriminatorsPerMethod, parentClass.DiscriminatorInformation.DiscriminatorMappings.Count() - currentDiscriminatorPageIndex * MaxDiscriminatorsPerMethod);
+            var currentDiscriminatorPage = parentClass.DiscriminatorInformation.DiscriminatorMappings.Skip(currentDiscriminatorPageIndex * MaxDiscriminatorsPerMethod).Take(takeValue).OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase);
+            WriteFactoryMethodBodyForInheritedModel(currentDiscriminatorPage, writer, parameter.Name.ToFirstCharacterLowerCase());
+        }
+        writer.WriteLine("return null;");
+    }
+    private static readonly int MaxDiscriminatorsPerMethod = 500;
+    private static void WriteSplitFactoryMethodBodyForInheritedModel(CodeClass parentClass, LanguageWriter writer) {
+        foreach(var otherMethod in parentClass.Methods.Where(static x => x.IsOverload && x.IsOfKind(CodeMethodKind.Factory)).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)) {
+            var varName = $"{otherMethod.Name}_result";
+            writer.WriteLine($"final {parentClass.Name.ToFirstCharacterUpperCase()} {varName} = {otherMethod.Name.ToFirstCharacterLowerCase()}({DiscriminatorMappingVarName});");
+            writer.StartBlock($"if ({varName} != null) {{");
+            writer.WriteLine($"return {varName};");
+            writer.CloseBlock();
+        }
+    }
+    private static void WriteFactoryMethodBodyForInheritedModel(IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> discriminatorMappings, LanguageWriter writer, string varName = null) {
+        if (string.IsNullOrEmpty(varName))
+            varName = DiscriminatorMappingVarName;
+        writer.StartBlock($"switch ({varName}) {{");
+        foreach(var mappedType in discriminatorMappings) {
             writer.WriteLine($"case \"{mappedType.Key}\": return new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}();");
         }
         writer.CloseBlock();
