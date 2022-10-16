@@ -797,9 +797,9 @@ namespace Kiota.Builder.Writers.Go {
             }
             return propertyTypeNameWithoutImportSymbol switch {
                 _ when conventions.IsPrimitiveType(propertyTypeNameWithoutImportSymbol) => 
-                    ($"Get{propertyTypeNameWithoutImportSymbol.ToFirstCharacterUpperCase()}Value", String.Empty),
+                    ($"Get{propertyTypeNameWithoutImportSymbol.ToFirstCharacterUpperCase()}Value", string.Empty),
                 _ when conventions.StreamTypeName.Equals(propertyTypeNameWithoutImportSymbol, StringComparison.OrdinalIgnoreCase) =>
-                    ("GetByteArrayValue", String.Empty),
+                    ("GetByteArrayValue", string.Empty),
                 _ => ("GetObjectValue", GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)),
             };
         }

@@ -504,7 +504,7 @@ namespace Kiota.Builder.Writers.Shell
                     bool indentParam = true;
                     if (isStringParam)
                     {
-                        writer.Write($"if (!String.IsNullOrEmpty({paramName})) ");
+                        writer.Write($"if (!string.IsNullOrEmpty({paramName})) ");
                         indentParam = false;
                     }
 

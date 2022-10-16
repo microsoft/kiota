@@ -200,7 +200,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// This is currently used for CommandBuilder methods to get the original name without the Build prefix & Command suffix.
     /// Avoids regex operations
     /// </summary>
-    public string SimpleName { get; set; } = String.Empty;
+    public string SimpleName { get; set; } = string.Empty;
 
     private ConcurrentDictionary<string, CodeTypeBase> errorMappings = new();
     

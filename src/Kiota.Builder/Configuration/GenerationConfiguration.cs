@@ -13,39 +13,39 @@ public class GenerationConfiguration {
     public string ApiRootUrl { get; set; }
     public bool UsesBackingStore { get; set; }
     public bool IncludeAdditionalData { get; set; } = true;
-    public HashSet<string> Serializers { get; set; } = new(StringComparer.OrdinalIgnoreCase){
+    public HashSet<string> Serializers { get; set; } = new(2, StringComparer.OrdinalIgnoreCase){
         "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
         "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory"
     };
-    public HashSet<string> Deserializers { get; set; } = new(StringComparer.OrdinalIgnoreCase) {
+    public HashSet<string> Deserializers { get; set; } = new(2, StringComparer.OrdinalIgnoreCase) {
         "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
         "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory"
     };
     public bool ShouldWriteNamespaceIndices { get { return BarreledLanguages.Contains(Language); } }
     public bool ShouldWriteBarrelsIfClassExists { get { return BarreledLanguagesWithConstantFileName.Contains(Language); } }
     public bool ShouldRenderMethodsOutsideOfClasses { get { return MethodOutsideOfClassesLanguages.Contains(Language); } }
-    private static readonly HashSet<GenerationLanguage> MethodOutsideOfClassesLanguages = new () {
+    private static readonly HashSet<GenerationLanguage> MethodOutsideOfClassesLanguages = new (1) {
         GenerationLanguage.Go,
     };
-    private static readonly HashSet<GenerationLanguage> BarreledLanguages = new () {
+    private static readonly HashSet<GenerationLanguage> BarreledLanguages = new (3) {
         GenerationLanguage.Ruby,
         GenerationLanguage.TypeScript,
         GenerationLanguage.Swift,
     };
-    private static readonly HashSet<GenerationLanguage> BarreledLanguagesWithConstantFileName = new () {
+    private static readonly HashSet<GenerationLanguage> BarreledLanguagesWithConstantFileName = new (1) {
         GenerationLanguage.TypeScript
     };
     public bool CleanOutput { get; set;}
-    public HashSet<string> StructuredMimeTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase) {
+    public HashSet<string> StructuredMimeTypes { get; set; } = new(5, StringComparer.OrdinalIgnoreCase) {
         "application/json",
         "application/xml",
         "text/plain",
         "text/xml",
         "text/yaml",
     };
-    public HashSet<string> IncludePatterns { get; set; } = new(StringComparer.OrdinalIgnoreCase) {
+    public HashSet<string> IncludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase) {
     };
-    public HashSet<string> ExcludePatterns { get; set; } = new(StringComparer.OrdinalIgnoreCase) {
+    public HashSet<string> ExcludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase) {
     };
     public bool ClearCache { get; set; }
 }

@@ -24,7 +24,7 @@ public class OpenApiSpecSearchProvider : ISearchProvider
     }
     private const string ApiTitle = "Swagger Petstore";
     private const string ApiDescription = "Canonical API description used in many examples throughout the OpenAPI ecosystem.";
-    private readonly HashSet<string> Keywords = new (StringComparer.OrdinalIgnoreCase) {
+    private readonly HashSet<string> Keywords = new (10, StringComparer.OrdinalIgnoreCase) {
         "pet",
         "store",
         "petstore",

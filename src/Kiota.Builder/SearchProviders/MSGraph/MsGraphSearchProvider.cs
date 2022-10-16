@@ -30,7 +30,7 @@ public class MSGraphSearchProvider : ISearchProvider
     private readonly HashSet<string> AcceptedVersions = new(StringComparer.OrdinalIgnoreCase) { "v1.0", "beta" };
     private const string ApiTitle = "Microsoft Graph";
     private const string ApiDescription = "Microsoft Graph is a unified API endpoint that enables developers to integrate with the data and intelligence in Microsoft 365, Windows 10, and Enterprise Mobility + Security.";
-    private readonly HashSet<string> Keywords = new (StringComparer.OrdinalIgnoreCase) {
+    private readonly HashSet<string> Keywords = new (20, StringComparer.OrdinalIgnoreCase) {
         "microsoft",
         "graph",
         "msgraph",
@@ -50,6 +50,6 @@ public class MSGraphSearchProvider : ISearchProvider
         "excel",
         "word",
         "powerpoint",
-        "onenote",
+        "onenote"
     };
 }
