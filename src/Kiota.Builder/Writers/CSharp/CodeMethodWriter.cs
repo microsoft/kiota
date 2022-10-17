@@ -370,7 +370,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             (_, true) => "var collectionResult = ",
             (_, _ ) => "return ",
         };
-        writer.WriteLine($"{prefix}await RequestAdapter.{GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, responseHandler, {errorMappingVarName}, cancellationToken);");
+        writer.WriteLine($"{prefix}await RequestAdapter.{GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, {errorMappingVarName}, cancellationToken);");
         if (codeElement.ReturnType.IsCollection)
             writer.WriteLine("return collectionResult.ToList();");
     }
