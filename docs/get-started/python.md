@@ -12,7 +12,7 @@ parent: Get started
 
 ## Target project requirements
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota-abstractions-python), [authentication](https://github.com/microsoft/kiota-authentication-azure-python), [http](https://github.com/microsoft/kiota-http-python), [serialization JSON](https://github.com/microsoft/kiota-serialization-json-python), and [serialization Text](https://github.com/microsoft/kiota-serialization-text-python) packages.
+Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstractions](https://github.com/microsoft/kiota-abstractions-python), [authentication](https://github.com/microsoft/kiota-authentication-azure-python), [http](https://github.com/microsoft/kiota-http-python), [serialization JSON](https://github.com/microsoft/kiota-serialization-json-python), and [serialization Text](https://github.com/microsoft/kiota-serialization-text-python) packages.
 
 ## Creating target projects
 
@@ -36,7 +36,7 @@ pip install microsoft-kiota-http
 > **Note:** It is recommended to use a package manager/virtual environment to avoid installing packages
 system wide. Read more [here](https://packaging.python.org/en/latest/).
 
-Only the first package, `microsoft-kiota-abstractions`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
+Only `microsoft-kiota-abstractions` is required to build the generated result. The other packages provide default implementations needed at runtime that you can choose to replace with your own implementations if you wish.
 
 ## Generating the SDK
 
