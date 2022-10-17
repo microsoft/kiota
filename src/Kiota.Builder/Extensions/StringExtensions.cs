@@ -10,9 +10,9 @@ using System.Threading;
 namespace Kiota.Builder.Extensions {
     public static class StringExtensions {
         public static string ToFirstCharacterLowerCase(this string input)
-            => string.IsNullOrEmpty(input) ? input : $"{char.ToLowerInvariant(input.FirstOrDefault())}{input[1..]}";
+            => string.IsNullOrEmpty(input) ? input : char.ToLowerInvariant(input[0]) + input[1..];
         public static string ToFirstCharacterUpperCase(this string input)
-            => string.IsNullOrEmpty(input) ? input : Char.ToUpperInvariant(input.FirstOrDefault()) + input[1..];
+            => string.IsNullOrEmpty(input) ? input : char.ToUpperInvariant(input[0]) + input[1..];
 
         /// <summary>
         /// Converts a string delimited by a symbol to camel case
@@ -30,40 +30,63 @@ namespace Kiota.Builder.Extensions {
         }
 
         public static string ToPascalCase(this string name)
-            => string.IsNullOrEmpty(name) ? name : String.Join(null, name.Split("-", StringSplitOptions.RemoveEmptyEntries)
+            => string.IsNullOrEmpty(name) ? name : string.Join(null, name.Split("-", StringSplitOptions.RemoveEmptyEntries)
                                                                             .Select(s => ToFirstCharacterUpperCase(s)));
         public static string ReplaceValueIdentifier(this string original) =>
             original?.Replace("$value", "Content");
         public static string TrimQuotes(this string original) =>
             original?.Trim('\'', '"');
-        
+
         public static string ToSnakeCase(this string name, char separator = '_')
         {
-            if(string.IsNullOrEmpty(name)) return name;
-            var chunks = name.Split('-', StringSplitOptions.RemoveEmptyEntries);
-            var identifier = chunks[0] + string.Join(string.Empty, chunks.Skip(1)
-                                                                .Select(s => ToFirstCharacterUpperCase(s)));
-            if(identifier.Length < 2) {
-                return identifier;
-            }
-            var sb = new StringBuilder();
-            sb.Append(char.ToLowerInvariant(identifier[0]));
-            foreach (var item in identifier[1..])
+            if (string.IsNullOrEmpty(name)) return name;
+
+            var nameSpan = name.AsSpan();
+            var indexOfLess = nameSpan.IndexOf('<');
+            if (indexOfLess >= 0)
             {
-                if(char.IsUpper(item)) {
-                    sb.Append(separator);
-                    sb.Append(char.ToLowerInvariant(item));
-                } else {
-                    sb.Append(item);
+                nameSpan = nameSpan[..indexOfLess];
+            }
+
+            static int CountNecessaryNewSeparators(ReadOnlySpan<char> span)
+            {
+                int count = 0;
+                for (var i = 1; i < span.Length; i++)
+                {
+                    if (char.IsUpper(span[i]) && span[i - 1] is not '_' and not '-')
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+
+            Span<char> span = stackalloc char[nameSpan.Length + CountNecessaryNewSeparators(nameSpan)];
+            var current = nameSpan[0];
+            span[0] = char.ToLowerInvariant(current);
+            var counter = 1;
+            for (int i = 1; i < nameSpan.Length; i++)
+            {
+                current = nameSpan[i];
+                if (current == '-')
+                {
+                    if (!char.IsUpper(nameSpan[i + 1])) span[counter++] = separator;
+                }
+                else if (char.IsUpper(current))
+                {
+                    if (nameSpan[i - 1] != '_') span[counter++] = separator;
+                    span[counter++] = char.ToLowerInvariant(current);
+                }
+                else
+                {
+                    span[counter++] = current;
                 }
             }
-            var output = sb.ToString();
-            int index = output.IndexOf("<");
-            if (index >= 0)
-                output = output.Substring(0, index);
-            
-            return output;
+
+            return new string(span);
         }
+
         public static string NormalizeNameSpaceName(this string original, string delimiter) => 
             string.IsNullOrEmpty(original) ? 
                 original :
