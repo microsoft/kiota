@@ -458,5 +458,38 @@ public class JavaLanguageRefinerTests {
         Assert.Equal(4, childMethods.Count());
         Assert.Equal(2, childMethods.Count(x => x.IsOverload));
     }
+    [Fact]
+    public async Task SplitsLongRefiners() {
+        var model = new CodeClass {
+            Kind = CodeClassKind.Model,
+            Name = "model",
+        };
+        model.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+
+        var otherModel = new CodeClass {
+            Kind = CodeClassKind.Model,
+            Name = "otherModel"
+        };
+        root.AddClass(otherModel);
+
+        Enumerable.Range(0, 1500).ToList().ForEach(x => model.DiscriminatorInformation.AddDiscriminatorMapping($"#microsoft.graph.{x}", new CodeType {
+            Name = $"microsoft.graph.{x}",
+            TypeDefinition = otherModel,
+        }));
+        model.AddMethod(new CodeMethod {
+            Kind = CodeMethodKind.Factory,
+            Name = "factory",
+            ReturnType = new CodeType {
+                Name = "model",
+                TypeDefinition = model,
+            },
+            IsAsync = false,
+            IsStatic = true,
+        });
+        root.AddClass(model);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        Assert.Equal(4, model.Methods.Count());
+        Assert.Equal("String", model.Methods.First(static x => x.IsOverload).Parameters.First().Type.Name);
+    }
     #endregion
 }

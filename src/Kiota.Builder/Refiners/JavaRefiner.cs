@@ -82,7 +82,39 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 addUsings: true
             );
             RemoveHandlerFromRequestBuilder(generatedCode);
+            SplitLongDiscriminatorMethods(generatedCode);
         }, cancellationToken);
+    }
+    private static readonly int maxDiscriminatorLength = 500;
+    private static void SplitLongDiscriminatorMethods(CodeElement currentElement) {
+        if (currentElement is CodeMethod currentMethod &&
+            !currentMethod.IsOverload &&
+            currentMethod.IsOfKind(CodeMethodKind.Factory) &&
+            currentMethod.Parent is CodeClass parentClass &&
+            parentClass.IsOfKind(CodeClassKind.Model) &&
+            parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation &&
+            parentClass.DiscriminatorInformation.DiscriminatorMappings.Count() > maxDiscriminatorLength) {
+                var discriminatorsCount = parentClass.DiscriminatorInformation.DiscriminatorMappings.Count();
+                for(var currentDiscriminatorPageIndex = 0; currentDiscriminatorPageIndex * maxDiscriminatorLength < discriminatorsCount; currentDiscriminatorPageIndex++) {
+                    var newMethod = currentMethod.Clone() as CodeMethod;
+                    newMethod.Name = $"{currentMethod.Name}_{currentDiscriminatorPageIndex}";
+                    newMethod.OriginalMethod = currentMethod;
+                    newMethod.Access = AccessModifier.Private;
+                    newMethod.RemoveParametersByKind(CodeParameterKind.ParseNode);
+                    newMethod.AddParameter(new CodeParameter {
+                        Type = new CodeType {
+                            Name = "String",
+                            IsNullable = true,
+                            IsExternal = true
+                        },
+                        Optional = false,
+                        Description = "Discriminator value from the payload",
+                        Name = "discriminatorValue"
+                    });
+                    parentClass.AddMethod(newMethod);
+                }
+            }
+        CrawlTree(currentElement, SplitLongDiscriminatorMethods);
     }
     private static void SetSetterParametersToNullable(CodeElement currentElement, params Tuple<CodeMethodKind, CodePropertyKind>[] accessorPairs) {
         if(currentElement is CodeMethod method &&
