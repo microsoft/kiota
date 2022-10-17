@@ -24,15 +24,6 @@ namespace Kiota.Builder.Tests;
 public class KiotaBuilderTests
 {
     [Fact]
-    public async Task ThrowsOnMissingServer() {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await File.WriteAllLinesAsync(tempFilePath, new[] {"openapi: 3.0.0", "info:", "  title: \"Todo API\"", "  version: \"1.0.0\""});
-        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
-        await Assert.ThrowsAsync<InvalidOperationException>(() => builder.GenerateClientAsync(new()));
-        File.Delete(tempFilePath);
-    }
-    [Fact]
     public async Task ParsesEnumDescriptions() {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1

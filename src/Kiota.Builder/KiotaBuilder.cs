@@ -154,7 +154,7 @@ public class KiotaBuilder
     private void SetApiRootUrl() {
         config.ApiRootUrl = openApiDocument.Servers.FirstOrDefault()?.Url.TrimEnd('/');
         if(string.IsNullOrEmpty(config.ApiRootUrl))
-            throw new InvalidOperationException("A servers entry (v3) or host + basePath + schemes properties (v2) must be present in the OpenAPI description.");
+            logger.LogWarning("A servers entry (v3) or host + basePath + schemes properties (v2) was not present in the OpenAPI description. The root URL will need to be set manually with the request adapter.");
     }
     private void StopLogAndReset(Stopwatch sw, string prefix) {
         sw.Stop();
