@@ -76,6 +76,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
 
             try {
                 await new KiotaBuilder(logger, Configuration.Generation).GenerateClientAsync(cancellationToken);
+                Console.WriteLine("Generation completed successfully");
                 DisplayInfoHint(language, Configuration.Generation.OpenAPIFilePath);
                 DisplayGenerateAdvancedHint(includePatterns, excludePatterns, Configuration.Generation.OpenAPIFilePath);
                 return 0;
