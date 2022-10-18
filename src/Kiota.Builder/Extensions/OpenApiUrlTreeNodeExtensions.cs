@@ -84,10 +84,10 @@ namespace Kiota.Builder.Extensions {
                                             .ToFirstCharacterUpperCase();
             }
 
-            var classNameSegments = rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries).AsEnumerable();
+            var classNameSegments = rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries).AsEnumerable() ?? Enumerable.Empty<string>();
             // only apply the exceptions if we had multiple segments.
             // Otherwise a single segment class name like `Json` will be returned as an empty string.
-            if (classNameSegments != null && classNameSegments.Count() > 1)
+            if (classNameSegments.Count() > 1)
                 classNameSegments =  classNameSegments.Except(SegmentsToSkipForClassNames, StringComparer.OrdinalIgnoreCase);
 
             return (prefix + classNameSegments.LastOrDefault() +suffix).CleanupSymbolName();
