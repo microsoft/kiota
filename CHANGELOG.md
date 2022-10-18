@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Missing host/server is now considered a warning instead of a critical error. [#1896](https://github.com/microsoft/kiota/issues/1896)
 - Fixed a bug where info and show commands would crash in case of invalid description URL. [#1894](https://github.com/microsoft/kiota/issues/1894)
 - Show command now reads descriptions directly from APIs.guru instead of their origin. [#1897](https://github.com/microsoft/kiota/issues/1897)
+- Fixed a classnames having the same name as extensions would cause generation to fail. [#1892](https://github.com/microsoft/kiota/issues/1892)
 
 ## [0.6.0] - 2022-10-06
 
