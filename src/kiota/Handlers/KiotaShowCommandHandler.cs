@@ -53,17 +53,28 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             Configuration.Generation.IncludePatterns = includePatterns.ToHashSet();
             Configuration.Generation.ExcludePatterns = excludePatterns.ToHashSet();
             Configuration.Generation.ClearCache = clearCache;
-            var urlTreeNode = await new KiotaBuilder(logger, Configuration.Generation).GetUrlTreeNodeAsync(cancellationToken);
+            try {
+                var urlTreeNode = await new KiotaBuilder(logger, Configuration.Generation).GetUrlTreeNodeAsync(cancellationToken);
 
-            var builder = new StringBuilder();
-            RenderNode(urlTreeNode, maxDepth, builder);
-            var tree = builder.ToString();
-            Console.Write(tree);
-            if(descriptionProvided)
-                DisplayShowAdvancedHint(string.Empty, string.Empty, includePatterns, excludePatterns, openapi);
-            else
-                DisplayShowAdvancedHint(searchTerm, version, includePatterns, excludePatterns, openapi);
-            DisplayGenerateHint(openapi, includePatterns, excludePatterns);
+                var builder = new StringBuilder();
+                RenderNode(urlTreeNode, maxDepth, builder);
+                var tree = builder.ToString();
+                Console.Write(tree);
+                if(descriptionProvided)
+                    DisplayShowAdvancedHint(string.Empty, string.Empty, includePatterns, excludePatterns, openapi);
+                else
+                    DisplayShowAdvancedHint(searchTerm, version, includePatterns, excludePatterns, openapi);
+                DisplayGenerateHint(openapi, includePatterns, excludePatterns);
+            } catch (Exception ex) {
+#if DEBUG
+                logger.LogCritical(ex, "error showing the description: {exceptionMessage}", ex.Message);
+                throw; // so debug tools go straight to the source of the exception when attached
+#else
+                logger.LogCritical("error showing the description: {exceptionMessage}", ex.Message);
+                return 1;
+#endif
+            }
+
         }
         return 0;
     }

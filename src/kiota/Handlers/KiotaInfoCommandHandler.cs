@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers;
 internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler {
@@ -51,12 +52,21 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler {
             Configuration.Generation.Language = language.Value;
 
             var instructions = Configuration.Languages;
-            if(!string.IsNullOrEmpty(openapi)) {
-                var builder = new KiotaBuilder(logger, Configuration.Generation);
-                var result = await builder.GetLanguageInformationAsync(cancellationToken);
-                if (result != null)
-                    instructions = result;
-            }
+            if(!string.IsNullOrEmpty(openapi))
+                try {
+                    var builder = new KiotaBuilder(logger, Configuration.Generation);
+                    var result = await builder.GetLanguageInformationAsync(cancellationToken);
+                    if (result != null)
+                        instructions = result;
+                } catch (Exception ex) {
+#if DEBUG
+                    logger.LogCritical(ex, "error getting information from the description: {exceptionMessage}", ex.Message);
+                    throw; // so debug tools go straight to the source of the exception when attached
+#else
+                    logger.LogCritical("error getting information from the description: {exceptionMessage}", ex.Message);
+                    return 1;
+#endif
+                }
             ShowLanguageInformation(language.Value, instructions);
             return 0;
         }

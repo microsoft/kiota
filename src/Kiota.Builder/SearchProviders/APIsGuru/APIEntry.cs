@@ -12,9 +12,6 @@ public record ApiInformation {
     public ApiContact contact { get; set;}
     public string description { get; set;}
     public string title { get; set;}
-    public string version { get; set;}
-    [JsonPropertyName("x-origin")]
-    public List<ApiOrigin> origin { get; set;}
 }
 
 public record ApiContact(string email, string name, Uri url);
