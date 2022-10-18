@@ -62,15 +62,15 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
     private async Task<int> SaveResultsAsync(IDictionary<string, SearchResult> results, ILogger logger, CancellationToken cancellationToken){
         var searchTerm = Configuration.Download.SearchTerm;
         if (!results.Any())
-            Console.WriteLine("No matching result found, use the search command to find the right key");
+            DisplayError("No matching result found, use the search command to find the right key");
         else if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm)) {
             var (path, statusCode) = await SaveResultAsync(results.First(), logger, cancellationToken);
-            Console.WriteLine($"File successfully downloaded to {path}");
+            DisplaySuccess($"File successfully downloaded to {path}");
             DisplayShowHint(Configuration.Search.SearchTerm, Configuration.Search.Version, path);
             DisplayGenerateHint(path, Enumerable.Empty<string>(), Enumerable.Empty<string>());
             return statusCode;
         }  else 
-            Console.WriteLine("Multiple matches found, use the key to select a specific description.");
+            DisplayError("Multiple matches found, use the key to select a specific description. You can find the key by using the search command.");
 
         return 0;
     }

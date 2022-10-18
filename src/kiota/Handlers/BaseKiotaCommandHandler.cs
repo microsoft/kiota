@@ -67,78 +67,88 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         return true;
     });
     protected bool TutorialMode => tutorialMode.Value;
+    private static void DisplayHint(params string[] messages) {
+        Console.WriteLine();
+        DisplayMessages(ConsoleColor.Blue, messages);
+    }
+    private static void DisplayMessages(ConsoleColor color, params string[] messages) {
+        Console.ForegroundColor = color;
+        foreach(var message in messages)
+            Console.WriteLine(message);
+        Console.ResetColor();
+    }
+    protected static void DisplayError(params string[] messages) {
+        DisplayMessages(ConsoleColor.Red, messages);
+    }
+    protected static void DisplayWarning(params string[] messages) {
+        DisplayMessages(ConsoleColor.Yellow, messages);
+    }
+    protected static void DisplaySuccess(params string[] messages) {
+        DisplayMessages(ConsoleColor.Green, messages);
+    }
+    protected static void DisplayInfo(params string[] messages) {
+        DisplayMessages(ConsoleColor.White, messages);
+    }
     protected void DisplayDownloadHint(string searchTerm, string version) {
         if(TutorialMode) {
-            Console.WriteLine();
-            Console.WriteLine("Hint: use kiota download to download the OpenAPI description.");
-            if(string.IsNullOrEmpty(version))
-                Console.WriteLine($"Example: kiota download {searchTerm} -o <output path>");
-            else
-                Console.WriteLine($"Example: kiota download {searchTerm} -v {version} -o <output path>");
+            var example = string.IsNullOrEmpty(version) ?
+                $"Example: kiota download {searchTerm} -o <output path>" :
+                $"Example: kiota download {searchTerm} -v {version} -o <output path>";
+            DisplayHint("Hint: use kiota download to download the OpenAPI description.", example);
         }
     }
     protected void DisplayShowHint(string searchTerm, string version, string path = null) {
         if(TutorialMode) {
-            Console.WriteLine();
-            Console.WriteLine("Hint: use kiota show to display a tree of paths present in the OpenAPI description.");
-            if(!string.IsNullOrEmpty(path))
-                Console.WriteLine($"Example: kiota show -d {path}");
-            else if(string.IsNullOrEmpty(version))
-                Console.WriteLine($"Example: kiota show -k {searchTerm}");
-            else
-                Console.WriteLine($"Example: kiota show -k {searchTerm} -v {version}");
+            var example = path switch {
+                _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path}",
+                _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm}",
+                _ => $"Example: kiota show -k {searchTerm} -v {version}",
+            };
+            DisplayHint("Hint: use kiota show to display a tree of paths present in the OpenAPI description.", example);
         }
     }
     protected void DisplayShowAdvancedHint(string searchTerm, string version, IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path = null) {
         if(TutorialMode && !includePaths.Any() && !excludePaths.Any()) {
-            Console.WriteLine();
-            Console.WriteLine("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths displayed.");
-            if(!string.IsNullOrEmpty(path))
-                Console.WriteLine($"Example: kiota show -d {path} --include-path **/foo");
-            else if(string.IsNullOrEmpty(version))
-                Console.WriteLine($"Example: kiota show -k {searchTerm} --include-path **/foo");
-            else
-                Console.WriteLine($"Example: kiota show -k {searchTerm} -v {version} --include-path **/foo");
+            var example = path switch {
+                _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path} --include-path **/foo",
+                _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm} --include-path **/foo",
+                _ => $"Example: kiota show -k {searchTerm} -v {version} --include-path **/foo",
+            };
+            DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths displayed.", example);
         }
     }
     protected void DisplaySearchHint(string firstKey, string version) {
         if (TutorialMode &&!string.IsNullOrEmpty(firstKey)) {
-            Console.WriteLine();
-            Console.WriteLine("Hint: multiple matches found, use the key as the search term to display the details of a specific description.");
-            if(string.IsNullOrEmpty(version))
-                Console.WriteLine($"Example: kiota search {firstKey}");
-            else
-                Console.WriteLine($"Example: kiota search {firstKey} -v {version}");
+            var example = string.IsNullOrEmpty(version) ?
+                $"Example: kiota search {firstKey}" :
+                $"Example: kiota search {firstKey} -v {version}";
+            DisplayHint("Hint: multiple matches found, use the key as the search term to display the details of a specific description.", example);
         }
     }
     protected void DisplayGenerateHint(string path, IEnumerable<string> includedPaths, IEnumerable<string> excludedPaths) {
         if(TutorialMode) {
-            Console.WriteLine();
-            Console.WriteLine("Hint: use kiota generate to generate a client for the OpenAPI description.");
             var includedPathsSuffix = ((includedPaths?.Any() ?? false)? " -i " : string.Empty) + string.Join(" -i ", includedPaths);
             var excludedPathsSuffix = ((excludedPaths?.Any() ?? false)? " -e " : string.Empty) + string.Join(" -e ", excludedPaths);
-            Console.WriteLine($"Example: kiota generate -l <language> -o <output path> -d {path}{includedPathsSuffix}{excludedPathsSuffix}");
+            var example = $"Example: kiota generate -l <language> -o <output path> -d {path}{includedPathsSuffix}{excludedPathsSuffix}";
+            DisplayHint("Hint: use kiota generate to generate a client for the OpenAPI description.", example);
         }
     }
     protected void DisplayGenerateAdvancedHint(IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path) {
         if(TutorialMode && !includePaths.Any() && !excludePaths.Any()) {
-            Console.WriteLine();
-            Console.WriteLine("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths generated.");
-            Console.WriteLine($"Example: kiota generate --include-path **/foo -d {path}");
+            DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths generated.",
+                        $"Example: kiota generate --include-path **/foo -d {path}");
         }
     }
     protected void DisplayInfoHint(GenerationLanguage language, string path) {
         if(TutorialMode) {
-            Console.WriteLine();
-            Console.WriteLine("Hint: use the info command to get the list of dependencies you need to add to your project.");
-            Console.WriteLine($"Example: kiota info -d {path} -l {language}");
+            DisplayHint("Hint: use the info command to get the list of dependencies you need to add to your project.",
+                        $"Example: kiota info -d {path} -l {language}");
         }
     }
     protected void DisplayInfoAdvanced() {
         if(TutorialMode) {
-            Console.WriteLine();
-            Console.WriteLine("Hint: use the language argument to get the list of dependencies you need to add to your project.");
-            Console.WriteLine("Example: kiota info -l <language>");
+            DisplayHint("Hint: use the language argument to get the list of dependencies you need to add to your project.",
+                        "Example: kiota info -l <language>");
         }
     }
 }
