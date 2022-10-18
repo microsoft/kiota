@@ -66,11 +66,16 @@ The additional azure authentication package contains an authentication provider 
 
 ## Anonymous Authentication Provider
 
-Some APIs do not require any authentication and can be queried anonymously. For this reasons the abstraction package also provide an `AnonymousAuthenticationProvider` which serves as a placeholder and performs no operation.
+Some APIs do not require any authentication and can be queried anonymously. For this reason the abstractions packages also provide an `AnonymousAuthenticationProvider` which serves as a placeholder and performs no operation.
+
+## API Key Authentication Provider
+
+Some APIs simply rely on an API key for authentication that's placed in the request query parameters or in the request headers. For this reason the abstractions packages also provide an `ApiKeyAuthenticationProvider`.
 
 ## Choose your authentication provider
 
 1. Does the target API require authentication? No - Use the Anonymous Authentication Provider, Yes - keep reading
+1. Is the authentication implemented via an API key in the query parameters or headers? Yes - use the API Key Authentication provider, No - keep reading
 1. Is the authentication implemented that Authorization bearer token header? No - Implement a custom authentication provider, Yes - keep reading
 1. Is the API protected by Microsoft Identity Platform? No - Implement a custom authentication provider, Yes - Use the Azure Identity Authentication Provider
 

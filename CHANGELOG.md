@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added an API key authentication provider for dotnet, TypeScript, Go and Java. [#1902](https://github.com/microsoft/kiota/issues/1902)
 - Added compatibility all the way down to android API level 26 for Java.
 - Added support for enum and collection of enum return types for Java.
 - Added support for types with more than 500 discriminator entries in Java.
