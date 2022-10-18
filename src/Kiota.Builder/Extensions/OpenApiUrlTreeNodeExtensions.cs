@@ -92,7 +92,7 @@ namespace Kiota.Builder.Extensions {
                     suffix)
                     .CleanupSymbolName();
         }
-        private static readonly HashSet<string> SegmentsToSkipForClassNames = new(StringComparer.OrdinalIgnoreCase) {
+        private static readonly HashSet<string> SegmentsToSkipForClassNames = new(6, StringComparer.OrdinalIgnoreCase) {
             "json",
             "xml",
             "csv",
