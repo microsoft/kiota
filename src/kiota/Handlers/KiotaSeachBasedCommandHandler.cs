@@ -17,10 +17,10 @@ internal abstract class KiotaSearchBasedCommandHandler : BaseKiotaCommandHandler
             if (results.Count == 1)
                 return (results.First().Value.DescriptionUrl.ToString(), null);
             else if(!results.Any()) {
-                Console.WriteLine("No results found for the search term, use the search command to locate the description");
+                DisplayWarning("No results found for the search term, use the search command to locate the description");
                 return (string.Empty, 1);
             } else {
-                Console.WriteLine("Multiple results found for the search term, use the search command to locate the description");
+                DisplayWarning("Multiple results found for the search term, use the search command to locate the description");
                 return (string.Empty, 1);
             }
         }

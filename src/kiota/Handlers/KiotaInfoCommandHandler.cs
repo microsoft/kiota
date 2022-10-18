@@ -85,13 +85,13 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler {
     }
     private static void ShowLanguageInformation(GenerationLanguage language, LanguagesInformation informationSource) {
         if (informationSource.TryGetValue(language.ToString(), out var languageInformation)) {
-            Console.WriteLine($"The language {language} is currently in {languageInformation.MaturityLevel} maturity level.");
-            Console.WriteLine("After generating code for this language, you need to install the following packages:");
+            DisplayInfo($"The language {language} is currently in {languageInformation.MaturityLevel} maturity level.",
+                        "After generating code for this language, you need to install the following packages:");
             foreach(var dependency in languageInformation.Dependencies) {
-                Console.WriteLine(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version);
+                DisplayInfo(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version);
             }
         } else {
-            Console.WriteLine($"No information for {language}.");
+            DisplayInfo($"No information for {language}.");
         }
     }
 }

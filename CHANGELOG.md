@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for enum and collection of enum return types for Java.
 - Added support for types with more than 500 discriminator entries in Java.
 - Added a confirmation message once the generation is successful. [#1898](https://github.com/microsoft/kiota/issues/1898)
+- Added colour scheme for all console messages to improve readability. [#1895](https://github.com/microsoft/kiota/issues/1895)
 
 ### Changed
 
