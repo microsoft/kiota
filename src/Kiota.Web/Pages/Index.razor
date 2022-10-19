@@ -1,0 +1,78 @@
+﻿@page "/"
+@using Kiota.Builder
+@using Kiota.Builder.SearchProviders
+@using Kiota.Builder.Configuration
+@using System.Linq
+@inject ILoggerFactory LoggerFactory
+
+<PageTitle>Kiota - search for an OpenAPI description</PageTitle>
+
+<h1>Search query</h1>
+
+<div>
+    <div class="form-group">
+        <div class="form-row">
+            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                <label for="term">Search term or Key</label>
+                <input id="term" type="text" @bind="SearchTerm" class="form-control" required="true" />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                <label for="version">Version</label>
+                <input id="version" type="text" @bind="Version" class="form-control" />
+            </div>
+        </div>
+    </div>
+    <button @onclick="SearchDocuments" class="btn btn-primary">Search</button>
+</div>
+
+@if (SearchResults.Any() && (SearchTerm?.Contains("::") ?? false) && SearchResults.ContainsKey(SearchTerm)) {
+    var singleResult = SearchResults[SearchTerm];
+    <div id="single-result">
+        <h2>Single result</h2>
+        <p>
+            <span>Key: </span><a href="@singleResult.DescriptionUrl" target="_blank">@SearchTerm</a><br />
+            <span>Description: </span>@singleResult.Description<br />
+            <span>Service root: </span>@singleResult.ServiceUrl<br />
+            <span>Version(s): </span>@(Version ?? string.Join(", ", singleResult.VersionLabels))<br />
+        </p>
+    </div>
+} else if (SearchResults.Any()) {
+    <div id="results">
+        <h2>Multiple Results</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Description</th>
+                    <th>Version</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var result in SearchResults)
+                {
+                    <tr>
+                        <td><a href="@result.Value.DescriptionUrl" target="_blank">@result.Key</a></td>
+                        <td><p>@result.Value.Description</p></td>
+                        <td><p>@string.Join(", ", result.Value.VersionLabels)</p></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private string? SearchTerm { get; set; }
+    private string? Version { get; set; }
+    private IDictionary<string, SearchResult> SearchResults = new Dictionary<string, SearchResult>();
+    private async Task SearchDocuments() {
+        var searchConfig = new SearchConfiguration() {
+            SearchTerm = SearchTerm,
+            Version = Version,
+        };
+        var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
+        SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(new CancellationToken());
+    }
+}
