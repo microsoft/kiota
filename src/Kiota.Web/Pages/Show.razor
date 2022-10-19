@@ -1,0 +1,128 @@
+﻿@page "/show"
+@using Kiota.Builder
+@using Kiota.Builder.SearchProviders
+@using Kiota.Builder.Configuration
+@using System.Linq
+@using System.Text;
+@inject ILoggerFactory LoggerFactory
+
+<PageTitle>Kiota - show an OpenAPI description and fine tune your filters</PageTitle>
+
+<h1>Show arguments</h1>
+
+<div>
+    <div class="form-group">
+        <div class="form-row">
+            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                <label for="term">Search term or Key</label>
+                <input id="term" type="text" @bind="SearchTerm" class="form-control" />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                <label for="version">Version</label>
+                <input id="version" type="text" @bind="Version" class="form-control" />
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="form-row">
+            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                <label for="descriptionUrl">Description Url</label>
+                <input id="descriptionUrl" type="text" @bind="DescriptionUrl" class="form-control" />
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="form-row">
+            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                <label for="includePatterns">Include Patterns</label>
+                <textarea id="includePatterns" type="text" @bind="IncludePatterns" class="form-control" rows="5"></textarea>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                <label for="excludePatterns">Exclude Patterns</label>
+                <textarea id="excludePatterns" type="text" @bind="ExcludePatterns" class="form-control" rows="5"></textarea>
+            </div>
+        </div>
+    </div>
+    <button @onclick="ShowDescription" class="btn btn-primary">Show</button>
+</div>
+
+@if(!string.IsNullOrEmpty(Tree)) {
+    <div>
+        <h2>Tree</h2>
+        <pre>@Tree</pre>
+    </div>
+}
+
+@code {
+    private string? SearchTerm { get; set; }
+    private string? Version { get; set; }
+    private string? DescriptionUrl { get; set; }
+    private IDictionary<string, SearchResult> SearchResults = new Dictionary<string, SearchResult>();
+    private string? IncludePatterns { get; set; }
+    private string? ExcludePatterns { get; set; }
+    private string? Tree { get; set; }
+    private async Task ShowDescription() {
+        var cancellationToken = new CancellationToken();
+        if (string.IsNullOrEmpty(DescriptionUrl)) {
+            var searchConfig = new SearchConfiguration() {
+                SearchTerm = SearchTerm,
+                Version = Version,
+            };
+            var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
+            SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(cancellationToken);
+            DescriptionUrl = SearchResults.First().Value.DescriptionUrl.ToString();
+        }
+        var generationConfiguration = new GenerationConfiguration{
+            OpenAPIFilePath = DescriptionUrl,
+            IncludePatterns = IncludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
+            ExcludePatterns = ExcludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
+        };
+        var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
+        var urlTreeNode = await new KiotaBuilder(builderLogger, generationConfiguration).GetUrlTreeNodeAsync(cancellationToken);
+
+        var builder = new StringBuilder();
+        RenderNode(urlTreeNode, 5, builder);
+        Tree = builder.ToString();
+    }
+    private const string Cross = " ├─";
+    private const string Corner = " └─";
+    private const string Vertical = " │ ";
+    private const string Space = "   ";
+    private static void RenderNode(Microsoft.OpenApi.Services.OpenApiUrlTreeNode node, uint maxDepth, StringBuilder builder, string indent = "", int nodeDepth = 0)
+    {
+        builder.AppendLine(node.Segment);
+
+        var children = node.Children;
+        var numberOfChildren = children.Count;
+        for (var i = 0; i < numberOfChildren; i++)
+        {
+            var child = children.ElementAt(i);
+            var isLast = i == (numberOfChildren - 1);
+            RenderChildNode(child.Value, maxDepth, builder, indent, isLast, nodeDepth);
+        }
+    }
+
+    private static void RenderChildNode(Microsoft.OpenApi.Services.OpenApiUrlTreeNode node, uint maxDepth, StringBuilder builder, string indent, bool isLast, int nodeDepth = 0)
+    {
+        if (nodeDepth >= maxDepth && maxDepth != 0)
+            return;
+        builder.Append(indent);
+
+        if (isLast)
+        {
+            builder.Append(Corner);
+            indent += Space;
+        }
+        else
+        {
+            builder.Append(Cross);
+            indent += Vertical;
+        }
+
+        RenderNode(node, maxDepth, builder, indent, nodeDepth + 1);
+    }
+}
