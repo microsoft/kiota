@@ -291,7 +291,7 @@ namespace Kiota.Builder.Writers.Php
                         null => "$n->getCollectionOfPrimitiveValues()",
                         CodeEnum enumType =>
                             $"$n->getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
-                        _ => $"$n->getCollectionOfObjectValues(array({conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'))"
+                        _ => $"$n->getCollectionOfObjectValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"
                     };
                 if (currentType.TypeDefinition is CodeEnum)
                     return $"$n->getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
@@ -307,7 +307,7 @@ namespace Kiota.Builder.Writers.Php
                 "streaminterface" => "$n->getBinaryContent()",
                 "byte" => "$n->getByteValue()",
                 _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"$n->get{propertyType.ToFirstCharacterUpperCase()}Value()",
-                _ => $"$n->getObjectValue(array({propertyType.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'))",
+                _ => $"$n->getObjectValue([{propertyType.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'])",
             };
         }
 
@@ -407,7 +407,7 @@ namespace Kiota.Builder.Writers.Php
                     .Where(static x => !x.ExistsInBaseType && x.Setter != null)
                     .OrderBy(static x => x.Name)
                     .Select(x => 
-                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => function (ParseNode $n) use ({currentObjectName}) {{ {currentObjectName}->{x.Setter.Name.ToFirstCharacterLowerCase()}({GetDeserializationMethodName(x.Type, method)}); }},")
+                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => fn(ParseNode $n) => {currentObjectName}->{x.Setter.Name.ToFirstCharacterLowerCase()}({GetDeserializationMethodName(x.Type, method)}),")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
                 writer.DecreaseIndent();
@@ -454,7 +454,7 @@ namespace Kiota.Builder.Writers.Php
                 writer.IncreaseIndent(2);
                 errorMappings.ToList().ForEach(errorMapping =>
                 {
-                    writer.WriteLine($"'{errorMapping.Key}' => array({errorMapping.Value.Name}::class, '{CreateDiscriminatorMethodName}'),");
+                    writer.WriteLine($"'{errorMapping.Key}' => [{errorMapping.Value.Name}::class, '{CreateDiscriminatorMethodName}'],");
                 });
                 writer.DecreaseIndent();
                 writer.WriteLine("];");
@@ -465,7 +465,7 @@ namespace Kiota.Builder.Writers.Php
             var isCollection = codeElement.ReturnType.IsCollection;
             var methodName = GetSendRequestMethodName(returnsVoid, isStream, isCollection, returnType);
             var returnTypeFactory = codeElement.ReturnType is CodeType {TypeDefinition: CodeClass returnTypeClass}
-                ? $", array({returnType}::class, '{CreateDiscriminatorMethodName}')"
+                ? $", [{returnType}::class, '{CreateDiscriminatorMethodName}']"
                 : string.Empty;
             var returnWithCustomType =
                 !returnsVoid && string.IsNullOrEmpty(returnTypeFactory) && conventions.CustomTypes.Contains(returnType)
@@ -498,10 +498,12 @@ namespace Kiota.Builder.Writers.Php
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             WriteSerializationRegistration(codeMethod.SerializerModules, writer, "registerDefaultSerializer");
             WriteSerializationRegistration(codeMethod.DeserializerModules, writer, "registerDefaultDeserializer");
-            writer.WriteLines($"if (empty({GetPropertyCall(requestAdapterProperty, string.Empty)}->getBaseUrl())) {{");
-            writer.IncreaseIndent();
-            writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl}');");
-            writer.CloseBlock();
+            if(!string.IsNullOrEmpty(codeMethod.BaseUrl)) {
+                writer.WriteLines($"if (empty({GetPropertyCall(requestAdapterProperty, string.Empty)}->getBaseUrl())) {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl}');");
+                writer.CloseBlock();
+            }
         }
         
         private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName) {

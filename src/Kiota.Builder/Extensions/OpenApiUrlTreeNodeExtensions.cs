@@ -18,9 +18,11 @@ namespace Kiota.Builder.Extensions {
                              + currentPath
                                 ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
                                 ?.Select(replaceSingleParameterSegmentByItem)
-                                ?.Select(static x => CleanupParametersFromPath((x ?? string.Empty).Split('.', StringSplitOptions.RemoveEmptyEntries)
-                                ?.Select(static x => x.TrimStart('$')) //$ref from OData
-                                                                .Last()))
+                                ?.Select(static x => CleanupParametersFromPath((x ?? string.Empty)
+                                                        .Split('.', StringSplitOptions.RemoveEmptyEntries)
+                                                        .Select(static x => x.TrimStart('$')) //$ref from OData
+                                                        .Except(SegmentsToSkipForClassNames, StringComparer.OrdinalIgnoreCase)
+                                                        .Last()))
                                 ?.Select(static x => x.CleanupSymbolName())
                                 ?.Aggregate(string.Empty, 
                                     static (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
@@ -70,6 +72,8 @@ namespace Kiota.Builder.Extensions {
                                 (requestBody ? null : response?.GetResponseSchema(structuredMimeTypes)?.Reference?.GetClassName()) ??
                                 (requestBody ? operation?.GetRequestSchema(structuredMimeTypes) : operation?.GetResponseSchema(structuredMimeTypes))?.Reference?.GetClassName() ?? 
                                 CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier();
+            if(stripExtensionForIndexersRegex.IsMatch(rawClassName))
+                rawClassName = stripExtensionForIndexersRegex.Replace(rawClassName, string.Empty);
             if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName)) {
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
                 if(rawClassName == WithKeyword) // in case the single parameter doesn't follow {classname-id} we get the previous segment
@@ -78,11 +82,24 @@ namespace Kiota.Builder.Extensions {
                                             .SkipLast(1)
                                             .Last()
                                             .ToFirstCharacterUpperCase();
-
             }
-            return (prefix + rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries)?.LastOrDefault() + suffix)
-                    .CleanupSymbolName();
+
+            var classNameSegments = rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries).AsEnumerable() ?? Enumerable.Empty<string>();
+            // only apply the exceptions if we had multiple segments.
+            // Otherwise a single segment class name like `Json` will be returned as an empty string.
+            if (classNameSegments.Count() > 1)
+                classNameSegments =  classNameSegments.Except(SegmentsToSkipForClassNames, StringComparer.OrdinalIgnoreCase);
+
+            return (prefix + classNameSegments.LastOrDefault() +suffix).CleanupSymbolName();
         }
+        private static readonly HashSet<string> SegmentsToSkipForClassNames = new(6, StringComparer.OrdinalIgnoreCase) {
+            "json",
+            "xml",
+            "csv",
+            "yaml",
+            "yml",
+            "txt",
+        };
         private static readonly Regex descriptionCleanupRegex = new (@"[\r\n\t]", RegexOptions.Compiled);
         public static string CleanupDescription(this string description) => string.IsNullOrEmpty(description) ? description : descriptionCleanupRegex.Replace(description, string.Empty);
         public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string defaultValue = default) =>
@@ -96,10 +113,14 @@ namespace Kiota.Builder.Extensions {
             currentNode?.Segment.IsPathSegmentWithSingleSimpleParameter() ?? false;
         private static bool IsPathSegmentWithSingleSimpleParameter(this string currentSegment)
         {
-            return (currentSegment?.StartsWith(requestParametersChar) ?? false) &&
-                    currentSegment.EndsWith(requestParametersEndChar) &&
-                    currentSegment.Count(x => x == requestParametersChar) == 1;
+            if (string.IsNullOrEmpty(currentSegment)) return false;
+
+            var segmentWithoutExtension = stripExtensionForIndexersRegex.Replace(currentSegment, string.Empty);
+            return segmentWithoutExtension.StartsWith(requestParametersChar) &&
+                    segmentWithoutExtension.EndsWith(requestParametersEndChar) &&
+                    segmentWithoutExtension.Count(x => x == requestParametersChar) == 1;
         }
+        private static readonly Regex stripExtensionForIndexersRegex = new(@"\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Compiled); // so {param-name}.json is considered as indexer
         public static bool IsComplexPathWithAnyNumberOfParameters(this OpenApiUrlTreeNode currentNode)
         {
             return (currentNode?.Segment?.Contains(requestParametersSectionChar) ?? false) && currentNode.Segment.EndsWith(requestParametersSectionEndChar);
@@ -139,7 +160,8 @@ namespace Kiota.Builder.Extensions {
         }
         public static string SanitizeParameterNameForUrlTemplate(this string original) {
             if(string.IsNullOrEmpty(original)) return original;
-            return Uri.EscapeDataString(original
+            return Uri.EscapeDataString(stripExtensionForIndexersRegex
+                                            .Replace(original, string.Empty) // {param-name}.json becomes {param-name}
                                     .TrimStart('{')
                                     .TrimEnd('}'))
                         .Replace("-", "%2D")

@@ -186,10 +186,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterUpperCase();
         WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
-        writer.WriteLine($"if (string.IsNullOrEmpty({requestAdapterPropertyName}.BaseUrl)) {{");
-        writer.IncreaseIndent();
-        writer.WriteLine($"{requestAdapterPropertyName}.BaseUrl = \"{method.BaseUrl}\";");
-        writer.CloseBlock();
+        if (!string.IsNullOrEmpty(method.BaseUrl)) {
+            writer.WriteLine($"if (string.IsNullOrEmpty({requestAdapterPropertyName}.BaseUrl)) {{");
+            writer.IncreaseIndent();
+            writer.WriteLine($"{requestAdapterPropertyName}.BaseUrl = \"{method.BaseUrl}\";");
+            writer.CloseBlock();
+        }
         if (backingStoreParameter != null)
             writer.WriteLine($"{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
     }
@@ -214,9 +216,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
-            if (currentMethod.IsOfKind(CodeMethodKind.Constructor))
+            if (currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+                currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam)
             {
-                var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
                 conventions.AddParametersAssignment(writer,
                                                     pathParametersParam.Type,
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
@@ -226,10 +228,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                                                 .ToArray());
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
             }
-            else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor))
+            else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor) &&
+                    currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RawUrl)) is CodeParameter rawUrlParam)
             {
                 var pathParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-                var rawUrlParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RawUrl));
                 conventions.AddParametersAssignment(writer,
                                                     pathParametersProp.Type,
                                                     string.Empty,
@@ -370,7 +372,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             (_, true) => "var collectionResult = ",
             (_, _ ) => "return ",
         };
-        writer.WriteLine($"{prefix}await RequestAdapter.{GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, responseHandler, {errorMappingVarName}, cancellationToken);");
+        writer.WriteLine($"{prefix}await RequestAdapter.{GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, {errorMappingVarName}, cancellationToken);");
         if (codeElement.ReturnType.IsCollection)
             writer.WriteLine("return collectionResult.ToList();");
     }

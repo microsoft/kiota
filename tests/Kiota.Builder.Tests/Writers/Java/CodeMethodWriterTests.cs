@@ -499,7 +499,9 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("put(\"5XX\", Error5XX::createFromDiscriminatorValue);", result);
         Assert.Contains("put(\"403\", Error403::createFromDiscriminatorValue);", result);
         Assert.Contains("sendAsync", result);
-        Assert.Contains("CompletableFuture.failedFuture(ex)", result);
+        Assert.Contains("return new java.util.concurrent.CompletableFuture<Somecustomtype>() {{", result);
+        Assert.Contains("this.completeExceptionally(ex);", result);
+        Assert.Contains("}};", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -645,6 +647,140 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("switch (mappingValue) {", result);
         Assert.Contains("case \"ns.childmodel\": return new ChildModel();", result);
         Assert.Contains("return new ParentModel()", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesModelSplitFactoryBody() {
+        var parentModel = root.AddClass(new CodeClass {
+            Name = "parentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass {
+            Name = "childModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        childModel.StartBlock.Inherits = new CodeType {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        var factoryOverloadMethod = factoryMethod.Clone() as CodeMethod;
+        factoryOverloadMethod.Access = AccessModifier.Private;
+        factoryOverloadMethod.Name += "_1";
+        factoryOverloadMethod.OriginalMethod = factoryMethod;
+        factoryOverloadMethod.RemoveParametersByKind(CodeParameterKind.ParseNode);
+        factoryOverloadMethod.AddParameter(new CodeParameter {
+            Name = "value",
+            Type = new CodeType{
+                Name = "String",
+                IsNullable = true,
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        parentModel.AddMethod(factoryOverloadMethod);
+        Enumerable.Range(0, 1500).ToList().ForEach(x => parentModel.DiscriminatorInformation.AddDiscriminatorMapping($"#microsoft.graph.{x}", new CodeType {
+            Name = $"microsoft.graph.{x}",
+            TypeDefinition = childModel,
+        }));
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        factoryMethod.AddParameter(new CodeParameter {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("final ParseNode mappingValueNode = parseNode.getChildNode(\"@odata.type\")", result);
+        Assert.Contains("if (mappingValueNode != null) {", result);
+        Assert.Contains("final String mappingValue = mappingValueNode.getStringValue()", result);
+        Assert.DoesNotContain("switch (mappingValue) {", result);
+        Assert.DoesNotContain("case \"ns.childmodel\": return new ChildModel();", result);
+        Assert.Contains("final ParentModel factory_1_result = factory_1(mappingValue);", result);
+        Assert.Contains("if (factory_1_result != null) {", result);
+        Assert.Contains("return new ParentModel()", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesModelSplitFactoryOverloadBody() {
+        var parentModel = root.AddClass(new CodeClass {
+            Name = "parentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass {
+            Name = "childModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        childModel.StartBlock.Inherits = new CodeType {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        var factoryOverloadMethod = factoryMethod.Clone() as CodeMethod;
+        factoryOverloadMethod.Access = AccessModifier.Private;
+        factoryOverloadMethod.Name += "_1";
+        factoryOverloadMethod.OriginalMethod = factoryMethod;
+        factoryOverloadMethod.RemoveParametersByKind(CodeParameterKind.ParseNode);
+        factoryOverloadMethod.AddParameter(new CodeParameter {
+            Name = "value",
+            Type = new CodeType{
+                Name = "String",
+                IsNullable = true,
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        parentModel.AddMethod(factoryOverloadMethod);
+        Enumerable.Range(0, 1500).ToList().ForEach(x => parentModel.DiscriminatorInformation.AddDiscriminatorMapping($"#microsoft.graph.{x}", new CodeType {
+            Name = $"microsoft.graph.{x}",
+            TypeDefinition = childModel,
+        }));
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        factoryMethod.AddParameter(new CodeParameter {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(factoryOverloadMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("final ParseNode mappingValueNode = parseNode.getChildNode(\"@odata.type\")", result);
+        Assert.DoesNotContain("if (mappingValueNode != null) {", result);
+        Assert.DoesNotContain("final String mappingValue = mappingValueNode.getStringValue()", result);
+        Assert.Contains("switch (value) {", result);
+        Assert.Contains("case \"#microsoft.graph.535\": return new Microsoft.graph.535();", result);
+        Assert.DoesNotContain("final ParentModel factory_1_result = factory_1(mappingValue);", result);
+        Assert.DoesNotContain("if (factory_1_result != null) {", result);
+        Assert.DoesNotContain("return new ParentModel()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

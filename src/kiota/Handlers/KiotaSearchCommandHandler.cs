@@ -55,11 +55,11 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
         var searchTerm = Configuration.Search.SearchTerm;
         if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm)) {
             var result = results.First();
-            Console.WriteLine($"Key: {result.Key}");
-            Console.WriteLine($"Title: {result.Value.Title}");
-            Console.WriteLine($"Description: {result.Value.Description}");
-            Console.WriteLine($"Service: {result.Value.ServiceUrl}");
-            Console.WriteLine($"OpenAPI: {result.Value.DescriptionUrl}");
+            DisplayInfo($"Key: {result.Key}");
+            DisplayInfo($"Title: {result.Value.Title}");
+            DisplayInfo($"Description: {result.Value.Description}");
+            DisplayInfo($"Service: {result.Value.ServiceUrl}");
+            DisplayInfo($"OpenAPI: {result.Value.DescriptionUrl}");
             DisplayDownloadHint(Configuration.Search.SearchTerm, Configuration.Search.Version);
             DisplayShowHint(Configuration.Search.SearchTerm, Configuration.Search.Version);
         }  else {

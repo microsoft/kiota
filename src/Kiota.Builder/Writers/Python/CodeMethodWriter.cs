@@ -97,10 +97,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToSnakeCase();
         WriteSerializationRegistration(method.SerializerModules, writer, "register_default_serializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "register_default_deserializer");
-        writer.WriteLine($"if not {requestAdapterPropertyName}.base_url:");
-        writer.IncreaseIndent();
-        writer.WriteLine($"{requestAdapterPropertyName}.base_url = \"{method.BaseUrl}\"");
-        writer.DecreaseIndent();
+        if(!string.IsNullOrEmpty(method.BaseUrl)) {
+            writer.WriteLine($"if not {requestAdapterPropertyName}.base_url:");
+            writer.IncreaseIndent();
+            writer.WriteLine($"{requestAdapterPropertyName}.base_url = \"{method.BaseUrl}\"");
+            writer.DecreaseIndent();
+        }
         if(backingStoreParameter != null)
             writer.WriteLine($"self.{requestAdapterPropertyName}.enable_backing_store({backingStoreParameter.Name})");
     }
@@ -152,8 +154,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.WriteLine();
         }
         if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
-            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
+            if(currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+            currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam) {
                 conventions.AddParametersAssignment(writer, 
                                                     pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),

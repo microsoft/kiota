@@ -76,15 +76,16 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
 
             try {
                 await new KiotaBuilder(logger, Configuration.Generation).GenerateClientAsync(cancellationToken);
+                DisplaySuccess("Generation completed successfully");
                 DisplayInfoHint(language, Configuration.Generation.OpenAPIFilePath);
                 DisplayGenerateAdvancedHint(includePatterns, excludePatterns, Configuration.Generation.OpenAPIFilePath);
                 return 0;
             } catch (Exception ex) {
     #if DEBUG
-                logger.LogCritical(ex, "error generating the SDK: {exceptionMessage}", ex.Message);
+                logger.LogCritical(ex, "error generating the client: {exceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached
     #else
-                logger.LogCritical("error generating the SDK: {exceptionMessage}", ex.Message);
+                logger.LogCritical("error generating the client: {exceptionMessage}", ex.Message);
                 return 1;
     #endif
             }

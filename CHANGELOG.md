@@ -9,7 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added an API key authentication provider for dotnet, TypeScript, Go and Java. [#1902](https://github.com/microsoft/kiota/issues/1902)
+- Added compatibility all the way down to android API level 26 for Java.
+- Added support for enum and collection of enum return types for Java.
+- Added support for types with more than 500 discriminator entries in Java.
+- Added a confirmation message once the generation is successful. [#1898](https://github.com/microsoft/kiota/issues/1898)
+- Added colour scheme for all console messages to improve readability. [#1895](https://github.com/microsoft/kiota/issues/1895)
+
 ### Changed
+
+- Removed response handler parameter from Java executor methods.
+- Changed the generated PHP deserializer code to use `fn` instead of `function`. [#1880](https://github.com/microsoft/kiota/pull/1880)
+- Fixes compile errors due to type ambiguity in generated models in dotnet. [#1881](https://github.com/microsoft/kiota/issues/1881)
+- Changes the ResponeHandler parameter in IRequestAdapter to be a RequestOption in dotnet [#1858](https://github.com/microsoft/kiota/issues/1858)
+- File extensions are now stripped from property/namespace/class names. [#1892](https://github.com/microsoft/kiota/issues/1892)
+- Missing host/server is now considered a warning instead of a critical error. [#1896](https://github.com/microsoft/kiota/issues/1896)
+- Fixed a bug where info and show commands would crash in case of invalid description URL. [#1894](https://github.com/microsoft/kiota/issues/1894)
+- Show command now reads descriptions directly from APIs.guru instead of their origin. [#1897](https://github.com/microsoft/kiota/issues/1897)
+- Fixed a classnames having the same name as extensions would cause generation to fail. [#1892](https://github.com/microsoft/kiota/issues/1892)
 
 ## [0.6.0] - 2022-10-06
 

@@ -18,7 +18,7 @@ public class DiscriminatorInformation : CodeElement, ICloneable
                     Parent?.GetImmediateParentOfType<CodeClass>() is CodeClass parentClass ?
                         discriminatorMappings.Where(x => x.Value is not CodeType currentType || currentType.TypeDefinition != parentClass) :
                         discriminatorMappings)
-                    .OrderBy(static x => x.Key);
+                    .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase);
         }
     }
     /// <summary>

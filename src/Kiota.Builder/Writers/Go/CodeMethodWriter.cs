@@ -397,10 +397,12 @@ namespace Kiota.Builder.Writers.Go {
             var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
             WriteSerializationRegistration(method.SerializerModules, writer, parentClass, "RegisterDefaultSerializer", "SerializationWriterFactory");
             WriteSerializationRegistration(method.DeserializerModules, writer, parentClass, "RegisterDefaultDeserializer", "ParseNodeFactory");
-            writer.WriteLine($"if m.{requestAdapterPropertyName}.GetBaseUrl() == \"\" {{");
-            writer.IncreaseIndent();
-            writer.WriteLine($"m.{requestAdapterPropertyName}.SetBaseUrl(\"{method.BaseUrl}\")");
-            writer.CloseBlock();
+            if (!string.IsNullOrEmpty(method.BaseUrl)) {
+                writer.WriteLine($"if m.{requestAdapterPropertyName}.GetBaseUrl() == \"\" {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"m.{requestAdapterPropertyName}.SetBaseUrl(\"{method.BaseUrl}\")");
+                writer.CloseBlock();
+            }
             if(backingStoreParameter != null)
                 writer.WriteLine($"m.{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
         }
@@ -797,9 +799,9 @@ namespace Kiota.Builder.Writers.Go {
             }
             return propertyTypeNameWithoutImportSymbol switch {
                 _ when conventions.IsPrimitiveType(propertyTypeNameWithoutImportSymbol) => 
-                    ($"Get{propertyTypeNameWithoutImportSymbol.ToFirstCharacterUpperCase()}Value", String.Empty),
+                    ($"Get{propertyTypeNameWithoutImportSymbol.ToFirstCharacterUpperCase()}Value", string.Empty),
                 _ when conventions.StreamTypeName.Equals(propertyTypeNameWithoutImportSymbol, StringComparison.OrdinalIgnoreCase) =>
-                    ("GetByteArrayValue", String.Empty),
+                    ("GetByteArrayValue", string.Empty),
                 _ => ("GetObjectValue", GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)),
             };
         }

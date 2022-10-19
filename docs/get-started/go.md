@@ -119,6 +119,7 @@ func main() {
 > **Note:**
 >
 > - If the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.
+> - If the target API relies on an API key for authentication, you can use the **ApiKeyAuthenticationProvider** instead.
 > - If the target API requires an `Authorization: Bearer <token>` header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
 > - If the target API requires any other form of authentication schemes, you can implement the **AuthenticationProvider** interface.
 
