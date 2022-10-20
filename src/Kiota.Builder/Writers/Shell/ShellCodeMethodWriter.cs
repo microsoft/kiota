@@ -539,7 +539,7 @@ namespace Kiota.Builder.Writers.Shell
         /// <returns></returns>
         private static string NormalizeToIdentifier(string input)
         {
-            return input.ToCamelCase("-", "_", ".");
+            return input.ToCamelCase('-', '_', '.');
         }
 
         /// <summary>

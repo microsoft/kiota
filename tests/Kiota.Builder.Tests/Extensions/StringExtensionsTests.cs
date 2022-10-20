@@ -30,7 +30,7 @@ namespace Kiota.Builder.Tests.Extensions {
             Assert.Equal(string.Empty, "-".ToCamelCase());
             Assert.Equal("toto", "toto".ToCamelCase());
             Assert.Equal("totoCamelCase", "toto-camel-case".ToCamelCase());
-            Assert.Equal("totoCamelCase", "toto.camel~case".ToCamelCase(".", "~"));
+            Assert.Equal("totoCamelCase", "toto.camel~case".ToCamelCase('.', '~'));
         }
         [Fact]
         public void ToPascalCase() {

@@ -571,17 +571,13 @@ public class KiotaBuilder
         
         Parallel.ForEach(unmappedRequestBuilderTypes, x => {
             var parentNS = x.Parent.Parent.Parent as CodeNamespace;
-            x.TypeDefinition = parentNS.FindChildrenByName<CodeClass>(x.Name)
-                                        .OrderBy(shortestNamespaceOrder)
-                                        .FirstOrDefault();
+            x.TypeDefinition = parentNS.FindChildrenByName<CodeClass>(x.Name).MinBy(shortestNamespaceOrder);
             // searching down first because most request builder properties on a request builder are just sub paths on the API
             if(x.TypeDefinition == null) {
                 parentNS = parentNS.Parent as CodeNamespace;
-                x.TypeDefinition = parentNS
+                x.TypeDefinition = (parentNS
                     .FindNamespaceByName($"{parentNS.Name}.{x.Name.Substring(0, x.Name.Length - requestBuilderSuffix.Length).ToFirstCharacterLowerCase()}".TrimEnd(nsNameSeparator))
-                    ?.FindChildrenByName<CodeClass>(x.Name)
-                    ?.OrderBy(shortestNamespaceOrder)
-                    ?.FirstOrDefault();
+                    ?.FindChildrenByName<CodeClass>(x.Name)).MinBy(shortestNamespaceOrder);
                 // in case of the .item namespace, going to the parent and then down to the target by convention
                 // this avoid getting the wrong request builder in case we have multiple request builders with the same name in the parent branch
                 // in both cases we always take the uppermost item (smaller numbers of segments in the namespace name)
