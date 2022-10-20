@@ -23,8 +23,8 @@ Before you can compile and run the target project, you will need to initialize i
     ````shell
     gem install bundler
     ````
-    
-2. Create a gemfile named **Gemfile** in the root directory of your project. 
+
+2. Create a gemfile named **Gemfile** in the root directory of your project.
 
 #### Getting your Personal Access Token
 
@@ -47,22 +47,23 @@ Before you can compile and run the target project, you will need to initialize i
         gem "microsoft_kiota_nethttplibrary"
     end
     ````
+
     Only the first package, `microsoft_kiota_abstractions`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
 
 2. Use `bundler config` to globally specify the authentication information.
     Execute this line:
-    
+
     ````shell
-    bundle config https://rubygems.pkg.github.com/microsoft/kiota USERNAME:TOKEN     
+    bundle config https://rubygems.pkg.github.com/microsoft/kiota USERNAME:TOKEN
     ````
-    
-3. Finally, install your gems. Execute this line: 
-    
-    ````shell 
-    bundle install 
+
+3. Finally, install your gems. Execute this line:
+
+    ````shell
+    bundle install
     ````
-    
-### Generating the SDK 
+
+### Generating the SDK
 
 Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** and add the contents of the [Sample OpenAPI description](https://github.com/microsoft/kiota/blob/main/docs/get-started/reference-openapi.md).
 
@@ -82,20 +83,23 @@ Follow the instructions in [Register an application for Microsoft identity platf
 
 ## Creating the client application
 
-1. Create a file in the root of the project named **get_user.rb** and add the following code. 
+1. Create a file in the root of the project named **get_user.rb** and add the following code.
 
-    Replace the `tenant_id`, `client_id`, `client_secret` with your credentials from the previous step. 
-    
-    See [Get access on behalf of a user](https://docs.microsoft.com/en-us/graph/auth-v2-user?context=graph%2Fapi%2F1.0&view=graph-rest-1.0) for details on how to get the `auth_code` and set the `redirect_uri`. 
-    
-    > **Note:** If you need help generating the authorize url, the line 
-    >> ````ruby
-    >> puts token_request_context.generate_authorize_url(graph_scopes)
-    >>  ```` 
-    >  (after you've initialized your `token_request_context` of course) will print out a corresponding authorization url, with which you can retrieve your authorization code. You can also re-set the `auth_code` after you've initialized the `token_request_context` like so: 
-    >>  ````ruby 
-    >>  token_request_context.auth_code = 'CODE'
-    >>  ````
+    Replace the `tenant_id`, `client_id`, `client_secret` with your credentials from the previous step.
+
+    See [Get access on behalf of a user](https://learn.microsoft.com/graph/auth-v2-user?context=graph%2Fapi%2F1.0&view=graph-rest-1.0) for details on how to get the `auth_code` and set the `redirect_uri`.
+
+    > **Note:** If you need help generating the authorize url, the line
+    >
+    > ````ruby
+    > puts token_request_context.generate_authorize_url(graph_scopes)
+    >  ````
+    >
+    >  (after you've initialized your `token_request_context` of course) will print out a corresponding authorization url, with which you can retrieve your authorization code. You can also re-set the `auth_code` after you've initialized the `token_request_context` like so:
+    >
+    >  ````ruby
+    >  token_request_context.auth_code = 'CODE'
+    >  ````
 
     ````ruby
     # frozen_string_literal: true
@@ -126,12 +130,10 @@ Follow the instructions in [Register an application for Microsoft identity platf
     puts "Hi! My name is #{me.display_name}, and my ID is #{me.id}."
 
     ````
-    
-2. Lastly, create a file called **graph.rb** in the `client` folder that was just created by Kiota.
 
-Please add the following code:
+2. Lastly, create a file called **graph.rb** in the `client` folder that was just created by Kiota. Please add the following code:
 
-    ````ruby 
+    ````ruby
     # frozen_string_literal: true
     module Graph
     end
@@ -141,7 +143,7 @@ Please add the following code:
 
 When ready to execute the application, execute the following command in your project directory.
 
-````shell 
+````shell
 ruby ./get_user.rb
 ````
 

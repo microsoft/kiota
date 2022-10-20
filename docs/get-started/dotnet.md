@@ -78,7 +78,7 @@ var credential = new DeviceCodeCredential((code, cancellation) =>
 },
 clientId);
 
-var authProvider = new AzureIdentityAuthenticationProvider(credential, allowedHosts, graphScopes);
+var authProvider = new AzureIdentityAuthenticationProvider(credential, allowedHosts, scopes: graphScopes);
 var requestAdapter = new HttpClientRequestAdapter(authProvider);
 var client = new GetUserApiClient(requestAdapter);
 

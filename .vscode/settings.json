@@ -21,11 +21,16 @@
         "todoclient"
     ],
     "cSpell.words": [
+        "autoload",
         "deserialization",
+        "dumpautoload",
         "getenv",
         "Kiota",
+        "Nethttplibrary",
         "npmrc",
         "openapi",
+        "phpleague",
+        "samespaceprefix",
         "serializers"
     ],
     "java.configuration.updateBuildConfiguration": "automatic",

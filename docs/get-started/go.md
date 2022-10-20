@@ -106,7 +106,7 @@ func main() {
 
   client := client.NewGraphApiClient(adapter)
 
-  me, err := client.Me().Get(nil)
+  me, err := client.Me().Get(context.Background(), nil)
 
   if err != nil {
     fmt.Printf("Error getting user: %v\n", err)
