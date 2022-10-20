@@ -5,6 +5,7 @@
 @using System.Linq
 @using System.Text;
 @inject ILoggerFactory LoggerFactory
+@inject NavigationManager navManager 
 
 <PageTitle>Kiota - show an OpenAPI description and fine tune your filters</PageTitle>
 
@@ -48,6 +49,7 @@
         </div>
     </div>
     <button @onclick="ShowDescription" class="btn btn-primary">Show</button>
+    <button @onclick="GoToGenerate" class="btn btn-secondary" disabled="@(string.IsNullOrEmpty(DescriptionUrl))">Go To Generate</button>
 </div>
 
 @if(!string.IsNullOrEmpty(Tree)) {
@@ -58,15 +60,41 @@
 }
 
 @code {
-    private string? SearchTerm { get; set; }
-    private string? Version { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "k")]
+    public string? SearchTermFromQuery { get; set; }
+    public string? SearchTerm { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "v")]
+    public string? VersionFromQuery { get; set; }
+    public string? Version { get; set; }
     private string? DescriptionUrl { get; set; }
     private IDictionary<string, SearchResult> SearchResults = new Dictionary<string, SearchResult>();
     private string? IncludePatterns { get; set; }
     private string? ExcludePatterns { get; set; }
     private string? Tree { get; set; }
+    protected override void OnParametersSet() {
+        if(!string.IsNullOrEmpty(SearchTermFromQuery))
+            SearchTerm = SearchTermFromQuery;
+        if(!string.IsNullOrEmpty(VersionFromQuery))
+            Version = VersionFromQuery;
+        base.OnParametersSet();
+    }
+    private void GoToGenerate() {
+        if(!string.IsNullOrEmpty(DescriptionUrl))
+        {
+            var includeFilters = string.IsNullOrEmpty(IncludePatterns) ? string.Empty : string.Join(",", IncludePatterns
+                                .Split(new [] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                                .Select(static x => x.Trim()));
+            var excludeFilters = string.IsNullOrEmpty(ExcludePatterns) ? string.Empty : string.Join(",", ExcludePatterns
+                                .Split(new [] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                                .Select(static x => x.Trim()));
+            navManager.NavigateTo($"/generate?d={DescriptionUrl}&i={includeFilters}&e={excludeFilters}");
+        }
+    }
     private async Task ShowDescription() {
         var cancellationToken = new CancellationToken();
+        Tree = string.Empty;
         if (string.IsNullOrEmpty(DescriptionUrl)) {
             var searchConfig = new SearchConfiguration() {
                 SearchTerm = SearchTerm,

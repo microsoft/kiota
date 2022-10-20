@@ -55,7 +55,15 @@
                     <tr>
                         <td><a href="@result.Value.DescriptionUrl" target="_blank">@result.Key</a></td>
                         <td><p>@result.Value.Description</p></td>
-                        <td><p>@string.Join(", ", result.Value.VersionLabels)</p></td>
+                        <td><p>
+                            @foreach (var versionLabel in result.Value.VersionLabels)
+                            {
+                                var target = $"/show?k={result.Key}&v={versionLabel}";
+                                <NavLink class="nav-link" href="@target">
+                                    @versionLabel
+                                </NavLink>
+                            }
+                        </p></td>
                     </tr>
                 }
             </tbody>

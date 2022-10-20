@@ -67,16 +67,31 @@
 }
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "d")]
+    public string? DescriptionUrlFromQuery { get; set; }
     private string? DescriptionUrl { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "i")]
+    public string? IncludePatternsFromQuery { get; set; }
     private string? IncludePatterns { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "e")]
+    public string? ExcludePatternsFromQuery { get; set; }
     private string? ExcludePatterns { get; set; }
     private GenerationLanguage? Language { get; set; }
     private string? OutputPath { get; set; }
     private string? DownloadUrl { get; set; }
     private bool IsLoading { get; set; }
-    protected override async Task OnInitializedAsync()
-    {
-        //TODO read passed values from the query string
+    protected override void OnParametersSet() {
+        if(!string.IsNullOrEmpty(DescriptionUrlFromQuery))
+            DescriptionUrl = DescriptionUrlFromQuery;
+        if(!string.IsNullOrEmpty(IncludePatternsFromQuery))
+            IncludePatterns = string.Join(Environment.NewLine, IncludePatternsFromQuery.Split(',', StringSplitOptions.RemoveEmptyEntries));
+        if(!string.IsNullOrEmpty(ExcludePatternsFromQuery))
+            ExcludePatterns = string.Join(Environment.NewLine, ExcludePatternsFromQuery.Split(',', StringSplitOptions.RemoveEmptyEntries));
+            
+        base.OnParametersSet();
     }
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(() => SHA256.Create());
     private async Task ShowDescription() {
@@ -84,7 +99,7 @@
         DownloadUrl = string.Empty;
         if (!string.IsNullOrEmpty(DescriptionUrl)) {
             IsLoading = true;
-            var hashedUrl = BitConverter.ToString(HashAlgorithm.Value.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl!.ToString()))).Replace("-", string.Empty);
+            var hashedUrl = BitConverter.ToString(HashAlgorithm.Value!.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl!.ToString()))).Replace("-", string.Empty);
             OutputPath = Path.Combine(Path.GetTempPath(), "kiota", "generation", hashedUrl);
             var generationConfiguration = new GenerationConfiguration{
                 OpenAPIFilePath = DescriptionUrl,
