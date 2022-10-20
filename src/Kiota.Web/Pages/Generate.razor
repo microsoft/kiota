@@ -1,0 +1,116 @@
+﻿@page "/generate"
+@using Kiota.Builder
+@using Kiota.Builder.Configuration
+@using System.Linq
+@using System.IO
+@using System.IO.Compression
+@using System.Security.Cryptography
+@using System.Text
+@using System.Threading
+@inject HttpClient Http
+@inject ILoggerFactory LoggerFactory
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Kiota - generate an OpenAPI client</PageTitle>
+
+<h1>Generate</h1>
+
+<p>This component demonstrates fetching data from the server.</p>
+
+<div>
+    <div class="form-group">
+        <div class="form-row">
+            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                <label for="descriptionUrl">Description Url</label>
+                <input id="descriptionUrl" type="text" @bind="DescriptionUrl" class="form-control" />
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="form-row">
+            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                <label for="includePatterns">Include Patterns</label>
+                <textarea id="includePatterns" type="text" @bind="IncludePatterns" class="form-control" rows="5"></textarea>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                <label for="excludePatterns">Exclude Patterns</label>
+                <textarea id="excludePatterns" type="text" @bind="ExcludePatterns" class="form-control" rows="5"></textarea>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                <label for="language">Language</label>
+                <select id="language" type="text" @bind="Language" class="form-control">
+                    @foreach (var item in Enum.GetValues(typeof(GenerationLanguage)))
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+    <button @onclick="ShowDescription" class="btn btn-primary" disabled="@(string.IsNullOrEmpty(DescriptionUrl) || IsLoading)">Generate</button>
+</div>
+
+@if(IsLoading) {
+    <div class="spinner-border" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+}
+
+@if(!string.IsNullOrEmpty(DownloadUrl)) {
+    <div>
+        <button @onclick="DownloadClient" class="btn btn-secondary">Download the generated client</button>
+    </div>
+}
+
+@code {
+    private string? DescriptionUrl { get; set; }
+    private string? IncludePatterns { get; set; }
+    private string? ExcludePatterns { get; set; }
+    private GenerationLanguage? Language { get; set; }
+    private string? OutputPath { get; set; }
+    private string? DownloadUrl { get; set; }
+    private bool IsLoading { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        //TODO read passed values from the query string
+    }
+    private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(() => SHA256.Create());
+    private async Task ShowDescription() {
+        var cancellationToken = new CancellationToken();
+        DownloadUrl = string.Empty;
+        if (!string.IsNullOrEmpty(DescriptionUrl)) {
+            IsLoading = true;
+            var hashedUrl = BitConverter.ToString(HashAlgorithm.Value.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl!.ToString()))).Replace("-", string.Empty);
+            OutputPath = Path.Combine(Path.GetTempPath(), "kiota", "generation", hashedUrl);
+            var generationConfiguration = new GenerationConfiguration{
+                OpenAPIFilePath = DescriptionUrl,
+                IncludePatterns = IncludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
+                ExcludePatterns = ExcludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
+                Language = Language ?? GenerationLanguage.CSharp,
+                OutputPath = OutputPath,
+            };
+            var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
+            await new KiotaBuilder(builderLogger, generationConfiguration).GenerateClientAsync(cancellationToken);
+            var zipFilePath = Path.Combine(Path.GetTempPath(), "kiota", "clients", hashedUrl, "client.zip");
+            if (File.Exists(zipFilePath))
+                File.Delete(zipFilePath);
+            else
+                Directory.CreateDirectory(Path.GetDirectoryName(zipFilePath)!);
+            ZipFile.CreateFromDirectory(OutputPath, zipFilePath);
+            DownloadUrl = zipFilePath;
+            IsLoading = false;
+        }
+    }
+    private async Task DownloadClient() {
+        if (!string.IsNullOrEmpty(DownloadUrl)) {
+            using var fileStream = File.OpenRead(DownloadUrl);
+            using var ms = new MemoryStream();
+            await fileStream.CopyToAsync(ms);
+            await JSRuntime.InvokeVoidAsync("BlazorDownloadFile", "client.zip", "application/zip", ms.ToArray());
+        }
+    }
+}
