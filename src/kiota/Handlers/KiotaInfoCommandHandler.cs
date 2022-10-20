@@ -88,7 +88,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler {
             DisplayInfo($"The language {language} is currently in {languageInformation.MaturityLevel} maturity level.",
                         "After generating code for this language, you need to install the following packages:");
             foreach(var dependency in languageInformation.Dependencies) {
-                DisplayInfo(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version);
+                DisplayInfo(string.Format(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version));
             }
         } else {
             DisplayInfo($"No information for {language}.");
