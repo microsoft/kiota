@@ -104,8 +104,8 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         var cacheProvider = new DocumentCachingProvider(client, logger) {
             ClearCache = true,
         };
-        using var document = await cacheProvider.GetDocumentAsync(result.Value.DescriptionUrl, "download", Path.GetFileName(path), cancellationToken);
-        using var fileStream = File.Create(path);
+        await using var document = await cacheProvider.GetDocumentAsync(result.Value.DescriptionUrl, "download", Path.GetFileName(path), cancellationToken);
+        await using var fileStream = File.Create(path);
         await document.CopyToAsync(fileStream, cancellationToken);
         await fileStream.FlushAsync(cancellationToken);
         return (path, 0);

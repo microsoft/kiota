@@ -58,7 +58,7 @@ public class KiotaBuilder
     private async Task<(int, OpenApiUrlTreeNode)> GetTreeNodeInternal(string inputPath, Stopwatch sw, CancellationToken cancellationToken) {
         var stepId = 0;
         sw.Start();
-        using var input = await LoadStream(inputPath, cancellationToken);
+        await using var input = await LoadStream(inputPath, cancellationToken);
         if(input == null)
             return (0, null);
         StopLogAndReset(sw, $"step {++stepId} - reading the stream - took");

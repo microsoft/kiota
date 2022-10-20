@@ -28,7 +28,7 @@ public class DocumentCachingProviderTests {
         using var client = new HttpClient();
         var mockLogger = new Mock<ILogger>().Object;
         var provider = new DocumentCachingProvider(client, mockLogger);
-        using var result = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
+        await using var result = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
         Assert.NotNull(result);
         Assert.NotEqual(0, result.Length);
     }
@@ -37,9 +37,9 @@ public class DocumentCachingProviderTests {
         using var client = new HttpClient();
         var mockLogger = new Mock<ILogger>().Object;
         var provider = new DocumentCachingProvider(client, mockLogger);
-        using var result1 = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
+        await using var result1 = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
         provider.Duration = TimeSpan.FromMilliseconds(-1);
-        using var result2 = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
+        await using var result2 = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
         Assert.NotNull(result2);
         Assert.NotEqual(0, result2.Length);
     }
@@ -48,9 +48,9 @@ public class DocumentCachingProviderTests {
         using var client = new HttpClient();
         var mockLogger = new Mock<ILogger>().Object;
         var provider = new DocumentCachingProvider(client, mockLogger);
-        using var result1 = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
+        await using var result1 = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
         provider.ClearCache = true;
-        using var result2 = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
+        await using var result2 = await provider.GetDocumentAsync(new Uri("https://httpbin.org/headers"), "foo", "bar.json", new CancellationToken());
         Assert.NotNull(result2);
         Assert.NotEqual(0, result2.Length);
     }

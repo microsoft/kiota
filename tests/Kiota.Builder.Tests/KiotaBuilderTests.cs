@@ -72,7 +72,7 @@ components:
           - value: Premium_LRS");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
-        using var fs = new FileStream(tempFilePath, FileMode.Open);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = builder.CreateOpenApiDocument(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
@@ -107,7 +107,7 @@ servers:
   - url: https://graph.microsoft.com/v1.0");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
-        using var fs = new FileStream(tempFilePath, FileMode.Open);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = builder.CreateOpenApiDocument(fs);
         var node = builder.CreateUriSpace(document);
         var extensionResult = await builder.GetLanguageInformationAsync(new CancellationToken());
@@ -133,7 +133,7 @@ servers:
   - url: https://graph.microsoft.com/v1.0");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
-        using var fs = new FileStream(tempFilePath, FileMode.Open);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = builder.CreateOpenApiDocument(fs);
         var node = builder.CreateUriSpace(document);
         var extensionResult = await builder.GetLanguageInformationAsync(new CancellationToken());
