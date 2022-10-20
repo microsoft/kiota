@@ -6,6 +6,8 @@
 @using System.IO.Compression
 @using System.Security.Cryptography
 @using System.Text
+@using System.Text.Json
+@using System.Text.Json.Serialization;
 @using System.Threading
 @inject HttpClient Http
 @inject ILoggerFactory LoggerFactory
@@ -21,8 +23,20 @@
     <div class="form-group">
         <div class="form-row">
             <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="descriptionUrl">Description Url</label>
+                <label for="descriptionUrl">Open API Description Url</label>
                 <input id="descriptionUrl" type="text" @bind="DescriptionUrl" class="form-control" />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                <label for="namespaceName">Namespace prefix</label>
+                <input id="namespaceName" type="text" @bind="NamespaceName" class="form-control" />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                <label for="clientClassName">Client class name</label>
+                <input id="clientClassName" type="text" @bind="ClientClassName" class="form-control" />
             </div>
         </div>
     </div>
@@ -50,8 +64,20 @@
                 </select>
             </div>
         </div>
+        <div>
+            <div class="custom-control custom-checkbox">
+                <input id="additionalData" type="checkbox" @bind="AdditionalData" class="custom-control-input" />
+                <label for="additionalData" class="custom-control-label">Generate additional data holder for models</label>
+            </div>
+        </div>
+        <div>
+            <div class="custom-control custom-checkbox">
+                <input id="backingStore" type="checkbox" @bind="BackingStore" class="custom-control-input" />
+                <label for="backingStore" class="custom-control-label">Generate models with a backing store</label>
+            </div>
+        </div>
     </div>
-    <button @onclick="ShowDescription" class="btn btn-primary" disabled="@(string.IsNullOrEmpty(DescriptionUrl) || IsLoading)">Generate</button>
+    <button @onclick="GenerateClient" class="btn btn-primary" disabled="@(string.IsNullOrEmpty(DescriptionUrl) || IsLoading)">Generate</button>
 </div>
 
 @if(IsLoading) {
@@ -66,7 +92,30 @@
     </div>
 }
 
+@if(!string.IsNullOrEmpty(Dependencies)) {
+    <div>
+        <h2>Dependencies</h2>
+        <pre>@Dependencies</pre>
+    </div>
+}
+
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "c")]
+    public string? ClientClassNameFromQuery { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "n")]
+    public string? NamespaceNameFromQuery { get; set; }
+    private string? ClientClassName { get; set; }
+    private string? NamespaceName { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "b")]
+    public string? BackingStoreFromQuery { get; set; }
+    private bool BackingStore { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "ad")]
+    public string? AdditionalDataFromQuery { get; set; }
+    private bool AdditionalData { get; set; }
     [Parameter]
     [SupplyParameterFromQuery(Name = "d")]
     public string? DescriptionUrlFromQuery { get; set; }
@@ -83,6 +132,7 @@
     private string? OutputPath { get; set; }
     private string? DownloadUrl { get; set; }
     private bool IsLoading { get; set; }
+    private string? Dependencies { get; set; }
     protected override void OnParametersSet() {
         if(!string.IsNullOrEmpty(DescriptionUrlFromQuery))
             DescriptionUrl = DescriptionUrlFromQuery;
@@ -90,26 +140,54 @@
             IncludePatterns = string.Join(Environment.NewLine, IncludePatternsFromQuery.Split(',', StringSplitOptions.RemoveEmptyEntries));
         if(!string.IsNullOrEmpty(ExcludePatternsFromQuery))
             ExcludePatterns = string.Join(Environment.NewLine, ExcludePatternsFromQuery.Split(',', StringSplitOptions.RemoveEmptyEntries));
+
+        var defaultConfiguration = new GenerationConfiguration();
+
+        if(!string.IsNullOrEmpty(AdditionalDataFromQuery) && bool.TryParse(AdditionalDataFromQuery, out var additionalData))
+            AdditionalData = additionalData;
+        else 
+            AdditionalData = defaultConfiguration.IncludeAdditionalData;
+        
+        if(!string.IsNullOrEmpty(BackingStoreFromQuery) && bool.TryParse(BackingStoreFromQuery, out var backingStore))
+            BackingStore = backingStore;
+        else 
+            BackingStore = defaultConfiguration.UsesBackingStore;
+
+        if(!string.IsNullOrEmpty(ClientClassNameFromQuery))
+            ClientClassName = ClientClassNameFromQuery;
+        else 
+            ClientClassName = defaultConfiguration.ClientClassName;
+
+        if(!string.IsNullOrEmpty(NamespaceNameFromQuery))
+            NamespaceName = NamespaceNameFromQuery;
+        else 
+            NamespaceName = defaultConfiguration.ClientNamespaceName;
             
         base.OnParametersSet();
     }
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(() => SHA256.Create());
-    private async Task ShowDescription() {
+    private async Task GenerateClient() {
         var cancellationToken = new CancellationToken();
         DownloadUrl = string.Empty;
+        Dependencies = string.Empty;
         if (!string.IsNullOrEmpty(DescriptionUrl)) {
             IsLoading = true;
             var hashedUrl = BitConverter.ToString(HashAlgorithm.Value!.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl!.ToString()))).Replace("-", string.Empty);
             OutputPath = Path.Combine(Path.GetTempPath(), "kiota", "generation", hashedUrl);
             var generationConfiguration = new GenerationConfiguration{
                 OpenAPIFilePath = DescriptionUrl,
-                IncludePatterns = IncludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
-                ExcludePatterns = ExcludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
+                IncludePatterns = IncludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
+                ExcludePatterns = ExcludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
                 Language = Language ?? GenerationLanguage.CSharp,
                 OutputPath = OutputPath,
+                ClientClassName = ClientClassName,
+                ClientNamespaceName = NamespaceName,
+                IncludeAdditionalData = AdditionalData,
+                UsesBackingStore = BackingStore
             };
             var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
-            await new KiotaBuilder(builderLogger, generationConfiguration).GenerateClientAsync(cancellationToken);
+            var builder = new KiotaBuilder(builderLogger, generationConfiguration);
+            await builder.GenerateClientAsync(cancellationToken);
             var zipFilePath = Path.Combine(Path.GetTempPath(), "kiota", "clients", hashedUrl, "client.zip");
             if (File.Exists(zipFilePath))
                 File.Delete(zipFilePath);
@@ -117,6 +195,11 @@
                 Directory.CreateDirectory(Path.GetDirectoryName(zipFilePath)!);
             ZipFile.CreateFromDirectory(OutputPath, zipFilePath);
             DownloadUrl = zipFilePath;
+            var informationSource = await builder.GetLanguageInformationAsync(cancellationToken) ?? (await GetConfiguration(cancellationToken))?.Languages;
+            if (informationSource?.TryGetValue(generationConfiguration.Language.ToString(), out var languageInformation) ?? false) {
+                foreach(var dependency in languageInformation.Dependencies)
+                    Dependencies += $"{string.Format(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version)}{Environment.NewLine}";
+            }
             IsLoading = false;
         }
     }
@@ -127,5 +210,16 @@
             await fileStream.CopyToAsync(ms);
             await JSRuntime.InvokeVoidAsync("BlazorDownloadFile", "client.zip", "application/zip", ms.ToArray());
         }
+    }
+    private Task<KiotaConfiguration?> GetConfiguration(CancellationToken cancellationToken) {
+        return Http.GetFromJsonAsync<KiotaConfiguration>(
+            "appsettings.json",
+            new JsonSerializerOptions{
+                Converters ={
+                    new JsonStringEnumConverter( JsonNamingPolicy.CamelCase)
+                },
+                
+            },
+            cancellationToken);
     }
 }
