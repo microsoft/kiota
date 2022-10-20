@@ -13,11 +13,11 @@ nav_order: 2
 
 Kiota offers the following commands to help you build your API client:
 
-- **[search](#description-search)**: search for APIs and their description from various registries.
-- **[download](#description-download)**: download an API description.
-- **[show](#description-show)**: show the API paths tree for an API description.
-- **[generate](#client-generation)**: generate a client for any API from its description.
-- **[info](#language-information)**: show languages and runtime dependencies information.
+- [search](#description-search): search for APIs and their description from various registries.
+- [download](#description-download): download an API description.
+- [show](#description-show): show the API paths tree for an API description.
+- [generate](#client-generation): generate a client for any API from its description.
+- [info](#language-information): show languages and runtime dependencies information.
 
 ## Description search
 
@@ -79,9 +79,9 @@ OpenAPI: https://raw.githubusercontent.com/github/rest-api-description/main/desc
 
 The search command accepts optional parameters commonly available on the other commands:
 
-- **[--clear-cache](#--clear-cache---co)**
-- **[--log-level](#--log-level---ll)**
-- **[--version](#--version--v)**
+- [--clear-cache](#--clear-cache---co)
+- [--log-level](#--log-level---ll)
+- [--version](#--version--v)
 
 ## Description download
 
@@ -114,11 +114,11 @@ kiota download apisguru::github.com
 
 The download command accepts optional parameters commonly available on the other commands:
 
-- **[--clean-output](#--clean-output---co)**
-- **[--clear-cache](#--clear-cache---co)**
-- **[--log-level](#--log-level---ll)**
-- **[--output](#--output--o)**
-- **[--version](#--version--v)**
+- [--clean-output](#--clean-output---co)
+- [--clear-cache](#--clear-cache---co)
+- [--log-level](#--log-level---ll)
+- [--output](#--output--o)
+- [--version](#--version--v)
 
 ## Description show
 
@@ -158,13 +158,13 @@ kiota show -d https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-power
 
 The show command accepts optional parameters commonly available on the other commands:
 
-- **[--openapi](#--openapi--d)**
-- **[--clear-cache](#--clear-cache---co)**
-- **[--log-level](#--log-level---ll)**
-- **[--include-path](#--include-path--i)**
-- **[--exclude-path](#--exclude-path--e)**
-- **[--version](#--version--v)**
-- **[--search-key](#--search-key--k)**
+- [--openapi](#--openapi--d)
+- [--clear-cache](#--clear-cache---co)
+- [--log-level](#--log-level---ll)
+- [--include-path](#--include-path--i)
+- [--exclude-path](#--exclude-path--e)
+- [--version](#--version--v)
+- [--search-key](#--search-key--k)
 
 ## Client generation
 
@@ -190,17 +190,17 @@ kiota generate (--openapi | -d) <path>
 
 ### Mandatory parameters
 
-- **[openapi](#--openapi--d)**
-- **[language](#--language--l)**
+- [openapi](#--openapi--d)
+- [language](#--language--l)
 
 ### Optional parameters
 
 The generate command accepts optional parameters commonly available on the other commands:
 
-- **[--clear-cache](#--clear-cache---co)**
-- **[--clean-output](#--clean-output---co)**
-- **[--log-level](#--log-level---ll)**
-- **[--output](#--output--o)**
+- [--clear-cache](#--clear-cache---co)
+- [--clean-output](#--clean-output---co)
+- [--log-level](#--log-level---ll)
+- [--output](#--output--o)
 
 #### `--backing-store (-b)`
 
@@ -390,12 +390,12 @@ dotnet add package Microsoft.Kiota.Serialization.Text --version 1.0.0-preview.4 
 
 The info command accepts optional parameters commonly available on the other commands:
 
-- **[--openapi](#--openapi--d)**
-- **[--clear-cache](#--clear-cache---co)**
-- **[--log-level](#--log-level---ll)**
-- **[--language](#--language--l)**
-- **[--version](#--version--v)**
-- **[--search-key](#--search-key--k)**
+- [--openapi](#--openapi--d)
+- [--clear-cache](#--clear-cache---co)
+- [--log-level](#--log-level---ll)
+- [--language](#--language--l)
+- [--version](#--version--v)
+- [--search-key](#--search-key--k)
 
 ## Common parameters
 
