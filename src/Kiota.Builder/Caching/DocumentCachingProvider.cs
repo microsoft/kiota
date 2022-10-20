@@ -37,10 +37,10 @@ public class DocumentCachingProvider {
                 Directory.CreateDirectory(directory);
             Stream content = null;
             try {
-                using var httpContent = await HttpClient.GetStreamAsync(documentUri, token);
+                await using var httpContent = await HttpClient.GetStreamAsync(documentUri, token);
                 content = new MemoryStream();
                 await httpContent.CopyToAsync(content, token);
-                using var fileStream = File.Create(target);
+                await using var fileStream = File.Create(target);
                 content.Position = 0;
                 await content.CopyToAsync(fileStream, token);
                 await fileStream.FlushAsync(token);

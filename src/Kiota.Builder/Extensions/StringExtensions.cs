@@ -8,7 +8,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Kiota.Builder.Extensions {
-    public static class StringExtensions {
+    public static class StringExtensions
+    {
+        private const int MaxStackLimit = 1024;
+
         public static string ToFirstCharacterLowerCase(this string input)
             => string.IsNullOrEmpty(input) ? input : char.ToLowerInvariant(input[0]) + input[1..];
         public static string ToFirstCharacterUpperCase(this string input)
@@ -62,7 +65,8 @@ namespace Kiota.Builder.Extensions {
                 return count;
             }
 
-            Span<char> span = stackalloc char[nameSpan.Length + CountNecessaryNewSeparators(nameSpan)];
+            var newStringLength = nameSpan.Length + CountNecessaryNewSeparators(nameSpan);
+            Span<char> span = Encoding.UTF8.GetMaxByteCount(newStringLength) <= MaxStackLimit ? stackalloc char[newStringLength] : new char[newStringLength];
             var current = nameSpan[0];
             span[0] = char.ToLowerInvariant(current);
             var counter = 1;
