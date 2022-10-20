@@ -21,8 +21,12 @@
         "todoclient"
     ],
     "cSpell.words": [
+        "apisguru",
+        "Contoso",
         "deserialization",
+        "deserializers",
         "getenv",
+        "ghes",
         "Kiota",
         "npmrc",
         "openapi",
