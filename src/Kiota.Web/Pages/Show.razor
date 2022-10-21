@@ -4,6 +4,7 @@
 @using Kiota.Builder.Configuration
 @using System.Linq
 @using System.Text;
+@using Microsoft.Fast.Components.FluentUI
 @inject ILoggerFactory LoggerFactory
 @inject NavigationManager navManager
 @using System.Globalization
@@ -58,7 +59,7 @@
 @if(!string.IsNullOrEmpty(Tree)) {
     <div>
         <h2>@Loc["ApiPaths"]</h2>
-        <pre>@Tree</pre>
+        <fluent-tree-view>@((MarkupString)Tree)</fluent-tree-view>
     </div>
 }
 
@@ -125,15 +126,12 @@
         var urlTreeNode = await new KiotaBuilder(builderLogger, generationConfiguration).GetUrlTreeNodeAsync(ComponentDetached);
 
         var builder = new StringBuilder();
-        RenderNode(urlTreeNode, 5, builder);
+        RenderNode(urlTreeNode, 2, builder);
         Tree = builder.ToString();
     }
-    private const string Cross = " ├─";
-    private const string Corner = " └─";
-    private const string Vertical = " │ ";
-    private const string Space = "   ";
     private static void RenderNode(Microsoft.OpenApi.Services.OpenApiUrlTreeNode node, uint maxDepth, StringBuilder builder, string indent = "", int nodeDepth = 0)
     {
+        builder.AppendLine("<fluent-tree-item expanded=\"true\">");
         builder.AppendLine(node.Segment);
 
         var children = node.Children;
@@ -141,28 +139,15 @@
         for (var i = 0; i < numberOfChildren; i++)
         {
             var child = children.ElementAt(i);
-            var isLast = i == (numberOfChildren - 1);
-            RenderChildNode(child.Value, maxDepth, builder, indent, isLast, nodeDepth);
+            RenderChildNode(child.Value, maxDepth, builder, indent, nodeDepth);
         }
+        builder.AppendLine("</fluent-tree-item>");
     }
 
-    private static void RenderChildNode(Microsoft.OpenApi.Services.OpenApiUrlTreeNode node, uint maxDepth, StringBuilder builder, string indent, bool isLast, int nodeDepth = 0)
+    private static void RenderChildNode(Microsoft.OpenApi.Services.OpenApiUrlTreeNode node, uint maxDepth, StringBuilder builder, string indent, int nodeDepth = 0)
     {
         if (nodeDepth >= maxDepth && maxDepth != 0)
             return;
-        builder.Append(indent);
-
-        if (isLast)
-        {
-            builder.Append(Corner);
-            indent += Space;
-        }
-        else
-        {
-            builder.Append(Cross);
-            indent += Vertical;
-        }
-
         RenderNode(node, maxDepth, builder, indent, nodeDepth + 1);
     }
 }
