@@ -21,10 +21,15 @@
         "todoclient"
     ],
     "cSpell.words": [
+        "allof",
+        "apisguru",
         "autoload",
+        "Contoso",
         "deserialization",
+        "deserializers",
         "dumpautoload",
         "getenv",
+        "ghes",
         "Kiota",
         "Nethttplibrary",
         "npmrc",
