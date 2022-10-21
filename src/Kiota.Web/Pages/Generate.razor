@@ -12,30 +12,32 @@
 @inject HttpClient Http
 @inject ILoggerFactory LoggerFactory
 @inject IJSRuntime JSRuntime
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Generate> Loc
 
-<PageTitle>Kiota - generate an OpenAPI client</PageTitle>
 
-<h1>Generate</h1>
+<PageTitle>@Loc["PageTitle"]</PageTitle>
 
-<p>This component demonstrates fetching data from the server.</p>
+<h1>@Loc["Generate"]</h1>
 
 <div>
     <div class="form-group">
         <div class="form-row">
             <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="descriptionUrl">Open API Description Url</label>
+                <label for="descriptionUrl">@Loc["DescriptionUrl"]</label>
                 <input id="descriptionUrl" type="text" @bind="DescriptionUrl" class="form-control" />
             </div>
         </div>
         <div class="form-row">
             <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="namespaceName">Namespace prefix</label>
+                <label for="namespaceName">@Loc["NamespacePrefix"]</label>
                 <input id="namespaceName" type="text" @bind="NamespaceName" class="form-control" />
             </div>
         </div>
         <div class="form-row">
             <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="clientClassName">Client class name</label>
+                <label for="clientClassName">@Loc["ClientClassName"]</label>
                 <input id="clientClassName" type="text" @bind="ClientClassName" class="form-control" />
             </div>
         </div>
@@ -43,19 +45,19 @@
     <div class="form-group">
         <div class="form-row">
             <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="includePatterns">Include Patterns</label>
+                <label for="includePatterns">@Loc["IncludePatterns"]</label>
                 <textarea id="includePatterns" type="text" @bind="IncludePatterns" class="form-control" rows="5"></textarea>
             </div>
         </div>
         <div class="form-row">
             <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="excludePatterns">Exclude Patterns</label>
+                <label for="excludePatterns">@Loc["ExcludePatterns"]</label>
                 <textarea id="excludePatterns" type="text" @bind="ExcludePatterns" class="form-control" rows="5"></textarea>
             </div>
         </div>
         <div class="form-row">
             <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="language">Language</label>
+                <label for="language">@Loc["Language"]</label>
                 <select id="language" type="text" @bind="Language" class="form-control">
                     @foreach (var item in Enum.GetValues(typeof(GenerationLanguage)))
                     {
@@ -67,13 +69,13 @@
         <div>
             <div class="custom-control custom-checkbox">
                 <input id="additionalData" type="checkbox" @bind="AdditionalData" class="custom-control-input" />
-                <label for="additionalData" class="custom-control-label">Generate additional data holder for models</label>
+                <label for="additionalData" class="custom-control-label">@Loc["AdditionalData"]</label>
             </div>
         </div>
         <div>
             <div class="custom-control custom-checkbox">
                 <input id="backingStore" type="checkbox" @bind="BackingStore" class="custom-control-input" />
-                <label for="backingStore" class="custom-control-label">Generate models with a backing store</label>
+                <label for="backingStore" class="custom-control-label">@Loc["BackingStore"]</label>
             </div>
         </div>
     </div>
@@ -82,19 +84,19 @@
 
 @if(IsLoading) {
     <div class="spinner-border" role="status">
-        <span class="sr-only">Loading...</span>
+        <span class="sr-only">@Loc["Loading"]</span>
     </div>
 }
 
 @if(!string.IsNullOrEmpty(DownloadUrl)) {
     <div>
-        <button @onclick="DownloadClient" class="btn btn-secondary">Download the generated client</button>
+        <button @onclick="DownloadClient" class="btn btn-secondary">@Loc["Download"]</button>
     </div>
 }
 
 @if(!string.IsNullOrEmpty(Dependencies)) {
     <div>
-        <h2>Dependencies</h2>
+        <h2>@Loc["Dependencies"]</h2>
         <pre>@Dependencies</pre>
     </div>
 }
