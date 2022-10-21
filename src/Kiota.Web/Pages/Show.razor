@@ -5,23 +5,26 @@
 @using System.Linq
 @using System.Text;
 @inject ILoggerFactory LoggerFactory
-@inject NavigationManager navManager 
+@inject NavigationManager navManager
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Show> Loc
 
-<PageTitle>Kiota - show an OpenAPI description and fine tune your filters</PageTitle>
+<PageTitle>@Loc["PageTitle"]</PageTitle>
 
-<h1>Show</h1>
+<h1>@Loc["Show"]</h1>
 
 <div>
     <div class="form-group">
         <div class="form-row">
             <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="term">Search term or Key</label>
+                <label for="term">@Loc["SearchKey"]</label>
                 <input id="term" type="text" @bind="SearchTerm" class="form-control" />
             </div>
         </div>
         <div class="form-row">
             <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="version">Version</label>
+                <label for="version">@Loc["Version"]</label>
                 <input id="version" type="text" @bind="Version" class="form-control" />
             </div>
         </div>
@@ -29,7 +32,7 @@
     <div class="form-group">
         <div class="form-row">
             <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="descriptionUrl">Description Url</label>
+                <label for="descriptionUrl">@Loc["DescriptionUrl"]</label>
                 <input id="descriptionUrl" type="text" @bind="DescriptionUrl" class="form-control" />
             </div>
         </div>
@@ -37,24 +40,24 @@
     <div class="form-group">
         <div class="form-row">
             <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="includePatterns">Include Patterns</label>
+                <label for="includePatterns">@Loc["IncludePatterns"]</label>
                 <textarea id="includePatterns" type="text" @bind="IncludePatterns" class="form-control" rows="5"></textarea>
             </div>
         </div>
         <div class="form-row">
             <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="excludePatterns">Exclude Patterns</label>
+                <label for="excludePatterns">@Loc["ExcludePatterns"]</label>
                 <textarea id="excludePatterns" type="text" @bind="ExcludePatterns" class="form-control" rows="5"></textarea>
             </div>
         </div>
     </div>
-    <button @onclick="ShowDescription" class="btn btn-primary">Show</button>
-    <button @onclick="GoToGenerate" class="btn btn-secondary" disabled="@(string.IsNullOrEmpty(DescriptionUrl))">Go To Generate</button>
+    <button @onclick="ShowDescription" class="btn btn-primary">@Loc["ShowButton"]</button>
+    <button @onclick="GoToGenerate" class="btn btn-secondary" disabled="@(string.IsNullOrEmpty(DescriptionUrl))">@Loc["GoToGenerate"]</button>
 </div>
 
 @if(!string.IsNullOrEmpty(Tree)) {
     <div>
-        <h2>API Paths</h2>
+        <h2>@Loc["ApiPaths"]</h2>
         <pre>@Tree</pre>
     </div>
 }
