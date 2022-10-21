@@ -2,7 +2,7 @@
 
 [![Dotnet](https://github.com/microsoft/kiota/actions/workflows/dotnet.yml/badge.svg)](https://github.com/microsoft/kiota/actions/workflows/dotnet.yml) [![CodeQL](https://github.com/microsoft/kiota/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/microsoft/kiota/actions/workflows/codeql-analysis.yml) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=microsoft_kiota&metric=coverage)](https://sonarcloud.io/dashboard?id=microsoft_kiota) [![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=microsoft_kiota&metric=alert_status)](https://sonarcloud.io/dashboard?id=microsoft_kiota)
 
-Kiota is a project to build an OpenAPI based code generator for creating SDKs for HTTP APIs. The goal is to produce a lightweight, low maintenance, code generator that is fast enough to run as part of the compile time tool-chain but scalable enough to handle the largest APIs. Kiota generates a lightweight set of strongly typed classes that layer over a set of core HTTP libraries and produce an intuitive and discoverable way of creating HTTP requests. A set of abstractions decouple the generated service library from the core libraries allowing a variety of core libraries to be supported.
+Kiota is a command line tool for generating an API client to call any OpenAPI described API you are interested in. The goal is to eliminate the need to take a dependency on a different API SDK for every API that you need to call. Kiota API clients provide a strongly typed experience with all the features you expect from a high quality API SDK, but without having to learn a new library for every HTTP API.
 
 This library builds on top of the [Microsoft.OpenAPI.NET](https://github.com/microsoft/openapi.net) library to ensure comprehensive support for APIs that use OpenAPI descriptions. One of the goals of the project is to provide the best code generator support possible for OpenAPI and JSON Schema features. The [conceptual documentation](https://microsoft.github.io/kiota) describes how kiota works and the high level concepts, this readme documents how to get started with Kiota.
 
@@ -13,7 +13,7 @@ This library builds on top of the [Microsoft.OpenAPI.NET](https://github.com/mic
 1. Install required tools and dependencies. (refer to the [Supported Languages](#supported-languages) table under the **Required tools & dependencies** column)
 1. Get Kiota using one of the [available options](https://microsoft.github.io/kiota/get-started/).
 1. Generate your API client, checkout the [Parameters reference](https://microsoft.github.io/kiota/using) for the different options.
-1. Start calling your API using your fluent API SDK.
+1. Start calling your API using your fluent API Client.
 
 ### Supported languages
 
@@ -41,11 +41,13 @@ Parameters are documented [here](https://microsoft.github.io/kiota/using).
 
 Make sure you [install the pre-requisites first](https://microsoft.github.io/kiota/contributing). If you are using Visual Studio Code as your IDE, the **launch.json** file already contains the configuration to run Kiota. By default this configuration will use the `openApiDocs/v1.0/Mail.yml` under the [PowerShell repository](https://github.com/microsoftgraph/msgraph-sdk-powershell) as the OpenAPI to generate an SDK for. By default this configuration will output the generated files in a graphdotnetv4|graphjavav4|graphtypescriptv4 folder located in the parent folder this repository is cloned in.
 
-Selecting the language you want to generate an SDK for in the Visual Studio Debug tab and hitting **F5** will automatically build, start, and attach the debugging process to Kiota.
+Selecting the language you want to generate an API client for in the Visual Studio Debug tab and hitting **F5** will automatically build, start, and attach the debugging process to Kiota.
 
 ### Samples
 
 You can find samples of clients generated with Kiota in the [Kiota samples](https://github.com/microsoft/kiota-samples) repository.
+
+An example of an application that is calling multiple API can be found in the [KiotaApp](https://github.com/darrelmiller/KiotaApp) repo 
 
 ## Contributing
 
