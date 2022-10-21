@@ -7,6 +7,7 @@
 @using System.Globalization
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<Index> Loc
+@inject NavigationManager navManager
 
 <PageTitle>@Loc["PageTitle"]</PageTitle>
 
@@ -24,7 +25,7 @@
     <button @onclick="SearchDocuments" class="btn btn-primary">@Loc["SearchAction"]</button>
 </div>
 
-@if (SearchResults.Any() && (SearchTerm?.Contains("::") ?? false) && SearchResults.ContainsKey(SearchTerm)) {
+@if (IsExactMatch()) {
     var singleResult = SearchResults[SearchTerm];
     <div id="single-result">
         <h2>@Loc["SingleResult"]</h2>
@@ -32,8 +33,21 @@
             <span>@Loc["SR_Key"]</span><a href="@singleResult.DescriptionUrl" target="_blank">@SearchTerm</a><br />
             <span>@Loc["SR_Description"]</span>@singleResult.Description<br />
             <span>@Loc["SR_ServiceRoot"]</span>@singleResult.ServiceUrl<br />
-            <span>@Loc["SR_Versions"]</span>@(string.Join(", ", singleResult.VersionLabels))<br />
+            <span>@Loc["SR_Versions"]</span>
+            <ul>
+                @foreach (var versionLabel in singleResult.VersionLabels)
+                {
+                    var target = $"/show?k={SearchTerm}&v={versionLabel}";
+                    <li>
+                        <NavLink class="nav-link" href="@target">
+                            @versionLabel
+                        </NavLink>
+                    </li>
+                }
+            </ul>
+            <br />
         </p>
+        <button @onclick="GoToGenerate" class="btn btn-primary">@Loc["GoToGenerate"]</button>
     </div>
 } else if (SearchResults.Any()) {
     <div id="results">
@@ -84,5 +98,12 @@
         };
         var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
         SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
+    }
+    private bool IsExactMatch() => SearchResults.Any() && (SearchTerm?.Contains("::") ?? false) && SearchResults.ContainsKey(SearchTerm);
+    private void GoToGenerate() {
+        if(IsExactMatch())
+        {
+            navManager.NavigateTo($"/generate?d={SearchResults.Values.First().DescriptionUrl}");
+        }
     }
 }
