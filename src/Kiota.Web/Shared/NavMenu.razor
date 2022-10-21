@@ -1,4 +1,9 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using System.Globalization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<NavMenu> Loc
+
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">Kiota.dev</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
@@ -11,23 +16,23 @@
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All"><!-- icons list https://github.com/iconic/open-iconic/tree/master/svg --> 
-                <span class="oi oi-magnifying-glass" aria-hidden="true"></span> Search
+                <span class="oi oi-magnifying-glass" aria-hidden="true"></span> @Loc["Search"]
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="show">
-                <span class="oi oi-list" aria-hidden="true"></span> Show
+                <span class="oi oi-list" aria-hidden="true"></span> @Loc["Show"]
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="generate">
-                <span class="oi oi-aperture" aria-hidden="true"></span> Generate
+                <span class="oi oi-aperture" aria-hidden="true"></span> @Loc["Generate"]
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="https://microsoft.github.io/kiota" target="_blank">
-                <span class="oi oi-question-mark" aria-hidden="true"></span> About
+                <span class="oi oi-question-mark" aria-hidden="true"></span> @Loc["About"]
             </NavLink>
         </div>
     </nav>

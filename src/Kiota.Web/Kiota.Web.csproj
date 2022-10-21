@@ -21,6 +21,18 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Index.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="Pages\Generate.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Generate.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Pages\Show.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Show.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Shared\NavMenu.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>NavMenu.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
   <PropertyGroup>
