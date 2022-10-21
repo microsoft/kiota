@@ -1446,7 +1446,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("getShort", result);
         Assert.DoesNotContain("getShort_escaped", result);
         
-        using var tw2 = new StringWriter();
+        await using var tw2 = new StringWriter();
         tempWriter.SetTextWriter(tw2);
         tempWriter.Write(setter);
         result = tw2.ToString();

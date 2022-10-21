@@ -32,7 +32,7 @@ public class APIsGuruSearchProvider : ISearchProvider
     {
         if (SearchUri == null)
             return new Dictionary<string, SearchResult>();
-        using var rawDocument = await cachingProvider.GetDocumentAsync(SearchUri, "search", "apisguru.json", cancellationToken);
+        await using var rawDocument = await cachingProvider.GetDocumentAsync(SearchUri, "search", "apisguru.json", cancellationToken);
         var apiEntries = JsonSerializer.Deserialize<Dictionary<string, ApiEntry>>(rawDocument);
         var candidates = apiEntries
                             .Where(x => !KeysToExclude.Contains(x.Key))
