@@ -76,12 +76,22 @@
     private string? IncludePatterns { get; set; }
     private string? ExcludePatterns { get; set; }
     private string? Tree { get; set; }
-    protected override void OnParametersSet() {
+    protected override async Task OnParametersSetAsync() {
         if(!string.IsNullOrEmpty(SearchTermFromQuery))
             SearchTerm = SearchTermFromQuery;
         if(!string.IsNullOrEmpty(VersionFromQuery))
             Version = VersionFromQuery;
-        base.OnParametersSet();
+        if (!string.IsNullOrEmpty(SearchTerm) && !string.IsNullOrEmpty(Version) && string.IsNullOrEmpty(DescriptionUrl)) {
+            var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
+            var searchConfig = new SearchConfiguration() {
+                SearchTerm = SearchTerm,
+                Version = Version,
+            };
+            var searchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
+            if(searchResults.Any())
+                DescriptionUrl = searchResults.Values.First().DescriptionUrl.ToString();
+        }
+        await base.OnParametersSetAsync();
     }
     private void GoToGenerate() {
         if(!string.IsNullOrEmpty(DescriptionUrl))
