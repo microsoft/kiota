@@ -76,6 +76,6 @@
             SearchTerm = SearchTerm,
         };
         var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
-        SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(new CancellationToken());
+        SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
     }
 }

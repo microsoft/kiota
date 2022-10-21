@@ -169,7 +169,6 @@
     }
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(() => SHA256.Create());
     private async Task GenerateClient() {
-        var cancellationToken = new CancellationToken();
         DownloadUrl = string.Empty;
         Dependencies = string.Empty;
         if (!string.IsNullOrEmpty(DescriptionUrl)) {
@@ -189,7 +188,7 @@
             };
             var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
             var builder = new KiotaBuilder(builderLogger, generationConfiguration);
-            await builder.GenerateClientAsync(cancellationToken);
+            await builder.GenerateClientAsync(ComponentDetached);
             var zipFilePath = Path.Combine(Path.GetTempPath(), "kiota", "clients", hashedUrl, "client.zip");
             if (File.Exists(zipFilePath))
                 File.Delete(zipFilePath);
@@ -197,7 +196,7 @@
                 Directory.CreateDirectory(Path.GetDirectoryName(zipFilePath)!);
             ZipFile.CreateFromDirectory(OutputPath, zipFilePath);
             DownloadUrl = zipFilePath;
-            var informationSource = await builder.GetLanguageInformationAsync(cancellationToken) ?? (await GetConfiguration(cancellationToken))?.Languages;
+            var informationSource = await builder.GetLanguageInformationAsync(ComponentDetached) ?? (await GetConfiguration(ComponentDetached))?.Languages;
             if (informationSource?.TryGetValue(generationConfiguration.Language.ToString(), out var languageInformation) ?? false) {
                 foreach(var dependency in languageInformation.Dependencies)
                     Dependencies += $"{string.Format(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version)}{Environment.NewLine}";

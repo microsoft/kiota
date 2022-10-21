@@ -96,7 +96,6 @@
         }
     }
     private async Task ShowDescription() {
-        var cancellationToken = new CancellationToken();
         Tree = string.Empty;
         if (string.IsNullOrEmpty(DescriptionUrl)) {
             var searchConfig = new SearchConfiguration() {
@@ -104,7 +103,7 @@
                 Version = Version,
             };
             var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
-            SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(cancellationToken);
+            SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
             DescriptionUrl = SearchResults.First().Value.DescriptionUrl.ToString();
         }
         var generationConfiguration = new GenerationConfiguration{
@@ -113,7 +112,7 @@
             ExcludePatterns = ExcludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
         };
         var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
-        var urlTreeNode = await new KiotaBuilder(builderLogger, generationConfiguration).GetUrlTreeNodeAsync(cancellationToken);
+        var urlTreeNode = await new KiotaBuilder(builderLogger, generationConfiguration).GetUrlTreeNodeAsync(ComponentDetached);
 
         var builder = new StringBuilder();
         RenderNode(urlTreeNode, 5, builder);
