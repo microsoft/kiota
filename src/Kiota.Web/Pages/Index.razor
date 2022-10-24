@@ -23,55 +23,27 @@
     }
 </div>
 
-@if (IsExactMatch()) {
-    var singleResult = SearchResults[SearchTerm!];
-    <div id="single-result">
-        <h2>@Loc["SingleResult"]</h2>
-        <p>
-            <span>@Loc["SR_Key"]</span><a href="@singleResult.DescriptionUrl" target="_blank">@SearchTerm</a><br />
-            <span>@Loc["SR_Description"]</span>@singleResult.Description<br />
-            <span>@Loc["SR_ServiceRoot"]</span>@singleResult.ServiceUrl<br />
-            <span>@Loc["SR_Versions"]</span>
-            <ul>
-                @foreach (var versionLabel in singleResult.VersionLabels)
-                {
-                    var target = $"/show?k={SearchTerm}&v={versionLabel}";
-                    <li>
-                        <NavLink class="nav-link" href="@target">
-                            @versionLabel
-                        </NavLink>
-                    </li>
-                }
-            </ul>
-            <br />
-        </p>
-        <FluentButton Appearance="Appearance.Accent" @onclick="GoToGenerate">@Loc["GoToGenerate"]</FluentButton>
-    </div>
-} else if (SearchResults.Any()) {
+@if (SearchResults.Any()) {
     <div id="results">
-        <h2>@Loc["MultipleResults"]</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>@Loc["MR_Key"]</th>
-                    <th>@Loc["MR_Description"]</th>
-                    <th>@Loc["MR_Versions"]</th>
-                </tr>
-            </thead>
-            <tbody>
+        <FluentDataGrid id="manualGrid" GenerateHeader=GenerateHeaderOption.None GridTemplateColumns="1fr 1fr 1fr" TItem=string>
+            <FluentDataGridRow RowType="DataGridRowType.Header">
+                <FluentDataGridCell GridColumn=1 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Key"]</FluentDataGridCell>
+                <FluentDataGridCell GridColumn=2 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Description"]</FluentDataGridCell>
+                <FluentDataGridCell GridColumn=3 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Versions"]</FluentDataGridCell>
+            </FluentDataGridRow>
                 @foreach (var result in SearchResults)
                 {
-                    <tr>
-                        <td>
+                    <FluentDataGridRow>
+                        <FluentDataGridCell GridColumn=1>
                             @{
                                 var generationTarget = $"/generate?d={result.Value.DescriptionUrl}";
                             }
                             <NavLink class="nav-link" href="@generationTarget">
                                 @result.Key
                             </NavLink>
-                        </td>
-                        <td><p>@result.Value.Description</p></td>
-                        <td><p>
+                        </FluentDataGridCell>
+                        <FluentDataGridCell GridColumn=2>@result.Value.Description</FluentDataGridCell>
+                        <FluentDataGridCell GridColumn=3>
                             @foreach (var versionLabel in result.Value.VersionLabels)
                             {
                                 var target = $"/show?k={result.Key}&v={versionLabel}";
@@ -79,11 +51,10 @@
                                     @versionLabel
                                 </NavLink>
                             }
-                        </p></td>
-                    </tr>
+                        </FluentDataGridCell>
+                    </FluentDataGridRow>
                 }
-            </tbody>
-        </table>
+        </FluentDataGrid>
     </div>
 }
 

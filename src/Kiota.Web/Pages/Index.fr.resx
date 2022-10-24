@@ -70,24 +70,6 @@
   <data name="SearchAction" xml:space="preserve">
     <value>Rechercher</value>
   </data>
-  <data name="MultiplResults" xml:space="preserve">
-    <value>Plusieurs résultats</value>
-  </data>
-  <data name="SingleResult" xml:space="preserve">
-    <value>Résultat unique</value>
-  </data>
-  <data name="SR_Key" xml:space="preserve">
-    <value>Clef: </value>
-  </data>
-  <data name="SR_Description" xml:space="preserve">
-    <value>Description: </value>
-  </data>
-  <data name="SR_ServiceRoot" xml:space="preserve">
-    <value>URL du service: </value>
-  </data>
-  <data name="SR_Versions" xml:space="preserve">
-    <value>Version(s): </value>
-  </data>
   <data name="MR_Key" xml:space="preserve">
     <value>Clef</value>
   </data>
