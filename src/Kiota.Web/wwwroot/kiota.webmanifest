@@ -1,0 +1,17 @@
+{
+  "name": "Kiota.dev",
+  "short_name": "kiota-dev",
+  "description": "Generate OpenAPI clients.",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "lang": "en-us",
+  "display": "fullscreen",
+  "theme_color": "#94C73D",
+  "background_color": "#4C5B31"
+}
