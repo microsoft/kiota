@@ -63,15 +63,10 @@
     </div>
     <FluentButton @onclick="GenerateClient" Appearance="Appearance.Accent" Disabled="@(string.IsNullOrEmpty(DescriptionUrl) || IsLoading)">@Loc["GenerateAction"]</FluentButton>
     <FluentButton @onclick="DownloadClient" Appearance="Appearance.Neutral" Disabled="@string.IsNullOrEmpty(DownloadUrl)">@Loc["Download"]</FluentButton>
+    @if(IsLoading) {
+        <FluentProgress></FluentProgress>
+    }
 </div>
-
-@if(IsLoading) {
-    <div class="spinner-border" role="status">
-        <span class="sr-only">@Loc["Loading"]</span>
-    </div>
-}
-
-
 
 @if(!string.IsNullOrEmpty(Dependencies)) {
     <div>
@@ -147,41 +142,46 @@
         base.OnParametersSet();
     }
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(() => SHA256.Create());
-    private async Task GenerateClient() {
-        DownloadUrl = string.Empty;
-        Dependencies = string.Empty;
-        if (!string.IsNullOrEmpty(DescriptionUrl)) {
+    private Task GenerateClient() {
+        if (string.IsNullOrEmpty(DescriptionUrl)) {
+            return Task.CompletedTask;
+        } else {
+            DownloadUrl = string.Empty;
+            Dependencies = string.Empty;
             IsLoading = true;
-            var hashedUrl = BitConverter.ToString(HashAlgorithm.Value!.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl!.ToString()))).Replace("-", string.Empty);
-            OutputPath = Path.Combine(Path.GetTempPath(), "kiota", "generation", hashedUrl);
-            var generationConfiguration = new GenerationConfiguration{
-                OpenAPIFilePath = DescriptionUrl,
-                IncludePatterns = IncludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
-                ExcludePatterns = ExcludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
-                Language = Language ?? GenerationLanguage.CSharp,
-                OutputPath = OutputPath,
-                ClientClassName = ClientClassName,
-                ClientNamespaceName = NamespaceName,
-                IncludeAdditionalData = AdditionalData,
-                UsesBackingStore = BackingStore
-            };
-            var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
-            var builder = new KiotaBuilder(builderLogger, generationConfiguration);
-            await builder.GenerateClientAsync(ComponentDetached);
-            var zipFilePath = Path.Combine(Path.GetTempPath(), "kiota", "clients", hashedUrl, "client.zip");
-            if (File.Exists(zipFilePath))
-                File.Delete(zipFilePath);
-            else
-                Directory.CreateDirectory(Path.GetDirectoryName(zipFilePath)!);
-            ZipFile.CreateFromDirectory(OutputPath, zipFilePath);
-            DownloadUrl = zipFilePath;
-            var informationSource = await builder.GetLanguageInformationAsync(ComponentDetached) ?? (await GetConfiguration(ComponentDetached))?.Languages;
-            if (informationSource?.TryGetValue(generationConfiguration.Language.ToString(), out var languageInformation) ?? false) {
-                foreach(var dependency in languageInformation.Dependencies)
-                    Dependencies += $"{string.Format(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version)}{Environment.NewLine}";
-            }
-            IsLoading = false;
+            return GenerateClientInternal();
         }
+    }
+    private async Task GenerateClientInternal() {
+        var hashedUrl = BitConverter.ToString(HashAlgorithm.Value!.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl!.ToString()))).Replace("-", string.Empty);
+        OutputPath = Path.Combine(Path.GetTempPath(), "kiota", "generation", hashedUrl);
+        var generationConfiguration = new GenerationConfiguration{
+            OpenAPIFilePath = DescriptionUrl,
+            IncludePatterns = IncludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
+            ExcludePatterns = ExcludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
+            Language = Language ?? GenerationLanguage.CSharp,
+            OutputPath = OutputPath,
+            ClientClassName = ClientClassName,
+            ClientNamespaceName = NamespaceName,
+            IncludeAdditionalData = AdditionalData,
+            UsesBackingStore = BackingStore
+        };
+        var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
+        var builder = new KiotaBuilder(builderLogger, generationConfiguration);
+        await builder.GenerateClientAsync(ComponentDetached);
+        var zipFilePath = Path.Combine(Path.GetTempPath(), "kiota", "clients", hashedUrl, "client.zip");
+        if (File.Exists(zipFilePath))
+            File.Delete(zipFilePath);
+        else
+            Directory.CreateDirectory(Path.GetDirectoryName(zipFilePath)!);
+        ZipFile.CreateFromDirectory(OutputPath, zipFilePath);
+        DownloadUrl = zipFilePath;
+        var informationSource = await builder.GetLanguageInformationAsync(ComponentDetached) ?? (await GetConfiguration(ComponentDetached))?.Languages;
+        if (informationSource?.TryGetValue(generationConfiguration.Language.ToString(), out var languageInformation) ?? false) {
+            foreach(var dependency in languageInformation.Dependencies)
+                Dependencies += $"{string.Format(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version)}{Environment.NewLine}";
+        }
+        IsLoading = false;
     }
     private async Task DownloadClient() {
         if (!string.IsNullOrEmpty(DownloadUrl)) {

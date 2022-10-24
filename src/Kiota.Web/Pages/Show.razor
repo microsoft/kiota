@@ -36,6 +36,9 @@
     </div>
     <FluentButton @onclick="ShowDescription" Appearance="Appearance.Accent">@Loc["ShowButton"]</FluentButton>
     <FluentButton @onclick="GoToGenerate" Appearance="Appearance.Neutral" Disabled="@(string.IsNullOrEmpty(DescriptionUrl))">@Loc["GoToGenerate"]</FluentButton>
+    @if(IsLoading) {
+        <FluentProgress></FluentProgress>
+    }
 </div>
 
 @if(!string.IsNullOrEmpty(Tree)) {
@@ -59,6 +62,7 @@
     private string? IncludePatterns { get; set; }
     private string? ExcludePatterns { get; set; }
     private string? Tree { get; set; }
+    private bool IsLoading { get; set; }
     protected override async Task OnParametersSetAsync() {
         if(!string.IsNullOrEmpty(SearchTermFromQuery))
             SearchTerm = SearchTermFromQuery;
@@ -88,7 +92,11 @@
             navManager.NavigateTo($"/generate?d={DescriptionUrl}&i={includeFilters}&e={excludeFilters}");
         }
     }
-    private async Task ShowDescription() {
+    private Task ShowDescription() {
+        IsLoading = true;
+        return ShowDescriptionInternal();
+    }
+    private async Task ShowDescriptionInternal() {
         Tree = string.Empty;
         if (string.IsNullOrEmpty(DescriptionUrl)) {
             var searchConfig = new SearchConfiguration() {
@@ -110,6 +118,7 @@
         var builder = new StringBuilder();
         RenderNode(urlTreeNode, 10, builder);
         Tree = builder.ToString();
+        IsLoading = false;
     }
     private static void RenderNode(Microsoft.OpenApi.Services.OpenApiUrlTreeNode node, uint maxDepth, StringBuilder builder, string indent = "", int nodeDepth = 0)
     {

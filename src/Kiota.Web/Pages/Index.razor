@@ -21,10 +21,13 @@
         </div>
     </div>
     <FluentButton Appearance="Appearance.Accent" @onclick="SearchDocuments">@Loc["SearchAction"]</FluentButton>
+    @if(IsLoading) {
+        <FluentProgress></FluentProgress>
+    }
 </div>
 
 @if (IsExactMatch()) {
-    var singleResult = SearchResults[SearchTerm];
+    var singleResult = SearchResults[SearchTerm!];
     <div id="single-result">
         <h2>@Loc["SingleResult"]</h2>
         <p>
@@ -88,14 +91,20 @@
 }
 
 @code {
+    private bool IsLoading { get; set; }
     private string? SearchTerm { get; set; }
     private IDictionary<string, SearchResult> SearchResults = new Dictionary<string, SearchResult>();
-    private async Task SearchDocuments() {
+    private Task SearchDocuments() {
+        IsLoading = true;
+        return SearchDocumentsInternal();
+    }
+    private async Task SearchDocumentsInternal() {
         var searchConfig = new SearchConfiguration() {
             SearchTerm = SearchTerm,
         };
         var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
         SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
+        IsLoading = false;
     }
     private bool IsExactMatch() => SearchResults.Any() && (SearchTerm?.Contains("::") ?? false) && SearchResults.ContainsKey(SearchTerm);
     private void GoToGenerate() {
