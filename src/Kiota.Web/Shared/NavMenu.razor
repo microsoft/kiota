@@ -5,12 +5,12 @@
 @inject NavigationManager navManager
 
 
-<div class="top-row ps-3 navbar navbar-dark burger-menu">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Kiota.dev</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+<div class="ps-3 navbar navbar-dark burger-menu">
+    <div class="navbar-toggler">
+        <FluentButton title="Navigation menu" @onclick=@ToggleNavMenu>
+            <FluentIcon Name="@FluentIcons.List" Slot="end" Size="@IconSize.Size28" Filled=true UseAccentColor=true />
+        </FluentButton>
+        <FluentAnchor Href="#" Appearance="Appearance.Stealth">Kiota.dev</FluentAnchor>
     </div>
 </div>
 
@@ -40,7 +40,7 @@
 @code {
     private bool collapseNavMenu = true;
 
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse main-nav-menu" : "main-nav-menu";
 
     private void ToggleNavMenu()
     {

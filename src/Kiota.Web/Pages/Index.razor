@@ -15,11 +15,8 @@
 <h1>@Loc["Search"]</h1>
 
 <div>
-    <div class="form-group">
-        <div class="form-row">
-            <FluentTextField Required="true" Minlength="50" @bind-Value=@SearchTerm>@Loc["SearchTermOrKey"]</FluentTextField>
-        </div>
-    </div>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@SearchTerm>@Loc["SearchTermOrKey"]</FluentTextField>
+    <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
     <FluentButton Appearance="Appearance.Accent" @onclick="SearchDocuments">@Loc["SearchAction"]</FluentButton>
     @if(IsLoading) {
         <FluentProgress></FluentProgress>

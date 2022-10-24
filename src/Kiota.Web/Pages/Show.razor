@@ -17,23 +17,14 @@
 <h1>@Loc["Show"]</h1>
 
 <div>
-    <div class="form-group">
-        <div class="form-row">
-            <FluentTextField Required="true" Minlength="50" @bind-Value=@DescriptionUrl>@Loc["DescriptionUrl"]</FluentTextField>
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="form-row">
-            <FluentTextArea @bind-Value=@IncludePatterns Placeholder="**/messages/**" Rows="10" Resize="TextAreaResize.Vertical">
-                <span>@Loc["IncludePatterns"]</span>
-            </FluentTextArea>
-        </div>
-        <div class="form-row">
-            <FluentTextArea @bind-Value=@ExcludePatterns Placeholder="**/users/**" Rows="10" Resize="TextAreaResize.Vertical">
-                <span>@Loc["ExcludePatterns"]</span>
-            </FluentTextArea>
-        </div>
-    </div>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@DescriptionUrl>@Loc["DescriptionUrl"]</FluentTextField>
+    <FluentTextArea @bind-Value=@IncludePatterns class="full-width-field" Placeholder="**/messages/**" Rows="10" Resize="TextAreaResize.Vertical">
+        <span>@Loc["IncludePatterns"]</span>
+    </FluentTextArea>
+    <FluentTextArea @bind-Value=@ExcludePatterns class="full-width-field" Placeholder="**/users/**" Rows="10" Resize="TextAreaResize.Vertical">
+        <span>@Loc["ExcludePatterns"]</span>
+    </FluentTextArea>
+    <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
     <FluentButton @onclick="ShowDescription" Appearance="Appearance.Accent">@Loc["ShowButton"]</FluentButton>
     <FluentButton @onclick="GoToGenerate" Appearance="Appearance.Neutral" Disabled="@(string.IsNullOrEmpty(DescriptionUrl))">@Loc["GoToGenerate"]</FluentButton>
     @if(IsLoading) {

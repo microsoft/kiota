@@ -23,44 +23,27 @@
 <h1>@Loc["Generate"]</h1>
 
 <div>
-    <div class="form-group">
-        <div class="form-row">
-            <FluentTextField Required="true" Minlength="50" @bind-Value=@DescriptionUrl>@Loc["DescriptionUrl"]</FluentTextField>
-        </div>
-        <div class="form-row">
-            <FluentTextField Required="true" @bind-Value=@NamespaceName>@Loc["NamespacePrefix"]</FluentTextField>
-        </div>
-        <div class="form-row">
-            <FluentTextField Required="true" @bind-Value=@ClientClassName>@Loc["ClientClassName"]</FluentTextField>
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="form-row">
-            <FluentTextArea @bind-Value=@IncludePatterns Placeholder="**/messages/**" Rows="10" Resize="TextAreaResize.Vertical">
-                <span>@Loc["IncludePatterns"]</span>
-            </FluentTextArea>
-        </div>
-        <div class="form-row">
-            <FluentTextArea @bind-Value=@ExcludePatterns Placeholder="**/users/**" Rows="10" Resize="TextAreaResize.Vertical">
-                <span>@Loc["ExcludePatterns"]</span>
-            </FluentTextArea>
-        </div>
-        <div class="form-row">
-            <label for="language">@Loc["Language"]</label>
-            <FluentSelect Id="language" @bind-Value="@Language">
-                @foreach (var item in Enum.GetValues(typeof(GenerationLanguage)))
-                {
-                    <FluentOption Value=@item>@item</FluentOption>
-                }
-            </FluentSelect>
-        </div>
-        <div>
-            <FluentCheckbox @bind-Value=@AdditionalData>@Loc["AdditionalData"]</FluentCheckbox>
-        </div>
-        <div>
-            <FluentCheckbox @bind-Value=@BackingStore>@Loc["BackingStore"]</FluentCheckbox>
-        </div>
-    </div>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@DescriptionUrl>@Loc["DescriptionUrl"]</FluentTextField>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@NamespaceName>@Loc["NamespacePrefix"]</FluentTextField>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@ClientClassName>@Loc["ClientClassName"]</FluentTextField>
+    <FluentTextArea class="full-width-field" @bind-Value=@IncludePatterns Placeholder="**/messages/**" Rows="10" Resize="TextAreaResize.Vertical">
+        <span>@Loc["IncludePatterns"]</span>
+    </FluentTextArea>
+    <FluentTextArea class="full-width-field" @bind-Value=@ExcludePatterns Placeholder="**/users/**" Rows="10" Resize="TextAreaResize.Vertical">
+        <span>@Loc["ExcludePatterns"]</span>
+    </FluentTextArea>
+    <label for="language">@Loc["Language"]</label>
+    <FluentSelect Id="language" @bind-Value="@Language">
+        @foreach (var item in Enum.GetValues(typeof(GenerationLanguage)))
+        {
+            <FluentOption Value=@item>@item</FluentOption>
+        }
+    </FluentSelect>
+    <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
+    <FluentCheckbox @bind-Value=@AdditionalData>@Loc["AdditionalData"]</FluentCheckbox>
+    <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
+    <FluentCheckbox @bind-Value=@BackingStore>@Loc["BackingStore"]</FluentCheckbox>
+    <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
     <FluentButton @onclick="GenerateClient" Appearance="Appearance.Accent" Disabled="@(string.IsNullOrEmpty(DescriptionUrl) || IsLoading)">@Loc["GenerateAction"]</FluentButton>
     <FluentButton @onclick="DownloadClient" Appearance="Appearance.Neutral" Disabled="@string.IsNullOrEmpty(DownloadUrl)">@Loc["Download"]</FluentButton>
     @if(IsLoading) {
