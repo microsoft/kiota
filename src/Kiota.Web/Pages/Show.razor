@@ -75,10 +75,11 @@
     private async Task GoToGenerate() {
         if(!string.IsNullOrEmpty(DescriptionUrl))
         {
-            await AppInsights?.TrackEvent("gotogenerate", new Dictionary<string, object?> {
-                { "includePatterns", IncludePatterns },
-                { "excludePatterns", ExcludePatterns },
-            });
+            if(AppInsights != null)
+                await AppInsights.TrackEvent("gotogenerate", new Dictionary<string, object?> {
+                    { "includePatterns", IncludePatterns },
+                    { "excludePatterns", ExcludePatterns },
+                });
             var includeFilters = string.IsNullOrEmpty(IncludePatterns) ? string.Empty : string.Join(",", IncludePatterns
                                 .Split(new [] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
                                 .Select(static x => x.Trim()));
@@ -103,17 +104,18 @@
             SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
             DescriptionUrl = SearchResults.First().Value.DescriptionUrl.ToString();
         }
-        await AppInsights?.TrackEvent("showdescription", new Dictionary<string, object?> {
-            { "includePatterns", IncludePatterns },
-            { "excludePatterns", ExcludePatterns },
-        });
+        if(AppInsights != null)
+            await AppInsights.TrackEvent("showdescription", new Dictionary<string, object?> {
+                { "includePatterns", IncludePatterns },
+                { "excludePatterns", ExcludePatterns },
+            });
         var generationConfiguration = new GenerationConfiguration{
             OpenAPIFilePath = DescriptionUrl,
             IncludePatterns = IncludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
             ExcludePatterns = ExcludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
         };
         var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
-        var urlTreeNode = await new KiotaBuilder(builderLogger, generationConfiguration).GetUrlTreeNodeAsync(ComponentDetached);
+        var urlTreeNode = await new KiotaBuilder(builderLogger, generationConfiguration).GetUrlTreeNodeAsync(ComponentDetached).ConfigureAwait(false);
 
         var builder = new StringBuilder();
         RenderNode(urlTreeNode, 10, builder);

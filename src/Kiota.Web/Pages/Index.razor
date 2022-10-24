@@ -71,9 +71,10 @@
         return SearchDocumentsInternal();
     }
     private async Task SearchDocumentsInternal() {
-        await AppInsights?.TrackEvent("search", new Dictionary<string, object?> {
-            { "searchterm", SearchTerm },
-        });
+        if(AppInsights != null)
+            await AppInsights.TrackEvent("search", new Dictionary<string, object?> {
+                { "searchterm", SearchTerm },
+            }).ConfigureAwait(false);
         var searchConfig = new SearchConfiguration() {
             SearchTerm = SearchTerm,
         };
