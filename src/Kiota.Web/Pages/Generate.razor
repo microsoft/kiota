@@ -58,6 +58,13 @@
     </div>
 }
 
+@if(!string.IsNullOrEmpty(Logs)) {
+    <div>
+        <h2>@Loc["Logs"]</h2>
+        <pre>@Logs</pre>
+    </div>
+}
+
 @code {
     [Parameter]
     [SupplyParameterFromQuery(Name = "c")]
@@ -92,6 +99,7 @@
     private string? DownloadUrl { get; set; }
     private bool IsLoading { get; set; }
     private string? Dependencies { get; set; }
+    private string? Logs { get; set; }
     protected override void OnParametersSet() {
         if(!string.IsNullOrEmpty(DescriptionUrlFromQuery))
             DescriptionUrl = DescriptionUrlFromQuery;
@@ -132,18 +140,20 @@
         } else {
             DownloadUrl = string.Empty;
             Dependencies = string.Empty;
+            Logs = string.Empty;
             IsLoading = true;
             return GenerateClientInternal();
         }
     }
     private async Task GenerateClientInternal() {
-        await AppInsights?.TrackEvent("generateclient", new Dictionary<string, object?> {
-            { "language", Language.ToString() },
-            { "includePatterns", IncludePatterns },
-            { "excludePatterns", ExcludePatterns },
-            { "additionalData", AdditionalData.ToString() },
-            { "backingStore", BackingStore.ToString() }
-        });
+        if(AppInsights != null)
+            await AppInsights.TrackEvent("generateclient", new Dictionary<string, object?> {
+                { "language", Language?.ToString() },
+                { "includePatterns", IncludePatterns },
+                { "excludePatterns", ExcludePatterns },
+                { "additionalData", AdditionalData.ToString() },
+                { "backingStore", BackingStore.ToString() }
+            }).ConfigureAwait(false);
         var hashedUrl = BitConverter.ToString(HashAlgorithm.Value!.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl!.ToString()))).Replace("-", string.Empty);
         OutputPath = Path.Combine(Path.GetTempPath(), "kiota", "generation", hashedUrl);
         var generationConfiguration = new GenerationConfiguration{
@@ -157,35 +167,43 @@
             IncludeAdditionalData = AdditionalData,
             UsesBackingStore = BackingStore
         };
-        var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
+        var logBuilder = new StringBuilder();
+        var builderLogger = new StringBuilderLogger<KiotaBuilder>(LoggerFactory.CreateLogger<KiotaBuilder>(), logBuilder, LogLevel.Warning);
         var builder = new KiotaBuilder(builderLogger, generationConfiguration);
-        await builder.GenerateClientAsync(ComponentDetached);
-        var zipFilePath = Path.Combine(Path.GetTempPath(), "kiota", "clients", hashedUrl, "client.zip");
-        if (File.Exists(zipFilePath))
-            File.Delete(zipFilePath);
-        else
-            Directory.CreateDirectory(Path.GetDirectoryName(zipFilePath)!);
-        ZipFile.CreateFromDirectory(OutputPath, zipFilePath);
-        DownloadUrl = zipFilePath;
-        var informationSource = await builder.GetLanguageInformationAsync(ComponentDetached) ?? (await GetConfiguration(ComponentDetached))?.Languages;
-        if (informationSource?.TryGetValue(generationConfiguration.Language.ToString(), out var languageInformation) ?? false) {
-            foreach(var dependency in languageInformation.Dependencies)
-                Dependencies += $"{string.Format(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version)}{Environment.NewLine}";
+        try {
+            await builder.GenerateClientAsync(ComponentDetached).ConfigureAwait(false);
+            var zipFilePath = Path.Combine(Path.GetTempPath(), "kiota", "clients", hashedUrl, "client.zip");
+            if (File.Exists(zipFilePath))
+                File.Delete(zipFilePath);
+            else
+                Directory.CreateDirectory(Path.GetDirectoryName(zipFilePath)!);
+            ZipFile.CreateFromDirectory(OutputPath, zipFilePath);
+            DownloadUrl = zipFilePath;
+            var informationSource = await builder.GetLanguageInformationAsync(ComponentDetached).ConfigureAwait(false) ?? (await GetConfiguration(ComponentDetached).ConfigureAwait(false))?.Languages;
+            if (informationSource?.TryGetValue(generationConfiguration.Language.ToString(), out var languageInformation) ?? false) {
+                foreach(var dependency in languageInformation.Dependencies)
+                    Dependencies += $"{string.Format(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version)}{Environment.NewLine}";
+            }
+            Logs = logBuilder.ToString();
+        } catch (Exception ex) {
+            Logs += "ERROR" + ex.Message;
+        } finally {
+            IsLoading = false;
         }
-        IsLoading = false;
     }
     private async Task DownloadClient() {
-        await AppInsights?.TrackEvent("downloadclient", new Dictionary<string, object?> {
-            { "language", Language.ToString() },
-            { "includePatterns", IncludePatterns },
-            { "excludePatterns", ExcludePatterns },
-            { "additionalData", AdditionalData.ToString() },
-            { "backingStore", BackingStore.ToString() }
-        });
+        if(AppInsights != null)
+            await AppInsights.TrackEvent("downloadclient", new Dictionary<string, object?> {
+                { "language", Language?.ToString() },
+                { "includePatterns", IncludePatterns },
+                { "excludePatterns", ExcludePatterns },
+                { "additionalData", AdditionalData.ToString() },
+                { "backingStore", BackingStore.ToString() }
+            }).ConfigureAwait(false);
         if (!string.IsNullOrEmpty(DownloadUrl)) {
             using var fileStream = File.OpenRead(DownloadUrl);
             using var ms = new MemoryStream();
-            await fileStream.CopyToAsync(ms);
+            await fileStream.CopyToAsync(ms).ConfigureAwait(false);
             await JSRuntime.InvokeVoidAsync("BlazorDownloadFile", "client.zip", "application/zip", ms.ToArray());
         }
     }

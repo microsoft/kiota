@@ -97,4 +97,7 @@
   <data name="GenerateAction" xml:space="preserve">
     <value>Generate</value>
   </data>
+  <data name="Logs" xml:space="preserve">
+    <value>Generation logs</value>
+  </data>
 </root>
