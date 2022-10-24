@@ -64,9 +64,6 @@
   <data name="Show" xml:space="preserve">
     <value>Show</value>
   </data>
-  <data name="SearchKey" xml:space="preserve">
-    <value>Search Key</value>
-  </data>
   <data name="DescriptionUrl" xml:space="preserve">
     <value>OpenAPI Description Url</value>
   </data>
@@ -75,9 +72,6 @@
   </data>
   <data name="ExcludePatterns" xml:space="preserve">
     <value>Exclude Patterns</value>
-  </data>
-  <data name="Version" xml:space="preserve">
-    <value>Version</value>
   </data>
   <data name="ShowButton" xml:space="preserve">
     <value>Show</value>
