@@ -1,9 +1,11 @@
 ﻿@using System.Globalization
 @using Microsoft.Extensions.Localization
+@using Microsoft.Fast.Components.FluentUI
 @inject IStringLocalizer<NavMenu> Loc
+@inject NavigationManager navManager
 
 
-<div class="top-row ps-3 navbar navbar-dark">
+<div class="top-row ps-3 navbar navbar-dark burger-menu">
     <div class="container-fluid">
         <a class="navbar-brand" href="">Kiota.dev</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
@@ -14,27 +16,24 @@
 
 <div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
     <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All"><!-- icons list https://github.com/iconic/open-iconic/tree/master/svg --> 
-                <span class="oi oi-magnifying-glass" aria-hidden="true"></span> @Loc["Search"]
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="show">
-                <span class="oi oi-list" aria-hidden="true"></span> @Loc["Show"]
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="generate">
-                <span class="oi oi-aperture" aria-hidden="true"></span> @Loc["Generate"]
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="https://microsoft.github.io/kiota" target="_blank">
-                <span class="oi oi-question-mark" aria-hidden="true"></span> @Loc["About"]
-            </NavLink>
-        </div>
+        <FluentMenu>
+            <FluentMenuItem @onclick=@GoHome>
+                @Loc["Search"]
+                <FluentIcon Name="@FluentIcons.Search" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+            </FluentMenuItem>
+            <FluentMenuItem @onclick="@GoToShow">
+                @Loc["Show"]
+                <FluentIcon Name="@FluentIcons.AppsList" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+            </FluentMenuItem>
+            <FluentMenuItem @onclick=@GoToGenerate>
+                @Loc["Generate"]
+                <FluentIcon Name="@FluentIcons.Code" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+            </FluentMenuItem>
+            <FluentMenuItem @onclick=@GoToAbout>
+                @Loc["About"]
+                <FluentIcon Name="@FluentIcons.Info" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+            </FluentMenuItem>
+        </FluentMenu>
     </nav>
 </div>
 
@@ -46,5 +45,20 @@
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+    private void GoHome() {
+        navManager.NavigateTo("/");
+    }
+    private void GoToShow()
+    {
+        navManager.NavigateTo("show");
+    }
+    private void GoToGenerate()
+    {
+        navManager.NavigateTo("generate");
+    }
+    private void GoToAbout()
+    {
+        navManager.NavigateTo("https://microsoft.github.io/kiota");
     }
 }
