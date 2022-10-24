@@ -4,6 +4,7 @@
 @using Kiota.Builder.Configuration
 @using System.Linq
 @using System.Text;
+@using System.Web
 @using Microsoft.Fast.Components.FluentUI
 @inject ILoggerFactory LoggerFactory
 @inject NavigationManager navManager
@@ -126,13 +127,13 @@
         var urlTreeNode = await new KiotaBuilder(builderLogger, generationConfiguration).GetUrlTreeNodeAsync(ComponentDetached);
 
         var builder = new StringBuilder();
-        RenderNode(urlTreeNode, 2, builder);
+        RenderNode(urlTreeNode, 10, builder);
         Tree = builder.ToString();
     }
     private static void RenderNode(Microsoft.OpenApi.Services.OpenApiUrlTreeNode node, uint maxDepth, StringBuilder builder, string indent = "", int nodeDepth = 0)
     {
-        builder.AppendLine("<fluent-tree-item expanded=\"true\">");
-        builder.AppendLine(node.Segment);
+        builder.AppendLine($"<fluent-tree-item{(nodeDepth < 2 ? " expanded" : string.Empty)}>");
+        builder.AppendLine(HttpUtility.HtmlEncode(node.Segment));
 
         var children = node.Children;
         var numberOfChildren = children.Count;
