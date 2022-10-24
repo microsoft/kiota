@@ -32,7 +32,7 @@
     <FluentTextArea class="full-width-field" @bind-Value=@ExcludePatterns Placeholder="**/users/**" Rows="10" Resize="TextAreaResize.Vertical">
         <span>@Loc["ExcludePatterns"]</span>
     </FluentTextArea>
-    <label for="language">@Loc["Language"]</label>
+    <label for="language">@Loc["Language"]</label><br />
     <FluentSelect Id="language" @bind-Value="@Language">
         @foreach (var item in Enum.GetValues(typeof(GenerationLanguage)))
         {
