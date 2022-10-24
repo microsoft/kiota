@@ -53,3 +53,25 @@ jobs:
         with:
           args: |
               output/binaries-*/*.zip
+  publish_kiota_dev:
+    name: Publish kiota.dev
+    environment:
+      name: kiota.dev
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.x
+      - name: Publish kiota.dev
+        run: dotnet publish -c Release
+        working-directory: ./src/Kiota.Web
+
+      - uses: LanceMcCarthy/Action-AzureBlobUpload@v2
+        name: Azure Blob Upload with Destination folder defined
+        with:
+          connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          container_name: $web
+          source_folder: src/Kiota.Web/bin/Release/net6.0/publish/wwwroot
+          clean_destination_folder: true
