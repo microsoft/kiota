@@ -6,6 +6,7 @@
 @inject ILoggerFactory LoggerFactory
 @using System.Globalization
 @using Microsoft.Extensions.Localization
+@using Microsoft.Fast.Components.FluentUI
 @inject IStringLocalizer<Index> Loc
 @inject NavigationManager navManager
 
@@ -22,7 +23,7 @@
             </div>
         </div>
     </div>
-    <button @onclick="SearchDocuments" class="btn btn-primary">@Loc["SearchAction"]</button>
+    <FluentButton Appearance="Appearance.Accent" @onclick="SearchDocuments">@Loc["SearchAction"]</FluentButton>
 </div>
 
 @if (IsExactMatch()) {
@@ -47,7 +48,7 @@
             </ul>
             <br />
         </p>
-        <button @onclick="GoToGenerate" class="btn btn-primary">@Loc["GoToGenerate"]</button>
+        <FluentButton Appearance="Appearance.Accent" @onclick="GoToGenerate">@Loc["GoToGenerate"]</FluentButton>
     </div>
 } else if (SearchResults.Any()) {
     <div id="results">

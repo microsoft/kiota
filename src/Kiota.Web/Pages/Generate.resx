@@ -97,4 +97,7 @@
   <data name="Dependencies" xml:space="preserve">
     <value>Dependencies</value>
   </data>
+  <data name="GenerateAction" xml:space="preserve">
+    <value>Generate</value>
+  </data>
 </root>

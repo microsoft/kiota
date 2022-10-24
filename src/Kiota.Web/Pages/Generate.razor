@@ -9,6 +9,7 @@
 @using System.Text.Json
 @using System.Text.Json.Serialization;
 @using System.Threading
+@using Microsoft.Fast.Components.FluentUI
 @inject HttpClient Http
 @inject ILoggerFactory LoggerFactory
 @inject IJSRuntime JSRuntime
@@ -79,7 +80,8 @@
             </div>
         </div>
     </div>
-    <button @onclick="GenerateClient" class="btn btn-primary" disabled="@(string.IsNullOrEmpty(DescriptionUrl) || IsLoading)">Generate</button>
+    <FluentButton @onclick="GenerateClient" Appearance="Appearance.Accent" Disabled="@(string.IsNullOrEmpty(DescriptionUrl) || IsLoading)">@Loc["GenerateAction"]</FluentButton>
+    <FluentButton @onclick="DownloadClient" Appearance="Appearance.Neutral" Disabled="@string.IsNullOrEmpty(DownloadUrl)">@Loc["Download"]</FluentButton>
 </div>
 
 @if(IsLoading) {
@@ -88,11 +90,7 @@
     </div>
 }
 
-@if(!string.IsNullOrEmpty(DownloadUrl)) {
-    <div>
-        <button @onclick="DownloadClient" class="btn btn-secondary">@Loc["Download"]</button>
-    </div>
-}
+
 
 @if(!string.IsNullOrEmpty(Dependencies)) {
     <div>

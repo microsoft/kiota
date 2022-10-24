@@ -39,8 +39,8 @@
             </div>
         </div>
     </div>
-    <button @onclick="ShowDescription" class="btn btn-primary">@Loc["ShowButton"]</button>
-    <button @onclick="GoToGenerate" class="btn btn-secondary" disabled="@(string.IsNullOrEmpty(DescriptionUrl))">@Loc["GoToGenerate"]</button>
+    <FluentButton @onclick="ShowDescription" Appearance="Appearance.Accent">@Loc["ShowButton"]</FluentButton>
+    <FluentButton @onclick="GoToGenerate" Appearance="Appearance.Neutral" Disabled="@(string.IsNullOrEmpty(DescriptionUrl))">@Loc["GoToGenerate"]</FluentButton>
 </div>
 
 @if(!string.IsNullOrEmpty(Tree)) {
