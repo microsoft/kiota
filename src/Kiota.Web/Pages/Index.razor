@@ -2,11 +2,14 @@
 @using Kiota.Builder
 @using Kiota.Builder.SearchProviders
 @using Kiota.Builder.Configuration
+@using System.Web
+@using System.Text.RegularExpressions
 @using System.Linq
 @inject ILoggerFactory LoggerFactory
 @using System.Globalization
 @using Microsoft.Extensions.Localization
 @using Microsoft.Fast.Components.FluentUI
+@using Markdig
 @inject IStringLocalizer<Index> Loc
 @inject NavigationManager navManager
 
@@ -25,7 +28,7 @@
 
 @if (SearchResults.Any()) {
     <div id="results">
-        <FluentDataGrid id="manualGrid" GenerateHeader=GenerateHeaderOption.None GridTemplateColumns="1fr 1fr 1fr" TItem=string>
+        <FluentDataGrid id="manualGrid" GenerateHeader=GenerateHeaderOption.None GridTemplateColumns="1fr 4fr 1fr" TItem=string>
             <FluentDataGridRow RowType="DataGridRowType.Header">
                 <FluentDataGridCell GridColumn=1 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Key"]</FluentDataGridCell>
                 <FluentDataGridCell GridColumn=2 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Description"]</FluentDataGridCell>
@@ -42,7 +45,7 @@
                                 @result.Key
                             </NavLink>
                         </FluentDataGridCell>
-                        <FluentDataGridCell GridColumn=2>@result.Value.Description</FluentDataGridCell>
+                        <FluentDataGridCell GridColumn=2>@SanitizeDescription(result.Value.Description)</FluentDataGridCell>
                         <FluentDataGridCell GridColumn=3>
                             @foreach (var versionLabel in result.Value.VersionLabels)
                             {
@@ -80,5 +83,12 @@
         {
             navManager.NavigateTo($"/generate?d={SearchResults.Values.First().DescriptionUrl}");
         }
+    }
+    private static readonly Regex _htmlTagRegex = new Regex("<.*?>", RegexOptions.Compiled);
+    private string SanitizeDescription(string original) {
+        if (string.IsNullOrEmpty(original))
+            return string.Empty;
+
+        return HttpUtility.HtmlDecode(_htmlTagRegex.Replace(Markdown.ToHtml(original), string.Empty));
     }
 }
