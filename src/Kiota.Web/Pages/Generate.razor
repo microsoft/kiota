@@ -25,59 +25,40 @@
 <div>
     <div class="form-group">
         <div class="form-row">
-            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="descriptionUrl">@Loc["DescriptionUrl"]</label>
-                <input id="descriptionUrl" type="text" @bind="DescriptionUrl" class="form-control" />
-            </div>
+            <FluentTextField Required="true" Minlength="50" @bind-Value=@DescriptionUrl>@Loc["DescriptionUrl"]</FluentTextField>
         </div>
         <div class="form-row">
-            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="namespaceName">@Loc["NamespacePrefix"]</label>
-                <input id="namespaceName" type="text" @bind="NamespaceName" class="form-control" />
-            </div>
+            <FluentTextField Required="true" @bind-Value=@NamespaceName>@Loc["NamespacePrefix"]</FluentTextField>
         </div>
         <div class="form-row">
-            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="clientClassName">@Loc["ClientClassName"]</label>
-                <input id="clientClassName" type="text" @bind="ClientClassName" class="form-control" />
-            </div>
+            <FluentTextField Required="true" @bind-Value=@ClientClassName>@Loc["ClientClassName"]</FluentTextField>
         </div>
     </div>
     <div class="form-group">
         <div class="form-row">
-            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="includePatterns">@Loc["IncludePatterns"]</label>
-                <textarea id="includePatterns" type="text" @bind="IncludePatterns" class="form-control" rows="5"></textarea>
-            </div>
+            <FluentTextArea @bind-Value=@IncludePatterns Placeholder="**/messages/**" Rows="10" Resize="TextAreaResize.Vertical">
+                <span>@Loc["IncludePatterns"]</span>
+            </FluentTextArea>
         </div>
         <div class="form-row">
-            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="excludePatterns">@Loc["ExcludePatterns"]</label>
-                <textarea id="excludePatterns" type="text" @bind="ExcludePatterns" class="form-control" rows="5"></textarea>
-            </div>
+            <FluentTextArea @bind-Value=@ExcludePatterns Placeholder="**/users/**" Rows="10" Resize="TextAreaResize.Vertical">
+                <span>@Loc["ExcludePatterns"]</span>
+            </FluentTextArea>
         </div>
         <div class="form-row">
-            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                <label for="language">@Loc["Language"]</label>
-                <select id="language" type="text" @bind="Language" class="form-control">
-                    @foreach (var item in Enum.GetValues(typeof(GenerationLanguage)))
-                    {
-                        <option value="@item">@item</option>
-                    }
-                </select>
-            </div>
+            <label for="language">@Loc["Language"]</label>
+            <FluentSelect Id="language" @bind-Value="@Language">
+                @foreach (var item in Enum.GetValues(typeof(GenerationLanguage)))
+                {
+                    <FluentOption Value=@item>@item</FluentOption>
+                }
+            </FluentSelect>
         </div>
         <div>
-            <div class="custom-control custom-checkbox">
-                <input id="additionalData" type="checkbox" @bind="AdditionalData" class="custom-control-input" />
-                <label for="additionalData" class="custom-control-label">@Loc["AdditionalData"]</label>
-            </div>
+            <FluentCheckbox @bind-Value=@AdditionalData>@Loc["AdditionalData"]</FluentCheckbox>
         </div>
         <div>
-            <div class="custom-control custom-checkbox">
-                <input id="backingStore" type="checkbox" @bind="BackingStore" class="custom-control-input" />
-                <label for="backingStore" class="custom-control-label">@Loc["BackingStore"]</label>
-            </div>
+            <FluentCheckbox @bind-Value=@BackingStore>@Loc["BackingStore"]</FluentCheckbox>
         </div>
     </div>
     <FluentButton @onclick="GenerateClient" Appearance="Appearance.Accent" Disabled="@(string.IsNullOrEmpty(DescriptionUrl) || IsLoading)">@Loc["GenerateAction"]</FluentButton>
