@@ -62,6 +62,7 @@
 }
 
 @code {
+    [Inject] private IApplicationInsights? AppInsights { get; set; }
     private bool IsLoading { get; set; }
     private string? SearchTerm { get; set; }
     private IDictionary<string, SearchResult> SearchResults = new Dictionary<string, SearchResult>();
@@ -70,6 +71,9 @@
         return SearchDocumentsInternal();
     }
     private async Task SearchDocumentsInternal() {
+        await AppInsights?.TrackEvent("search", new Dictionary<string, object?> {
+            { "searchterm", SearchTerm },
+        });
         var searchConfig = new SearchConfiguration() {
             SearchTerm = SearchTerm,
         };

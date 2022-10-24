@@ -125,6 +125,7 @@
         base.OnParametersSet();
     }
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(() => SHA256.Create());
+    [Inject] private IApplicationInsights? AppInsights { get; set; }
     private Task GenerateClient() {
         if (string.IsNullOrEmpty(DescriptionUrl)) {
             return Task.CompletedTask;
@@ -136,6 +137,13 @@
         }
     }
     private async Task GenerateClientInternal() {
+        await AppInsights?.TrackEvent("generateclient", new Dictionary<string, object?> {
+            { "language", Language.ToString() },
+            { "includePatterns", IncludePatterns },
+            { "excludePatterns", ExcludePatterns },
+            { "additionalData", AdditionalData.ToString() },
+            { "backingStore", BackingStore.ToString() }
+        });
         var hashedUrl = BitConverter.ToString(HashAlgorithm.Value!.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl!.ToString()))).Replace("-", string.Empty);
         OutputPath = Path.Combine(Path.GetTempPath(), "kiota", "generation", hashedUrl);
         var generationConfiguration = new GenerationConfiguration{
@@ -167,6 +175,13 @@
         IsLoading = false;
     }
     private async Task DownloadClient() {
+        await AppInsights?.TrackEvent("downloadclient", new Dictionary<string, object?> {
+            { "language", Language.ToString() },
+            { "includePatterns", IncludePatterns },
+            { "excludePatterns", ExcludePatterns },
+            { "additionalData", AdditionalData.ToString() },
+            { "backingStore", BackingStore.ToString() }
+        });
         if (!string.IsNullOrEmpty(DownloadUrl)) {
             using var fileStream = File.OpenRead(DownloadUrl);
             using var ms = new MemoryStream();
