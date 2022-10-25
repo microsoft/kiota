@@ -1,0 +1,64 @@
+﻿@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using Microsoft.Fast.Components.FluentUI
+@inject IStringLocalizer<NavMenu> Loc
+@inject NavigationManager navManager
+
+
+<div class="ps-3 navbar navbar-dark burger-menu">
+    <div class="navbar-toggler">
+        <FluentButton title="Navigation menu" @onclick=@ToggleNavMenu>
+            <FluentIcon Name="@FluentIcons.List" Slot="end" Size="@IconSize.Size28" Filled=true UseAccentColor=true />
+        </FluentButton>
+        <FluentAnchor Href="#" Appearance="Appearance.Stealth">Kiota.dev</FluentAnchor>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <FluentMenu>
+            <FluentMenuItem @onclick=@GoHome>
+                @Loc["Search"]
+                <FluentIcon Name="@FluentIcons.Search" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+            </FluentMenuItem>
+            <FluentMenuItem @onclick="@GoToShow">
+                @Loc["Show"]
+                <FluentIcon Name="@FluentIcons.AppsList" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+            </FluentMenuItem>
+            <FluentMenuItem @onclick=@GoToGenerate>
+                @Loc["Generate"]
+                <FluentIcon Name="@FluentIcons.Code" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+            </FluentMenuItem>
+            <FluentMenuItem @onclick=@GoToAbout>
+                @Loc["About"]
+                <FluentIcon Name="@FluentIcons.Info" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+            </FluentMenuItem>
+        </FluentMenu>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse main-nav-menu" : "main-nav-menu";
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+    private void GoHome() {
+        navManager.NavigateTo("/");
+    }
+    private void GoToShow()
+    {
+        navManager.NavigateTo("show");
+    }
+    private void GoToGenerate()
+    {
+        navManager.NavigateTo("generate");
+    }
+    private void GoToAbout()
+    {
+        navManager.NavigateTo("https://microsoft.github.io/kiota");
+    }
+}

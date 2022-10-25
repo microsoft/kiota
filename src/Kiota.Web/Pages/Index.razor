@@ -1,0 +1,99 @@
+﻿@page "/"
+@using Kiota.Builder
+@using Kiota.Builder.SearchProviders
+@using Kiota.Builder.Configuration
+@using System.Web
+@using System.Text.RegularExpressions
+@using System.Linq
+@inject ILoggerFactory LoggerFactory
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using Microsoft.Fast.Components.FluentUI
+@using Markdig
+@inject IStringLocalizer<Index> Loc
+@inject NavigationManager navManager
+
+<PageTitle>@Loc["PageTitle"]</PageTitle>
+
+<h1>@Loc["Search"]</h1>
+
+<div>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@SearchTerm>@Loc["SearchTermOrKey"]</FluentTextField>
+    <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
+    <FluentButton Appearance="Appearance.Accent" @onclick="SearchDocuments">@Loc["SearchAction"]</FluentButton>
+    @if(IsLoading) {
+        <FluentProgress></FluentProgress>
+    }
+</div>
+
+@if (SearchResults.Any()) {
+    <div id="results">
+        <FluentDataGrid id="manualGrid" GenerateHeader=GenerateHeaderOption.None GridTemplateColumns="1fr 4fr 1fr" TItem=string>
+            <FluentDataGridRow RowType="DataGridRowType.Header">
+                <FluentDataGridCell GridColumn=1 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Key"]</FluentDataGridCell>
+                <FluentDataGridCell GridColumn=2 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Description"]</FluentDataGridCell>
+                <FluentDataGridCell GridColumn=3 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Versions"]</FluentDataGridCell>
+            </FluentDataGridRow>
+                @foreach (var result in SearchResults)
+                {
+                    <FluentDataGridRow>
+                        <FluentDataGridCell GridColumn=1>
+                            @{
+                                var generationTarget = $"/generate?d={result.Value.DescriptionUrl}";
+                            }
+                            <NavLink class="nav-link" href="@generationTarget">
+                                @result.Key
+                            </NavLink>
+                        </FluentDataGridCell>
+                        <FluentDataGridCell GridColumn=2>@SanitizeDescription(result.Value.Description)</FluentDataGridCell>
+                        <FluentDataGridCell GridColumn=3>
+                            @foreach (var versionLabel in result.Value.VersionLabels)
+                            {
+                                var target = $"/show?k={result.Key}&v={versionLabel}";
+                                <NavLink class="nav-link" href="@target">
+                                    @versionLabel
+                                </NavLink>
+                            }
+                        </FluentDataGridCell>
+                    </FluentDataGridRow>
+                }
+        </FluentDataGrid>
+    </div>
+}
+
+@code {
+    [Inject] private IApplicationInsights? AppInsights { get; set; }
+    private bool IsLoading { get; set; }
+    private string? SearchTerm { get; set; }
+    private IDictionary<string, SearchResult> SearchResults = new Dictionary<string, SearchResult>();
+    private Task SearchDocuments() {
+        IsLoading = true;
+        return SearchDocumentsInternal();
+    }
+    private async Task SearchDocumentsInternal() {
+        if(AppInsights != null)
+            await AppInsights.TrackEvent("search", new Dictionary<string, object?> {
+                { "searchterm", SearchTerm },
+            }).ConfigureAwait(false);
+        var searchConfig = new SearchConfiguration() {
+            SearchTerm = SearchTerm,
+        };
+        var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
+        SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
+        IsLoading = false;
+    }
+    private bool IsExactMatch() => SearchResults.Any() && (SearchTerm?.Contains("::") ?? false) && SearchResults.ContainsKey(SearchTerm);
+    private void GoToGenerate() {
+        if(IsExactMatch())
+        {
+            navManager.NavigateTo($"/generate?d={SearchResults.Values.First().DescriptionUrl}");
+        }
+    }
+    private static readonly Regex _htmlTagRegex = new Regex("<.*?>", RegexOptions.Compiled);
+    private string SanitizeDescription(string original) {
+        if (string.IsNullOrEmpty(original))
+            return string.Empty;
+
+        return HttpUtility.HtmlDecode(_htmlTagRegex.Replace(Markdown.ToHtml(original), string.Empty));
+    }
+}
