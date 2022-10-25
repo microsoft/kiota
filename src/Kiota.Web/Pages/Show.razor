@@ -96,6 +96,8 @@
         IsLoading = true;
         return ShowDescriptionInternal();
     }
+    private KiotaBuilder? kiotaBuilder;
+    private GenerationConfiguration? generationConfiguration;
     private const string showDescriptionTelemetryKey = "showdescription";
     private async Task ShowDescriptionInternal() {
         Tree = string.Empty;
@@ -110,13 +112,20 @@
         }
         if(AppInsights != null)
             await AppInsights.StartTrackEvent(showDescriptionTelemetryKey).ConfigureAwait(false);
-        var generationConfiguration = new GenerationConfiguration{
-            OpenAPIFilePath = DescriptionUrl,
-            IncludePatterns = IncludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
-            ExcludePatterns = ExcludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
-        };
-        var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
-        var urlTreeNode = await new KiotaBuilder(builderLogger, generationConfiguration).GetUrlTreeNodeAsync(ComponentDetached).ConfigureAwait(false);
+        
+        if (!(generationConfiguration?.OpenAPIFilePath.Equals(DescriptionUrl, StringComparison.OrdinalIgnoreCase) ?? false)) {
+            generationConfiguration = new GenerationConfiguration{
+                OpenAPIFilePath = DescriptionUrl,
+            };
+        }
+
+        if (kiotaBuilder == null) {
+            var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
+            kiotaBuilder = new KiotaBuilder(builderLogger, generationConfiguration);
+        }
+        generationConfiguration.IncludePatterns = IncludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet();
+        generationConfiguration.ExcludePatterns = ExcludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet();
+        var urlTreeNode = await kiotaBuilder.GetUrlTreeNodeAsync(ComponentDetached).ConfigureAwait(false);
 
         var builder = new StringBuilder();
         RenderNode(urlTreeNode, 10, builder);
