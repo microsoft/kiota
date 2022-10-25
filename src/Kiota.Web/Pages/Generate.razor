@@ -186,7 +186,8 @@
             }
             Logs = logBuilder.ToString();
         } catch (Exception ex) {
-            Logs += "ERROR" + ex.Message;
+            if(string.IsNullOrEmpty(Logs)) Logs = logBuilder.ToString();
+            Logs += "ERROR : " + ex.Message;
         } finally {
             IsLoading = false;
         }
