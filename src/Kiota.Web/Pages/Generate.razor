@@ -154,7 +154,7 @@
                 { "additionalData", AdditionalData.ToString() },
                 { "backingStore", BackingStore.ToString() }
             }).ConfigureAwait(false);
-        var hashedUrl = BitConverter.ToString(HashAlgorithm.Value!.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl!.ToString()))).Replace("-", string.Empty);
+        var hashedUrl = BitConverter.ToString(HashAlgorithm.Value!.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl!))).Replace("-", string.Empty);
         OutputPath = Path.Combine(Path.GetTempPath(), "kiota", "generation", hashedUrl);
         var generationConfiguration = new GenerationConfiguration{
             OpenAPIFilePath = DescriptionUrl,
