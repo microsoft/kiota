@@ -18,9 +18,9 @@
 <h1>@Loc["Search"]</h1>
 
 <div>
-    <FluentTextField Required="true" class="full-width-field" @bind-Value=@SearchTerm>@Loc["SearchTermOrKey"]</FluentTextField>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@SearchTerm @onkeydown=@EnterSubmit>@Loc["SearchTermOrKey"]</FluentTextField>
     <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
-    <FluentButton Appearance="Appearance.Accent" @onclick="SearchDocuments">@Loc["SearchAction"]</FluentButton>
+    <FluentButton Appearance="Appearance.Accent" @onclick=@SearchDocuments Disabled=@IsLoading>@Loc["SearchAction"]</FluentButton>
     @if(IsLoading) {
         <FluentProgress></FluentProgress>
     }
@@ -72,6 +72,16 @@
     private bool Searched { get; set; }
     private string? SearchTerm { get; set; }
     private IDictionary<string, SearchResult> SearchResults = new Dictionary<string, SearchResult>();
+    private Task EnterSubmit(KeyboardEventArgs e) {
+        if(e.Key == "Enter") {
+            return EnterSubmitInternal(e);
+        }
+        return Task.CompletedTask;
+    }
+    private async Task EnterSubmitInternal(KeyboardEventArgs e) {
+        await Task.Delay(10, ComponentDetached).ConfigureAwait(false); // so the value is updated
+        await SearchDocuments();
+    }
     private Task SearchDocuments() {
         IsLoading = true;
         Searched = true;
