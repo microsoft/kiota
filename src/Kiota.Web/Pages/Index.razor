@@ -34,7 +34,7 @@
                 <FluentDataGridCell GridColumn=2 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Description"]</FluentDataGridCell>
                 <FluentDataGridCell GridColumn=3 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Versions"]</FluentDataGridCell>
             </FluentDataGridRow>
-                @foreach (var result in SearchResults)
+                @foreach (var result in SearchResults.OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase))
                 {
                     <FluentDataGridRow>
                         <FluentDataGridCell GridColumn=1>
