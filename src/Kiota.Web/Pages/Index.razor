@@ -59,15 +59,22 @@
                 }
         </FluentDataGrid>
     </div>
+} else if (Searched && !IsLoading) {
+    <div id="no-results">
+        <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
+        <span>@Loc["NoResults"]</span>
+    </div>
 }
 
 @code {
     [Inject] private IApplicationInsights? AppInsights { get; set; }
     private bool IsLoading { get; set; }
+    private bool Searched { get; set; }
     private string? SearchTerm { get; set; }
     private IDictionary<string, SearchResult> SearchResults = new Dictionary<string, SearchResult>();
     private Task SearchDocuments() {
         IsLoading = true;
+        Searched = true;
         return SearchDocumentsInternal();
     }
     private async Task SearchDocumentsInternal() {

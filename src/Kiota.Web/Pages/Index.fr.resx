@@ -82,4 +82,7 @@
   <data name="GoToGenerate" xml:space="preserve">
     <value>Générer un client</value>
   </data>
+  <data name="NoResults" xml:space="preserve">
+    <value>Aucun résulat.</value>
+  </data>
 </root>
