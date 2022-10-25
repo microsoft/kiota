@@ -87,17 +87,21 @@
         Searched = true;
         return SearchDocumentsInternal();
     }
+    private const string searchTelemetryKey = "search";
     private async Task SearchDocumentsInternal() {
         if(AppInsights != null)
-            await AppInsights.TrackEvent("search", new Dictionary<string, object?> {
-                { "searchterm", SearchTerm },
-            }).ConfigureAwait(false);
+            await AppInsights.StartTrackEvent(searchTelemetryKey).ConfigureAwait(false);
         var searchConfig = new SearchConfiguration() {
             SearchTerm = SearchTerm,
         };
         var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
         SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
         IsLoading = false;
+        if(AppInsights != null)
+            await AppInsights.StopTrackEvent(searchTelemetryKey, new Dictionary<string, string?> {
+                { "searchterm", SearchTerm },
+                { "results", SearchResults.Count.ToString() },
+            }).ConfigureAwait(false);
     }
     private bool IsExactMatch() => SearchResults.Any() && (SearchTerm?.Contains("::") ?? false) && SearchResults.ContainsKey(SearchTerm);
     private void GoToGenerate() {

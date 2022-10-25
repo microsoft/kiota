@@ -72,20 +72,23 @@
         }
         await base.OnParametersSetAsync();
     }
+    private const string goToGenerateTelemetryKey = "gotogenerate";
     private async Task GoToGenerate() {
         if(!string.IsNullOrEmpty(DescriptionUrl))
         {
             if(AppInsights != null)
-                await AppInsights.TrackEvent("gotogenerate", new Dictionary<string, object?> {
-                    { "includePatterns", IncludePatterns },
-                    { "excludePatterns", ExcludePatterns },
-                });
+                await AppInsights.StartTrackEvent(goToGenerateTelemetryKey).ConfigureAwait(false);
             var includeFilters = string.IsNullOrEmpty(IncludePatterns) ? string.Empty : string.Join(",", IncludePatterns
                                 .Split(new [] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
                                 .Select(static x => x.Trim()));
             var excludeFilters = string.IsNullOrEmpty(ExcludePatterns) ? string.Empty : string.Join(",", ExcludePatterns
                                 .Split(new [] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
                                 .Select(static x => x.Trim()));
+            if(AppInsights != null)
+                await AppInsights.StopTrackEvent(goToGenerateTelemetryKey, new Dictionary<string, string?> {
+                    { "includePatterns", IncludePatterns },
+                    { "excludePatterns", ExcludePatterns },
+                }).ConfigureAwait(false);
             navManager.NavigateTo($"/generate?d={DescriptionUrl}&i={includeFilters}&e={excludeFilters}");
         }
     }
@@ -93,6 +96,7 @@
         IsLoading = true;
         return ShowDescriptionInternal();
     }
+    private const string showDescriptionTelemetryKey = "showdescription";
     private async Task ShowDescriptionInternal() {
         Tree = string.Empty;
         if (string.IsNullOrEmpty(DescriptionUrl)) {
@@ -105,10 +109,7 @@
             DescriptionUrl = SearchResults.First().Value.DescriptionUrl.ToString();
         }
         if(AppInsights != null)
-            await AppInsights.TrackEvent("showdescription", new Dictionary<string, object?> {
-                { "includePatterns", IncludePatterns },
-                { "excludePatterns", ExcludePatterns },
-            });
+            await AppInsights.StartTrackEvent(showDescriptionTelemetryKey).ConfigureAwait(false);
         var generationConfiguration = new GenerationConfiguration{
             OpenAPIFilePath = DescriptionUrl,
             IncludePatterns = IncludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
@@ -121,6 +122,11 @@
         RenderNode(urlTreeNode, 10, builder);
         Tree = builder.ToString();
         IsLoading = false;
+        if(AppInsights != null)
+            await AppInsights.StopTrackEvent(showDescriptionTelemetryKey, new Dictionary<string, string?> {
+                { "includePatterns", IncludePatterns },
+                { "excludePatterns", ExcludePatterns },
+            }).ConfigureAwait(false);
     }
     private static void RenderNode(Microsoft.OpenApi.Services.OpenApiUrlTreeNode node, uint maxDepth, StringBuilder builder, string indent = "", int nodeDepth = 0)
     {
