@@ -149,7 +149,7 @@ public class KiotaBuilder
         }
         return (includePatterns, excludePatterns);
     }
-    public static void FilterPathsByPatterns(OpenApiDocument doc, List<Glob> includePatterns, List<Glob> excludePatterns) {
+    public void FilterPathsByPatterns(OpenApiDocument doc, List<Glob> includePatterns, List<Glob> excludePatterns) {
         if (!includePatterns.Any() && !excludePatterns.Any()) return;
 
         doc.Paths.Keys.Except(
