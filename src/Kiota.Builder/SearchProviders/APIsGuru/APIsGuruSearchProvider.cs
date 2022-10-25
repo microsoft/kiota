@@ -41,6 +41,7 @@ public class APIsGuruSearchProvider : ISearchProvider
         var results = candidates
                                 .Select(x => x.Value.versions.TryGetValue(GetVersionKey(singleCandidate, version, x), out var versionInfo) ? (x.Key, versionInfo, x.Value.versions.Keys.ToList()) : (x.Key, default, default))
                                 .Where(static x => x.versionInfo is not null)
+                                .DistinctBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
                                 .ToDictionary(static x => x.Key,
                                             static x => new SearchResult(x.versionInfo.info?.title, x.versionInfo.info?.description, x.versionInfo.info?.contact?.url, x.versionInfo.swaggerUrl, x.Item3),
                                             StringComparer.OrdinalIgnoreCase);
