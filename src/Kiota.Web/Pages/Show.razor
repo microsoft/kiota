@@ -113,13 +113,10 @@
         if(AppInsights != null)
             await AppInsights.StartTrackEvent(showDescriptionTelemetryKey).ConfigureAwait(false);
         
-        if (!(generationConfiguration?.OpenAPIFilePath.Equals(DescriptionUrl, StringComparison.OrdinalIgnoreCase) ?? false)) {
+        if (kiotaBuilder == null || (!(generationConfiguration?.OpenAPIFilePath.Equals(DescriptionUrl, StringComparison.OrdinalIgnoreCase) ?? false))) {
             generationConfiguration = new GenerationConfiguration{
                 OpenAPIFilePath = DescriptionUrl,
             };
-        }
-
-        if (kiotaBuilder == null) {
             var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
             kiotaBuilder = new KiotaBuilder(builderLogger, generationConfiguration);
         }
