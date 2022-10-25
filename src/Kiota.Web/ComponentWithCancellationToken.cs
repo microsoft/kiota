@@ -4,18 +4,20 @@ namespace Kiota.Web;
 
 public abstract class ComponentWithCancellationToken : ComponentBase, IDisposable
 {
-    private CancellationTokenSource? _cancellationTokenSource;
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-    protected CancellationToken ComponentDetached => (_cancellationTokenSource ??= new()).Token;
+    protected CancellationToken ComponentDetached => _cancellationTokenSource.Token;
 
-    public virtual void Dispose()
+    public void Dispose() {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+    public virtual void Dispose(bool disposing)
     {
         if (_cancellationTokenSource != null)
         {
             _cancellationTokenSource.Cancel();
             _cancellationTokenSource.Dispose();
-            _cancellationTokenSource = null;
         }
-        GC.SuppressFinalize(this);
     }
 }
