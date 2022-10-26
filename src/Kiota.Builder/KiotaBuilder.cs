@@ -15,6 +15,7 @@ using Kiota.Builder.CodeRenderers;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Lock;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
@@ -53,17 +54,17 @@ public class KiotaBuilder
     public async Task<OpenApiUrlTreeNode> GetUrlTreeNodeAsync(CancellationToken cancellationToken) {
         var sw = new Stopwatch();
         string inputPath = config.OpenAPIFilePath;
-        var (_, openApiTree) = await GetTreeNodeInternal(inputPath, sw, cancellationToken);
+        var (_, openApiTree, _) = await GetTreeNodeInternal(inputPath, false, sw, cancellationToken);
         return openApiTree;
     }
-    private async Task<(int, OpenApiUrlTreeNode)> GetTreeNodeInternal(string inputPath, Stopwatch sw, CancellationToken cancellationToken) {
+    private async Task<(int, OpenApiUrlTreeNode, bool)> GetTreeNodeInternal(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken) {
         var stepId = 0;
         sw.Start();
         await using var input = await (originalDocument == null ? 
                                         LoadStream(inputPath, cancellationToken) :
                                         Task.FromResult<Stream>(new MemoryStream()));
         if(input == null)
-            return (0, null);
+            return (0, null, false);
         StopLogAndReset(sw, $"step {++stepId} - reading the stream - took");
 
         // Create patterns
@@ -81,26 +82,44 @@ public class KiotaBuilder
         if(originalDocument == null)
             originalDocument = new OpenApiDocument(openApiDocument);
 
-        // filter paths
+        // Should Generate
         sw.Start();
-        FilterPathsByPatterns(openApiDocument, pathPatterns.Item1, pathPatterns.Item2);
-        StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
+        var shouldGenerate = await ShouldGenerate(cancellationToken);
+        StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
+        
+        OpenApiUrlTreeNode openApiTree = null;
+        if(shouldGenerate && generating) {
+        
+            // filter paths
+            sw.Start();
+            FilterPathsByPatterns(openApiDocument, pathPatterns.Item1, pathPatterns.Item2);
+            StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
 
-        SetApiRootUrl();
+            SetApiRootUrl();
 
-        modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
+            modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
 
-        // Create Uri Space of API
-        sw.Start();
-        var openApiTree = CreateUriSpace(openApiDocument);
-        StopLogAndReset(sw, $"step {++stepId} - create uri space - took");
+            // Create Uri Space of API
+            sw.Start();
+            openApiTree = CreateUriSpace(openApiDocument);
+            StopLogAndReset(sw, $"step {++stepId} - create uri space - took");
+        }
 
-        return (stepId, openApiTree);
+        return (stepId, openApiTree, shouldGenerate);
+    }
+    private async Task<bool> ShouldGenerate(CancellationToken cancellationToken) {
+        if(config.CleanOutput) return true;
+        var existingLock = await lockManagementService.GetLockFromDirectoryAsync(config.OutputPath, cancellationToken);
+        var configurationLock = new KiotaLock(config) {
+            DescriptionHash = openApiDocument.HashCode,
+        };
+        var comparer = new KiotaLockComparer();
+        return !comparer.Equals(existingLock, configurationLock);
     }
 
     public async Task<LanguagesInformation> GetLanguageInformationAsync(CancellationToken cancellationToken)
     {
-        await GetTreeNodeInternal(config.OpenAPIFilePath, new Stopwatch(), cancellationToken);
+        await GetTreeNodeInternal(config.OpenAPIFilePath, false, new Stopwatch(), cancellationToken);
         if (openApiDocument == null)
             return null;
         if (openApiDocument.Extensions.TryGetValue(OpenApiKiotaExtension.Name, out var ext) && ext is OpenApiKiotaExtension kiotaExt)
@@ -108,7 +127,12 @@ public class KiotaBuilder
         return null;
     }
 
-    public async Task GenerateClientAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Generates the code from the OpenAPI document
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>Whether the generated code was updated or not</returns>
+    public async Task<bool> GenerateClientAsync(CancellationToken cancellationToken)
     {
         var sw = new Stopwatch();
         // Read input stream
@@ -121,8 +145,12 @@ public class KiotaBuilder
         } catch (Exception ex) {
             throw new InvalidOperationException($"Could not open/create output directory {config.OutputPath}, reason: {ex.Message}", ex);
         }
-        var (stepId, openApiTree) = await GetTreeNodeInternal(inputPath, sw, cancellationToken);
+        var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, sw, cancellationToken);
         
+        if(!shouldGenerate) {
+            logger.LogInformation("No changes detected, skipping generation");
+            return false;
+        }
         // Create Source Model
         sw.Start();
         var generatedCode = CreateSourceModel(openApiTree);
@@ -137,6 +165,19 @@ public class KiotaBuilder
         sw.Start();
         await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken);
         StopLogAndReset(sw, $"step {++stepId} - writing files - took");
+
+        // Write lock file
+        sw.Start();
+        await UpdateLockFile(cancellationToken);
+        StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
+        return true;
+    }
+    private readonly LockManagementService lockManagementService = new();
+    private async Task UpdateLockFile(CancellationToken cancellationToken) {
+        var configurationLock = new KiotaLock(config) {
+            DescriptionHash = openApiDocument.HashCode,
+        };
+        await lockManagementService.WriteLockFileAsync(config.OutputPath, configurationLock, cancellationToken);
     }
     public (List<Glob>, List<Glob>) BuildGlobPatterns() {
         var includePatterns = new List<Glob>();
