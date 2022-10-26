@@ -34,9 +34,13 @@
     </FluentTextArea>
     <label for="language">@Loc["Language"]</label><br />
     <FluentSelect Id="language" @bind-Value="@Language" Required=@true>
-        @foreach (var item in Enum.GetValues(typeof(GenerationLanguage)))
+        @foreach (var item in Enum.GetValues<GenerationLanguage>().OrderBy(static x => x.ToString(), StringComparer.OrdinalIgnoreCase))
         {
-            <FluentOption Value=@item>@item</FluentOption>
+            if (configuration?.Languages?.TryGetValue(item.ToString(), out var languageInfo) ?? false) {
+                <FluentOption Value=@item>@item - @languageInfo.MaturityLevel</FluentOption>
+            } else {
+                <FluentOption Value=@item>@item</FluentOption>
+            }
         }
     </FluentSelect>
     <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
@@ -100,7 +104,7 @@
     private bool IsLoading { get; set; }
     private string? Dependencies { get; set; }
     private string? Logs { get; set; }
-    protected override void OnParametersSet() {
+    protected override async Task OnParametersSetAsync() {
         if(!string.IsNullOrEmpty(DescriptionUrlFromQuery))
             DescriptionUrl = DescriptionUrlFromQuery;
         if(!string.IsNullOrEmpty(IncludePatternsFromQuery))
@@ -129,8 +133,9 @@
             NamespaceName = NamespaceNameFromQuery;
         else 
             NamespaceName = defaultConfiguration.ClientNamespaceName;
-            
-        base.OnParametersSet();
+        
+        await GetConfiguration(ComponentDetached);
+        await base.OnParametersSetAsync();
     }
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(() => SHA256.Create());
     [Inject] private IApplicationInsights? AppInsights { get; set; }
@@ -216,15 +221,19 @@
                 }).ConfigureAwait(false);
         }
     }
-    private Task<KiotaConfiguration?> GetConfiguration(CancellationToken cancellationToken) {
-        return Http.GetFromJsonAsync<KiotaConfiguration>(
-            "appsettings.json",
-            new JsonSerializerOptions{
-                Converters ={
-                    new JsonStringEnumConverter( JsonNamingPolicy.CamelCase)
+    private static KiotaConfiguration? configuration;
+    private async Task<KiotaConfiguration?> GetConfiguration(CancellationToken cancellationToken) {
+        if(configuration == null)
+            configuration = await Http.GetFromJsonAsync<KiotaConfiguration>(
+                "appsettings.json",
+                new JsonSerializerOptions{
+                    Converters ={
+                        new JsonStringEnumConverter( JsonNamingPolicy.CamelCase)
+                    },
+                    
                 },
-                
-            },
-            cancellationToken);
+                cancellationToken);
+
+        return configuration;
     }
 }
