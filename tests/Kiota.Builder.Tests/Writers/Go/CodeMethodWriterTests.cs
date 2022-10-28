@@ -883,6 +883,42 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public async Task WritesRequestGeneratorBodyForScalarCollection() {
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        var executor = parentClass.AddMethod(new CodeMethod {
+            Name = "executor",
+            HttpMethod = HttpMethod.Get,
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType {
+                Name = "string",
+                IsExternal = true,
+            }
+        }).First();
+        AddRequestBodyParameters(executor);
+        AddRequestBodyParameters();
+        AddRequestProperties();
+        var bodyParameter = method.Parameters.OfKind(CodeParameterKind.RequestBody);
+        bodyParameter.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go}, parentClass.Parent as CodeNamespace);
+        method.AcceptedResponseTypes.Add("application/json");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
+        Assert.Contains("requestInfo.UrlTemplate = ", result);
+        Assert.Contains("requestInfo.PathParameters", result);
+        Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
+        Assert.Contains("if c != nil", result);
+        Assert.Contains("requestInfo.AddRequestHeaders(", result);
+        Assert.Contains("if c.Q != nil", result);
+        Assert.Contains("requestInfo.AddQueryParameters(", result);
+        Assert.Contains("requestInfo.AddRequestOptions(", result);
+        Assert.Contains("requestInfo.SetContentFromScalarCollection(ctx, m.requestAdapter", result);
+        Assert.Contains("return requestInfo, nil", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public async Task WritesRequestGeneratorBodyForParsable() {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
@@ -913,6 +949,42 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
         Assert.Contains("requestInfo.SetContentFromParsable(ctx, m.requestAdapter", result);
+        Assert.Contains("return requestInfo, nil", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public async Task WritesRequestGeneratorBodyForParsableCollection() {
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        var executor = parentClass.AddMethod(new CodeMethod {
+            Name = "executor",
+            HttpMethod = HttpMethod.Get,
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType {
+                Name = "string",
+                IsExternal = true,
+            }
+        }).First();
+        AddRequestBodyParameters(executor, true);
+        AddRequestBodyParameters(useComplexTypeForBody: true);
+        AddRequestProperties();
+        var bodyParameter = method.Parameters.OfKind(CodeParameterKind.RequestBody);
+        bodyParameter.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go}, parentClass.Parent as CodeNamespace);
+        method.AcceptedResponseTypes.Add("application/json");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
+        Assert.Contains("requestInfo.UrlTemplate = ", result);
+        Assert.Contains("requestInfo.PathParameters", result);
+        Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
+        Assert.Contains("if c != nil", result);
+        Assert.Contains("requestInfo.AddRequestHeaders(", result);
+        Assert.Contains("if c.Q != nil", result);
+        Assert.Contains("requestInfo.AddQueryParameters(", result);
+        Assert.Contains("requestInfo.AddRequestOptions(", result);
+        Assert.Contains("requestInfo.SetContentFromParsableCollection(ctx, m.requestAdapter", result);
         Assert.Contains("return requestInfo, nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
