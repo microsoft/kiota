@@ -88,7 +88,7 @@ public class KiotaBuilder
         StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
         
         OpenApiUrlTreeNode openApiTree = null;
-        if(shouldGenerate && generating) {
+        if(shouldGenerate || !generating) {
         
             // filter paths
             sw.Start();
