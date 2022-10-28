@@ -17,6 +17,7 @@ Kiota offers the following commands to help you build your API client:
 - [download](#description-download): download an API description.
 - [show](#description-show): show the API paths tree for an API description.
 - [generate](#client-generation): generate a client for any API from its description.
+- [update](#client-update): update existing clients from previous generations.
 - [info](#language-information): show languages and runtime dependencies information.
 
 ## Description search
@@ -188,6 +189,8 @@ kiota generate (--openapi | -d) <path>
       [(--exclude-path | -e) <glob pattern>]
 ```
 
+> Note: the output directory will also contain a **kiota.lock** lock file in addition to client sources. This file contains all the generation parameters for future reference as well as a hash from the description. On subsequent generations, including updates, the generation will be skipped if the description and the parameters have not changed and if clean-output is **false**. The lock file is meant to be committed to the source control with the generated sources.
+
 ### Mandatory parameters
 
 - [openapi](#--openapi--d)
@@ -199,6 +202,8 @@ The generate command accepts optional parameters commonly available on the other
 
 - [--clear-cache](#--clear-cache---co)
 - [--clean-output](#--clean-output---co)
+- [--include-path](#--include-path--i)
+- [--exclude-path](#--exclude-path--e)
 - [--log-level](#--log-level---ll)
 - [--output](#--output--o)
 
@@ -249,26 +254,6 @@ One or more module names that implements `IParseNodeFactory`.
 ```shell
 kiota generate --deserializer Contoso.Json.CustomDeserializer
 ```
-
-#### `--exclude-path (-e)`
-
-A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing.
-
-```shell
-kiota generate --exclude-path **/users/** --exclude-path **/groups/**
-```
-
-> Note: exclude pattern can be used in combination with the include pattern argument. A path item is included when (no include pattern is included OR it matches an include pattern) AND (no exclude pattern is included OR it doesn't match an exclude pattern).
-
-#### `--include-path (-i)`
-
-A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything.
-
-```shell
-kiota generate --include-path **/users/** --include-path **/groups/**
-```
-
-> Note: include pattern can be used in combination with the exclude pattern argument. A path item is included when (no include pattern is included OR it matches an include pattern) AND (no exclude pattern is included OR it doesn't match an exclude pattern).
 
 #### `--namespace-name (-n)`
 
@@ -397,6 +382,26 @@ The info command accepts optional parameters commonly available on the other com
 - [--version](#--version--v)
 - [--search-key](#--search-key--k)
 
+## Client update
+
+Kiota update accepts the following parameters during the update of existing clients. This command will search for lock files in the output directory and all its subdirectories and trigger generations to refresh the existing clients using settings from the lock files.
+
+```shell
+kiota update [(--output | -o) <path>]
+      [(--log-level | --ll) <level>]
+      [--clean-output | --co]
+      [--clear-cache | --cc]
+```
+
+### Optional parameters
+
+The generate command accepts optional parameters commonly available on the other commands:
+
+- [--clear-cache](#--clear-cache---co)
+- [--clean-output](#--clean-output---co)
+- [--log-level](#--log-level---ll)
+- [--output](#--output--o)
+
 ## Common parameters
 
 The following parameters are available across multiple commands.
@@ -420,6 +425,26 @@ Cached files are stored under `%TEMP%/kiota/cache` and valid for one (1) hour af
 ```shell
 kiota <command name> --clear-cache
 ```
+
+### `--exclude-path (-e)`
+
+A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing.
+
+```shell
+kiota <command name> --exclude-path **/users/** --exclude-path **/groups/**
+```
+
+> Note: exclude pattern can be used in combination with the include pattern argument. A path item is included when (no include pattern is included OR it matches an include pattern) AND (no exclude pattern is included OR it doesn't match an exclude pattern).
+
+### `--include-path (-i)`
+
+A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything.
+
+```shell
+kiota <command name> --include-path **/users/** --include-path **/groups/**
+```
+
+> Note: include pattern can be used in combination with the exclude pattern argument. A path item is included when (no include pattern is included OR it matches an include pattern) AND (no exclude pattern is included OR it doesn't match an exclude pattern).
 
 ### `--openapi (-d)`
 
