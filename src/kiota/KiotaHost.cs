@@ -19,6 +19,7 @@ public class KiotaHost {
         rootCommand.AddCommand(GetDownloadCommand());
         rootCommand.AddCommand(GetShowCommand());
         rootCommand.AddCommand(GetInfoCommand());
+        rootCommand.AddCommand(GetUpdateCommand());
         return rootCommand;
     }
     private static Command GetInfoCommand() {
@@ -261,6 +262,31 @@ public class KiotaHost {
             StructuredMimeTypesOption = structuredMimeTypesOption,
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
+            ClearCacheOption = clearCacheOption,
+        };
+        return command;
+    }
+    private static Command GetUpdateCommand()
+    {
+        var defaultConfiguration = new GenerationConfiguration();
+        var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);
+
+        var logLevelOption = GetLogLevelOption();
+
+        var cleanOutputOption = GetCleanOutputOption(defaultConfiguration.CleanOutput);
+
+        var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
+
+        var command = new Command ("update", "Updates existing clients under the target directory using their lock files.") {
+            outputOption,
+            logLevelOption,
+            cleanOutputOption,
+            clearCacheOption,
+        };
+        command.Handler = new KiotaUpdateCommandHandler {
+            OutputOption = outputOption,
+            LogLevelOption = logLevelOption,
+            CleanOutputOption = cleanOutputOption,
             ClearCacheOption = clearCacheOption,
         };
         return command;

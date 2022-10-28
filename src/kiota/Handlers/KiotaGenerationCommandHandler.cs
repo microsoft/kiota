@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Kiota.Builder;
-using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 using Microsoft.Extensions.Logging;
@@ -90,10 +89,6 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
     #endif
             }
         }
-    }
-    private void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment) {
-        if (!string.IsNullOrEmpty(input))
-            assignment.Invoke(Configuration.Generation, input);
     }
     public Option<List<string>> IncludePatternsOption { get; set; }
     public Option<List<string>> ExcludePatternsOption { get; set; }

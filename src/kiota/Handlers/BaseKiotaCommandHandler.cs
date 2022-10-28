@@ -52,6 +52,10 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
             return string.Empty;
         return Path.IsPathRooted(source) || source.StartsWith("http") ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
     }
+    protected void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment) {
+        if (!string.IsNullOrEmpty(input))
+            assignment.Invoke(Configuration.Generation, input);
+    }
     protected static string NormalizeSlashesInPath(string path) {
         if (string.IsNullOrEmpty(path))
             return path;

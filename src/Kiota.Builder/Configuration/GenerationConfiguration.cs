@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 namespace Kiota.Builder.Configuration;
-public class GenerationConfiguration {
+public class GenerationConfiguration : ICloneable {
     public string OpenAPIFilePath { get; set; } = "openapi.yaml";
     public string OutputPath { get; set; } = "./output";
     public string ClientClassName { get; set; } = "ApiClient";
@@ -48,4 +48,25 @@ public class GenerationConfiguration {
     public HashSet<string> ExcludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase) {
     };
     public bool ClearCache { get; set; }
+    public object Clone()
+    {
+        return new GenerationConfiguration {
+            OpenAPIFilePath = OpenAPIFilePath,
+            OutputPath = OutputPath,
+            ClientClassName = ClientClassName,
+            ClientNamespaceName = ClientNamespaceName,
+            NamespaceNameSeparator = NamespaceNameSeparator,
+            Language = Language,
+            ApiRootUrl = ApiRootUrl,
+            UsesBackingStore = UsesBackingStore,
+            IncludeAdditionalData = IncludeAdditionalData,
+            Serializers = new(Serializers, StringComparer.OrdinalIgnoreCase),
+            Deserializers = new(Deserializers, StringComparer.OrdinalIgnoreCase),
+            CleanOutput = CleanOutput,
+            StructuredMimeTypes = new(StructuredMimeTypes, StringComparer.OrdinalIgnoreCase),
+            IncludePatterns = new(IncludePatterns, StringComparer.OrdinalIgnoreCase),
+            ExcludePatterns = new(ExcludePatterns, StringComparer.OrdinalIgnoreCase),
+            ClearCache = ClearCache,
+        };
+    }
 }
