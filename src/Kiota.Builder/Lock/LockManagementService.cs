@@ -25,7 +25,7 @@ public class LockManagementService {
         var lockFile = Path.Combine(directoryPath, LockFileName);
         if(File.Exists(lockFile)) {
             await using var fileStream = File.OpenRead(lockFile);
-            var result = await JsonSerializer.DeserializeAsync<KiotaLock>(fileStream, cancellationToken: cancellationToken);
+            var result = await JsonSerializer.DeserializeAsync<KiotaLock>(fileStream, options, cancellationToken);
             return result;
         }
         return null;
@@ -36,9 +36,14 @@ public class LockManagementService {
         ArgumentNullException.ThrowIfNull(lockInfo);
         return WriteLockFileInternalAsync(directoryPath, lockInfo, cancellationToken);
     }
+    private static readonly JsonSerializerOptions options = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+    };
     private static async Task WriteLockFileInternalAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken) {
         var lockFilePath = Path.Combine(directoryPath, LockFileName);
         await using var fileStream = File.Open(lockFilePath, FileMode.Create);
-        await JsonSerializer.SerializeAsync(fileStream, lockInfo, cancellationToken: cancellationToken);
+        await JsonSerializer.SerializeAsync(fileStream, lockInfo, options, cancellationToken);
     }
 }
