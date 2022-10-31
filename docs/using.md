@@ -189,7 +189,7 @@ kiota generate (--openapi | -d) <path>
       [(--exclude-path | -e) <glob pattern>]
 ```
 
-> Note: the output directory will also contain a **kiota.lock** lock file in addition to client sources. This file contains all the generation parameters for future reference as well as a hash from the description. On subsequent generations, including updates, the generation will be skipped if the description and the parameters have not changed and if clean-output is **false**. The lock file is meant to be committed to the source control with the generated sources.
+> Note: the output directory will also contain a **kiota-lock.json** lock file in addition to client sources. This file contains all the generation parameters for future reference as well as a hash from the description. On subsequent generations, including updates, the generation will be skipped if the description and the parameters have not changed and if clean-output is **false**. The lock file is meant to be committed to the source control with the generated sources.
 
 ### Mandatory parameters
 

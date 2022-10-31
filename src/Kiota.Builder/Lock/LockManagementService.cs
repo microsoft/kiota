@@ -8,14 +8,19 @@ using System.Threading.Tasks;
 
 namespace Kiota.Builder.Lock;
 
-public class LockManagementService {
+/// <summary>
+/// A service that manages the lock file for a Kiota project implemented using the file system.
+/// </summary>
+public class LockManagementService : ILockManagementService {
     private const string LockFileName = "kiota-lock.json";
+    /// <inheritdoc/>
     public IEnumerable<string> GetDirectoriesContainingLockFile(string searchDirectory) {
         if(string.IsNullOrEmpty(searchDirectory))
             throw new ArgumentNullException(nameof(searchDirectory));
         var files = Directory.GetFiles(searchDirectory, LockFileName, SearchOption.AllDirectories);
         return files.Select(x => Path.GetDirectoryName(x));
     }
+    /// <inheritdoc/>
     public Task<KiotaLock> GetLockFromDirectoryAsync(string directoryPath, CancellationToken cancellationToken = default) {
         if(string.IsNullOrEmpty(directoryPath))
             throw new ArgumentNullException(nameof(directoryPath));
@@ -29,6 +34,7 @@ public class LockManagementService {
         }
         return null;
     }
+    /// <inheritdoc/>
     public async Task<KiotaLock> GetLockFromStreamAsync(Stream stream, CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(stream);
         return await GetLockFromStreamInternalAsync(stream, cancellationToken);
@@ -36,6 +42,7 @@ public class LockManagementService {
     private ValueTask<KiotaLock> GetLockFromStreamInternalAsync(Stream stream, CancellationToken cancellationToken) {
         return JsonSerializer.DeserializeAsync<KiotaLock>(stream, options, cancellationToken);
     }
+    /// <inheritdoc/>
     public Task WriteLockFileAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken = default) {
         if (string.IsNullOrEmpty(directoryPath))
             throw new ArgumentNullException(nameof(directoryPath));

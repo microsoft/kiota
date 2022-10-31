@@ -9,16 +9,12 @@ namespace Kiota.Builder.Lock;
 /// </summary>
 public class KiotaLockComparer : IEqualityComparer<KiotaLock>
 {
-    /// <summary>
     /// <inheritdoc/>
-    /// </summary>
     public bool Equals(KiotaLock x, KiotaLock y)
     {
         return GetHashCode(x) == GetHashCode(y);
     }
-    /// <summary>
     /// <inheritdoc/>
-    /// </summary>
     public int GetHashCode(KiotaLock obj)
     {
         if (obj == null) return 0;
