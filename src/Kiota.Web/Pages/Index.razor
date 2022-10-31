@@ -18,9 +18,9 @@
 <h1>@Loc["Search"]</h1>
 
 <div>
-    <FluentTextField Required="true" class="full-width-field" @bind-Value=@SearchTerm>@Loc["SearchTermOrKey"]</FluentTextField>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@SearchTerm @onkeydown=@EnterSubmit>@Loc["SearchTermOrKey"]</FluentTextField>
     <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
-    <FluentButton Appearance="Appearance.Accent" @onclick="SearchDocuments">@Loc["SearchAction"]</FluentButton>
+    <FluentButton Appearance="Appearance.Accent" @onclick=@SearchDocuments Disabled=@IsLoading>@Loc["SearchAction"]</FluentButton>
     @if(IsLoading) {
         <FluentProgress></FluentProgress>
     }
@@ -34,7 +34,7 @@
                 <FluentDataGridCell GridColumn=2 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Description"]</FluentDataGridCell>
                 <FluentDataGridCell GridColumn=3 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Versions"]</FluentDataGridCell>
             </FluentDataGridRow>
-                @foreach (var result in SearchResults)
+                @foreach (var result in SearchResults.OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase))
                 {
                     <FluentDataGridRow>
                         <FluentDataGridCell GridColumn=1>
@@ -59,28 +59,49 @@
                 }
         </FluentDataGrid>
     </div>
+} else if (Searched && !IsLoading) {
+    <div id="no-results">
+        <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
+        <span>@Loc["NoResults"]</span>
+    </div>
 }
 
 @code {
     [Inject] private IApplicationInsights? AppInsights { get; set; }
     private bool IsLoading { get; set; }
+    private bool Searched { get; set; }
     private string? SearchTerm { get; set; }
     private IDictionary<string, SearchResult> SearchResults = new Dictionary<string, SearchResult>();
+    private Task EnterSubmit(KeyboardEventArgs e) {
+        if(e.Key == "Enter") {
+            return EnterSubmitInternal(e);
+        }
+        return Task.CompletedTask;
+    }
+    private async Task EnterSubmitInternal(KeyboardEventArgs e) {
+        await Task.Delay(10, ComponentDetached).ConfigureAwait(false); // so the value is updated
+        await SearchDocuments();
+    }
     private Task SearchDocuments() {
         IsLoading = true;
+        Searched = true;
         return SearchDocumentsInternal();
     }
+    private const string searchTelemetryKey = "search";
     private async Task SearchDocumentsInternal() {
         if(AppInsights != null)
-            await AppInsights.TrackEvent("search", new Dictionary<string, object?> {
-                { "searchterm", SearchTerm },
-            }).ConfigureAwait(false);
+            await AppInsights.StartTrackEvent(searchTelemetryKey).ConfigureAwait(false);
         var searchConfig = new SearchConfiguration() {
             SearchTerm = SearchTerm,
         };
         var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
         SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
         IsLoading = false;
+        if(AppInsights != null)
+            await AppInsights.StopTrackEvent(searchTelemetryKey, new Dictionary<string, string?> {
+                { "searchterm", SearchTerm },
+                { "results", SearchResults.Count.ToString() },
+            }).ConfigureAwait(false);
     }
     private bool IsExactMatch() => SearchResults.Any() && (SearchTerm?.Contains("::") ?? false) && SearchResults.ContainsKey(SearchTerm);
     private void GoToGenerate() {

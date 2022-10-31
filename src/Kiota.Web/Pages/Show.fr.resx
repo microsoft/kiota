@@ -77,7 +77,7 @@
     <value>Afficher</value>
   </data>
   <data name="GoToGenerate" xml:space="preserve">
-    <value>Générer un client avec les paramètres courants</value>
+    <value>Générer</value>
   </data>
   <data name="ApiPaths" xml:space="preserve">
     <value>Segments de l'API</value>

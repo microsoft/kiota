@@ -77,7 +77,7 @@
     <value>Show</value>
   </data>
   <data name="GoToGenerate" xml:space="preserve">
-    <value>Generate with current settings</value>
+    <value>Generate</value>
   </data>
   <data name="ApiPaths" xml:space="preserve">
     <value>API Paths</value>

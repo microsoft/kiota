@@ -33,6 +33,7 @@ public class KiotaBuilder
 {
     private readonly ILogger<KiotaBuilder> logger;
     private readonly GenerationConfiguration config;
+    private OpenApiDocument originalDocument;
     private OpenApiDocument openApiDocument;
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
@@ -58,7 +59,9 @@ public class KiotaBuilder
     private async Task<(int, OpenApiUrlTreeNode)> GetTreeNodeInternal(string inputPath, Stopwatch sw, CancellationToken cancellationToken) {
         var stepId = 0;
         sw.Start();
-        await using var input = await LoadStream(inputPath, cancellationToken);
+        await using var input = await (originalDocument == null ? 
+                                        LoadStream(inputPath, cancellationToken) :
+                                        Task.FromResult<Stream>(new MemoryStream()));
         if(input == null)
             return (0, null);
         StopLogAndReset(sw, $"step {++stepId} - reading the stream - took");
@@ -70,8 +73,13 @@ public class KiotaBuilder
 
         // Parse OpenAPI
         sw.Start();
-        openApiDocument = CreateOpenApiDocument(input);
+        if (originalDocument == null)
+            openApiDocument = CreateOpenApiDocument(input);
+        else
+            openApiDocument = new OpenApiDocument(originalDocument);
         StopLogAndReset(sw, $"step {++stepId} - parsing the document - took");
+        if(originalDocument == null)
+            originalDocument = new OpenApiDocument(openApiDocument);
 
         // filter paths
         sw.Start();
