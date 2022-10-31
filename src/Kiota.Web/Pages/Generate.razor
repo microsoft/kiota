@@ -56,16 +56,16 @@
 </div>
 
 @if(!string.IsNullOrEmpty(Dependencies)) {
-    <div>
+    <div class="log-container">
         <h2>@Loc["Dependencies"]</h2>
-        <pre>@Dependencies</pre>
+        <pre class="log-box">@Dependencies</pre>
     </div>
 }
 
 @if(!string.IsNullOrEmpty(Logs)) {
-    <div>
+    <div class="log-container">
         <h2>@Loc["Logs"]</h2>
-        <pre>@Logs</pre>
+        <pre class="log-box">@Logs</pre>
     </div>
 }
 
