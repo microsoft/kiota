@@ -41,12 +41,14 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler {
                                             config.OutputPath = x.lockDirectoryPath;
                                             return config;
                                         }).ToArray();
-                await Task.WhenAll(configurations
+                var results = await Task.WhenAll(configurations
                                         .Select(x => new KiotaBuilder(logger, x)
                                                     .GenerateClientAsync(cancellationToken)));
                 DisplaySuccess($"Update of {locks.Length} clients completed successfully");
                 foreach(var configuration in configurations)
                     DisplayInfoHint(configuration.Language, configuration.OpenAPIFilePath);
+                if(results.Any(x => x))
+                    DisplayCleanHint("update");
                 return 0;
             } catch (Exception ex) {
     #if DEBUG

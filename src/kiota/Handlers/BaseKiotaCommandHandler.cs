@@ -149,10 +149,10 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
                         $"Example: kiota info -d {path} -l {language}");
         }
     }
-    protected void DisplayCleanHint() {
+    protected void DisplayCleanHint(string commandName) {
         if(TutorialMode) {
             DisplayHint("Hint: to force the generation to overwrite an existing client pass the --clean-output switch.",
-                        $"Example: kiota generate --clean-output");
+                        $"Example: kiota {commandName} --clean-output");
         }
     }
     protected void DisplayInfoAdvanced() {

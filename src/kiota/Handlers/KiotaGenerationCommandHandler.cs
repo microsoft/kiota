@@ -79,7 +79,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
                     DisplaySuccess("Generation completed successfully");
                 else {
                     DisplaySuccess("Generation skipped as no changes were detected");
-                    DisplayCleanHint();
+                    DisplayCleanHint("generate");
                 }
                 DisplayInfoHint(language, Configuration.Generation.OpenAPIFilePath);
                 DisplayGenerateAdvancedHint(includePatterns, excludePatterns, Configuration.Generation.OpenAPIFilePath);
