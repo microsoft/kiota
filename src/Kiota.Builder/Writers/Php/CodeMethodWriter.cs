@@ -379,8 +379,9 @@ namespace Kiota.Builder.Writers.Php
                 if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)});");
                 else {
-                    var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {spreadOperator}{conventions.GetParameterName(requestParams.requestBody)});");
+                    var spreadOperator = requestParams.requestBody.Type.IsCollection ? "..." : string.Empty;
+                    var methodName = (requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass) ? "setContentFromParsable" : "setContentFromScalarType";
+                    writer.WriteLine($"{RequestInfoVarName}->{methodName}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {spreadOperator}{conventions.GetParameterName(requestParams.requestBody)});");
                 }
             }
 
