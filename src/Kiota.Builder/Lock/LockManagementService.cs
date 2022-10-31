@@ -26,7 +26,7 @@ public class LockManagementService : ILockManagementService {
             throw new ArgumentNullException(nameof(directoryPath));
         return GetLockFromDirectoryInternalAsync(directoryPath, cancellationToken);
     }
-    private async Task<KiotaLock> GetLockFromDirectoryInternalAsync(string directoryPath, CancellationToken cancellationToken) {
+    private static async Task<KiotaLock> GetLockFromDirectoryInternalAsync(string directoryPath, CancellationToken cancellationToken) {
         var lockFile = Path.Combine(directoryPath, LockFileName);
         if(File.Exists(lockFile)) {
             await using var fileStream = File.OpenRead(lockFile);
@@ -39,7 +39,7 @@ public class LockManagementService : ILockManagementService {
         ArgumentNullException.ThrowIfNull(stream);
         return await GetLockFromStreamInternalAsync(stream, cancellationToken);
     }
-    private ValueTask<KiotaLock> GetLockFromStreamInternalAsync(Stream stream, CancellationToken cancellationToken) {
+    private static ValueTask<KiotaLock> GetLockFromStreamInternalAsync(Stream stream, CancellationToken cancellationToken) {
         return JsonSerializer.DeserializeAsync<KiotaLock>(stream, options, cancellationToken);
     }
     /// <inheritdoc/>
