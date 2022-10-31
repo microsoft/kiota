@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where collections request bodies would not serialize single elements properly. [#1927](https://github.com/microsoft/kiota/issues/1927)
 - Removed response handler parameter from Java executor methods.
 - Changed the generated PHP deserializer code to use `fn` instead of `function`. [#1880](https://github.com/microsoft/kiota/pull/1880)
 - Fixes compile errors due to type ambiguity in generated models in dotnet. [#1881](https://github.com/microsoft/kiota/issues/1881)

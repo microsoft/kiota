@@ -937,6 +937,33 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesRequestGeneratorBodyForScalarCollection() {
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.AcceptedResponseTypes.Add("application/json");
+        var bodyParameter = method.Parameters.OfKind(CodeParameterKind.RequestBody);
+        bodyParameter.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("final RequestInformation requestInfo = new RequestInformation()", result);
+        Assert.Contains("urlTemplate =", result);
+        Assert.Contains("pathParameters =", result);
+        Assert.Contains("httpMethod = HttpMethod.GET", result);
+        Assert.Contains("requestInfo.addRequestHeader(\"Accept\", \"application/json\")", result);
+        Assert.Contains("if (c != null)", result);
+        Assert.Contains("final RequestConfig requestConfig = new RequestConfig()", result);
+        Assert.Contains("c.accept(requestConfig)", result);
+        Assert.Contains("addQueryParameters", result);
+        Assert.Contains("addRequestHeaders", result);
+        Assert.Contains("addRequestOptions", result);
+        Assert.Contains("setContentFromScalarCollection", result);
+        Assert.Contains("toArray", result);
+        Assert.Contains("return requestInfo;", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesRequestGeneratorBodyForParsable() {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;

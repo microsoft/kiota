@@ -698,7 +698,7 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesRequestGeneratorBodyForCollection() {
+    public void WritesRequestGeneratorBodyForScalarCollection() {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
@@ -706,10 +706,11 @@ public class CodeMethodWriterTests : IDisposable {
         method.AcceptedResponseTypes.Add("application/json");
         var bodyParameter = method.Parameters.OfKind(CodeParameterKind.RequestBody);
         bodyParameter.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+        bodyParameter.Type.Name = "string";
+        bodyParameter.Type.AllTypes.First().TypeDefinition = null;
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains(".ToArray()", result);
-        Assert.Contains("SetContentFromParsable", result);
+        Assert.Contains("SetContentFromScalarCollection", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

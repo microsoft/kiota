@@ -319,9 +319,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             if(requestParams.requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                 writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
             else {
-                var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
                 var setMethodName = requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass ? "setContentFromParsable" : "setContentFromScalar";
-                writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {spreadOperator}{requestParams.requestBody.Name});");
+                writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name});");
             }
         }
         

@@ -699,6 +699,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"{RequestInfoVarName}.Headers[\"Accept\"] = \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\"");
             if(requestParams.requestBody != null) {
                 var bodyParamReference = $"{requestParams.requestBody.Name.ToFirstCharacterLowerCase()}";
+                var collectionSuffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
                 if(requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({bodyParamReference})");
                 else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.TypeDefinition is CodeInterface)) {
@@ -707,9 +708,9 @@ namespace Kiota.Builder.Writers.Go {
                         WriteCollectionCast(parsableSymbol, bodyParamReference, "cast", writer, false);
                         bodyParamReference = "cast...";
                     }
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
                 } else
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
             }
             if(requestParams.requestConfiguration != null) {
                 var headers = requestParams.Headers;
