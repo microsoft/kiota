@@ -67,6 +67,9 @@
   <data name="Generate" xml:space="preserve">
     <value>Generate</value>
   </data>
+  <data name="Update" xml:space="preserve">
+    <value>Update</value>
+  </data>
   <data name="About" xml:space="preserve">
     <value>About</value>
   </data>

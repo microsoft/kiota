@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Kiota.Builder.Lock;
 
 public class LockManagementService {
-    private const string LockFileName = "kiota.lock";
+    private const string LockFileName = "kiota-lock.json";
     public IEnumerable<string> GetDirectoriesContainingLockFile(string searchDirectory) {
         if(string.IsNullOrEmpty(searchDirectory))
             throw new ArgumentNullException(nameof(searchDirectory));
@@ -25,10 +25,16 @@ public class LockManagementService {
         var lockFile = Path.Combine(directoryPath, LockFileName);
         if(File.Exists(lockFile)) {
             await using var fileStream = File.OpenRead(lockFile);
-            var result = await JsonSerializer.DeserializeAsync<KiotaLock>(fileStream, options, cancellationToken);
-            return result;
+            return await GetLockFromStreamInternalAsync(fileStream, cancellationToken);
         }
         return null;
+    }
+    public async Task<KiotaLock> GetLockFromStreamAsync(Stream stream, CancellationToken cancellationToken = default) {
+        ArgumentNullException.ThrowIfNull(stream);
+        return await GetLockFromStreamInternalAsync(stream, cancellationToken);
+    }
+    private ValueTask<KiotaLock> GetLockFromStreamInternalAsync(Stream stream, CancellationToken cancellationToken) {
+        return JsonSerializer.DeserializeAsync<KiotaLock>(stream, options, cancellationToken);
     }
     public Task WriteLockFileAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken = default) {
         if (string.IsNullOrEmpty(directoryPath))

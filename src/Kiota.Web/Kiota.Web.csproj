@@ -38,6 +38,10 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Show.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="Pages\Update.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Update.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Shared\NavMenu.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>NavMenu.Designer.cs</LastGenOutput>
