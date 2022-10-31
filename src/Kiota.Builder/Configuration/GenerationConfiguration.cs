@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Kiota.Builder.Configuration;
 public class GenerationConfiguration : ICloneable {
@@ -60,12 +61,12 @@ public class GenerationConfiguration : ICloneable {
             ApiRootUrl = ApiRootUrl,
             UsesBackingStore = UsesBackingStore,
             IncludeAdditionalData = IncludeAdditionalData,
-            Serializers = new(Serializers, StringComparer.OrdinalIgnoreCase),
-            Deserializers = new(Deserializers, StringComparer.OrdinalIgnoreCase),
+            Serializers = new(Serializers ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            Deserializers = new(Deserializers ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             CleanOutput = CleanOutput,
-            StructuredMimeTypes = new(StructuredMimeTypes, StringComparer.OrdinalIgnoreCase),
-            IncludePatterns = new(IncludePatterns, StringComparer.OrdinalIgnoreCase),
-            ExcludePatterns = new(ExcludePatterns, StringComparer.OrdinalIgnoreCase),
+            StructuredMimeTypes = new(StructuredMimeTypes ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            IncludePatterns = new(IncludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            ExcludePatterns = new(ExcludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             ClearCache = ClearCache,
         };
     }
