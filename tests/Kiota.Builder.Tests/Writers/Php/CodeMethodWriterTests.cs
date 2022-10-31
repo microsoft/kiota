@@ -387,7 +387,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("$requestInfo->headers = array_merge($requestInfo->headers, $requestConfiguration->h);", result);
             Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
             Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
-            Assert.Contains("$requestInfo->setContentFromParsable($this->requestAdapter, \"\", ...$body);", result);
+            Assert.Contains("$requestInfo->setContentFromParsableCollection($this->requestAdapter, \"\", $body);", result);
             Assert.Contains("return $requestInfo;", result);
         }
         
@@ -413,7 +413,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("$requestInfo->headers = array_merge($requestInfo->headers, $requestConfiguration->h);", result);
             Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
             Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
-            Assert.Contains("$requestInfo->setContentFromScalarType($this->requestAdapter, \"\", $body);", result);
+            Assert.Contains("$requestInfo->setContentFromScalar($this->requestAdapter, \"\", $body);", result);
             Assert.Contains("return $requestInfo;", result);
         }
         
@@ -444,7 +444,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("$requestInfo->headers = array_merge($requestInfo->headers, $requestConfiguration->h);", result);
             Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
             Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
-            Assert.Contains("$requestInfo->setContentFromScalarType($this->requestAdapter, \"\", ...$body);", result);
+            Assert.Contains("$requestInfo->setContentFromScalarCollection($this->requestAdapter, \"\", $body);", result);
             Assert.Contains("return $requestInfo;", result);
         }
 
