@@ -72,7 +72,8 @@ public class KiotaLock {
     public void UpdateGenerationConfigurationFromLock(GenerationConfiguration config) {
         config.ClientClassName = ClientClassName;
         config.ClientNamespaceName = ClientNamespaceName;
-        config.Language = Enum.Parse<GenerationLanguage>(Language);
+        if(Enum.TryParse<GenerationLanguage>(Language, out var parsedLanguage))
+            config.Language = parsedLanguage;
         config.UsesBackingStore = UsesBackingStore;
         config.IncludeAdditionalData = IncludeAdditionalData;
         config.Serializers = Serializers;
