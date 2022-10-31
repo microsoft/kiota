@@ -74,8 +74,13 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
             try {
-                await new KiotaBuilder(logger, Configuration.Generation).GenerateClientAsync(cancellationToken);
-                DisplaySuccess("Generation completed successfully");
+                var result = await new KiotaBuilder(logger, Configuration.Generation).GenerateClientAsync(cancellationToken);
+                if (result)
+                    DisplaySuccess("Generation completed successfully");
+                else {
+                    DisplaySuccess("Generation skipped as no changes were detected");
+                    DisplayCleanHint();
+                }
                 DisplayInfoHint(language, Configuration.Generation.OpenAPIFilePath);
                 DisplayGenerateAdvancedHint(includePatterns, excludePatterns, Configuration.Generation.OpenAPIFilePath);
                 return 0;

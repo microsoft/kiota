@@ -149,6 +149,12 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
                         $"Example: kiota info -d {path} -l {language}");
         }
     }
+    protected void DisplayCleanHint() {
+        if(TutorialMode) {
+            DisplayHint("Hint: to force the generation to overwrite an existing client pass the --clean-output switch.",
+                        $"Example: kiota generate --clean-output");
+        }
+    }
     protected void DisplayInfoAdvanced() {
         if(TutorialMode) {
             DisplayHint("Hint: use the language argument to get the list of dependencies you need to add to your project.",
