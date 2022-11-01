@@ -11,7 +11,7 @@ public interface ILockManagementService {
     /// <summary>
     /// Gets the lock file for a Kiota project by crawling the directory tree.
     /// </summary>
-    /// <param name="root">The root directory to crawl</param>
+    /// <param name="searchDirectory">The root directory to crawl</param>
     IEnumerable<string> GetDirectoriesContainingLockFile(string searchDirectory);
     /// <summary>
     /// Gets the lock file for a Kiota project by reading it from the target directory.
