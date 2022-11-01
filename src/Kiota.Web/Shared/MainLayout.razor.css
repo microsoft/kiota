@@ -6,6 +6,7 @@
 
 main {
     flex: 1;
+    max-width: calc(100% - 100px);
 }
 
 .top-row {

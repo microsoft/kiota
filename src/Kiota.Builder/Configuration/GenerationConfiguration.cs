@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Kiota.Builder.Configuration;
-public class GenerationConfiguration {
+public class GenerationConfiguration : ICloneable {
     public string OpenAPIFilePath { get; set; } = "openapi.yaml";
     public string OutputPath { get; set; } = "./output";
     public string ClientClassName { get; set; } = "ApiClient";
@@ -48,4 +49,25 @@ public class GenerationConfiguration {
     public HashSet<string> ExcludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase) {
     };
     public bool ClearCache { get; set; }
+    public object Clone()
+    {
+        return new GenerationConfiguration {
+            OpenAPIFilePath = OpenAPIFilePath,
+            OutputPath = OutputPath,
+            ClientClassName = ClientClassName,
+            ClientNamespaceName = ClientNamespaceName,
+            NamespaceNameSeparator = NamespaceNameSeparator,
+            Language = Language,
+            ApiRootUrl = ApiRootUrl,
+            UsesBackingStore = UsesBackingStore,
+            IncludeAdditionalData = IncludeAdditionalData,
+            Serializers = new(Serializers ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            Deserializers = new(Deserializers ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            CleanOutput = CleanOutput,
+            StructuredMimeTypes = new(StructuredMimeTypes ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            IncludePatterns = new(IncludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            ExcludePatterns = new(ExcludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            ClearCache = ClearCache,
+        };
+    }
 }

@@ -58,19 +58,19 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Show" xml:space="preserve">
-    <value>Afficher</value>
-  </data>
-  <data name="Search" xml:space="preserve">
-    <value>Rechercher</value>
-  </data>
-  <data name="Generate" xml:space="preserve">
-    <value>Générer</value>
+  <data name="PageTitle" xml:space="preserve">
+    <value>Kiota - update an OpenAPI client</value>
   </data>
   <data name="Update" xml:space="preserve">
-    <value>Mettre à jour</value>
+    <value>Update a client</value>
   </data>
-  <data name="About" xml:space="preserve">
-    <value>A propos</value>
+  <data name="File" xml:space="preserve">
+    <value>Select a kiota lock file</value>
+  </data>
+  <data name="InvalidLockFile" xml:space="preserve">
+    <value>The lock file couldn't be recognized.</value>
+  </data>
+  <data name="LockFileValid" xml:space="preserve">
+    <value>The OpenAPI description could not be found.</value>
   </data>
 </root>

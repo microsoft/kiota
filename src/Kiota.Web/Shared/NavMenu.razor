@@ -29,6 +29,10 @@
                 @Loc["Generate"]
                 <FluentIcon Name="@FluentIcons.Code" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
             </FluentMenuItem>
+            <FluentMenuItem @onclick=@GoToUpdate>
+                @Loc["Update"]
+                <FluentIcon Name="@FluentIcons.ArrowSync" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+            </FluentMenuItem>
             <FluentMenuItem @onclick=@GoToAbout>
                 @Loc["About"]
                 <FluentIcon Name="@FluentIcons.Info" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
@@ -47,18 +51,26 @@
         collapseNavMenu = !collapseNavMenu;
     }
     private void GoHome() {
-        navManager.NavigateTo("/");
+        GoTo("/");
     }
     private void GoToShow()
     {
-        navManager.NavigateTo("show");
+        GoTo("show");
     }
     private void GoToGenerate()
     {
-        navManager.NavigateTo("generate");
+        GoTo("generate");
+    }
+    private void GoToUpdate()
+    {
+        GoTo("update");
+    }
+    private void GoTo(string target)
+    {
+        navManager.NavigateTo(target);
     }
     private void GoToAbout()
     {
-        navManager.NavigateTo("https://microsoft.github.io/kiota");
+        GoTo("https://microsoft.github.io/kiota");
     }
 }

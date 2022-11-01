@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Kiota.Builder;
-using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 using Microsoft.Extensions.Logging;
@@ -75,8 +74,13 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
             try {
-                await new KiotaBuilder(logger, Configuration.Generation).GenerateClientAsync(cancellationToken);
-                DisplaySuccess("Generation completed successfully");
+                var result = await new KiotaBuilder(logger, Configuration.Generation).GenerateClientAsync(cancellationToken);
+                if (result)
+                    DisplaySuccess("Generation completed successfully");
+                else {
+                    DisplaySuccess("Generation skipped as no changes were detected");
+                    DisplayCleanHint("generate");
+                }
                 DisplayInfoHint(language, Configuration.Generation.OpenAPIFilePath);
                 DisplayGenerateAdvancedHint(includePatterns, excludePatterns, Configuration.Generation.OpenAPIFilePath);
                 return 0;
@@ -90,10 +94,6 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
     #endif
             }
         }
-    }
-    private void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment) {
-        if (!string.IsNullOrEmpty(input))
-            assignment.Invoke(Configuration.Generation, input);
     }
     public Option<List<string>> IncludePatternsOption { get; set; }
     public Option<List<string>> ExcludePatternsOption { get; set; }

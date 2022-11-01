@@ -58,19 +58,19 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Show" xml:space="preserve">
-    <value>Afficher</value>
-  </data>
-  <data name="Search" xml:space="preserve">
-    <value>Rechercher</value>
-  </data>
-  <data name="Generate" xml:space="preserve">
-    <value>Générer</value>
+  <data name="PageTitle" xml:space="preserve">
+    <value>Kiota - mettre à jour un client OpenAPI</value>
   </data>
   <data name="Update" xml:space="preserve">
-    <value>Mettre à jour</value>
+    <value>Mettre à jour un client</value>
   </data>
-  <data name="About" xml:space="preserve">
-    <value>A propos</value>
+  <data name="File" xml:space="preserve">
+    <value>Selectionez un fichier de sommaire kiota.</value>
+  </data>
+  <data name="InvalidLockFile" xml:space="preserve">
+    <value>Le fichier de sommaire n'a pas été reconnu.</value>
+  </data>
+  <data name="LockFileValid" xml:space="preserve">
+    <value>La description OpenAPI n'a pas été trouvée.</value>
   </data>
 </root>

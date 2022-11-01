@@ -52,6 +52,10 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
             return string.Empty;
         return Path.IsPathRooted(source) || source.StartsWith("http") ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
     }
+    protected void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment) {
+        if (!string.IsNullOrEmpty(input))
+            assignment.Invoke(Configuration.Generation, input);
+    }
     protected static string NormalizeSlashesInPath(string path) {
         if (string.IsNullOrEmpty(path))
             return path;
@@ -143,6 +147,12 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         if(TutorialMode) {
             DisplayHint("Hint: use the info command to get the list of dependencies you need to add to your project.",
                         $"Example: kiota info -d {path} -l {language}");
+        }
+    }
+    protected void DisplayCleanHint(string commandName) {
+        if(TutorialMode) {
+            DisplayHint("Hint: to force the generation to overwrite an existing client pass the --clean-output switch.",
+                        $"Example: kiota {commandName} --clean-output");
         }
     }
     protected void DisplayInfoAdvanced() {

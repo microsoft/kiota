@@ -37,9 +37,9 @@
         @foreach (var item in Enum.GetValues<GenerationLanguage>().OrderBy(static x => x.ToString(), StringComparer.OrdinalIgnoreCase))
         {
             if (configuration?.Languages?.TryGetValue(item.ToString(), out var languageInfo) ?? false) {
-                <FluentOption Value=@item>@item - @languageInfo.MaturityLevel</FluentOption>
+                <FluentOption Value=@item Selected=@(Language.HasValue && Language.Value == item)>@item - @languageInfo.MaturityLevel</FluentOption>
             } else {
-                <FluentOption Value=@item>@item</FluentOption>
+                <FluentOption Value=@item Selected=@(Language.HasValue && Language.Value == item)>@item</FluentOption>
             }
         }
     </FluentSelect>
@@ -56,16 +56,16 @@
 </div>
 
 @if(!string.IsNullOrEmpty(Dependencies)) {
-    <div>
+    <div class="log-container">
         <h2>@Loc["Dependencies"]</h2>
-        <pre>@Dependencies</pre>
+        <pre class="log-box">@Dependencies</pre>
     </div>
 }
 
 @if(!string.IsNullOrEmpty(Logs)) {
-    <div>
+    <div class="log-container">
         <h2>@Loc["Logs"]</h2>
-        <pre>@Logs</pre>
+        <pre class="log-box">@Logs</pre>
     </div>
 }
 
@@ -98,12 +98,27 @@
     [SupplyParameterFromQuery(Name = "e")]
     public string? ExcludePatternsFromQuery { get; set; }
     private string? ExcludePatterns { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "l")]
+    public string? LanguageFromQuery { get; set; }
     private GenerationLanguage? Language { get; set; }
     private string? OutputPath { get; set; }
     private string? DownloadUrl { get; set; }
     private bool IsLoading { get; set; }
     private string? Dependencies { get; set; }
     private string? Logs { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name="s")]
+    public string? SerializersFromQuery { get; set; }
+    private HashSet<string> Serializers { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter]
+    [SupplyParameterFromQuery(Name="ds")]
+    public string? DeserializersFromQuery { get; set; }
+    private HashSet<string> Deserializers { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter]
+    [SupplyParameterFromQuery(Name="m")]
+    public string? StructuredMimeTypesFromQuery { get; set; }
+    private HashSet<string> StructuredMimeTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     protected override async Task OnParametersSetAsync() {
         if(!string.IsNullOrEmpty(DescriptionUrlFromQuery))
             DescriptionUrl = DescriptionUrlFromQuery;
@@ -133,6 +148,26 @@
             NamespaceName = NamespaceNameFromQuery;
         else 
             NamespaceName = defaultConfiguration.ClientNamespaceName;
+
+        if(!string.IsNullOrEmpty(LanguageFromQuery) && Enum.TryParse<GenerationLanguage>(LanguageFromQuery, true, out var language))
+            Language = language;
+        else
+            Language = defaultConfiguration.Language;
+
+        if(!string.IsNullOrEmpty(SerializersFromQuery))
+            Serializers = new HashSet<string>(SerializersFromQuery.Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.OrdinalIgnoreCase);
+        else
+            Serializers = defaultConfiguration.Serializers;
+
+        if(!string.IsNullOrEmpty(DeserializersFromQuery))
+            Deserializers = new HashSet<string>(DeserializersFromQuery.Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.OrdinalIgnoreCase);
+        else
+            Deserializers = defaultConfiguration.Deserializers;
+
+        if(!string.IsNullOrEmpty(StructuredMimeTypesFromQuery))
+            StructuredMimeTypes = new HashSet<string>(StructuredMimeTypesFromQuery.Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.OrdinalIgnoreCase);
+        else
+            StructuredMimeTypes = defaultConfiguration.StructuredMimeTypes;
         
         await GetConfiguration(ComponentDetached);
         await base.OnParametersSetAsync();
@@ -167,7 +202,10 @@
             ClientClassName = ClientClassName,
             ClientNamespaceName = NamespaceName,
             IncludeAdditionalData = AdditionalData,
-            UsesBackingStore = BackingStore
+            UsesBackingStore = BackingStore,
+            Serializers = Serializers,
+            Deserializers = Deserializers,
+            StructuredMimeTypes = StructuredMimeTypes,
         };
         var logBuilder = new StringBuilder();
         var builderLogger = new StringBuilderLogger<KiotaBuilder>(LoggerFactory.CreateLogger<KiotaBuilder>(), logBuilder, LogLevel.Warning);
