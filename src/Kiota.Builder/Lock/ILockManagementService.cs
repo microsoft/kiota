@@ -16,7 +16,7 @@ public interface ILockManagementService {
     /// <summary>
     /// Gets the lock file for a Kiota project by reading it from the target directory.
     /// </summary>
-    /// <param name="targetDirectory">The target directory to read the lock file from.</param>
+    /// <param name="directoryPath">The target directory to read the lock file from.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     Task<KiotaLock> GetLockFromDirectoryAsync(string directoryPath, CancellationToken cancellationToken = default);
     /// <summary>
