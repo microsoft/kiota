@@ -74,4 +74,4 @@ jobs:
           connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
           container_name: $web
           source_folder: src/Kiota.Web/bin/Release/net6.0/publish/wwwroot
-          clean_destination_folder: true
+          delete_if_exists: true

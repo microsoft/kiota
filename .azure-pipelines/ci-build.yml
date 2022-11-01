@@ -74,6 +74,9 @@ stages:
           projects: '$(Build.SourcesDirectory)\kiota.sln'
           arguments: '--configuration $(BuildConfiguration) --no-build'
 
+      # removing kiota web files before signing as they don't need to be signed
+      - pwsh: rm -r $(Build.SourcesDirectory)\src\Kiota.Web\bin
+
       # CredScan
       - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@2
         displayName: 'Run CredScan - Src'

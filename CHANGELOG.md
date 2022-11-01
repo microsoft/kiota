@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [0.7.1] - 2022-11-01
+
+### Changed
+
+- Fixes publishing workflow which fails because of the web application.
+
 ## [0.7.0] - 2022-11-01
 
 ### Added
