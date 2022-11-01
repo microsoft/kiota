@@ -44,6 +44,8 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler {
                 var results = await Task.WhenAll(configurations
                                         .Select(x => new KiotaBuilder(logger, x)
                                                     .GenerateClientAsync(cancellationToken)));
+                foreach (var (lockInfo, lockDirectoryPath) in locks)
+                    DisplaySuccess($"Update of {lockInfo.ClientClassName} client for {lockInfo.Language} at {lockDirectoryPath} completed");
                 DisplaySuccess($"Update of {locks.Length} clients completed successfully");
                 foreach(var configuration in configurations)
                     DisplayInfoHint(configuration.Language, configuration.OpenAPIFilePath);
