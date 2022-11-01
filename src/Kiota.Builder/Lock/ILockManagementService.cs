@@ -28,7 +28,7 @@ public interface ILockManagementService {
     /// <summary>
     /// Writes the lock file for a Kiota project to the target directory.
     /// </summary>
-    /// <param name="targetDirectory">The target directory to write the lock file to.</param>
+    /// <param name="directoryPath">The target directory to write the lock file to.</param>
     /// <param name="lockInfo">The lock information to write.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     Task WriteLockFileAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken = default);
