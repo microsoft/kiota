@@ -33,7 +33,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AliasUsingsWithSameSymbol(generatedCode);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-            ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null);
+            ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null, isNullable: true);
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
             AddGetterAndSetterMethods(generatedCode,
