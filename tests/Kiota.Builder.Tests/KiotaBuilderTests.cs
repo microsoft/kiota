@@ -3554,7 +3554,7 @@ paths:
                     Summary = "some path item summary",
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Description = "some operation description",
                             Summary = "some operation summary",
                             Responses = new OpenApiResponses
@@ -3577,7 +3577,7 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             }
         };
@@ -3590,8 +3590,16 @@ paths:
         var responseClass = modelsSubNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model));
         Assert.NotNull(responseClass);
         Assert.Equal("some description", responseClass.Description);
-    
+
+        responseClass = modelsSubNS.Classes.FirstOrDefault(c => c.IsOfKind(CodeClassKind.RequestBuilder));
+        Assert.NotNull(responseClass);
+        Assert.Equal("some path item description", responseClass.Description);
+
+        var responseProperty = codeModel.FindNamespaceByName("TestSdk").Classes.SelectMany(c=> c.Properties).FirstOrDefault(p => p.Kind == CodePropertyKind.RequestBuilder);
+        Assert.NotNull(responseProperty);
+        Assert.Equal("some path item description", responseProperty.Description);
     }
+
     [InlineData("application/json", "206", true, "default", "binary")]
     [InlineData("application/json", "206", false, "default", "binary")]
     [InlineData("application/json", "205", true, "default", "void")]
