@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using DevLab.JmesPath;
 
 namespace Microsoft.Kiota.Cli.Commons.IO;

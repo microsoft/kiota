@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Spectre.Console;
 using Spectre.Console.Rendering;
@@ -30,7 +30,11 @@ public class TableOutputFormatter : IOutputFormatter
     }
 
     /// <inheritdoc />
-    public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions? options = null, CancellationToken cancellationToken = default) {
+    public async Task WriteOutputAsync(Stream? content, IOutputFormatterOptions? options = null, CancellationToken cancellationToken = default) {
+        if (content == null)
+        {
+            return;
+        }
         using var doc = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
         var table = ConstructTable(doc);
         _ansiConsole.Write(table);
