@@ -20,7 +20,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode, 
+            ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore
             );
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
@@ -137,7 +137,8 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
                 Name = "BuildCommand",
                 IsAsync = false,
                 Kind = CodeMethodKind.CommandBuilder,
-                OriginalIndexer = indexer
+                OriginalIndexer = indexer,
+                Description = indexer.Description,
             };
 
             // ReturnType setter assigns the parent
@@ -162,7 +163,8 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         {
             IsAsync = false,
             Name = $"Build{navProperty.Name.ToFirstCharacterUpperCase()}Command",
-            Kind = CodeMethodKind.CommandBuilder
+            Kind = CodeMethodKind.CommandBuilder,
+            Description = navProperty.Description
         };
         codeMethod.ReturnType = CreateCommandType();
         codeMethod.AccessedProperty = navProperty;
