@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where array buffers nullability would wrongly be defined for TypeScript.
+
 ## [0.7.1] - 2022-11-01
 
 ### Changed
