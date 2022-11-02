@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.Text.Json;
 using Spectre.Console;
 
@@ -28,8 +28,13 @@ public class TextOutputFormatter : IOutputFormatter
     }
 
     /// <inheritdoc />
-    public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task WriteOutputAsync(Stream? content, IOutputFormatterOptions? options = null, CancellationToken cancellationToken = default)
     {
+        if (content == null)
+        {
+            return;
+        }
+
         using var reader = new StreamReader(content);
         const int BUFFER_LENGTH = 4096;
         var charsReceived = 0;
