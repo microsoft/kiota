@@ -276,28 +276,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                             $"{RequestInfoVarName}.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
                             $"{RequestInfoVarName}.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}",
                             $"{RequestInfoVarName}.http_method = Method.{codeElement.HttpMethod.ToString().ToUpperInvariant()}");
-        if(requestParams.requestConfiguration != null) {
-            writer.WriteLine($"if {requestParams.requestConfiguration.Name.ToSnakeCase()}:");
-            writer.IncreaseIndent();
-            var headers = requestParams.Headers;
-            if(headers != null)
-                writer.WriteLine($"{RequestInfoVarName}.add_request_headers({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
-            var queryString = requestParams.QueryParameters;
-            if(queryString != null)
-                writer.WriteLines($"{RequestInfoVarName}.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
-            var options = requestParams.Options;
-            if(options != null)
-                writer.WriteLine($"{RequestInfoVarName}.add_request_options({requestParams.requestConfiguration.Name.ToSnakeCase()}.{options.Name.ToSnakeCase()})");
-            writer.DecreaseIndent();
-        }
-        if(requestParams.requestBody != null) {
-            if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                writer.WriteLine($"{RequestInfoVarName}.set_stream_content({requestParams.requestBody.Name.ToSnakeCase()})");
-            else {
-                var setMethodName = requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass ? "set_content_from_parsable" : "set_content_from_scalar";
-                writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(self.{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
-            }
-        }
+        UpdateRequestInformationFromRequestConfiguration(requestParams, writer);
+        UpdateRequestInformationFromRequestBody(codeElement, requestParams, requestAdapterProperty, writer);
         writer.WriteLine($"return {RequestInfoVarName}");
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"self.{property.Name.ToSnakeCase()}";
@@ -421,5 +401,35 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
 
         if(isStream || conventions.IsPrimitiveType(returnType)) return "send_primitive_async";
         return "send_async";
+    }
+
+    private static void UpdateRequestInformationFromRequestConfiguration(RequestParams requestParams, LanguageWriter writer)
+    {
+        if(requestParams.requestConfiguration != null) {
+            writer.WriteLine($"if {requestParams.requestConfiguration.Name.ToSnakeCase()}:");
+            writer.IncreaseIndent();
+            var headers = requestParams.Headers;
+            if(headers != null)
+                writer.WriteLine($"{RequestInfoVarName}.add_request_headers({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
+            var queryString = requestParams.QueryParameters;
+            if(queryString != null)
+                writer.WriteLines($"{RequestInfoVarName}.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
+            var options = requestParams.Options;
+            if(options != null)
+                writer.WriteLine($"{RequestInfoVarName}.add_request_options({requestParams.requestConfiguration.Name.ToSnakeCase()}.{options.Name.ToSnakeCase()})");
+            writer.DecreaseIndent();
+        }
+    }
+
+    private void UpdateRequestInformationFromRequestBody(CodeMethod codeElement, RequestParams requestParams, CodeProperty requestAdapterProperty, LanguageWriter writer)
+    {
+        if(requestParams.requestBody != null) {
+            if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+                writer.WriteLine($"{RequestInfoVarName}.set_stream_content({requestParams.requestBody.Name.ToSnakeCase()})");
+            else {
+                var setMethodName = requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass ? "set_content_from_parsable" : "set_content_from_scalar";
+                writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(self.{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
+            }
+        }
     }
 }
