@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where array buffers nullability would wrongly be defined for TypeScript.
+- Fixed a bug where parameter comments would apprear in summary tag comments in dotnet. [#1945](https://github.com/microsoft/kiota/issues/1945)
 
 ## [0.7.1] - 2022-11-01
 
