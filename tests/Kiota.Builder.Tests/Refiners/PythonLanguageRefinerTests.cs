@@ -254,7 +254,7 @@ public class PythonLanguageRefinerTests {
         Assert.Empty(model.Methods.Where(x => DeserializeDefaultName.Equals(x.ReturnType.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => HandlerDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
-        Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeUnionType));
+        Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeComposedTypeBase));
     }
     [Fact]
     public async Task ReplacesDateTimeOffsetByNativeType() {

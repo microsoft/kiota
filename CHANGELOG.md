@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added support for scalar request bodies Python [#1571](https://github.com/microsoft/kiota/issues/1571)
 
 ### Changed
 

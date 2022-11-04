@@ -260,11 +260,31 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("send_collection_async", result);
     }
     [Fact]
-    public void WritesRequestGeneratorBodyForParsable() {
+    public void WritesRequestGeneratorBodyForScalar() {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
         AddRequestBodyParameters();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("request_info = RequestInformation()", result);
+        Assert.Contains("request_info.http_method = Method", result);
+        Assert.Contains("request_info.url_template = ", result);
+        Assert.Contains("request_info.path_parameters = ", result);
+        Assert.Contains("if c:", result);
+        Assert.Contains("request_info.add_request_headers", result);
+        Assert.Contains("request_info.add_request_options", result);
+        Assert.Contains("request_info.set_query_string_parameters_from_raw_object", result);
+        Assert.Contains("set_content_from_scalar", result);
+        Assert.Contains("return request_info", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyForParsable() {
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
