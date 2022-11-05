@@ -331,7 +331,7 @@ namespace Kiota.Builder.Writers.Php
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"$this->{property.Name}";
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer) 
         {
-            if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+            if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             var requestInformationClass = "RequestInformation";
             var pathParametersProperty = currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var urlTemplateProperty = currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
@@ -341,6 +341,22 @@ namespace Kiota.Builder.Writers.Php
                                 $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(pathParametersProperty, "''")};",
                                 $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
             WriteAcceptHeaderDef(codeElement, writer);
+            WriteRequestConfiguration(requestParams, writer);
+            if (requestParams.requestBody != null) {
+                var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
+                if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+                    writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)});");
+                if (requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass) {
+                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
+                }
+                writer.WriteLine($"{RequestInfoVarName}->setContentFromScalar{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
+            }
+
+            writer.WriteLine($"return {RequestInfoVarName};");
+        }
+
+        private void WriteRequestConfiguration(RequestParams requestParams, LanguageWriter writer)
+        {
             if (requestParams.requestConfiguration != null)
             {
                 var queryString = requestParams.QueryParameters;
@@ -349,7 +365,7 @@ namespace Kiota.Builder.Writers.Php
                 var requestConfigParamName = conventions.GetParameterName(requestParams.requestConfiguration);
                 writer.WriteLine($"if ({requestConfigParamName} !== null) {{");
                 writer.IncreaseIndent();
-                if(headers != null) {
+                if (headers != null) {
                     var headersName = $"{requestConfigParamName}->{headers.Name.ToFirstCharacterLowerCase()}";
                     writer.WriteLine($"if ({headersName} !== null) {{");
                     writer.IncreaseIndent();
@@ -374,19 +390,6 @@ namespace Kiota.Builder.Writers.Php
                 }
                 writer.CloseBlock();
             }
-
-            if(requestParams.requestBody != null) {
-                var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
-                if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                    writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)});");
-                else if (requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass) {
-                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
-                } else {
-                    writer.WriteLine($"{RequestInfoVarName}->setContentFromScalar{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
-                }
-            }
-
-            writer.WriteLine($"return {RequestInfoVarName};");
         }
 
         private void WriteAcceptHeaderDef(CodeMethod codeMethod, LanguageWriter writer)
