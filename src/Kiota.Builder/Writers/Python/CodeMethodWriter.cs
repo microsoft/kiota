@@ -170,18 +170,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.WriteLine();
         }
         foreach(var propWithDefault in parentClass.GetPropertiesOfKind(SetterAccessProperties)
-                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
-                                        .OrderByDescending(static x => x.Kind)
-                                        .ThenBy(static x => x.Name)) {                                
-            writer.WriteLine($"self.{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue};");
-        }
-        foreach(var propWithoutDefault in parentClass.GetPropertiesOfKind(SetterAccessProperties)
-                                        .Where(static x => string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderByDescending(static x => x.Kind)
                                         .ThenBy(static x => x.Name)) {
-            var returnType = conventions.GetTypeString(propWithoutDefault.Type, propWithoutDefault, true, writer);
-            conventions.WriteInLineDescription(propWithoutDefault.Description, writer);
-            writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
+            var defaultValueReference = propWithDefault.DefaultValue;
+            if (string.IsNullOrEmpty(defaultValueReference)) {
+                var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
+                conventions.WriteInLineDescription(propWithDefault.Description, writer);
+                writer.WriteLine($"self.{conventions.GetAccessModifier(propWithDefault.Access)}{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = None");
+            }              
+            writer.WriteLine($"self.{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
         }
         if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
