@@ -532,9 +532,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.WriteLine($"{conventions.DocCommentPrefix}<summary>");
             if (isDescriptionPresent)
                 writer.WriteLine($"{conventions.DocCommentPrefix}{code.Description.CleanupXMLString()}");
+            writer.WriteLine($"{conventions.DocCommentPrefix}</summary>");
             foreach (var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
                 writer.WriteLine($"{conventions.DocCommentPrefix}<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">{paramWithDescription.Description.CleanupXMLString()}</param>");
-            writer.WriteLine($"{conventions.DocCommentPrefix}</summary>");
         }
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
