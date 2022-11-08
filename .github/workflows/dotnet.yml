@@ -21,8 +21,8 @@ jobs:
         dotnet-version: 7.0.x
     - name: Restore dependencies
       run: dotnet restore kiota.sln
-    - name: Install require workloads
-      run: dotnet workload install wasm-tools
+    - name: Restore workloads
+      run: dotnet workload restore
     - name: Build
       run: dotnet build kiota.sln --no-restore
     - name: Test
