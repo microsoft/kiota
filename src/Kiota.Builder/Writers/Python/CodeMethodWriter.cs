@@ -160,15 +160,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
         if(inherits)
             writer.WriteLine("super().__init__()");
-        foreach (var propWithoutDefault in parentClass.Properties.Except(parentClass.GetPropertiesOfKind(DirectAccessProperties))
-                                        .Except(parentClass.GetPropertiesOfKind(CodePropertyKind.RequestAdapter))
-                                        .OrderByDescending(x => x.Kind)
-                                        .ThenBy(x => x.Name)) {
-            var returnType = conventions.GetTypeString(propWithoutDefault.Type, propWithoutDefault, true, writer);
-            conventions.WriteInLineDescription(propWithoutDefault.Description, writer);
-            writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
-            writer.WriteLine();
-        }
         foreach(var propWithDefault in parentClass.GetPropertiesOfKind(DirectAccessProperties)
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderByDescending(static x => x.Kind)
@@ -181,8 +172,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         foreach(var propWithDefault in parentClass.GetPropertiesOfKind(SetterAccessProperties)
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderByDescending(static x => x.Kind)
-                                        .ThenBy(static x => x.Name)) {
+                                        .ThenBy(static x => x.Name)) {                                
             writer.WriteLine($"self.{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue};");
+        }
+        foreach(var propWithoutDefault in parentClass.GetPropertiesOfKind(SetterAccessProperties)
+                                        .Where(static x => string.IsNullOrEmpty(x.DefaultValue))
+                                        .OrderByDescending(static x => x.Kind)
+                                        .ThenBy(static x => x.Name)) {
+            var returnType = conventions.GetTypeString(propWithoutDefault.Type, propWithoutDefault, true, writer);
+            conventions.WriteInLineDescription(propWithoutDefault.Description, writer);
+            writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
         }
         if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
