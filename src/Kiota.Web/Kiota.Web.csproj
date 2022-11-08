@@ -1,15 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+    <RunAOTCompilation>true</RunAOTCompilation> <!-- https://learn.microsoft.com/en-us/aspnet/core/blazor/host-and-deploy/webassembly?view=aspnetcore-6.0#ahead-of-time-aot-compilation  https://github.com/microsoft/fast-blazor/issues/214-->
+    <PublishTrimmed>true</PublishTrimmed> <!-- https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming/trim-self-contained -->
+    <!-- <WasmEnableThreads>true</WasmEnableThreads>  https://devblogs.microsoft.com/dotnet/asp-net-core-updates-in-dotnet-7-rc-2/ -->
+    <!-- <RuntimeIdentifier>browser-wasm</RuntimeIdentifier> -->
   </PropertyGroup>
 
   <ItemGroup>
-    <ServiceWorker Include="wwwroot\service-worker.js" 
-      PublishedContent="wwwroot\service-worker.published.js" />
+    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,6 +22,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Localization" Version="7.0.0" />
     <PackageReference Include="Microsoft.Fast.Components.FluentUI" Version="1.6.0-rc.2" />
+    <!-- <PackageReference Include="Microsoft.NET.WebAssembly.Threading" Version="7.0.0-rc.2.22472.3" /> -->
   </ItemGroup>
 
   <ItemGroup>
