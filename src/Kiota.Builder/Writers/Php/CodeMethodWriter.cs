@@ -346,10 +346,11 @@ namespace Kiota.Builder.Writers.Php
                 var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
                 if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)});");
-                if (requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass) {
+                else if (requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass) {
                     writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
+                } else {
+                    writer.WriteLine($"{RequestInfoVarName}->setContentFromScalar{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
                 }
-                writer.WriteLine($"{RequestInfoVarName}->setContentFromScalar{suffix}($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {conventions.GetParameterName(requestParams.requestBody)});");
             }
 
             writer.WriteLine($"return {RequestInfoVarName};");
