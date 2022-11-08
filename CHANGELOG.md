@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added support for scalar request bodies Python [#1571](https://github.com/microsoft/kiota/issues/1571)
+- Sets property defaults in constructor and removes duplicate properties defined in base types from model serialization and deserialization methods in Python. [#1726](https://github.com/microsoft/kiota/issues/1726)
 
 ### Changed
 
