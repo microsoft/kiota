@@ -19,10 +19,10 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 7.0.x
-    - name: Restore dependencies
-      run: dotnet restore kiota.sln
     - name: Restore workloads
       run: dotnet workload restore
+    - name: Restore dependencies
+      run: dotnet restore kiota.sln
     - name: Build
       run: dotnet build kiota.sln --no-restore
     - name: Test

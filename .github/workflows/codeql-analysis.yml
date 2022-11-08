@@ -66,10 +66,10 @@ jobs:
     #    and modify them (or add more) to build your code if your project
     #    uses a compiled language
 
-    - name: Restore dependencies
-      run: dotnet restore
     - name: Restore workloads
       run: dotnet workload restore
+    - name: Restore dependencies
+      run: dotnet restore
     - name: Build
       run: dotnet build --no-restore -c Release
 
