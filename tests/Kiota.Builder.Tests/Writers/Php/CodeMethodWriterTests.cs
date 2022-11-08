@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Php;
@@ -56,6 +57,101 @@ namespace Kiota.Builder.Tests.Writers.Php
             _refiner = new PhpRefiner(new GenerationConfiguration {Language = GenerationLanguage.PHP});
             parentClass.AddMethod(method);
         }
+        
+        
+        private void AddRequestProperties()
+        {
+            parentClass.AddProperty(
+                new CodeProperty
+                {
+                    Name = "urlTemplate",
+                    Access = AccessModifier.Protected,
+                    DefaultValue = "https://graph.microsoft.com/v1.0/",
+                    Description = "The URL template",
+                    Kind = CodePropertyKind.UrlTemplate,
+                    Type = new CodeType {Name = "string"}
+                },
+                new CodeProperty
+                {
+                    Name = "pathParameters",
+                    Access = AccessModifier.Protected,
+                    DefaultValue = "[]",
+                    Description = "The Path parameters.",
+                    Kind = CodePropertyKind.PathParameters,
+                    Type = new CodeType {Name = "array"}
+                },
+                new CodeProperty
+                {
+                    Name = "requestAdapter",
+                    Access = AccessModifier.Protected,
+                    Description = "The request Adapter",
+                    Kind = CodePropertyKind.RequestAdapter,
+                    Type = new CodeType
+                    {
+                        IsNullable = false,
+                        Name = "RequestAdapter"
+                    }
+                }
+            );
+        }
+
+        private void AddRequestBodyParameters()
+        {
+            var stringType = new CodeType {
+                Name = "string",
+                IsNullable = false
+            };
+            var requestConfigClass = parentClass.AddInnerClass(new CodeClass {
+                Name = "RequestConfig",
+                Kind = CodeClassKind.RequestConfiguration,
+            }).First();
+            
+            requestConfigClass.AddProperty(new() {
+                    Name = "h",
+                    Kind = CodePropertyKind.Headers,
+                    Type = stringType,
+                },
+                new () {
+                    Name = "q",
+                    Kind = CodePropertyKind.QueryParameters,
+                    Type = stringType,
+                },
+                new () {
+                    Name = "o",
+                    Kind = CodePropertyKind.Options,
+                    Type = stringType,
+                }
+            );
+            
+            method.AddParameter(
+                new CodeParameter
+                {
+                    Name = "body",
+                    Kind = CodeParameterKind.RequestBody,
+                    Type = new CodeType
+                    {
+                        Name = "Message",
+                        IsExternal = true,
+                        IsNullable = false,
+                        TypeDefinition = root.AddClass(new CodeClass {
+                            Name = "SomeComplexTypeForRequestBody",
+                            Kind = CodeClassKind.Model,
+                        }).First()
+                    },
+                },
+                new CodeParameter{
+                    Name = "config",
+                    Kind = CodeParameterKind.RequestConfiguration,
+                    Type = new CodeType {
+                        Name = "RequestConfig",
+                        TypeDefinition = requestConfigClass,
+                        ActionOf = true,
+                    },
+                    Optional = true,
+                }
+            );
+        }
+        
         [Fact]
         public void WriteABasicMethod()
         {
@@ -67,17 +163,8 @@ namespace Kiota.Builder.Tests.Writers.Php
         [Fact]
         public void WriteMethodWithNoDescription()
         {
-            var codeMethod = new CodeMethod
-            {
-                Access = AccessModifier.Public,
-                Kind = CodeMethodKind.Custom,
-                ReturnType = new CodeType
-                {
-                    Name = "void"
-                },
-                Parent = parentClass
-            };
-            _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
+            method.Description = null;
+            _codeMethodWriter.WriteCodeElement(method, languageWriter);
             var result = stringWriter.ToString();
             
             Assert.DoesNotContain("/*", result);
@@ -251,104 +338,20 @@ namespace Kiota.Builder.Tests.Writers.Php
         }
 
         [Fact]
-        public void WriteRequestGenerator()
+        public void WriteRequestGeneratorForParsable()
         {
             parentClass.Kind = CodeClassKind.RequestBuilder;
-            parentClass.AddProperty(
-                new CodeProperty
-                {
-                    Name = "urlTemplate",
-                    Access = AccessModifier.Protected,
-                    DefaultValue = "https://graph.microsoft.com/v1.0/",
-                    Description = "The URL template",
-                    Kind = CodePropertyKind.UrlTemplate,
-                    Type = new CodeType {Name = "string"}
-                },
-                new CodeProperty
-                {
-                    Name = "pathParameters",
-                    Access = AccessModifier.Protected,
-                    DefaultValue = "[]",
-                    Description = "The Path parameters.",
-                    Kind = CodePropertyKind.PathParameters,
-                    Type = new CodeType {Name = "array"}
-                },
-                new CodeProperty
-                {
-                    Name = "requestAdapter",
-                    Access = AccessModifier.Protected,
-                    Description = "The request Adapter",
-                    Kind = CodePropertyKind.RequestAdapter,
-                    Type = new CodeType
-                    {
-                        IsNullable = false,
-                        Name = "RequestAdapter"
-                    }
-                });
-            var codeMethod = new CodeMethod
+            method.Name = "createPostRequestInformation";
+            method.Kind = CodeMethodKind.RequestGenerator;
+            method.ReturnType = new CodeType()
             {
-                Name = "createPostRequestInformation",
-                ReturnType = new CodeType {Name = "RequestInformation", IsNullable = false},
-                Access = AccessModifier.Public,
-                Description = "This method creates request information for POST request.",
-                HttpMethod = HttpMethod.Post,
-                BaseUrl = "https://graph.microsoft.com/v1.0/",
-                Kind = CodeMethodKind.RequestGenerator,
+                Name = "RequestInformation", IsNullable = false
             };
-
-            var stringType = new CodeType {
-                Name = "string",
-                IsNullable = false
-            };
-            var requestConfigClass = parentClass.AddInnerClass(new CodeClass {
-                Name = "RequestConfig",
-                Kind = CodeClassKind.RequestConfiguration,
-            }).First();
-            requestConfigClass.AddProperty(new() {
-                Name = "h",
-                Kind = CodePropertyKind.Headers,
-                Type = stringType,
-            },
-            new () {
-                Name = "q",
-                Kind = CodePropertyKind.QueryParameters,
-                Type = stringType,
-            },
-            new () {
-                Name = "o",
-                Kind = CodePropertyKind.Options,
-                Type = stringType,
-            });
-            
-            codeMethod.AddParameter(
-                new CodeParameter
-                {
-                    Name = "body",
-                    Kind = CodeParameterKind.RequestBody,
-                    Type = new CodeType
-                    {
-                        Name = "Message",
-                        IsExternal = true,
-                        IsNullable = false
-                    }
-                },
-                new CodeParameter{
-                    Name = "config",
-                    Kind = CodeParameterKind.RequestConfiguration,
-                    Type = new CodeType {
-                        Name = "RequestConfig",
-                        TypeDefinition = requestConfigClass,
-                        ActionOf = true,
-                    },
-                    Optional = true,
-                });
-
-            
-            parentClass.AddMethod(codeMethod);
-            
-            _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
+            method.HttpMethod = HttpMethod.Post;
+            AddRequestProperties();
+            AddRequestBodyParameters();
+            _codeMethodWriter.WriteCodeElement(method, languageWriter);
             var result = stringWriter.ToString();
-
             Assert.Contains(
                 "public function createPostRequestInformation(Message $body, ?RequestConfig $requestConfiguration = null): RequestInformation",
                 result);
@@ -357,6 +360,91 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("$requestInfo->headers = array_merge($requestInfo->headers, $requestConfiguration->h);", result);
             Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
             Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
+            Assert.Contains("$requestInfo->setContentFromParsable($this->requestAdapter, \"\", $body);", result);
+            Assert.Contains("return $requestInfo;", result);
+        }
+
+        [Fact]
+        public void WritesRequestGeneratorBodyForParsableCollection()
+        {
+            parentClass.Kind = CodeClassKind.RequestBuilder;
+            method.Name = "createPostRequestInformation";
+            method.Kind = CodeMethodKind.RequestGenerator;
+            method.AcceptedResponseTypes.Add("application/json");
+            method.ReturnType = new CodeType() { Name = "RequestInformation", IsNullable = false };
+            method.HttpMethod = HttpMethod.Post;
+            AddRequestProperties();
+            AddRequestBodyParameters();
+            var bodyParameter = method.Parameters.OfKind(CodeParameterKind.RequestBody);
+            bodyParameter.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+            _codeMethodWriter.WriteCodeElement(method, languageWriter);
+            var result = stringWriter.ToString();
+            Assert.Contains(
+                "public function createPostRequestInformation(array $body, ?RequestConfig $requestConfiguration = null): RequestInformation",
+                result);
+            Assert.Contains("if ($requestConfiguration !== null", result);
+            Assert.Contains("if ($requestConfiguration->h !== null)", result);
+            Assert.Contains("$requestInfo->headers = array_merge($requestInfo->headers, $requestConfiguration->h);", result);
+            Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
+            Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
+            Assert.Contains("$requestInfo->setContentFromParsableCollection($this->requestAdapter, \"\", $body);", result);
+            Assert.Contains("return $requestInfo;", result);
+        }
+        
+        [Fact]
+        public void WriteRequestGeneratorForScalarType()
+        {
+            parentClass.Kind = CodeClassKind.RequestBuilder;
+            method.Name = "createPostRequestInformation";
+            method.Kind = CodeMethodKind.RequestGenerator;
+            method.ReturnType = new CodeType() { Name = "RequestInformation", IsNullable = false };
+            method.HttpMethod = HttpMethod.Post;
+            AddRequestProperties();
+            AddRequestBodyParameters();
+            var bodyParameter = method.Parameters.OfKind(CodeParameterKind.RequestBody);
+            bodyParameter.Type = new CodeType() { Name = "string", IsNullable = false };
+            _codeMethodWriter.WriteCodeElement(method, languageWriter);
+            var result = stringWriter.ToString();
+            Assert.Contains(
+                "public function createPostRequestInformation(string $body, ?RequestConfig $requestConfiguration = null): RequestInformation",
+                result);
+            Assert.Contains("if ($requestConfiguration !== null", result);
+            Assert.Contains("if ($requestConfiguration->h !== null)", result);
+            Assert.Contains("$requestInfo->headers = array_merge($requestInfo->headers, $requestConfiguration->h);", result);
+            Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
+            Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
+            Assert.Contains("$requestInfo->setContentFromScalar($this->requestAdapter, \"\", $body);", result);
+            Assert.Contains("return $requestInfo;", result);
+        }
+        
+        [Fact]
+        public void WritesRequestGeneratorBodyForScalarCollection()
+        {
+            parentClass.Kind = CodeClassKind.RequestBuilder;
+            method.Name = "createPostRequestInformation";
+            method.Kind = CodeMethodKind.RequestGenerator;
+            method.AcceptedResponseTypes.Add("application/json");
+            method.ReturnType = new CodeType()
+            {
+                Name = "RequestInformation", IsNullable = false
+            };
+            method.HttpMethod = HttpMethod.Post;
+            AddRequestProperties();
+            AddRequestBodyParameters();
+            var bodyParameter = method.Parameters.OfKind(CodeParameterKind.RequestBody);
+            bodyParameter.Type = new CodeType() { Name = "string", IsNullable = false };
+            bodyParameter.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+            _codeMethodWriter.WriteCodeElement(method, languageWriter);
+            var result = stringWriter.ToString();
+            Assert.Contains(
+                "public function createPostRequestInformation(array $body, ?RequestConfig $requestConfiguration = null): RequestInformation",
+                result);
+            Assert.Contains("if ($requestConfiguration !== null", result);
+            Assert.Contains("if ($requestConfiguration->h !== null)", result);
+            Assert.Contains("$requestInfo->headers = array_merge($requestInfo->headers, $requestConfiguration->h);", result);
+            Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
+            Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
+            Assert.Contains("$requestInfo->setContentFromScalarCollection($this->requestAdapter, \"\", $body);", result);
             Assert.Contains("return $requestInfo;", result);
         }
 
