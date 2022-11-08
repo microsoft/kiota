@@ -313,13 +313,6 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesDeSerializerBody() {
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
-        };
         method.Kind = CodeMethodKind.Deserializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -334,6 +327,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("get_collection_of_primitive_values", result);
         Assert.Contains("get_collection_of_object_values", result);
         Assert.Contains("get_enum_value", result);
+        Assert.DoesNotContain("defined_in_Parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public void WritesInheritedSerializerBody() {
@@ -347,13 +341,6 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesSerializerBody() {
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
-        };
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -364,6 +351,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("write_collection_of_object_values", result);
         Assert.Contains("write_enum_value", result);
         Assert.Contains("write_additional_data_value(self.additional_data)", result);
+        Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public void WritesMethodAsyncDescription() {
@@ -411,7 +399,7 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void Defensive() {
-        var codeMethodWriter = new CodeMethodWriter(new PythonConventionService());
+        var codeMethodWriter = new CodeMethodWriter(new PythonConventionService(), false);
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
         var originalParent = method.Parent;
