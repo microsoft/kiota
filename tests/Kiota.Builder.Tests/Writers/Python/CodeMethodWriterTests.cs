@@ -327,7 +327,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("get_collection_of_primitive_values", result);
         Assert.Contains("get_collection_of_object_values", result);
         Assert.Contains("get_enum_value", result);
-        Assert.DoesNotContain("defined_in_Parent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public void WritesInheritedSerializerBody() {
@@ -603,6 +603,49 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("has a description", result);
         Assert.Contains($"self.{propName}: Optional[str] = {defaultValue}", result);
         Assert.Contains("get_path_parameters", result);
+    }
+    [Fact]
+    public void WritesConstructorWithInheritance() {
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        var propName = "prop_with_no_default_value";
+        parentClass.Kind = CodeClassKind.Model;
+        AddInheritanceClass();
+        parentClass.AddProperty(new CodeProperty {
+            Name = propName,
+            Kind = CodePropertyKind.Custom,
+            Description = "This property has a description",
+            Type = new CodeType {
+                Name = "string"
+            }
+        });
+        var defaultValue = "someVal";
+        var prop2Name = "prop_with_default_value";
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        parentClass.AddProperty(new CodeProperty {
+            Name = prop2Name,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.UrlTemplate,
+            Description = "This property has a description",
+            Type = new CodeType {
+                Name = "string"
+            }
+        });
+        AddRequestProperties();
+        method.AddParameter(new CodeParameter {
+            Name = "pathParameters",
+            Kind = CodeParameterKind.PathParameters,
+            Type = new CodeType {
+                Name = "Union[Dict[str, Any], str]",
+                IsNullable = true,
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("super().__init__()", result);
+        Assert.Contains("has a description", result);
+        Assert.Contains($"self.{prop2Name}: Optional[str] = {defaultValue}", result);
+        Assert.Contains($"self.{propName}: Optional[str] = None", result);
     }
     [Fact]
     public void WritesApiConstructor() {
