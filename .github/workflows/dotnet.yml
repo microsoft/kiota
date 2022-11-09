@@ -18,7 +18,9 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 7.0.x
+    - name: Restore workloads
+      run: dotnet workload restore
     - name: Restore dependencies
       run: dotnet restore kiota.sln
     - name: Build
