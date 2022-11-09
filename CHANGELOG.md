@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed container support for MacOS M1. [#1888](https://github.com/microsoft/kiota/issues/1888)
 - Fixed a bug where a missing baseURL would make search fail. [#2095](https://github.com/microsoft/kiota/issues/2095)
 - Fixed a bug in Ruby where the request adapter URL would be overwritten by the client defaults. [#1647](https://github.com/microsoft/kiota/issues/1647)
 - Replaced concurrent-ruby by Fibers in Ruby libraries to implement proper asynchronous execution of requests.

@@ -31,15 +31,19 @@ jobs:
         if: contains(github.ref, 'refs/tags/v')
         env:
           BRANCH_NAME: ${{ github.ref }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
       - name: Push to GitHub Packages - Nightly
         if: contains(github.ref, 'refs/head/main')
         uses: docker/build-push-action@v3.2.0
         with:
           push: true
+          platforms: linux/amd64,linux/arm64/v8,linux/arm/v7,windows/amd64
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly
       - name: Push to GitHub Packages - Release
         if: contains(github.ref, 'refs/tags/v')
         uses: docker/build-push-action@v3.2.0
         with:
           push: true
+          platforms: linux/amd64,linux/arm64/v8,linux/arm/v7,windows/amd64
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.getversion.outputs.version }}
