@@ -265,12 +265,14 @@ public class CodeMethodWriterTests : IDisposable {
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
         AddRequestBodyParameters();
+        method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("request_info = RequestInformation()", result);
         Assert.Contains("request_info.http_method = Method", result);
         Assert.Contains("request_info.url_template = ", result);
         Assert.Contains("request_info.path_parameters = ", result);
+        Assert.Contains("request_info.headers[\"Accept\"] = \"application/json\"", result);
         Assert.Contains("if c:", result);
         Assert.Contains("request_info.add_request_headers", result);
         Assert.Contains("request_info.add_request_options", result);
@@ -292,6 +294,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("request_info.http_method = Method", result);
         Assert.Contains("request_info.url_template = ", result);
         Assert.Contains("request_info.path_parameters = ", result);
+        Assert.Contains("request_info.headers[\"Accept\"] = \"application/json\"", result);
         Assert.Contains("if c:", result);
         Assert.Contains("request_info.add_request_headers", result);
         Assert.Contains("request_info.add_request_options", result);
