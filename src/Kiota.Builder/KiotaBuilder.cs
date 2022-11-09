@@ -217,6 +217,8 @@ public class KiotaBuilder
         var stopwatch = new Stopwatch();
         stopwatch.Start();
 
+        inputPath = inputPath.Trim();
+
         Stream input;
         if (inputPath.StartsWith("http"))
             try {

@@ -4518,4 +4518,78 @@ paths:
         var codeModel = builder.CreateSourceModel(node);
         Assert.Null(codeModel.FindNamespaceByName("TestSdk.groups"));
     }
+    [Fact]
+    public void SupportsIndexingParametersInSubPaths(){
+        var myObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false,
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["users({userId})/manager"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Parameters = new List<OpenApiParameter> {
+                                new OpenApiParameter {
+                                    Name = "userId",
+                                    In = ParameterLocation.Path,
+                                    Required = true,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string"
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                },
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { 
+            ClientClassName = "TestClient",
+            ClientNamespaceName = "TestSdk",
+            ApiRootUrl = "https://localhost",
+        });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var NS = codeModel.FindNamespaceByName("TestSdk.usersWithUserId");
+        Assert.NotNull(NS);
+        var rb = NS.FindChildByName<CodeClass>("usersWithUserIdRequestBuilder");
+        Assert.NotNull(rb);
+        var method = rb.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.Constructor));
+        Assert.NotNull(method);
+        Assert.Equal("userId", method.Parameters.Last(static x => x.IsOfKind(CodeParameterKind.Path)).Name);
+    }
 }
