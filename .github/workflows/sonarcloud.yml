@@ -39,10 +39,10 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 5.0.x
-      - name: Setup .NET 6
+      - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: 7.0.x
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
@@ -71,6 +71,7 @@ jobs:
         shell: pwsh
         run: |
           ./.sonar/scanner/dotnet-sonarscanner begin /k:"microsoft_kiota" /o:"microsoft" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="tests/**/coverage.opencover.xml"
+          dotnet workload restore
           dotnet build
           dotnet test kiota.sln --no-build --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
           ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"

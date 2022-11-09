@@ -14,7 +14,7 @@ public class StringBuilderLogger<T> : ILogger<T>
         _stringBuilder = stringBuilder;
         _logLevel = logLevel;
     }
-    public IDisposable BeginScope<TState>(TState state) => _logger.BeginScope(state);
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _logger.BeginScope(state);
 
     public bool IsEnabled(LogLevel logLevel) => _logger.IsEnabled(logLevel);
 
