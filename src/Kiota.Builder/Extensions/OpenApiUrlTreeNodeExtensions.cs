@@ -52,14 +52,22 @@ namespace Kiota.Builder.Extensions {
                                         .Replace(requestParametersSectionChar.ToString(), string.Empty);
             return pathSegment;
         }
+        private static IEnumerable<OpenApiParameter> GetParametersForPathItem(OpenApiPathItem pathItem, string nodeSegment) {
+            return pathItem.Parameters
+                        .Union(pathItem.Operations.SelectMany(static x => x.Value.Parameters))
+                        .Where(static x => x.In == ParameterLocation.Path)
+                        .Where(x => nodeSegment.Contains($"{{{x.Name}}}", StringComparison.OrdinalIgnoreCase));
+        }
         public static IEnumerable<OpenApiParameter> GetPathParametersForCurrentSegment(this OpenApiUrlTreeNode node) {
             if(node != null &&
-                (node.Segment.Contains(requestParametersSectionChar) || node.Segment.Count(x => x == requestParametersChar) > 1) &&
-                node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
-                return pathItem.Parameters
-                                .Union(pathItem.Operations.SelectMany(x => x.Value.Parameters))
-                                .Where(x => x.In == ParameterLocation.Path)
-                                .Where(x => node.Segment.Contains($"{{{x.Name}}}", StringComparison.OrdinalIgnoreCase));
+                (node.Segment.Contains(requestParametersSectionChar) || node.Segment.Count(static x => x == requestParametersChar) > 1))
+                if (node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
+                    return GetParametersForPathItem(pathItem, node.Segment);
+                else if (node.Children.Any())
+                    return node.Children
+                                .Where(x => x.Value.PathItems.ContainsKey(Constants.DefaultOpenApiLabel))
+                                .SelectMany(x => GetParametersForPathItem(x.Value.PathItems[Constants.DefaultOpenApiLabel], node.Segment))
+                                .Distinct();
             return Enumerable.Empty<OpenApiParameter>();
         }
         private static readonly char pathNameSeparator = '\\';
@@ -118,12 +126,12 @@ namespace Kiota.Builder.Extensions {
             var segmentWithoutExtension = stripExtensionForIndexersRegex.Replace(currentSegment, string.Empty);
             return segmentWithoutExtension.StartsWith(requestParametersChar) &&
                     segmentWithoutExtension.EndsWith(requestParametersEndChar) &&
-                    segmentWithoutExtension.Count(x => x == requestParametersChar) == 1;
+                    segmentWithoutExtension.Count(static x => x == requestParametersChar) == 1;
         }
         private static readonly Regex stripExtensionForIndexersRegex = new(@"\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Compiled); // so {param-name}.json is considered as indexer
         public static bool IsComplexPathWithAnyNumberOfParameters(this OpenApiUrlTreeNode currentNode)
         {
-            return (currentNode?.Segment?.Contains(requestParametersSectionChar) ?? false) && currentNode.Segment.EndsWith(requestParametersSectionEndChar);
+            return (currentNode?.Segment?.Contains(requestParametersSectionChar, StringComparison.OrdinalIgnoreCase) ?? false) && currentNode.Segment.EndsWith(requestParametersSectionEndChar);
         }
         public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode) {
             var queryStringParameters = string.Empty;
