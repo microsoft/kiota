@@ -78,6 +78,7 @@ public class PhpRefiner: CommonLanguageRefiner
                 string.Empty,
                 true);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            CorrectCoreTypesForBackingStore(generatedCode, "null");
         }, cancellationToken);
     }
     private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
@@ -211,6 +212,12 @@ public class PhpRefiner: CommonLanguageRefiner
         codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.ParseNode)).ToList().ForEach(x =>
         {
             x.Type.Name = "ParseNode";
+        });
+        codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.BackingStore)
+            && currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)).ToList().ForEach(x =>
+        {
+            x.Type.Name = "BackingStoreFactory";
+            x.DefaultValue = "null";
         });
         CrawlTree(codeElement, CorrectParameterType);
     }

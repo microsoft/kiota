@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-
 namespace Kiota.Builder.Writers.Php
 {
     public class CodeMethodWriter: BaseElementWriter<CodeMethod, PhpConventionService>
     {
-        public CodeMethodWriter(PhpConventionService conventionService) : base(conventionService) { }
+
+        protected readonly bool UseBackingStore = false;
+        public CodeMethodWriter(PhpConventionService conventionService, bool useBackingStore = false) : base(conventionService)
+        {
+            UseBackingStore = useBackingStore;
+        }
         
         private const string RequestInfoVarName = "$requestInfo";
         private const string CreateDiscriminatorMethodName = "createFromDiscriminatorValue";
@@ -71,8 +74,10 @@ namespace Kiota.Builder.Writers.Php
         private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
                 writer.WriteLine("parent::__construct();");
+            var backingStoreProperty = parentClass.GetPropertyOfKind(CodePropertyKind.BackingStore);
+            if (backingStoreProperty != null && !string.IsNullOrEmpty(backingStoreProperty.DefaultValue))
+                writer.WriteLine($"$this->{backingStoreProperty.Name.ToFirstCharacterLowerCase()} = {backingStoreProperty.DefaultValue}");
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(
-                    CodePropertyKind.BackingStore,
                     CodePropertyKind.RequestBuilder,
                     CodePropertyKind.UrlTemplate,
                     CodePropertyKind.PathParameters)
@@ -311,16 +316,24 @@ namespace Kiota.Builder.Writers.Php
             };
         }
 
-        private static void WriteSetterBody(LanguageWriter writer, CodeMethod codeElement)
+        private void WriteSetterBody(LanguageWriter writer, CodeMethod codeElement)
         {
             var propertyName = codeElement.AccessedProperty?.Name;
-            writer.WriteLine($"$this->{propertyName.ToFirstCharacterLowerCase()} = $value;");
+            var parentClass = codeElement.Parent as CodeClass;
+            if (UseBackingStore)
+                writer.WriteLine($"$this->{parentClass.GetBackingStoreProperty()?.Name.ToFirstCharacterLowerCase()}->set('{propertyName.ToFirstCharacterLowerCase()}', $value);");
+            else
+                writer.WriteLine($"$this->{propertyName.ToFirstCharacterLowerCase()} = $value;");
         }
 
-        private static void WriteGetterBody(LanguageWriter writer, CodeMethod codeMethod)
+        private void WriteGetterBody(LanguageWriter writer, CodeMethod codeMethod)
         {
             var propertyName = codeMethod.AccessedProperty?.Name.ToFirstCharacterLowerCase();
-            writer.WriteLine($"return $this->{propertyName};");
+            var parentClass = codeMethod.Parent as CodeClass;
+            if (UseBackingStore)
+                writer.WriteLine($"return $this->{parentClass.GetBackingStoreProperty()?.Name.ToFirstCharacterLowerCase()}->get({propertyName});");
+            else
+                writer.WriteLine($"return $this->{propertyName};");
         }
 
         private void WriteRequestBuilderWithParametersBody(string returnType, LanguageWriter writer, CodeElement element = default)
@@ -510,6 +523,9 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl}');");
                 writer.CloseBlock();
             }
+            var backingStoreParam = codeMethod.Parameters.OfKind(CodeParameterKind.BackingStore);
+            if (backingStoreParam != null)
+                writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->enableBackingStore({backingStoreParam.Name} ?? BackingStoreFactorySingleton::getInstance());");
         }
         
         private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName) {
