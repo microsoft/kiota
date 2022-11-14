@@ -32,32 +32,36 @@
             <FluentDataGridRow RowType="DataGridRowType.Header">
                 <FluentDataGridCell GridColumn=1 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Key"]</FluentDataGridCell>
                 <FluentDataGridCell GridColumn=2 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Description"]</FluentDataGridCell>
-                <FluentDataGridCell GridColumn=3 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Versions"]</FluentDataGridCell>
+                <FluentDataGridCell GridColumn=3 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Actions"]</FluentDataGridCell>
             </FluentDataGridRow>
                 @foreach (var result in SearchResults.OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase))
                 {
                     <FluentDataGridRow>
                         <FluentDataGridCell GridColumn=1>
-                            @{
-                                var generationTarget = $"/generate?d={result.Value.DescriptionUrl}";
-                            }
-                            <NavLink class="nav-link" href="@generationTarget">
-                                @result.Key
-                            </NavLink>
+                            @result.Key
                         </FluentDataGridCell>
                         <FluentDataGridCell GridColumn=2>@SanitizeDescription(result.Value.Description)</FluentDataGridCell>
                         <FluentDataGridCell GridColumn=3>
-                            @foreach (var versionLabel in result.Value.VersionLabels)
-                            {
-                                var target = $"/show?k={result.Key}&v={versionLabel}";
-                                <NavLink class="nav-link" href="@target">
-                                    @versionLabel
-                                </NavLink>
-                            }
+                            <FluentButton Appearance="Appearance.Accent" @onclick="@(e => GoToGenerate(result.Key))">@Loc["GoToGenerate"]</FluentButton>
+                            <FluentButton Appearance="Appearance.Neutral" @onclick="@(e => GoToShow(result.Key))">@Loc["GoToShow"]</FluentButton>
                         </FluentDataGridCell>
                     </FluentDataGridRow>
                 }
         </FluentDataGrid>
+        @if(ShowVersionSelector) {
+            <FluentDialog>
+                <div>
+                    <h2>@Loc["SelectVersion"]</h2>
+                    <FluentSelect @bind-Value="@SelectedVersion" Required=@true TValue=string>
+                        @foreach(var version in AvailableVersions) {
+                            <FluentOption Value=@version>@version</FluentOption>
+                        }
+                    </FluentSelect><br>
+                    <FluentButton Appearance="Appearance.Accent" @onclick=@GoToGenerateWithVersion>@Loc["GoToGenerate"]</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" @onclick=@GoToShowWithVersion>@Loc["GoToShow"]</FluentButton>
+                </div>
+            </FluentDialog>
+        }
     </div>
 } else if (Searched && !IsLoading) {
     <div id="no-results">
@@ -68,6 +72,7 @@
 
 @code {
     [Inject] private IApplicationInsights? AppInsights { get; set; }
+    private bool ShowVersionSelector { get; set; }
     private bool IsLoading { get; set; }
     private bool Searched { get; set; }
     private string? SearchTerm { get; set; }
@@ -103,11 +108,44 @@
                 { "results", SearchResults.Count.ToString() },
             }).ConfigureAwait(false);
     }
-    private bool IsExactMatch() => SearchResults.Any() && (SearchTerm?.Contains("::") ?? false) && SearchResults.ContainsKey(SearchTerm);
-    private void GoToGenerate() {
-        if(IsExactMatch())
+    private void GoToShow(string key) {
+        if(SearchResults.TryGetValue(key, out var result) && result.VersionLabels.Count <= 1)
         {
-            navManager.NavigateTo($"/generate?d={SearchResults.Values.First().DescriptionUrl}");
+            navManager.NavigateTo($"/show?k={result.DescriptionUrl}");
+        } else {
+            OpenVersionSelectionDialog(key);
+        }
+    }
+    private Task GoToGenerateWithVersion() {
+
+        //TODO search from selected key and version & redirect to generate
+        return Task.CompletedTask;
+    }
+    private void GoToShowWithVersion() {
+        navManager.NavigateTo($"/show?k={SelectedKey}&v={SelectedVersion}");
+    }
+    private void GoToGenerate(string key) {
+        if(SearchResults.TryGetValue(key, out var result) && result.VersionLabels.Count <= 1)
+        {
+            navManager.NavigateTo($"/generate?d={result.DescriptionUrl}");
+        } else {
+            OpenVersionSelectionDialog(key);
+        }
+    }
+    private string SelectedKey { get; set; } = string.Empty;
+    private string SelectedVersion { get; set; } = string.Empty;
+    private List<string> AvailableVersions { get; set; } = new List<string>();
+    private void OpenVersionSelectionDialog(string key) {
+        if(SearchResults.TryGetValue(key, out var result) && result.VersionLabels.Count >= 1) {
+            ShowVersionSelector = true;
+            SelectedKey = key;
+            SelectedVersion = string.Empty;
+            AvailableVersions = result.VersionLabels;
+        } else {
+            ShowVersionSelector = false;
+            SelectedKey = string.Empty;
+            SelectedVersion = string.Empty;
+            AvailableVersions.Clear(); 
         }
     }
     private static readonly Regex _htmlTagRegex = new Regex("<.*?>", RegexOptions.Compiled);
