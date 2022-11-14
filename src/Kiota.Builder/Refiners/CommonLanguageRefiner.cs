@@ -109,9 +109,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
             var propertyOriginalName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
                                         .ToFirstCharacterLowerCase();
-            var accessorName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
-                                .CleanupSymbolName()
-                                .ToFirstCharacterUpperCase();
+            var accessorName = propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase();
             currentProperty.Getter = parentClass.AddMethod(new CodeMethod {
                 Name = $"get-{accessorName}",
                 Access = AccessModifier.Public,
@@ -122,29 +120,32 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 AccessedProperty = currentProperty,
             }).First();
             currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
-            var setter = parentClass.AddMethod(new CodeMethod {
-                Name = $"set-{accessorName}",
-                Access = AccessModifier.Public,
-                IsAsync = false,
-                Kind = CodeMethodKind.Setter,
-                Description = $"Sets the {propertyOriginalName} property value. {currentProperty.Description}",
-                AccessedProperty = currentProperty,
-                ReturnType = new CodeType {
-                    Name = "void",
-                    IsNullable = false,
-                    IsExternal = true,
-                },
-            }).First();
-            setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
-            currentProperty.Setter = setter;
+            if (!currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+            {
+                var setter = parentClass.AddMethod(new CodeMethod {
+                    Name = $"set-{accessorName}",
+                    Access = AccessModifier.Public,
+                    IsAsync = false,
+                    Kind = CodeMethodKind.Setter,
+                    Description = $"Sets the {propertyOriginalName} property value. {currentProperty.Description}",
+                    AccessedProperty = currentProperty,
+                    ReturnType = new CodeType {
+                        Name = "void",
+                        IsNullable = false,
+                        IsExternal = true,
+                    },
+                }).First();
+                setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
+                currentProperty.Setter = setter;
             
-            setter.AddParameter(new CodeParameter {
-                Name = "value",
-                Kind = CodeParameterKind.SetterValue,
-                Description = $"Value to set for the {current.Name} property.",
-                Optional = parameterAsOptional,
-                Type = currentProperty.Type.Clone() as CodeTypeBase,
-            });
+                setter.AddParameter(new CodeParameter {
+                    Name = "value",
+                    Kind = CodeParameterKind.SetterValue,
+                    Description = $"Value to set for the {current.Name} property.",
+                    Optional = parameterAsOptional,
+                    Type = currentProperty.Type.Clone() as CodeTypeBase,
+                });
+            }
         }
         CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors, removeProperty, parameterAsOptional, getterPrefix, setterPrefix));
     }
