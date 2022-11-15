@@ -49,14 +49,15 @@
                 }
         </FluentDataGrid>
         @if(ShowVersionSelector) {
-            <FluentDialog>
-                <div>
+            <FluentDialog @ondismiss=OnDialogDismiss>
+                <div class="dialog-content">
                     <h2>@Loc["SelectVersion"]</h2>
-                    <FluentSelect @bind-Value="@SelectedVersion" Required=@true TValue=string>
+                    <FluentSelect Id="selectedversion" @bind-Value=@SelectedVersion Required=@true>
                         @foreach(var version in AvailableVersions) {
                             <FluentOption Value=@version>@version</FluentOption>
                         }
-                    </FluentSelect><br>
+                    </FluentSelect>
+                    <FluentDivider Role=DividerRole.Presentation></FluentDivider>
                     <FluentButton Appearance="Appearance.Accent" @onclick=@GoToGenerateWithVersion>@Loc["GoToGenerate"]</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" @onclick=@GoToShowWithVersion>@Loc["GoToShow"]</FluentButton>
                 </div>
@@ -116,10 +117,14 @@
             OpenVersionSelectionDialog(key);
         }
     }
-    private Task GoToGenerateWithVersion() {
-
-        //TODO search from selected key and version & redirect to generate
-        return Task.CompletedTask;
+    private void GoToGenerateWithVersion() {
+        navManager.NavigateTo($"/generate?k={SelectedKey}&v={SelectedVersion}");
+    }
+    private void OnDialogDismiss() {
+        ShowVersionSelector = false;
+        SelectedKey = string.Empty;
+        SelectedVersion = string.Empty;
+        AvailableVersions.Clear(); 
     }
     private void GoToShowWithVersion() {
         navManager.NavigateTo($"/show?k={SelectedKey}&v={SelectedVersion}");
@@ -139,13 +144,10 @@
         if(SearchResults.TryGetValue(key, out var result) && result.VersionLabels.Count >= 1) {
             ShowVersionSelector = true;
             SelectedKey = key;
-            SelectedVersion = string.Empty;
-            AvailableVersions = result.VersionLabels;
+            SelectedVersion = result.VersionLabels.First();
+            AvailableVersions = new(result.VersionLabels);
         } else {
-            ShowVersionSelector = false;
-            SelectedKey = string.Empty;
-            SelectedVersion = string.Empty;
-            AvailableVersions.Clear(); 
+            OnDialogDismiss();
         }
     }
     private static readonly Regex _htmlTagRegex = new Regex("<.*?>", RegexOptions.Compiled);
