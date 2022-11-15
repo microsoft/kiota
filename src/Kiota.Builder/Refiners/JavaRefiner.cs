@@ -18,6 +18,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             LowerCaseNamespaceNames(generatedCode);
             AddInnerClasses(generatedCode, false, string.Empty);
+            RemoveParentNamePrefixFromInnerClasses(generatedCode);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
@@ -299,6 +300,38 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors);
     }
 
+    private static void RemoveParentNamePrefixFromInnerClasses(CodeElement currentElement){
+        if(currentElement is CodeClass currentClass) {
+            var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
+            var innerClasses = currentClass
+                                    .Methods
+                                    .SelectMany(static x => x.Parameters)
+                                    .Where(static x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
+                                    .SelectMany(static x => x.Type.AllTypes)
+                                    .Select(static x => x.TypeDefinition)
+                                    .OfType<CodeClass>();
+
+            // ensure we do not miss out the types present in request configuration objects i.e. the query parameters
+            var nestedQueryParameters = innerClasses
+                                    .SelectMany(static x => x.Properties)
+                                    .Where(static x => x.IsOfKind(CodePropertyKind.QueryParameters))
+                                    .SelectMany(static x => x.Type.AllTypes)
+                                    .Select(static x => x.TypeDefinition)
+                                    .OfType<CodeClass>();
+
+            var nestedClasses = new List<CodeClass>();
+            nestedClasses.AddRange(innerClasses);
+            nestedClasses.AddRange(nestedQueryParameters);
+
+            foreach(var innerClass in nestedClasses) {
+                if(innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase)){
+                    innerClass.Name = innerClass.Name[currentClass.Name.Length..];
+                }
+            }
+        }
+        CrawlTree(currentElement, x => RemoveParentNamePrefixFromInnerClasses(x));
+    }
+    
     // Namespaces in Java by convention are all lower case, like:
     // com.microsoft.kiota.serialization
     private static void LowerCaseNamespaceNames(CodeElement currentElement) {
