@@ -77,7 +77,7 @@
     <value>Description</value>
   </data>
   <data name="MR_Actions" xml:space="preserve">
-    <value>Actionsa</value>
+    <value>Actions</value>
   </data>
   <data name="GoToGenerate" xml:space="preserve">
     <value>Générer un client</value>

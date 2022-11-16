@@ -112,7 +112,7 @@
     private void GoToShow(string key) {
         if(SearchResults.TryGetValue(key, out var result) && result.VersionLabels.Count <= 1)
         {
-            navManager.NavigateTo($"/show?k={result.DescriptionUrl}");
+            navManager.NavigateTo($"/show?d={result.DescriptionUrl}");
         } else {
             OpenVersionSelectionDialog(key);
         }
