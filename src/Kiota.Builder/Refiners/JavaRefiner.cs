@@ -18,7 +18,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             LowerCaseNamespaceNames(generatedCode);
             AddInnerClasses(generatedCode, false, string.Empty);
-            RemoveParentNamePrefixFromInnerClasses(generatedCode);
+            RemoveClassNamePrefixFromNestedClasses(generatedCode);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
@@ -299,10 +299,9 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors);
     }
-
-    private static void RemoveParentNamePrefixFromInnerClasses(CodeElement currentElement){
+    private static void RemoveClassNamePrefixFromNestedClasses(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass) {
-            var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
+            var prefix = currentClass.Name;
             var innerClasses = currentClass
                                     .Methods
                                     .SelectMany(static x => x.Parameters)
@@ -322,18 +321,50 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             var nestedClasses = new List<CodeClass>();
             nestedClasses.AddRange(innerClasses);
             nestedClasses.AddRange(nestedQueryParameters);
-
+            
             foreach(var innerClass in nestedClasses) {
-                if(innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase)){
-                    innerClass.Name = innerClass.Name[currentClass.Name.Length..];
-                }
+                if(innerClass.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) 
+                    innerClass.Name = innerClass.Name[prefix.Length..];
+                
+                if(innerClass.IsOfKind(CodeClassKind.RequestConfiguration))
+                    RemovePrefixFromQueryProperties(innerClass, prefix);
+            }
+            RemovePrefixFromRequestConfigParameters(currentClass, prefix);
+        }
+        CrawlTree(currentElement, x => RemoveClassNamePrefixFromNestedClasses(x));
+    }
+    private static void RemovePrefixFromQueryProperties(CodeElement currentElement, String prefix) { 
+        if(currentElement is CodeClass currentClass) {            
+            var queryProperty = currentClass
+                                .Properties
+                                .Where(static x=> x.IsOfKind(CodePropertyKind.QueryParameters))
+                                .Select(static x => x.Type)
+                                .OfType<CodeTypeBase>();
+
+            foreach(var property in queryProperty) {
+                if(property.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    property.Name = property.Name[prefix.Length..];
             }
         }
-        CrawlTree(currentElement, x => RemoveParentNamePrefixFromInnerClasses(x));
     }
-    
-    // Namespaces in Java by convention are all lower case, like:
-    // com.microsoft.kiota.serialization
+    private static void RemovePrefixFromRequestConfigParameters(CodeElement currentElement, String prefix) {
+        if(currentElement is CodeClass currentClass) {
+            var parameters = currentClass
+                                .Methods
+                                .SelectMany(static x => x.Parameters)
+                                .Where(static x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
+                                .Select(static x=> x.Type)
+                                .OfType<CodeTypeBase>();
+
+            var paramList = new List<CodeTypeBase>();
+            paramList.AddRange(parameters);
+
+            foreach(var parameter in paramList ) {
+                if(parameter.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    parameter.Name = parameter.Name[prefix.Length..];
+            }
+        }
+    }
     private static void LowerCaseNamespaceNames(CodeElement currentElement) {
         if (currentElement is CodeNamespace codeNamespace)
         {
