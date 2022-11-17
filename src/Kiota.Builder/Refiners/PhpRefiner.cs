@@ -59,6 +59,10 @@ public class PhpRefiner: CommonLanguageRefiner
             AddSerializationModulesImport(generatedCode, new []{"Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"}, null, '\\');
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
+            AddInnerClasses(generatedCode,
+                true,
+                string.Empty,
+                true);
             // Imports should be done before adding getters and setters since AddGetterAndSetterMethods can remove properties from classes when backing store is enabled
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddGetterAndSetterMethods(generatedCode,
@@ -75,10 +79,6 @@ public class PhpRefiner: CommonLanguageRefiner
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            AddInnerClasses(generatedCode,
-                true,
-                string.Empty,
-                true);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton::getInstance()->createBackingStore()");
         }, cancellationToken);
     }
