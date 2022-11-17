@@ -299,7 +299,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors);
     }
     private static void RemoveClassNamePrefixFromNestedClasses(CodeElement currentElement) {
-        if(currentElement is CodeClass currentClass) {
+        if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
             var prefix = currentClass.Name;
             var innerClasses = currentClass
                                     .Methods
