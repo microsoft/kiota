@@ -12,6 +12,34 @@ public class GoLanguageRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLangRefinerTests
     [Fact]
+    public async Task AddsInnerClasses() {
+        var model = root.AddClass(new CodeClass {
+            Name = "model",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var method = model.AddMethod(new CodeMethod {
+            Name = "method1",
+            ReturnType = new CodeType {
+                Name = "string",
+                IsExternal = true
+            }
+        }).First();
+        var parameter = new CodeParameter {
+            Name = "param1",
+            Kind = CodeParameterKind.RequestConfiguration,
+            Type = new CodeType {
+                Name = "SomeCustomType",
+                ActionOf = true,
+                TypeDefinition = new CodeClass {
+                    Name = "SomeCustomType"
+                }
+            }
+        };
+        method.AddParameter(parameter);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Equal(2, model.GetChildElements(true).Count());
+    }
+    [Fact]
     public async Task TrimsCircularDiscriminatorReferences() {
         var modelsNS = root.AddNamespace("models");
         var baseModel = modelsNS.AddClass(new CodeClass {
