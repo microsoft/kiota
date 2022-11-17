@@ -755,7 +755,7 @@ namespace Kiota.Builder.Tests.Writers.Php
 
             _codeMethodWriter.WriteCodeElement(getter, languageWriter);
             var result = stringWriter.ToString();
-            Assert.Contains("public function getAdditionalData(): array", result);
+            Assert.Contains("public function getAdditionalData(): ?array", result);
             Assert.Contains("return $this->additionalData;", result);
         }
 
@@ -1103,11 +1103,29 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("public function getBackingStore(): BackingStore", result);
             Assert.Contains("return $this->backingStore;", result);
 
-            Assert.Contains("public function setName(?string $value )", result);
+            Assert.Contains("public function setName(?string $value)", result);
             Assert.Contains("$this->getBackingStore()->set('name', $value);", result);
             
             // Backing store should NOT contain setter
             Assert.DoesNotContain("private function setBackingStore(BackingStore $value )", result);
+        }
+
+        [Fact]
+        public async void ReplaceBinaryTypeWithStreamInterface()
+        {
+            var binaryProperty = new CodeProperty
+            {
+                Name = "binaryContent",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { Name = "binary", IsNullable = false }
+            };
+            parentClass.AddProperty(binaryProperty);
+            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP, UsesBackingStore = true}, root);
+            parentClass.GetMethodsOffKind(CodeMethodKind.Getter, CodeMethodKind.Setter).ToList().ForEach(x => _codeMethodWriter.WriteCodeElement(x, languageWriter));
+            var result = stringWriter.ToString();
+
+            Assert.Contains("public function setBinaryContent(?StreamInterface $value): void", result);
+            Assert.Contains("public function getBinaryContent(): ?StreamInterface", result);
         }
     }
 }

@@ -102,7 +102,7 @@ namespace Kiota.Builder.Writers.Php
             };
             var qualified = parameter?.Optional != null && parameter.Optional &&
                             targetElement is CodeMethod methodTarget && !methodTarget.IsOfKind(CodeMethodKind.Setter);
-            return parameter?.Optional != null && parameter.Optional ? $"?{parameterSuffix} {(qualified ?  "= null" : string.Empty)}" : parameterSuffix;
+            return parameter?.Optional != null && parameter.Optional ? $"?{parameterSuffix}{(qualified ?  " = null" : string.Empty)}" : parameterSuffix;
         }
         public string GetParameterDocNullable(CodeParameter parameter, CodeElement codeElement)
         {

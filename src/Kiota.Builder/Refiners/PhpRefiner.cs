@@ -76,7 +76,7 @@ public class PhpRefiner: CommonLanguageRefiner
                 "get",
                 "set");
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-            ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
+            ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true, _configuration.UsesBackingStore);
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton::getInstance()->createBackingStore()");
