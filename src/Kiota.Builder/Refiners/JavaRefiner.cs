@@ -338,11 +338,11 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                 .Properties
                                 .Where(static x=> x.IsOfKind(CodePropertyKind.QueryParameters))
                                 .Select(static x => x.Type)
-                                .OfType<CodeTypeBase>();
+                                .OfType<CodeTypeBase>()
+                                .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
 
             foreach(var property in queryProperty) {
-                if(property.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                    property.Name = property.Name[prefix.Length..];
+                property.Name = property.Name[prefix.Length..];
             }
         }
     }
@@ -353,14 +353,12 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                 .SelectMany(static x => x.Parameters)
                                 .Where(static x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
                                 .Select(static x=> x.Type)
-                                .OfType<CodeTypeBase>();
+                                .OfType<CodeTypeBase>()
+                                .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
 
-            var paramList = new List<CodeTypeBase>();
-            paramList.AddRange(parameters);
 
-            foreach(var parameter in paramList ) {
-                if(parameter.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                    parameter.Name = parameter.Name[prefix.Length..];
+            foreach(var parameter in parameters) {
+                parameter.Name = parameter.Name[prefix.Length..];
             }
         }
     }
