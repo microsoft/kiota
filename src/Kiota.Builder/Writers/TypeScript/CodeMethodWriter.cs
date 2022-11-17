@@ -213,8 +213,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             {
                 var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
                 localConventions.AddParametersAssignment(writer,
-                                                    pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
-                                                    pathParametersParam.Name.ToFirstCharacterLowerCase(),
+                                                    pathParametersParam?.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
+                                                    pathParametersParam?.Name.ToFirstCharacterLowerCase(),
                                                     currentMethod.Parameters
                                                                 .Where(x => x.IsOfKind(CodeParameterKind.Path))
                                                                 .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
@@ -232,7 +232,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
     private static void ConstructorBodyForModelClass(CodeClass codeClass, LanguageWriter writer, CodeMethod currentMethod)
     {
-        var codeInterfaceName = currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType type && type.TypeDefinition is CodeInterface).Name;
+        var codeInterfaceName = currentMethod.Parameters?.FirstOrDefault(x => x.Type is CodeType type && type.TypeDefinition is CodeInterface)?.Name;
         if (codeClass.StartBlock.Inherits != null)
         {
             if (codeClass.StartBlock.Inherits.TypeDefinition != null)
