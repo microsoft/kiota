@@ -17,7 +17,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() => {
             cancellationToken.ThrowIfCancellationRequested();
             LowerCaseNamespaceNames(generatedCode);
-            AddInnerClasses(generatedCode, false, string.Empty);
             RemoveClassNamePrefixFromNestedClasses(generatedCode);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);

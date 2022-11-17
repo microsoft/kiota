@@ -20,8 +20,7 @@ public class GoRefiner : CommonLanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             AddInnerClasses(
                 generatedCode,
-                true,
-                null);
+                true);
             ReplaceIndexersByMethodsWithParameter(
                 generatedCode,
                 generatedCode,

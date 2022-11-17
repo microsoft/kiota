@@ -25,7 +25,6 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddRawUrlConstructorOverload(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
-            AddInnerClasses(generatedCode, false, string.Empty);
             cancellationToken.ThrowIfCancellationRequested();
             AddParsableImplementsForModelClasses(generatedCode, "IParsable");
             CapitalizeNamespacesFirstLetters(generatedCode);

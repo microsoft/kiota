@@ -1412,7 +1412,7 @@ public class KiotaBuilder
     }
     private CodeClass CreateOperationParameterClass(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
-        var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters.Union(operation.Parameters).Where(p => p.In == ParameterLocation.Query);
+        var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters.Union(operation.Parameters).Where(static p => p.In == ParameterLocation.Query);
         if(parameters.Any()) {
             var parameterClass = parentClass.AddInnerClass(new CodeClass
             {
