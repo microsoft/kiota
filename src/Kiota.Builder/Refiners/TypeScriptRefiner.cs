@@ -343,11 +343,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             modelInterface.Name = ReturnFinalInterfaceName(modelInterface.Name);
         }
-        else if (currentElement is CodeFunction codeFunction)
-        {
-            //var mappingValueList = codeFunction?.OriginalLocalMethod?.DiscriminatorMappings?.Select(y => y.Value).Where(y => y is CodeType codeType && codeType.TypeDefinition is CodeClass modelClass && modelClass.IsOfKind(CodeClassKind.Model)).ToList();
-            //mappingValueList?.ForEach(x => { x.Name = x.Name + FinalModelClassNameSuffix; });
-        }
 
         CrawlTree(currentElement, x => RenameModelInterfacesAndClasses(x));
     }

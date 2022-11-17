@@ -8,7 +8,8 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.TypeScript;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventionService>
 {
-    public CodeMethodWriter(TypeScriptConventionService conventionService, bool usesBackingStore) : base(conventionService){
+    public CodeMethodWriter(TypeScriptConventionService conventionService, bool usesBackingStore) : base(conventionService)
+    {
         _usesBackingStore = usesBackingStore;
     }
     private const string ModelClassSuffix = "Impl";
@@ -18,10 +19,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
-        if(codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
+        if (codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
         ArgumentNullException.ThrowIfNull(writer);
-        if(codeElement.Parent is CodeFunction) return;
-        if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
+        if (codeElement.Parent is CodeFunction) return;
+        if (!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
         localConventions = new TypeScriptConventionService(writer); //because we allow inline type definitions for methods parameters
         var returnType = localConventions.GetTypeString(codeElement.ReturnType, codeElement);
@@ -131,13 +132,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterLowerCase();
         WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
-        if(!string.IsNullOrEmpty(method.BaseUrl)) {
+        if (!string.IsNullOrEmpty(method.BaseUrl))
+        {
             writer.WriteLine($"if ({requestAdapterPropertyName}.baseUrl === undefined || {requestAdapterPropertyName}.baseUrl === \"\") {{");
             writer.IncreaseIndent();
             writer.WriteLine($"{requestAdapterPropertyName}.baseUrl = \"{method.BaseUrl}\";");
             writer.CloseBlock();
         }
-        if(backingStoreParameter != null)
+        if (backingStoreParameter != null)
             writer.WriteLine($"this.{requestAdapterPropertyName}.enableBackingStore({backingStoreParameter.Name});");
     }
     private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName)
@@ -147,25 +149,34 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 writer.WriteLine($"{methodName}({module});");
     }
     private CodePropertyKind[] _DirectAccessProperties;
-    private CodePropertyKind[] DirectAccessProperties { get {
-        if(_DirectAccessProperties == null) {
-            var directAccessProperties = new List<CodePropertyKind> {
+    private CodePropertyKind[] DirectAccessProperties
+    {
+        get
+        {
+            if (_DirectAccessProperties == null)
+            {
+                var directAccessProperties = new List<CodePropertyKind> {
                 CodePropertyKind.BackingStore,
                 CodePropertyKind.RequestBuilder,
                 CodePropertyKind.UrlTemplate,
                 CodePropertyKind.PathParameters
             };
-            if(!_usesBackingStore) {
-                directAccessProperties.Add(CodePropertyKind.AdditionalData);
+                if (!_usesBackingStore)
+                {
+                    directAccessProperties.Add(CodePropertyKind.AdditionalData);
+                }
+                _DirectAccessProperties = directAccessProperties.ToArray();
             }
-            _DirectAccessProperties = directAccessProperties.ToArray();
+            return _DirectAccessProperties;
         }
-        return _DirectAccessProperties;
-    }}
+    }
     private CodePropertyKind[] _SetterAccessProperties;
-    private CodePropertyKind[] SetterAccessProperties {
-        get {
-            if (_SetterAccessProperties == null) {
+    private CodePropertyKind[] SetterAccessProperties
+    {
+        get
+        {
+            if (_SetterAccessProperties == null)
+            {
                 _SetterAccessProperties = new[] {
                     CodePropertyKind.AdditionalData, //additional data and custom properties need to use the accessors in case of backing store use
                     CodePropertyKind.Custom
@@ -179,7 +190,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     {
         if (!parentClass.IsOfKind(CodeClassKind.Model) && (inherits || parentClass.IsErrorDefinition))
             writer.WriteLine("super();");
-        
+
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(DirectAccessProperties)
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderByDescending(static x => x.Kind)
@@ -187,11 +198,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         {
             writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
         }
-        
-        foreach(var propWithDefault in parentClass.GetPropertiesOfKind(SetterAccessProperties)
+
+        foreach (var propWithDefault in parentClass.GetPropertiesOfKind(SetterAccessProperties)
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderByDescending(static x => x.Kind)
-                                        .ThenBy(static x => x.Name)) {
+                                        .ThenBy(static x => x.Name))
+        {
             writer.WriteLine($"this.{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
         }
 
@@ -259,6 +271,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 writer.WriteLine($"this.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
         }
     }
+
+    private static bool IsCodePropertyCollectionOfEnum(CodeProperty property)
+    {
+        return property.Type is CodeType cType && cType.IsCollection && cType.TypeDefinition is CodeEnum;
+    }
+
     private void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
         writer.WriteLine("if(value) {");
@@ -268,7 +286,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var properyType = property.Type is CodeType type && type.TypeDefinition is CodeInterface @interface ? @interface.Name : "";
 
         var propertyValue = "";
-        if (IsCodePropertyCollection(property))
+
+        if (IsCodePropertyCollectionOfEnum(property))
+        {
+            propertyValue = "value";
+        }
+        else if (IsCodePropertyCollection(property))
         {
             propertyValue = ConvertPropertyValueToInstanceArray(property.Name, property.Type, writer);
         }
@@ -444,12 +467,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             WritePropertySerializer(otherProp, writer);
         }
         if (additionalDataProperty != null)
-            writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
+            writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()}!);");
     }
 
     private void WritePropertySerializer(CodeProperty codeProperty, LanguageWriter writer)
     {
-        var isCollectionOfEnum = codeProperty.Type is CodeType cType && cType.IsCollection && cType.TypeDefinition is CodeEnum;
+        var isCollectionOfEnum = IsCodePropertyCollectionOfEnum(codeProperty);
         var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
         var undefinedPrefix = isCollectionOfEnum ? $"this.{codePropertyName} && " : string.Empty;
