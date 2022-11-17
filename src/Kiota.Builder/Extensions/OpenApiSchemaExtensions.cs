@@ -1,30 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions {
     public static class OpenApiSchemaExtensions {
-        private static readonly Func<OpenApiSchema, IList<OpenApiSchema>> classNamesFlattener = (x) =>
+        private static readonly Func<OpenApiSchema, IList<OpenApiSchema>> classNamesFlattener = x =>
         (x.AnyOf ?? Enumerable.Empty<OpenApiSchema>()).Union(x.AllOf).Union(x.OneOf).ToList();
-        public static IEnumerable<string> GetSchemaNames(this OpenApiSchema schema) {
+        public static IEnumerable<string> GetSchemaNames(this OpenApiSchema schema)
+        {
             if(schema == null)
                 return Enumerable.Empty<string>();
-            else if(schema.Items != null)
+            if(schema.Items != null)
                 return schema.Items.GetSchemaNames();
-            else if(schema.AnyOf.Any())
+            if(!string.IsNullOrEmpty(schema.Reference?.Id))
+                return new[] {schema.Reference.Id.Split('/').Last().Split('.').Last()};
+            if(schema.AnyOf.Any())
                 return schema.AnyOf.FlattenIfRequired(classNamesFlattener);
-            else if(schema.AllOf.Any())
+            if(schema.AllOf.Any())
                 return schema.AllOf.FlattenIfRequired(classNamesFlattener);
-            else if(schema.OneOf.Any())
+            if(schema.OneOf.Any())
                 return schema.OneOf.FlattenIfRequired(classNamesFlattener);
-            else if(!string.IsNullOrEmpty(schema.Reference?.Id))
-                return new string[] {schema.Reference.Id.Split('/').Last().Split('.').Last()};
-            else if(!string.IsNullOrEmpty(schema.Title))
-                return new string[] { schema.Title };
-            else if(!string.IsNullOrEmpty(schema.Xml?.Name))
-                return new string[] {schema.Xml.Name};
-            else return Enumerable.Empty<string>();
+            if(!string.IsNullOrEmpty(schema.Title))
+                return new[] { schema.Title };
+            if(!string.IsNullOrEmpty(schema.Xml?.Name))
+                return new[] {schema.Xml.Name};
+            return Enumerable.Empty<string>();
         }
         private static IEnumerable<string> FlattenIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter) {
             var resultSet = schemas;
@@ -56,19 +58,48 @@ namespace Kiota.Builder.Extensions {
         }
         public static bool IsAnyOf(this OpenApiSchema schema)
         {
-            return schema?.AnyOf?.Count > 1;
+            return schema?.AnyOf?.Count(IsSemanticallyMeaningful) > 1;
         }
 
         public static bool IsAllOf(this OpenApiSchema schema)
         {
-            return schema?.AllOf?.Count > 1;
+            return schema?.AllOf?.Count(IsSemanticallyMeaningful) > 1;
         }
 
         public static bool IsOneOf(this OpenApiSchema schema)
         {
-            return schema?.OneOf?.Count > 1;
+            return schema?.OneOf?.Count(IsSemanticallyMeaningful) > 1;
         }
-
+        private static readonly HashSet<string> oDataTypes = new() {
+            "number",
+            "integer",
+        };
+        public static bool IsODataPrimitiveType(this OpenApiSchema schema)
+        {
+            return schema.IsOneOf() &&
+                    schema.OneOf.Count == 3 &&
+                    schema.OneOf.Count(static x => x.Enum?.Any() ?? false) == 1 &&
+                    schema.OneOf.Count(static x => oDataTypes.Contains(x.Type)) == 1 &&
+                    schema.OneOf.Count(static x => "string".Equals(x.Type, StringComparison.OrdinalIgnoreCase)) == 1
+                    ||
+                schema.IsAnyOf() &&
+                    schema.AnyOf.Count == 3 &&
+                    schema.AnyOf.Count(static x => x.Enum?.Any() ?? false) == 1 &&
+                    schema.AnyOf.Count(static x => oDataTypes.Contains(x.Type)) == 1 &&
+                    schema.AnyOf.Count(static x => "string".Equals(x.Type, StringComparison.OrdinalIgnoreCase)) == 1;
+        }
+        public static bool IsEnum(this OpenApiSchema schema)
+        {
+            return schema?.Enum?.Any() ?? false;
+        }
+        public static bool IsComposedEnum(this OpenApiSchema schema)
+        {
+            return (schema.IsAnyOf() && schema.AnyOf.Any(x => x.IsEnum())) || (schema.IsOneOf() && schema.OneOf.Any(x => x.IsEnum()));
+        }
+        private static bool IsSemanticallyMeaningful(this OpenApiSchema schema)
+        {
+            return schema.Properties.Any() || schema.Items != null || !string.IsNullOrEmpty(schema.Type) || !string.IsNullOrEmpty(schema.Format) || !string.IsNullOrEmpty(schema.Reference?.Id);
+        }
         public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
             visitedSchemas ??= new();            
             if(schema != null && !visitedSchemas.Contains(schema)) {
@@ -90,12 +121,13 @@ namespace Kiota.Builder.Extensions {
                 if(subSchemaReferences.Any())
                     result.AddRange(subSchemaReferences);
                 return result.Distinct();
-            } else 
-                return Enumerable.Empty<string>();
+            }
+
+            return Enumerable.Empty<string>();
         }
         internal static IList<OpenApiSchema> FlattenEmptyEntries(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter, int? maxDepth = default) {
             if(schemas == null) return default;
-            if(subsequentGetter == null) throw new ArgumentNullException(nameof(subsequentGetter));
+            ArgumentNullException.ThrowIfNull(subsequentGetter);
 
             if((maxDepth ?? 1) <= 0)
                 return schemas;

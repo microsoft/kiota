@@ -1,7 +1,11 @@
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Refiners;
+
 using Xunit;
 
-namespace Kiota.Builder.Refiners.Tests {
+namespace Kiota.Builder.Tests.Refiners {
     public class CodeUsingDeclarationNameComparerTests {
         private readonly CodeUsingDeclarationNameComparer comparer = new ();
         [Fact]

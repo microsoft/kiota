@@ -44,7 +44,7 @@ Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** a
 You can then use the Kiota command line tool to generate the SDK classes.
 
 ```shell
-kiota -l go -d ../getme.yml -c GraphApiClient -n getuser/client -o ./client
+kiota generate -l go -d ../getme.yml -c GraphApiClient -n getuser/client -o ./client
 ```
 
 ## Creating an application registration
@@ -106,7 +106,7 @@ func main() {
 
   client := client.NewGraphApiClient(adapter)
 
-  me, err := client.Me().Get(nil)
+  me, err := client.Me().Get(context.Background(), nil)
 
   if err != nil {
     fmt.Printf("Error getting user: %v\n", err)
@@ -119,6 +119,7 @@ func main() {
 > **Note:**
 >
 > - If the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.
+> - If the target API relies on an API key for authentication, you can use the **ApiKeyAuthenticationProvider** instead.
 > - If the target API requires an `Authorization: Bearer <token>` header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
 > - If the target API requires any other form of authentication schemes, you can implement the **AuthenticationProvider** interface.
 

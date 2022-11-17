@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 
 public enum CodeClassKind {
     Custom,
@@ -27,13 +28,17 @@ public enum CodeClassKind {
 /// <summary>
 /// CodeClass represents an instance of a Class to be generated in source code
 /// </summary>
-public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition
+public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition, IDiscriminatorInformationHolder
 {
     public bool IsErrorDefinition { get; set; }
+
+    /// <summary>
+    /// Original composed type this class was generated for.
+    /// </summary>
+    public CodeComposedTypeBase OriginalComposedType { get; set; }
     public void SetIndexer(CodeIndexer indexer)
     {
-        if(indexer == null)
-            throw new ArgumentNullException(nameof(indexer));
+        ArgumentNullException.ThrowIfNull(indexer);
         if(InnerChildElements.Values.OfType<CodeIndexer>().Any() || InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility))) {
             var existingIndexer = InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
             if(existingIndexer != null) {
@@ -71,14 +76,36 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     public CodeClass GetParentClass() {
         return StartBlock.Inherits?.TypeDefinition as CodeClass;
     }
+    public bool DerivesFrom(CodeClass codeClass) {
+        ArgumentNullException.ThrowIfNull(codeClass);
+        var parent = GetParentClass();
+        if (parent == null)
+            return false;
+        if (parent == codeClass)
+            return true;
+        return parent.DerivesFrom(codeClass);
+    }
     
     public CodeClass GetGreatestGrandparent(CodeClass startClassToSkip = null) {
         var parentClass = GetParentClass();
         if(parentClass == null)
             return startClassToSkip != null && startClassToSkip == this ? null : this;
         // we don't want to return the current class if this is the start node in the inheritance tree and doesn't have parent
-        else
-            return parentClass.GetGreatestGrandparent(startClassToSkip);
+        return parentClass.GetGreatestGrandparent(startClassToSkip);
+    }
+    private DiscriminatorInformation _discriminatorInformation;
+    /// <inheritdoc />
+    public DiscriminatorInformation DiscriminatorInformation { 
+        get {
+            if (_discriminatorInformation == null)
+                DiscriminatorInformation = new DiscriminatorInformation();
+            return _discriminatorInformation;
+        } 
+        set {
+            ArgumentNullException.ThrowIfNull(value);
+            EnsureElementsAreChildren(value);
+            _discriminatorInformation = value;
+        }
     }
 }
 public class ClassDeclaration : ProprietableBlockDeclaration
@@ -98,12 +125,11 @@ public class ClassDeclaration : ProprietableBlockDeclaration
                 return currentProperty;
             else
                 return currentParentClass.StartBlock.GetOriginalPropertyDefinedFromBaseType(propertyName);
-        else
-            return default;
+        return default;
     }
 
     public bool InheritsFrom(CodeClass candidate) {
-        ArgumentNullException.ThrowIfNull(candidate, nameof(candidate));
+        ArgumentNullException.ThrowIfNull(candidate);
 
         if (inherits is CodeType currentInheritsType &&
             currentInheritsType.TypeDefinition is CodeClass currentParentClass)
@@ -111,8 +137,7 @@ public class ClassDeclaration : ProprietableBlockDeclaration
                 return true;
             else
                 return currentParentClass.StartBlock.InheritsFrom(candidate);
-        else
-            return false;
+        return false;
     }
 }
 

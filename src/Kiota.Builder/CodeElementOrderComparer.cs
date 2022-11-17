@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder {
     public class CodeElementOrderComparer : IComparer<CodeElement>
     {
@@ -33,7 +35,8 @@ namespace Kiota.Builder {
             };
         }
         private static readonly int methodKindWeight = 10;
-        protected static int GetMethodKindFactor(CodeElement element) {
+        protected static int GetMethodKindFactor(CodeElement element)
+        {
             if (element is CodeMethod method)
                 return method.Kind switch {
                     CodeMethodKind.ClientConstructor => 1,
@@ -41,7 +44,7 @@ namespace Kiota.Builder {
                     CodeMethodKind.RawUrlConstructor => 3,
                     _ => 0,
                 };
-            else return 0;
+            return 0;
         }
         private static readonly int parametersWeight = 1;
         private static int GetParametersFactor(CodeElement element) {

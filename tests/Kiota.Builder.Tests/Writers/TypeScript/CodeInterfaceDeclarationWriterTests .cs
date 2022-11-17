@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Kiota.Builder.CodeDOM;
 using Xunit;
 
 namespace Kiota.Builder.Writers.TypeScript.Tests

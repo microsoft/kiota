@@ -8,10 +8,143 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added support for scalar request bodies Python [#1571](https://github.com/microsoft/kiota/issues/1571)
+- Sets property defaults in constructor and removes duplicate properties defined in base types from model serialization and deserialization methods in Python. [#1726](https://github.com/microsoft/kiota/issues/1726)
+- Added support for scalar request bodies in PHP [#1937](https://github.com/microsoft/kiota/pull/1937)
+- Added accept header for all schematized requests Python. [#1617](https://github.com/microsoft/kiota/issues/1617)
+
+### Changed
+
+- Fixed a bug where array buffers nullability would wrongly be defined for TypeScript.
+- Fixed a bug where parameter comments would appear in summary tag comments in dotnet. [#1945](https://github.com/microsoft/kiota/issues/1945)
+- Fixed a bug in PHP generation where request bodies would not serialize single elements properly. [#1937](https://github.com/microsoft/kiota/pull/1937)
+- Fixed a bug where request information would always be set from scalar. [#1965](https://github.com/microsoft/kiota/pull/1965)
+- Fixed a bug where path parameters would be missing if no operation was present at the segment the parameter is defined. [#1940](https://github.com/microsoft/kiota/issues/1940)
+
+## [0.7.1] - 2022-11-01
+
+### Changed
+
+- Fixes publishing workflow which fails because of the web application.
+
+## [0.7.0] - 2022-11-01
+
+### Added
+
+- Added an API key authentication provider for dotnet, TypeScript, Go and Java. [#1902](https://github.com/microsoft/kiota/issues/1902)
+- Added compatibility all the way down to android API level 26 for Java.
+- Added support for enum and collection of enum return types for Java.
+- Added support for types with more than 500 discriminator entries in Java.
+- Added a confirmation message once the generation is successful. [#1898](https://github.com/microsoft/kiota/issues/1898)
+- Added colour scheme for all console messages to improve readability. [#1895](https://github.com/microsoft/kiota/issues/1895)
+
+### Changed
+
+- Fixed a bug where collections request bodies would not serialize single elements properly. [#1927](https://github.com/microsoft/kiota/issues/1927)
+- Removed response handler parameter from Java executor methods.
+- Changed the generated PHP deserializer code to use `fn` instead of `function`. [#1880](https://github.com/microsoft/kiota/pull/1880)
+- Fixes compile errors due to type ambiguity in generated models in dotnet. [#1881](https://github.com/microsoft/kiota/issues/1881)
+- Changes the ResponseHandler parameter in IRequestAdapter to be a RequestOption in dotnet [#1858](https://github.com/microsoft/kiota/issues/1858)
+- File extensions are now stripped from property/namespace/class names. [#1892](https://github.com/microsoft/kiota/issues/1892)
+- Missing host/server is now considered a warning instead of a critical error. [#1896](https://github.com/microsoft/kiota/issues/1896)
+- Fixed a bug where info and show commands would crash in case of invalid description URL. [#1894](https://github.com/microsoft/kiota/issues/1894)
+- Show command now reads descriptions directly from APIs.guru instead of their origin. [#1897](https://github.com/microsoft/kiota/issues/1897)
+- Fixed a classnames having the same name as extensions would cause generation to fail. [#1892](https://github.com/microsoft/kiota/issues/1892)
+- Fixed an issue where CSharp defensive programing would use string.IsNullOrEmpty for collections parameters.
+
+## [0.6.0] - 2022-10-06
+
+### Added
+
+- Added a search command to find APIs.
+- Added a download command to download API descriptions.
+- Added a show command to display the API paths as a tree.
+- Added an info command to show languages maturity and dependencies.
+- Added hints to help people use and discover the commands.
+- Added arguments to filter path items during generation (include-path/exclude-path).
+- Added the ability to cancel the refinement process.
+- Added Java 8 generation support.
+- Added tracing support for Go. [#618](https://github.com/microsoft/kiota/issues/618)
+
+### Changed
+
+- BREAKING: the generation command is now a sub command: `kiota generate ...` instead of `kiota ...`.
+- BREAKING: docker image renamed from `mcr.microsoft.com/kiota/generator` to `mcr.microsoft.com/openapi/kiota`.
+- Fixed a bug where OData primitive types would result in composed types.
+- Fixed a concurrency issue with imports management.
+- Fixed a bug where Java request options type could conflict with generated types.
+- Fixed a bug where CSharp serialization/deserialization names for properties would always be lowercased. [#1830](https://github.com/microsoft/kiota/issues/1830)
+- Fixed a regression where the incorrect schema would be selected in an AllOf collection to generate incorrect type inheritance.
+- Fixed a bug where discriminator information could contain non-derived types. [#1833](https://github.com/microsoft/kiota/issues/1833)
+- Fixes a bug where mapping value would be missing from factories. [#1833](https://github.com/microsoft/kiota/issues/1833)
+- Update go serializers and deserializers to use abstractions utils
+
+## [0.5.1] - 2022-09-09
+
+### Added
+
+- Exempts read only properties from being serialized and sent to the service. [#1828](https://github.com/microsoft/kiota/issues/1828)
+
+### Changed
+
+- Fixed a regression where parse node parameter type for factories would be incorrect in Go, Ruby, Swift, Java and TypeScript.
+
+## [0.5.0] - 2022-09-08
+
+### Added
+
+- Added support for range (2XX) responses. [#1699](https://github.com/microsoft/kiota/issues/1699)
+- Added none output formatter to CLI commons. (Shell)
+- Added 'Accept' field of http request header in Ruby.  [#1660](https://github.com/microsoft/kiota/issues/1660)
+- Added support for text serialization in Python. [#1406](https://github.com/microsoft/kiota/issues/1406)
+- Added support for composed types (union, intersection) in CSharp, Java and Go. [#1411](https://github.com/microsoft/kiota/issues/1411)
+- Added support for implicit discriminator mapping.
+- Added support for default values of enum properties in CSharp, Java and Go.
+
+### Changed
+
+- Fixed a bug where Go clients would panic in case of nil response value.
+- Fixed a bug to properly add request headers to Nethttp requests in Ruby. 
+- Fixed a bug to properly reject invalid URLs in Ruby.
+- Fixed an issue with require statements being generated instead of require relative in Ruby. 
+- Updated AdditionDataHolder with the correct namespace. (Ruby)
+- Removed/fixed passing in the current instance to fields deserializers in Ruby. [#1663](https://github.com/microsoft/kiota/issues/1663)
+- Fix issue with duplicate variable declaration in command handlers (Shell)
+- Update namespace qualification algorithm (helps in resolving when a type name appears in multiple namespaces) to use case insensitive string comparison (CSharp).
+- Fix an issue where namespace reserved name replacement would not include replacing import names in the declared areas in CSharp. [#1799](https://github.com/microsoft/kiota/issues/1799)
+- Removed Python abstractions, http, authentication and serialization packages
+- Fixed an issue with generating the incorrect serialized type name and require statement for get/post methods (Ruby).
+- Remove all overloads for GO request executors
+- Adds a context object in all GO requests
+- Remove all overloads for GO request executors and Adds a context object in all GO requests [GO#176](https://github.com/microsoftgraph/msgraph-sdk-go/issues/176)
+- Fixed a bug where the Hashing method for type names differentiation could lock the process.
+- Fixed a bug where CSharp declaration writer would add usings for inner classes.
+- Fixed a bug with inline schema class naming.
+- Fixed a bug where symbols starting with a number would be invalid.
+- Fixed a bug where classes could end up with duplicated methods.
+- Fixed a bug where Go writer would try to import multiple times the same symbol.
+- Fixed a bug where the core generator engine would fail to recognize meaningful schemas.
+- Fixed a bug where Go and Java inner class imports would be missing.
+- Fixed a bug where Go and Java collection bodies would not generate properly.
+- Aligns request options types in Java with other collections type.
+- Fixed a bug where Java would skip duplicated imports instead of deduplicating them.
+- Fixed a bug where Java would not convert date types for query parameters.
+- Fixed a bug where Java doc comments could contain invalid characters.
+- Fixed a bug where function parameters would be reodered incorrectly in dotnet[#1822](https://github.com/microsoft/kiota/issues/1822)
+
+## [0.4.0] - 2022-08-18
+
+### Added
+
+- Updated test suite and tooling for python abstractions and core packages. [#1761](https://github.com/microsoft/kiota/issues/367)
 - Added support for no-content responses in python abstractions and http packages. [#1630](https://github.com/microsoft/kiota/issues/1459)
 - Added support for vendor-specific content types in python. [#1631](https://github.com/microsoft/kiota/issues/1463)
 - Simplified field deserializers for json in Python. [#1632](https://github.com/microsoft/kiota/issues/1492)
+- Adds python code generation support. [#1200](https://github.com/microsoft/kiota/issues/163)
+- Added native type support for Duration, Time Only, and Date Only in Ruby. [#1644](https://github.com/microsoft/kiota/issues/1644)
 - Added a `--additional-data` argument to generate the AdditionalData properties [#1772](https://github.com/microsoft/kiota/issues/1772)
+- Added CAE infrastructure in Ruby by adding an `--additional-properties` parameter to the authenticate method of AuthenticationProvider, the get access token method of the AccessTokenProvider in Ruby. [#1643](https://github.com/microsoft/kiota/issues/1643)
+- Added Kiota authentication library for Ruby. [#421](https://github.com/microsoft/kiota/issues/421)
 
 ### Changed
 
@@ -20,6 +153,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed duplicate properties defined in base types from model serialization and deserialization methods and initialise property defaults in constructor. [#1737](https://github.com/microsoft/kiota/pull/1737)
 - Fixed a bug where the generated code had incorrect casing within a method (Ruby). [#1672](https://github.com/microsoft/kiota/issues/1672)
 - Fixed an issue where duplicate 'require' statements are generated for inner classes in the middle of the file (Ruby). [#1649](https://github.com/microsoft/kiota/issues/1649)
+- Split parsable interface and additional property/data interface in Ruby. [#1654](https://github.com/microsoft/kiota/issues/1654)
+- Changed format of datetimes in Go to be converted to ISO 8601 by default when place in path parameters(Go)
+- Defined the Access Token Provider Interface for Ruby authentication. [#1638](https://github.com/microsoft/kiota/issues/1638)
+- Reduce code verbosity on Go Getters and Setters. [G0#26][https://github.com/microsoftgraph/msgraph-sdk-go-core/issues/26]
+
 
 ## [0.3.0] - 2022-07-08
 
@@ -33,6 +171,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for vendor specific content types(PHP) [#1464](https://github.com/microsoft/kiota/issues/1464)
 - Added support for accept request header (PHP) [#1616](https://github.com/microsoft/kiota/issues/1616)
 - Added Getting Started steps for PHP. [#1642](https://github.com/microsoft/kiota/pull/1642)
+- Defined the Access Token Provider interface (Ruby) [#1638](https://github.com/microsoft/kiota/issues/1638)
+- Added Continuous Access Evalution infrastructure (Ruby) [#1643](https://github.com/microsoft/kiota/issues/1643)
 - Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
 
 ### Changed

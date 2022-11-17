@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 require "microsoft_kiota_serialization"
-# require_relative "./../lib/microsoft_kiota_serialization"
 
 Dir["#{File.dirname(__FILE__)}/./../lib/*.rb"].each { |f| load(f) }
 

@@ -65,3 +65,5 @@ components:
           type: string
         subject:
           type: string
+        Notes:
+          type: string

@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 
 /// <summary>
 /// Marker interface for type testing
@@ -41,17 +41,18 @@ public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumen
     public bool IsOfKind(params T[] kinds) {
         return kinds?.Contains(Kind) ?? false;
     }
-    public CodeProperty GetPropertyOfKind(CodePropertyKind kind) =>
+    public CodeProperty GetPropertyOfKind(params CodePropertyKind[] kind) =>
     Properties.FirstOrDefault(x => x.IsOfKind(kind));
-    public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>().OrderBy(x => x.Name);
-    public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>().OrderBy(x => x.Name);
+    public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>().OrderBy(static x => x.Name);
+    public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>().OrderBy(static x => x.Name);
+    public IEnumerable<CodeClass> InnerClasses => InnerChildElements.Values.OfType<CodeClass>().OrderBy(static x => x.Name);
     public bool ContainsMember(string name)
     {
         return InnerChildElements.ContainsKey(name);
     }
     public IEnumerable<CodeMethod> AddMethod(params CodeMethod[] methods)
     {
-        if(methods == null || methods.Any(x => x == null))
+        if(methods == null || methods.Any(static x => x == null))
             throw new ArgumentNullException(nameof(methods));
         if(!methods.Any())
             throw new ArgumentOutOfRangeException(nameof(methods));

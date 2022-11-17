@@ -1,4 +1,6 @@
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go {
@@ -45,7 +47,7 @@ namespace Kiota.Builder.Writers.Go {
                             $"func Parse{typeName}(v string) (interface{{}}, error) {{");
             writer.IncreaseIndent();
             writer.WriteLine($"result := {enumOptions.First().Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
-            writer.WriteLine($"switch v {{");
+            writer.WriteLine("switch v {");
             writer.IncreaseIndent();
             foreach (var item in enumOptions) {
                 writer.WriteLine($"case \"{item.SerializationName ?? item.Name}\":");

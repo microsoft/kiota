@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 
 public abstract class CodeTerminalWithKind<T> : CodeTerminal where T : Enum {
     public T Kind { get; set; }

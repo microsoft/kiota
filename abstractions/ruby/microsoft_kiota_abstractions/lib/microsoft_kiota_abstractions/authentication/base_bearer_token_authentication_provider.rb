@@ -1,27 +1,30 @@
+# frozen_string_literal: true
+
 require 'concurrent'
+require_relative './authentication_provider'
+require_relative './access_token_provider'
 
 module MicrosoftKiotaAbstractions
- class BaseBearerTokenAuthenticationProvider
+  # Provides a base class for implementing AuthenticationProvider for Bearer token scheme
+  class BaseBearerTokenAuthenticationProvider
+    include MicrosoftKiotaAbstractions::AccessTokenProvider
     include MicrosoftKiotaAbstractions::AuthenticationProvider
     include Concurrent::Async
+    def initialize(access_token_provider)
+      raise StandardError, 'access_token_provider parameter cannot be nil' if access_token_provider.nil?
+
+      @access_token_provider = access_token_provider
+    end 
 
     AUTHORIZATION_HEADER_KEY = 'Authorization'
-    def authenticate_request(request)
-      if !request
-        raise StandardError, 'request cannot be null'
-      end
-      if !request.headers.has_key?(AUTHORIZATION_HEADER_KEY) 
-        token = self.get_authorization_token(request)
-        if !token
-          raise StandardError, 'Could not get an authorization token'
-        end
-        request.headers[AUTHORIZATION_HEADER_KEY] = 'Bearer ' + token
-      end
-    end
+    def authenticate_request(request, additional_properties = {})
 
-    def get_authorization_token(request)
-      raise NotImplementedError, 'get_authorization_token must be implemented'
+      raise StandardError, 'Request cannot be null' if request.nil?
+      return if request.headers.key?(AUTHORIZATION_HEADER_KEY)
+
+      token = @access_token_provider.get_authorization_token(request.uri, additional_properties)
+
+      request.headers[AUTHORIZATION_HEADER_KEY] = "Bearer #{token}" unless token.nil?
     end
   end
 end
-  

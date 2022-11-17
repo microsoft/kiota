@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventionService>
@@ -16,11 +17,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
-        if (codeElement == null) throw new ArgumentNullException(nameof(codeElement));
-        if (codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
-        if (writer == null) throw new ArgumentNullException(nameof(writer));
-        if (codeElement.Parent is CodeFunction) return;
-        if (!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
+        ArgumentNullException.ThrowIfNull(codeElement);
+        if(codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
+        ArgumentNullException.ThrowIfNull(writer);
+        if(codeElement.Parent is CodeFunction) return;
+        if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
         localConventions = new TypeScriptConventionService(writer); //because we allow inline type definitions for methods parameters
         var returnType = localConventions.GetTypeString(codeElement.ReturnType, codeElement);
@@ -130,11 +131,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterLowerCase();
         WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
-        writer.WriteLine($"if ({requestAdapterPropertyName}.baseUrl === undefined || {requestAdapterPropertyName}.baseUrl === \"\") {{");
-        writer.IncreaseIndent();
-        writer.WriteLine($"{requestAdapterPropertyName}.baseUrl = \"{method.BaseUrl}\";");
-        writer.CloseBlock();
-        if (backingStoreParameter != null)
+        if(!string.IsNullOrEmpty(method.BaseUrl)) {
+            writer.WriteLine($"if ({requestAdapterPropertyName}.baseUrl === undefined || {requestAdapterPropertyName}.baseUrl === \"\") {{");
+            writer.IncreaseIndent();
+            writer.WriteLine($"{requestAdapterPropertyName}.baseUrl = \"{method.BaseUrl}\";");
+            writer.CloseBlock();
+        }
+        if(backingStoreParameter != null)
             writer.WriteLine($"this.{requestAdapterPropertyName}.enableBackingStore({backingStoreParameter.Name});");
     }
     private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName)
@@ -163,7 +166,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private CodePropertyKind[] SetterAccessProperties {
         get {
             if (_SetterAccessProperties == null) {
-                _SetterAccessProperties = new CodePropertyKind[] {
+                _SetterAccessProperties = new[] {
                     CodePropertyKind.AdditionalData, //additional data and custom properties need to use the accessors in case of backing store use
                     CodePropertyKind.Custom
                 }.Except(DirectAccessProperties)
@@ -336,7 +339,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                                             ?.Name
                                             ?.ToFirstCharacterLowerCase();
         writer.WriteLine($"const requestInfo = this.{generatorMethodName}(");
-        var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration }
+        var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
                                         .Select(x => x?.Name).Where(x => x != null);
         if (requestInfoParameters.Any())
         {
@@ -361,7 +364,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             }
             writer.CloseBlock("};");
         }
-        writer.WriteLine($"return this.requestAdapter?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler, {errorMappingVarName}) ?? Promise.reject(new Error('http core is null'));");
+        writer.WriteLine($"return this.requestAdapter?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler, {errorMappingVarName}) ?? Promise.reject(new Error('request adapter is null'));");
     }
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName)
     {
@@ -515,7 +518,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             writer.WriteLine(localConventions.DocCommentEnd);
         }
     }
-    private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
+    private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid)
     {
         WriteMethodPrototypeInternal(code, writer, returnType, isVoid, localConventions, false);

@@ -1,3 +1,5 @@
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Writers.TypeScript {
     public class CodeBlockEndWriter : ICodeElementWriter<BlockEnd>
     {

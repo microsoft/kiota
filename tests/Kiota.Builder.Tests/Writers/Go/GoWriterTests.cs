@@ -1,7 +1,10 @@
 using System;
+
+using Kiota.Builder.Writers.Go;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Go.Tests {
+namespace Kiota.Builder.Tests.Writers.Go {
     public class GoWriterTests {
         [Fact]
         public void Instanciates() {

@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.Extensions;
+﻿using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConventionService>

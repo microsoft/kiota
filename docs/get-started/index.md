@@ -19,7 +19,7 @@ You can download the latest version from the [releases page](https://github.com/
 
 ## Install as .NET tool
 
-If you have the [.NET SDK](https://dotnet.microsoft.com/download) installed, you can install Kiota as a [.NET tool](https://docs.microsoft.com/dotnet/core/tools/global-tools).
+If you have the [.NET SDK](https://dotnet.microsoft.com/download) installed, you can install Kiota as a [.NET tool](https://learn.microsoft.com/dotnet/core/tools/global-tools).
 
 ## Install the .NET tool
 
@@ -36,7 +36,7 @@ You can run Kiota in our Docker container with one of the following commands.
 ```shell
 docker run -v /some/output/path:/app/output \
 -v /some/input/description.yml:/app/openapi.yml \
-mcr.microsoft.com/kiota/generator --language csharp -n samespaceprefix
+mcr.microsoft.com/openapi/kiota generate --language csharp -n samespaceprefix
 ```
 
 > **Note:** you can alternatively use the `--openapi` parameter with a URI instead of volume mapping.
@@ -44,8 +44,8 @@ mcr.microsoft.com/kiota/generator --language csharp -n samespaceprefix
 To generate a SDK from an online OpenAPI description and into the current directory:
 
 ```shell
-docker run -v ${PWD}:/app/output mcr.microsoft.com/kiota/generator \
---language typescript -n gfx -d \
+docker run -v ${PWD}:/app/output mcr.microsoft.com/openapi/kiota \
+generate --language typescript -n gfx -d \
 https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml
 ```
 
@@ -59,10 +59,10 @@ https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/open
     dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -r win-x64
     ```
 
-1. Navigate to the output directory (usually under `src/kiota/bin/Release/net6.0`).
+1. Navigate to the output directory (usually under `src/kiota/bin/Release/net7.0`).
 1. Run `kiota.exe ...`.
 
-> **Note:** refer to [.NET runtime identifier catalog](https://docs.microsoft.com/dotnet/core/rid-catalog) so select the appropriate runtime for your platform.
+> **Note:** refer to [.NET runtime identifier catalog](https://learn.microsoft.com/dotnet/core/rid-catalog) so select the appropriate runtime for your platform.
 
 ## Next steps
 

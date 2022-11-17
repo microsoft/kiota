@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 
 public enum CodeMethodKind
 {
@@ -74,10 +74,8 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
 {
     public static CodeMethod FromIndexer(CodeIndexer originalIndexer, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable)
     {
-        if(originalIndexer == null)
-            throw new ArgumentNullException(nameof(originalIndexer));
-        if(indexerClass == null)
-            throw new ArgumentNullException(nameof(indexerClass));
+        ArgumentNullException.ThrowIfNull(originalIndexer);
+        ArgumentNullException.ThrowIfNull(indexerClass);
         var method = new CodeMethod {
             IsAsync = false,
             IsStatic = false,
@@ -139,9 +137,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         parameters.Clear();
     }
-    private readonly CodeParameterOrderComparer parameterOrderComparer = new ();
+    private readonly BaseCodeParameterOrderComparer parameterOrderComparer = new ();
     public IEnumerable<CodeParameter> Parameters { get => parameters.Values.OrderBy(static x => x, parameterOrderComparer); }
-    public bool IsStatic {get;set;} = false;
+    public bool IsStatic {get;set;}
     public bool IsAsync {get;set;} = true;
     public string Description {get; set;}
 
@@ -202,7 +200,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// This is currently used for CommandBuilder methods to get the original name without the Build prefix & Command suffix.
     /// Avoids regex operations
     /// </summary>
-    public string SimpleName { get; set; } = String.Empty;
+    public string SimpleName { get; set; } = string.Empty;
 
     private ConcurrentDictionary<string, CodeTypeBase> errorMappings = new();
     
@@ -224,26 +222,6 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             errorMappings[code] = newType;
         }
     }
-    private ConcurrentDictionary<string, CodeTypeBase> discriminatorMappings = new();
-    /// <summary>
-    /// Gets/Sets the discriminator values for the class where the key is the value as represented in the payload.
-    /// </summary>
-    public IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> DiscriminatorMappings
-    {
-        get
-        {
-            return discriminatorMappings.OrderBy(static x => x.Key);
-        }
-    }
-    /// <summary>
-    /// Gets/Sets the name of the property to use for discrimination during deserialization.
-    /// </summary>
-    public string DiscriminatorPropertyName { get; set; } 
-
-    public bool ShouldWriteDiscriminatorSwitch { get {
-        return !string.IsNullOrEmpty(DiscriminatorPropertyName) && DiscriminatorMappings.Any();
-    } }
-
     public object Clone()
     {
         var method = new CodeMethod {
@@ -264,8 +242,6 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Parent = Parent,
             OriginalIndexer = OriginalIndexer,
             errorMappings = errorMappings == null ? null : new (errorMappings),
-            discriminatorMappings = discriminatorMappings == null ? null : new (discriminatorMappings),
-            DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string,
             acceptedResponseTypes = acceptedResponseTypes == null ? null : new (acceptedResponseTypes),
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
         };
@@ -285,28 +261,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     }
     public void AddErrorMapping(string errorCode, CodeTypeBase type)
     {
-        if(type == null) throw new ArgumentNullException(nameof(type));
+        ArgumentNullException.ThrowIfNull(type);
         if(string.IsNullOrEmpty(errorCode)) throw new ArgumentNullException(nameof(errorCode));
         errorMappings.TryAdd(errorCode, type);
-    }
-
-    public void AddDiscriminatorMapping(string key, CodeTypeBase type)
-    {
-        if(type == null) throw new ArgumentNullException(nameof(type));
-        if(string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
-        discriminatorMappings.TryAdd(key, type);
-    }
-    public CodeTypeBase GetDiscriminatorMappingValue(string key)
-    {
-        if(string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
-        if(discriminatorMappings.TryGetValue(key, out var value))
-            return value;
-        return null;
-    }
-    public void RemoveDiscriminatorMapping(params string[] keys) {
-        ArgumentNullException.ThrowIfNull(keys, nameof(keys));
-        foreach(var key in keys)
-            discriminatorMappings.TryRemove(key, out var _);
     }
     public CodeTypeBase GetErrorMappingValue(string key)
     {

@@ -1,9 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder {
+namespace Kiota.Builder.PathSegmenters {
     public class RubyPathSegmenter : CommonPathSegmenter
     {
         public RubyPathSegmenter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName) { }
@@ -11,7 +12,7 @@ namespace Kiota.Builder {
         {
             return currentElement switch
             {
-                CodeNamespace => new string[] { fileName },// We put barrels inside namespace folders
+                CodeNamespace => new[] { fileName },// We put barrels inside namespace folders
                 _ => Enumerable.Empty<string>(),
             };
         }

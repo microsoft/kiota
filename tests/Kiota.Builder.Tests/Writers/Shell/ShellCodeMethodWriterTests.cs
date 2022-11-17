@@ -1,9 +1,13 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Shell.Tests;
+namespace Kiota.Builder.Tests.Writers.Shell;
 
 public class ShellCodeMethodWriterTests : IDisposable
 {
@@ -238,19 +242,25 @@ public class ShellCodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.CommandBuilder;
         method.SimpleName = "User";
         // Types: A.B.T1
-        //        A.B.C.T2
-        //        A.B.C.D.T1
-        var ns1 = root.AddNamespace("Test.Name");
-        var ns2 = ns1.AddNamespace("Test.Name.Sub1");
-        var ns3 = ns2.AddNamespace("Test.Name.Sub1.Sub2");
-        var t1 = new CodeClass { Name = "TestClass1", Kind = CodeClassKind.RequestBuilder };
+        //        A.B.C.D.T2
+        //        A.B.C.D.E.F.T1
+        var ns1 = root.AddNamespace("A.B");
+        var ns2 = ns1.AddNamespace("A.B.C.D");
+        var ns3 = ns2.AddNamespace("A.B.C.D.E.F");
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        var t1 = new CodeClass { Name = "TestRequestBuilder", Kind = CodeClassKind.RequestBuilder };
+        var t1a = new CodeClass { Name = "TestRequestBuilder2", Kind = CodeClassKind.RequestBuilder };
         ns1.AddClass(t1);
+        ns1.AddClass(t1a);
         var t2 = parentClass;
         ns2.AddClass(t2);
-        var t1Sub = new CodeClass { Name = "TestClass1", Kind = CodeClassKind.RequestBuilder };
+        var t1Sub = new CodeClass { Name = "TestRequestBuilder", Kind = CodeClassKind.RequestBuilder };
+        var t1Sub2 = new CodeClass { Name = "testRequestBuilder2", Kind = CodeClassKind.RequestBuilder }; // Should match ignoring case
         ns3.AddClass(t1Sub);
+        ns3.AddClass(t1Sub2);
         t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod1", ReturnType = new CodeType() });
         t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod2", ReturnType = new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array } });
+
         method.AccessedProperty = new CodeProperty
         {
             Type = new CodeType
@@ -259,14 +269,30 @@ public class ShellCodeMethodWriterTests : IDisposable
                 TypeDefinition = t1Sub
             }
         };
+        var method2 = new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "methodName2", SimpleName = "Mail", ReturnType = new CodeType { Name = ReturnTypeName } };
+        parentClass.AddMethod(method2);
+
+        t1Sub2.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod1", ReturnType = new CodeType() });
+
+        method2.AccessedProperty = new CodeProperty
+        {
+            Type = new CodeType
+            {
+                Name = "testRequestBuilder2",
+                TypeDefinition = t1Sub2
+            }
+        };
 
         AddRequestProperties();
 
         writer.Write(method);
+        writer.Write(method2);
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var builder = new Test.Name.Sub1.Sub2.TestRequestBuilder", result);
+        Assert.Contains("var builder = new Test.A.B.C.D.E.F.TestRequestBuilder", result);
+        // Test case insensitive match
+        Assert.Contains("var builder = new Test.A.B.C.D.E.F.TestRequestBuilder2", result);
         Assert.Contains("command.AddCommand(builder.BuildTestMethod1());", result);
         Assert.Contains("foreach (var cmd in builder.BuildTestMethod2()) {", result);
         Assert.Contains("command.AddCommand(cmd);", result);

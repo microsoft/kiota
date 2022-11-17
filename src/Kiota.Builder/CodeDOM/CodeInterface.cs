@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Kiota.Builder;
+﻿namespace Kiota.Builder.CodeDOM;
 
 public enum CodeInterfaceKind
 {
@@ -14,6 +10,7 @@ public enum CodeInterfaceKind
 
 public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDeclaration>, ITypeDefinition
 {
+    public CodeClass OriginalClass { get; set; }
 }
 public class InterfaceDeclaration : ProprietableBlockDeclaration
 {

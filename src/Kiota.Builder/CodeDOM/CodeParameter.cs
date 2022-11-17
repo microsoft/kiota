@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 public enum CodeParameterKind
 {
     Custom,
@@ -56,7 +56,7 @@ public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable
         EnsureElementsAreChildren(type);
         type = value;
     }}
-    public bool Optional {get;set;}= false;
+    public bool Optional {get;set;}
     public string Description {get; set;}
     public string DefaultValue {get; set;}
     public string SerializationName { get; set; }

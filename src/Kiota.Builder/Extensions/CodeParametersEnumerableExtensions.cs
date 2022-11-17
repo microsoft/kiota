@@ -1,7 +1,9 @@
-﻿using System.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
 
-namespace Kiota.Builder;
+using Kiota.Builder.CodeDOM;
+
+namespace Kiota.Builder.Extensions;
 public static class CodeParametersEnumerableExtensions {
     public static CodeParameter OfKind(this IEnumerable<CodeParameter> parameters, CodeParameterKind kind) {
         return parameters.FirstOrDefault(x => x.IsOfKind(kind));

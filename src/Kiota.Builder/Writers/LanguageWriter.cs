@@ -3,14 +3,18 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.PathSegmenters;
 using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Writers.Go;
 using Kiota.Builder.Writers.Java;
+using Kiota.Builder.Writers.Php;
+using Kiota.Builder.Writers.Python;
 using Kiota.Builder.Writers.Ruby;
 using Kiota.Builder.Writers.Shell;
-using Kiota.Builder.Writers.TypeScript;
-using Kiota.Builder.Writers.Php;
 using Kiota.Builder.Writers.Swift;
+using Kiota.Builder.Writers.TypeScript;
 
 namespace Kiota.Builder.Writers
 {
@@ -20,14 +24,14 @@ namespace Kiota.Builder.Writers
         private TextWriter writer;
         private const int IndentSize = 4;
         private static readonly string indentString = Enumerable.Repeat(" ", 1000).Aggregate((x, y) => x + y);
-        private int currentIndent = 0;
+        private int currentIndent;
 
         /// <summary>
         /// This method must be called before you can use the writer method
         /// </summary>
         /// <param name="writer"></param>
         /// <remarks>Passing this to the constructor is problematic because for writing to files, an instance of this
-        /// class is needed to get the file suffix to be able to create the filestream to create the writer.
+        /// class is needed to get the file suffix to be able to create the file stream to create the writer.
         /// By making this a separate step, we can instantiate the LanguageWriter, then get the suffix, then create the writer.</remarks>
         public void SetTextWriter(TextWriter writer)
         {
@@ -63,8 +67,14 @@ namespace Kiota.Builder.Writers
         }
         internal void WriteLines(params string[] lines) {
             foreach(var line in lines) {
-                WriteLine(line, true);
+                WriteLine(line);
             }
+        }
+        internal void StartBlock(string symbol = "{", bool increaseIndent = true)
+        {
+            WriteLine(symbol);
+            if (increaseIndent)
+                IncreaseIndent();
         }
         internal void CloseBlock(string symbol = "}", bool decreaseIndent = true)
         {
@@ -135,6 +145,7 @@ namespace Kiota.Builder.Writers
                 GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName, usesBackingStore),
                 GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.PHP => new PhpWriter(outputPath, clientNamespaceName),
+                GenerationLanguage.Python => new PythonWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.Go => new GoWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.Shell => new ShellWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.Swift => new SwiftWriter(outputPath, clientNamespaceName),

@@ -1,6 +1,7 @@
-﻿using Kiota.Builder.Extensions;
+﻿using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder
+namespace Kiota.Builder.PathSegmenters
 {
     public class PhpPathSegmenter : CommonPathSegmenter
     {

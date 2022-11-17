@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 
 /// <summary>
 /// 
@@ -13,7 +13,7 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
     public V StartBlock {get; set;}
     protected ConcurrentDictionary<string, CodeElement> InnerChildElements {get; private set;} = new (StringComparer.OrdinalIgnoreCase);
     public U EndBlock {get; set;}
-    public CodeBlock():base()
+    public CodeBlock()
     {
         StartBlock = new V { Parent = this };
         EndBlock = new U { Parent = this };
@@ -22,8 +22,7 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
     {
         if(innerOnly)
             return InnerChildElements.Values;
-        else
-            return new CodeElement[] { StartBlock, EndBlock }.Union(InnerChildElements.Values);
+        return new CodeElement[] { StartBlock, EndBlock }.Union(InnerChildElements.Values);
     }
     public void RemoveChildElement<T>(params T[] elements) where T: CodeElement {
         if(elements == null) return;
@@ -60,11 +59,19 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
                 // indexer retrofitted to method in the parent request builder on the path and conflicting with the collection request builder property
                 returnedValue = InnerChildElements.GetOrAdd($"{element.Name}-indexerbackcompat", element);
                 added = true;
-            } else if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor)) {
-                // allows for methods overload
-                var methodOverloadNameSuffix = currentMethod.Parameters.Any() ? currentMethod.Parameters.Select(x => x.Name).OrderBy(x => x).Aggregate((x, y) => x + y) : "1";
-                returnedValue = InnerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", element);
-                added = true;
+            } else if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor) &&
+                     returnedValue is CodeMethod existingMethod) {
+                var currentMethodParameterNames = currentMethod.Parameters.Select(static x => x.Name).ToHashSet();
+                var returnedMethodParameterNames = existingMethod.Parameters.Select(static x => x.Name).ToHashSet();
+                if(currentMethodParameterNames.Count != returnedMethodParameterNames.Count ||
+                    currentMethodParameterNames.Union(returnedMethodParameterNames)
+                                                .Except(currentMethodParameterNames.Intersect(returnedMethodParameterNames))
+                                                .Any()) {
+                    // allows for methods overload
+                    var methodOverloadNameSuffix = currentMethodParameterNames.Any() ? currentMethodParameterNames.OrderBy(static x => x).Aggregate(static (x, y) => x + y) : "1";
+                    returnedValue = InnerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", element);
+                    added = true;
+                }
             }
 
         if(!added && returnedValue.GetType() != element.GetType())
@@ -84,8 +91,9 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
             foreach(var childElement in InnerChildElements.Values.OfType<IBlock>())
                 result.AddRange(childElement.FindChildrenByName<T>(childName));
             return result;
-        } else
-            return Enumerable.Empty<T>();
+        }
+
+        return Enumerable.Empty<T>();
     }
     public T FindChildByName<T>(string childName, bool findInChildElements = true) where T: ICodeElement {
         if(string.IsNullOrEmpty(childName))
@@ -96,9 +104,9 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
 
         if(InnerChildElements.TryGetValue(childName, out var result) && result is T castResult)
             return castResult;
-        else if(findInChildElements)
+        if(findInChildElements)
             foreach(var childElement in InnerChildElements.Values.OfType<IBlock>()) {
-                var childResult = childElement.FindChildByName<T>(childName, true);
+                var childResult = childElement.FindChildByName<T>(childName);
                 if(childResult != null)
                     return childResult;
             }
@@ -107,26 +115,28 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
 }
 public class BlockDeclaration : CodeTerminal
 {
-    private readonly List<CodeUsing> usings = new ();
-    public IEnumerable<CodeUsing> Usings => usings;
+    private readonly ConcurrentDictionary<CodeUsing, bool> usings = new (); // To avoid concurrent access issues
+    public IEnumerable<CodeUsing> Usings => usings.Keys;
     public void AddUsings(params CodeUsing[] codeUsings) {
-        if(codeUsings == null || codeUsings.Any(x => x == null))
+        if(codeUsings == null || codeUsings.Any(static x => x == null))
             throw new ArgumentNullException(nameof(codeUsings));
         EnsureElementsAreChildren(codeUsings);
-        usings.AddRange(codeUsings);
+        foreach (var codeUsing in codeUsings)
+            usings.TryAdd(codeUsing, true);
     }
     public void RemoveUsings(params CodeUsing[] codeUsings)
     {
-        if(codeUsings == null || codeUsings.Any(x => x == null))
+        if(codeUsings == null || codeUsings.Any(static x => x == null))
             throw new ArgumentNullException(nameof(codeUsings));
         foreach(var codeUsing in codeUsings)
-            usings.Remove(codeUsing);
+            usings.TryRemove(codeUsing, out var _);
     }
     public void RemoveUsingsByDeclarationName(params string[] names) {
         if(names == null || names.Any(x => string.IsNullOrEmpty(x)))
             throw new ArgumentNullException(nameof(names));
-        var namesAsHashset = names.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        usings.RemoveAll(x => namesAsHashset.Contains(x.Declaration?.Name));
+        var namesAsHashSet = names.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach(var usingToRemove in usings.Keys.Where(x => namesAsHashSet.Contains(x.Declaration?.Name)))
+            usings.TryRemove(usingToRemove, out var _);
     }
 }
 public class BlockEnd : CodeTerminal

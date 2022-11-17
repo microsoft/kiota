@@ -12,6 +12,7 @@ The following is a minimal OpenAPI description that describes how to call the `/
 - [Build SDKs for Java](java.md)
 - [Build SDKs for Ruby](ruby.md)
 - [Build SDKs for TypeScript](typescript.md)
+- [Build SDKs for Python](python.md)
 
 ```yaml
 openapi: 3.0.3

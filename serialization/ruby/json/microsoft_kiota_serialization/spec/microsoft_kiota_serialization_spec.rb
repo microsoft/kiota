@@ -20,7 +20,7 @@ RSpec.describe MicrosoftKiotaSerialization do
     file = File.open("#{File.dirname(__FILE__)}/sample.json")
     data = file.read
     file.close
-    message_response = MicrosoftKiotaSerialization::JsonParseNodeFactory.new().get_parse_node("application/json", data)
+    message_response = MicrosoftKiotaSerialization::JsonParseNodeFactory.new.get_parse_node("application/json", data)
     object_value = message_response.get_object_value(Files::MessagesResponse)
     
     ## Object Value tests
@@ -46,8 +46,8 @@ RSpec.describe MicrosoftKiotaSerialization do
     expect(object_value.value[0].guid_id.instance_of? UUIDTools::UUID).to eq(true)
 
     ## Date tests
-    expect(object_value.value[0].received_date_time.instance_of? Time).to eq(true)
-    expect(object_value.value[0].sent_date_time.instance_of? Time).to eq(true)
+    expect((object_value.value[0].received_date_time).instance_of? DateTime).to eq(true)
+    expect((object_value.value[0].sent_date_time).instance_of? DateTime).to eq(true)
     
     ## Collection of Primitive values tests
     expect(object_value.additional_data["primativeValues"].instance_of? Array).to eq(true)

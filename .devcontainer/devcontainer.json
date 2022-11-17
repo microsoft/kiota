@@ -39,8 +39,9 @@
 		"ms-vscode.powershell",
 		"rebornix.ruby",
 		"visualstudioexptteam.vscodeintellicode",
-        "streetsidesoftware.code-spell-checker",
-        "sswg.swift-lang"
+		"streetsidesoftware.code-spell-checker",
+		"sswg.swift-lang",
+		"ms-dotnettools.blazorwasm-companion"
 	],
 	"remoteUser": "vscode",
 	"features": {

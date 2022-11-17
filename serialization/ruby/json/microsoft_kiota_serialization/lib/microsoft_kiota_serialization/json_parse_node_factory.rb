@@ -1,5 +1,5 @@
-require 'microsoft_kiota_abstractions'
 require 'json'
+require 'microsoft_kiota_abstractions'
 
 module MicrosoftKiotaSerialization
   class JsonParseNodeFactory

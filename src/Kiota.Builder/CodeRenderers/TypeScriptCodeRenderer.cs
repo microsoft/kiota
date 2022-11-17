@@ -1,5 +1,8 @@
 ﻿using System.Linq;
 
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
+
 namespace Kiota.Builder.CodeRenderers
 {
     public class TypeScriptCodeRenderer : CodeRenderer

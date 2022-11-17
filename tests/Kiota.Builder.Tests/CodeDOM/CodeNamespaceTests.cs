@@ -1,9 +1,10 @@
 ﻿using System;
-using System.IO;
-using Kiota.Builder.Writers.CSharp;
+
+using Kiota.Builder.CodeDOM;
+
 using Xunit;
 
-namespace Kiota.Builder.Tests
+namespace Kiota.Builder.Tests.CodeDOM
 {
     public class CodeNamespaceTests
     {

@@ -1,8 +1,12 @@
 using System;
 using System.IO;
+
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Writers;
+
 using Xunit;
 
-namespace Kiota.Builder.Writers.Java.Tests;
+namespace Kiota.Builder.Tests.Writers.Java;
 public class CodePropertyWriterTests: IDisposable {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";

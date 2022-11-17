@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Kiota.Builder
+namespace Kiota.Builder.CodeDOM
 {
     public class CodeType : CodeTypeBase, ICloneable
     {
@@ -9,7 +9,7 @@ namespace Kiota.Builder
             get;
             set;
         }
-        public bool IsExternal {get;set;} = false;
+        public bool IsExternal {get;set;}
 
         public override object Clone()
         {

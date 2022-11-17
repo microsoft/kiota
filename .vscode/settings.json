@@ -21,11 +21,21 @@
         "todoclient"
     ],
     "cSpell.words": [
+        "allof",
+        "apisguru",
+        "autoload",
+        "Contoso",
         "deserialization",
+        "deserializers",
+        "dumpautoload",
         "getenv",
+        "ghes",
         "Kiota",
+        "Nethttplibrary",
         "npmrc",
         "openapi",
+        "phpleague",
+        "samespaceprefix",
         "serializers"
     ],
     "java.configuration.updateBuildConfiguration": "automatic",

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Refiners {
     public class CodeUsingComparer : IEqualityComparer<CodeUsing>
     {

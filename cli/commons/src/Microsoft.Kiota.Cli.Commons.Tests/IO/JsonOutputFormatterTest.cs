@@ -58,5 +58,17 @@ public class JsonOutputFormatterTest
 
             Assert.Equal(expected, _console.Output);
         }
+
+        [Fact]
+        public async Task Write_Nothing_Given_A_Null_Stream()
+        {
+            var formatter = new JsonOutputFormatter(_console);
+            Stream? stream = null;
+
+            await formatter.WriteOutputAsync(stream, new JsonOutputFormatterOptions(false));
+            var expected = "";
+
+            Assert.Equal(expected, _console.Output);
+        }
     }
 }

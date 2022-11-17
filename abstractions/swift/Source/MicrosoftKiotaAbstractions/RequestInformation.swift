@@ -4,7 +4,6 @@ import URITemplate
 public enum RequestInformationErrors : Error {
     case emptyUrlTemplate
     case emptyContentType
-    case itemsCannotBeNilOrEmpty
     case unableToExpandUriTemplate
     case invalidRawUrl
 }
@@ -73,19 +72,22 @@ public class RequestInformation {
     public func getRequestOptions() -> [RequestOption] {
         return [RequestOption](options.values)
     }
-    public func setContentFromParsable<T: Parsable>(requestAdapter: RequestAdapter, contentType: String, items: T...) throws {
+    public func setContentFromParsable<T: Parsable>(requestAdapter: RequestAdapter, contentType: String, item: T) throws {
         guard contentType != "" else {
             throw RequestInformationErrors.emptyContentType
         }
-        guard items.count > 0 else {
-            throw RequestInformationErrors.itemsCannotBeNilOrEmpty
+        if let writer = try? requestAdapter.serializationWriterFactory.getSerializationWriter(contentType: contentType) {
+            try writer.writeObjectValue(key: "", value: item)
+            self.content = try? writer.getSerializedContent()
+            self.headers[contentTypeHeaderKey] = contentType
+        }
+    }
+    public func setContentFromParsableCollection<T: Parsable>(requestAdapter: RequestAdapter, contentType: String, items: [T]) throws {
+        guard contentType != "" else {
+            throw RequestInformationErrors.emptyContentType
         }
         if let writer = try? requestAdapter.serializationWriterFactory.getSerializationWriter(contentType: contentType) {
-            if(items.count == 1) {
-                try writer.writeObjectValue(key: "", value: items[0])
-            } else {
-                try writer.writeCollectionOfObjectValues(key: "", value: items)
-            }
+            try writer.writeCollectionOfObjectValues(key: "", value: items)
             self.content = try? writer.getSerializedContent()
             self.headers[contentTypeHeaderKey] = contentType
         }

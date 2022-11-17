@@ -1,7 +1,9 @@
-require 'microsoft_kiota_abstractions'
 require 'time'
+require 'date'
 require 'json'
 require 'uuidtools'
+require 'microsoft_kiota_abstractions'
+
 
 module MicrosoftKiotaSerialization
   class JsonParseNode
@@ -31,7 +33,19 @@ module MicrosoftKiotaSerialization
     end
 
     def get_date_value
+      Date.parse(@current_node)
+    end
+
+    def get_time_value()
       Time.parse(@current_node)
+    end
+
+    def get_date_time_value()
+      DateTime.parse(@current_node)
+    end
+
+    def get_duration_value()
+      MicrosoftKiotaAbstractions::ISODuration.new(@current_node)
     end
 
     def get_collection_of_primitive_values(type)
@@ -46,8 +60,14 @@ module MicrosoftKiotaSerialization
           current_parse_node.get_float_value
         when "Boolean"
           current_parse_node.get_float_value
+        when DateTime
+          current_parse_node.get_date_time_value
         when Time
-          current_parse_node.get_date_value
+          current_parse_node.get_time_value
+        when Date 
+          current_parse_node.get_date_value 
+        when MicrosoftKiotaAbstractions::ISODuration
+          current_parse_node.get_duration_value
         when UUIDTools::UUID
           current_parse_node.get_guid_value
         else
@@ -78,7 +98,7 @@ module MicrosoftKiotaSerialization
       @current_node.each do |k, v|
         deserializer = fields[k]
         if deserializer
-          deserializer.call(item, JsonParseNode.new(v))
+          deserializer.call(JsonParseNode.new(v))
         elsif item.additional_data
           item.additional_data[k] = v
         else

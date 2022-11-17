@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 
+using Kiota.Builder.CodeDOM;
+
 namespace Kiota.Builder.Writers.Swift;
 public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWriter<T, SwiftConventionService> 
     where T : ProprietableBlockDeclaration
@@ -8,8 +10,8 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
     protected CodeProprietableBlockDeclarationWriter(SwiftConventionService conventionService) : base(conventionService) {}
     public override void WriteCodeElement(T codeElement, LanguageWriter writer)
     {
-        if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
-        if(writer == null) throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent?.Parent is CodeNamespace ns)
         {
             var importSegments = codeElement

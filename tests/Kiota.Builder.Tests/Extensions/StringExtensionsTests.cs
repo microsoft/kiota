@@ -1,10 +1,12 @@
-﻿using Xunit;
+﻿using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder.Extensions.Tests {
+using Xunit;
+
+namespace Kiota.Builder.Tests.Extensions {
     public class StringExtensionsTests {
         [Fact]
         public void Defensive() {
-            Assert.Equal(StringExtensions.GetNamespaceImportSymbol((string)null), string.Empty);
+            Assert.Equal(StringExtensions.GetNamespaceImportSymbol(null), string.Empty);
         }
         [Fact]
         public void ToLowerCase() {
@@ -28,7 +30,7 @@ namespace Kiota.Builder.Extensions.Tests {
             Assert.Equal(string.Empty, "-".ToCamelCase());
             Assert.Equal("toto", "toto".ToCamelCase());
             Assert.Equal("totoCamelCase", "toto-camel-case".ToCamelCase());
-            Assert.Equal("totoCamelCase", "toto.camel~case".ToCamelCase(".", "~"));
+            Assert.Equal("totoCamelCase", "toto.camel~case".ToCamelCase('.', '~'));
         }
         [Fact]
         public void ToPascalCase() {
@@ -53,6 +55,9 @@ namespace Kiota.Builder.Extensions.Tests {
             Assert.Equal("toto", "Toto".ToSnakeCase());
             Assert.Equal("microsoft_graph_message_content", "microsoft-Graph-Message-Content".ToSnakeCase());
             Assert.Equal("microsoft_graph_message_content", "microsoftGraphMessageContent".ToSnakeCase());
+            Assert.Equal("microsoft_graph_message_content", "microsoft_Graph_Message_Content".ToSnakeCase());
+            Assert.Equal("test_value", "testValue<WithStrippedContent".ToSnakeCase());
+            Assert.Equal("test", "test<Value".ToSnakeCase());
         }
         [Fact]
         public void NormalizeNameSpaceName() {
@@ -67,6 +72,7 @@ namespace Kiota.Builder.Extensions.Tests {
         [InlineData("@odata.changed", "OdataChanged")]
         [InlineData("specialLast@", "specialLast")]
         [InlineData("kebab-cased", "kebabCased")]
+        [InlineData("123Spelled", "OneTwoThreeSpelled")]
         [Theory]
         public void CleansUpSymbolNames(string input, string expected) {
             Assert.Equal(expected, input.CleanupSymbolName());

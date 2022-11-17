@@ -37,15 +37,15 @@ gradle init --dsl groovy --test-framework junit --type java-application --projec
 
 Edit **./app/build.gradle** to add the following dependencies.
 
-> **Note:** Find current version numbers for Kiota packages at [GitHub](https://github.com/orgs/microsoft/packages?repo_name=kiota&ecosystem=maven).
+> **Note:** Find current version numbers for Kiota packages at [Nexus Repository Manager](https://oss.sonatype.org/).
 
 ```groovy
-implementation 'com.microsoft.kiota:microsoft-kiota-abstractions:0.0.1-SNAPSHOT'
-implementation 'com.microsoft.kiota:microsoft-kiota-authentication-azure:0.0.1-SNAPSHOT'
-implementation 'com.microsoft.kiota:microsoft-kiota-http-okHttp:0.0.1-SNAPSHOT'
-implementation 'com.microsoft.kiota:microsoft-kiota-serialization-json:0.0.1-SNAPSHOT'
-implementation 'com.microsoft.kiota:microsoft-kiota-serialization-text:0.0.1-SNAPSHOT'
-implementation 'com.azure:azure-identity:1.+'
+implementation 'com.microsoft.kiota:microsoft-kiota-abstractions:0.0.5-SNAPSHOT'
+implementation 'com.microsoft.kiota:microsoft-kiota-authentication-azure:0.0.2-SNAPSHOT'
+implementation 'com.microsoft.kiota:microsoft-kiota-http-okHttp:0.0.5-SNAPSHOT'
+implementation 'com.microsoft.kiota:microsoft-kiota-serialization-json:0.0.2-SNAPSHOT'
+implementation 'com.microsoft.kiota:microsoft-kiota-serialization-text:0.0.2-SNAPSHOT'
+implementation 'com.azure:azure-identity:1.6.1'
 ```
 
 Only the first package, `kiota-abstractions`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
@@ -57,7 +57,7 @@ Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** a
 You can then use the Kiota command line tool to generate the SDK classes.
 
 ```bash
-kiota -l java -d getme.yml -c GetUserApiClient -n getuserclient.apiclient -o ./app/src/main/java/getuserclient/apiclient
+kiota generate -l java -d getme.yml -c GetUserApiClient -n getuserclient.apiclient -o ./app/src/main/java/getuserclient/apiclient
 ```
 
 ## Registering an application in Azure AD
@@ -122,6 +122,7 @@ public class App {
 > **Note:**
 >
 > - If the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.
+> - If the target API relies on an API key for authentication, you can use the **ApiKeyAuthenticationProvider** instead.
 > - If the target API requires an `Authorization bearer <token>` header but doesn't rely on the Microsoft identity platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
 > - If the target API requires any other form of authentication schemes, you can implement the **AuthenticationProvider** interface.
 

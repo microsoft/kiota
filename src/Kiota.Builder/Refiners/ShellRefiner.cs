@@ -1,163 +1,188 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder.Refiners
+namespace Kiota.Builder.Refiners;
+public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 {
-    public class ShellRefiner : CSharpRefiner, ILanguageRefiner
+    public ShellRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        public ShellRefiner(GenerationConfiguration configuration) : base(configuration) { }
-        public override void Refine(CodeNamespace generatedCode)
-        {
+        return Task.Run(() => {
+            cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddDefaultImports(generatedCode, additionalUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
+            cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
+            ConvertUnionTypesToWrapper(generatedCode,
+                _configuration.UsesBackingStore
+            );
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
+            cancellationToken.ThrowIfCancellationRequested();
             AddInnerClasses(generatedCode, false);
             AddParsableImplementsForModelClasses(generatedCode, "IParsable");
             CapitalizeNamespacesFirstLetters(generatedCode);
+            cancellationToken.ThrowIfCancellationRequested();
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);
-            CreateCommandBuilders(generatedCode);
             /* Exclude the following as their names will be capitalized making the change unnecessary in this case sensitive language
-             * code classes, class declarations, property names, using declarations, namespace names
-             * Exclude CodeMethod as the return type will also be capitalized (excluding the CodeType is not enough since this is evaluated at the code method level)
+                * code classes, class declarations, property names, using declarations, namespace names
+                * Exclude CodeMethod as the return type will also be capitalized (excluding the CodeType is not enough since this is evaluated at the code method level)
             */
             ReplaceReservedNames(
                 generatedCode,
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
-                new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod) }
+                new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum) }
             );
+            // Replace the reserved types
+            ReplaceReservedModelTypes(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Object");
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceReservedNamespaceTypeNames(generatedCode, new CSharpReservedTypesProvider(), static x => $"{x}Namespace");
+            AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiException",
+                "Microsoft.Kiota.Abstractions"
+            );
+            AddDiscriminatorMappingsUsingsToParentClasses(
+                generatedCode,
+                "IParseNode"
+            );
+            cancellationToken.ThrowIfCancellationRequested();
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);
-        }
+            cancellationToken.ThrowIfCancellationRequested();
+            CreateCommandBuilders(generatedCode);
+        }, cancellationToken);
+    }
 
-        private static void CreateCommandBuilders(CodeElement currentElement)
+    private static void CreateCommandBuilders(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
-            if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+            // Replace Nav Properties with BuildXXXCommand methods
+            var navProperties = currentClass.GetChildElements().OfType<CodeProperty>().Where(e => e.IsOfKind(CodePropertyKind.RequestBuilder));
+            foreach (var navProp in navProperties)
             {
-                // Replace Nav Properties with BuildXXXCommand methods
-                var navProperties = currentClass.GetChildElements().OfType<CodeProperty>().Where(e => e.IsOfKind(CodePropertyKind.RequestBuilder));
-                foreach (var navProp in navProperties)
-                {
-                    var method = CreateBuildCommandMethod(navProp, currentClass);
-                    currentClass.AddMethod(method);
-                    currentClass.RemoveChildElement(navProp);
-                }
-
-                // Build command for indexers
-                var indexers = currentClass.GetChildElements().OfType<CodeIndexer>();
-                var classHasIndexers = indexers.Any();
-                CreateCommandBuildersFromIndexers(currentClass, indexers);
-
-                // Clone executors & convert to build command
-                var requestExecutors = currentClass.GetChildElements().OfType<CodeMethod>().Where(e => e.IsOfKind(CodeMethodKind.RequestExecutor));
-                CreateCommandBuildersFromRequestExecutors(currentClass, classHasIndexers, requestExecutors);
-
-                // Build root command
-                var clientConstructor = currentClass.GetChildElements().OfType<CodeMethod>().FirstOrDefault(m => m.IsOfKind(CodeMethodKind.ClientConstructor));
-                if (clientConstructor != null)
-                {
-                    var rootMethod = new CodeMethod
-                    {
-                        Name = "BuildRootCommand",
-                        Description = clientConstructor.Description,
-                        IsAsync = false,
-                        Kind = CodeMethodKind.CommandBuilder,
-                        ReturnType = new CodeType { Name = "Command", IsExternal = true },
-                        OriginalMethod = clientConstructor,
-                    };
-                    currentClass.AddMethod(rootMethod);
-                }
+                var method = CreateBuildCommandMethod(navProp, currentClass);
+                currentClass.AddMethod(method);
+                currentClass.RemoveChildElement(navProp);
             }
-            CrawlTree(currentElement, CreateCommandBuilders);
-        }
 
-        private static void CreateCommandBuildersFromRequestExecutors(CodeClass currentClass, bool classHasIndexers, IEnumerable<CodeMethod> requestMethods)
-        {
-            foreach (var requestMethod in requestMethods)
+            // Build command for indexers
+            var indexers = currentClass.GetChildElements().OfType<CodeIndexer>();
+            var classHasIndexers = indexers.Any();
+            CreateCommandBuildersFromIndexers(currentClass, indexers);
+
+            // Clone executors & convert to build command
+            var requestExecutors = currentClass.GetChildElements().OfType<CodeMethod>().Where(e => e.IsOfKind(CodeMethodKind.RequestExecutor));
+            CreateCommandBuildersFromRequestExecutors(currentClass, classHasIndexers, requestExecutors);
+
+            // Build root command
+            var clientConstructor = currentClass.GetChildElements().OfType<CodeMethod>().FirstOrDefault(m => m.IsOfKind(CodeMethodKind.ClientConstructor));
+            if (clientConstructor != null)
             {
-                CodeMethod clone = requestMethod.Clone() as CodeMethod;
-                var cmdName = clone.HttpMethod switch
+                var rootMethod = new CodeMethod
                 {
-                    HttpMethod.Get when classHasIndexers => "List",
-                    HttpMethod.Post when classHasIndexers => "Create",
-                    _ => clone.Name,
-                };
-
-                clone.IsAsync = false;
-                clone.Name = $"Build{cmdName}Command";
-                clone.Description = requestMethod.Description;
-                clone.ReturnType = CreateCommandType();
-                clone.Kind = CodeMethodKind.CommandBuilder;
-                clone.OriginalMethod = requestMethod;
-                clone.SimpleName = cmdName;
-                clone.ClearParameters();
-                currentClass.AddMethod(clone);
-                currentClass.RemoveChildElement(requestMethod);
-            }
-        }
-
-        private static void CreateCommandBuildersFromIndexers(CodeClass currentClass, IEnumerable<CodeIndexer> indexers)
-        {
-            foreach (var indexer in indexers)
-            {
-                var method = new CodeMethod
-                {
-                    Name = "BuildCommand",
+                    Name = "BuildRootCommand",
+                    Description = clientConstructor.Description,
                     IsAsync = false,
                     Kind = CodeMethodKind.CommandBuilder,
-                    OriginalIndexer = indexer
+                    ReturnType = new CodeType { Name = "Command", IsExternal = true },
+                    OriginalMethod = clientConstructor,
                 };
-
-                // ReturnType setter assigns the parent
-                method.ReturnType = CreateCommandType();
-                currentClass.AddMethod(method);
-                currentClass.RemoveChildElement(indexer);
+                currentClass.AddMethod(rootMethod);
             }
         }
+        CrawlTree(currentElement, CreateCommandBuilders);
+    }
 
-        private static CodeType CreateCommandType()
+    private static void CreateCommandBuildersFromRequestExecutors(CodeClass currentClass, bool classHasIndexers, IEnumerable<CodeMethod> requestMethods)
+    {
+        foreach (var requestMethod in requestMethods)
         {
-            return new CodeType
+            CodeMethod clone = requestMethod.Clone() as CodeMethod;
+            var cmdName = clone.HttpMethod switch
             {
-                Name = "Command",
-                IsExternal = true,
+                HttpMethod.Get when classHasIndexers => "List",
+                HttpMethod.Post when classHasIndexers => "Create",
+                _ => clone.Name,
             };
-        }
 
-        private static CodeMethod CreateBuildCommandMethod(CodeProperty navProperty, CodeClass parent)
+            clone.IsAsync = false;
+            clone.Name = $"Build{cmdName}Command";
+            clone.Description = requestMethod.Description;
+            clone.ReturnType = CreateCommandType();
+            clone.Kind = CodeMethodKind.CommandBuilder;
+            clone.OriginalMethod = requestMethod;
+            clone.SimpleName = cmdName;
+            clone.ClearParameters();
+            currentClass.AddMethod(clone);
+            currentClass.RemoveChildElement(requestMethod);
+        }
+    }
+
+    private static void CreateCommandBuildersFromIndexers(CodeClass currentClass, IEnumerable<CodeIndexer> indexers)
+    {
+        foreach (var indexer in indexers)
         {
-            var codeMethod = new CodeMethod
+            var method = new CodeMethod
             {
+                Name = "BuildCommand",
                 IsAsync = false,
-                Name = $"Build{navProperty.Name.ToFirstCharacterUpperCase()}Command",
-                Kind = CodeMethodKind.CommandBuilder
+                Kind = CodeMethodKind.CommandBuilder,
+                OriginalIndexer = indexer,
+                Description = indexer.Description,
             };
-            codeMethod.ReturnType = CreateCommandType();
-            codeMethod.AccessedProperty = navProperty;
-            codeMethod.SimpleName = navProperty.Name;
-            codeMethod.Parent = parent;
-            return codeMethod;
-        }
 
-        private static readonly AdditionalUsingEvaluator[] additionalUsingEvaluators = new AdditionalUsingEvaluator[] {
-            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-                "System.CommandLine",  "Command", "RootCommand", "IConsole"),
-            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-                "Microsoft.Kiota.Cli.Commons.IO", "IOutputFormatter", "IOutputFormatterFactory", "FormatterType", "PageLinkData", "IPagingService"),
-            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-                "Microsoft.Extensions.Hosting", "IHost"),
-            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-                "Microsoft.Extensions.DependencyInjection", "IHost"),
-            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-                "System.Text",  "Encoding"),
+            // ReturnType setter assigns the parent
+            method.ReturnType = CreateCommandType();
+            currentClass.AddMethod(method);
+            currentClass.RemoveChildElement(indexer);
+        }
+    }
+
+    private static CodeType CreateCommandType()
+    {
+        return new CodeType
+        {
+            Name = "Command",
+            IsExternal = true,
         };
     }
+
+    private static CodeMethod CreateBuildCommandMethod(CodeProperty navProperty, CodeClass parent)
+    {
+        var codeMethod = new CodeMethod
+        {
+            IsAsync = false,
+            Name = $"Build{navProperty.Name.ToFirstCharacterUpperCase()}Command",
+            Kind = CodeMethodKind.CommandBuilder,
+            Description = navProperty.Description
+        };
+        codeMethod.ReturnType = CreateCommandType();
+        codeMethod.AccessedProperty = navProperty;
+        codeMethod.SimpleName = navProperty.Name;
+        codeMethod.Parent = parent;
+        return codeMethod;
+    }
+
+    private static readonly AdditionalUsingEvaluator[] additionalUsingEvaluators = {
+        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
+            "System.CommandLine",  "Command", "RootCommand", "IConsole"),
+        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
+            "Microsoft.Kiota.Cli.Commons.IO", "IOutputFormatter", "IOutputFormatterFactory", "FormatterType", "PageLinkData", "IPagingService"),
+        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
+            "Microsoft.Extensions.Hosting", "IHost"),
+        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
+            "Microsoft.Extensions.DependencyInjection", "IHost"),
+        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
+            "System.Text",  "Encoding"),
+    };
 }

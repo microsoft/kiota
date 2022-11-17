@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go;
@@ -15,12 +17,16 @@ public class GoConventionService : CommonLanguageConventionService
     #pragma warning disable CA1822 // Method should be static
     public string AbstractionsHash => "i2ae4187f7daee263371cb1c977df639813ab50ffa529013b7437480d1ec0158f";
     public string SerializationHash => "i878a80d2330e89d26896388a3f487eef27b0a0e6c010c493bf80be1452208f91";
+    public string StringsHash => "ie967d16dae74a49b5e0e051225c5dac0d76e5e38f13dd1628028cbce108c25b6";
+    
+    public string ContextVarTypeName => "context.Context";
+    
     #pragma warning restore CA1822 // Method should be static
     public override string GetAccessModifier(AccessModifier access)
     {
         throw new InvalidOperationException("go uses a naming convention for access modifiers");
     }
-    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
     {
         return $"{parameter.Name.ToFirstCharacterLowerCase()} {GetTypeString(parameter.Type, targetElement)}";
     }
@@ -30,37 +36,37 @@ public class GoConventionService : CommonLanguageConventionService
         var importSymbol = typeString == null || typeString.Length < 2 ? string.Empty : typeString.First() + dot;
         var methodName = typeString.Last().ToFirstCharacterUpperCase();
         if(!string.IsNullOrEmpty(trimEnd) && methodName.EndsWith(trimEnd, StringComparison.OrdinalIgnoreCase)) {
-            methodName = methodName[0..^trimEnd.Length];
+            methodName = methodName[..^trimEnd.Length];
         }
         return $"{importSymbol}{methodPrefix}{methodName}{methodSuffix}";
     }
-    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true) =>
+    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null) =>
         GetTypeString(code, targetElement, includeCollectionInformation, true);
-    public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool addPointerSymbol)
+    public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool addPointerSymbol, bool includeImportSymbol = true)
     {
         if(code is CodeComposedTypeBase) 
             throw new InvalidOperationException($"Go does not support union types, the union type {code.Name} should have been filtered out by the refiner");
-        else if (code is CodeType currentType) {
+        if (code is CodeType currentType) {
             var importSymbol = GetImportSymbol(code, targetElement);
             if(!string.IsNullOrEmpty(importSymbol))
                 importSymbol += ".";
-            var typeName = TranslateType(currentType, true);
+            var typeName = TranslateType(currentType, includeImportSymbol);
             var nullableSymbol = addPointerSymbol && 
-                                currentType.IsNullable &&
-                                currentType.TypeDefinition is not CodeInterface &&
-                                currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None &&
-                                !IsScalarType(currentType.Name) ? "*"
-                                : string.Empty;
+                                 currentType.IsNullable &&
+                                 currentType.TypeDefinition is not CodeInterface &&
+                                 currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None &&
+                                 !IsScalarType(currentType.Name) ? "*"
+                : string.Empty;
             var collectionPrefix = currentType.CollectionKind switch {
-                CodeType.CodeTypeCollectionKind.Array or CodeType.CodeTypeCollectionKind.Complex when includeCollectionInformation => "[]",
+                CodeTypeBase.CodeTypeCollectionKind.Array or CodeTypeBase.CodeTypeCollectionKind.Complex when includeCollectionInformation => "[]",
                 _ => string.Empty,
             };
             if (currentType.ActionOf)
                 return $"func (value {nullableSymbol}{collectionPrefix}{importSymbol}{typeName}) (err error)";
-            else
-                return $"{nullableSymbol}{collectionPrefix}{importSymbol}{typeName}";
+            return $"{nullableSymbol}{collectionPrefix}{importSymbol}{typeName}";
         }
-        else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+
+        throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
 
     public override string TranslateType(CodeType type) => throw new InvalidOperationException("use the overload instead.");
@@ -87,6 +93,7 @@ public class GoConventionService : CommonLanguageConventionService
             "binary" => "[]byte",
             "string" or "float32" or "float64" or "int32" or "int64" => type.Name,
             "String" or "Int64" or "Int32" or "Float32" or "Float64" => type.Name.ToFirstCharacterLowerCase(), //casing hack
+            "context.Context" => "context.Context",
             _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",
         };
     }
@@ -110,24 +117,25 @@ public class GoConventionService : CommonLanguageConventionService
     private string GetImportSymbol(CodeTypeBase currentBaseType, CodeElement targetElement) {
         if(currentBaseType == null || IsPrimitiveType(currentBaseType.Name)) return string.Empty;
         var targetNamespace = targetElement.GetImmediateParentOfType<CodeNamespace>();
-        if(currentBaseType is CodeType currentType) {
+        if(currentBaseType is CodeType currentType)
+        {
             if(currentType.TypeDefinition is IProprietableBlock currentTypDefinition &&
-                currentTypDefinition.Parent is CodeNamespace typeDefNS &&
-                targetNamespace != typeDefNS)
+               currentTypDefinition.Parent is CodeNamespace typeDefNS &&
+               targetNamespace != typeDefNS)
                     return typeDefNS.GetNamespaceImportSymbol();
-            else if(currentType.TypeDefinition is CodeEnum currentEnumDefinition &&
-                currentEnumDefinition.Parent is CodeNamespace enumNS &&
-                targetNamespace != enumNS)
-                    return enumNS.GetNamespaceImportSymbol();
-            else if(currentType.TypeDefinition is null &&
-                    targetElement is IProprietableBlock targetTypeDef) {
-                        var symbolUsing = ((targetTypeDef.Parent as CodeClass)?.StartBlock as BlockDeclaration ?? 
-                                            (targetTypeDef as CodeClass)?.StartBlock as BlockDeclaration ??
-                                            (targetTypeDef as CodeInterface)?.StartBlock as BlockDeclaration)
-                                                        .Usings
-                                                        .FirstOrDefault(x => currentBaseType.Name?.Equals(x.Name, StringComparison.OrdinalIgnoreCase) ?? false);
-                        return symbolUsing == null ? string.Empty : symbolUsing.Declaration.Name.GetNamespaceImportSymbol();
-                    }
+            if(currentType.TypeDefinition is CodeEnum currentEnumDefinition &&
+               currentEnumDefinition.Parent is CodeNamespace enumNS &&
+               targetNamespace != enumNS)
+                return enumNS.GetNamespaceImportSymbol();
+            if(currentType.TypeDefinition is null &&
+               targetElement is IProprietableBlock targetTypeDef) {
+                var symbolUsing = ((targetTypeDef.Parent as CodeClass)?.StartBlock as BlockDeclaration ?? 
+                                   (targetTypeDef as CodeClass)?.StartBlock as BlockDeclaration ??
+                                   (targetTypeDef as CodeInterface)?.StartBlock)
+                    .Usings
+                    .FirstOrDefault(x => currentBaseType.Name?.Equals(x.Name, StringComparison.OrdinalIgnoreCase) ?? false);
+                return symbolUsing == null ? string.Empty : symbolUsing.Declaration.Name.GetNamespaceImportSymbol();
+            }
         }
         return string.Empty;
     }
@@ -170,6 +178,7 @@ public class GoConventionService : CommonLanguageConventionService
     }
     #pragma warning restore CA1822 // Method should be static
     private const string StrConvHash = "i53ac87e8cb3cc9276228f74d38694a208cacb99bb8ceb705eeae99fb88d4d274";
+    private const string TimeFormatHash = "i336074805fc853987abe6f7fe3ad97a6a6f3077a16391fec744f671a015fbd7e";
     private static string GetValueStringConversion(string typeName, string reference) {
         return typeName switch {
             "boolean" => $"{StrConvHash}.FormatBool({reference})",
@@ -177,7 +186,8 @@ public class GoConventionService : CommonLanguageConventionService
             "integer" or "int32" => $"{StrConvHash}.FormatInt(int64({reference}), 10)",
             "long" => $"{StrConvHash}.FormatInt({reference}, 10)",
             "float" or "double" or "decimal" or "float64" or "float32" => $"{StrConvHash}.FormatFloat({reference}, 'E', -1, 64)",
-            "DateTimeOffset" or "Time" or "ISODuration" or "TimeSpan" or "TimeOnly" or "DateOnly" => $"({reference}).String()",
+            "DateTimeOffset" or "Time" => $"({reference}).Format({TimeFormatHash}.RFC3339)", // default to using ISO 8601
+            "ISODuration" or "TimeSpan" or "TimeOnly" or "DateOnly" => $"({reference}).String()",
             _ => reference,
         };
     }

@@ -1,9 +1,12 @@
 ﻿using System;
 using System.IO;
+
 using Kiota.Builder.OpenApiExtensions;
+
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Writers;
+
 using Xunit;
 
 namespace Kiota.Builder.Tests.OpenApiExtensions;
@@ -13,9 +16,6 @@ public class OpenApiPagingExtensionsTests
     [Fact]
     public void ExtensionNameMatchesExpected()
     {
-        // Arrange
-        OpenApiPagingExtension extension = new();
-
         // Act
         string name = OpenApiPagingExtension.Name;
         var expectedName = "x-ms-pageable";

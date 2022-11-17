@@ -1,19 +1,27 @@
 using System.Collections.Generic;
+
+using Kiota.Builder.OpenApiExtensions;
+
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Writers;
+
 using Moq;
+
 using Xunit;
 
-namespace Kiota.Builder.OpenApiExtensions.Tests;
+namespace Kiota.Builder.Tests.OpenApiExtensions;
 
 public class OpenApiEnumValuesDescriptionExtensionTests {
     [Fact]
     public void NOOPTestForCoverage() {
-        // This class is already covered by the convertion libary tests
-        var value = new OpenApiEnumValuesDescriptionExtension() {
+        // This class is already covered by the convertion library tests
+        var value = new OpenApiEnumValuesDescriptionExtension
+        {
             EnumName = "some enum",
-            ValuesDescriptions = new List<EnumDescription>() {
-                new EnumDescription() {
+            ValuesDescriptions = new List<EnumDescription>
+            {
+                new EnumDescription
+                {
                     Value = "some value",
                 },
             },

@@ -1,7 +1,7 @@
 ﻿using System;
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder;
+namespace Kiota.Builder.CodeDOM;
 public enum CodePropertyKind
 {
     Custom,
@@ -35,9 +35,9 @@ public enum CodePropertyKind
     /// </summary>
     Options,
     /// <summary>
-    /// The request response handler. Used when request parameters are wrapped in a class.
+    /// Serialization hint for composed type wrappers.
     /// </summary>
-    ResponseHandler,
+    SerializationHint,
 }
 
 public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, ICloneable, IDocumentedElement
@@ -49,23 +49,23 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, ICloneable, 
     public CodeMethod Getter {get; set;}
     public CodeMethod Setter {get; set;}
     public CodeMethod GetterFromCurrentOrBaseType {
-        get {
+        get
+        {
             if (Getter != null)
                 return Getter;
-            else if (ExistsInBaseType)
+            if (ExistsInBaseType)
                 return OriginalPropertyFromBaseType.Getter;
-            else
-                return default;
+            return default;
         }
     }
     public CodeMethod SetterFromCurrentOrBaseType {
-        get {
+        get
+        {
             if (Setter != null)
                 return Setter;
-            else if (ExistsInBaseType)
+            if (ExistsInBaseType)
                 return OriginalPropertyFromBaseType.Setter;
-            else
-                return default;
+            return default;
         }
     }
     public CodeTypeBase Type {get => type ;set {

@@ -29,7 +29,7 @@ module Files
         ## 
         def get_field_deserializers() 
             return {
-                "id" => lambda {|o, n| o.id = n.get_string_value() },
+                "id" => lambda {|n| @id = n.get_string_value() },
             }
         end
         ## 
