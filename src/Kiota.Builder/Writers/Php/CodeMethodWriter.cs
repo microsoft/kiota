@@ -202,7 +202,7 @@ namespace Kiota.Builder.Writers.Php
 
             if (codeMethod.IsOfKind(CodeMethodKind.Getter) && codeMethod.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData))
             {
-                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}(): array {{");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}(): ?array {{");
                 writer.IncreaseIndent();
                 return;
             }
