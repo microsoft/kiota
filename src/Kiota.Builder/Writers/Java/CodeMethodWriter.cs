@@ -431,12 +431,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var errorMappingVarName = "null";
         if(codeElement.ErrorMappings.Any()) {
             errorMappingVarName = "errorMapping";
-            writer.WriteLine($"final HashMap<String, ParsableFactory<? extends Parsable>> {errorMappingVarName} = new HashMap<String, ParsableFactory<? extends Parsable>>({codeElement.ErrorMappings.Count()}) {{{{");
-            writer.IncreaseIndent();
+            writer.WriteLine($"final HashMap<String, ParsableFactory<? extends Parsable>> {errorMappingVarName} = new HashMap<String, ParsableFactory<? extends Parsable>>()"); //{codeElement.ErrorMappings.Count()}) {{{{");
+            //writer.IncreaseIndent();
             foreach(var errorMapping in codeElement.ErrorMappings) {
-                writer.WriteLine($"put(\"{errorMapping.Key.ToUpperInvariant()}\", {errorMapping.Value.Name.ToFirstCharacterUpperCase()}::{FactoryMethodName});");
+                writer.WriteLine($"{errorMappingVarName}.put(\"{errorMapping.Key.ToUpperInvariant()}\", {errorMapping.Value.Name.ToFirstCharacterUpperCase()}::{FactoryMethodName});");
             }
-            writer.CloseBlock("}};");
+            //writer.CloseBlock("}};");
         }
         var factoryParameter = codeElement.ReturnType is CodeType returnCodeType && returnCodeType.TypeDefinition is CodeClass ? $"{returnType}::{FactoryMethodName}" : $"{returnType}.class";
         writer.WriteLine($"return this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {errorMappingVarName});");
