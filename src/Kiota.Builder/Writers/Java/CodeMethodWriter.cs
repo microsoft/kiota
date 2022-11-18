@@ -485,11 +485,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var urlTemplateParamsProperty = currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         var urlTemplateProperty = currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
         var requestAdapterProperty = currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-        writer.WriteLine($"final RequestInformation {RequestInfoVarName} = new RequestInformation() {{{{");
-        writer.IncreaseIndent();
-        writer.WriteLine($"httpMethod = HttpMethod.{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");
-        writer.DecreaseIndent();
-        writer.WriteLine("}};");
+        writer.WriteLine($"final RequestInformation {RequestInfoVarName} = new RequestInformation();"); //{{{{");
+        //writer.IncreaseIndent();
+        writer.WriteLine($"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");
+        //writer.DecreaseIndent();
+        //writer.WriteLine("}};");
         writer.WriteLines($"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")};",
                         $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "null")};");
         if(codeElement.AcceptedResponseTypes.Any())
