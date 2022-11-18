@@ -170,6 +170,19 @@
             "stopAtEntry": false
         },
         {
+            "name": "Launch Search (GitHub)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/kiota/bin/Debug/net7.0/kiota.dll",
+            "args": ["search",
+                 "test"
+                ],
+            "cwd": "${workspaceFolder}/src/kiota",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
             "name": "Launch Show",
             "type": "coreclr",
             "request": "launch",
