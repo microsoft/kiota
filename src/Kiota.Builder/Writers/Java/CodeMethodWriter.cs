@@ -417,7 +417,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
         }
-        writer.WriteLine($"return {DeserializerVarName}");
+        writer.WriteLine($"return {DeserializerVarName};");
     }
     private const string FactoryMethodName = "createFromDiscriminatorValue";
     private const string ExecuterExceptionVar = "executionException";
