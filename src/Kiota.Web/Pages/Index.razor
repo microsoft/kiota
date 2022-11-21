@@ -65,9 +65,14 @@
         }
     </div>
 } else if (Searched && !IsLoading) {
-    <div id="no-results">
+    <div id="no-results" class="additional-information">
         <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
         <span>@Loc["NoResults"]</span>
+    </div>
+} else {
+    <div id="no-search" class="additional-information">
+        <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
+        <span><a href="https://aka.ms/kiota/addapi" target="_blank">@Loc["NoSearch"]</a></span>
     </div>
 }
 

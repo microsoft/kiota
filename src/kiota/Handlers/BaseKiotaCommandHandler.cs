@@ -121,6 +121,9 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
             DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths displayed.", example);
         }
     }
+    protected static void DisplaySearchAddHint() {
+        DisplayHint("Hint: add your own API to the search result https://aka.ms/kiota/addapi.");
+    }
     protected void DisplaySearchHint(string firstKey, string version) {
         if (TutorialMode &&!string.IsNullOrEmpty(firstKey)) {
             var example = string.IsNullOrEmpty(version) ?

@@ -75,6 +75,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             var layout = new StackLayoutView { view };
             console.Append(layout);
             DisplaySearchHint(results.Keys.FirstOrDefault(), Configuration.Search.Version);
+            DisplaySearchAddHint();
         }
     }
     private const int MaxDescriptionLength = 70;
