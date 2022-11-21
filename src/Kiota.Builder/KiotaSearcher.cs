@@ -31,12 +31,10 @@ public class KiotaSearcher {
         var apiGurusSearchProvider = new APIsGuruSearchProvider(config.APIsGuruListUrl, client, logger, config.ClearCache);
         logger.LogDebug("searching for {searchTerm}", config.SearchTerm);
         logger.LogDebug("searching APIs.guru with url {url}", config.APIsGuruListUrl);
-        var msGraphProvider = new MSGraphSearchProvider();
         var oasProvider = new OpenApiSpecSearchProvider();
         var githubProvider = new GitHubSearchProvider(client, config.GitHubBlockListUrl, logger, config.ClearCache);
         var results = await Task.WhenAll(
                         SearchProviderAsync(apiGurusSearchProvider, cancellationToken),
-                        SearchProviderAsync(msGraphProvider, cancellationToken),
                         SearchProviderAsync(oasProvider, cancellationToken),
                         SearchProviderAsync(githubProvider, cancellationToken));
         return results.SelectMany(static x => x)
