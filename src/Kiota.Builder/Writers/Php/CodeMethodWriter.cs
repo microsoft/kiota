@@ -233,10 +233,10 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"parent::serialize({writerParameterName});");
             var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly);
             foreach(var otherProp in customProperties) {
-                writer.WriteLine($"{writerParameterName}->{GetSerializationMethodName(otherProp.Type)}('{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}', $this->get{otherProp.Name.ToFirstCharacterUpperCase()}());");
+                writer.WriteLine($"{writerParameterName}->{GetSerializationMethodName(otherProp.Type)}('{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}', $this->{otherProp.Getter.Name}());");
             }
             if(additionalDataProperty != null)
-                writer.WriteLine($"{writerParameterName}->writeAdditionalData($this->get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");
+                writer.WriteLine($"{writerParameterName}->writeAdditionalData($this->{additionalDataProperty.Getter.Name}());");
         }
         
         private string GetSerializationMethodName(CodeTypeBase propType) {
@@ -309,7 +309,7 @@ namespace Kiota.Builder.Writers.Php
             var parentClass = codeElement.Parent as CodeClass;
             var isBackingStoreSetter = codeElement.AccessedProperty?.Kind == CodePropertyKind.BackingStore;
             if (UseBackingStore && !isBackingStoreSetter)
-                writer.WriteLine($"$this->get{parentClass.GetBackingStoreProperty()?.Name.ToFirstCharacterUpperCase()}()->set('{propertyName.ToFirstCharacterLowerCase()}', $value);");
+                writer.WriteLine($"$this->{parentClass.GetBackingStoreProperty()?.Getter.Name}()->set('{propertyName.ToFirstCharacterLowerCase()}', $value);");
             else
                 writer.WriteLine($"$this->{propertyName.ToFirstCharacterLowerCase()} = $value;");
         }
@@ -320,7 +320,7 @@ namespace Kiota.Builder.Writers.Php
             var parentClass = codeMethod.Parent as CodeClass;
             var isBackingStoreGetter = codeMethod.AccessedProperty?.Kind == CodePropertyKind.BackingStore;
             if (UseBackingStore && !isBackingStoreGetter)
-                writer.WriteLine($"return $this->get{parentClass.GetBackingStoreProperty()?.Name.ToFirstCharacterUpperCase()}()->get('{propertyName}');");
+                writer.WriteLine($"return $this->{parentClass.GetBackingStoreProperty()?.Getter.Name}()->get('{propertyName}');");
             else
                 writer.WriteLine($"return $this->{propertyName};");
         }

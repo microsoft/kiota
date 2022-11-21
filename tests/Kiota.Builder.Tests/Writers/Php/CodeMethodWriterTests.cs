@@ -305,7 +305,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         
         [Theory]
         [MemberData(nameof(SerializerProperties))]
-        public void WriteSerializer(CodeProperty property, string expected)
+        public async void WriteSerializer(CodeProperty property, string expected)
         {
             var codeMethod = new CodeMethod
             {
@@ -327,7 +327,18 @@ namespace Kiota.Builder.Tests.Writers.Php
             });
             parentClass.AddMethod(codeMethod);
             parentClass.AddProperty(property);
+            var propertyType = property.Type.AllTypes.FirstOrDefault()?.TypeDefinition;
+            switch (propertyType)
+            {
+                case CodeClass:
+                    root.AddClass(propertyType as CodeClass);
+                    break;
+                case CodeEnum:
+                    root.AddEnum(propertyType as CodeEnum);
+                    break;
+            }
             parentClass.Kind = CodeClassKind.Model;
+            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
             _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
             var result = stringWriter.ToString();
             Assert.Contains("public function serialize(SerializationWriter $writer)", result);
