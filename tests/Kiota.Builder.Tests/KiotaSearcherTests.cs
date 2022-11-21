@@ -1,8 +1,10 @@
 using System;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.SearchProviders.GitHub;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -14,6 +16,15 @@ public class KiotaSearcherTests {
         Assert.Throws<ArgumentNullException>(() => new KiotaSearcher(null, null));
         Assert.Throws<ArgumentNullException>(() => new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, null));
         Assert.Throws<ArgumentNullException>(() => new KiotaSearcher(null, new SearchConfiguration()));
+        Assert.ThrowsAsync<ArgumentNullException>(() => new GitHubSearchProvider(new HttpClient(), new Uri("https://httpbin.org/headers"), new Mock<ILogger<KiotaSearcher>>().Object, false).SearchAsync(null, null, CancellationToken.None));
+    }
+    [Fact]
+    public async Task GetsMicrosoftGraphBothVersions() {
+        var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, new SearchConfiguration(){
+            SearchTerm = "github::microsoftgraph/msgraph-metadata",
+        });
+        var results = await searcher.SearchAsync(new CancellationToken());
+        Assert.Equal(2, results.Count);
     }
     [Fact]
     public async Task GetsMicrosoftGraph() {

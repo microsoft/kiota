@@ -56,7 +56,7 @@ public class GitHubSearchProvider : ISearchProvider
         return SearchAsyncInternal(term, cancellationToken);
     }
     private static bool BlockListContainsRepo(Tuple<HashSet<string>, HashSet<string>> blockLists, string organization, string repo) =>
-        blockLists.Item1.Contains(organization) && blockLists.Item2.Contains($"{organization}/{repo}");
+        blockLists.Item1.Contains(organization) || blockLists.Item2.Contains($"{organization}/{repo}");
     private async Task<IDictionary<string, SearchResult>> SearchAsyncInternal(string term, CancellationToken cancellationToken)
     {
         var blockLists = await GetBlockLists(cancellationToken);
