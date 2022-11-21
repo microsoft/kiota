@@ -1106,8 +1106,8 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("public function setName(?string $value)", result);
             Assert.Contains("$this->getBackingStore()->set('name', $value);", result);
             
-            // Backing store should NOT contain setter
-            Assert.DoesNotContain("private function setBackingStore(BackingStore $value )", result);
+            Assert.Contains("public function setBackingStore(BackingStore $value)", result);
+            Assert.Contains("$this->backingStore = $value;", result);
         }
 
         [Fact]

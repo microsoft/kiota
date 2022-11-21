@@ -80,6 +80,7 @@ public class PhpRefiner: CommonLanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton::getInstance()->createBackingStore()");
+            CorrectBackingStoreSetterParam(generatedCode);
         }, cancellationToken);
     }
     private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
@@ -251,6 +252,13 @@ public class PhpRefiner: CommonLanguageRefiner
             }
         }
         CrawlTree(currentElement, AliasUsingWithSameSymbol);
+    }
+
+    private static void CorrectBackingStoreSetterParam(CodeElement codeElement)
+    {
+        if (codeElement is CodeMethod method && method.Kind == CodeMethodKind.Setter && method.AccessedProperty?.Kind == CodePropertyKind.BackingStore)
+            method.Parameters.ToList().ForEach(param => param.Optional = false);
+        CrawlTree(codeElement, CorrectBackingStoreSetterParam);
     }
 }
 
