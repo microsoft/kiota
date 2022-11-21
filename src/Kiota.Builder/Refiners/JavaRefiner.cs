@@ -301,48 +301,23 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void RemoveClassNamePrefixFromNestedClasses(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
             var prefix = currentClass.Name;
-            var innerClasses = currentClass
+            var requestConfigClasses = currentClass
                                     .Methods
                                     .SelectMany(static x => x.Parameters)
                                     .Where(static x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
                                     .SelectMany(static x => x.Type.AllTypes)
                                     .Select(static x => x.TypeDefinition)
-                                    .OfType<CodeClass>()
-                                    .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
-                                    
-                                    // {
-                                    //      x => x.SelectMany(static x => x.Properties)
-                                    //     .Where(static x => x.IsOfKind(CodePropertyKind.QueryParameters))
-                                    //     .SelectMany(static x => x.Type.AllTypes)
-                                    //     .Select(static x => x.TypeDefinition)
-                                    //     .Select(static x => x.TypeDefinition)
-                                    //     .OfType<CodeClass>()
-                                    // )
-                                    // .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
-
-                                    // .SelectMany(static x => x.Properties)
-                                    // .Where(static x => x.IsOfKind(CodePropertyKind.QueryParameters))
-                                    // .SelectMany(static x => x.Type.AllTypes)
-                                    // .Select(static x => x.TypeDefinition)
-                                    // .OfType<CodeClass>()
-                                    // .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
-
+                                    .OfType<CodeClass>();
             // ensure we do not miss out the types present in request configuration objects i.e. the query parameters
-            var nestedQueryParameters = innerClasses
+            var innerClasses = requestConfigClasses
                                     .SelectMany(static x => x.Properties)
                                     .Where(static x => x.IsOfKind(CodePropertyKind.QueryParameters))
                                     .SelectMany(static x => x.Type.AllTypes)
                                     .Select(static x => x.TypeDefinition)
-                                    .OfType<CodeClass>().Union(innerClasses)
+                                    .OfType<CodeClass>().Union(requestConfigClasses)
                                     .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
-
-
-            // var nestedClasses = new List<CodeClass>();
-            // nestedClasses.AddRange(innerClasses);
-            // nestedClasses.AddRange(nestedQueryParameters);
             
-            foreach(var innerClass in nestedQueryParameters) {
-                //if(innerClass.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) 
+            foreach(var innerClass in innerClasses) {
                     innerClass.Name = innerClass.Name[prefix.Length..];
                 
                 if(innerClass.IsOfKind(CodeClassKind.RequestConfiguration))
@@ -375,7 +350,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                 .Select(static x=> x.Type)
                                 .OfType<CodeTypeBase>()
                                 .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
-
 
             foreach(var parameter in parameters) {
                 parameter.Name = parameter.Name[prefix.Length..];
