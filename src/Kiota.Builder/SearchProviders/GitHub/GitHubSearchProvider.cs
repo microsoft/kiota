@@ -22,9 +22,12 @@ public class GitHubSearchProvider : ISearchProvider
 {
     private readonly DocumentCachingProvider cachingProvider;
     private readonly ILogger _logger;
-    public GitHubSearchProvider(HttpClient httpClient, ILogger logger, bool clearCache)
+    private readonly Uri _blockListUrl;
+
+    public GitHubSearchProvider(HttpClient httpClient, Uri blockListUrl, ILogger logger, bool clearCache)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
+        ArgumentNullException.ThrowIfNull(blockListUrl);
         ArgumentNullException.ThrowIfNull(logger);
         cachingProvider = new DocumentCachingProvider(httpClient, logger)
         {
@@ -32,6 +35,7 @@ public class GitHubSearchProvider : ISearchProvider
         };
         _httpClient = httpClient;
         _logger = logger;
+        _blockListUrl = blockListUrl;
     }
     private readonly HttpClient _httpClient;
     public string ProviderKey => "github";
@@ -52,12 +56,13 @@ public class GitHubSearchProvider : ISearchProvider
         if (string.IsNullOrEmpty(term))
             throw new ArgumentNullException(nameof(term));
 
-        //TODO set an exclusion mechanism for the search provider that's based off repos URLS
+        var blockLists = await GetBlockLists(cancellationToken);
         var gitHubRequestAdapter = new HttpClientRequestAdapter(new GitHubAnonymousAuthenticationProvider(), httpClient: _httpClient);
         var gitHubClient = new GitHubClient.GitHubClient(gitHubRequestAdapter);
         var results = (await Task.WhenAll(_topics.Select(x => GetAllReposForTerm(gitHubClient, term, x, cancellationToken)))
                                 .ConfigureAwait(false))
                         .SelectMany(static x => x)
+                        .Where(x => !blockLists.Item1.Contains(x.Owner.Login) && !blockLists.Item2.Contains($"{x.Owner.Login}/{x.Name}"))
                         .DistinctBy(static x => x.Url, StringComparer.OrdinalIgnoreCase)
                         .ToList();
 
@@ -69,19 +74,31 @@ public class GitHubSearchProvider : ISearchProvider
 
         return searchResults;
     }
+    private async Task<Tuple<HashSet<string>, HashSet<string>>> GetBlockLists(CancellationToken cancellationToken) {
+        try {
+            await using var document = await cachingProvider.GetDocumentAsync(_blockListUrl, "search", Path.GetFileName(_blockListUrl.ToString()), "text/yaml", cancellationToken);
+            var deserialized = deserializeDocumentFromYaml<BlockList>(document);
+            return new Tuple<HashSet<string>, HashSet<string>>(
+                new HashSet<string>(deserialized.Organizations.Distinct(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase),
+                new HashSet<string>(deserialized.Repositories.Distinct(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase));
+        } catch(Exception ex) {
+            _logger.LogError(ex, "Error while getting block list");
+            return new Tuple<HashSet<string>, HashSet<string>>(new HashSet<string>(StringComparer.OrdinalIgnoreCase), new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+        }
+    }
     private const string OpenApiPropertyKey = "x-openapi";
     private static readonly Lazy<IDeserializer> _deserializer = new(() => new DeserializerBuilder()
                 .WithNamingConvention(new YamlNamingConvention())
                 .IgnoreUnmatchedProperties()
                 .Build());
-    private static IndexRoot deserializeIndexRootFromJson(Stream document) => JsonSerializer.Deserialize<IndexRoot>(document, new JsonSerializerOptions
+    private static T deserializeDocumentFromJson<T>(Stream document) => JsonSerializer.Deserialize<T>(document, new JsonSerializerOptions
     {
         PropertyNameCaseInsensitive = true,
     });
-    private static IndexRoot deserializeIndexRootFromYaml(Stream document)
+    private static T deserializeDocumentFromYaml<T>(Stream document)
     {
         using var reader = new StreamReader(document);
-        return _deserializer.Value.Deserialize<IndexRoot>(reader);
+        return _deserializer.Value.Deserialize<T>(reader);
     }
     private async Task<IEnumerable<Tuple<string, SearchResult>>> GetSearchResultsFromRepo(GitHubClient.GitHubClient gitHubClient, RepoSearchResultItem repo, string fileName, string accept, CancellationToken cancellationToken)
     {
@@ -93,8 +110,8 @@ public class GitHubSearchProvider : ISearchProvider
             await using var document = await cachingProvider.GetDocumentAsync(new Uri(downloadUrl), "search", Path.GetFileName(downloadUrl), accept, cancellationToken);
             var indexFile = accept.ToLowerInvariant() switch
             {
-                "application/json" => deserializeIndexRootFromJson(document),
-                "text/yaml" => deserializeIndexRootFromYaml(document),
+                "application/json" => deserializeDocumentFromJson<IndexRoot>(document),
+                "text/yaml" => deserializeDocumentFromYaml<IndexRoot>(document),
                 _ => throw new InvalidOperationException($"Unsupported accept type {accept}"),
             };
             if (indexFile is null || indexFile.Apis is null)
