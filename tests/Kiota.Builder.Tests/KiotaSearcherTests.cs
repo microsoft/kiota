@@ -18,18 +18,19 @@ public class KiotaSearcherTests {
     [Fact]
     public async Task GetsMicrosoftGraph() {
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, new SearchConfiguration(){
-            SearchTerm = "msgraph::microsoft-graph",
+            SearchTerm = "github::microsoftgraph/msgraph-metadata/graph.microsoft.com/v1.0",
         });
         var results = await searcher.SearchAsync(new CancellationToken());
         Assert.Single(results);
+        Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml", results.First().Value.DescriptionUrl.ToString());
     }
     [Fact]
     public async Task GetsMicrosoftGraphBeta() {
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, new SearchConfiguration(){
-            SearchTerm = "msgraph::microsoft-graph",
-            Version = "beta",
+            SearchTerm = "github::microsoftgraph/msgraph-metadata/graph.microsoft.com/beta",
         });
         var results = await searcher.SearchAsync(new CancellationToken());
+        Assert.Single(results);
         Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/beta/openapi.yaml", results.First().Value.DescriptionUrl.ToString());
     }
     [Fact]

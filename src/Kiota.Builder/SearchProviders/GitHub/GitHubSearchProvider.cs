@@ -50,29 +50,47 @@ public class GitHubSearchProvider : ISearchProvider
     {
         get; set;
     }
-    public async Task<IDictionary<string, SearchResult>> SearchAsync(string term, string version, CancellationToken cancellationToken)
-    {
+    public Task<IDictionary<string, SearchResult>> SearchAsync(string term, string version, CancellationToken cancellationToken) {
         if (string.IsNullOrEmpty(term))
             throw new ArgumentNullException(nameof(term));
-
+        return SearchAsyncInternal(term, cancellationToken);
+    }
+    private static bool BlockListContainsRepo(Tuple<HashSet<string>, HashSet<string>> blockLists, string organization, string repo) =>
+        blockLists.Item1.Contains(organization) && blockLists.Item2.Contains($"{organization}/{repo}");
+    private async Task<IDictionary<string, SearchResult>> SearchAsyncInternal(string term, CancellationToken cancellationToken)
+    {
         var blockLists = await GetBlockLists(cancellationToken);
         var gitHubRequestAdapter = new HttpClientRequestAdapter(new GitHubAnonymousAuthenticationProvider(), httpClient: _httpClient);
         var gitHubClient = new GitHubClient.GitHubClient(gitHubRequestAdapter);
+        if(term.Contains('/')) {
+            var parts = term.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            var owner = parts[0];
+            var repo = parts[1];
+            if (!BlockListContainsRepo(blockLists, owner, repo)) {
+                var keyResults = GetDictionaryResultFromMultipleSources(await Task.WhenAll(_indexFileInfos.Select(x => GetSearchResultsFromRepo(gitHubClient, owner, repo, x.Key, x.Value, cancellationToken))).ConfigureAwait(false));
+                if (parts.Length > 2 && keyResults.TryGetValue(term, out var result))
+                    return new Dictionary<string, SearchResult> (StringComparer.OrdinalIgnoreCase) { { term, result } };
+                else if (keyResults.Any())
+                    return keyResults;
+            }
+        }
+        
         var results = (await Task.WhenAll(_topics.Select(x => GetAllReposForTerm(gitHubClient, term, x, cancellationToken)))
                                 .ConfigureAwait(false))
                         .SelectMany(static x => x)
-                        .Where(x => !blockLists.Item1.Contains(x.Owner.Login) && !blockLists.Item2.Contains($"{x.Owner.Login}/{x.Name}"))
+                        .Where(x => !BlockListContainsRepo(blockLists, x.Owner.Login, x.Name))
                         .DistinctBy(static x => x.Url, StringComparer.OrdinalIgnoreCase)
                         .ToList();
 
-        var searchResults = (await Task.WhenAll(results.Join(_indexFileInfos, x => true, x => true, (repo, indexFileInfo) => (repo, indexFileInfo))
-                                                    .Select(x => GetSearchResultsFromRepo(gitHubClient, x.repo, x.indexFileInfo.Key, x.indexFileInfo.Value, cancellationToken))).ConfigureAwait(false))
-                                .SelectMany(static x => x)
-                                .DistinctBy(static x => x.Item1, StringComparer.OrdinalIgnoreCase)
-                                .ToDictionary(static x => x.Item1, static x => x.Item2, StringComparer.OrdinalIgnoreCase);
+        var searchResults = GetDictionaryResultFromMultipleSources(await Task.WhenAll(results.Join(_indexFileInfos, x => true, x => true, (repo, indexFileInfo) => (repo, indexFileInfo))
+                                                    .Select(x => GetSearchResultsFromRepo(gitHubClient, x.repo.Owner.Login, x.repo.Name, x.indexFileInfo.Key, x.indexFileInfo.Value, cancellationToken))).ConfigureAwait(false));
 
         return searchResults;
     }
+    private static Dictionary<string, SearchResult> GetDictionaryResultFromMultipleSources(IEnumerable<IEnumerable<Tuple<string, SearchResult>>> sources) =>
+        sources.SelectMany(static x => x)
+                .DistinctBy(static x => x.Item1, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(static x => x.Item1, static x => x.Item2, StringComparer.OrdinalIgnoreCase);
     private async Task<Tuple<HashSet<string>, HashSet<string>>> GetBlockLists(CancellationToken cancellationToken) {
         try {
             await using var document = await cachingProvider.GetDocumentAsync(_blockListUrl, "search", Path.GetFileName(_blockListUrl.ToString()), "text/yaml", cancellationToken);
@@ -100,11 +118,11 @@ public class GitHubSearchProvider : ISearchProvider
         return _deserializer.Value.Deserialize<T>(reader);
     }
     private const string DownloadUrlKey = "download_url";
-    private async Task<IEnumerable<Tuple<string, SearchResult>>> GetSearchResultsFromRepo(GitHubClient.GitHubClient gitHubClient, RepoSearchResultItem repo, string fileName, string accept, CancellationToken cancellationToken)
+    private async Task<IEnumerable<Tuple<string, SearchResult>>> GetSearchResultsFromRepo(GitHubClient.GitHubClient gitHubClient, string org, string repo, string fileName, string accept, CancellationToken cancellationToken)
     {
         try
         {
-            var response = await gitHubClient.Repos[repo.Owner.Login][repo.Name].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            var response = await gitHubClient.Repos[org][repo].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             if (!response.AdditionalData.TryGetValue(DownloadUrlKey, out var rawDownloadUrl) || rawDownloadUrl is not string downloadUrl || string.IsNullOrEmpty(downloadUrl))
                 return Enumerable.Empty<Tuple<string, SearchResult>>();
             await using var document = await cachingProvider.GetDocumentAsync(new Uri(downloadUrl), "search", Path.GetFileName(downloadUrl), accept, cancellationToken);
@@ -116,13 +134,13 @@ public class GitHubSearchProvider : ISearchProvider
             };
             if (indexFile is null || indexFile.Apis is null)
                 return Enumerable.Empty<Tuple<string, SearchResult>>();
-            await GetUrlForRelativeDescriptions(indexFile.Apis, gitHubClient, repo, cancellationToken).ConfigureAwait(false);
+            await GetUrlForRelativeDescriptions(indexFile.Apis, gitHubClient, org, repo, cancellationToken).ConfigureAwait(false);
             var results = indexFile.Apis.Where(static x => x.Properties.Any(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase)))
                                 .Select(x =>
                                 {
                                     var baseUrl = new Uri(x.BaseUrl);
                                     var hostAndPath = baseUrl.Host + baseUrl.AbsolutePath;
-                                    return new Tuple<string, SearchResult>($"{repo.Owner.Login}/{repo.Name}/{hostAndPath}",
+                                    return new Tuple<string, SearchResult>($"{org}/{repo}/{hostAndPath}",
                                         new SearchResult(x.Name,
                                             x.Description,
                                             new Uri(x.BaseUrl),
@@ -134,22 +152,22 @@ public class GitHubSearchProvider : ISearchProvider
         }
         catch (BasicError)
         {
-            _logger.LogInformation("Unable to find {fileName} in {repoUrl}", fileName, repo.Url);
+            _logger.LogInformation("Unable to find {fileName} in {org}/{repo}", fileName, org, repo);
         }
         catch(Exception ex) when (ex is YamlException || ex is JsonException) {
             #if DEBUG
-            _logger.LogError(ex, "Error while parsing the file {fileName} in {repoUrl}", fileName, repo.Url);
+            _logger.LogError(ex, "Error while parsing the file {fileName} in {org}/{repo}", fileName, org, repo);
             #else
-            _logger.LogInformation("Error while parsing the file {fileName} in {repoUrl}", fileName, repo.Url);
+            _logger.LogInformation("Error while parsing the file {fileName} in {org}/{repo}", fileName, org, repo);
             #endif
         }
         return Enumerable.Empty<Tuple<string, SearchResult>>();
     }
-    private async Task GetUrlForRelativeDescriptions(List<IndexApiEntry> originalResults, GitHubClient.GitHubClient gitHubClient, RepoSearchResultItem repo, CancellationToken cancellationToken) {
+    private async Task GetUrlForRelativeDescriptions(List<IndexApiEntry> originalResults, GitHubClient.GitHubClient gitHubClient, string org, string repo, CancellationToken cancellationToken) {
         var relativeUrlsResults = originalResults.Where(static x => x.Properties.Any(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase) && !y.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase)));
         if(!relativeUrlsResults.Any())
             return;
-        var resultsToUpdate = await Task.WhenAll(relativeUrlsResults.Select(x => GetUrlForRelativeDescription(x, gitHubClient, repo, cancellationToken))).ConfigureAwait(false);
+        var resultsToUpdate = await Task.WhenAll(relativeUrlsResults.Select(x => GetUrlForRelativeDescription(x, gitHubClient, org, repo, cancellationToken))).ConfigureAwait(false);
         var keysToRemove = resultsToUpdate.Where(static x => x.Item2 is null).Select(static x => x.Item1).ToHashSet(StringComparer.OrdinalIgnoreCase);
         originalResults.RemoveAll(x => x.Properties.Any(y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase) && keysToRemove.Contains(y.Url)));
         resultsToUpdate.Where(static x => x.Item2 is not null).ToList().ForEach(x => {
@@ -158,15 +176,15 @@ public class GitHubSearchProvider : ISearchProvider
                 propertyToUpdate.Url = x.Item2;
         });
     }
-    private async Task<Tuple<string, string>> GetUrlForRelativeDescription(IndexApiEntry searchResult, GitHubClient.GitHubClient gitHubClient, RepoSearchResultItem repo, CancellationToken cancellationToken) {
+    private async Task<Tuple<string, string>> GetUrlForRelativeDescription(IndexApiEntry searchResult, GitHubClient.GitHubClient gitHubClient, string org, string repo, CancellationToken cancellationToken) {
         var originalUrl = searchResult.Properties.First(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase)).Url;
         try {
             var fileName = originalUrl.TrimStart('/');
-            var response = await gitHubClient.Repos[repo.Owner.Login][repo.Name].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            var response = await gitHubClient.Repos[org][repo].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             if (response.AdditionalData.TryGetValue(DownloadUrlKey, out var rawDownloadUrl) && rawDownloadUrl is string downloadUrl && !string.IsNullOrEmpty(downloadUrl))
                 return new Tuple<string, string>(originalUrl, downloadUrl);
         } catch (BasicError) {
-            _logger.LogInformation("Unable to find {fileName} in {repoUrl}", originalUrl, repo.Url);
+            _logger.LogInformation("Unable to find {fileName} in {org}/{repo}", originalUrl, org, repo);
         }
         return new Tuple<string, string>(originalUrl, null);
     }
