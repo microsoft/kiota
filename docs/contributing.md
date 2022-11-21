@@ -7,7 +7,7 @@ nav_order: 4
 
 ## Required tools
 
-- [.NET SDK 6.0](https://dotnet.microsoft.com/download)
+- [.NET SDK 7.0](https://get.dot.net/7)
 
 ## Recommended tools
 
