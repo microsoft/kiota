@@ -21,13 +21,13 @@ public class DocumentCachingProvider {
         HttpClient = client;
         Logger = logger;
     }
-    public Task<Stream> GetDocumentAsync(Uri documentUri, string intermediateFolderName, string fileName, CancellationToken token) {
+    public Task<Stream> GetDocumentAsync(Uri documentUri, string intermediateFolderName, string fileName, string accept = null, CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(documentUri);
         if(string.IsNullOrEmpty(intermediateFolderName)) throw new ArgumentNullException(nameof(intermediateFolderName));
         if(string.IsNullOrEmpty(fileName)) throw new ArgumentNullException(nameof(fileName));
-        return GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, false, token);
+        return GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, false, accept, cancellationToken);
     }
-    private async Task<Stream> GetDocumentInternalAsync(Uri documentUri, string intermediateFolderName, string fileName, bool couldNotDelete, CancellationToken token) {
+    private async Task<Stream> GetDocumentInternalAsync(Uri documentUri, string intermediateFolderName, string fileName, bool couldNotDelete, string accept, CancellationToken token) {
         var hashedUrl = BitConverter.ToString(HashAlgorithm.Value.ComputeHash(Encoding.UTF8.GetBytes(documentUri.ToString()))).Replace("-", string.Empty);
         var target = Path.Combine(Path.GetTempPath(), "kiota", "cache", intermediateFolderName, hashedUrl, fileName);
         if(!File.Exists(target) || couldNotDelete) {
@@ -37,9 +37,13 @@ public class DocumentCachingProvider {
                 Directory.CreateDirectory(directory);
             Stream content = null;
             try {
-                await using var httpContent = await HttpClient.GetStreamAsync(documentUri, token);
+                using var requestMessage = new HttpRequestMessage(HttpMethod.Get, documentUri);
+                if (!string.IsNullOrEmpty(accept))
+                    requestMessage.Headers.Add("Accept", accept);
+                using var responseMessage = await HttpClient.SendAsync(requestMessage, token).ConfigureAwait(false);
+                responseMessage.EnsureSuccessStatusCode();
                 content = new MemoryStream();
-                await httpContent.CopyToAsync(content, token);
+                await responseMessage.Content.CopyToAsync(content, token);
                 await using var fileStream = File.Create(target);
                 content.Position = 0;
                 await content.CopyToAsync(fileStream, token);
@@ -69,6 +73,6 @@ public class DocumentCachingProvider {
                 Logger.LogWarning("could not delete cache file {cacheFile}, reason: {reason}", target, ex.Message);
             }
         }
-        return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, token);
+        return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, accept, token);
     }
 }
