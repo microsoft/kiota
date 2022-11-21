@@ -307,7 +307,25 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                     .Where(static x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
                                     .SelectMany(static x => x.Type.AllTypes)
                                     .Select(static x => x.TypeDefinition)
-                                    .OfType<CodeClass>();
+                                    .OfType<CodeClass>()
+                                    .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+                                    
+                                    // {
+                                    //      x => x.SelectMany(static x => x.Properties)
+                                    //     .Where(static x => x.IsOfKind(CodePropertyKind.QueryParameters))
+                                    //     .SelectMany(static x => x.Type.AllTypes)
+                                    //     .Select(static x => x.TypeDefinition)
+                                    //     .Select(static x => x.TypeDefinition)
+                                    //     .OfType<CodeClass>()
+                                    // )
+                                    // .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+
+                                    // .SelectMany(static x => x.Properties)
+                                    // .Where(static x => x.IsOfKind(CodePropertyKind.QueryParameters))
+                                    // .SelectMany(static x => x.Type.AllTypes)
+                                    // .Select(static x => x.TypeDefinition)
+                                    // .OfType<CodeClass>()
+                                    // .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
 
             // ensure we do not miss out the types present in request configuration objects i.e. the query parameters
             var nestedQueryParameters = innerClasses
@@ -315,14 +333,16 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                     .Where(static x => x.IsOfKind(CodePropertyKind.QueryParameters))
                                     .SelectMany(static x => x.Type.AllTypes)
                                     .Select(static x => x.TypeDefinition)
-                                    .OfType<CodeClass>();
+                                    .OfType<CodeClass>().Union(innerClasses)
+                                    .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
 
-            var nestedClasses = new List<CodeClass>();
-            nestedClasses.AddRange(innerClasses);
-            nestedClasses.AddRange(nestedQueryParameters);
+
+            // var nestedClasses = new List<CodeClass>();
+            // nestedClasses.AddRange(innerClasses);
+            // nestedClasses.AddRange(nestedQueryParameters);
             
-            foreach(var innerClass in nestedClasses) {
-                if(innerClass.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) 
+            foreach(var innerClass in nestedQueryParameters) {
+                //if(innerClass.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) 
                     innerClass.Name = innerClass.Name[prefix.Length..];
                 
                 if(innerClass.IsOfKind(CodeClassKind.RequestConfiguration))
