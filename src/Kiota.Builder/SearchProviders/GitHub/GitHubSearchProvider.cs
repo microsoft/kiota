@@ -14,7 +14,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 using SharpYaml;
 using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace Kiota.Builder.SearchProviders.GitHub;
 
@@ -100,12 +99,13 @@ public class GitHubSearchProvider : ISearchProvider
         using var reader = new StreamReader(document);
         return _deserializer.Value.Deserialize<T>(reader);
     }
+    private const string DownloadUrlKey = "download_url";
     private async Task<IEnumerable<Tuple<string, SearchResult>>> GetSearchResultsFromRepo(GitHubClient.GitHubClient gitHubClient, RepoSearchResultItem repo, string fileName, string accept, CancellationToken cancellationToken)
     {
         try
         {
             var response = await gitHubClient.Repos[repo.Owner.Login][repo.Name].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            if (!response.AdditionalData.TryGetValue("download_url", out var rawDownloadUrl) || rawDownloadUrl is not string downloadUrl || string.IsNullOrEmpty(downloadUrl))
+            if (!response.AdditionalData.TryGetValue(DownloadUrlKey, out var rawDownloadUrl) || rawDownloadUrl is not string downloadUrl || string.IsNullOrEmpty(downloadUrl))
                 return Enumerable.Empty<Tuple<string, SearchResult>>();
             await using var document = await cachingProvider.GetDocumentAsync(new Uri(downloadUrl), "search", Path.GetFileName(downloadUrl), accept, cancellationToken);
             var indexFile = accept.ToLowerInvariant() switch
@@ -116,7 +116,8 @@ public class GitHubSearchProvider : ISearchProvider
             };
             if (indexFile is null || indexFile.Apis is null)
                 return Enumerable.Empty<Tuple<string, SearchResult>>();
-            return indexFile.Apis.Where(static x => x.Properties.Any(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase)))
+            await GetUrlForRelativeDescriptions(indexFile.Apis, gitHubClient, repo, cancellationToken).ConfigureAwait(false);
+            var results = indexFile.Apis.Where(static x => x.Properties.Any(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase)))
                                 .Select(x =>
                                 {
                                     var baseUrl = new Uri(x.BaseUrl);
@@ -125,9 +126,11 @@ public class GitHubSearchProvider : ISearchProvider
                                         new SearchResult(x.Name,
                                             x.Description,
                                             new Uri(x.BaseUrl),
-                                            new Uri(x.Properties.FirstOrDefault(y => OpenApiPropertyKey.Equals(y.Type, StringComparison.OrdinalIgnoreCase))?.Url),//TODO build the URL if it's relative
+                                            new Uri(x.Properties.FirstOrDefault(y => OpenApiPropertyKey.Equals(y.Type, StringComparison.OrdinalIgnoreCase))?.Url),
                                             new()));
-                                });
+                                })
+                                .ToList();
+            return results;
         }
         catch (BasicError)
         {
@@ -141,6 +144,31 @@ public class GitHubSearchProvider : ISearchProvider
             #endif
         }
         return Enumerable.Empty<Tuple<string, SearchResult>>();
+    }
+    private async Task GetUrlForRelativeDescriptions(List<IndexApiEntry> originalResults, GitHubClient.GitHubClient gitHubClient, RepoSearchResultItem repo, CancellationToken cancellationToken) {
+        var relativeUrlsResults = originalResults.Where(static x => x.Properties.Any(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase) && !y.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase)));
+        if(!relativeUrlsResults.Any())
+            return;
+        var resultsToUpdate = await Task.WhenAll(relativeUrlsResults.Select(x => GetUrlForRelativeDescription(x, gitHubClient, repo, cancellationToken))).ConfigureAwait(false);
+        var keysToRemove = resultsToUpdate.Where(static x => x.Item2 is null).Select(static x => x.Item1).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        originalResults.RemoveAll(x => x.Properties.Any(y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase) && keysToRemove.Contains(y.Url)));
+        resultsToUpdate.Where(static x => x.Item2 is not null).ToList().ForEach(x => {
+            var resultToUpdate = originalResults.FirstOrDefault(z => z.Properties.Any(y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase) && x.Item1.Equals(y.Url, StringComparison.OrdinalIgnoreCase)));
+            if(resultToUpdate?.Properties.FirstOrDefault(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase)) is IndexApiProperty propertyToUpdate)
+                propertyToUpdate.Url = x.Item2;
+        });
+    }
+    private async Task<Tuple<string, string>> GetUrlForRelativeDescription(IndexApiEntry searchResult, GitHubClient.GitHubClient gitHubClient, RepoSearchResultItem repo, CancellationToken cancellationToken) {
+        var originalUrl = searchResult.Properties.First(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase)).Url;
+        try {
+            var fileName = originalUrl.TrimStart('/');
+            var response = await gitHubClient.Repos[repo.Owner.Login][repo.Name].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            if (response.AdditionalData.TryGetValue(DownloadUrlKey, out var rawDownloadUrl) && rawDownloadUrl is string downloadUrl && !string.IsNullOrEmpty(downloadUrl))
+                return new Tuple<string, string>(originalUrl, downloadUrl);
+        } catch (BasicError) {
+            _logger.LogInformation("Unable to find {fileName} in {repoUrl}", originalUrl, repo.Url);
+        }
+        return new Tuple<string, string>(originalUrl, null);
     }
     private static async Task<List<RepoSearchResultItem>> GetAllReposForTerm(GitHubClient.GitHubClient gitHubClient, string term, string topic, CancellationToken cancellationToken)
     {
