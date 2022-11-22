@@ -406,7 +406,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private void WriteDeserializerBodyForInheritedModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool inherits) {
         var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
         writer.WriteLines(
-            $"final {parentClass.Name.ToFirstCharacterUpperCase()} currentObject = this;",
             $"final {DeserializerReturnType} {DeserializerVarName} = new {DeserializerReturnType}({(inherits ? "super." + method.Name.ToFirstCharacterLowerCase()+ "()" : fieldToSerialize.Count())});");
         if(fieldToSerialize.Any()) {
             fieldToSerialize
