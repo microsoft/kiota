@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -15,6 +16,12 @@ namespace kiota.Handlers;
 
 internal abstract class BaseKiotaCommandHandler : ICommandHandler
 {
+    protected TempFolderCachingAccessTokenProvider GitHubAuthenticationCachingProvider(ILogger logger) => new(){
+        Logger = logger,
+        ApiBaseUrl = new Uri("https://api.github.com"),
+        Concrete = null,
+        AppId = Configuration.Search.GitHub.AppId,
+    };
     internal static readonly HttpClient httpClient = new();
     public Option<LogLevel> LogLevelOption { get;set; }
     protected KiotaConfiguration Configuration { get => ConfigurationFactory.Value; }
@@ -74,9 +81,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         return true;
     });
     protected bool TutorialMode => tutorialMode.Value;
-    private static void DisplayHint(params string[] messages) {
-        Console.WriteLine();
-        DisplayMessages(ConsoleColor.Blue, messages);
+    private void DisplayHint(params string[] messages) {
+        if(TutorialMode) {
+            Console.WriteLine();
+            DisplayMessages(ConsoleColor.Blue, messages);
+        }
     }
     private static void DisplayMessages(ConsoleColor color, params string[] messages) {
         Console.ForegroundColor = color;
@@ -97,25 +106,21 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         DisplayMessages(ConsoleColor.White, messages);
     }
     protected void DisplayDownloadHint(string searchTerm, string version) {
-        if(TutorialMode) {
-            var example = string.IsNullOrEmpty(version) ?
-                $"Example: kiota download {searchTerm} -o <output path>" :
-                $"Example: kiota download {searchTerm} -v {version} -o <output path>";
-            DisplayHint("Hint: use kiota download to download the OpenAPI description.", example);
-        }
+        var example = string.IsNullOrEmpty(version) ?
+            $"Example: kiota download {searchTerm} -o <output path>" :
+            $"Example: kiota download {searchTerm} -v {version} -o <output path>";
+        DisplayHint("Hint: use kiota download to download the OpenAPI description.", example);
     }
     protected void DisplayShowHint(string searchTerm, string version, string path = null) {
-        if(TutorialMode) {
-            var example = path switch {
-                _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path}",
-                _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm}",
-                _ => $"Example: kiota show -k {searchTerm} -v {version}",
-            };
-            DisplayHint("Hint: use kiota show to display a tree of paths present in the OpenAPI description.", example);
-        }
+        var example = path switch {
+            _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path}",
+            _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm}",
+            _ => $"Example: kiota show -k {searchTerm} -v {version}",
+        };
+        DisplayHint("Hint: use kiota show to display a tree of paths present in the OpenAPI description.", example);
     }
     protected void DisplayShowAdvancedHint(string searchTerm, string version, IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path = null) {
-        if(TutorialMode && !includePaths.Any() && !excludePaths.Any()) {
+        if(!includePaths.Any() && !excludePaths.Any()) {
             var example = path switch {
                 _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path} --include-path **/foo",
                 _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm} --include-path **/foo",
@@ -124,11 +129,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
             DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths displayed.", example);
         }
     }
-    protected static void DisplaySearchAddHint() {
+    protected void DisplaySearchAddHint() {
         DisplayHint("Hint: add your own API to the search result https://aka.ms/kiota/addapi.");
     }
     protected void DisplaySearchHint(string firstKey, string version) {
-        if (TutorialMode &&!string.IsNullOrEmpty(firstKey)) {
+        if (!string.IsNullOrEmpty(firstKey)) {
             var example = string.IsNullOrEmpty(version) ?
                 $"Example: kiota search {firstKey}" :
                 $"Example: kiota search {firstKey} -v {version}";
@@ -136,35 +141,42 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         }
     }
     protected void DisplayGenerateHint(string path, IEnumerable<string> includedPaths, IEnumerable<string> excludedPaths) {
-        if(TutorialMode) {
-            var includedPathsSuffix = ((includedPaths?.Any() ?? false)? " -i " : string.Empty) + string.Join(" -i ", includedPaths);
-            var excludedPathsSuffix = ((excludedPaths?.Any() ?? false)? " -e " : string.Empty) + string.Join(" -e ", excludedPaths);
-            var example = $"Example: kiota generate -l <language> -o <output path> -d {path}{includedPathsSuffix}{excludedPathsSuffix}";
-            DisplayHint("Hint: use kiota generate to generate a client for the OpenAPI description.", example);
-        }
+        var includedPathsSuffix = ((includedPaths?.Any() ?? false)? " -i " : string.Empty) + string.Join(" -i ", includedPaths);
+        var excludedPathsSuffix = ((excludedPaths?.Any() ?? false)? " -e " : string.Empty) + string.Join(" -e ", excludedPaths);
+        var example = $"Example: kiota generate -l <language> -o <output path> -d {path}{includedPathsSuffix}{excludedPathsSuffix}";
+        DisplayHint("Hint: use kiota generate to generate a client for the OpenAPI description.", example);
     }
     protected void DisplayGenerateAdvancedHint(IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path) {
-        if(TutorialMode && !includePaths.Any() && !excludePaths.Any()) {
+        if(!includePaths.Any() && !excludePaths.Any()) {
             DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths generated.",
                         $"Example: kiota generate --include-path **/foo -d {path}");
         }
     }
     protected void DisplayInfoHint(GenerationLanguage language, string path) {
-        if(TutorialMode) {
-            DisplayHint("Hint: use the info command to get the list of dependencies you need to add to your project.",
-                        $"Example: kiota info -d {path} -l {language}");
-        }
+        DisplayHint("Hint: use the info command to get the list of dependencies you need to add to your project.",
+                    $"Example: kiota info -d {path} -l {language}");
     }
     protected void DisplayCleanHint(string commandName) {
-        if(TutorialMode) {
-            DisplayHint("Hint: to force the generation to overwrite an existing client pass the --clean-output switch.",
-                        $"Example: kiota {commandName} --clean-output");
-        }
+        DisplayHint("Hint: to force the generation to overwrite an existing client pass the --clean-output switch.",
+                    $"Example: kiota {commandName} --clean-output");
     }
     protected void DisplayInfoAdvancedHint() {
-        if(TutorialMode) {
-            DisplayHint("Hint: use the language argument to get the list of dependencies you need to add to your project.",
-                        "Example: kiota info -l <language>");
+        DisplayHint("Hint: use the language argument to get the list of dependencies you need to add to your project.",
+                    "Example: kiota info -l <language>");
+    }
+    protected void DisplayGitHubLogoutHint() {
+        DisplayHint("Hint: use the logout command to sign out of GitHub.",
+                    "Example: kiota logout github");
+    }
+    protected void DisplaySearchBasicHint() {
+        DisplayHint("Hint: use the search command to search for an OpenAPI description.",
+                    "Example: kiota search <search term>");
+    }
+    protected void DisplayLoginHint(ILogger logger) {
+        var cachingConfig = GitHubAuthenticationCachingProvider(logger);
+        if(!cachingConfig.IsCachedTokenPresent()) {
+            DisplayHint("Hint: use the login command to sign in to GitHub and access private OpenAPI descriptions.",
+                        "Example: kiota login github");
         }
     }
     protected static void DisplayGitHubDeviceCodeLoginMessage(Uri uri, string code) {

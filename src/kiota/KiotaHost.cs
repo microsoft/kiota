@@ -40,6 +40,9 @@ public class KiotaHost {
         var githubLogoutCommand = new Command("github", "Logs out of GitHub.") {
             logLevelOption,
         };
+        githubLogoutCommand.Handler = new KiotaGitHubLogoutCommandHandler {
+            LogLevelOption = logLevelOption,
+        };
         return githubLogoutCommand;
     }
     private static Command GetLoginCommand() {

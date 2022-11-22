@@ -20,10 +20,10 @@ internal class KiotaGitHubLoginCommandHandler : BaseKiotaCommandHandler
                 return await LoginAsync(logger, cancellationToken);
             } catch (Exception ex) {
     #if DEBUG
-                logger.LogCritical(ex, "error downloading a description: {exceptionMessage}", ex.Message);
+                logger.LogCritical(ex, "error signing in to GitHub: {exceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached
     #else
-                logger.LogCritical("error downloading a description: {exceptionMessage}", ex.Message);
+                logger.LogCritical("error signing in to GitHub: {exceptionMessage}", ex.Message);
                 return 1;
     #endif
             }
@@ -31,7 +31,6 @@ internal class KiotaGitHubLoginCommandHandler : BaseKiotaCommandHandler
         }
     }
     private async Task<int> LoginAsync(ILogger logger, CancellationToken cancellationToken) {
-        //TODO handle caching
         var authenticationProvider = new GitHubAuthenticationProvider(Configuration.Search.GitHub.AppId,
                                                                         "repo",
                                                                         new List<string> { "api.github.com"},
@@ -45,8 +44,8 @@ internal class KiotaGitHubLoginCommandHandler : BaseKiotaCommandHandler
         await authenticationProvider.AuthenticateRequestAsync(dummyRequest, cancellationToken: cancellationToken);
         if(dummyRequest.Headers.TryGetValue("Authorization", out var authHeaderValue) && authHeaderValue is string authHeader && authHeader.StartsWith("bearer", StringComparison.OrdinalIgnoreCase)) {
             DisplaySuccess("Authentication successful.");
-            //TODO hint to search command
-            //TODO hint to logout command
+            DisplaySearchBasicHint();
+            DisplayGitHubLogoutHint();
             return 0;
         } else {
             DisplayError("Authentication failed. Please try again.");

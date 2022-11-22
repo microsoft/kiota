@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.SearchProviders.GitHub.Authentication;
 
-internal class TempFolderCachingAccessTokenProvider : IAccessTokenProvider
+public class TempFolderCachingAccessTokenProvider : IAccessTokenProvider
 {
     public required IAccessTokenProvider Concrete
     {

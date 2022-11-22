@@ -38,7 +38,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
 
             try {
                 var results = await new KiotaSearcher(logger, Configuration.Search, httpClient).SearchAsync(cancellationToken);
-                DisplayResults(results);
+                DisplayResults(results, logger);
                 return 0;
             } catch (Exception ex) {
     #if DEBUG
@@ -51,7 +51,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private void DisplayResults(IDictionary<string, SearchResult> results){
+    private void DisplayResults(IDictionary<string, SearchResult> results, ILogger logger){
         var searchTerm = Configuration.Search.SearchTerm;
         if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm)) {
             var result = results.First();
@@ -75,6 +75,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             var layout = new StackLayoutView { view };
             console.Append(layout);
             DisplaySearchHint(results.Keys.FirstOrDefault(), Configuration.Search.Version);
+            DisplayLoginHint(logger);
             DisplaySearchAddHint();
         }
     }
