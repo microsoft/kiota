@@ -60,14 +60,6 @@ namespace Kiota.Builder.Tests.Writers.TypeScript {
             Assert.Contains($"{PropertyName}?: {TypeName} | undefined", result);
         }
         [Fact]
-        public void WritesPrivateSetter() {
-            property.Kind = CodePropertyKind.Custom;
-            property.ReadOnly = true;
-            writer.Write(property);
-            var result = tw.ToString();
-            Assert.Contains("readonly", result);
-        }
-        [Fact]
         public void WritesFlagEnums() {
             property.Kind = CodePropertyKind.Custom;
             property.Type = new CodeType {
