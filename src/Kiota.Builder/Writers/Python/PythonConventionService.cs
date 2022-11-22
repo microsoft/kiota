@@ -105,6 +105,8 @@ public class PythonConventionService : CommonLanguageConventionService
             return type.TypeDefinition?.Name.ToFirstCharacterUpperCase();
         if (type.Name.Contains("QueryParameters"))
             return type.Name;
+        if (type.Name.Contains("APIError"))
+            return type.Name;
         return type.Name switch  {
             "String" or "string" => "str",
             "integer" or "int32" or "int64" or "byte" or "sbyte" => "int",
