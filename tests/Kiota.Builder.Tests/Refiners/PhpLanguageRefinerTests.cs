@@ -1,6 +1,7 @@
 ﻿using System.Linq;
-
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
 
 using Xunit;
@@ -12,7 +13,7 @@ namespace Kiota.Builder.Tests.Refiners
         private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
 
         [Fact]
-        public void ReplacesRequestBuilderPropertiesByMethods()
+        public async Task ReplacesRequestBuilderPropertiesByMethods()
         {
             var model = root.AddClass(new CodeClass
             {
@@ -29,13 +30,13 @@ namespace Kiota.Builder.Tests.Refiners
                     Name = "string"
                 }
             }).First();
-            ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
+            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
             Assert.Equal("breaks", requestBuilder.Name);
             Assert.Equal("userRequestBuilder", model.Name);
         }
 
         [Fact]
-        public void PrefixReservedWordPropertyNamesWith()
+        public async Task PrefixReservedWordPropertyNamesWith()
         {
             var model = root.AddClass(new CodeClass
             {
@@ -53,12 +54,12 @@ namespace Kiota.Builder.Tests.Refiners
                 }
             }).First();
             
-            ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
+            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
             Assert.Equal("EscapedContinue",property.Name);
         }
         
         [Fact]
-        public void ReplacesBinaryWithNativeType()
+        public async Task ReplacesBinaryWithNativeType()
         {
             var model = root.AddClass(new CodeClass
             {
@@ -73,12 +74,12 @@ namespace Kiota.Builder.Tests.Refiners
             {
                 Name = "binary"
             };
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP}, root);
+            await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP}, root);
             Assert.Equal("StreamInterface", method.ReturnType.Name);
         }
 
         [Fact]
-        public void AddsDefaultImports() {
+        public async Task AddsDefaultImports() {
             var model = root.AddClass(new CodeClass
             {
                 Name = "model",
@@ -89,14 +90,8 @@ namespace Kiota.Builder.Tests.Refiners
                 Name = "rb",
                 Kind = CodeClassKind.RequestBuilder,
             }).First();
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+            await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
             Assert.NotEmpty(model.StartBlock.Usings);
-        }
-
-        [Fact]
-        public void TestCanReturnCorrectAccess()
-        {
-            
         }
     }
 }

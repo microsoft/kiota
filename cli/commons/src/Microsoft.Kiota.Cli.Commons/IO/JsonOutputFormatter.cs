@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.Text.Json;
 using Spectre.Console;
 
@@ -28,9 +28,13 @@ public class JsonOutputFormatter : IOutputFormatter
     }
 
     /// <inheritdoc />
-    public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task WriteOutputAsync(Stream? content, IOutputFormatterOptions? options = null, CancellationToken cancellationToken = default)
     {
         string resultStr;
+        if (content == null)
+        {
+            return;
+        }
 
         if (options is IJsonOutputFormatterOptions jsonOptions && jsonOptions.OutputIndented)
         {

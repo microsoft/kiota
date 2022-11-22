@@ -14,7 +14,7 @@ namespace Kiota.Builder.Tests.OpenApiExtensions;
 public class OpenApiEnumValuesDescriptionExtensionTests {
     [Fact]
     public void NOOPTestForCoverage() {
-        // This class is already covered by the convertion libary tests
+        // This class is already covered by the convertion library tests
         var value = new OpenApiEnumValuesDescriptionExtension
         {
             EnumName = "some enum",

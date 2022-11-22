@@ -183,4 +183,115 @@ public class OpenApiUrlTreeNodeExtensionsTests
         Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select,api%2Dversion,api%7Etopic,api%2Eencoding}", node.Children.First().Value.GetUrlTemplate());
         // the query parameters will be decoded by a middleware at runtime before the request is executed
     }
+    [InlineData("\\reviews\\search.json", "reviews.search")]
+    [InlineData("\\members\\$ref", "members.ref")]
+    [Theory]
+    public void GetsNamespaceFromPath(string source, string expected)
+    {
+        Assert.Equal(expected, source.GetNamespaceFromPath(string.Empty));
+    }
+    [Fact]
+    public void GetsClassNameWithIndexerAndExtension() {
+        var doc = new OpenApiDocument
+        {
+            Paths = new(),
+        };
+        doc.Paths.Add("/reviews/{resource-type}.json", new()
+        {
+            Operations = new Dictionary<OperationType, OpenApiOperation> {
+                { OperationType.Get, new() {
+                        Parameters = new List<OpenApiParameter> {
+                            new() {
+                                Name = "resource-type",
+                                In = ParameterLocation.Path,
+                                Required = true,
+                                Schema = new() {
+                                    Type = "string"
+                                },
+                                Style = ParameterStyle.Simple,
+                            }
+                        },
+                        Responses = new OpenApiResponses() {
+                            {"200", new() {
+                                Content = new Dictionary<string, OpenApiMediaType>() {
+                                    {"application/json", new() {
+                                        Schema = new () {
+                                            Type = "string"
+                                        }
+                                    }}
+                                }
+                            }}
+                        }
+                    }
+                }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var result = node.Children["reviews"].Children["{resource-type}.json"].GetClassName(new(){"application/json"});
+        Assert.Equal("ResourceType", result);
+    }
+    [Fact]
+    public void GetsClassNameWithSegmentsToSkipForClassNames() {
+        var doc = new OpenApiDocument
+        {
+            Paths = new(),
+        };
+        doc.Paths.Add("/reviews/{resource-type}.json", new()
+        {
+            Operations = new Dictionary<OperationType, OpenApiOperation> {
+                { 
+                    OperationType.Get, new() {
+                        Parameters = new List<OpenApiParameter> {
+                            new() {
+                                Name = "resource-type",
+                                In = ParameterLocation.Path,
+                                Required = true,
+                                Schema = new() {
+                                    Type = "string"
+                                },
+                                Style = ParameterStyle.Simple,
+                            }
+                        },
+                        Responses = new OpenApiResponses() 
+                        {
+                            {
+                                "200", new() 
+                                {
+                                    Content = new Dictionary<string, OpenApiMediaType>() 
+                                    {
+                                        {
+                                            "application/json", new() 
+                                            { 
+                                                Schema = new () 
+                                                {
+                                                    Type = "object",
+                                                    Title = "json",
+                                                    Reference = new OpenApiReference()
+                                                    {
+                                                        Id = "microsoft.graph.json"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }   
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var result = node.Children["reviews"].Children["{resource-type}.json"].GetClassName(new(){"application/json"});
+        Assert.Equal("ResourceType", result);
+        
+        // Get the responseSchema with a type "microsoft.graph.json"
+        var responseSchema = node.Children["reviews"].Children["{resource-type}.json"].PathItems["default"].Operations[0].Responses["200"].Content["application/json"].Schema;
+        var responseClassName = node.Children["reviews"].Children["{resource-type}.json"]
+            .GetClassName(new() { "application/json" },schema: responseSchema);
+        
+        // validate that we get a valid class name
+        Assert.Equal("Json",responseClassName);
+    }
 }

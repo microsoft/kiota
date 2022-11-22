@@ -1,7 +1,8 @@
 using System;
 using System.Linq;
-
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
 
 using Xunit;
@@ -21,7 +22,7 @@ public class PythonLanguageRefinerTests {
     }
 #region commonrefiner
     [Fact]
-    public void AddsDefaultImports() {
+    public async Task AddsDefaultImports() {
         var model = graphNS.AddClass(new CodeClass {
             Name = "someModel",
             Kind = CodeClassKind.Model
@@ -29,11 +30,11 @@ public class PythonLanguageRefinerTests {
 
         Assert.Empty(model.Methods);
         var declaration = model.StartBlock;
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS);
         Assert.Contains("annotations", declaration.Usings.Select(x => x.Name));
     }
     [Fact]
-    public void AddsQueryParameterMapperMethod() {
+    public async Task AddsQueryParameterMapperMethod() {
         var model = graphNS.AddClass(new CodeClass {
             Name = "somemodel",
             Kind = CodeClassKind.QueryParameters,
@@ -49,17 +50,17 @@ public class PythonLanguageRefinerTests {
 
         Assert.Empty(model.Methods);
 
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS);
         Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
     }
     [Fact]
-    public void AddsExceptionInheritanceOnErrorClasses() {
+    public async Task AddsExceptionInheritanceOnErrorClasses() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
 
         var declaration = model.StartBlock;
 
@@ -67,7 +68,7 @@ public class PythonLanguageRefinerTests {
         Assert.Equal("APIError", declaration.Inherits.Name);
     }
     [Fact]
-    public void FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
+    public async Task FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
             Kind = CodeClassKind.Model,
@@ -77,10 +78,10 @@ public class PythonLanguageRefinerTests {
         declaration.Inherits = new CodeType {
             Name = "SomeOtherModel"
         };
-        Assert.Throws<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root));
     }
     [Fact]
-    public void AddsUsingsForErrorTypesForRequestExecutor() {
+    public async Task AddsUsingsForErrorTypesForRequestExecutor() {
         var requestBuilder = root.AddClass(new CodeClass {
             Name = "somerequestbuilder",
             Kind = CodeClassKind.RequestBuilder,
@@ -102,14 +103,14 @@ public class PythonLanguageRefinerTests {
                         Name = "Error4XX",
                         TypeDefinition = errorClass,
                     });
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
 
         var declaration = requestBuilder.StartBlock;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
     [Fact]
-    public void AddsUsingsForDiscriminatorTypes() {
+    public async Task AddsUsingsForDiscriminatorTypes() {
         var parentModel = root.AddClass(new CodeClass {
             Name = "parentModel",
             Kind = CodeClassKind.Model,
@@ -136,7 +137,7 @@ public class PythonLanguageRefinerTests {
                         TypeDefinition = childModel,
                     });
         Assert.False(factoryMethod.Parent is CodeFunction);
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.Equal(childModel, (factoryMethod.Parent as CodeFunction).StartBlock.Usings.First(x => x.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
     }
 #endregion
@@ -150,7 +151,7 @@ public class PythonLanguageRefinerTests {
     private const string AddiationalDataDefaultName = "Dictionary<string, object>";
     private const string HandlerDefaultName = "IResponseHandler";
     [Fact]
-    public void EscapesReservedKeywords() {
+    public async Task EscapesReservedKeywords() {
         var model = root.AddClass(new CodeClass {
             Name = "break",
             Kind = CodeClassKind.Model
@@ -161,12 +162,12 @@ public class PythonLanguageRefinerTests {
                 Name = "void"
             }
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         Assert.NotEqual("break", model.Name);
         Assert.Contains("escaped", voidMethod.Name);
     }
     [Fact]
-    public void CorrectsCoreType() {
+    public async Task CorrectsCoreType() {
 
         var model = root.AddClass(new CodeClass
         {
@@ -243,7 +244,7 @@ public class PythonLanguageRefinerTests {
                 Name = PathParametersDefaultName
             },
         });
-        ILanguageRefiner.Refine(new GenerationConfiguration{ Language = GenerationLanguage.Python }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration{ Language = GenerationLanguage.Python }, root);
         Assert.Empty(model.Properties.Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => FactoryDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => DateTimeOffsetDefaultName.Equals(x.Type.Name)));
@@ -253,10 +254,10 @@ public class PythonLanguageRefinerTests {
         Assert.Empty(model.Methods.Where(x => DeserializeDefaultName.Equals(x.ReturnType.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => HandlerDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
-        Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeUnionType));
+        Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeComposedTypeBase));
     }
     [Fact]
-    public void ReplacesDateTimeOffsetByNativeType() {
+    public async Task ReplacesDateTimeOffsetByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -267,12 +268,12 @@ public class PythonLanguageRefinerTests {
                 Name = "DateTimeOffset"
             },
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("datetime", method.ReturnType.Name);
     }
     [Fact]
-    public void ReplacesDateOnlyByNativeType() {
+    public async Task ReplacesDateOnlyByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -283,12 +284,12 @@ public class PythonLanguageRefinerTests {
                 Name = "DateOnly"
             },
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("date", method.ReturnType.Name);
     }
     [Fact]
-    public void ReplacesTimeOnlyByNativeType() {
+    public async Task ReplacesTimeOnlyByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -299,12 +300,12 @@ public class PythonLanguageRefinerTests {
                 Name = "TimeOnly"
             },
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("time", method.ReturnType.Name);
     }
     [Fact]
-    public void ReplacesDurationByNativeType() {
+    public async Task ReplacesDurationByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -315,12 +316,12 @@ public class PythonLanguageRefinerTests {
                 Name = "TimeSpan"
             },
         }).First();
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("timedelta", method.ReturnType.Name);
     }
         [Fact]
-    public void AliasesDuplicateUsingSymbols() {
+    public async Task AliasesDuplicateUsingSymbols() {
         var model = graphNS.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -354,13 +355,13 @@ public class PythonLanguageRefinerTests {
         };
         model.AddUsing(using1);
         model.AddUsing(using2);
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.NotEmpty(using1.Alias);
         Assert.NotEmpty(using2.Alias);
         Assert.NotEqual(using1.Alias, using2.Alias);
     }
     [Fact]
-    public void DoesNotKeepCancellationParametersInRequestExecutors()
+    public async Task DoesNotKeepCancellationParametersInRequestExecutors()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -385,12 +386,12 @@ public class PythonLanguageRefinerTests {
             Type = new CodeType { Name = "CancellationToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         Assert.False(method.Parameters.Any());
         Assert.DoesNotContain(cancellationParam, method.Parameters);
     }
     [Fact]
-    public void AddsPropertiesAndMethodTypesImportsPython() {
+    public async Task AddsPropertiesAndMethodTypesImportsPython() {
         var requestBuilder = root.AddClass(new CodeClass {
             Name = "somerequestbuilder",
             Kind = CodeClassKind.RequestBuilder,
@@ -418,7 +419,7 @@ public class PythonLanguageRefinerTests {
 
         Assert.Empty(model.Methods);
         var declaration = model.StartBlock;
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS);
         Assert.Single(requestBuilder.Methods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor)));
         Assert.DoesNotContain("QueryParameters", declaration.Usings.Select(x => x.Name));
     }

@@ -16,13 +16,19 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 7.0.x
+    - name: Restore workloads
+      run: dotnet workload restore
     - name: Restore dependencies
       run: dotnet restore kiota.sln
     - name: Build
       run: dotnet build kiota.sln --no-restore
+    - name: Install PlayWright browsers
+      run: |
+        dotnet tool install --global Microsoft.Playwright.CLI
+        playwright install
     - name: Test
       run: dotnet test kiota.sln --no-build --verbosity normal --collect:"XPlat Code Coverage"
     - name: Install report generator

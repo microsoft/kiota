@@ -33,7 +33,8 @@ composer require microsoft/kiota-serialization-text
 ```
 
 Add the following to your `composer.json` to set your namespaces correctly:
-```shell
+
+```json
 "autoload": {
     "psr-4": {
         "GetUser\\Client\\": "client/"
@@ -50,7 +51,7 @@ Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** a
 You can then use the Kiota command line tool to generate the SDK classes.
 
 ```shell
-kiota -l PHP -d ../getme.yml -c GraphApiClient -n GetUser\Client -o ./client
+kiota generate -l PHP -d ../getme.yml -c GraphApiClient -n GetUser\Client -o ./client
 ```
 
 To ensure the newly generated classes can be imported, update the autoload paths using:
@@ -68,7 +69,7 @@ Follow the instructions in [Register an application for Microsoft identity platf
 ## Creating the client application
 
 Create a file in the root of the project named **GetUser.php** and add the following code. Replace the `$tenantId`, `$clientId`, `$clientSecret`
-with your credentials from the previous step. See [Get access on behalf of a user](https://docs.microsoft.com/en-us/graph/auth-v2-user?context=graph%2Fapi%2F1.0&view=graph-rest-1.0) for details on
+with your credentials from the previous step. See [Get access on behalf of a user](https://learn.microsoft.com/graph/auth-v2-user?context=graph%2Fapi%2F1.0&view=graph-rest-1.0) for details on
 how to get the `$authorizationCode` and set the `$redirectUri`.
 
 ```php

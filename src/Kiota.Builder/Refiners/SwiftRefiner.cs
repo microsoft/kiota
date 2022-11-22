@@ -1,45 +1,53 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading;
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
 public class SwiftRefiner : CommonLanguageRefiner
 {
     public SwiftRefiner(GenerationConfiguration configuration) : base(configuration) {}
-    public override void Refine(CodeNamespace generatedCode)
+    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        CapitalizeNamespacesFirstLetters(generatedCode);
-        AddRootClassForExtensions(generatedCode);
-        ReplaceIndexersByMethodsWithParameter(
-            generatedCode,
-            generatedCode,
-            false,
-            "ById");
-        ReplaceReservedNames(
-            generatedCode,
-            new SwiftReservedNamesProvider(),
-            x => $"{x}_escaped");
-        RemoveCancellationParameter(generatedCode);
-        ConvertUnionTypesToWrapper(
-            generatedCode,
-            _configuration.UsesBackingStore
-        );
-        AddPropertiesAndMethodTypesImports(
-            generatedCode,
-            true,
-            false,
-            true);
-        AddDefaultImports(
-            generatedCode,
-            defaultUsingEvaluators);
-        CorrectCoreType(
-            generatedCode,
-            CorrectMethodType,
-            CorrectPropertyType,
-            CorrectImplements);
+        return Task.Run(() => {
+            cancellationToken.ThrowIfCancellationRequested();
+            CapitalizeNamespacesFirstLetters(generatedCode);
+            AddRootClassForExtensions(generatedCode);
+            ReplaceIndexersByMethodsWithParameter(
+                generatedCode,
+                generatedCode,
+                false,
+                "ById");
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceReservedNames(
+                generatedCode,
+                new SwiftReservedNamesProvider(),
+                x => $"{x}_escaped");
+            RemoveCancellationParameter(generatedCode);
+            ConvertUnionTypesToWrapper(
+                generatedCode,
+                _configuration.UsesBackingStore
+            );
+            cancellationToken.ThrowIfCancellationRequested();
+            AddPropertiesAndMethodTypesImports(
+                generatedCode,
+                true,
+                false,
+                true);
+            AddDefaultImports(
+                generatedCode,
+                defaultUsingEvaluators);
+            cancellationToken.ThrowIfCancellationRequested();
+            CorrectCoreType(
+                generatedCode,
+                CorrectMethodType,
+                CorrectPropertyType,
+                CorrectImplements);
+        }, cancellationToken);
     }
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),

@@ -1,0 +1,160 @@
+﻿@page "/"
+@using Kiota.Builder
+@using Kiota.Builder.SearchProviders
+@using Kiota.Builder.Configuration
+@using System.Web
+@using System.Text.RegularExpressions
+@using System.Linq
+@inject ILoggerFactory LoggerFactory
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using Microsoft.Fast.Components.FluentUI
+@using Markdig
+@inject IStringLocalizer<Index> Loc
+@inject NavigationManager navManager
+
+<PageTitle>@Loc["PageTitle"]</PageTitle>
+
+<h1>@Loc["Search"]</h1>
+
+<div>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@SearchTerm @onkeydown=@EnterSubmit>@Loc["SearchTermOrKey"]</FluentTextField>
+    <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
+    <FluentButton Appearance="Appearance.Accent" @onclick=@SearchDocuments Disabled=@IsLoading>@Loc["SearchAction"]</FluentButton>
+    @if(IsLoading) {
+        <FluentProgress></FluentProgress>
+    }
+</div>
+
+@if (SearchResults.Any()) {
+    <div id="results">
+        <FluentDataGrid id="manualGrid" GenerateHeader=GenerateHeaderOption.None GridTemplateColumns="1fr 4fr 1fr" TItem=string>
+            <FluentDataGridRow RowType="DataGridRowType.Header">
+                <FluentDataGridCell GridColumn=1 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Key"]</FluentDataGridCell>
+                <FluentDataGridCell GridColumn=2 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Description"]</FluentDataGridCell>
+                <FluentDataGridCell GridColumn=3 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Actions"]</FluentDataGridCell>
+            </FluentDataGridRow>
+                @foreach (var result in SearchResults.OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase))
+                {
+                    <FluentDataGridRow>
+                        <FluentDataGridCell GridColumn=1>
+                            @result.Key
+                        </FluentDataGridCell>
+                        <FluentDataGridCell GridColumn=2>@SanitizeDescription(result.Value.Description)</FluentDataGridCell>
+                        <FluentDataGridCell GridColumn=3>
+                            <FluentButton Appearance="Appearance.Accent" @onclick="@(e => GoToGenerate(result.Key))">@Loc["GoToGenerate"]</FluentButton>
+                            <FluentButton Appearance="Appearance.Neutral" @onclick="@(e => GoToShow(result.Key))">@Loc["GoToShow"]</FluentButton>
+                        </FluentDataGridCell>
+                    </FluentDataGridRow>
+                }
+        </FluentDataGrid>
+        @if(ShowVersionSelector) {
+            <FluentDialog @ondismiss=OnDialogDismiss>
+                <div class="dialog-content">
+                    <h2>@Loc["SelectVersion"]</h2>
+                    <FluentSelect Id="selectedversion" @bind-Value=@SelectedVersion Required=@true>
+                        @foreach(var version in AvailableVersions) {
+                            <FluentOption Value=@version>@version</FluentOption>
+                        }
+                    </FluentSelect>
+                    <FluentDivider Role=DividerRole.Presentation></FluentDivider>
+                    <FluentButton Appearance="Appearance.Accent" @onclick=@GoToGenerateWithVersion>@Loc["GoToGenerate"]</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" @onclick=@GoToShowWithVersion>@Loc["GoToShow"]</FluentButton>
+                </div>
+            </FluentDialog>
+        }
+    </div>
+} else if (Searched && !IsLoading) {
+    <div id="no-results">
+        <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
+        <span>@Loc["NoResults"]</span>
+    </div>
+}
+
+@code {
+    [Inject] private IApplicationInsights? AppInsights { get; set; }
+    private bool ShowVersionSelector { get; set; }
+    private bool IsLoading { get; set; }
+    private bool Searched { get; set; }
+    private string? SearchTerm { get; set; }
+    private IDictionary<string, SearchResult> SearchResults = new Dictionary<string, SearchResult>();
+    private Task EnterSubmit(KeyboardEventArgs e) {
+        if(e.Key == "Enter") {
+            return EnterSubmitInternal(e);
+        }
+        return Task.CompletedTask;
+    }
+    private async Task EnterSubmitInternal(KeyboardEventArgs e) {
+        await Task.Delay(10, ComponentDetached).ConfigureAwait(false); // so the value is updated
+        await SearchDocuments();
+    }
+    private Task SearchDocuments() {
+        IsLoading = true;
+        Searched = true;
+        return SearchDocumentsInternal();
+    }
+    private const string searchTelemetryKey = "search";
+    private async Task SearchDocumentsInternal() {
+        if(AppInsights != null)
+            await AppInsights.StartTrackEvent(searchTelemetryKey).ConfigureAwait(false);
+        var searchConfig = new SearchConfiguration() {
+            SearchTerm = SearchTerm,
+        };
+        var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
+        SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
+        IsLoading = false;
+        if(AppInsights != null)
+            await AppInsights.StopTrackEvent(searchTelemetryKey, new Dictionary<string, string?> {
+                { "searchterm", SearchTerm },
+                { "results", SearchResults.Count.ToString() },
+            }).ConfigureAwait(false);
+    }
+    private void GoToShow(string key) {
+        if(SearchResults.TryGetValue(key, out var result) && result.VersionLabels.Count <= 1)
+        {
+            navManager.NavigateTo($"/show?d={result.DescriptionUrl}");
+        } else {
+            OpenVersionSelectionDialog(key);
+        }
+    }
+    private void GoToGenerateWithVersion() {
+        navManager.NavigateTo($"/generate?k={SelectedKey}&v={SelectedVersion}");
+    }
+    private void OnDialogDismiss() {
+        ShowVersionSelector = false;
+        SelectedKey = string.Empty;
+        SelectedVersion = string.Empty;
+        AvailableVersions.Clear(); 
+    }
+    private void GoToShowWithVersion() {
+        navManager.NavigateTo($"/show?k={SelectedKey}&v={SelectedVersion}");
+    }
+    private void GoToGenerate(string key) {
+        if(SearchResults.TryGetValue(key, out var result) && result.VersionLabels.Count <= 1)
+        {
+            navManager.NavigateTo($"/generate?d={result.DescriptionUrl}");
+        } else {
+            OpenVersionSelectionDialog(key);
+        }
+    }
+    private string SelectedKey { get; set; } = string.Empty;
+    private string SelectedVersion { get; set; } = string.Empty;
+    private List<string> AvailableVersions { get; set; } = new List<string>();
+    private void OpenVersionSelectionDialog(string key) {
+        if(SearchResults.TryGetValue(key, out var result) && result.VersionLabels.Count >= 1) {
+            ShowVersionSelector = true;
+            SelectedKey = key;
+            SelectedVersion = result.VersionLabels.First();
+            AvailableVersions = new(result.VersionLabels);
+        } else {
+            OnDialogDismiss();
+        }
+    }
+    private static readonly Regex _htmlTagRegex = new Regex("<.*?>", RegexOptions.Compiled);
+    private string SanitizeDescription(string original) {
+        if (string.IsNullOrEmpty(original))
+            return string.Empty;
+
+        return HttpUtility.HtmlDecode(_htmlTagRegex.Replace(Markdown.ToHtml(original), string.Empty));
+    }
+}

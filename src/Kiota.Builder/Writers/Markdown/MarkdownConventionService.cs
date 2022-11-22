@@ -4,7 +4,6 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using static Kiota.Builder.CodeDOM.CodeTypeBase;
-using static Kiota.Builder.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.Markdown {
     public class MarkdownConventionService : CommonLanguageConventionService {
@@ -50,6 +49,11 @@ namespace Kiota.Builder.Writers.Markdown {
         }
         private static HashSet<string> _namespaceSegmentsNames;
         private static readonly object _namespaceSegmentsNamesLock = new();
+
+        public MarkdownConventionService()
+        {
+        }
+
         private static HashSet<string> GetNamesInUseByNamespaceSegments(CodeElement currentElement) {
             if(_namespaceSegmentsNames == null) {
                 lock(_namespaceSegmentsNamesLock) {
@@ -69,7 +73,7 @@ namespace Kiota.Builder.Writers.Markdown {
                 foreach(var segment in GetNamespaceNameSegments(childNs))
                     yield return segment;
         }
-        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
+        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
             if(code is CodeComposedTypeBase)
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
@@ -100,14 +104,14 @@ namespace Kiota.Builder.Writers.Markdown {
                 {
                     // Get the discriminator mappings that refer to types  are in a different namespace that are have the same name
                     // E.g. DataSource from Microsoft.Graph.Beta.Models.Ediscovery and DataSource from Microsoft.Graph.Beta.Models.Security will need to be disambiguated.
-                    var duplicateMappingTypes = discriminatorMethod.DiscriminatorMappings.Select(x => x.Value).OfType<CodeType>()
-                        .Where(x => !DoesTypeExistsInSameNamesSpaceAsTarget(x, targetElement))
-                        .Select(x => x.Name)
-                        .GroupBy(x => x)
-                        .Where(group => group.Count() > 1)
-                        .Select(x => x.Key);
+                    // var duplicateMappingTypes = discriminatorMethod.DiscriminatorMappings.Select(x => x.Value).OfType<CodeType>()
+                    //     .Where(x => !DoesTypeExistsInSameNamesSpaceAsTarget(x, targetElement))
+                    //     .Select(x => x.Name)
+                    //     .GroupBy(x => x)
+                    //     .Where(group => group.Count() > 1)
+                    //     .Select(x => x.Key);
                     
-                    parentElements.AddRange(duplicateMappingTypes);
+                    // parentElements.AddRange(duplicateMappingTypes);
                 }
             }
             
@@ -172,7 +176,7 @@ namespace Kiota.Builder.Writers.Markdown {
                 _ => false,
             };
         }
-        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
         {
             var parameterType = GetTypeString(parameter.Type, targetElement);
             var defaultValue = parameter switch {
@@ -181,6 +185,26 @@ namespace Kiota.Builder.Writers.Markdown {
                 _ => string.Empty,
             };
             return $"{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}";
+        }
+
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return base.ToString();
+        }
+
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
+        {
+            throw new NotImplementedException();
         }
     }
 }

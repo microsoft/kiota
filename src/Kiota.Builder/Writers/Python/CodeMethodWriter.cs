@@ -8,7 +8,10 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Python;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionService>
 {
-    public CodeMethodWriter(PythonConventionService conventionService) : base(conventionService){}
+    public CodeMethodWriter(PythonConventionService conventionService, bool usesBackingStore) : base(conventionService){
+        _usesBackingStore = usesBackingStore;
+    }
+    private readonly bool _usesBackingStore;
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
         if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
@@ -97,10 +100,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToSnakeCase();
         WriteSerializationRegistration(method.SerializerModules, writer, "register_default_serializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "register_default_deserializer");
-        writer.WriteLine($"if not {requestAdapterPropertyName}.base_url:");
-        writer.IncreaseIndent();
-        writer.WriteLine($"{requestAdapterPropertyName}.base_url = \"{method.BaseUrl}\"");
-        writer.DecreaseIndent();
+        if(!string.IsNullOrEmpty(method.BaseUrl)) {
+            writer.WriteLine($"if not {requestAdapterPropertyName}.base_url:");
+            writer.IncreaseIndent();
+            writer.WriteLine($"{requestAdapterPropertyName}.base_url = \"{method.BaseUrl}\"");
+            writer.DecreaseIndent();
+        }
         if(backingStoreParameter != null)
             writer.WriteLine($"self.{requestAdapterPropertyName}.enable_backing_store({backingStoreParameter.Name})");
     }
@@ -123,37 +128,45 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             foreach(var module in serializationModules)
                 writer.WriteLine($"{methodName}({module})");
     }
+    private CodePropertyKind[] _DirectAccessProperties;
+    private CodePropertyKind[] DirectAccessProperties { get {
+        if(_DirectAccessProperties == null) {
+            var directAccessProperties = new List<CodePropertyKind> {
+                CodePropertyKind.BackingStore,
+                CodePropertyKind.RequestBuilder,
+                CodePropertyKind.UrlTemplate,
+                CodePropertyKind.PathParameters
+            };
+            if(!_usesBackingStore) {
+                directAccessProperties.Add(CodePropertyKind.AdditionalData);
+            }
+            _DirectAccessProperties = directAccessProperties.ToArray();
+        }
+        return _DirectAccessProperties;
+    }}
+    private CodePropertyKind[] _SetterAccessProperties;
+    private CodePropertyKind[] SetterAccessProperties {
+        get {
+            if (_SetterAccessProperties == null) {
+                _SetterAccessProperties = new CodePropertyKind[] {
+                    CodePropertyKind.AdditionalData, //additional data and custom properties need to use the accessors in case of backing store use
+                    CodePropertyKind.Custom
+                }.Except(DirectAccessProperties)
+                .ToArray();
+            }
+            return _SetterAccessProperties;
+        }
+    }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
         if(inherits)
             writer.WriteLine("super().__init__()");
-        var propertiesWithDefaultValues = new List<CodePropertyKind> {
-            CodePropertyKind.AdditionalData,
-            CodePropertyKind.BackingStore,
-            CodePropertyKind.RequestBuilder,
-            CodePropertyKind.UrlTemplate,
-            CodePropertyKind.PathParameters,
-        };
-        foreach (var propWithoutDefault in parentClass.Properties.Except(parentClass.GetPropertiesOfKind(propertiesWithDefaultValues.ToArray()))
-                                        .Except(parentClass.GetPropertiesOfKind(CodePropertyKind.RequestAdapter))
-                                        .OrderByDescending(x => x.Kind)
-                                        .ThenBy(x => x.Name)) {
-            var returnType = conventions.GetTypeString(propWithoutDefault.Type, propWithoutDefault, true, writer);
-            conventions.WriteInLineDescription(propWithoutDefault.Description, writer);
-            writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
-            writer.WriteLine();
-        }
-        foreach(var propWithDefault in parentClass.GetPropertiesOfKind(propertiesWithDefaultValues.ToArray())
-                                        .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                        .OrderByDescending(x => x.Kind)
-                                        .ThenBy(x => x.Name)) {
-            var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
-            conventions.WriteInLineDescription(propWithDefault.Description, writer);
-            writer.WriteLine($"self.{conventions.GetAccessModifier(propWithDefault.Access)}{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
-            writer.WriteLine();
-        }
+        WriteDirectAccessProperties(parentClass, writer);
+        WriteSetterAccessProperties(parentClass, writer);
+        WriteSetterAccessPropertiesWithoutDefaults(parentClass, writer);
+
         if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
-            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
+            if(currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+            currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam) {
                 conventions.AddParametersAssignment(writer, 
                                                     pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
@@ -164,6 +177,35 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
             }
             AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
+        }
+    }
+    private void WriteDirectAccessProperties(CodeClass parentClass, LanguageWriter writer) {
+        foreach(var propWithDefault in parentClass.GetPropertiesOfKind(DirectAccessProperties)
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        .OrderByDescending(static x => x.Kind)
+                                        .ThenBy(static x => x.Name)) {
+            var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
+            conventions.WriteInLineDescription(propWithDefault.Description, writer);
+            writer.WriteLine($"self.{conventions.GetAccessModifier(propWithDefault.Access)}{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
+            writer.WriteLine();
+        }
+    }
+    private void WriteSetterAccessProperties(CodeClass parentClass, LanguageWriter writer) {
+        foreach(var propWithDefault in parentClass.GetPropertiesOfKind(SetterAccessProperties)
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        .OrderByDescending(static x => x.Kind)
+                                        .ThenBy(static x => x.Name)) {                                
+            writer.WriteLine($"self.{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
+        }
+    }
+    private void WriteSetterAccessPropertiesWithoutDefaults(CodeClass parentClass, LanguageWriter writer) {
+        foreach(var propWithoutDefault in parentClass.GetPropertiesOfKind(SetterAccessProperties)
+                                        .Where(static x => string.IsNullOrEmpty(x.DefaultValue))
+                                        .OrderByDescending(static x => x.Kind)
+                                        .ThenBy(static x => x.Name)) {
+            var returnType = conventions.GetTypeString(propWithoutDefault.Type, propWithoutDefault, true, writer);
+            conventions.WriteInLineDescription(propWithoutDefault.Description, writer);
+            writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
         }
     }
     private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string variableName = default) {
@@ -274,27 +316,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                             $"{RequestInfoVarName}.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
                             $"{RequestInfoVarName}.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}",
                             $"{RequestInfoVarName}.http_method = Method.{codeElement.HttpMethod.ToString().ToUpperInvariant()}");
-        if(requestParams.requestConfiguration != null) {
-            writer.WriteLine($"if {requestParams.requestConfiguration.Name.ToSnakeCase()}:");
-            writer.IncreaseIndent();
-            var headers = requestParams.Headers;
-            if(headers != null)
-                writer.WriteLine($"{RequestInfoVarName}.add_request_headers({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
-            var queryString = requestParams.QueryParameters;
-            if(queryString != null)
-                writer.WriteLines($"{RequestInfoVarName}.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
-            var options = requestParams.Options;
-            if(options != null)
-                writer.WriteLine($"{RequestInfoVarName}.add_request_options({requestParams.requestConfiguration.Name.ToSnakeCase()}.{options.Name.ToSnakeCase()})");
-            writer.DecreaseIndent();
-        }
-        if(requestParams.requestBody != null) {
-            if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                writer.WriteLine($"{RequestInfoVarName}.set_stream_content({requestParams.requestBody.Name.ToSnakeCase()})");
-            else {
-                writer.WriteLine($"{RequestInfoVarName}.set_content_from_parsable(self.{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
-            }
-        }
+        if(codeElement.AcceptedResponseTypes.Any())
+            writer.WriteLine($"{RequestInfoVarName}.headers[\"Accept\"] = \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\"");
+        UpdateRequestInformationFromRequestConfiguration(requestParams, writer);
+        UpdateRequestInformationFromRequestBody(codeElement, requestParams, requestAdapterProperty, writer);
         writer.WriteLine($"return {RequestInfoVarName}");
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"self.{property.Name.ToSnakeCase()}";
@@ -418,5 +443,35 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
 
         if(isStream || conventions.IsPrimitiveType(returnType)) return "send_primitive_async";
         return "send_async";
+    }
+
+    private static void UpdateRequestInformationFromRequestConfiguration(RequestParams requestParams, LanguageWriter writer)
+    {
+        if(requestParams.requestConfiguration != null) {
+            writer.WriteLine($"if {requestParams.requestConfiguration.Name.ToSnakeCase()}:");
+            writer.IncreaseIndent();
+            var headers = requestParams.Headers;
+            if(headers != null)
+                writer.WriteLine($"{RequestInfoVarName}.add_request_headers({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
+            var queryString = requestParams.QueryParameters;
+            if(queryString != null)
+                writer.WriteLines($"{RequestInfoVarName}.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
+            var options = requestParams.Options;
+            if(options != null)
+                writer.WriteLine($"{RequestInfoVarName}.add_request_options({requestParams.requestConfiguration.Name.ToSnakeCase()}.{options.Name.ToSnakeCase()})");
+            writer.DecreaseIndent();
+        }
+    }
+
+    private void UpdateRequestInformationFromRequestBody(CodeMethod codeElement, RequestParams requestParams, CodeProperty requestAdapterProperty, LanguageWriter writer)
+    {
+        if(requestParams.requestBody != null) {
+            if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+                writer.WriteLine($"{RequestInfoVarName}.set_stream_content({requestParams.requestBody.Name.ToSnakeCase()})");
+            else {
+                var setMethodName = requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass ? "set_content_from_parsable" : "set_content_from_scalar";
+                writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(self.{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
+            }
+        }
     }
 }

@@ -33,7 +33,7 @@ Most SDK generator efforts use a combination of API description of DOM and templ
 
 Kiota takes a different approach to code generation.  The OpenAPI PathItems are analysed and a corresponding language agnostic code model is created.  This code model relies on standard object-oriented features that are available in all recent mainstream languages.
 
-The Code Model built for Kiota is designed to support the features needed to create the thin "typing" veneer over a core HTTP library. It is not intended to be provide a comprehensive code model for any arbitrary code.  This approach of using a common code model is feasible because we are targetting modern object oriented languages and limiting the scenarios to those of making HTTP requests.
+The Code Model built for Kiota is designed to support the features needed to create the thin "typing" veneer over a core HTTP library. It is not intended to be provide a comprehensive code model for any arbitrary code.  This approach of using a common code model is feasible because we are targeting modern object oriented languages and limiting the scenarios to those of making HTTP requests.
 
 ## Refine Code Model by Language
 

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 using Microsoft.OpenApi.Models;

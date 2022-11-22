@@ -30,7 +30,7 @@ namespace Kiota.Builder.Tests.Extensions {
             Assert.Equal(string.Empty, "-".ToCamelCase());
             Assert.Equal("toto", "toto".ToCamelCase());
             Assert.Equal("totoCamelCase", "toto-camel-case".ToCamelCase());
-            Assert.Equal("totoCamelCase", "toto.camel~case".ToCamelCase(".", "~"));
+            Assert.Equal("totoCamelCase", "toto.camel~case".ToCamelCase('.', '~'));
         }
         [Fact]
         public void ToPascalCase() {
@@ -55,6 +55,9 @@ namespace Kiota.Builder.Tests.Extensions {
             Assert.Equal("toto", "Toto".ToSnakeCase());
             Assert.Equal("microsoft_graph_message_content", "microsoft-Graph-Message-Content".ToSnakeCase());
             Assert.Equal("microsoft_graph_message_content", "microsoftGraphMessageContent".ToSnakeCase());
+            Assert.Equal("microsoft_graph_message_content", "microsoft_Graph_Message_Content".ToSnakeCase());
+            Assert.Equal("test_value", "testValue<WithStrippedContent".ToSnakeCase());
+            Assert.Equal("test", "test<Value".ToSnakeCase());
         }
         [Fact]
         public void NormalizeNameSpaceName() {

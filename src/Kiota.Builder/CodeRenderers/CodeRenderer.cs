@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Writers;
 
 namespace Kiota.Builder.CodeRenderers
@@ -21,7 +22,7 @@ namespace Kiota.Builder.CodeRenderers
         }
         public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile, CancellationToken cancellationToken)
         {
-            using var stream = new FileStream(outputFile, FileMode.Create);
+            await using var stream = new FileStream(outputFile, FileMode.Create);
 
             var sw = new StreamWriter(stream);
             writer.SetTextWriter(sw);

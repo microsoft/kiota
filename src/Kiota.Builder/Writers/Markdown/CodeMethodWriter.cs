@@ -86,19 +86,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, MarkdownConvention
         }
     }
     private void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
-        var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-        if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
-            writer.WriteLine($"var mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{codeElement.DiscriminatorPropertyName}\");");
-            writer.WriteLines($"var mappingValue = mappingValueNode?.GetStringValue();");
-            writer.WriteLine("return mappingValue switch {");
-            writer.IncreaseIndent();
-            foreach(var mappedType in codeElement.DiscriminatorMappings) {
-                writer.WriteLine($"\"{mappedType.Key}\" => new {conventions.GetTypeString(mappedType.Value.AllTypes.First() ,codeElement)}(),");
-            }
-            writer.WriteLine($"_ => new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}(),");
-            writer.CloseBlock("};");
-        } else 
-            writer.WriteLine($"return new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
+        // var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
+        // if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
+        //     writer.WriteLine($"var mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{codeElement.DiscriminatorPropertyName}\");");
+        //     writer.WriteLines($"var mappingValue = mappingValueNode?.GetStringValue();");
+        //     writer.WriteLine("return mappingValue switch {");
+        //     writer.IncreaseIndent();
+        //     foreach(var mappedType in codeElement.DiscriminatorMappings) {
+        //         writer.WriteLine($"\"{mappedType.Key}\" => new {conventions.GetTypeString(mappedType.Value.AllTypes.First() ,codeElement)}(),");
+        //     }
+        //     writer.WriteLine($"_ => new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}(),");
+        //     writer.CloseBlock("};");
+        // } else 
+        //     writer.WriteLine($"return new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
     }
     private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
     {
@@ -348,7 +348,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, MarkdownConvention
             writer.WriteLine($"{conventions.DocCommentPrefix}</summary>");
         }
     }
-    private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
+    private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;

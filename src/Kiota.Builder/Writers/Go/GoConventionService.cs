@@ -42,7 +42,7 @@ public class GoConventionService : CommonLanguageConventionService
     }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null) =>
         GetTypeString(code, targetElement, includeCollectionInformation, true);
-    public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool addPointerSymbol)
+    public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool addPointerSymbol, bool includeImportSymbol = true)
     {
         if(code is CodeComposedTypeBase) 
             throw new InvalidOperationException($"Go does not support union types, the union type {code.Name} should have been filtered out by the refiner");
@@ -50,7 +50,7 @@ public class GoConventionService : CommonLanguageConventionService
             var importSymbol = GetImportSymbol(code, targetElement);
             if(!string.IsNullOrEmpty(importSymbol))
                 importSymbol += ".";
-            var typeName = TranslateType(currentType, true);
+            var typeName = TranslateType(currentType, includeImportSymbol);
             var nullableSymbol = addPointerSymbol && 
                                  currentType.IsNullable &&
                                  currentType.TypeDefinition is not CodeInterface &&

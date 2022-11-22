@@ -28,7 +28,7 @@ await client.Users.PostAsync(newUser);
 
 ## Access Related Resources
 
-Resources are accessed via relation properties starting from the client object.  Collections of resources can be accessed by an indexer and a parameter. Once the desired resource has been referenced, the supported HTTP methods are exposed by corresponding methors.  Deeply nested resource hierarchy can be accessed by continuing to traverse relationships.
+Resources are accessed via relation properties starting from the client object. Collections of resources can be accessed by an indexer and a parameter. Once the desired resource has been referenced, the supported HTTP methods are exposed by corresponding methods. Deeply nested resource hierarchy can be accessed by continuing to traverse relationships.
 
 ```csharp
 // An authentication provider from the supported language table
@@ -72,7 +72,7 @@ servers:
   - url: https://example.org/
 paths:
   /speakers:
-    get: 
+    get:
       responses:
         200:
           description: Ok
@@ -80,7 +80,7 @@ paths:
 
 If the OpenAPI description does not describe the response payload, then it should be assumed to be of content type `application/octet-stream`.
 
-SDK implementations should return the response payload in the language-native way of providing an untyped set of bytes. This could be a byte-array or some kind of stream response.  
+SDK implementations should return the response payload in the language-native way of providing an untyped set of bytes. This could be a byte-array or some kind of stream response.
 
 ```csharp
 
@@ -101,7 +101,7 @@ servers:
   - url: https://example.org/
 paths:
   /speakers/{speakerId}:
-    get: 
+    get:
       parameters:
         - name: speakerId
           in: path
@@ -115,8 +115,8 @@ paths:
             application/json:
               schema:
                 type: object
-                properties: 
-                  displayName: 
+                properties:
+                  displayName:
                     type: string
 ```
 
@@ -140,7 +140,7 @@ servers:
   - url: https://example.org/
 paths:
   /speakers/count:
-    get: 
+    get:
       responses:
         200:
           description: Ok
@@ -169,7 +169,7 @@ servers:
   - url: https://example.org/
 paths:
   /speakers:
-    get: 
+    get:
       parameters:
         - name: location
           in: query
@@ -189,8 +189,8 @@ components:
   schemas:
     speaker:
       type: object
-      properties: 
-        displayName: 
+      properties:
+        displayName:
           type: string
         location:
           type: string
@@ -202,20 +202,20 @@ components:
 
 ```
 
-## Heterogenous collection
+## Heterogeneous collection
 
-Kiota SDKs will automatically downcast heterogenous collection items (or single properties) to the target type if a discriminator is present in the description and if the response payload contains a matching mapping entry. This way SDK users can easily access the other properties available on the specialized type.
+Kiota SDKs will automatically downcast heterogeneous collection items (or single properties) to the target type if a discriminator is present in the description and if the response payload contains a matching mapping entry. This way SDK users can easily access the other properties available on the specialized type.
 
 ```yaml
 openapi: 3.0.3
 info:
-  title: Heterogenous collection
+  title: Heterogeneous collection
   version: 1.0.0
 servers:
   - url: https://example.org/
 paths:
   /sessions:
-    get: 
+    get:
       parameters:
         - name: location
           in: query
@@ -236,18 +236,18 @@ components:
     entity:
       type: object
       properties:
-        id: 
+        id:
           type: string
     session:
       allof:
         - $ref: "#/components/schemas/entity"
       type: object
-      properties: 
-        '@OData.Type': 
+      properties:
+        '@OData.Type':
           type: string
           enum:
            - session
-        displayName: 
+        displayName:
           type: string
         location:
           type: string
@@ -255,29 +255,29 @@ components:
       allof:
         - $ref: "#/components/schemas/session"
       type: object
-      properties: 
-        '@OData.Type': 
+      properties:
+        '@OData.Type':
           type: string
           enum:
            - workshop
-        requiredEquipment: 
+        requiredEquipment:
           type: string
     presentation:
       allof:
         - $ref: "#/components/schemas/session"
       type: object
-      properties: 
-        '@OData.Type': 
+      properties:
+        '@OData.Type':
           type: string
           enum:
            - presentation
-        recorded: 
+        recorded:
           type: boolean
 
 ```
 
 ```csharp
-   IEnumerable<Session> sessions = await apiClient.Sessions.GetAsync(); 
+   IEnumerable<Session> sessions = await apiClient.Sessions.GetAsync();
    List<Presentation> presentations = sessions.OfType<Presentation>().ToList();
    // OfType is a native method that filters a collection based on the item type returning a subset
 ```
@@ -293,7 +293,7 @@ servers:
   - url: https://example.org/
 paths:
   /speakers:
-    get: 
+    get:
       responses:
         "2XX":
           description: Success
@@ -302,7 +302,7 @@ paths:
         "5XX":
           $ref: "#/components/responses/errorResponse"
 components:
-  responses: 
+  responses:
     errorResponse:
       description: error
       content:
@@ -310,7 +310,7 @@ components:
           schema:
             type: object
             properties:
-              code: 
+              code:
                 type: string
               message:
                 type: string
@@ -319,10 +319,10 @@ components:
 ```csharp
   try {
    var speakersStream = await apiClient.Speakers.GetAsync();
-  } 
+  }
   catch ( ServerException exception ) {
     Console.WriteLine(exception.Error.Message)
-  } 
+  }
 ```
 
 > **Warning:** Support for ServerException is not supported yet

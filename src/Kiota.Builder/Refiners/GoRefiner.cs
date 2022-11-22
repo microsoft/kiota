@@ -1,131 +1,144 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading;
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
 public class GoRefiner : CommonLanguageRefiner
 {
     public GoRefiner(GenerationConfiguration configuration) : base(configuration) { }
-    public override void Refine(CodeNamespace generatedCode)
+    public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         _configuration.NamespaceNameSeparator = "/";
-        AddInnerClasses(
-            generatedCode,
-            true,
-            null);
-        ReplaceIndexersByMethodsWithParameter(
-            generatedCode,
-            generatedCode,
-            false,
-            "ById");
-        RenameCancellationParameter(generatedCode);
-        RemoveDiscriminatorMappingsTargetingSubNamespaces(generatedCode);
-        ReplaceRequestBuilderPropertiesByMethods(
-            generatedCode
-        );
-        ConvertUnionTypesToWrapper(
-            generatedCode,
-            _configuration.UsesBackingStore
-        );
-        AddRawUrlConstructorOverload(
-            generatedCode
-        );
-        RemoveModelPropertiesThatDependOnSubNamespaces(
-            generatedCode
-        );
-        ReplaceReservedNames(
-            generatedCode,
-            new GoReservedNamesProvider(),
-            x => $"{x}_escaped",
-            shouldReplaceCallback: x => x is not CodeProperty currentProp || 
-                                        !(currentProp.Parent is CodeClass parentClass &&
-                                        parentClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.ParameterSet) &&
-                                        currentProp.Access == AccessModifier.Public)); // Go reserved keywords are all lowercase and public properties are uppercased when we don't provide accessors (models)
-        AddPropertiesAndMethodTypesImports(
-            generatedCode,
-            true,
-            false,
-            true);
-        AddDefaultImports(
-            generatedCode,
-            defaultUsingEvaluators);
-        CorrectCoreType(
-            generatedCode,
-            CorrectMethodType,
-            CorrectPropertyType,
-            CorrectImplements);
-        InsertOverrideMethodForBuildersAndConstructors(generatedCode);
-        DisableActionOf(generatedCode, 
-            CodeParameterKind.RequestConfiguration);
-        AddGetterAndSetterMethods(
-            generatedCode, 
-            new () { 
-                CodePropertyKind.AdditionalData,
-                CodePropertyKind.Custom,
-                CodePropertyKind.BackingStore }, 
-            _configuration.UsesBackingStore,
-            false,
-            "Get",
-            "Set");
-        AddConstructorsForDefaultValues(
-            generatedCode,
-            true,
-            true,  //forcing add as constructors are required for by factories 
-            new[] { CodeClassKind.RequestConfiguration });
-        MakeModelPropertiesNullable(
-            generatedCode);
-        AddErrorImportForEnums(
-            generatedCode);
-        var defaultConfiguration = new GenerationConfiguration();
-        ReplaceDefaultSerializationModules(
-            generatedCode,
-            defaultConfiguration.Serializers,
-            new (StringComparer.OrdinalIgnoreCase) {
-                "github.com/microsoft/kiota-serialization-json-go.JsonSerializationWriterFactory",
-                "github.com/microsoft/kiota-serialization-text-go.TextSerializationWriterFactory"});
-        ReplaceDefaultDeserializationModules(
-            generatedCode,
-            defaultConfiguration.Deserializers,
-            new (StringComparer.OrdinalIgnoreCase) {
-                "github.com/microsoft/kiota-serialization-json-go.JsonParseNodeFactory",
-                "github.com/microsoft/kiota-serialization-text-go.TextParseNodeFactory"});
-        AddSerializationModulesImport(
-            generatedCode,
-            new[] {"github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer"},
-            new[] {"github.com/microsoft/kiota-abstractions-go/serialization.ParseNodeFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultDeserializer"});
-        AddParentClassToErrorClasses(
+        return Task.Run(() => {
+            cancellationToken.ThrowIfCancellationRequested();
+            AddInnerClasses(
                 generatedCode,
-                "ApiError",
-                "github.com/microsoft/kiota-abstractions-go"
-        );
-        AddDiscriminatorMappingsUsingsToParentClasses(
-            generatedCode,
-            "ParseNode",
-            true
-        );
-        AddParsableImplementsForModelClasses(
-            generatedCode,
-            "Parsable"
-        );
-        RenameInnerModelsToAppended(
-            generatedCode
-        );
-        CopyModelClassesAsInterfaces(
-            generatedCode,
-            x => $"{x.Name}able"
-        );
-        RemoveHandlerFromRequestBuilder(generatedCode);
+                true,
+                null);
+            ReplaceIndexersByMethodsWithParameter(
+                generatedCode,
+                generatedCode,
+                false,
+                "ById");
+            RenameCancellationParameter(generatedCode);
+            RemoveDiscriminatorMappingsTargetingSubNamespaces(generatedCode);
+            cancellationToken.ThrowIfCancellationRequested();
+            ReplaceRequestBuilderPropertiesByMethods(
+                generatedCode
+            );
+            ConvertUnionTypesToWrapper(
+                generatedCode,
+                _configuration.UsesBackingStore
+            );
+            AddRawUrlConstructorOverload(
+                generatedCode
+            );
+            cancellationToken.ThrowIfCancellationRequested();
+            RemoveModelPropertiesThatDependOnSubNamespaces(
+                generatedCode
+            );
+            ReplaceReservedNames(
+                generatedCode,
+                new GoReservedNamesProvider(),
+                x => $"{x}_escaped",
+                shouldReplaceCallback: x => x is not CodeProperty currentProp || 
+                                            !(currentProp.Parent is CodeClass parentClass &&
+                                            parentClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.ParameterSet) &&
+                                            currentProp.Access == AccessModifier.Public)); // Go reserved keywords are all lowercase and public properties are uppercased when we don't provide accessors (models)
+            cancellationToken.ThrowIfCancellationRequested();
+            AddPropertiesAndMethodTypesImports(
+                generatedCode,
+                true,
+                false,
+                true);
+            AddDefaultImports(
+                generatedCode,
+                defaultUsingEvaluators);
+            CorrectCoreType(
+                generatedCode,
+                CorrectMethodType,
+                CorrectPropertyType,
+                CorrectImplements);
+            cancellationToken.ThrowIfCancellationRequested();
+            DisableActionOf(generatedCode, 
+                CodeParameterKind.RequestConfiguration);
+            AddGetterAndSetterMethods(
+                generatedCode, 
+                new () { 
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.BackingStore }, 
+                _configuration.UsesBackingStore,
+                false,
+                "Get",
+                "Set");
+            AddConstructorsForDefaultValues(
+                generatedCode,
+                true,
+                true,  //forcing add as constructors are required for by factories 
+                new[] { CodeClassKind.RequestConfiguration });
+            cancellationToken.ThrowIfCancellationRequested();
+            MakeModelPropertiesNullable(
+                generatedCode);
+            AddErrorImportForEnums(
+                generatedCode);
+            var defaultConfiguration = new GenerationConfiguration();
+            ReplaceDefaultSerializationModules(
+                generatedCode,
+                defaultConfiguration.Serializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "github.com/microsoft/kiota-serialization-json-go.JsonSerializationWriterFactory",
+                    "github.com/microsoft/kiota-serialization-text-go.TextSerializationWriterFactory"});
+            ReplaceDefaultDeserializationModules(
+                generatedCode,
+                defaultConfiguration.Deserializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "github.com/microsoft/kiota-serialization-json-go.JsonParseNodeFactory",
+                    "github.com/microsoft/kiota-serialization-text-go.TextParseNodeFactory"});
+            AddSerializationModulesImport(
+                generatedCode,
+                new[] {"github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer"},
+                new[] {"github.com/microsoft/kiota-abstractions-go/serialization.ParseNodeFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultDeserializer"});
+            cancellationToken.ThrowIfCancellationRequested();
+            AddParentClassToErrorClasses(
+                    generatedCode,
+                    "ApiError",
+                    "github.com/microsoft/kiota-abstractions-go"
+            );
+            AddDiscriminatorMappingsUsingsToParentClasses(
+                generatedCode,
+                "ParseNode",
+                true
+            );
+            AddParsableImplementsForModelClasses(
+                generatedCode,
+                "Parsable"
+            );
+            RenameInnerModelsToAppended(
+                generatedCode
+            );
+            cancellationToken.ThrowIfCancellationRequested();
+            CopyModelClassesAsInterfaces(
+                generatedCode,
+                x => $"{x.Name}able"
+            );
+            RemoveHandlerFromRequestBuilder(generatedCode);
+            AddContextParameterToGeneratorMethods(generatedCode);
+        }, cancellationToken);
     }
     
     protected static void RenameCancellationParameter(CodeElement currentElement){
         if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) && currentMethod.Parameters.OfKind(CodeParameterKind.Cancellation) is CodeParameter parameter)
         {
-            parameter.Name = "ctx";
-            parameter.Description = "Pass a context parameter to the request";
+            parameter.Name = ContextParameterName;
+            parameter.Description = ContextVarDescription;
             parameter.Kind = CodeParameterKind.Cancellation;
             parameter.Optional = false;
             parameter.Type.Name = conventions.ContextVarTypeName;
@@ -133,38 +146,24 @@ public class GoRefiner : CommonLanguageRefiner
         }
         CrawlTree(currentElement, RenameCancellationParameter);
     }
-    
-    private void RemoveHandlerFromRequestBuilder(CodeElement currentElement)
-    {
-        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
-        {
-            var codeMethods = currentClass.Methods.Where(x => x.Kind == CodeMethodKind.RequestExecutor);
-            foreach (var codeMethod in codeMethods)
-            {
-                codeMethod.RemoveParametersByKind(CodeParameterKind.ResponseHandler);
-            }
-        }
-
-        CrawlTree(currentElement, RemoveHandlerFromRequestBuilder);
+    private const string ContextParameterName = "ctx";
+    private const string ContextVarDescription = "Pass a context parameter to the request";
+    private static void AddContextParameterToGeneratorMethods(CodeElement currentElement) {
+        if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestGenerator) &&
+            currentMethod.Parameters.OfKind(CodeParameterKind.Cancellation) is null)
+            currentMethod.AddParameter(new CodeParameter {
+                Name = ContextParameterName,
+                Type = new CodeType {
+                    Name = conventions.ContextVarTypeName,
+                    IsNullable = false,
+                },
+                Kind = CodeParameterKind.Cancellation,
+                Optional = false,
+                Description = ContextVarDescription,
+            });
+        CrawlTree(currentElement, AddContextParameterToGeneratorMethods);
     }
 
-    private void InsertOverrideMethodForBuildersAndConstructors(CodeElement currentElement) {
-        if(currentElement is CodeClass currentClass) {
-            var codeMethods = currentClass.Methods;
-            if(codeMethods.Any(x => x.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))) {
-                var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator)).ToList();
-                var generatorMethodsToAdd = originalGeneratorMethods
-                    .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration))
-                    .Where(x => x != null)
-                    .ToArray();
-                originalGeneratorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.RequestConfiguration)}");
-                if(generatorMethodsToAdd.Any())
-                    currentClass.AddMethod(generatorMethodsToAdd.ToArray());
-            }
-        }
-
-        CrawlTree(currentElement, InsertOverrideMethodForBuildersAndConstructors);
-    }
     private static void RemoveModelPropertiesThatDependOnSubNamespaces(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass && 
             currentClass.IsOfKind(CodeClassKind.Model) &&
@@ -253,8 +252,6 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota-abstractions-go", "RequestAdapter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             "github.com/microsoft/kiota-abstractions-go", "RequestInformation", "HttpMethod", "RequestOption"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "github.com/microsoft/kiota-abstractions-go", "ResponseHandler"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor) &&
                     method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) &&
                                             !typeToSkipStrConv.Contains(x.Type.Name)),
@@ -265,6 +262,9 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota-abstractions-go/serialization", "ParseNode", "Parsable"),
         new (static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer)
+            && method.Parent is CodeClass codeClass && codeClass.GetPropertiesOfKind(CodePropertyKind.Custom).Any(static x => !x.ExistsInBaseType),
+            "github.com/microsoft/kiota-abstractions-go", ""),
         new (static x => x is CodeMethod method && 
                         method.IsOfKind(CodeMethodKind.RequestGenerator) &&
                         method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) && 
@@ -288,15 +288,8 @@ public class GoRefiner : CommonLanguageRefiner
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         var parentClass = currentMethod.Parent as CodeClass;
-        if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
-            parentClass != null) {
-            if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => {
-                    x.Type.Name = "ResponseHandler";
-                    x.Type.IsNullable = false; //no pointers
-                });
-            else if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
-                currentMethod.ReturnType.IsNullable = true;
+        if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator)) {
+            currentMethod.ReturnType.IsNullable = true;
         }
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");

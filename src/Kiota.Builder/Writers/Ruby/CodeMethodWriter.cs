@@ -76,10 +76,11 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-            var requestAdapterParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RequestAdapter));
             var requestAdapterPropertyName = requestAdapterProperty.Name.ToSnakeCase();
-            writer.WriteLine($"@{requestAdapterPropertyName} = {requestAdapterParameter.Name.ToSnakeCase()}");
-            writer.WriteLine($"{requestAdapterPropertyName}.set_base_url('{method.BaseUrl}')");
+            if (method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RequestAdapter)) is CodeParameter requestAdapterParameter)
+                writer.WriteLine($"@{requestAdapterPropertyName} = {requestAdapterParameter.Name.ToSnakeCase()}");
+            if(!string.IsNullOrEmpty(method.BaseUrl))
+                writer.WriteLine($"{requestAdapterPropertyName}.set_base_url('{method.BaseUrl}')");
         }
         private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
