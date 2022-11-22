@@ -59,6 +59,12 @@ public class PhpRefiner: CommonLanguageRefiner
             AddSerializationModulesImport(generatedCode, new []{"Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"}, null, '\\');
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
+            AddInnerClasses(generatedCode,
+                true,
+                string.Empty,
+                true);
+            // Imports should be done before adding getters and setters since AddGetterAndSetterMethods can remove properties from classes when backing store is enabled
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
@@ -70,14 +76,11 @@ public class PhpRefiner: CommonLanguageRefiner
                 "get",
                 "set");
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-            ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
+            ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true, _configuration.UsesBackingStore);
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            AddInnerClasses(generatedCode, 
-                true, 
-                string.Empty,
-                true);
-            AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton::getInstance()->createBackingStore()");
+            CorrectBackingStoreSetterParam(generatedCode);
         }, cancellationToken);
     }
     private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
@@ -212,6 +215,12 @@ public class PhpRefiner: CommonLanguageRefiner
         {
             x.Type.Name = "ParseNode";
         });
+        codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.BackingStore)
+            && currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)).ToList().ForEach(x =>
+        {
+            x.Type.Name = "BackingStoreFactory";
+            x.DefaultValue = "null";
+        });
         CrawlTree(codeElement, CorrectParameterType);
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
@@ -243,6 +252,13 @@ public class PhpRefiner: CommonLanguageRefiner
             }
         }
         CrawlTree(currentElement, AliasUsingWithSameSymbol);
+    }
+
+    private static void CorrectBackingStoreSetterParam(CodeElement codeElement)
+    {
+        if (codeElement is CodeMethod method && method.Kind == CodeMethodKind.Setter && method.AccessedProperty?.Kind == CodePropertyKind.BackingStore)
+            method.Parameters.ToList().ForEach(param => param.Optional = false);
+        CrawlTree(codeElement, CorrectBackingStoreSetterParam);
     }
 }
 

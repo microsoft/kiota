@@ -96,13 +96,13 @@ namespace Kiota.Builder.Writers.Php
                 CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",
                 CodeParameterKind.RequestConfiguration => $"{parameter!.Type.Name.ToFirstCharacterUpperCase()} {GetParameterName(parameter)}",
                 CodeParameterKind.Serializer => $"SerializationWriter {GetParameterName(parameter)}",
-                CodeParameterKind.BackingStore => $"BackingStore {GetParameterName(parameter)}",
+                CodeParameterKind.BackingStore => $"{parameter.Type.Name.ToFirstCharacterUpperCase()} {GetParameterName(parameter)}",
                 _ => $"{typeString} {GetParameterName(parameter)}"
 
             };
             var qualified = parameter?.Optional != null && parameter.Optional &&
                             targetElement is CodeMethod methodTarget && !methodTarget.IsOfKind(CodeMethodKind.Setter);
-            return parameter?.Optional != null && parameter.Optional ? $"?{parameterSuffix} {(qualified ?  "= null" : string.Empty)}" : parameterSuffix;
+            return parameter?.Optional != null && parameter.Optional ? $"?{parameterSuffix}{(qualified ?  " = null" : string.Empty)}" : parameterSuffix;
         }
         public string GetParameterDocNullable(CodeParameter parameter, CodeElement codeElement)
         {

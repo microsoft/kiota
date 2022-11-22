@@ -1,0 +1,36 @@
+{
+  "descriptionHash": "1A252F1952C159E7FD9243A2A5120597FD28DBF0A5691B5860E8016006E9154ED82172D56F26D8C2D1884E2B44BA9B3AE176CC5EF4C9C6FA9A797AC4772F7737",
+  "descriptionLocation": "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json",
+  "lockFileVersion": "1.0.0",
+  "kiotaVersion": "0.7.1.0",
+  "clientClassName": "GitHubClient",
+  "clientNamespaceName": "Kiota.Builder.SearchProviders.GitHub.GitHubClient",
+  "language": "CSharp",
+  "usesBackingStore": false,
+  "includeAdditionalData": true,
+  "serializers": [
+    "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
+    "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory"
+  ],
+  "deserializers": [
+    "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
+    "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory"
+  ],
+  "structuredMimeTypes": [
+    "application/json",
+    "application/xml",
+    "text/plain",
+    "text/xml",
+    "text/yaml"
+  ],
+  "includePatterns": [
+    "**/search/repositories",
+    "**/repos/**/contents/**"
+  ],
+  "excludePatterns": [
+    "**/migrations/**",
+    "**/teams/**",
+    "**/generate",
+    "**/repos/**/topics"
+  ]
+}

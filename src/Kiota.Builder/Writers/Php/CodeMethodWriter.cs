@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-
 namespace Kiota.Builder.Writers.Php
 {
     public class CodeMethodWriter: BaseElementWriter<CodeMethod, PhpConventionService>
     {
-        public CodeMethodWriter(PhpConventionService conventionService) : base(conventionService) { }
+
+        protected readonly bool UseBackingStore = false;
+        public CodeMethodWriter(PhpConventionService conventionService, bool useBackingStore = false) : base(conventionService)
+        {
+            UseBackingStore = useBackingStore;
+        }
         
         private const string RequestInfoVarName = "$requestInfo";
         private const string CreateDiscriminatorMethodName = "createFromDiscriminatorValue";
@@ -71,8 +74,10 @@ namespace Kiota.Builder.Writers.Php
         private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
                 writer.WriteLine("parent::__construct();");
+            var backingStoreProperty = parentClass.GetPropertyOfKind(CodePropertyKind.BackingStore);
+            if (backingStoreProperty != null && !string.IsNullOrEmpty(backingStoreProperty.DefaultValue))
+                writer.WriteLine($"$this->{backingStoreProperty.Name.ToFirstCharacterLowerCase()} = {backingStoreProperty.DefaultValue};");
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(
-                    CodePropertyKind.BackingStore,
                     CodePropertyKind.RequestBuilder,
                     CodePropertyKind.UrlTemplate,
                     CodePropertyKind.PathParameters)
@@ -197,28 +202,16 @@ namespace Kiota.Builder.Writers.Php
 
             if (codeMethod.IsOfKind(CodeMethodKind.Getter) && codeMethod.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData))
             {
-                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}(): array {{");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}(): ?array {{");
                 writer.IncreaseIndent();
                 return;
             }
-            var isVoidable = "void".Equals(isConstructor ? null : conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
-                StringComparison.OrdinalIgnoreCase);
+            var isVoidable = "void".Equals(isConstructor ? null : conventions.GetTypeString(codeMethod.ReturnType, codeMethod), StringComparison.OrdinalIgnoreCase);
             var optionalCharacterReturn = isVoidable ? string.Empty : orNullReturn[0];
-            var returnValue = isConstructor
-                ? string.Empty
-                : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType, codeMethod)}";
-            var pathParametersParam = codeMethod.Parameters.OfKind(CodeParameterKind.PathParameters);
-            var requestAdapterParam = codeMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter);
+            var returnValue = isConstructor ? string.Empty : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType, codeMethod)}";
             if (isConstructor && codeMethod?.Parent is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder))
             {
-                var pathParameters = codeMethod.Parameters
-                    .Where(parameter => parameter.IsOfKind(CodeParameterKind.Path))
-                    .Select(parameter => $"{conventions.GetParameterSignature(parameter, codeMethod)}");
-                var pathParamsString = string.Empty;
-                var parameters = pathParameters.ToList();
-                if (parameters.Any()) pathParamsString = $", {string.Join(", ", parameters)}";
-                var pathParametersString = pathParametersParam != null ? $"{conventions.GetParameterSignature(pathParametersParam, codeMethod)}, " : string.Empty;
-                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)}{(codeMethod.IsStatic ? " static" : string.Empty)} function {methodName}({pathParametersString}{conventions.GetParameterSignature(requestAdapterParam, codeMethod)}{pathParamsString}) {{");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)}{(codeMethod.IsStatic ? " static" : string.Empty)} function {methodName}({methodParameters}) {{");
             }
             else
             {
@@ -227,7 +220,6 @@ namespace Kiota.Builder.Writers.Php
             }
 
             writer.IncreaseIndent();
-            
         }
 
         private void WriteSerializerBody(CodeMethod codeMethod, CodeClass parentClass, LanguageWriter writer, bool inherits)
@@ -241,10 +233,10 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"parent::serialize({writerParameterName});");
             var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly);
             foreach(var otherProp in customProperties) {
-                writer.WriteLine($"{writerParameterName}->{GetSerializationMethodName(otherProp.Type)}('{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}', $this->{otherProp.Name.ToFirstCharacterLowerCase()});");
+                writer.WriteLine($"{writerParameterName}->{GetSerializationMethodName(otherProp.Type)}('{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}', $this->{otherProp.Getter.Name}());");
             }
             if(additionalDataProperty != null)
-                writer.WriteLine($"{writerParameterName}->writeAdditionalData($this->{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
+                writer.WriteLine($"{writerParameterName}->writeAdditionalData($this->{additionalDataProperty.Getter.Name}());");
         }
         
         private string GetSerializationMethodName(CodeTypeBase propType) {
@@ -311,16 +303,26 @@ namespace Kiota.Builder.Writers.Php
             };
         }
 
-        private static void WriteSetterBody(LanguageWriter writer, CodeMethod codeElement)
+        private void WriteSetterBody(LanguageWriter writer, CodeMethod codeElement)
         {
-            var propertyName = codeElement.AccessedProperty?.Name;
-            writer.WriteLine($"$this->{propertyName.ToFirstCharacterLowerCase()} = $value;");
+            var propertyName = codeElement.AccessedProperty?.Name.ToFirstCharacterLowerCase();
+            var parentClass = codeElement.Parent as CodeClass;
+            var isBackingStoreSetter = codeElement.AccessedProperty?.Kind == CodePropertyKind.BackingStore;
+            if (UseBackingStore && !isBackingStoreSetter)
+                writer.WriteLine($"$this->{parentClass.GetBackingStoreProperty()?.Getter.Name}()->set('{propertyName.ToFirstCharacterLowerCase()}', $value);");
+            else
+                writer.WriteLine($"$this->{propertyName.ToFirstCharacterLowerCase()} = $value;");
         }
 
-        private static void WriteGetterBody(LanguageWriter writer, CodeMethod codeMethod)
+        private void WriteGetterBody(LanguageWriter writer, CodeMethod codeMethod)
         {
             var propertyName = codeMethod.AccessedProperty?.Name.ToFirstCharacterLowerCase();
-            writer.WriteLine($"return $this->{propertyName};");
+            var parentClass = codeMethod.Parent as CodeClass;
+            var isBackingStoreGetter = codeMethod.AccessedProperty?.Kind == CodePropertyKind.BackingStore;
+            if (UseBackingStore && !isBackingStoreGetter)
+                writer.WriteLine($"return $this->{parentClass.GetBackingStoreProperty()?.Getter.Name}()->get('{propertyName}');");
+            else
+                writer.WriteLine($"return $this->{propertyName};");
         }
 
         private void WriteRequestBuilderWithParametersBody(string returnType, LanguageWriter writer, CodeElement element = default)
@@ -510,6 +512,9 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl}');");
                 writer.CloseBlock();
             }
+            var backingStoreParam = codeMethod.Parameters.OfKind(CodeParameterKind.BackingStore);
+            if (backingStoreParam != null)
+                writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->enableBackingStore(${backingStoreParam.Name} ?? BackingStoreFactorySingleton::getInstance());");
         }
         
         private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName) {
