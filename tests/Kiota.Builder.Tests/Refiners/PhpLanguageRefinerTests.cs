@@ -93,5 +93,31 @@ namespace Kiota.Builder.Tests.Refiners
             await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
             Assert.NotEmpty(model.StartBlock.Usings);
         }
+
+        [Fact]
+        public async Task ChangesBackingStoreParameterTypeInApiClientConstructor()
+        {
+            var apiClientClass = new CodeClass { Name = "ApiClient", Kind = CodeClassKind.Custom };
+            var constructor = new CodeMethod { Name = "ApiClientConstructor", Kind = CodeMethodKind.ClientConstructor};
+            var backingStoreParameter = new CodeParameter
+            {
+                Name = "BackingStore",
+                Kind = CodeParameterKind.BackingStore,
+                Type = new CodeType
+                {
+                    Name = "IBackingStoreFactory",
+                    IsExternal = true
+                }
+            };
+            constructor.AddParameter(backingStoreParameter);
+            constructor.DeserializerModules = new() {"Microsoft\\Kiota\\Serialization\\Deserializer"};
+            constructor.SerializerModules = new() {"Microsoft\\Kiota\\Serialization\\Serializer"};
+            apiClientClass.AddMethod(constructor);
+
+            root.AddClass(apiClientClass);
+            await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true}, root);
+            Assert.Equal("BackingStoreFactory", backingStoreParameter.Type.Name);
+            Assert.Equal("null", backingStoreParameter.DefaultValue);
+        }
     }
 }

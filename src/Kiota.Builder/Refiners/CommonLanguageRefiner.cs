@@ -109,9 +109,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
             var propertyOriginalName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
                                         .ToFirstCharacterLowerCase();
-            var accessorName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
-                                .CleanupSymbolName()
-                                .ToFirstCharacterUpperCase();
+            var accessorName = propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase();
             currentProperty.Getter = parentClass.AddMethod(new CodeMethod {
                 Name = $"get-{accessorName}",
                 Access = AccessModifier.Public,
@@ -137,7 +135,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }).First();
             setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
             currentProperty.Setter = setter;
-            
+        
             setter.AddParameter(new CodeParameter {
                 Name = "value",
                 Kind = CodeParameterKind.SetterValue,
