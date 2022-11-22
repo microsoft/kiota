@@ -12,7 +12,7 @@ internal abstract class KiotaSearchBasedCommandHandler : BaseKiotaCommandHandler
         if (string.IsNullOrEmpty(openapi) && !string.IsNullOrEmpty(searchTerm))
         {
             parentLogger.LogInformation("Searching for {searchTerm} in the OpenAPI description repository", searchTerm);
-            var searcher = new KiotaSearcher(loggerFactory.CreateLogger<KiotaSearcher>(), Configuration.Search);
+            var searcher = new KiotaSearcher(loggerFactory.CreateLogger<KiotaSearcher>(), Configuration.Search, httpClient);
             var results = await searcher.SearchAsync(cancellationToken);
             if (results.Count == 1)
                 return (results.First().Value.DescriptionUrl.ToString(), null);

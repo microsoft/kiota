@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,8 +22,13 @@ using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests;
-public class KiotaBuilderTests
+public class KiotaBuilderTests : IDisposable
 {
+    public void Dispose() {
+        _httpClient.Dispose();
+        GC.SuppressFinalize(this);
+    }
+    private readonly HttpClient _httpClient = new();
     [Fact]
     public async Task ParsesEnumDescriptions() {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
@@ -71,7 +77,7 @@ components:
           - value: Standard_RAGRS
           - value: Premium_LRS");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = builder.CreateOpenApiDocument(fs);
         var node = builder.CreateUriSpace(document);
@@ -106,7 +112,7 @@ x-ms-kiota-info:
 servers:
   - url: https://graph.microsoft.com/v1.0");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = builder.CreateOpenApiDocument(fs);
         var node = builder.CreateUriSpace(document);
@@ -132,7 +138,7 @@ info:
 servers:
   - url: https://graph.microsoft.com/v1.0");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = builder.CreateOpenApiDocument(fs);
         var node = builder.CreateUriSpace(document);
@@ -161,7 +167,7 @@ paths:
               schema:
                 type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         var treeNode = await builder.GetUrlTreeNodeAsync(new CancellationToken());
         Assert.NotNull(treeNode);
         Assert.Equal("/", treeNode.Segment);
@@ -174,7 +180,7 @@ paths:
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllLinesAsync(tempFilePath, new[] {"swagger: 2.0", "title: \"Todo API\"", "version: \"1.0.0\"", "host: mytodos.doesntexit", "basePath: v2", "schemes:", " - https"," - http"});
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         await builder.GenerateClientAsync(new());
         File.Delete(tempFilePath);
     }
@@ -183,7 +189,7 @@ paths:
     {
         var node = OpenApiUrlTreeNode.Create();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var codeModel = builder.CreateSourceModel(node);
 
         Assert.Single(codeModel.GetChildElements(true));
@@ -221,7 +227,7 @@ paths:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var codeModel = builder.CreateSourceModel(node);
 
         var rootNamespace = codeModel.GetChildElements(true).Single();
@@ -279,7 +285,7 @@ paths:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var codeModel = builder.CreateSourceModel(node);
         var progressProp = codeModel.FindChildByName<CodeProperty>("progress");
         Assert.Equal("double", progressProp.Type.Name);
@@ -330,7 +336,7 @@ paths:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var codeModel = builder.CreateSourceModel(node);
         var progressProp = codeModel.FindChildByName<CodeProperty>("progress");
         Assert.Equal("double", progressProp.Type.Name);
@@ -381,7 +387,7 @@ paths:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var codeModel = builder.CreateSourceModel(node);
         var progressProp = codeModel.FindChildByName<CodeProperty>("progress");
         Assert.Equal("double", progressProp.Type.Name);
@@ -453,7 +459,7 @@ paths:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.CreateUriSpace(document);//needed so the component index exists
         var codeModel = builder.CreateSourceModel(node);
         var userClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("user");
@@ -491,7 +497,7 @@ paths:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.CreateUriSpace(document);//needed so the component index exists
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderClass = codeModel.FindChildByName<CodeClass>("CountRequestBuilder");
@@ -606,7 +612,7 @@ paths:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.CreateUriSpace(document);//needed so the component index exists
         var codeModel = builder.CreateSourceModel(node);
         var deviceManagementNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement");
@@ -757,7 +763,7 @@ paths:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = GenerationLanguage.Shell });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = GenerationLanguage.Shell }, _httpClient);
         builder.CreateUriSpace(document);//needed so the component index exists
         var codeModel = builder.CreateSourceModel(node);
         var deviceManagementNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement");
@@ -776,7 +782,7 @@ paths:
         Assert.Single(constructorMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         var parameters = getEffectivePermissionsRequestBuilder
             .Methods
-            .SingleOrDefault(cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == HttpMethod.Get)?
+            .SingleOrDefault(cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == Builder.CodeDOM.HttpMethod.Get)?
             .PathQueryAndHeaderParameters;
         Assert.Equal(4, parameters.Count());
         Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "IfMatch" && p.Kind == CodeParameterKind.Headers));
@@ -862,7 +868,7 @@ paths:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.CreateUriSpace(document);//needed so the component index exists
         builder.SetOpenApiDocument(document);
         var codeModel = builder.CreateSourceModel(node);
@@ -916,7 +922,7 @@ paths:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var codeModel = builder.CreateSourceModel(node);
         var progressProp = codeModel.FindChildByName<CodeProperty>("progress");
         Assert.Equal("TimeOnly", progressProp.Type.Name);
@@ -957,7 +963,7 @@ paths:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var codeModel = builder.CreateSourceModel(node);
         var progressProp = codeModel.FindChildByName<CodeProperty>("progress");
         Assert.Equal("DateOnly", progressProp.Type.Name);
@@ -998,7 +1004,7 @@ paths:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var codeModel = builder.CreateSourceModel(node);
         var progressProp = codeModel.FindChildByName<CodeProperty>("progress");
         Assert.Equal("TimeSpan", progressProp.Type.Name);
@@ -1098,7 +1104,7 @@ paths:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var codeModel = builder.CreateSourceModel(node);
         var executorMethod = codeModel.FindChildByName<CodeMethod>("get");
         Assert.NotNull(executorMethod);
@@ -1176,7 +1182,7 @@ paths:
             } 
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var codeModel = builder.CreateSourceModel(node);
         var executorMethod = codeModel.FindChildByName<CodeMethod>("get");
         Assert.NotNull(executorMethod);
@@ -1269,7 +1275,7 @@ paths:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
         var codeModel = builder.CreateSourceModel(node);
         var executorMethod = codeModel.FindChildByName<CodeMethod>("get");
@@ -1361,7 +1367,7 @@ paths:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
         var codeModel = builder.CreateSourceModel(node);
         var weatherType = codeModel.FindChildByName<CodeClass>("WeatherForecast");
@@ -1436,7 +1442,7 @@ paths:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
         var codeModel = builder.CreateSourceModel(node);
         var responseClass = codeModel.FindChildByName<CodeClass>("CreateUploadSessionResponse");
@@ -1519,7 +1525,7 @@ paths:
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
         var codeModel = builder.CreateSourceModel(node);
         var responseClass = codeModel.FindChildByName<CodeClass>("CreateUploadSessionResponse");
@@ -1641,7 +1647,7 @@ paths:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
@@ -1790,7 +1796,7 @@ paths:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity", true);
@@ -1919,7 +1925,7 @@ paths:
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
-        var builder = new KiotaBuilder(mockLogger.Object, config);
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         await builder.ApplyLanguageRefinement(config, codeModel, CancellationToken.None);
@@ -2074,7 +2080,7 @@ paths:
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
-        var builder = new KiotaBuilder(mockLogger.Object, config);
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         await builder.ApplyLanguageRefinement(config, codeModel, CancellationToken.None);
@@ -2245,7 +2251,7 @@ paths:
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
-        var builder = new KiotaBuilder(mockLogger.Object, config);
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         await builder.ApplyLanguageRefinement(config, codeModel, CancellationToken.None);
@@ -2324,7 +2330,7 @@ paths:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.unionType");
@@ -2404,7 +2410,7 @@ paths:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.unionType");
@@ -2477,7 +2483,7 @@ paths:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.unionType");
@@ -2557,7 +2563,7 @@ paths:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.unionType");
@@ -2692,7 +2698,7 @@ paths:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.derivedType");
@@ -2768,7 +2774,7 @@ paths:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilder = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilder");
@@ -2836,7 +2842,7 @@ paths:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters");
@@ -2884,7 +2890,7 @@ paths:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters");
@@ -2922,7 +2928,7 @@ paths:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters");
@@ -2981,7 +2987,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
@@ -3040,7 +3046,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
@@ -3099,7 +3105,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.Null(codeModel.FindChildByName<CodeClass>("With"));
@@ -3193,7 +3199,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
@@ -3278,7 +3284,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
@@ -3345,7 +3351,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
@@ -3409,7 +3415,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
@@ -3469,7 +3475,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
@@ -3531,14 +3537,14 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
         Assert.NotNull(rbNS);
         var rbClass = rbNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.RequestBuilder));
         Assert.NotNull(rbClass);
-        var executorMethod = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get);
+        var executorMethod = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.NotNull(executorMethod);
         Assert.Equal("Myobject", executorMethod.ReturnType.Name);
     }
@@ -3582,7 +3588,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsSubNS = codeModel.FindNamespaceByName("TestSdk.answer");
@@ -3711,7 +3717,7 @@ paths:
                 StructuredMimeTypes = acceptedContentType.Equals("default", StringComparison.OrdinalIgnoreCase) ? 
                                             new GenerationConfiguration().StructuredMimeTypes:
                                             new (StringComparer.OrdinalIgnoreCase) { acceptedContentType }
-        });
+        }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -3800,7 +3806,7 @@ paths:
                 ClientNamespaceName = "TestSdk",
                 ApiRootUrl = "https://localhost",
                 StructuredMimeTypes = new GenerationConfiguration().StructuredMimeTypes
-        });
+        }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -3869,7 +3875,7 @@ paths:
                 ClientNamespaceName = "TestSdk",
                 ApiRootUrl = "https://localhost",
                 StructuredMimeTypes = new GenerationConfiguration().StructuredMimeTypes
-        });
+        }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -3932,7 +3938,7 @@ paths:
                 ClientNamespaceName = "TestSdk",
                 ApiRootUrl = "https://localhost",
                 StructuredMimeTypes = new GenerationConfiguration().StructuredMimeTypes
-        });
+        }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -4023,7 +4029,7 @@ paths:
                 StructuredMimeTypes = acceptedContentType.Equals("default", StringComparison.OrdinalIgnoreCase) ? 
                                             new GenerationConfiguration().StructuredMimeTypes:
                                             new (StringComparer.OrdinalIgnoreCase) { acceptedContentType }
-        });
+        }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -4084,7 +4090,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -4218,7 +4224,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var answersNS = codeModel.FindNamespaceByName("TestSdk.answerWithIds");
@@ -4285,14 +4291,14 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var answersNS = codeModel.FindNamespaceByName("TestSdk.users");
         Assert.NotNull(answersNS);
         var rbClass = answersNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.RequestBuilder));
         Assert.NotNull(rbClass);
-        var executorMethod = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get);
+        var executorMethod = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.NotNull(executorMethod);
         Assert.Equal("@odata.nextLink", executorMethod.PagingInformation?.NextLinkName);
     }
@@ -4348,7 +4354,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var objectClass = codeModel.FindChildByName<CodeClass>("myobject");
@@ -4430,7 +4436,7 @@ paths:
             IncludePatterns = new() {
                 "*users*"
             }
-        });
+        }, _httpClient);
         var filters = builder.BuildGlobPatterns();
         builder.FilterPathsByPatterns(document, filters.Item1, filters.Item2);
         var node = builder.CreateUriSpace(document);
@@ -4511,7 +4517,7 @@ paths:
             ExcludePatterns = new() {
                 "*groups*"
             }
-        });
+        }, _httpClient);
         var filters = builder.BuildGlobPatterns();
         builder.FilterPathsByPatterns(document, filters.Item1, filters.Item2);
         var node = builder.CreateUriSpace(document);
@@ -4581,7 +4587,7 @@ paths:
             ClientClassName = "TestClient",
             ClientNamespaceName = "TestSdk",
             ApiRootUrl = "https://localhost",
-        });
+        }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var NS = codeModel.FindNamespaceByName("TestSdk.usersWithUserId");

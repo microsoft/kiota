@@ -12,6 +12,7 @@
 @using Markdig
 @inject IStringLocalizer<Index> Loc
 @inject NavigationManager navManager
+@inject HttpClient Http
 
 <PageTitle>@Loc["PageTitle"]</PageTitle>
 
@@ -106,7 +107,7 @@
             SearchTerm = SearchTerm,
         };
         var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
-        SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
+        SearchResults = await new KiotaSearcher(logger, searchConfig, Http).SearchAsync(ComponentDetached);
         IsLoading = false;
         if(AppInsights != null)
             await AppInsights.StopTrackEvent(searchTelemetryKey, new Dictionary<string, string?> {

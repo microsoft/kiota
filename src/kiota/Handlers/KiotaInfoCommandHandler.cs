@@ -35,7 +35,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler {
 
             if(!language.HasValue) {
                 ShowLanguagesTable();
-                DisplayInfoAdvanced();
+                DisplayInfoAdvancedHint();
                 return 0;
             }
 
@@ -54,7 +54,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler {
             var instructions = Configuration.Languages;
             if(!string.IsNullOrEmpty(openapi))
                 try {
-                    var builder = new KiotaBuilder(logger, Configuration.Generation);
+                    var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient);
                     var result = await builder.GetLanguageInformationAsync(cancellationToken);
                     if (result != null)
                         instructions = result;

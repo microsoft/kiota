@@ -46,7 +46,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
             try {
-                var results = await new KiotaSearcher(logger, Configuration.Search).SearchAsync(cancellationToken);
+                var results = await new KiotaSearcher(logger, Configuration.Search, httpClient).SearchAsync(cancellationToken);
                 return await SaveResultsAsync(results, logger, cancellationToken);
             } catch (Exception ex) {
     #if DEBUG
@@ -100,8 +100,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         if(!Directory.Exists(Path.GetDirectoryName(path)))
             Directory.CreateDirectory(Path.GetDirectoryName(path));
         
-        using var client = new HttpClient();
-        var cacheProvider = new DocumentCachingProvider(client, logger) {
+        var cacheProvider = new DocumentCachingProvider(httpClient, logger) {
             ClearCache = true,
         };
         await using var document = await cacheProvider.GetDocumentAsync(result.Value.DescriptionUrl, "download", Path.GetFileName(path), cancellationToken: cancellationToken);

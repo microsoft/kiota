@@ -184,7 +184,7 @@
                 SearchTerm = SearchTerm,
                 Version = Version,
             };
-            var searchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
+            var searchResults = await new KiotaSearcher(logger, searchConfig, Http).SearchAsync(ComponentDetached);
             if(searchResults.Any())
                 DescriptionUrl = searchResults.Values.First().DescriptionUrl.ToString();
         }

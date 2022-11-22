@@ -74,7 +74,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
             try {
-                var result = await new KiotaBuilder(logger, Configuration.Generation).GenerateClientAsync(cancellationToken);
+                var result = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GenerateClientAsync(cancellationToken);
                 if (result)
                     DisplaySuccess("Generation completed successfully");
                 else {

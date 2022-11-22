@@ -4,6 +4,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
@@ -14,6 +15,7 @@ namespace kiota.Handlers;
 
 internal abstract class BaseKiotaCommandHandler : ICommandHandler
 {
+    internal static readonly HttpClient httpClient = new();
     public Option<LogLevel> LogLevelOption { get;set; }
     protected KiotaConfiguration Configuration { get => ConfigurationFactory.Value; }
     private readonly Lazy<KiotaConfiguration> ConfigurationFactory = new (() => {
@@ -158,7 +160,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
                         $"Example: kiota {commandName} --clean-output");
         }
     }
-    protected void DisplayInfoAdvanced() {
+    protected void DisplayInfoAdvancedHint() {
         if(TutorialMode) {
             DisplayHint("Hint: use the language argument to get the list of dependencies you need to add to your project.",
                         "Example: kiota info -l <language>");

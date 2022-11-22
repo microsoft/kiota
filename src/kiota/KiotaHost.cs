@@ -20,7 +20,37 @@ public class KiotaHost {
         rootCommand.AddCommand(GetShowCommand());
         rootCommand.AddCommand(GetInfoCommand());
         rootCommand.AddCommand(GetUpdateCommand());
+        rootCommand.AddCommand(GetLoginCommand());
+        rootCommand.AddCommand(GetLogoutCommand());
         return rootCommand;
+    }
+    private static Command GetGitHubLoginCommand() {
+        var logLevelOption = GetLogLevelOption();
+        var githubLoginCommand = new Command("github", "Logs in to GitHub using a device code flow.")
+        {
+            logLevelOption,
+        };
+        githubLoginCommand.Handler = new KiotaGitHubLoginCommandHandler {
+            LogLevelOption = logLevelOption,
+        };
+        return githubLoginCommand;
+    }
+    private static Command GetGitHubLogoutCommand() {
+        var logLevelOption = GetLogLevelOption();
+        var githubLogoutCommand = new Command("github", "Logs out of GitHub.") {
+            logLevelOption,
+        };
+        return githubLogoutCommand;
+    }
+    private static Command GetLoginCommand() {
+        var loginCommand = new Command("login", "Logs in to the Kiota registries so search/download/show/generate commands can access private API definitions.");
+        loginCommand.AddCommand(GetGitHubLoginCommand());
+        return loginCommand;
+    }
+    private static Command GetLogoutCommand() {
+        var loginCommand = new Command("logout", "Logs out of Kiota registries.");
+        loginCommand.AddCommand(GetGitHubLogoutCommand());
+        return loginCommand;
     }
     private static Command GetInfoCommand() {
         var defaultGenerationConfiguration = new GenerationConfiguration();

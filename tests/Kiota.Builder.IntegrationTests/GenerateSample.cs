@@ -1,12 +1,19 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Logging;
 
 using Xunit;
 
 namespace Kiota.Builder.IntegrationTests;
-public class GenerateSample
+public class GenerateSample :IDisposable
 {
+    public void Dispose() {
+        _httpClient.Dispose();
+        GC.SuppressFinalize(this);
+    }
+    private readonly HttpClient _httpClient = new();
     [InlineData(GenerationLanguage.CSharp, false)]
     [InlineData(GenerationLanguage.Java, false)]
     [InlineData(GenerationLanguage.TypeScript, false)]
@@ -29,7 +36,7 @@ public class GenerateSample
             OutputPath = $".\\Generated\\Todo\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
         };
-        await new KiotaBuilder(logger, configuration).GenerateClientAsync(new());
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
     [InlineData(GenerationLanguage.CSharp, false)]
     [InlineData(GenerationLanguage.Java, false)]
@@ -54,7 +61,7 @@ public class GenerateSample
             OutputPath = $".\\Generated\\ModelWithDictionary\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
         };
-        await new KiotaBuilder(logger, configuration).GenerateClientAsync(new());
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
     [InlineData(GenerationLanguage.CSharp, false)]
     [InlineData(GenerationLanguage.Java, false)]
@@ -79,6 +86,6 @@ public class GenerateSample
             OutputPath = $".\\Generated\\ResponseWithMultipleReturnFormats\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
         };
-        await new KiotaBuilder(logger, configuration).GenerateClientAsync(new());
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
 }

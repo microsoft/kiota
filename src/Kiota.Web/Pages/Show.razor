@@ -11,6 +11,7 @@
 @using System.Globalization
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<Show> Loc
+@inject HttpClient Http
 
 <PageTitle>@Loc["PageTitle"]</PageTitle>
 
@@ -71,7 +72,7 @@
                 SearchTerm = SearchTerm,
                 Version = Version,
             };
-            var searchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
+            var searchResults = await new KiotaSearcher(logger, searchConfig, Http).SearchAsync(ComponentDetached);
             if(searchResults.Any())
                 DescriptionUrl = searchResults.Values.First().DescriptionUrl.ToString();
         }
@@ -112,7 +113,7 @@
                 Version = Version,
             };
             var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
-            SearchResults = await new KiotaSearcher(logger, searchConfig).SearchAsync(ComponentDetached);
+            SearchResults = await new KiotaSearcher(logger, searchConfig, Http).SearchAsync(ComponentDetached);
             DescriptionUrl = SearchResults.First().Value.DescriptionUrl.ToString();
         }
         if(AppInsights != null)
