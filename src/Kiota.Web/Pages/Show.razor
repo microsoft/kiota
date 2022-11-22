@@ -124,7 +124,7 @@
                 OpenAPIFilePath = DescriptionUrl,
             };
             var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
-            kiotaBuilder = new KiotaBuilder(builderLogger, generationConfiguration);
+            kiotaBuilder = new KiotaBuilder(builderLogger, generationConfiguration, Http);
         }
         generationConfiguration.IncludePatterns = IncludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet();
         generationConfiguration.ExcludePatterns = ExcludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet();

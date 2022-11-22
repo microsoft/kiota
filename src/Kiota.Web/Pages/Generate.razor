@@ -227,7 +227,7 @@
         };
         var logBuilder = new StringBuilder();
         var builderLogger = new StringBuilderLogger<KiotaBuilder>(LoggerFactory.CreateLogger<KiotaBuilder>(), logBuilder, LogLevel.Warning);
-        var builder = new KiotaBuilder(builderLogger, generationConfiguration);
+        var builder = new KiotaBuilder(builderLogger, generationConfiguration, Http);
         try {
             await builder.GenerateClientAsync(ComponentDetached).ConfigureAwait(false);
             var zipFilePath = Path.Combine(Path.GetTempPath(), "kiota", "clients", hashedUrl, "client.zip");
