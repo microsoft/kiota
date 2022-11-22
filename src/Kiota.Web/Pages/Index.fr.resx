@@ -91,4 +91,7 @@
   <data name="SelectVersion" xml:space="preserve">
     <value>Sélectionez une version</value>
   </data>
+  <data name="NoSearch" xml:space="preserve">
+    <value>Souhaitez-vous ajouter votre API aux résultats?</value>
+  </data>
 </root>
