@@ -17,7 +17,7 @@ internal class KiotaGitHubLoginCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<GitHubAuthenticationProvider>(context);
         using (loggerFactory) {
             try {
-                return await LoginAsync(cancellationToken);
+                return await LoginAsync(logger, cancellationToken);
             } catch (Exception ex) {
     #if DEBUG
                 logger.LogCritical(ex, "error downloading a description: {exceptionMessage}", ex.Message);
@@ -30,13 +30,14 @@ internal class KiotaGitHubLoginCommandHandler : BaseKiotaCommandHandler
             
         }
     }
-    private async Task<int> LoginAsync(CancellationToken cancellationToken) {
+    private async Task<int> LoginAsync(ILogger logger, CancellationToken cancellationToken) {
         //TODO handle caching
-        var authenticationProvider = new GitHubAuthenticationProvider(Configuration.Search.GitHubAppId,
+        var authenticationProvider = new GitHubAuthenticationProvider(Configuration.Search.GitHub.AppId,
                                                                         "repo",
                                                                         new List<string> { "api.github.com"},
                                                                         httpClient,
-                                                                        (uri, code) => DisplayInfo($"Please go to {uri} and enter the code {code} to authenticate."));
+                                                                        DisplayGitHubDeviceCodeLoginMessage,
+                                                                        logger);
         var dummyRequest = new RequestInformation() {
             HttpMethod = Method.GET,
             URI = new Uri("https://api.github.com/user"),

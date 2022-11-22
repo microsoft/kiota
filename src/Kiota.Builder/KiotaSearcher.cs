@@ -34,7 +34,7 @@ public class KiotaSearcher {
         logger.LogDebug("searching for {searchTerm}", config.SearchTerm);
         logger.LogDebug("searching APIs.guru with url {url}", config.APIsGuruListUrl);
         var oasProvider = new OpenApiSpecSearchProvider();
-        var githubProvider = new GitHubSearchProvider(httpClient, config.GitHubBlockListUrl, logger, config.ClearCache);
+        var githubProvider = new GitHubSearchProvider(httpClient, logger, config.ClearCache, config.GitHub);
         var results = await Task.WhenAll(
                         SearchProviderAsync(apiGurusSearchProvider, cancellationToken),
                         SearchProviderAsync(oasProvider, cancellationToken),

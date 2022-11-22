@@ -7,7 +7,10 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Caching;
+using Kiota.Builder.Configuration;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
+using Kiota.Builder.SearchProviders.GitHub.Authentication.DeviceCode;
 using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models;
 using Kiota.Builder.SearchProviders.GitHub.Index;
 using Microsoft.Extensions.Logging;
@@ -22,19 +25,28 @@ public class GitHubSearchProvider : ISearchProvider
     private readonly DocumentCachingProvider cachingProvider;
     private readonly ILogger _logger;
     private readonly Uri _blockListUrl;
-
-    public GitHubSearchProvider(HttpClient httpClient, Uri blockListUrl, ILogger logger, bool clearCache)
+    private readonly string _clientId;
+    private readonly Action<Uri, string> _messageCallBack;
+    private const string ValidHost = "api.github.com";
+    private const string Scope = "repo";
+    public GitHubSearchProvider(HttpClient httpClient, ILogger logger, bool clearCache, GitHubConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
-        ArgumentNullException.ThrowIfNull(blockListUrl);
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(configuration.BlockListUrl);
+        ArgumentNullException.ThrowIfNull(configuration.DeviceCodeCallback);
         ArgumentNullException.ThrowIfNull(logger);
+        if(string.IsNullOrEmpty(configuration.AppId))
+            throw new ArgumentOutOfRangeException(nameof(configuration));
         cachingProvider = new DocumentCachingProvider(httpClient, logger)
         {
             ClearCache = clearCache,
         };
         _httpClient = httpClient;
         _logger = logger;
-        _blockListUrl = blockListUrl;
+        _blockListUrl = configuration.BlockListUrl;
+        _clientId = configuration.AppId;
+        _messageCallBack = configuration.DeviceCodeCallback;
     }
     private readonly HttpClient _httpClient;
     public string ProviderKey => "github";
@@ -60,7 +72,16 @@ public class GitHubSearchProvider : ISearchProvider
     private async Task<IDictionary<string, SearchResult>> SearchAsyncInternal(string term, CancellationToken cancellationToken)
     {
         var blockLists = await GetBlockLists(cancellationToken);
-        var gitHubRequestAdapter = new HttpClientRequestAdapter(new GitHubAnonymousAuthenticationProvider(), httpClient: _httpClient);
+        var cachingProvider = new TempFolderCachingAccessTokenProvider {
+            Logger = _logger,
+            ApiBaseUrl = new Uri($"https://{ValidHost}"),
+            Concrete = null,
+            AppId = _clientId,
+        };
+        var authenticationProvider = cachingProvider.IsCachedTokenPresent() ?
+            new GitHubAuthenticationProvider(_clientId, Scope, new List<string> { ValidHost }, _httpClient, _messageCallBack, _logger) :
+            new GitHubAnonymousAuthenticationProvider();
+        var gitHubRequestAdapter = new HttpClientRequestAdapter(authenticationProvider, httpClient: _httpClient);
         var gitHubClient = new GitHubClient.GitHubClient(gitHubRequestAdapter);
         if(term.Contains('/')) {
             var parts = term.Split('/', StringSplitOptions.RemoveEmptyEntries);
@@ -93,7 +114,7 @@ public class GitHubSearchProvider : ISearchProvider
                 .ToDictionary(static x => x.Item1, static x => x.Item2, StringComparer.OrdinalIgnoreCase);
     private async Task<Tuple<HashSet<string>, HashSet<string>>> GetBlockLists(CancellationToken cancellationToken) {
         try {
-            await using var document = await cachingProvider.GetDocumentAsync(_blockListUrl, "search", Path.GetFileName(_blockListUrl.ToString()), "text/yaml", cancellationToken);
+            await using var document = await cachingProvider.GetDocumentAsync(_blockListUrl, "search", _blockListUrl.GetFileName(), "text/yaml", cancellationToken);
             var deserialized = deserializeDocumentFromYaml<BlockList>(document);
             return new Tuple<HashSet<string>, HashSet<string>>(
                 new HashSet<string>(deserialized.Organizations.Distinct(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase),
@@ -125,7 +146,8 @@ public class GitHubSearchProvider : ISearchProvider
             var response = await gitHubClient.Repos[org][repo].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             if (!response.AdditionalData.TryGetValue(DownloadUrlKey, out var rawDownloadUrl) || rawDownloadUrl is not string downloadUrl || string.IsNullOrEmpty(downloadUrl))
                 return Enumerable.Empty<Tuple<string, SearchResult>>();
-            await using var document = await cachingProvider.GetDocumentAsync(new Uri(downloadUrl), "search", Path.GetFileName(downloadUrl), accept, cancellationToken);
+            var targetUrl = new Uri(downloadUrl);
+            await using var document = await cachingProvider.GetDocumentAsync(targetUrl, "search", targetUrl.GetFileName(), accept, cancellationToken);
             var indexFile = accept.ToLowerInvariant() switch
             {
                 "application/json" => deserializeDocumentFromJson<IndexRoot>(document),

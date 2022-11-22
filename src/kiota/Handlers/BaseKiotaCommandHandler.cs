@@ -25,6 +25,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
                 .Build();
         var configObject = new KiotaConfiguration();
         configuration.Bind(configObject);
+        configObject.Search.GitHub.DeviceCodeCallback = DisplayGitHubDeviceCodeLoginMessage;
         return configObject;
     });
     public int Invoke(InvocationContext context)
@@ -165,5 +166,8 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
             DisplayHint("Hint: use the language argument to get the list of dependencies you need to add to your project.",
                         "Example: kiota info -l <language>");
         }
+    }
+    protected static void DisplayGitHubDeviceCodeLoginMessage(Uri uri, string code) {
+        DisplayInfo($"Please go to {uri} and enter the code {code} to authenticate.");
     }
 }

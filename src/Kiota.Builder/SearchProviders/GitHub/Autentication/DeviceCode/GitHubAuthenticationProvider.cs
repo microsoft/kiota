@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
 
@@ -10,7 +12,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.Authentication.DeviceCode;
 
 public class GitHubAuthenticationProvider : GitHubAnonymousAuthenticationProvider
 {
-	public GitHubAuthenticationProvider(string clientId, string scope, IEnumerable<string> validHosts, HttpClient httpClient, Action<Uri, string> messageCallback)
+	public GitHubAuthenticationProvider(string clientId, string scope, IEnumerable<string> validHosts, HttpClient httpClient, Action<Uri, string> messageCallback, ILogger logger)
 	{
 		if (string.IsNullOrEmpty(clientId))
 			throw new ArgumentNullException(nameof(clientId));
@@ -19,14 +21,20 @@ public class GitHubAuthenticationProvider : GitHubAnonymousAuthenticationProvide
         ArgumentNullException.ThrowIfNull(validHosts);
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(messageCallback);
+        ArgumentNullException.ThrowIfNull(logger);
 
-		AccessTokenProvider = new GitHubAccessTokenProvider {
-			ClientId = clientId,
-			Scope = scope,
-			AllowedHostsValidator = new AllowedHostsValidator(validHosts),
-            HttpClient = httpClient,
-            MessageCallback = messageCallback
-		};
+		AccessTokenProvider = new TempFolderCachingAccessTokenProvider {
+            Concrete = new GitHubAccessTokenProvider {
+                ClientId = clientId,
+                Scope = scope,
+                AllowedHostsValidator = new AllowedHostsValidator(validHosts),
+                HttpClient = httpClient,
+                MessageCallback = messageCallback
+            },
+            Logger = logger,
+            ApiBaseUrl = new Uri($"https://{validHosts.FirstOrDefault() ?? "api.github.com"}"),
+            AppId = clientId,
+        };
 	}
 	public IAccessTokenProvider AccessTokenProvider {get; private set;}
     private const string AuthorizationHeaderKey = "Authorization";

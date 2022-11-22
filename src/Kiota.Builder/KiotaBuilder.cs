@@ -230,8 +230,9 @@ public class KiotaBuilder
                 var cachingProvider = new DocumentCachingProvider(httpClient, logger) {
                     ClearCache = config.ClearCache,
                 };
-                var fileName = Path.GetFileName(inputPath) is string name && !string.IsNullOrEmpty(name) ? name : "description.yml";
-                input = await cachingProvider.GetDocumentAsync(new Uri(inputPath), "generation", fileName, cancellationToken: cancellationToken);
+                var targetUri = new Uri(inputPath);
+                var fileName = targetUri.GetFileName() is string name && !string.IsNullOrEmpty(name) ? name : "description.yml";
+                input = await cachingProvider.GetDocumentAsync(targetUri, "generation", fileName, cancellationToken: cancellationToken);
             } catch (HttpRequestException ex) {
                 throw new InvalidOperationException($"Could not download the file at {inputPath}, reason: {ex.Message}", ex);
             }
