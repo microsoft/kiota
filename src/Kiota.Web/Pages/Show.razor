@@ -48,6 +48,9 @@
     [SupplyParameterFromQuery(Name = "v")]
     public string? VersionFromQuery { get; set; }
     public string? Version { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "d")]
+    public string? DescriptionUrlFromQuery { get; set; }
     private string? DescriptionUrl { get; set; }
     private IDictionary<string, SearchResult> SearchResults = new Dictionary<string, SearchResult>();
     private string? IncludePatterns { get; set; }
@@ -60,6 +63,8 @@
             SearchTerm = SearchTermFromQuery;
         if(!string.IsNullOrEmpty(VersionFromQuery))
             Version = VersionFromQuery;
+        if(!string.IsNullOrEmpty(DescriptionUrlFromQuery))
+            DescriptionUrl = DescriptionUrlFromQuery;
         if (!string.IsNullOrEmpty(SearchTerm) && !string.IsNullOrEmpty(Version) && string.IsNullOrEmpty(DescriptionUrl)) {
             var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
             var searchConfig = new SearchConfiguration() {

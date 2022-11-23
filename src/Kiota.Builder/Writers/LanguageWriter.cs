@@ -144,7 +144,7 @@ namespace Kiota.Builder.Writers
                 GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName, usesBackingStore),
                 GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
-                GenerationLanguage.PHP => new PhpWriter(outputPath, clientNamespaceName),
+                GenerationLanguage.PHP => new PhpWriter(outputPath, clientNamespaceName, usesBackingStore),
                 GenerationLanguage.Python => new PythonWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.Go => new GoWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.Shell => new ShellWriter(outputPath, clientNamespaceName),

@@ -21,40 +21,17 @@ public class DocumentCachingProvider {
         HttpClient = client;
         Logger = logger;
     }
-    public Task<Stream> GetDocumentAsync(Uri documentUri, string intermediateFolderName, string fileName, CancellationToken token) {
+    public Task<Stream> GetDocumentAsync(Uri documentUri, string intermediateFolderName, string fileName, string accept = null, CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(documentUri);
         if(string.IsNullOrEmpty(intermediateFolderName)) throw new ArgumentNullException(nameof(intermediateFolderName));
         if(string.IsNullOrEmpty(fileName)) throw new ArgumentNullException(nameof(fileName));
-        return GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, false, token);
+        return GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, false, accept, cancellationToken);
     }
-    private async Task<Stream> GetDocumentInternalAsync(Uri documentUri, string intermediateFolderName, string fileName, bool couldNotDelete, CancellationToken token) {
+    private async Task<Stream> GetDocumentInternalAsync(Uri documentUri, string intermediateFolderName, string fileName, bool couldNotDelete, string accept, CancellationToken token) {
         var hashedUrl = BitConverter.ToString(HashAlgorithm.Value.ComputeHash(Encoding.UTF8.GetBytes(documentUri.ToString()))).Replace("-", string.Empty);
         var target = Path.Combine(Path.GetTempPath(), "kiota", "cache", intermediateFolderName, hashedUrl, fileName);
-        if(!File.Exists(target) || couldNotDelete) {
-            Logger.LogDebug("cache file {cacheFile} not found, downloading from {url}", target, documentUri);
-            var directory = Path.GetDirectoryName(target);
-            if(!Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-            Stream content = null;
-            try {
-                await using var httpContent = await HttpClient.GetStreamAsync(documentUri, token);
-                content = new MemoryStream();
-                await httpContent.CopyToAsync(content, token);
-                await using var fileStream = File.Create(target);
-                content.Position = 0;
-                await content.CopyToAsync(fileStream, token);
-                await fileStream.FlushAsync(token);
-                content.Position = 0;
-                return content;
-            } catch (HttpRequestException ex) {
-                throw new InvalidOperationException($"Could not download the file at {documentUri}, reason: {ex.Message}", ex);
-            } catch (IOException ex) {
-                Logger.LogWarning("could not write to cache file {cacheFile}, reason: {reason}", target, ex.Message);
-                if(content != null)
-                    content.Position = 0;
-                return content;
-            }
-        }
+        if(!File.Exists(target) || couldNotDelete)
+            return await DownloadDocumentFromSourceAsync(documentUri, target, accept, token);
 
         var lastModificationDate = File.GetLastWriteTime(target);
         if (lastModificationDate.Add(Duration) > DateTime.Now && !ClearCache) {
@@ -69,6 +46,35 @@ public class DocumentCachingProvider {
                 Logger.LogWarning("could not delete cache file {cacheFile}, reason: {reason}", target, ex.Message);
             }
         }
-        return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, token);
+        return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, accept, token);
+    }
+    private async Task<Stream> DownloadDocumentFromSourceAsync(Uri documentUri, string target, string accept, CancellationToken token) {
+        Logger.LogDebug("cache file {cacheFile} not found, downloading from {url}", target, documentUri);
+        var directory = Path.GetDirectoryName(target);
+        if(!Directory.Exists(directory))
+            Directory.CreateDirectory(directory);
+        Stream content = null;
+        try {
+            using var requestMessage = new HttpRequestMessage(HttpMethod.Get, documentUri);
+            if (!string.IsNullOrEmpty(accept))
+                requestMessage.Headers.Add("Accept", accept);
+            using var responseMessage = await HttpClient.SendAsync(requestMessage, token).ConfigureAwait(false);
+            responseMessage.EnsureSuccessStatusCode();
+            content = new MemoryStream();
+            await responseMessage.Content.CopyToAsync(content, token);
+            await using var fileStream = File.Create(target);
+            content.Position = 0;
+            await content.CopyToAsync(fileStream, token);
+            await fileStream.FlushAsync(token);
+            content.Position = 0;
+            return content;
+        } catch (HttpRequestException ex) {
+            throw new InvalidOperationException($"Could not download the file at {documentUri}, reason: {ex.Message}", ex);
+        } catch (IOException ex) {
+            Logger.LogWarning("could not write to cache file {cacheFile}, reason: {reason}", target, ex.Message);
+            if(content != null)
+                content.Position = 0;
+            return content;
+        }
     }
 }
