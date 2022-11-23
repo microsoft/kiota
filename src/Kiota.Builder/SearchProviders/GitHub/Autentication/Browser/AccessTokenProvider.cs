@@ -15,8 +15,8 @@ public class AccessTokenProvider : IAccessTokenProvider
 	public required string Scope { get; init; }
     public required Uri RedirectUri { get; init; }
 	public required HttpClient HttpClient {get; init;}
-    public required Action<Uri, string> RedirectCallback { get; init; }
-    public string AuthorizationCode { get; init; }
+    public required Func<Uri, string, CancellationToken, Task> RedirectCallback { get; init; }
+    public required Func<CancellationToken, Task<string>> GetAccessCodeCallback { get; init; }
     internal string BaseLoginUrl { get; init; } = "https://github.com/login";
     public Task<string> GetAuthorizationTokenAsync(Uri uri, Dictionary<string, object> additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
     {
@@ -28,12 +28,13 @@ public class AccessTokenProvider : IAccessTokenProvider
         return GetAuthorizationTokenInternalAsync(cancellationToken);
     }
 	private async Task<string> GetAuthorizationTokenInternalAsync(CancellationToken cancellationToken) {
-        if(string.IsNullOrEmpty(AuthorizationCode)) {
+        var authorizationCode = await GetAccessCodeCallback(cancellationToken);
+        if(string.IsNullOrEmpty(authorizationCode)) {
             var state = Guid.NewGuid();
-            RedirectCallback(GetAuthorizeUrl(state), state.ToString());
+            await RedirectCallback(GetAuthorizeUrl(state), state.ToString(), cancellationToken);
             return string.Empty;
         } else {
-            var tokenResponse = await GetTokenAsync(cancellationToken);
+            var tokenResponse = await GetTokenAsync(authorizationCode, cancellationToken);
             return tokenResponse.AccessToken;
         }
     }
@@ -41,12 +42,12 @@ public class AccessTokenProvider : IAccessTokenProvider
         var authorizeUrl = $"{BaseLoginUrl}/oauth/authorize?client_id={ClientId}&scope={Scope}&redirect_uri={RedirectUri}&state={state}";
         return new Uri(authorizeUrl);
     }
-    private async Task<AccessCodeResponse> GetTokenAsync(CancellationToken cancellationToken)
+    private async Task<AccessCodeResponse> GetTokenAsync(string authorizationCode, CancellationToken cancellationToken)
 	{
 		using var tokenRequest = new HttpRequestMessage(HttpMethod.Post, $"{BaseLoginUrl}/oauth/access_token") {
 			Content = new FormUrlEncodedContent(new Dictionary<string, string> {
 				{ "client_id", ClientId },
-				{ "code", AuthorizationCode }, //TODO missing secret? what about SPA?
+				{ "code", authorizationCode }, //TODO missing secret? what about SPA?
 				// { "grant_type", "urn:ietf:params:oauth:grant-type:device_code" }
 			})
 		};

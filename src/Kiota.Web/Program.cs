@@ -9,6 +9,7 @@ using Microsoft.Kiota.Abstractions.Authentication;
 using Kiota.Builder.SearchProviders.GitHub.Authentication.Browser;
 using Kiota.Builder.Configuration;
 using Microsoft.AspNetCore.Components;
+using Blazored.SessionStorage;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -16,23 +17,35 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
-
+var gitHubStateKey = "github-authentication-state";
 builder.Services.AddLocalization();
 builder.Services.AddFluentUIComponents();
 builder.Services.AddBlazorApplicationInsights();
 var configObject = new KiotaConfiguration();
 builder.Configuration.Bind(configObject);
+builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddScoped<IAuthenticationProvider>(sp => new BrowserAuthenticationProvider(
     configObject.Search.GitHub.AppId,
     "repo",
     new string[] { configObject.Search.GitHub.ApiBaseUrl.Host },
     sp.GetService<HttpClient>(),
-    (uri, state) => {
+    async (uri, state, c) => {
         sp.GetService<NavigationManager>()?.NavigateTo(uri.ToString());
-        //TODO store state
+        var sessionStorage = sp.GetService<ISessionStorageService>();
+        if(sessionStorage != null)
+            await sessionStorage.SetItemAsync(gitHubStateKey, state, c).ConfigureAwait(false);
     },
+    async (c) => {
+        var sessionStorage = sp.GetService<ISessionStorageService>();
+        if(sessionStorage != null) {
+            var stateValue = await sessionStorage.GetItemAsync<string>(gitHubStateKey).ConfigureAwait(false);
+            //TODO compare state value
+            //TODO get authorization code from query string
+            await sessionStorage.RemoveItemAsync(gitHubStateKey, c).ConfigureAwait(false);
+        }
+        return string.Empty;
+    }, 
     sp.GetService<ILoggerFactory>()?.CreateLogger<BrowserAuthenticationProvider>(),
-    null, //TODO get authorization code from query string
     new Uri($"{builder.HostEnvironment.BaseAddress}/auth")
 ));
 
