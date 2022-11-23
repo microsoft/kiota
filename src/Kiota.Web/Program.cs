@@ -10,6 +10,7 @@ using Kiota.Builder.SearchProviders.GitHub.Authentication.Browser;
 using Kiota.Builder.Configuration;
 using Microsoft.AspNetCore.Components;
 using Blazored.SessionStorage;
+using Microsoft.AspNetCore.WebUtilities;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -24,30 +25,40 @@ builder.Services.AddBlazorApplicationInsights();
 var configObject = new KiotaConfiguration();
 builder.Configuration.Bind(configObject);
 builder.Services.AddBlazoredSessionStorage();
-builder.Services.AddScoped<IAuthenticationProvider>(sp => new BrowserAuthenticationProvider(
-    configObject.Search.GitHub.AppId,
-    "repo",
-    new string[] { configObject.Search.GitHub.ApiBaseUrl.Host },
-    sp.GetService<HttpClient>(),
-    async (uri, state, c) => {
-        sp.GetService<NavigationManager>()?.NavigateTo(uri.ToString());
-        var sessionStorage = sp.GetService<ISessionStorageService>();
-        if(sessionStorage != null)
-            await sessionStorage.SetItemAsync(gitHubStateKey, state, c).ConfigureAwait(false);
-    },
-    async (c) => {
-        var sessionStorage = sp.GetService<ISessionStorageService>();
-        if(sessionStorage != null) {
-            var stateValue = await sessionStorage.GetItemAsync<string>(gitHubStateKey).ConfigureAwait(false);
-            //TODO compare state value
-            //TODO get authorization code from query string
-            await sessionStorage.RemoveItemAsync(gitHubStateKey, c).ConfigureAwait(false);
-        }
-        return string.Empty;
-    }, 
-    sp.GetService<ILoggerFactory>()?.CreateLogger<BrowserAuthenticationProvider>(),
-    new Uri($"{builder.HostEnvironment.BaseAddress}/auth")
-));
+builder.Services.AddScoped<IAuthenticationProvider>(sp => {
+    var navManager = sp.GetService<NavigationManager>();
+    return new BrowserAuthenticationProvider(
+        configObject.Search.GitHub.AppId,
+        "repo",
+        new string[] { configObject.Search.GitHub.ApiBaseUrl.Host },
+        sp.GetService<HttpClient>(),
+        async (uri, state, c) => {
+            navManager?.NavigateTo(uri.ToString());
+            var sessionStorage = sp.GetService<ISessionStorageService>();
+            if(sessionStorage != null)
+                await sessionStorage.SetItemAsync(gitHubStateKey, state, c).ConfigureAwait(false);
+        },
+        async (c) => {
+            var sessionStorage = sp.GetService<ISessionStorageService>();
+            if(sessionStorage != null) {
+                var stateValue = await sessionStorage.GetItemAsync<string>(gitHubStateKey).ConfigureAwait(false);
+                if(navManager != null) {
+                    var uri = navManager.ToAbsoluteUri(navManager.Uri);
+                    var queryStrings = QueryHelpers.ParseQuery(uri.Query);
+                    if(queryStrings.TryGetValue("state", out var state) &&
+                        stateValue.Equals(state, StringComparison.OrdinalIgnoreCase) &&
+                        queryStrings.TryGetValue("code", out var code)) {
+                            return code;
+                    }
+                }
+                await sessionStorage.RemoveItemAsync(gitHubStateKey, c).ConfigureAwait(false);
+            }
+            return string.Empty;
+        }, 
+        sp.GetService<ILoggerFactory>()?.CreateLogger<BrowserAuthenticationProvider>(),
+        new Uri($"{builder.HostEnvironment.BaseAddress}/auth")
+    );
+});
 
 var host = builder.Build();
 
