@@ -10,9 +10,11 @@
 @using Microsoft.Extensions.Localization
 @using Microsoft.Fast.Components.FluentUI
 @using Markdig
+@using Microsoft.Kiota.Abstractions.Authentication;
 @inject IStringLocalizer<Index> Loc
 @inject NavigationManager navManager
 @inject HttpClient Http
+@inject IAuthenticationProvider GitHubAuthProvider
 
 <PageTitle>@Loc["PageTitle"]</PageTitle>
 
@@ -107,7 +109,7 @@
             SearchTerm = SearchTerm,
         };
         var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
-        SearchResults = await new KiotaSearcher(logger, searchConfig, Http).SearchAsync(ComponentDetached);
+        SearchResults = await new KiotaSearcher(logger, searchConfig, Http, GitHubAuthProvider).SearchAsync(ComponentDetached);
         IsLoading = false;
         if(AppInsights != null)
             await AppInsights.StopTrackEvent(searchTelemetryKey, new Dictionary<string, string?> {

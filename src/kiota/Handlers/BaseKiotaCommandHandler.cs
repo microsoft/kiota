@@ -9,8 +9,10 @@ using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
+using Kiota.Builder.SearchProviders.GitHub.Authentication.DeviceCode;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace kiota.Handlers;
 
@@ -32,9 +34,16 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
                 .Build();
         var configObject = new KiotaConfiguration();
         configuration.Bind(configObject);
-        configObject.Search.GitHub.DeviceCodeCallback = DisplayGitHubDeviceCodeLoginMessage;
         return configObject;
     });
+    private const string GitHubScope = "repo";
+    protected IAuthenticationProvider GetAuthenticationProvider(ILogger logger)  =>
+        new DeviceCodeAuthenticationProvider(Configuration.Search.GitHub.AppId,
+                                            GitHubScope,
+                                            new List<string> { Configuration.Search.GitHub.ApiBaseUrl.Host },
+                                            httpClient,
+                                            DisplayGitHubDeviceCodeLoginMessage,
+                                            logger);
     public int Invoke(InvocationContext context)
     {
         return InvokeAsync(context).GetAwaiter().GetResult();

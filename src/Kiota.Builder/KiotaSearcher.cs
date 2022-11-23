@@ -10,31 +10,35 @@ using Kiota.Builder.SearchProviders.APIsGuru;
 using Kiota.Builder.SearchProviders.GitHub;
 using Kiota.Builder.SearchProviders.MSGraph;
 using Microsoft.Extensions.Logging;
+using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace Kiota.Builder;
 
 public class KiotaSearcher {
-    private readonly ILogger<KiotaSearcher> logger;
-    private readonly SearchConfiguration config;
-    private readonly HttpClient httpClient;
-    public KiotaSearcher(ILogger<KiotaSearcher> logger, SearchConfiguration config, HttpClient httpClient) {
+    private readonly ILogger<KiotaSearcher> _logger;
+    private readonly SearchConfiguration _config;
+    private readonly HttpClient _httpClient;
+    private readonly IAuthenticationProvider _gitHubAuthenticationProvider;
+
+    public KiotaSearcher(ILogger<KiotaSearcher> logger, SearchConfiguration config, HttpClient httpClient, IAuthenticationProvider gitHubAuthenticationProvider) {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(config);
         ArgumentNullException.ThrowIfNull(httpClient);
-        this.logger = logger;
-        this.config = config;
-        this.httpClient = httpClient;
+        _logger = logger;
+        _config = config;
+        _httpClient = httpClient;
+        _gitHubAuthenticationProvider = gitHubAuthenticationProvider;
     }
     public async Task<IDictionary<string, SearchResult>> SearchAsync(CancellationToken cancellationToken) {
-        if (string.IsNullOrEmpty(config.SearchTerm)) {
-            logger.LogError("no search term provided");
+        if (string.IsNullOrEmpty(_config.SearchTerm)) {
+            _logger.LogError("no search term provided");
             return new Dictionary<string, SearchResult>();
         }
-        var apiGurusSearchProvider = new APIsGuruSearchProvider(config.APIsGuruListUrl, httpClient, logger, config.ClearCache);
-        logger.LogDebug("searching for {searchTerm}", config.SearchTerm);
-        logger.LogDebug("searching APIs.guru with url {url}", config.APIsGuruListUrl);
+        var apiGurusSearchProvider = new APIsGuruSearchProvider(_config.APIsGuruListUrl, _httpClient, _logger, _config.ClearCache);
+        _logger.LogDebug("searching for {searchTerm}", _config.SearchTerm);
+        _logger.LogDebug("searching APIs.guru with url {url}", _config.APIsGuruListUrl);
         var oasProvider = new OpenApiSpecSearchProvider();
-        var githubProvider = new GitHubSearchProvider(httpClient, logger, config.ClearCache, config.GitHub);
+        var githubProvider = new GitHubSearchProvider(_httpClient, _logger, _config.ClearCache, _config.GitHub, _gitHubAuthenticationProvider);
         var results = await Task.WhenAll(
                         SearchProviderAsync(apiGurusSearchProvider, cancellationToken),
                         SearchProviderAsync(oasProvider, cancellationToken),
@@ -44,7 +48,7 @@ public class KiotaSearcher {
     }
     private async Task<IDictionary<string, SearchResult>> SearchProviderAsync(ISearchProvider provider, CancellationToken cancellationToken) {
         var providerPrefix = $"{provider.ProviderKey}{ProviderSeparator}";
-        var results = await provider.SearchAsync(config.SearchTerm.Replace(providerPrefix, string.Empty), config.Version, cancellationToken);
+        var results = await provider.SearchAsync(_config.SearchTerm.Replace(providerPrefix, string.Empty), _config.Version, cancellationToken);
 
         return results.Select(x => ($"{providerPrefix}{x.Key}", x.Value))
                     .ToDictionary(static x => x.Item1, static x => x.Value, StringComparer.OrdinalIgnoreCase);

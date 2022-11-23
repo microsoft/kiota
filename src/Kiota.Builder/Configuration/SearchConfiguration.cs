@@ -12,6 +12,4 @@ public class GitHubConfiguration {
     public string AppId { get; set; } = "0adc165b71f9824f4282";
     public Uri ApiBaseUrl { get; set; } = new ("https://api.github.com");
     public Uri BlockListUrl { get; set; } = new ("https://raw.githubusercontent.com/microsoft/kiota/main/resources/index-block-list.yml");
-    [JsonIgnore]
-    public Action<Uri, string> DeviceCodeCallback { get; set; }
 }

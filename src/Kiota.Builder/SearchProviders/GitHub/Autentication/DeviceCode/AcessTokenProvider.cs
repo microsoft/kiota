@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace Kiota.Builder.SearchProviders.GitHub.Authentication.DeviceCode;
-internal class GitHubAccessTokenProvider : IAccessTokenProvider
+public class AccessTokenProvider : IAccessTokenProvider
 {
-    internal required Action<Uri, string> MessageCallback { get; init; }
+    public required Action<Uri, string> MessageCallback { get; init; }
     public AllowedHostsValidator AllowedHostsValidator {get;set;} = new ();
-	internal required string ClientId { get; init; }
-	internal required string Scope { get; init; }
-	internal required HttpClient HttpClient {get; init;}
+	public required string ClientId { get; init; }
+	public required string Scope { get; init; }
+	public required HttpClient HttpClient {get; init;}
     internal string BaseLoginUrl { get; init; } = "https://github.com/login";
 	public Task<string> GetAuthorizationTokenAsync(Uri uri, Dictionary<string, object> additionalAuthenticationContext = null, CancellationToken cancellationToken = default) {
         if(!AllowedHostsValidator.IsUrlHostValid(uri))
@@ -31,7 +31,7 @@ internal class GitHubAccessTokenProvider : IAccessTokenProvider
 		var tokenResponse = await PollForTokenAsync(deviceCodeResponse, cancellationToken);
 		return tokenResponse.AccessToken;
 	}
-	private async Task<GitHubAccessCodeResponse> PollForTokenAsync(GitHubDeviceCodeResponse deviceCodeResponse, CancellationToken cancellationToken)
+	private async Task<AccessCodeResponse> PollForTokenAsync(GitHubDeviceCodeResponse deviceCodeResponse, CancellationToken cancellationToken)
 	{
 		var timeOutTask = Task.Delay(TimeSpan.FromSeconds(deviceCodeResponse.ExpiresInSeconds), cancellationToken);
 		var pollTask = Task.Run(async () => {
@@ -48,7 +48,7 @@ internal class GitHubAccessTokenProvider : IAccessTokenProvider
 			throw new TimeoutException("The device code has expired.");
 		return await pollTask;
 	}
-	private async Task<GitHubAccessCodeResponse> GetTokenAsync(GitHubDeviceCodeResponse deviceCodeResponse, CancellationToken cancellationToken)
+	private async Task<AccessCodeResponse> GetTokenAsync(GitHubDeviceCodeResponse deviceCodeResponse, CancellationToken cancellationToken)
 	{
 		using var tokenRequest = new HttpRequestMessage(HttpMethod.Post, $"{BaseLoginUrl}/oauth/access_token") {
 			Content = new FormUrlEncodedContent(new Dictionary<string, string> {
@@ -61,7 +61,7 @@ internal class GitHubAccessTokenProvider : IAccessTokenProvider
 		using var tokenResponse = await HttpClient.SendAsync(tokenRequest, cancellationToken);
 		tokenResponse.EnsureSuccessStatusCode();
 		var tokenContent = await tokenResponse.Content.ReadAsStringAsync(cancellationToken);
-		var result = JsonSerializer.Deserialize<GitHubAccessCodeResponse>(tokenContent);
+		var result = JsonSerializer.Deserialize<AccessCodeResponse>(tokenContent);
 		if ("authorization_pending".Equals(result.Error, StringComparison.OrdinalIgnoreCase))
 			return null;
 		else if (!string.IsNullOrEmpty(result.Error))

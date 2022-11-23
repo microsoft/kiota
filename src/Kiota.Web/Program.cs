@@ -5,6 +5,10 @@ using System.Globalization;
 using Microsoft.JSInterop;
 using Microsoft.Fast.Components.FluentUI;
 using BlazorApplicationInsights;
+using Microsoft.Kiota.Abstractions.Authentication;
+using Kiota.Builder.SearchProviders.GitHub.Authentication.Browser;
+using Kiota.Builder.Configuration;
+using Microsoft.AspNetCore.Components;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -16,6 +20,21 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddLocalization();
 builder.Services.AddFluentUIComponents();
 builder.Services.AddBlazorApplicationInsights();
+var configObject = new KiotaConfiguration();
+builder.Configuration.Bind(configObject);
+builder.Services.AddScoped<IAuthenticationProvider>(sp => new BrowserAuthenticationProvider(
+    configObject.Search.GitHub.AppId,
+    "repo",
+    new string[] { configObject.Search.GitHub.ApiBaseUrl.Host },
+    sp.GetService<HttpClient>(),
+    (uri, state) => {
+        sp.GetService<NavigationManager>()?.NavigateTo(uri.ToString());
+        //TODO store state
+    },
+    sp.GetService<ILoggerFactory>()?.CreateLogger<BrowserAuthenticationProvider>(),
+    null, //TODO get authorization code from query string
+    new Uri($"{builder.HostEnvironment.BaseAddress}/auth")
+));
 
 var host = builder.Build();
 

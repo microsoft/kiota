@@ -10,8 +10,10 @@
 @inject NavigationManager navManager
 @using System.Globalization
 @using Microsoft.Extensions.Localization
+@using Microsoft.Kiota.Abstractions.Authentication;
 @inject IStringLocalizer<Show> Loc
 @inject HttpClient Http
+@inject IAuthenticationProvider GitHubAuthProvider
 
 <PageTitle>@Loc["PageTitle"]</PageTitle>
 
@@ -72,7 +74,7 @@
                 SearchTerm = SearchTerm,
                 Version = Version,
             };
-            var searchResults = await new KiotaSearcher(logger, searchConfig, Http).SearchAsync(ComponentDetached);
+            var searchResults = await new KiotaSearcher(logger, searchConfig, Http, GitHubAuthProvider).SearchAsync(ComponentDetached);
             if(searchResults.Any())
                 DescriptionUrl = searchResults.Values.First().DescriptionUrl.ToString();
         }
@@ -113,7 +115,7 @@
                 Version = Version,
             };
             var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
-            SearchResults = await new KiotaSearcher(logger, searchConfig, Http).SearchAsync(ComponentDetached);
+            SearchResults = await new KiotaSearcher(logger, searchConfig, Http, GitHubAuthProvider).SearchAsync(ComponentDetached);
             DescriptionUrl = SearchResults.First().Value.DescriptionUrl.ToString();
         }
         if(AppInsights != null)

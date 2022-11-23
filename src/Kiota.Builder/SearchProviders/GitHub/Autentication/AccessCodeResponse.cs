@@ -1,9 +1,9 @@
 using System;
 using System.Text.Json.Serialization;
 
-namespace Kiota.Builder.SearchProviders.GitHub.Authentication.DeviceCode;
+namespace Kiota.Builder.SearchProviders.GitHub.Authentication;
 
-internal class GitHubAccessCodeResponse {
+internal class AccessCodeResponse {
 	[JsonPropertyName("access_token")]
 	public string AccessToken { get; set; }
 	[JsonPropertyName("token_type")]

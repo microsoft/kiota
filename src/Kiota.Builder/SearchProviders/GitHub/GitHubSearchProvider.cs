@@ -14,6 +14,7 @@ using Kiota.Builder.SearchProviders.GitHub.Authentication.DeviceCode;
 using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models;
 using Kiota.Builder.SearchProviders.GitHub.Index;
 using Microsoft.Extensions.Logging;
+using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 using SharpYaml;
 using YamlDotNet.Serialization;
@@ -26,15 +27,14 @@ public class GitHubSearchProvider : ISearchProvider
     private readonly ILogger _logger;
     private readonly Uri _blockListUrl;
     private readonly string _clientId;
-    private readonly Action<Uri, string> _messageCallBack;
-    private const string ValidHost = "api.github.com";
-    private const string Scope = "repo";
-    public GitHubSearchProvider(HttpClient httpClient, ILogger logger, bool clearCache, GitHubConfiguration configuration)
+    private readonly Uri _appBaseUrl;
+    private readonly IAuthenticationProvider _authenticatedAuthenticationProvider;
+    public GitHubSearchProvider(HttpClient httpClient, ILogger logger, bool clearCache, GitHubConfiguration configuration, IAuthenticationProvider authenticatedAuthenticationProvider)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentNullException.ThrowIfNull(configuration.BlockListUrl);
-        ArgumentNullException.ThrowIfNull(configuration.DeviceCodeCallback);
+        ArgumentNullException.ThrowIfNull(configuration.ApiBaseUrl);
         ArgumentNullException.ThrowIfNull(logger);
         if(string.IsNullOrEmpty(configuration.AppId))
             throw new ArgumentOutOfRangeException(nameof(configuration));
@@ -46,7 +46,8 @@ public class GitHubSearchProvider : ISearchProvider
         _logger = logger;
         _blockListUrl = configuration.BlockListUrl;
         _clientId = configuration.AppId;
-        _messageCallBack = configuration.DeviceCodeCallback;
+        _authenticatedAuthenticationProvider = authenticatedAuthenticationProvider;
+        _appBaseUrl = configuration.ApiBaseUrl;
     }
     private readonly HttpClient _httpClient;
     public string ProviderKey => "github";
@@ -74,13 +75,13 @@ public class GitHubSearchProvider : ISearchProvider
         var blockLists = await GetBlockLists(cancellationToken);
         var cachingProvider = new TempFolderCachingAccessTokenProvider {
             Logger = _logger,
-            ApiBaseUrl = new Uri($"https://{ValidHost}"),
+            ApiBaseUrl = _appBaseUrl,
             Concrete = null,
             AppId = _clientId,
         };
-        var authenticationProvider = cachingProvider.IsCachedTokenPresent() ?
-            new GitHubAuthenticationProvider(_clientId, Scope, new List<string> { ValidHost }, _httpClient, _messageCallBack, _logger) :
-            new GitHubAnonymousAuthenticationProvider();
+        var authenticationProvider = _authenticatedAuthenticationProvider != null && cachingProvider.IsCachedTokenPresent() ?
+            _authenticatedAuthenticationProvider :
+            new Authentication.AnonymousAuthenticationProvider();
         var gitHubRequestAdapter = new HttpClientRequestAdapter(authenticationProvider, httpClient: _httpClient);
         var gitHubClient = new GitHubClient.GitHubClient(gitHubRequestAdapter);
         if(term.Contains('/')) {

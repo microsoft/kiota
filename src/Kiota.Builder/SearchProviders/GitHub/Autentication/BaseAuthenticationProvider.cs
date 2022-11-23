@@ -1,36 +1,32 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
 
-namespace Kiota.Builder.SearchProviders.GitHub.Authentication.DeviceCode;
+namespace Kiota.Builder.SearchProviders.GitHub.Authentication;
 
-public class GitHubAuthenticationProvider : GitHubAnonymousAuthenticationProvider
+public class BaseAuthenticationProvider<T> : AnonymousAuthenticationProvider where T: class, IAccessTokenProvider
 {
-	public GitHubAuthenticationProvider(string clientId, string scope, IEnumerable<string> validHosts, HttpClient httpClient, Action<Uri, string> messageCallback, ILogger logger)
+	public BaseAuthenticationProvider(string clientId,
+        string scope,
+        IEnumerable<string> validHosts,
+        ILogger logger,
+        Func<string, string, IEnumerable<string>, T> accessTokenProviderFactory)
 	{
         ArgumentNullException.ThrowIfNull(validHosts);
-        ArgumentNullException.ThrowIfNull(httpClient);
-        ArgumentNullException.ThrowIfNull(messageCallback);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(accessTokenProviderFactory);
         if (string.IsNullOrEmpty(clientId))
 			throw new ArgumentNullException(nameof(clientId));
 		if (string.IsNullOrEmpty(scope))
 			throw new ArgumentNullException(nameof(scope));
 
 		AccessTokenProvider = new TempFolderCachingAccessTokenProvider {
-            Concrete = new GitHubAccessTokenProvider {
-                ClientId = clientId,
-                Scope = scope,
-                AllowedHostsValidator = new AllowedHostsValidator(validHosts),
-                HttpClient = httpClient,
-                MessageCallback = messageCallback
-            },
+            Concrete = accessTokenProviderFactory(clientId, scope, validHosts),
             Logger = logger,
             ApiBaseUrl = new Uri($"https://{validHosts.FirstOrDefault() ?? "api.github.com"}"),
             AppId = clientId,

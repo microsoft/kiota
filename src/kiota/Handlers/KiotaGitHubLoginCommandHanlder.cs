@@ -14,7 +14,7 @@ internal class KiotaGitHubLoginCommandHandler : BaseKiotaCommandHandler
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
-        var (loggerFactory, logger) = GetLoggerAndFactory<GitHubAuthenticationProvider>(context);
+        var (loggerFactory, logger) = GetLoggerAndFactory<DeviceCodeAuthenticationProvider>(context);
         using (loggerFactory) {
             try {
                 return await LoginAsync(logger, cancellationToken);
@@ -31,7 +31,7 @@ internal class KiotaGitHubLoginCommandHandler : BaseKiotaCommandHandler
         }
     }
     private async Task<int> LoginAsync(ILogger logger, CancellationToken cancellationToken) {
-        var authenticationProvider = new GitHubAuthenticationProvider(Configuration.Search.GitHub.AppId,
+        var authenticationProvider = new DeviceCodeAuthenticationProvider(Configuration.Search.GitHub.AppId,
                                                                         "repo",
                                                                         new List<string> { "api.github.com"},
                                                                         httpClient,
