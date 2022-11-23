@@ -31,7 +31,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if(!codeElement.IsOfKind(CodeMethodKind.Setter))
             foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
                 var parameterName = parameter.Name.ToSnakeCase();
-                writer.WriteLine($"if not {parameterName}:");
+                writer.WriteLine($"if {parameterName} is None:");
                 writer.IncreaseIndent();
                 writer.WriteLine($"raise Exception(\"{parameterName} cannot be undefined\")");
                 writer.DecreaseIndent();
@@ -289,7 +289,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         writer.WriteLine($"{errorMappingVarName}: Dict[str, ParsableFactory] = {{");
         writer.IncreaseIndent();
         foreach(var errorMapping in codeElement.ErrorMappings) {
-            writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": o_data_error.{errorMapping.Value.Name}.get_from_discriminator_value(),");
+            writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": o_data_error.{errorMapping.Value.Name},");
         }
         writer.CloseBlock();
     }

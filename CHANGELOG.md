@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for scalar request bodies in PHP [#1937](https://github.com/microsoft/kiota/pull/1937)
 - Added accept header for all schematized requests Python. [#1617](https://github.com/microsoft/kiota/issues/1617)
 - Added optional backing store support for PHP. [#1976](https://github.com/microsoft/kiota/pull/1976)
+- Fixed a bug where OdataErrors had wrong inherited class name in Python.
+- Fixed a bug where empty path parameters dictionary would throw an error in request builders in Python.
 
 ### Changed
 

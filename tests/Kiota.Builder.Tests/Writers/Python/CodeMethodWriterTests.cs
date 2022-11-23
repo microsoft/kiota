@@ -233,9 +233,9 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.Contains("request_info", result);
         Assert.Contains("error_mapping: Dict[str, ParsableFactory] =", result);
-        Assert.Contains("\"4XX\": o_data_error.Error4XX.get_from_discriminator_value()", result);
-        Assert.Contains("\"5XX\": o_data_error.Error5XX.get_from_discriminator_value()", result);
-        Assert.Contains("\"403\": o_data_error.Error403.get_from_discriminator_value()", result);
+        Assert.Contains("\"4XX\": o_data_error.Error4XX", result);
+        Assert.Contains("\"5XX\": o_data_error.Error5XX", result);
+        Assert.Contains("\"403\": o_data_error.Error403", result);
         Assert.Contains("send_async", result);
         Assert.Contains("raise Exception", result);
     }
@@ -734,7 +734,7 @@ public class CodeMethodWriterTests : IDisposable {
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("if not original_name:", result);
+        Assert.Contains("if original_name is None:", result);
         Assert.Contains("if original_name == \"select\":", result);
         Assert.Contains("return \"%24select\"", result);
         Assert.Contains("if original_name == \"expand\":", result);
