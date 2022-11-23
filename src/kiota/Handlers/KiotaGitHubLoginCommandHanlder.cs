@@ -39,7 +39,7 @@ internal class KiotaGitHubLoginCommandHandler : BaseKiotaCommandHandler
                                                                         logger);
         var dummyRequest = new RequestInformation() {
             HttpMethod = Method.GET,
-            URI = new Uri("https://api.github.com/user"),
+            URI = Configuration.Search.GitHub.ApiBaseUrl,
         };
         await authenticationProvider.AuthenticateRequestAsync(dummyRequest, cancellationToken: cancellationToken);
         if(dummyRequest.Headers.TryGetValue("Authorization", out var authHeaderValue) && authHeaderValue is string authHeader && authHeader.StartsWith("bearer", StringComparison.OrdinalIgnoreCase)) {

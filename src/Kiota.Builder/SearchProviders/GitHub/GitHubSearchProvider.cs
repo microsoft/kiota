@@ -22,7 +22,7 @@ namespace Kiota.Builder.SearchProviders.GitHub;
 
 public class GitHubSearchProvider : ISearchProvider
 {
-    private readonly DocumentCachingProvider cachingProvider;
+    private readonly DocumentCachingProvider documentCachingProvider;
     private readonly ILogger _logger;
     private readonly Uri _blockListUrl;
     private readonly string _clientId;
@@ -38,7 +38,7 @@ public class GitHubSearchProvider : ISearchProvider
         ArgumentNullException.ThrowIfNull(logger);
         if(string.IsNullOrEmpty(configuration.AppId))
             throw new ArgumentOutOfRangeException(nameof(configuration));
-        cachingProvider = new DocumentCachingProvider(httpClient, logger)
+        documentCachingProvider = new DocumentCachingProvider(httpClient, logger)
         {
             ClearCache = clearCache,
         };
@@ -114,7 +114,7 @@ public class GitHubSearchProvider : ISearchProvider
                 .ToDictionary(static x => x.Item1, static x => x.Item2, StringComparer.OrdinalIgnoreCase);
     private async Task<Tuple<HashSet<string>, HashSet<string>>> GetBlockLists(CancellationToken cancellationToken) {
         try {
-            await using var document = await cachingProvider.GetDocumentAsync(_blockListUrl, "search", _blockListUrl.GetFileName(), "text/yaml", cancellationToken);
+            await using var document = await documentCachingProvider.GetDocumentAsync(_blockListUrl, "search", _blockListUrl.GetFileName(), "text/yaml", cancellationToken);
             var deserialized = deserializeDocumentFromYaml<BlockList>(document);
             return new Tuple<HashSet<string>, HashSet<string>>(
                 new HashSet<string>(deserialized.Organizations.Distinct(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase),
@@ -147,7 +147,7 @@ public class GitHubSearchProvider : ISearchProvider
             if (!response.AdditionalData.TryGetValue(DownloadUrlKey, out var rawDownloadUrl) || rawDownloadUrl is not string downloadUrl || string.IsNullOrEmpty(downloadUrl))
                 return Enumerable.Empty<Tuple<string, SearchResult>>();
             var targetUrl = new Uri(downloadUrl);
-            await using var document = await cachingProvider.GetDocumentAsync(targetUrl, "search", targetUrl.GetFileName(), accept, cancellationToken);
+            await using var document = await documentCachingProvider.GetDocumentAsync(targetUrl, "search", targetUrl.GetFileName(), accept, cancellationToken);
             var indexFile = accept.ToLowerInvariant() switch
             {
                 "application/json" => deserializeDocumentFromJson<IndexRoot>(document),

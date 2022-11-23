@@ -18,7 +18,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
 {
     protected TempFolderCachingAccessTokenProvider GitHubAuthenticationCachingProvider(ILogger logger) => new(){
         Logger = logger,
-        ApiBaseUrl = new Uri("https://api.github.com"),
+        ApiBaseUrl = Configuration.Search.GitHub.ApiBaseUrl,
         Concrete = null,
         AppId = Configuration.Search.GitHub.AppId,
     };

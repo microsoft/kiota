@@ -11,12 +11,15 @@ internal class KiotaGitHubLogoutCommandHandler : BaseKiotaCommandHandler
 {
     public override Task<int> InvokeAsync(InvocationContext context)
     {
-        CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
         var (loggerFactory, logger) = GetLoggerAndFactory<TempFolderCachingAccessTokenProvider>(context);
         using (loggerFactory) {
             try {
                 var cachingProvider = GitHubAuthenticationCachingProvider(logger);
-                cachingProvider.Logout();
+                var result = cachingProvider.Logout();
+                if(result)
+                    DisplaySuccess("Logged out successfully.");
+                else
+                    DisplaySuccess("Already logged out.");
                 return Task.FromResult(0);
             } catch (Exception ex) {
     #if DEBUG

@@ -14,14 +14,14 @@ public class GitHubAuthenticationProvider : GitHubAnonymousAuthenticationProvide
 {
 	public GitHubAuthenticationProvider(string clientId, string scope, IEnumerable<string> validHosts, HttpClient httpClient, Action<Uri, string> messageCallback, ILogger logger)
 	{
-		if (string.IsNullOrEmpty(clientId))
-			throw new ArgumentNullException(nameof(clientId));
-		if (string.IsNullOrEmpty(scope))
-			throw new ArgumentNullException(nameof(scope));
         ArgumentNullException.ThrowIfNull(validHosts);
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(messageCallback);
         ArgumentNullException.ThrowIfNull(logger);
+        if (string.IsNullOrEmpty(clientId))
+			throw new ArgumentNullException(nameof(clientId));
+		if (string.IsNullOrEmpty(scope))
+			throw new ArgumentNullException(nameof(scope));
 
 		AccessTokenProvider = new TempFolderCachingAccessTokenProvider {
             Concrete = new GitHubAccessTokenProvider {
@@ -39,8 +39,11 @@ public class GitHubAuthenticationProvider : GitHubAnonymousAuthenticationProvide
 	public IAccessTokenProvider AccessTokenProvider {get; private set;}
     private const string AuthorizationHeaderKey = "Authorization";
     private const string ClaimsKey = "claims";
-	public override async Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object> additionalAuthenticationContext = null, CancellationToken cancellationToken = default) {
+	public override Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object> additionalAuthenticationContext = null, CancellationToken cancellationToken = default) {
 		ArgumentNullException.ThrowIfNull(request);
+        return AuthenticateRequestInternalAsync(request, additionalAuthenticationContext, cancellationToken);
+    }
+	private async Task AuthenticateRequestInternalAsync(RequestInformation request, Dictionary<string, object> additionalAuthenticationContext = null, CancellationToken cancellationToken = default) {
         await base.AuthenticateRequestAsync(request, additionalAuthenticationContext, cancellationToken).ConfigureAwait(false);
         if(additionalAuthenticationContext != null &&
             additionalAuthenticationContext.ContainsKey(ClaimsKey) &&

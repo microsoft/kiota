@@ -62,13 +62,13 @@ public class TempFolderCachingAccessTokenProvider : IAccessTokenProvider
             return null;
         }
     }
-    public void Logout() {
-        try {
-            var target = GetTokenCacheFilePath();
-            File.Delete(target);
-        } catch (Exception ex) {
-            Logger.LogWarning(ex, "Error while deleting token from cache.");
-        }
+    public bool Logout() {
+        //no try-catch as we want the exception to bubble up to the command
+        var target = GetTokenCacheFilePath();
+        if(!IsCachedTokenPresent())
+            return false;
+        File.Delete(target);
+        return true;
     }
     public bool IsCachedTokenPresent() {
         try {
