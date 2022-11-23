@@ -33,10 +33,3 @@ updates:
   open-pull-requests-limit: 10
   labels:
     - Ruby
-- package-ecosystem: nuget
-  directory: "/cli/commons"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  labels:
-    - CLI
