@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="JmesPath.Net" Version="1.0.205" />
-    <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.0.0-preview.17" />
+    <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.0.0-preview.18" />
     <PackageReference Include="Spectre.Console" Version="0.45.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
