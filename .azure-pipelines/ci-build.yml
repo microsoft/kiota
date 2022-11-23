@@ -10,7 +10,6 @@ trigger:
       'authentication/**',
       'serialization/**',
       'http/**',
-      'cli/**',
       '**.md',
       '.vscode/**',
       '**.svg'
