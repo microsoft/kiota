@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.CommandLine.Invocation;
 using System.Threading;
 using System.Threading.Tasks;
-using Kiota.Builder.SearchProviders.GitHub.Authentication.DeviceCode;
+using kiota.Authentication.GitHub.DeviceCode;
 using Microsoft.Extensions.Logging;
 using Microsoft.Kiota.Abstractions;
 

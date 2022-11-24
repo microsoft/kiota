@@ -10,7 +10,6 @@ using Kiota.Builder.Caching;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
-using Kiota.Builder.SearchProviders.GitHub.Authentication.DeviceCode;
 using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models;
 using Kiota.Builder.SearchProviders.GitHub.Index;
 using Microsoft.Extensions.Logging;

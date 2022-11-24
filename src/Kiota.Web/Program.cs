@@ -6,11 +6,11 @@ using Microsoft.JSInterop;
 using Microsoft.Fast.Components.FluentUI;
 using BlazorApplicationInsights;
 using Microsoft.Kiota.Abstractions.Authentication;
-using Kiota.Builder.SearchProviders.GitHub.Authentication.Browser;
 using Kiota.Builder.Configuration;
 using Microsoft.AspNetCore.Components;
 using Blazored.SessionStorage;
 using Microsoft.AspNetCore.WebUtilities;
+using Kiota.Web.Authentication.GitHub;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -25,13 +25,13 @@ builder.Services.AddBlazorApplicationInsights();
 var configObject = new KiotaConfiguration();
 builder.Configuration.Bind(configObject);
 builder.Services.AddBlazoredSessionStorage();
-builder.Services.AddScoped<IAuthenticationProvider>(sp => {
+builder.Services.AddScoped<IAuthenticationProvider>(sp => { // TODO move to extension method
     var navManager = sp.GetService<NavigationManager>();
     return new BrowserAuthenticationProvider(
         configObject.Search.GitHub.AppId,
         "repo",
         new string[] { configObject.Search.GitHub.ApiBaseUrl.Host },
-        sp.GetService<HttpClient>(),
+        sp.GetService<HttpClient>()!,
         async (uri, state, c) => {
             navManager?.NavigateTo(uri.ToString());
             var sessionStorage = sp.GetService<ISessionStorageService>();
@@ -47,15 +47,14 @@ builder.Services.AddScoped<IAuthenticationProvider>(sp => {
                     var queryStrings = QueryHelpers.ParseQuery(uri.Query);
                     if(queryStrings.TryGetValue("state", out var state) &&
                         stateValue.Equals(state, StringComparison.OrdinalIgnoreCase) &&
-                        queryStrings.TryGetValue("code", out var code)) {
-                            return code;
-                    }
+                        queryStrings.TryGetValue("code", out var code) && code.FirstOrDefault() is string codeValue)
+                            return codeValue;
                 }
                 await sessionStorage.RemoveItemAsync(gitHubStateKey, c).ConfigureAwait(false);
             }
             return string.Empty;
         }, 
-        sp.GetService<ILoggerFactory>()?.CreateLogger<BrowserAuthenticationProvider>(),
+        sp.GetService<ILoggerFactory>()?.CreateLogger<BrowserAuthenticationProvider>()!,
         new Uri($"{builder.HostEnvironment.BaseAddress}/auth")
     );
 });

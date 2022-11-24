@@ -2,10 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Kiota.Abstractions.Authentication;
 
-namespace Kiota.Builder.SearchProviders.GitHub.Authentication.DeviceCode;
+namespace kiota.Authentication.GitHub.DeviceCode;
 
 public class DeviceCodeAuthenticationProvider : BaseAuthenticationProvider<AccessTokenProvider>
 {

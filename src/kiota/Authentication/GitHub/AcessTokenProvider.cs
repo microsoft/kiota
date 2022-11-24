@@ -5,9 +5,10 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Kiota.Abstractions.Authentication;
 
-namespace Kiota.Builder.SearchProviders.GitHub.Authentication.DeviceCode;
+namespace kiota.Authentication.GitHub.DeviceCode;
 public class AccessTokenProvider : IAccessTokenProvider
 {
     public required Action<Uri, string> MessageCallback { get; init; }

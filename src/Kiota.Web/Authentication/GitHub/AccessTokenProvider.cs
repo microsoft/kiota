@@ -1,13 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
+using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Kiota.Abstractions.Authentication;
 
-namespace Kiota.Builder.SearchProviders.GitHub.Authentication.Browser;
+namespace Kiota.Web.Authentication.GitHub;
 public class AccessTokenProvider : IAccessTokenProvider
 {
     public AllowedHostsValidator AllowedHostsValidator {get; set;} = new();
@@ -18,7 +14,7 @@ public class AccessTokenProvider : IAccessTokenProvider
     public required Func<Uri, string, CancellationToken, Task> RedirectCallback { get; init; }
     public required Func<CancellationToken, Task<string>> GetAccessCodeCallback { get; init; }
     internal string BaseLoginUrl { get; init; } = "https://github.com/login";
-    public Task<string> GetAuthorizationTokenAsync(Uri uri, Dictionary<string, object> additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
+    public Task<string> GetAuthorizationTokenAsync(Uri uri, Dictionary<string, object>? additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
     {
         if(!AllowedHostsValidator.IsUrlHostValid(uri))
 			return Task.FromResult(string.Empty);
@@ -35,14 +31,14 @@ public class AccessTokenProvider : IAccessTokenProvider
             return string.Empty;
         } else {
             var tokenResponse = await GetTokenAsync(authorizationCode, cancellationToken);
-            return tokenResponse.AccessToken;
+            return tokenResponse?.AccessToken ?? string.Empty;
         }
     }
     private Uri GetAuthorizeUrl(Guid state) {
         var authorizeUrl = $"{BaseLoginUrl}/oauth/authorize?client_id={ClientId}&scope={Scope}&redirect_uri={RedirectUri}&state={state}";
         return new Uri(authorizeUrl);
     }
-    private async Task<AccessCodeResponse> GetTokenAsync(string authorizationCode, CancellationToken cancellationToken)
+    private async Task<AccessCodeResponse?> GetTokenAsync(string authorizationCode, CancellationToken cancellationToken)
 	{
 		using var tokenRequest = new HttpRequestMessage(HttpMethod.Post, $"{BaseLoginUrl}/oauth/access_token") {
 			Content = new FormUrlEncodedContent(new Dictionary<string, string> {
@@ -56,9 +52,9 @@ public class AccessTokenProvider : IAccessTokenProvider
 		tokenResponse.EnsureSuccessStatusCode();
 		var tokenContent = await tokenResponse.Content.ReadAsStringAsync(cancellationToken);
 		var result = JsonSerializer.Deserialize<AccessCodeResponse>(tokenContent);
-		if ("authorization_pending".Equals(result.Error, StringComparison.OrdinalIgnoreCase))
+		if ("authorization_pending".Equals(result?.Error, StringComparison.OrdinalIgnoreCase))
 			return null;
-		else if (!string.IsNullOrEmpty(result.Error))
+		else if (!string.IsNullOrEmpty(result?.Error))
 			throw new InvalidOperationException($"Error while getting token: {result.Error} - {result.ErrorDescription}");
 		else
 			return result;

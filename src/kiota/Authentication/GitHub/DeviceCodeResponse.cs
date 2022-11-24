@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
 
-namespace Kiota.Builder.SearchProviders.GitHub.Authentication.DeviceCode;
+namespace kiota.Authentication.GitHub.DeviceCode;
 
 internal class GitHubDeviceCodeResponse {
 	[JsonPropertyName("device_code")]

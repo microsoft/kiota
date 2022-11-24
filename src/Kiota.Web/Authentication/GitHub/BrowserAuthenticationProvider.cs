@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Kiota.Abstractions.Authentication;
 
-namespace Kiota.Builder.SearchProviders.GitHub.Authentication.Browser;
+namespace Kiota.Web.Authentication.GitHub;
 
 public class BrowserAuthenticationProvider : BaseAuthenticationProvider<AccessTokenProvider>
 {
