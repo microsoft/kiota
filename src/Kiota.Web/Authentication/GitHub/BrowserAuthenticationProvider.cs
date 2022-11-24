@@ -3,10 +3,10 @@ using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace Kiota.Web.Authentication.GitHub;
 
-public class BrowserAuthenticationProvider : BaseAuthenticationProvider<AccessTokenProvider>
+public class BrowserAuthenticationProvider : BaseAuthenticationProvider<BrowserAccessTokenProvider>
 {
     public BrowserAuthenticationProvider(string clientId, string scope, IEnumerable<string> validHosts, HttpClient httpClient, Func<Uri, string, CancellationToken, Task> redirectCallback, Func<CancellationToken, Task<string>> getAccessCodeCallback, ILogger logger, Uri redirectUri) :
-        base(clientId, scope, validHosts, logger, (clientId, scope, validHosts) => new AccessTokenProvider {
+        base(clientId, scope, validHosts, logger, (clientId, scope, validHosts) => new BrowserAccessTokenProvider {
             ClientId = clientId,
             HttpClient = httpClient,
             RedirectCallback = redirectCallback,

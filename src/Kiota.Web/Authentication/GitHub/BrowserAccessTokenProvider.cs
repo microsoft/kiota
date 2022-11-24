@@ -4,7 +4,7 @@ using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace Kiota.Web.Authentication.GitHub;
-public class AccessTokenProvider : IAccessTokenProvider
+public class BrowserAccessTokenProvider : IAccessTokenProvider
 {
     public AllowedHostsValidator AllowedHostsValidator {get; set;} = new();
 	public required string ClientId { get; init; }

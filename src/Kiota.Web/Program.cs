@@ -20,7 +20,7 @@ builder.Services.AddBlazorApplicationInsights();
 var configObject = new KiotaConfiguration();
 builder.Configuration.Bind(configObject);
 builder.Services.AddSingleton(configObject);
-builder.Services.AddBrowserCodeAuthentication(builder.HostEnvironment.BaseAddress);
+builder.Services.AddPatAuthentication();
 
 var host = builder.Build();
 
