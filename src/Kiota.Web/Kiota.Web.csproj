@@ -53,6 +53,10 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>NavMenu.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="Shared\GitHubSignIn.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>GitHubSignIn.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
   <PropertyGroup>

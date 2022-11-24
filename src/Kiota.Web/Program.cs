@@ -5,12 +5,13 @@ using System.Globalization;
 using Microsoft.JSInterop;
 using Microsoft.Fast.Components.FluentUI;
 using BlazorApplicationInsights;
-using Microsoft.Kiota.Abstractions.Authentication;
 using Kiota.Builder.Configuration;
 using Microsoft.AspNetCore.Components;
 using Blazored.SessionStorage;
 using Microsoft.AspNetCore.WebUtilities;
 using Kiota.Web.Authentication.GitHub;
+using Kiota.Builder.SearchProviders.GitHub.Authentication;
+using Microsoft.Kiota.Abstractions.Authentication;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -24,7 +25,16 @@ builder.Services.AddFluentUIComponents();
 builder.Services.AddBlazorApplicationInsights();
 var configObject = new KiotaConfiguration();
 builder.Configuration.Bind(configObject);
+builder.Services.AddSingleton(configObject);
 builder.Services.AddBlazoredSessionStorage();
+builder.Services.AddScoped(sp => {
+    return new TempFolderCachingAccessTokenProvider {
+            Logger = sp.GetService<ILoggerFactory>()?.CreateLogger<TempFolderCachingAccessTokenProvider>()!,
+            ApiBaseUrl = configObject.Search.GitHub.ApiBaseUrl,
+            Concrete = null,
+            AppId = configObject.Search.GitHub.AppId,
+    };
+});
 builder.Services.AddScoped<IAuthenticationProvider>(sp => { // TODO move to extension method
     var navManager = sp.GetService<NavigationManager>();
     return new BrowserAuthenticationProvider(

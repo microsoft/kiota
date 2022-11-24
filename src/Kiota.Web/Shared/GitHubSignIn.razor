@@ -1,0 +1,28 @@
+@using Microsoft.Kiota.Abstractions.Authentication
+@using Kiota.Builder.Configuration
+@using Kiota.Web.Authentication.GitHub
+@using Kiota.Builder.SearchProviders.GitHub.Authentication
+@using Microsoft.Fast.Components.FluentUI
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<GitHubSignIn> Loc
+@inject TempFolderCachingAccessTokenProvider CacheTokenProvider
+@inject IAuthenticationProvider BrowserAuthenticationProvider
+@inject KiotaConfiguration KiotaConfiguration
+<div class="ghsignin">
+    @if(CacheTokenProvider.IsCachedTokenPresent()) {
+        <FluentButton @onclick="SignOut" Appearance="Appearance.Neutral">@Loc["SignOut"]</FluentButton>
+    } else {
+        <FluentButton @onclick="SignIn" Appearance="Appearance.Accent">@Loc["SignIn"]</FluentButton>
+    }
+</div>
+
+@code {
+    private async Task SignIn() {
+        if(BrowserAuthenticationProvider is BrowserAuthenticationProvider authProvider)
+            await authProvider.AccessTokenProvider.GetAuthorizationTokenAsync(KiotaConfiguration.Search.GitHub.ApiBaseUrl, cancellationToken: ComponentDetached);
+    }
+    private void SignOut() {
+        CacheTokenProvider.Logout();
+    }
+
+}
