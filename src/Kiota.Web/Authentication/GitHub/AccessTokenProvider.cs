@@ -43,8 +43,9 @@ public class AccessTokenProvider : IAccessTokenProvider
 		using var tokenRequest = new HttpRequestMessage(HttpMethod.Post, $"{BaseLoginUrl}/oauth/access_token") {
 			Content = new FormUrlEncodedContent(new Dictionary<string, string> {
 				{ "client_id", ClientId },
-				{ "code", authorizationCode }, //TODO missing secret? what about SPA?
-				// { "grant_type", "urn:ietf:params:oauth:grant-type:device_code" }
+				{ "code", authorizationCode }, 
+                // acquisition doesn't work because the endpoint doesn't support CORS or PKCE, and requires a secret
+                // we're leaving the code in place as we hope that GitHub will eventually support this and it'll be a matter of updating the parameters and calling AddBrowserCodeAuthentication
 			})
 		};
 		tokenRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
