@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Kiota.Builder.Caching;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models;
 using Kiota.Builder.SearchProviders.GitHub.Index;
 using Microsoft.Extensions.Logging;
@@ -28,7 +27,8 @@ public class GitHubSearchProvider : ISearchProvider
     private readonly string _clientId;
     private readonly Uri _appBaseUrl;
     private readonly IAuthenticationProvider _authenticatedAuthenticationProvider;
-    public GitHubSearchProvider(HttpClient httpClient, ILogger logger, bool clearCache, GitHubConfiguration configuration, IAuthenticationProvider authenticatedAuthenticationProvider)
+    private readonly Func<CancellationToken, Task<bool>> _isSignedInCallback;
+    public GitHubSearchProvider(HttpClient httpClient, ILogger logger, bool clearCache, GitHubConfiguration configuration, IAuthenticationProvider authenticatedAuthenticationProvider, Func<CancellationToken, Task<bool>> isSignedInCallBack)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(configuration);
@@ -47,6 +47,7 @@ public class GitHubSearchProvider : ISearchProvider
         _clientId = configuration.AppId;
         _authenticatedAuthenticationProvider = authenticatedAuthenticationProvider;
         _appBaseUrl = configuration.ApiBaseUrl;
+        _isSignedInCallback = isSignedInCallBack;
     }
     private readonly HttpClient _httpClient;
     public string ProviderKey => "github";
@@ -72,13 +73,8 @@ public class GitHubSearchProvider : ISearchProvider
     private async Task<IDictionary<string, SearchResult>> SearchAsyncInternal(string term, CancellationToken cancellationToken)
     {
         var blockLists = await GetBlockLists(cancellationToken);
-        var cachingProvider = new TempFolderCachingAccessTokenProvider {
-            Logger = _logger,
-            ApiBaseUrl = _appBaseUrl,
-            Concrete = null,
-            AppId = _clientId,
-        };
-        var authenticationProvider = _authenticatedAuthenticationProvider != null && cachingProvider.IsCachedTokenPresent() ?
+        var isSignedIn = await _isSignedInCallback(cancellationToken);
+        var authenticationProvider = _authenticatedAuthenticationProvider != null && isSignedIn ?
             _authenticatedAuthenticationProvider :
             new Authentication.AnonymousAuthenticationProvider();
         var gitHubRequestAdapter = new HttpClientRequestAdapter(authenticationProvider, httpClient: _httpClient);

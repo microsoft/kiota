@@ -5,6 +5,7 @@ using System.CommandLine.Invocation;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using kiota.Authentication.GitHub.DeviceCode;
 using Kiota.Builder;
@@ -37,6 +38,10 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         return configObject;
     });
     private const string GitHubScope = "repo";
+    protected Func<CancellationToken, Task<bool>> GetIsGitHubSignedInCallback(ILogger logger) => (cancellationToken) => {
+        var provider = GitHubAuthenticationCachingProvider(logger);
+        return Task.FromResult(provider.IsCachedTokenPresent());
+    };
     protected IAuthenticationProvider GetAuthenticationProvider(ILogger logger)  =>
         new DeviceCodeAuthenticationProvider(Configuration.Search.GitHub.AppId,
                                             GitHubScope,

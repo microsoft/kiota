@@ -7,7 +7,7 @@ public class PatAuthenticationProvider : BaseAuthenticationProvider<PatProvider>
         base(clientId, scope, validHosts, logger, (clientId, scope, validHosts) => new PatProvider {
             GetPATFromStorageCallback = GetPATFromStorageCallback,
             AllowedHostsValidator = new (validHosts),
-        })
+        }, false)
     {
         ArgumentNullException.ThrowIfNull(GetPATFromStorageCallback);
     }

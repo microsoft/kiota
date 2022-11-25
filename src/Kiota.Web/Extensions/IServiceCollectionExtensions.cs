@@ -51,15 +51,6 @@ public static class IServiceCollectionExtensions {
         });
     }
     public static void AddPatAuthentication(this IServiceCollection services) {
-        services.AddScoped(sp => {
-            var configObject = sp.GetRequiredService<KiotaConfiguration>();
-            return new TempFolderCachingAccessTokenProvider {
-                Logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<TempFolderCachingAccessTokenProvider>()!,
-                ApiBaseUrl = configObject.Search.GitHub.ApiBaseUrl,
-                Concrete = null,
-                AppId = configObject.Search.GitHub.AppId,
-            };
-        });
         services.AddBlazoredLocalStorage();
         services.AddScoped(sp => {
             var localStorage = sp.GetRequiredService<ILocalStorageService>();

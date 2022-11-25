@@ -15,7 +15,8 @@ public class BaseAuthenticationProvider<T> : AnonymousAuthenticationProvider whe
         string scope,
         IEnumerable<string> validHosts,
         ILogger logger,
-        Func<string, string, IEnumerable<string>, T> accessTokenProviderFactory)
+        Func<string, string, IEnumerable<string>, T> accessTokenProviderFactory,
+        bool enableCache = true)
 	{
         ArgumentNullException.ThrowIfNull(validHosts);
         ArgumentNullException.ThrowIfNull(logger);
@@ -25,12 +26,14 @@ public class BaseAuthenticationProvider<T> : AnonymousAuthenticationProvider whe
 		if (string.IsNullOrEmpty(scope))
 			throw new ArgumentNullException(nameof(scope));
 
-		AccessTokenProvider = new TempFolderCachingAccessTokenProvider {
-            Concrete = accessTokenProviderFactory(clientId, scope, validHosts),
-            Logger = logger,
-            ApiBaseUrl = new Uri($"https://{validHosts.FirstOrDefault() ?? "api.github.com"}"),
-            AppId = clientId,
-        };
+        AccessTokenProvider = accessTokenProviderFactory(clientId, scope, validHosts);
+        if(enableCache)
+            AccessTokenProvider = new TempFolderCachingAccessTokenProvider {
+                Concrete = AccessTokenProvider,
+                Logger = logger,
+                ApiBaseUrl = new Uri($"https://{validHosts.FirstOrDefault() ?? "api.github.com"}"),
+                AppId = clientId,
+            };
 	}
 	public IAccessTokenProvider AccessTokenProvider {get; private set;}
     private const string AuthorizationHeaderKey = "Authorization";
