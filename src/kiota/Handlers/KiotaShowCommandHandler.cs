@@ -33,12 +33,10 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
 
-        Configuration.Search.SearchTerm = searchTerm;
-        Configuration.Search.Version = version;
         Configuration.Search.ClearCache = clearCache;
         using (loggerFactory) {
             var descriptionProvided = !string.IsNullOrEmpty(openapi) && string.IsNullOrEmpty(searchTerm);
-            var (searchResultDescription, statusCode) = await GetDescriptionFromSearch(openapi, searchTerm, loggerFactory, logger, cancellationToken);
+            var (searchResultDescription, statusCode) = await GetDescriptionFromSearch(openapi, searchTerm, version, loggerFactory, logger, cancellationToken);
             if (statusCode.HasValue) {
                 return statusCode.Value;
             }

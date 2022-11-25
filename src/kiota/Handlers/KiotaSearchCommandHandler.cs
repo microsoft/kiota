@@ -27,8 +27,6 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
 
-        Configuration.Search.SearchTerm = searchTerm;
-        Configuration.Search.Version = version;
         Configuration.Search.ClearCache = clearCache;
 
 
@@ -37,8 +35,9 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
             try {
-                var results = await new KiotaSearcher(logger, Configuration.Search, httpClient, GetAuthenticationProvider(logger), GetIsGitHubSignedInCallback(logger)).SearchAsync(cancellationToken);
-                DisplayResults(results, logger);
+                var results = await new KiotaSearcher(logger, Configuration.Search, httpClient, GetAuthenticationProvider(logger), GetIsGitHubSignedInCallback(logger))
+                    .SearchAsync(searchTerm, version, cancellationToken);
+                DisplayResults(searchTerm, version, results, logger);
                 return 0;
             } catch (Exception ex) {
     #if DEBUG
@@ -51,8 +50,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private void DisplayResults(IDictionary<string, SearchResult> results, ILogger logger){
-        var searchTerm = Configuration.Search.SearchTerm;
+    private void DisplayResults(string searchTerm, string version, IDictionary<string, SearchResult> results, ILogger logger){
         if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm)) {
             var result = results.First();
             DisplayInfo($"Key: {result.Key}");
@@ -60,8 +58,8 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             DisplayInfo($"Description: {result.Value.Description}");
             DisplayInfo($"Service: {result.Value.ServiceUrl}");
             DisplayInfo($"OpenAPI: {result.Value.DescriptionUrl}");
-            DisplayDownloadHint(Configuration.Search.SearchTerm, Configuration.Search.Version);
-            DisplayShowHint(Configuration.Search.SearchTerm, Configuration.Search.Version);
+            DisplayDownloadHint(searchTerm, version);
+            DisplayShowHint(searchTerm, version);
         }  else {
             var view = new TableView<KeyValuePair<string, SearchResult>>() {
                 Items = results.OrderBy(static x => x.Key).Select(static x => x).ToList(),
@@ -74,7 +72,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             using var terminal = new SystemConsoleTerminal(console);
             var layout = new StackLayoutView { view };
             console.Append(layout);
-            DisplaySearchHint(results.Keys.FirstOrDefault(), Configuration.Search.Version);
+            DisplaySearchHint(results.Keys.FirstOrDefault(), version);
             DisplayLoginHint(logger);
             DisplaySearchAddHint();
         }

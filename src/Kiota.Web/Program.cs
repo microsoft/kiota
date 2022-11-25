@@ -21,6 +21,7 @@ var configObject = new KiotaConfiguration();
 builder.Configuration.Bind(configObject);
 builder.Services.AddSingleton(configObject);
 builder.Services.AddPatAuthentication();
+builder.Services.AddSearchService();
 
 var host = builder.Build();
 

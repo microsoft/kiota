@@ -1,4 +1,5 @@
 using Blazored.LocalStorage;
+using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.AspNetCore.Components;
@@ -73,6 +74,17 @@ public static class IServiceCollectionExtensions {
                     return string.Empty;
                 }
             );
+        });
+    }
+    public static void AddSearchService(this IServiceCollection services) {
+        services.AddScoped(sp => {
+            var configObject = sp.GetRequiredService<KiotaConfiguration>();
+            var patService = sp.GetRequiredService<LocalStoragePatService>();
+            return new KiotaSearcher(sp.GetRequiredService<ILoggerFactory>().CreateLogger<KiotaSearcher>(),
+                                configObject.Search, 
+                                sp.GetRequiredService<HttpClient>(),
+                                sp.GetRequiredService<IAuthenticationProvider>(),
+                                (c) => patService.IsSignedInAsync(c));
         });
     }
 }

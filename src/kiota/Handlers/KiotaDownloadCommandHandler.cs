@@ -31,14 +31,10 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
 
-        Configuration.Download.SearchTerm = searchTerm;
-        Configuration.Download.Version = version;
         Configuration.Download.ClearCache = clearCache;
         Configuration.Download.CleanOutput = cleanOutput;
         Configuration.Download.OutputPath = NormalizeSlashesInPath(outputPath);
 
-        Configuration.Search.SearchTerm = Configuration.Download.SearchTerm;
-        Configuration.Search.Version = Configuration.Download.Version;
         Configuration.Search.ClearCache = Configuration.Download.ClearCache;
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaSearcher>(context);
@@ -46,8 +42,9 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
             try {
-                var results = await new KiotaSearcher(logger, Configuration.Search, httpClient, GetAuthenticationProvider(logger), GetIsGitHubSignedInCallback(logger)).SearchAsync(cancellationToken);
-                return await SaveResultsAsync(results, logger, cancellationToken);
+                var results = await new KiotaSearcher(logger, Configuration.Search, httpClient, GetAuthenticationProvider(logger), GetIsGitHubSignedInCallback(logger))
+                    .SearchAsync(searchTerm, version, cancellationToken);
+                return await SaveResultsAsync(searchTerm, version, results, logger, cancellationToken);
             } catch (Exception ex) {
     #if DEBUG
                 logger.LogCritical(ex, "error downloading a description: {exceptionMessage}", ex.Message);
@@ -59,14 +56,13 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private async Task<int> SaveResultsAsync(IDictionary<string, SearchResult> results, ILogger logger, CancellationToken cancellationToken){
-        var searchTerm = Configuration.Download.SearchTerm;
+    private async Task<int> SaveResultsAsync(string searchTerm, string version, IDictionary<string, SearchResult> results, ILogger logger, CancellationToken cancellationToken){
         if (!results.Any())
             DisplayError("No matching result found, use the search command to find the right key");
         else if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm)) {
             var (path, statusCode) = await SaveResultAsync(results.First(), logger, cancellationToken);
             DisplaySuccess($"File successfully downloaded to {path}");
-            DisplayShowHint(Configuration.Search.SearchTerm, Configuration.Search.Version, path);
+            DisplayShowHint(searchTerm, version, path);
             DisplayGenerateHint(path, Enumerable.Empty<string>(), Enumerable.Empty<string>());
             return statusCode;
         }  else 

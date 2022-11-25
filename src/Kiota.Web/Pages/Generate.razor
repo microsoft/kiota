@@ -17,7 +17,6 @@
 @using System.Globalization
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<Generate> Loc
-@inject IAuthenticationProvider GitHubAuthProvider
 
 
 <PageTitle>@Loc["PageTitle"]</PageTitle>
@@ -180,18 +179,14 @@
         await GetConfiguration(ComponentDetached);
         var SearchTerm = string.IsNullOrEmpty(SearchTermFromQuery) ? string.Empty : SearchTermFromQuery;
         var Version = string.IsNullOrEmpty(VersionFromQuery) ? string.Empty : VersionFromQuery;
-        if (!string.IsNullOrEmpty(SearchTerm) && !string.IsNullOrEmpty(Version) && string.IsNullOrEmpty(DescriptionUrl)) {
-            var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
-            var searchConfig = new SearchConfiguration() {
-                SearchTerm = SearchTerm,
-                Version = Version,
-            };
-            var searchResults = await new KiotaSearcher(logger, searchConfig, Http, GitHubAuthProvider).SearchAsync(ComponentDetached);
+        if (!string.IsNullOrEmpty(SearchTerm) && !string.IsNullOrEmpty(Version) && string.IsNullOrEmpty(DescriptionUrl) && KiotaSearcher != null) {
+            var searchResults = await KiotaSearcher.SearchAsync(SearchTerm, Version, ComponentDetached);
             if(searchResults.Any())
                 DescriptionUrl = searchResults.Values.First().DescriptionUrl.ToString();
         }
         await base.OnParametersSetAsync();
     }
+    [Inject] private KiotaSearcher? KiotaSearcher { get; set; }
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(() => SHA256.Create());
     [Inject] private IApplicationInsights? AppInsights { get; set; }
     private Task GenerateClient() {

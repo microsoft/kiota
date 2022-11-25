@@ -8,12 +8,12 @@ using Microsoft.Extensions.Logging;
 namespace kiota.Handlers;
 
 internal abstract class KiotaSearchBasedCommandHandler : BaseKiotaCommandHandler {
-    protected async Task<(string, int?)> GetDescriptionFromSearch(string openapi, string searchTerm, ILoggerFactory loggerFactory, ILogger logger, CancellationToken cancellationToken) {
+    protected async Task<(string, int?)> GetDescriptionFromSearch(string openapi, string searchTerm, string version, ILoggerFactory loggerFactory, ILogger logger, CancellationToken cancellationToken) {
         if (string.IsNullOrEmpty(openapi) && !string.IsNullOrEmpty(searchTerm))
         {
             logger.LogInformation("Searching for {searchTerm} in the OpenAPI description repository", searchTerm);
             var searcher = new KiotaSearcher(loggerFactory.CreateLogger<KiotaSearcher>(), Configuration.Search, httpClient, GetAuthenticationProvider(logger), GetIsGitHubSignedInCallback(logger));
-            var results = await searcher.SearchAsync(cancellationToken);
+            var results = await searcher.SearchAsync(searchTerm, version, cancellationToken);
             if (results.Count == 1)
                 return (results.First().Value.DescriptionUrl.ToString(), null);
             else if(!results.Any()) {

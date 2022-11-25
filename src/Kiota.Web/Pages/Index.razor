@@ -14,7 +14,6 @@
 @inject IStringLocalizer<Index> Loc
 @inject NavigationManager navManager
 @inject HttpClient Http
-@inject IAuthenticationProvider GitHubAuthProvider
 
 <PageTitle>@Loc["PageTitle"]</PageTitle>
 
@@ -81,6 +80,8 @@
 
 @code {
     [Inject] private IApplicationInsights? AppInsights { get; set; }
+    [Inject] private KiotaSearcher? KiotaSearcher { get; set; }
+
     private bool ShowVersionSelector { get; set; }
     private bool IsLoading { get; set; }
     private bool Searched { get; set; }
@@ -105,11 +106,8 @@
     private async Task SearchDocumentsInternal() {
         if(AppInsights != null)
             await AppInsights.StartTrackEvent(searchTelemetryKey).ConfigureAwait(false);
-        var searchConfig = new SearchConfiguration() {
-            SearchTerm = SearchTerm,
-        };
-        var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
-        SearchResults = await new KiotaSearcher(logger, searchConfig, Http, GitHubAuthProvider).SearchAsync(ComponentDetached);
+        if(KiotaSearcher != null)
+            SearchResults = await KiotaSearcher.SearchAsync(SearchTerm, string.Empty, ComponentDetached);
         IsLoading = false;
         if(AppInsights != null)
             await AppInsights.StopTrackEvent(searchTelemetryKey, new Dictionary<string, string?> {

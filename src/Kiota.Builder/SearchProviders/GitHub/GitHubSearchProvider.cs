@@ -73,7 +73,7 @@ public class GitHubSearchProvider : ISearchProvider
     private async Task<IDictionary<string, SearchResult>> SearchAsyncInternal(string term, CancellationToken cancellationToken)
     {
         var blockLists = await GetBlockLists(cancellationToken);
-        var isSignedIn = await _isSignedInCallback(cancellationToken);
+        var isSignedIn = _isSignedInCallback != null && await _isSignedInCallback(cancellationToken);
         var authenticationProvider = _authenticatedAuthenticationProvider != null && isSignedIn ?
             _authenticatedAuthenticationProvider :
             new Authentication.AnonymousAuthenticationProvider();

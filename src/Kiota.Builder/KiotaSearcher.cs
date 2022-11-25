@@ -31,26 +31,26 @@ public class KiotaSearcher {
         _gitHubAuthenticationProvider = gitHubAuthenticationProvider;
         _isGitHubSignedInCallBack = isGitHubSignedInCallBack;
     }
-    public async Task<IDictionary<string, SearchResult>> SearchAsync(CancellationToken cancellationToken) {
-        if (string.IsNullOrEmpty(_config.SearchTerm)) {
+    public async Task<IDictionary<string, SearchResult>> SearchAsync(string searchTerm, string version, CancellationToken cancellationToken) {
+        if (string.IsNullOrEmpty(searchTerm)) {
             _logger.LogError("no search term provided");
             return new Dictionary<string, SearchResult>();
         }
         var apiGurusSearchProvider = new APIsGuruSearchProvider(_config.APIsGuruListUrl, _httpClient, _logger, _config.ClearCache);
-        _logger.LogDebug("searching for {searchTerm}", _config.SearchTerm);
+        _logger.LogDebug("searching for {searchTerm}", searchTerm);
         _logger.LogDebug("searching APIs.guru with url {url}", _config.APIsGuruListUrl);
         var oasProvider = new OpenApiSpecSearchProvider();
         var githubProvider = new GitHubSearchProvider(_httpClient, _logger, _config.ClearCache, _config.GitHub, _gitHubAuthenticationProvider, _isGitHubSignedInCallBack);
         var results = await Task.WhenAll(
-                        SearchProviderAsync(apiGurusSearchProvider, cancellationToken),
-                        SearchProviderAsync(oasProvider, cancellationToken),
-                        SearchProviderAsync(githubProvider, cancellationToken));
+                        SearchProviderAsync(searchTerm, version, apiGurusSearchProvider, cancellationToken),
+                        SearchProviderAsync(searchTerm, version, oasProvider, cancellationToken),
+                        SearchProviderAsync(searchTerm, version, githubProvider, cancellationToken));
         return results.SelectMany(static x => x)
                 .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase);
     }
-    private async Task<IDictionary<string, SearchResult>> SearchProviderAsync(ISearchProvider provider, CancellationToken cancellationToken) {
+    private async Task<IDictionary<string, SearchResult>> SearchProviderAsync(string searchTerm, string version, ISearchProvider provider, CancellationToken cancellationToken) {
         var providerPrefix = $"{provider.ProviderKey}{ProviderSeparator}";
-        var results = await provider.SearchAsync(_config.SearchTerm.Replace(providerPrefix, string.Empty), _config.Version, cancellationToken);
+        var results = await provider.SearchAsync(searchTerm.Replace(providerPrefix, string.Empty), version, cancellationToken);
 
         return results.Select(x => ($"{providerPrefix}{x.Key}", x.Value))
                     .ToDictionary(static x => x.Item1, static x => x.Value, StringComparer.OrdinalIgnoreCase);

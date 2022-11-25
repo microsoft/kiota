@@ -13,7 +13,6 @@
 @using Microsoft.Kiota.Abstractions.Authentication;
 @inject IStringLocalizer<Show> Loc
 @inject HttpClient Http
-@inject IAuthenticationProvider GitHubAuthProvider
 
 <PageTitle>@Loc["PageTitle"]</PageTitle>
 
@@ -61,6 +60,7 @@
     private string? Tree { get; set; }
     private bool IsLoading { get; set; }
     [Inject] private IApplicationInsights? AppInsights { get; set; }
+    [Inject] private KiotaSearcher? KiotaSearcher { get; set; }
     protected override async Task OnParametersSetAsync() {
         if(!string.IsNullOrEmpty(SearchTermFromQuery))
             SearchTerm = SearchTermFromQuery;
@@ -68,13 +68,8 @@
             Version = VersionFromQuery;
         if(!string.IsNullOrEmpty(DescriptionUrlFromQuery))
             DescriptionUrl = DescriptionUrlFromQuery;
-        if (!string.IsNullOrEmpty(SearchTerm) && !string.IsNullOrEmpty(Version) && string.IsNullOrEmpty(DescriptionUrl)) {
-            var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
-            var searchConfig = new SearchConfiguration() {
-                SearchTerm = SearchTerm,
-                Version = Version,
-            };
-            var searchResults = await new KiotaSearcher(logger, searchConfig, Http, GitHubAuthProvider).SearchAsync(ComponentDetached);
+        if (!string.IsNullOrEmpty(SearchTerm) && !string.IsNullOrEmpty(Version) && string.IsNullOrEmpty(DescriptionUrl) && KiotaSearcher != null) {
+            var searchResults = await KiotaSearcher.SearchAsync(SearchTerm, Version, ComponentDetached);
             if(searchResults.Any())
                 DescriptionUrl = searchResults.Values.First().DescriptionUrl.ToString();
         }
@@ -109,13 +104,8 @@
     private const string showDescriptionTelemetryKey = "showdescription";
     private async Task ShowDescriptionInternal() {
         Tree = string.Empty;
-        if (string.IsNullOrEmpty(DescriptionUrl)) {
-            var searchConfig = new SearchConfiguration() {
-                SearchTerm = SearchTerm,
-                Version = Version,
-            };
-            var logger = LoggerFactory.CreateLogger<KiotaSearcher>();
-            SearchResults = await new KiotaSearcher(logger, searchConfig, Http, GitHubAuthProvider).SearchAsync(ComponentDetached);
+        if (string.IsNullOrEmpty(DescriptionUrl) && KiotaSearcher != null) {
+            SearchResults = await KiotaSearcher.SearchAsync(SearchTerm, Version, ComponentDetached);
             DescriptionUrl = SearchResults.First().Value.DescriptionUrl.ToString();
         }
         if(AppInsights != null)
