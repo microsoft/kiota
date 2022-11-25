@@ -106,4 +106,7 @@
   <data name="PersonalAccessTokenAdd" xml:space="preserve">
     <value>Add the personal access token</value>
   </data>
+  <data name="SVGAltText" xml:space="preserve">
+    <value>GitHub Octocat logo</value>
+  </data>
 </root>
