@@ -1,8 +1,5 @@
-@using Microsoft.Kiota.Abstractions
-@using Microsoft.Kiota.Abstractions.Authentication
 @using Kiota.Builder.Configuration
 @using Kiota.Web.Authentication.GitHub
-@using Kiota.Builder.SearchProviders.GitHub.Authentication
 @using Microsoft.Fast.Components.FluentUI
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<GitHubSignIn> Loc
@@ -17,19 +14,56 @@
         <FluentButton @onclick="SignIn" Appearance="Appearance.Accent">@Loc["SignIn"]</FluentButton>
     }
 </div>
+<FluentDialog Modal="true" @ondismiss=OnPatSetDialogDismiss @bind-Hidden=@PatSetDialogHidden>
+    <div class="gh-dialog-content">
+        <h2>@Loc["PersonalAccessTokenHeader"]</h2>
+        <h3>@Loc["PersonalAccessTokenInstructions"]</h3>
+        <ol>
+            <li>@Loc["PersonalAccessTokenInstructionsStep1"] <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">@Loc["PersonalAccessTokenInstructionsOpen"]</a></li>
+            <li>@Loc["PersonalAccessTokenInstructionsStep2"]</li><!--Give a name-->
+            <li>@Loc["PersonalAccessTokenInstructionsStep3"]</li><!--Give a resource owner-->
+            <li>@Loc["PersonalAccessTokenInstructionsStep4"]</li><!--Optional. Authenticate with resource-->
+            <li>@Loc["PersonalAccessTokenInstructionsStep5"]</li><!--All repos or select repos-->
+            <li>@Loc["PersonalAccessTokenInstructionsStep6"]</li><!--Under "repository permissions-->
+            <li>@Loc["PersonalAccessTokenInstructionsStep7"]</li><!--Click generate token-->
+            <li>@Loc["PersonalAccessTokenInstructionsStep8"]</li><!--Copy the value here-->
+        </ol>
+        <span>@Loc["PersonalAccessTokenDescription"]</span>
+        <div class="gh-dialog-content-form">
+            <h3>@Loc["PersonalAccessTokenAdd"]</h3>
+            <FluentTextField TextFieldType="TextFieldType.Password" Required=true class="full-width-field" @bind-Value=@PersonalAccessToken>@Loc["PersonalAccessToken"]</FluentTextField>
+            <FluentDivider Role=DividerRole.Presentation></FluentDivider>
+            <FluentButton @onclick="Save" Appearance="Appearance.Accent">@Loc["Save"]</FluentButton>
+            <FluentButton @onclick="OnPatSetDialogDismiss" Appearance="Appearance.Neutral">@Loc["Close"]</FluentButton>
+        </div>
+    </div>
+</FluentDialog>
 
 @code {
+    private bool PatSetDialogHidden { get; set; } = true;
     private bool IsSignedIn {get; set;}
+    private string? PersonalAccessToken {get; set;}
+    private void OnPatSetDialogDismiss() {
+        PatSetDialogHidden = true;
+    }
     protected override async Task OnParametersSetAsync() {
         IsSignedIn = await LocalStoragePatService.IsSignedInAsync(ComponentDetached);
         await base.OnParametersSetAsync();
     }
-    private async Task SignIn() {
-        @* await LocalStoragePatService.SetPatAsync("value", ComponentDetached); *@
-        //TODO Open dialog
+    private void SignIn() {
+        PatSetDialogHidden = false;
+    }
+    private async Task Save() {
+        if(!String.IsNullOrEmpty(PersonalAccessToken)) {
+            IsSignedIn = true;
+            await LocalStoragePatService.SetPatAsync(PersonalAccessToken, ComponentDetached);
+            PatSetDialogHidden = true;
+            PersonalAccessToken = string.Empty;
+        }
     }
     private async Task SignOut() {
         await LocalStoragePatService.SignOutAsync(ComponentDetached);
+        IsSignedIn = false;
     }
 
 }

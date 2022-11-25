@@ -58,7 +58,52 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Show" xml:space="preserve">
-    <value>Show</value>
+  <data name="SignIn" xml:space="preserve">
+    <value>Se connecter à GitHub</value>
+  </data>
+  <data name="SignOut" xml:space="preserve">
+    <value>Se déconnecter de GitHub</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep1" xml:space="preserve">
+    <value>Ouvrez un nouvel onglet afin de créer un nouveau jeton d'accès.</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep2" xml:space="preserve">
+    <value>Donnez un nom au nouveau jeton.</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep3" xml:space="preserve">
+    <value>Sélectionnez le propriétaires du repository qui contient les définitions.</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep4" xml:space="preserve">
+    <value>Optionel. Authentifiez vous auprès de la resource sélectionnée si demandé.</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep5" xml:space="preserve">
+    <value>Sous "accès au repository", sélectionnez "Tous les repositories" ou "Uniquement les repositories sélectionnés".</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep6" xml:space="preserve">
+    <value>Sous "permissions du repository" sélectionnez "contenu" puis "lecture simple".</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep7" xml:space="preserve">
+    <value>Cliquez sur "Générer le jeton".</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep8" xml:space="preserve">
+    <value>Copiez le jeton généré ci-dessous.</value>
+  </data>
+  <data name="PersonalAccessTokenDescription" xml:space="preserve">
+    <value>Le jeton est uniquement envoyé à l'API REST GitHub.</value>
+  </data>
+  <data name="PersonalAccessToken" xml:space="preserve">
+    <value>Jeton d'accès personnalisé</value>
+  </data>
+  <data name="PersonalAccessTokenHeader" xml:space="preserve">
+    <value>Connectez vous à GitHub à l'aide d'un jeton d'accès personnel</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsOpen" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="PersonalAccessTokenInstructions" xml:space="preserve">
+    <value>Instructions to create the token</value>
+  </data>
+  <data name="PersonalAccessTokenAdd" xml:space="preserve">
+    <value>Add the personal access token</value>
   </data>
 </root>

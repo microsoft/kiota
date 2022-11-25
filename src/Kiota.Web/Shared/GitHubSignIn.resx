@@ -64,4 +64,46 @@
   <data name="SignOut" xml:space="preserve">
     <value>Sign Out from GitHub</value>
   </data>
+  <data name="PersonalAccessTokenInstructionsStep1" xml:space="preserve">
+    <value>Open a new tab to create a personal access token.</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep2" xml:space="preserve">
+    <value>Give a name to the new access token.</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep3" xml:space="preserve">
+    <value>Select the resource owner for the repository containing the definitions.</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep4" xml:space="preserve">
+    <value>Optional. Authenticate with the selected resource if requested.</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep5" xml:space="preserve">
+    <value>Under "repository access", select "All repositories" or "Only select repositories".</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep6" xml:space="preserve">
+    <value>Under "repository permissions" select "contents" to "read-only".</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep7" xml:space="preserve">
+    <value>Click on "Generate Token".</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsStep8" xml:space="preserve">
+    <value>Copy the generated token down below.</value>
+  </data>
+  <data name="PersonalAccessTokenDescription" xml:space="preserve">
+    <value>The personal access token is only ever sent to GitHub REST API.</value>
+  </data>
+  <data name="PersonalAccessToken" xml:space="preserve">
+    <value>Personal Access Token</value>
+  </data>
+  <data name="PersonalAccessTokenHeader" xml:space="preserve">
+    <value>Sign in to GitHub with a Personal Access Token</value>
+  </data>
+  <data name="PersonalAccessTokenInstructionsOpen" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="PersonalAccessTokenInstructions" xml:space="preserve">
+    <value>Instructions to create the token</value>
+  </data>
+  <data name="PersonalAccessTokenAdd" xml:space="preserve">
+    <value>Add the personal access token</value>
+  </data>
 </root>
