@@ -1,4 +1,4 @@
-using Blazored.SessionStorage;
+using Blazored.LocalStorage;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.AspNetCore.Components;
@@ -10,7 +10,7 @@ namespace Kiota.Web.Authentication.GitHub;
 public static class IServiceCollectionExtensions {
     private const string GitHubStateKey = "github-authentication-state";
     public static void AddBrowserCodeAuthentication(this IServiceCollection services, string baseAddress) {
-        services.AddBlazoredSessionStorage();
+        services.AddBlazoredLocalStorage();
         services.AddScoped(sp => {
             var configObject = sp.GetRequiredService<KiotaConfiguration>();
             return new TempFolderCachingAccessTokenProvider {
@@ -29,20 +29,20 @@ public static class IServiceCollectionExtensions {
                 new string[] { configObject.Search.GitHub.ApiBaseUrl.Host },
                 sp.GetRequiredService<HttpClient>(),
                 async (uri, state, c) => {
-                    var sessionStorage = sp.GetRequiredService<ISessionStorageService>();
-                    await sessionStorage.SetItemAsync(GitHubStateKey, state, c).ConfigureAwait(false);
+                    var localStorage = sp.GetRequiredService<ILocalStorageService>();
+                    await localStorage.SetItemAsync(GitHubStateKey, state, c).ConfigureAwait(false);
                     navManager.NavigateTo(uri.ToString());
                 },
                 async (c) => {
-                    var sessionStorage = sp.GetRequiredService<ISessionStorageService>();
-                    var stateValue = await sessionStorage.GetItemAsync<string>(GitHubStateKey).ConfigureAwait(false);
+                    var localStorage = sp.GetRequiredService<ILocalStorageService>();
+                    var stateValue = await localStorage.GetItemAsync<string>(GitHubStateKey, c).ConfigureAwait(false);
                     var uri = navManager.ToAbsoluteUri(navManager.Uri);
                     var queryStrings = QueryHelpers.ParseQuery(uri.Query);
                     if(queryStrings.TryGetValue("state", out var state) &&
                         stateValue.Equals(state, StringComparison.OrdinalIgnoreCase) &&
                         queryStrings.TryGetValue("code", out var code) && code.FirstOrDefault() is string codeValue)
                             return codeValue;
-                    await sessionStorage.RemoveItemAsync(GitHubStateKey, c).ConfigureAwait(false);
+                    await localStorage.RemoveItemAsync(GitHubStateKey, c).ConfigureAwait(false);
                     return string.Empty;
                 }, 
                 sp.GetRequiredService<ILoggerFactory>().CreateLogger<BrowserAuthenticationProvider>(),
@@ -60,11 +60,11 @@ public static class IServiceCollectionExtensions {
                 AppId = configObject.Search.GitHub.AppId,
             };
         });
-        services.AddBlazoredSessionStorage();
+        services.AddBlazoredLocalStorage();
         services.AddScoped(sp => {
-            var sessionStorage = sp.GetRequiredService<ISessionStorageService>();
-            return new SessionStoragePatService {
-                SessionStorageService = sessionStorage,
+            var localStorage = sp.GetRequiredService<ILocalStorageService>();
+            return new LocalStoragePatService {
+                LocalStorageService = localStorage,
             };
         });
         services.AddScoped<IAuthenticationProvider>(sp => {
@@ -75,7 +75,7 @@ public static class IServiceCollectionExtensions {
                 new string[] { configObject.Search.GitHub.ApiBaseUrl.Host },
                 sp.GetRequiredService<ILoggerFactory>().CreateLogger<PatAuthenticationProvider>(),
                 async (c) => {
-                    var patService = sp.GetRequiredService<SessionStoragePatService>();
+                    var patService = sp.GetRequiredService<LocalStoragePatService>();
                     var patValue = await patService.GetPatAsync(c).ConfigureAwait(false);
                     if(!string.IsNullOrEmpty(patValue))
                         return patValue;
