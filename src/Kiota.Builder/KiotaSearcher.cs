@@ -48,7 +48,7 @@ public class KiotaSearcher {
         return results.SelectMany(static x => x)
                 .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase);
     }
-    private async Task<IDictionary<string, SearchResult>> SearchProviderAsync(string searchTerm, string version, ISearchProvider provider, CancellationToken cancellationToken) {
+    private static async Task<IDictionary<string, SearchResult>> SearchProviderAsync(string searchTerm, string version, ISearchProvider provider, CancellationToken cancellationToken) {
         var providerPrefix = $"{provider.ProviderKey}{ProviderSeparator}";
         var results = await provider.SearchAsync(searchTerm.Replace(providerPrefix, string.Empty), version, cancellationToken);
 

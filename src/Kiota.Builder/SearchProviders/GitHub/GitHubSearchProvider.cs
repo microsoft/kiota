@@ -24,8 +24,6 @@ public class GitHubSearchProvider : ISearchProvider
     private readonly DocumentCachingProvider documentCachingProvider;
     private readonly ILogger _logger;
     private readonly Uri _blockListUrl;
-    private readonly string _clientId;
-    private readonly Uri _appBaseUrl;
     private readonly IAuthenticationProvider _authenticatedAuthenticationProvider;
     private readonly Func<CancellationToken, Task<bool>> _isSignedInCallback;
     public GitHubSearchProvider(HttpClient httpClient, ILogger logger, bool clearCache, GitHubConfiguration configuration, IAuthenticationProvider authenticatedAuthenticationProvider, Func<CancellationToken, Task<bool>> isSignedInCallBack)
@@ -33,10 +31,7 @@ public class GitHubSearchProvider : ISearchProvider
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentNullException.ThrowIfNull(configuration.BlockListUrl);
-        ArgumentNullException.ThrowIfNull(configuration.ApiBaseUrl);
         ArgumentNullException.ThrowIfNull(logger);
-        if(string.IsNullOrEmpty(configuration.AppId))
-            throw new ArgumentOutOfRangeException(nameof(configuration));
         documentCachingProvider = new DocumentCachingProvider(httpClient, logger)
         {
             ClearCache = clearCache,
@@ -44,9 +39,7 @@ public class GitHubSearchProvider : ISearchProvider
         _httpClient = httpClient;
         _logger = logger;
         _blockListUrl = configuration.BlockListUrl;
-        _clientId = configuration.AppId;
         _authenticatedAuthenticationProvider = authenticatedAuthenticationProvider;
-        _appBaseUrl = configuration.ApiBaseUrl;
         _isSignedInCallback = isSignedInCallBack;
     }
     private readonly HttpClient _httpClient;
