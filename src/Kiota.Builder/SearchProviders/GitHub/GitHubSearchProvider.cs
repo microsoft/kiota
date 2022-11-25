@@ -178,6 +178,8 @@ public class GitHubSearchProvider : ISearchProvider
             #else
             _logger.LogInformation("Error while parsing the file {fileName} in {org}/{repo}", fileName, org, repo);
             #endif
+        } catch (InvalidOperationException ex) {
+            _logger.LogError(ex, "Error while downloading the file {fileName} in {org}/{repo}", fileName, org, repo);
         }
         return Enumerable.Empty<Tuple<string, SearchResult>>();
     }
