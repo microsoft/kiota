@@ -8,11 +8,11 @@ using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers;
 internal class KiotaGitHubPatLoginCommandHandler : BaseKiotaCommandHandler {
-    public Option<string> PatOption { get; set; }
+    public required Option<string> PatOption { get; init; }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
-        CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
-        string pat = context.ParseResult.GetValueForOption(PatOption);
+        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
+        string pat = context.ParseResult.GetValueForOption(PatOption) ?? string.Empty;
         var (loggerFactory, logger) = GetLoggerAndFactory<PatAuthenticationProvider>(context);
         using (loggerFactory) {
             try {

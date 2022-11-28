@@ -17,19 +17,19 @@ namespace kiota.Handlers;
 
 internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
 {
-    public Argument<string> SearchTermArgument { get; set; }
-    public Option<string> VersionOption { get; set; }
-    public Option<string> OutputPathOption { get; set; }
-    public Option<bool> ClearCacheOption { get; set; }
-    public Option<bool> CleanOutputOption { get; set; }
+    public required Argument<string> SearchTermArgument { get; init; }
+    public required Option<string> VersionOption { get; init; }
+    public required Option<string> OutputPathOption { get; init; }
+    public required Option<bool> ClearCacheOption { get; init; }
+    public required Option<bool> CleanOutputOption { get; init; }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string searchTerm = context.ParseResult.GetValueForArgument(SearchTermArgument);
-        string version = context.ParseResult.GetValueForOption(VersionOption);
-        string outputPath = context.ParseResult.GetValueForOption(OutputPathOption);
+        string version = context.ParseResult.GetValueForOption(VersionOption) ?? string.Empty;
+        string outputPath = context.ParseResult.GetValueForOption(OutputPathOption) ?? string.Empty;
         bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
-        CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
+        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
         Configuration.Download.ClearCache = clearCache;
         Configuration.Download.CleanOutput = cleanOutput;
@@ -93,8 +93,8 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
                 return (path, 1);
             }
         }
-        if(!Directory.Exists(Path.GetDirectoryName(path)))
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
+        if(Path.GetDirectoryName(path) is string directoryName && !Directory.Exists(directoryName))
+            Directory.CreateDirectory(directoryName);
         
         var cacheProvider = new DocumentCachingProvider(httpClient, logger) {
             ClearCache = true,

@@ -14,19 +14,19 @@ using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers;
 internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler {
-    public Option<string> DescriptionOption { get;set; }
-    public Option<bool> ClearCacheOption { get; set; }
-    public Option<string> SearchTermOption { get; set; }
-    public Option<string> VersionOption { get; set; }
-    public Option<GenerationLanguage?> GenerationLanguage { get; set; }
+    public required Option<string> DescriptionOption { get;init; }
+    public required Option<bool> ClearCacheOption { get; init; }
+    public required Option<string> SearchTermOption { get; init; }
+    public required Option<string> VersionOption { get; init; }
+    public required Option<GenerationLanguage?> GenerationLanguage { get; init; }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
-        string openapi = context.ParseResult.GetValueForOption(DescriptionOption);
+        string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
-        string searchTerm = context.ParseResult.GetValueForOption(SearchTermOption);
-        string version = context.ParseResult.GetValueForOption(VersionOption);
+        string searchTerm = context.ParseResult.GetValueForOption(SearchTermOption) ?? string.Empty;
+        string version = context.ParseResult.GetValueForOption(VersionOption) ?? string.Empty;
         GenerationLanguage? language = context.ParseResult.GetValueForOption(GenerationLanguage);
-        CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
+        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
         Configuration.Search.ClearCache = clearCache;
         using (loggerFactory) {

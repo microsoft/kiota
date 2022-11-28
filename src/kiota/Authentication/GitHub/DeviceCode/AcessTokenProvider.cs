@@ -17,7 +17,7 @@ public class AccessTokenProvider : IAccessTokenProvider
 	public required string Scope { get; init; }
 	public required HttpClient HttpClient {get; init;}
     internal string BaseLoginUrl { get; init; } = "https://github.com/login";
-	public Task<string> GetAuthorizationTokenAsync(Uri uri, Dictionary<string, object> additionalAuthenticationContext = null, CancellationToken cancellationToken = default) {
+	public Task<string> GetAuthorizationTokenAsync(Uri uri, Dictionary<string, object>? additionalAuthenticationContext = null, CancellationToken cancellationToken = default) {
         if(!AllowedHostsValidator.IsUrlHostValid(uri))
 			return Task.FromResult(string.Empty);
 		if(!uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
@@ -28,11 +28,14 @@ public class AccessTokenProvider : IAccessTokenProvider
 	private async Task<string> GetAuthorizationTokenInternalAsync(CancellationToken cancellationToken )
 	{
 		var deviceCodeResponse = await GetDeviceCodeAsync(cancellationToken);
-        MessageCallback(deviceCodeResponse.VerificationUri, deviceCodeResponse.UserCode);
-		var tokenResponse = await PollForTokenAsync(deviceCodeResponse, cancellationToken);
-		return tokenResponse.AccessToken;
+        if (!string.IsNullOrEmpty(deviceCodeResponse?.UserCode) && deviceCodeResponse.VerificationUri != null) {
+            MessageCallback(deviceCodeResponse.VerificationUri, deviceCodeResponse.UserCode);
+            var tokenResponse = await PollForTokenAsync(deviceCodeResponse, cancellationToken);
+            return tokenResponse?.AccessToken ?? string.Empty;
+        }
+        return string.Empty;
 	}
-	private async Task<AccessCodeResponse> PollForTokenAsync(GitHubDeviceCodeResponse deviceCodeResponse, CancellationToken cancellationToken)
+	private async Task<AccessCodeResponse?> PollForTokenAsync(GitHubDeviceCodeResponse deviceCodeResponse, CancellationToken cancellationToken)
 	{
 		var timeOutTask = Task.Delay(TimeSpan.FromSeconds(deviceCodeResponse.ExpiresInSeconds), cancellationToken);
 		var pollTask = Task.Run(async () => {
@@ -49,8 +52,10 @@ public class AccessTokenProvider : IAccessTokenProvider
 			throw new TimeoutException("The device code has expired.");
 		return await pollTask;
 	}
-	private async Task<AccessCodeResponse> GetTokenAsync(GitHubDeviceCodeResponse deviceCodeResponse, CancellationToken cancellationToken)
+	private async Task<AccessCodeResponse?> GetTokenAsync(GitHubDeviceCodeResponse deviceCodeResponse, CancellationToken cancellationToken)
 	{
+        if(string.IsNullOrEmpty(deviceCodeResponse.DeviceCode))
+            return null;
 		using var tokenRequest = new HttpRequestMessage(HttpMethod.Post, $"{BaseLoginUrl}/oauth/access_token") {
 			Content = new FormUrlEncodedContent(new Dictionary<string, string> {
 				{ "client_id", ClientId },
@@ -63,15 +68,15 @@ public class AccessTokenProvider : IAccessTokenProvider
 		tokenResponse.EnsureSuccessStatusCode();
 		var tokenContent = await tokenResponse.Content.ReadAsStringAsync(cancellationToken);
 		var result = JsonSerializer.Deserialize<AccessCodeResponse>(tokenContent);
-		if ("authorization_pending".Equals(result.Error, StringComparison.OrdinalIgnoreCase))
+		if ("authorization_pending".Equals(result?.Error, StringComparison.OrdinalIgnoreCase))
 			return null;
-		else if (!string.IsNullOrEmpty(result.Error))
+		else if (!string.IsNullOrEmpty(result?.Error))
 			throw new InvalidOperationException($"Error while getting token: {result.Error} - {result.ErrorDescription}");
 		else
 			return result;
 	}
 
-	private async Task<GitHubDeviceCodeResponse> GetDeviceCodeAsync(CancellationToken cancellationToken) {
+	private async Task<GitHubDeviceCodeResponse?> GetDeviceCodeAsync(CancellationToken cancellationToken) {
 		using var codeRequest = new HttpRequestMessage(HttpMethod.Post, $"{BaseLoginUrl}/device/code") {
 			Content = new FormUrlEncodedContent(new Dictionary<string, string> {
 				{ "client_id", ClientId },

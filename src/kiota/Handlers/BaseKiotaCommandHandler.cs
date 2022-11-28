@@ -26,7 +26,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         AppId = Configuration.Search.GitHub.AppId,
     };
     internal static readonly HttpClient httpClient = new();
-    public Option<LogLevel> LogLevelOption { get;set; }
+    public required Option<LogLevel> LogLevelOption { get;init; }
     protected KiotaConfiguration Configuration { get => ConfigurationFactory.Value; }
     private readonly Lazy<KiotaConfiguration> ConfigurationFactory = new (() => {
         var builder = new ConfigurationBuilder();
@@ -125,7 +125,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
             $"Example: kiota download {searchTerm} -v {version} -o <output path>";
         DisplayHint("Hint: use kiota download to download the OpenAPI description.", example);
     }
-    protected void DisplayShowHint(string searchTerm, string version, string path = null) {
+    protected void DisplayShowHint(string searchTerm, string version, string? path = null) {
         var example = path switch {
             _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path}",
             _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm}",
@@ -133,7 +133,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         };
         DisplayHint("Hint: use kiota show to display a tree of paths present in the OpenAPI description.", example);
     }
-    protected void DisplayShowAdvancedHint(string searchTerm, string version, IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path = null) {
+    protected void DisplayShowAdvancedHint(string searchTerm, string version, IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string? path = null) {
         if(!includePaths.Any() && !excludePaths.Any()) {
             var example = path switch {
                 _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path} --include-path **/foo",
@@ -146,7 +146,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     protected void DisplaySearchAddHint() {
         DisplayHint("Hint: add your own API to the search result https://aka.ms/kiota/addapi.");
     }
-    protected void DisplaySearchHint(string firstKey, string version) {
+    protected void DisplaySearchHint(string? firstKey, string version) {
         if (!string.IsNullOrEmpty(firstKey)) {
             var example = string.IsNullOrEmpty(version) ?
                 $"Example: kiota search {firstKey}" :
@@ -155,8 +155,8 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         }
     }
     protected void DisplayGenerateHint(string path, IEnumerable<string> includedPaths, IEnumerable<string> excludedPaths) {
-        var includedPathsSuffix = ((includedPaths?.Any() ?? false)? " -i " : string.Empty) + string.Join(" -i ", includedPaths);
-        var excludedPathsSuffix = ((excludedPaths?.Any() ?? false)? " -e " : string.Empty) + string.Join(" -e ", excludedPaths);
+        var includedPathsSuffix = (includedPaths.Any()? " -i " : string.Empty) + string.Join(" -i ", includedPaths);
+        var excludedPathsSuffix = (excludedPaths.Any()? " -e " : string.Empty) + string.Join(" -e ", excludedPaths);
         var example = $"Example: kiota generate -l <language> -o <output path> -d {path}{includedPathsSuffix}{excludedPathsSuffix}";
         DisplayHint("Hint: use kiota generate to generate a client for the OpenAPI description.", example);
     }

@@ -17,15 +17,15 @@ namespace kiota.Handlers;
 
 internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
 {
-    public Argument<string> SearchTermArgument { get; set; }
-    public Option<bool> ClearCacheOption { get; set; }
-    public Option<string> VersionOption { get; set; }
+    public required Argument<string> SearchTermArgument { get; init; }
+    public required Option<bool> ClearCacheOption { get; init; }
+    public required Option<string> VersionOption { get; init; }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string searchTerm = context.ParseResult.GetValueForArgument(SearchTermArgument);
-        string version = context.ParseResult.GetValueForOption(VersionOption);
+        string version = context.ParseResult.GetValueForOption(VersionOption) ?? string.Empty;
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
-        CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
+        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
         Configuration.Search.ClearCache = clearCache;
 

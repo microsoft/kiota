@@ -11,7 +11,7 @@ internal class KiotaGitHubLogoutCommandHandler : BaseKiotaCommandHandler
 {
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
-        CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
+        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
         var (loggerFactory, logger) = GetLoggerAndFactory<TempFolderCachingAccessTokenProvider>(context);
         using (loggerFactory) {
             try {

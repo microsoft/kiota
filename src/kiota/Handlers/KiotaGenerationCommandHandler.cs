@@ -16,34 +16,34 @@ namespace kiota.Handlers;
 
 internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
 {
-    public Option<string> DescriptionOption { get;set; }
-    public Option<string> OutputOption { get;set; }
-    public Option<GenerationLanguage> LanguageOption { get;set; }
-    public Option<string> ClassOption { get;set; }
-    public Option<string> NamespaceOption { get;set; }
-    public Option<bool> BackingStoreOption { get;set; }
-    public Option<bool> AdditionalDataOption { get;set; }
-    public Option<List<string>> SerializerOption { get;set; }
-    public Option<List<string>> DeserializerOption { get;set; }
-    public Option<bool> CleanOutputOption { get;set; }
-    public Option<List<string>> StructuredMimeTypesOption { get;set; }
+    public required Option<string> DescriptionOption { get;init; }
+    public required Option<string> OutputOption { get;init; }
+    public required Option<GenerationLanguage> LanguageOption { get;init; }
+    public required Option<string> ClassOption { get;init; }
+    public required Option<string> NamespaceOption { get;init; }
+    public required Option<bool> BackingStoreOption { get;init; }
+    public required Option<bool> AdditionalDataOption { get;init; }
+    public required Option<List<string>> SerializerOption { get;init; }
+    public required Option<List<string>> DeserializerOption { get;init; }
+    public required Option<bool> CleanOutputOption { get;init; }
+    public required Option<List<string>> StructuredMimeTypesOption { get;init; }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
-        string output = context.ParseResult.GetValueForOption(OutputOption);
+        string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         GenerationLanguage language = context.ParseResult.GetValueForOption(LanguageOption);
-        string openapi = context.ParseResult.GetValueForOption(DescriptionOption);
+        string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
         bool backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         bool includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
-        string className = context.ParseResult.GetValueForOption(ClassOption);
-        string namespaceName = context.ParseResult.GetValueForOption(NamespaceOption);
-        List<string> serializer = context.ParseResult.GetValueForOption(SerializerOption);
-        List<string> deserializer = context.ParseResult.GetValueForOption(DeserializerOption);
-        List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption);
-        List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption);
+        string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
+        string namespaceName = context.ParseResult.GetValueForOption(NamespaceOption) ?? string.Empty;
+        List<string> serializer = context.ParseResult.GetValueForOption(SerializerOption) ?? new List<string>();
+        List<string> deserializer = context.ParseResult.GetValueForOption(DeserializerOption) ?? new List<string>();
+        List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption) ?? new List<string>();
+        List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption) ?? new List<string>();
         bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
-        List<string> structuredMimeTypes = context.ParseResult.GetValueForOption(StructuredMimeTypesOption);
-        CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
+        List<string> structuredMimeTypes = context.ParseResult.GetValueForOption(StructuredMimeTypesOption) ?? new List<string>();
+        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
         AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
         AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
         AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
@@ -51,15 +51,15 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         Configuration.Generation.UsesBackingStore = backingStore;
         Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
         Configuration.Generation.Language = language;
-        if(serializer?.Any() ?? false)
+        if(serializer.Any())
             Configuration.Generation.Serializers = serializer.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if(deserializer?.Any() ?? false)
+        if(deserializer.Any())
             Configuration.Generation.Deserializers = deserializer.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if(includePatterns?.Any() ?? false)
+        if(includePatterns.Any())
             Configuration.Generation.IncludePatterns = includePatterns.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if(excludePatterns?.Any() ?? false)
+        if(excludePatterns.Any())
             Configuration.Generation.ExcludePatterns = excludePatterns.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if(structuredMimeTypes?.Any() ?? false)
+        if(structuredMimeTypes.Any())
             Configuration.Generation.StructuredMimeTypes = structuredMimeTypes.SelectMany(x => x.Split(new[] {' '}))
                                                             .Select(x => x.TrimQuotes())
                                                             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -95,7 +95,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    public Option<List<string>> IncludePatternsOption { get; set; }
-    public Option<List<string>> ExcludePatternsOption { get; set; }
-    public Option<bool> ClearCacheOption { get; set; }
+    public required Option<List<string>> IncludePatternsOption { get; init; }
+    public required Option<List<string>> ExcludePatternsOption { get; init; }
+    public required Option<bool> ClearCacheOption { get; init; }
 }
