@@ -233,9 +233,9 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.Contains("request_info", result);
         Assert.Contains("error_mapping: Dict[str, ParsableFactory] =", result);
-        Assert.Contains("\"4XX\": error4_x_x.Error4XX", result);
-        Assert.Contains("\"5XX\": error5_x_x.Error5XX", result);
-        Assert.Contains("\"403\": error403.Error403", result);
+        Assert.Contains("\"4XX\": o_data_error.Error4XX", result);
+        Assert.Contains("\"5XX\": o_data_error.Error5XX", result);
+        Assert.Contains("\"403\": o_data_error.Error403", result);
         Assert.Contains("send_async", result);
         Assert.Contains("raise Exception", result);
     }
