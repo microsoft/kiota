@@ -35,8 +35,8 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
             try {
-                var results = await new KiotaSearcher(logger, Configuration.Search, httpClient, GetAuthenticationProvider(logger), GetIsGitHubSignedInCallback(logger))
-                    .SearchAsync(searchTerm, version, cancellationToken);
+                var searcher = await GetKiotaSearcher(loggerFactory, cancellationToken).ConfigureAwait(false);
+                var results = await searcher.SearchAsync(searchTerm, version, cancellationToken);
                 await DisplayResults(searchTerm, version, results, logger, cancellationToken);
                 return 0;
             } catch (Exception ex) {

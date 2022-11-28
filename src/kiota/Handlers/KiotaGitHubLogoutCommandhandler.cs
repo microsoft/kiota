@@ -15,9 +15,10 @@ internal class KiotaGitHubLogoutCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<TempFolderCachingAccessTokenProvider>(context);
         using (loggerFactory) {
             try {
-                var authProvider = GitHubDeviceAuthenticationProvider(logger);
-                var result = await authProvider.TokenStorageService.Value.DeleteTokenAsync(cancellationToken);
-                if(result)
+                var deviceCodeAuthProvider = GetGitHubDeviceStorageService(logger);
+                var deviceCodeResult = await deviceCodeAuthProvider.TokenStorageService.Value.DeleteTokenAsync(cancellationToken).ConfigureAwait(false);
+                var patResult = await GetGitHubPatStorageService(logger).DeleteTokenAsync(cancellationToken).ConfigureAwait(false);
+                if(deviceCodeResult || patResult)
                     DisplaySuccess("Logged out successfully.");
                 else
                     DisplaySuccess("Already logged out.");

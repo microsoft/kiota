@@ -33,11 +33,7 @@ internal class KiotaGitHubPatLoginCommandHandler : BaseKiotaCommandHandler {
             logger.LogCritical("no personal access token provided");
             return 1;
         }
-        var tokenStorageService = new TempFolderTokenStorageService {
-            Logger = logger,
-            FileName = "pat-api.github.com"
-        };
-        await tokenStorageService.SetTokenAsync(patValue, cancellationToken).ConfigureAwait(false);
+        await GetGitHubPatStorageService(logger).SetTokenAsync(patValue, cancellationToken).ConfigureAwait(false);
         DisplaySuccess("Authentication successful.");
         DisplaySearchBasicHint();
         DisplayGitHubLogoutHint();

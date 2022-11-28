@@ -19,11 +19,15 @@ namespace kiota.Handlers;
 
 internal abstract class BaseKiotaCommandHandler : ICommandHandler
 {
-    protected TempFolderCachingAccessTokenProvider GitHubDeviceAuthenticationProvider(ILogger logger) => new(){
+    protected TempFolderCachingAccessTokenProvider GetGitHubDeviceStorageService(ILogger logger) => new(){
         Logger = logger,
         ApiBaseUrl = Configuration.Search.GitHub.ApiBaseUrl,
         Concrete = null,
         AppId = Configuration.Search.GitHub.AppId,
+    };
+    protected static TempFolderTokenStorageService GetGitHubPatStorageService(ILogger logger) => new() {
+        Logger = logger,
+        FileName = "pat-api.github.com"
     };
     internal static readonly HttpClient httpClient = new();
     public required Option<LogLevel> LogLevelOption { get;init; }
@@ -38,17 +42,41 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         return configObject;
     });
     private const string GitHubScope = "repo";
-    protected Func<CancellationToken, Task<bool>> GetIsGitHubSignedInCallback(ILogger logger) => (cancellationToken) => {
-        var provider = GitHubDeviceAuthenticationProvider(logger);
+    private Func<CancellationToken, Task<bool>> GetIsGitHubDeviceSignedInCallback(ILogger logger) => (cancellationToken) => {
+        var provider = GetGitHubDeviceStorageService(logger);
         return provider.TokenStorageService.Value.IsTokenPresentAsync(cancellationToken);
     };
-    protected IAuthenticationProvider GetAuthenticationProvider(ILogger logger)  =>
+    private Func<CancellationToken, Task<bool>> GetIsGitHubPatSignedInCallback(ILogger logger) => (cancellationToken) => {
+        var provider = GetGitHubPatStorageService(logger);
+        return provider.IsTokenPresentAsync(cancellationToken);
+    };
+    private IAuthenticationProvider GetGitHubAuthenticationProvider(ILogger logger)  =>
         new DeviceCodeAuthenticationProvider(Configuration.Search.GitHub.AppId,
                                             GitHubScope,
                                             new List<string> { Configuration.Search.GitHub.ApiBaseUrl.Host },
                                             httpClient,
                                             DisplayGitHubDeviceCodeLoginMessage,
                                             logger);
+    private IAuthenticationProvider GetGitHubPatAuthenticationProvider(ILogger logger)  =>
+        new PatAuthenticationProvider(Configuration.Search.GitHub.AppId,
+                                    GitHubScope,
+                                    new List<string> { Configuration.Search.GitHub.ApiBaseUrl.Host },
+                                    logger,
+                                    GetGitHubPatStorageService(logger));
+    protected async Task<KiotaSearcher> GetKiotaSearcher(ILoggerFactory loggerFactory, CancellationToken cancellationToken) {
+        var logger = loggerFactory.CreateLogger<KiotaSearcher>();
+        var deviceCodeSignInCallback = GetIsGitHubDeviceSignedInCallback(logger);
+        var patSignInCallBack = GetIsGitHubPatSignedInCallback(logger);
+        var isDeviceCodeSignedIn = await deviceCodeSignInCallback(cancellationToken).ConfigureAwait(false);
+        var isPatSignedIn = await patSignInCallBack(cancellationToken).ConfigureAwait(false);
+        var (provider, callback) = (isDeviceCodeSignedIn, isPatSignedIn) switch {
+            (true, _) => (GetGitHubAuthenticationProvider(logger), deviceCodeSignInCallback),
+            (_, true) => (GetGitHubPatAuthenticationProvider(logger), patSignInCallBack),
+            (_, _) => (null, null)
+        };
+
+        return new KiotaSearcher(logger, Configuration.Search, httpClient, provider, callback);
+    }
     public int Invoke(InvocationContext context)
     {
         return InvokeAsync(context).GetAwaiter().GetResult();
@@ -187,8 +215,9 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
                     "Example: kiota search <search term>");
     }
     protected async Task DisplayLoginHint(ILogger logger, CancellationToken token) {
-        var authProvider = GitHubDeviceAuthenticationProvider(logger);
-        if(!await authProvider.TokenStorageService.Value.IsTokenPresentAsync(token)) {
+        var deviceCodeAuthProvider = GetGitHubDeviceStorageService(logger);
+        var patStorage = GetGitHubPatStorageService(logger);
+        if(!await deviceCodeAuthProvider.TokenStorageService.Value.IsTokenPresentAsync(token) && !await patStorage.IsTokenPresentAsync(token)) {
             DisplayHint("Hint: use the login command to sign in to GitHub and access private OpenAPI descriptions.",
                         "Example: kiota login github");
         }
