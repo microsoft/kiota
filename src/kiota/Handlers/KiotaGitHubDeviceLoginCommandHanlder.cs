@@ -9,7 +9,7 @@ using Microsoft.Kiota.Abstractions;
 
 namespace kiota.Handlers;
 
-internal class KiotaGitHubLoginCommandHandler : BaseKiotaCommandHandler
+internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
 {
     public override async Task<int> InvokeAsync(InvocationContext context)
     {

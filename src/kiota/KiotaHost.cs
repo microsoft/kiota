@@ -25,15 +25,20 @@ public class KiotaHost {
         return rootCommand;
     }
     private static Command GetGitHubLoginCommand() {
+        var githubLoginCommand = new Command("github", "Logs in to GitHub.");
+        githubLoginCommand.AddCommand(GetGitHubDeviceLoginCommand());
+        return githubLoginCommand;
+    }
+    private static Command GetGitHubDeviceLoginCommand() {
         var logLevelOption = GetLogLevelOption();
-        var githubLoginCommand = new Command("github", "Logs in to GitHub using a device code flow.")
+        var deviceLoginCommand = new Command("device", "Logs in to GitHub using a device code flow.")
         {
             logLevelOption,
         };
-        githubLoginCommand.Handler = new KiotaGitHubLoginCommandHandler {
+        deviceLoginCommand.Handler = new KiotaGitHubDeviceLoginCommandHandler {
             LogLevelOption = logLevelOption,
         };
-        return githubLoginCommand;
+        return deviceLoginCommand;
     }
     private static Command GetGitHubLogoutCommand() {
         var logLevelOption = GetLogLevelOption();

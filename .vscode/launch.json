@@ -257,13 +257,14 @@
             "stopAtEntry": false
         },
         {
-            "name": "Launch Login (github)",
+            "name": "Launch Login (github - device)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/src/kiota/bin/Debug/net7.0/kiota.dll",
             "args": ["login",
-                    "github"
+                    "github",
+                    "device"
                 ],
             "cwd": "${workspaceFolder}/src/kiota",
             "console": "internalConsole",
