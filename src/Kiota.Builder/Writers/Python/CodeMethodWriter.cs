@@ -80,7 +80,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 break;
         }
         writer.CloseBlock(string.Empty);
-        writer.WriteLine();
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer) {
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
