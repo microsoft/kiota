@@ -66,13 +66,7 @@ public static class IServiceCollectionExtensions {
                 "repo",
                 new string[] { configObject.Search.GitHub.ApiBaseUrl.Host },
                 sp.GetRequiredService<ILoggerFactory>().CreateLogger<PatAuthenticationProvider>(),
-                async (c) => {
-                    var patService = sp.GetRequiredService<ITokenStorageService>();
-                    var patValue = await patService.GetTokenAsync(c).ConfigureAwait(false);
-                    if(!string.IsNullOrEmpty(patValue))
-                        return patValue;
-                    return string.Empty;
-                }
+                sp.GetRequiredService<ITokenStorageService>()
             );
         });
     }

@@ -27,6 +27,7 @@ public class KiotaHost {
     private static Command GetGitHubLoginCommand() {
         var githubLoginCommand = new Command("github", "Logs in to GitHub.");
         githubLoginCommand.AddCommand(GetGitHubDeviceLoginCommand());
+        githubLoginCommand.AddCommand(GetGitHubPatLoginCommand());
         return githubLoginCommand;
     }
     private static Command GetGitHubDeviceLoginCommand() {
@@ -37,6 +38,23 @@ public class KiotaHost {
         };
         deviceLoginCommand.Handler = new KiotaGitHubDeviceLoginCommandHandler {
             LogLevelOption = logLevelOption,
+        };
+        return deviceLoginCommand;
+    }
+    private static Command GetGitHubPatLoginCommand() {
+        var logLevelOption = GetLogLevelOption();
+        var patOption = new Option<string>("--pat", "The personal access token to use to authenticate to GitHub.")
+        {
+            IsRequired = true
+        };
+        var deviceLoginCommand = new Command("pat", "Logs in to GitHub using a Personal Access Token.")
+        {
+            logLevelOption,
+            patOption,
+        };
+        deviceLoginCommand.Handler = new KiotaGitHubPatLoginCommandHandler {
+            LogLevelOption = logLevelOption,
+            PatOption = patOption,
         };
         return deviceLoginCommand;
     }
