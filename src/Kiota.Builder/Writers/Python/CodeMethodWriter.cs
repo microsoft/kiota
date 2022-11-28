@@ -79,7 +79,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 WriteDefaultMethodBody(codeElement, writer, returnType);
                 break;
         }
-        writer.DecreaseIndent();
+        writer.CloseBlock(string.Empty);
         writer.WriteLine();
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer) {
