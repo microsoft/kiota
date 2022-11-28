@@ -6,8 +6,7 @@ namespace Kiota.Builder.Writers.Php
     {
         public void WriteCodeElement(BlockEnd codeElement, LanguageWriter writer)
         {
-            if(codeElement.Parent is CodeNamespace) return;
-            writer.CloseBlock(string.Empty);
+            writer.CloseBlock();
         }
     }
 }
