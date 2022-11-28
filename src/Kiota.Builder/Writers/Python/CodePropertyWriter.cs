@@ -19,8 +19,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                 writer.IncreaseIndent();
                 conventions.WriteShortDescription(codeElement.Description, writer);
                 conventions.AddRequestBuilderBody(parentClass, returnType, writer);
-                writer.DecreaseIndent();
-                writer.WriteLine();
+                writer.CloseBlock(string.Empty);
             break;
             case CodePropertyKind.QueryParameters:
             case CodePropertyKind.Headers:
