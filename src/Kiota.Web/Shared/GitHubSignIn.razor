@@ -3,7 +3,7 @@
 @using Microsoft.Fast.Components.FluentUI
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<GitHubSignIn> Loc
-@inject LocalStoragePatService LocalStoragePatService
+@inject ITokenStorageService TokenStorageService
 @inject KiotaConfiguration KiotaConfiguration
 <svg fill="black" role="img" viewBox="0 0 24 24" width="32px" height="32px" xmlns="http://www.w3.org/2000/svg">
     <title>@Loc["SVGAltText"]</title>
@@ -50,7 +50,7 @@
         PatSetDialogHidden = true;
     }
     protected override async Task OnParametersSetAsync() {
-        IsSignedIn = await LocalStoragePatService.IsSignedInAsync(ComponentDetached);
+        IsSignedIn = await TokenStorageService.IsTokenPresentAsync(ComponentDetached);
         await base.OnParametersSetAsync();
     }
     private void SignIn() {
@@ -59,13 +59,13 @@
     private async Task Save() {
         if(!String.IsNullOrEmpty(PersonalAccessToken)) {
             IsSignedIn = true;
-            await LocalStoragePatService.SetPatAsync(PersonalAccessToken, ComponentDetached);
+            await TokenStorageService.SetTokenAsync(PersonalAccessToken, ComponentDetached);
             PatSetDialogHidden = true;
             PersonalAccessToken = string.Empty;
         }
     }
     private async Task SignOut() {
-        await LocalStoragePatService.SignOutAsync(ComponentDetached);
+        await TokenStorageService.DeleteTokenAsync(ComponentDetached);
         IsSignedIn = false;
     }
 

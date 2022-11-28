@@ -1,6 +1,11 @@
-using Kiota.Builder.SearchProviders.GitHub.Authentication;
 
-namespace Kiota.Web.Authentication.GitHub;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+
+namespace Kiota.Builder.SearchProviders.GitHub.Authentication;
 public class PatAuthenticationProvider : BaseAuthenticationProvider<PatProvider>
 {
     public PatAuthenticationProvider(string clientId, string scope, IEnumerable<string> validHosts, ILogger logger, Func<CancellationToken, Task<string>> GetPATFromStorageCallback) :

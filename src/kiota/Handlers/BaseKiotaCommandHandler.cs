@@ -19,7 +19,7 @@ namespace kiota.Handlers;
 
 internal abstract class BaseKiotaCommandHandler : ICommandHandler
 {
-    protected TempFolderCachingAccessTokenProvider GitHubAuthenticationCachingProvider(ILogger logger) => new(){
+    protected TempFolderCachingAccessTokenProvider GitHubDeviceAuthenticationProvider(ILogger logger) => new(){
         Logger = logger,
         ApiBaseUrl = Configuration.Search.GitHub.ApiBaseUrl,
         Concrete = null,
@@ -39,8 +39,8 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     });
     private const string GitHubScope = "repo";
     protected Func<CancellationToken, Task<bool>> GetIsGitHubSignedInCallback(ILogger logger) => (cancellationToken) => {
-        var provider = GitHubAuthenticationCachingProvider(logger);
-        return Task.FromResult(provider.IsCachedTokenPresent());
+        var provider = GitHubDeviceAuthenticationProvider(logger);
+        return provider.TokenStorageService.Value.IsTokenPresentAsync(cancellationToken);
     };
     protected IAuthenticationProvider GetAuthenticationProvider(ILogger logger)  =>
         new DeviceCodeAuthenticationProvider(Configuration.Search.GitHub.AppId,
@@ -186,9 +186,9 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         DisplayHint("Hint: use the search command to search for an OpenAPI description.",
                     "Example: kiota search <search term>");
     }
-    protected void DisplayLoginHint(ILogger logger) {
-        var cachingConfig = GitHubAuthenticationCachingProvider(logger);
-        if(!cachingConfig.IsCachedTokenPresent()) {
+    protected async Task DisplayLoginHint(ILogger logger, CancellationToken token) {
+        var authProvider = GitHubDeviceAuthenticationProvider(logger);
+        if(!await authProvider.TokenStorageService.Value.IsTokenPresentAsync(token)) {
             DisplayHint("Hint: use the login command to sign in to GitHub and access private OpenAPI descriptions.",
                         "Example: kiota login github");
         }

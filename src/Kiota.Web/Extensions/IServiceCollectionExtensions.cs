@@ -53,9 +53,9 @@ public static class IServiceCollectionExtensions {
     }
     public static void AddPatAuthentication(this IServiceCollection services) {
         services.AddBlazoredLocalStorage();
-        services.AddScoped(sp => {
+        services.AddScoped<ITokenStorageService>(sp => {
             var localStorage = sp.GetRequiredService<ILocalStorageService>();
-            return new LocalStoragePatService {
+            return new LocalStorageTokenStorageService {
                 LocalStorageService = localStorage,
             };
         });
@@ -67,8 +67,8 @@ public static class IServiceCollectionExtensions {
                 new string[] { configObject.Search.GitHub.ApiBaseUrl.Host },
                 sp.GetRequiredService<ILoggerFactory>().CreateLogger<PatAuthenticationProvider>(),
                 async (c) => {
-                    var patService = sp.GetRequiredService<LocalStoragePatService>();
-                    var patValue = await patService.GetPatAsync(c).ConfigureAwait(false);
+                    var patService = sp.GetRequiredService<ITokenStorageService>();
+                    var patValue = await patService.GetTokenAsync(c).ConfigureAwait(false);
                     if(!string.IsNullOrEmpty(patValue))
                         return patValue;
                     return string.Empty;
@@ -79,12 +79,12 @@ public static class IServiceCollectionExtensions {
     public static void AddSearchService(this IServiceCollection services) {
         services.AddScoped(sp => {
             var configObject = sp.GetRequiredService<KiotaConfiguration>();
-            var patService = sp.GetRequiredService<LocalStoragePatService>();
+            var patService = sp.GetRequiredService<ITokenStorageService>();
             return new KiotaSearcher(sp.GetRequiredService<ILoggerFactory>().CreateLogger<KiotaSearcher>(),
                                 configObject.Search, 
                                 sp.GetRequiredService<HttpClient>(),
                                 sp.GetRequiredService<IAuthenticationProvider>(),
-                                (c) => patService.IsSignedInAsync(c));
+                                (c) => patService.IsTokenPresentAsync(c));
         });
     }
 }

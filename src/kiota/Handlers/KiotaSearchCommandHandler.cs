@@ -37,7 +37,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             try {
                 var results = await new KiotaSearcher(logger, Configuration.Search, httpClient, GetAuthenticationProvider(logger), GetIsGitHubSignedInCallback(logger))
                     .SearchAsync(searchTerm, version, cancellationToken);
-                DisplayResults(searchTerm, version, results, logger);
+                await DisplayResults(searchTerm, version, results, logger, cancellationToken);
                 return 0;
             } catch (Exception ex) {
     #if DEBUG
@@ -50,7 +50,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private void DisplayResults(string searchTerm, string version, IDictionary<string, SearchResult> results, ILogger logger){
+    private async Task DisplayResults(string searchTerm, string version, IDictionary<string, SearchResult> results, ILogger logger, CancellationToken cancellationToken){
         if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm)) {
             var result = results.First();
             DisplayInfo($"Key: {result.Key}");
@@ -73,7 +73,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             var layout = new StackLayoutView { view };
             console.Append(layout);
             DisplaySearchHint(results.Keys.FirstOrDefault(), version);
-            DisplayLoginHint(logger);
+            await DisplayLoginHint(logger, cancellationToken);
             DisplaySearchAddHint();
         }
     }
