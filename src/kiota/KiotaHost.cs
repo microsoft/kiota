@@ -12,7 +12,7 @@ using kiota.Handlers;
 
 namespace kiota;
 public class KiotaHost {
-    public RootCommand GetRootCommand() {
+    public static RootCommand GetRootCommand() {
         var rootCommand = new RootCommand();
         rootCommand.AddCommand(GetGenerateCommand());
         rootCommand.AddCommand(GetSearchCommand());
