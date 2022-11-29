@@ -288,7 +288,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         writer.WriteLine($"{errorMappingVarName}: Dict[str, ParsableFactory] = {{");
         writer.IncreaseIndent();
         foreach(var errorMapping in codeElement.ErrorMappings) {
-            writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": o_data_error.{errorMapping.Value.Name},");
+            writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorMapping.Value.Name.ToSnakeCase()}.{errorMapping.Value.Name},");
         }
         writer.CloseBlock();
     }
