@@ -500,7 +500,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(current, x => DisableActionOf(x, kinds));
     }
-    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "", bool addToParentNamespace = false, Func<string,string,string> nameFactory = null) {
+    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "", bool addToParentNamespace = false, Func<string,string,string> nameFactory = default) {
         if(current is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
             var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
             var innerClasses = currentClass
@@ -526,10 +526,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             foreach (var innerClass in nestedClasses) {
                 var originalClassName = innerClass.Name;
                 
-                if(nameFactory == null && prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
+                if(nameFactory == default && prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
                     innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
 
-                if (nameFactory != null)
+                if (nameFactory != default)
                     innerClass.Name = nameFactory(currentClass.Name, innerClass.Name);
 
                 if(addToParentNamespace && parentNamespace.FindChildByName<CodeClass>(innerClass.Name, false) == null)
@@ -544,19 +544,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     innerClass.StartBlock.Inherits = new CodeType { Name = queryParametersBaseClassName, IsExternal = true };
             }
         }
-        CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName, addToParentNamespace));
-    }
-    
-    private string mergeRemoveOverlap(string start, string end)
-    {
-        var endPattern = end.Substring(0, end.IndexOf("RequestBuilder") + "RequestBuilder".Length);
-
-        if (start.EndsWith(endPattern))
-        {
-            return $"{start.Substring(0, start.IndexOf(endPattern))}{end}";
-        }
-            
-        return $"{start}{end}";
+        CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName, addToParentNamespace, nameFactory));
     }
     
     private static readonly CodeUsingComparer usingComparerWithDeclarations = new(true);

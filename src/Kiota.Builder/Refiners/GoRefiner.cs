@@ -144,7 +144,7 @@ public class GoRefiner : CommonLanguageRefiner
     private static String MODELS_FOLDER = "models";
     private static String BUILDERS_FOLDER = "builders";
     
-    private static string MergeOverLappedStrings(string start, string end)
+    private string MergeOverLappedStrings(string start, string end)
     {
         start = start.ToFirstCharacterUpperCase();
         end = end.ToFirstCharacterUpperCase();
