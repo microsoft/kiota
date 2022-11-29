@@ -472,7 +472,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(current, x => DisableActionOf(x, kinds));
     }
-    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "", bool addToParentNamespace = false) {
+    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "", bool addToParentNamespace = false, Func<String,String,String> nameFactory = null) {
         if(current is CodeClass currentClass) {
             var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
             var innerClasses = currentClass
@@ -497,8 +497,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
             foreach (var innerClass in nestedClasses) {
                 var originalClassName = innerClass.Name;
-                if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
+                
+                if(nameFactory == null && prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
                     innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
+
+                if (nameFactory != null)
+                    innerClass.Name = nameFactory(currentClass.Name, innerClass.Name);
 
                 if(addToParentNamespace && parentNamespace.FindChildByName<CodeClass>(innerClass.Name, false) == null)
                 { // the query parameters class is already a child of the request executor method parent class
@@ -514,6 +518,19 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName, addToParentNamespace));
     }
+    
+    private string mergeRemoveOverlap(string start, string end)
+    {
+        var endPattern = end.Substring(0, end.IndexOf("RequestBuilder") + "RequestBuilder".Length);
+
+        if (start.EndsWith(endPattern))
+        {
+            return $"{start.Substring(0, start.IndexOf(endPattern))}{end}";
+        }
+            
+        return $"{start}{end}";
+    }
+    
     private static readonly CodeUsingComparer usingComparerWithDeclarations = new(true);
     private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new(false);
     protected readonly GenerationConfiguration _configuration;
