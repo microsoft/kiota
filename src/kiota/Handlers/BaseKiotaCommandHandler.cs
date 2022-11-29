@@ -46,7 +46,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         var provider = GetGitHubDeviceStorageService(logger);
         return provider.TokenStorageService.Value.IsTokenPresentAsync(cancellationToken);
     };
-    private Func<CancellationToken, Task<bool>> GetIsGitHubPatSignedInCallback(ILogger logger) => (cancellationToken) => {
+    private static Func<CancellationToken, Task<bool>> GetIsGitHubPatSignedInCallback(ILogger logger) => (cancellationToken) => {
         var provider = GetGitHubPatStorageService(logger);
         return provider.IsTokenPresentAsync(cancellationToken);
     };

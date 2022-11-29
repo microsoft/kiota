@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 using kiota.Handlers;
 
 namespace kiota;
-public class KiotaHost {
+public static class KiotaHost {
     public static RootCommand GetRootCommand() {
         var rootCommand = new RootCommand();
         rootCommand.AddCommand(GetGenerateCommand());
