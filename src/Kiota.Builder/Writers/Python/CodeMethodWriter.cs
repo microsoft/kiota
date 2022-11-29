@@ -80,7 +80,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 break;
         }
         writer.CloseBlock(string.Empty);
-        writer.WriteLine();
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer) {
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
@@ -116,7 +115,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var parameterName = parameter.Name.ToSnakeCase();
         var escapedProperties = parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.QueryParameter) && x.IsNameEscaped);
         foreach(var escapedProperty in escapedProperties) {
-            writer.WriteLine($"if {parameterName} == \"{escapedProperty.Name}\":");
+            writer.WriteLine($"if {parameterName} == \"{escapedProperty.Name.ToSnakeCase()}\":");
             writer.IncreaseIndent();
             writer.WriteLine($"return \"{escapedProperty.SerializationName}\"");
             writer.DecreaseIndent();
