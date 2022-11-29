@@ -14,7 +14,8 @@
     @if(IsSignedIn) {
         <FluentButton @onclick="SignOut" Appearance="Appearance.Neutral">@Loc["SignOut"]</FluentButton>
     } else {
-        <FluentButton @onclick="SignIn" Appearance="Appearance.Accent">@Loc["SignIn"]</FluentButton>
+        <FluentButton id="signinbtn" @onclick="SignIn" Appearance="Appearance.Accent">@Loc["SignIn"]</FluentButton>
+        <FluentTooltip Anchor="signinbtn" Position=TooltipPosition.Bottom>@Loc["ToolTip"]</FluentTooltip>
     }
 </div>
 <FluentDialog Modal="true" @ondismiss=OnPatSetDialogDismiss @bind-Hidden=@PatSetDialogHidden>

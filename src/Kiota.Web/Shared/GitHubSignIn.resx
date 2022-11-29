@@ -109,4 +109,7 @@
   <data name="SVGAltText" xml:space="preserve">
     <value>GitHub Octocat logo</value>
   </data>
+  <data name="ToolTip" xml:space="preserve">
+    <value>Access private API descriptions.</value>
+  </data>
 </root>
