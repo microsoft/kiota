@@ -721,10 +721,16 @@ public class CodeMethodWriterTests : IDisposable {
             SerializationName = "%24expand"
         },
         new CodeProperty {
+            Name = "select-from",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "select%2Dfrom"
+        },
+        new CodeProperty {
             Name = "filter",
             Kind = CodePropertyKind.QueryParameter,
             SerializationName = "%24filter"
         });
+        
         method.AddParameter(new CodeParameter{
             Kind = CodeParameterKind.QueryParametersMapperParameter,
             Name = "originalName",
@@ -739,6 +745,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("return \"%24select\"", result);
         Assert.Contains("if original_name == \"expand\":", result);
         Assert.Contains("return \"%24expand\"", result);
+        Assert.Contains("if original_name == \"select_from\":", result);
+        Assert.Contains("return \"select%2Dfrom\"", result);
         Assert.Contains("if original_name == \"filter\":", result);
         Assert.Contains("return \"%24filter\"", result);
         Assert.Contains("return original_name", result);
