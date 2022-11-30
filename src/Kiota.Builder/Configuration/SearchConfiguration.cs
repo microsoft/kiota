@@ -8,7 +8,8 @@ public class SearchConfiguration : SearchConfigurationBase {
 }
 
 public class GitHubConfiguration {
-    public string AppId { get; set; } = "0adc165b71f9824f4282";
+    public string AppId { get; set; } = "Iv1.9ed2bcb878c90617";
     public Uri ApiBaseUrl { get; set; } = new ("https://api.github.com");
     public Uri BlockListUrl { get; set; } = new ("https://raw.githubusercontent.com/microsoft/kiota/main/resources/index-block-list.yml");
+    public Uri AppManagement { get; set; } = new("https://aka.ms/kiota/install/github");
 }

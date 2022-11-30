@@ -210,6 +210,9 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         DisplayHint("Hint: use the logout command to sign out of GitHub.",
                     "Example: kiota logout github");
     }
+    protected void DisplayManageInstallationHint() {
+        DisplayHint($"Hint: go to {Configuration.Search.GitHub.AppManagement} to manage your which organizations and repositories Kiota has access to.");
+    }
     protected void DisplaySearchBasicHint() {
         DisplayHint("Hint: use the search command to search for an OpenAPI description.",
                     "Example: kiota search <search term>");
