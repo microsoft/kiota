@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
-    /// <summary>An object describing a symlink</summary>
+    /// <summary>An object describing a submodule</summary>
     public class ContentSubmodule : IAdditionalDataHolder, IParsable {
         /// <summary>The _links property</summary>
         public ContentSubmodule__links _links { get; set; }
@@ -27,7 +27,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The submodule_git_url property</summary>
         public string Submodule_git_url { get; set; }
         /// <summary>The type property</summary>
-        public string Type { get; set; }
+        public ContentSubmodule_type? Type { get; set; }
         /// <summary>The url property</summary>
         public string Url { get; set; }
         /// <summary>
@@ -58,7 +58,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
                 {"sha", n => { Sha = n.GetStringValue(); } },
                 {"size", n => { Size = n.GetIntValue(); } },
                 {"submodule_git_url", n => { Submodule_git_url = n.GetStringValue(); } },
-                {"type", n => { Type = n.GetStringValue(); } },
+                {"type", n => { Type = n.GetEnumValue<ContentSubmodule_type>(); } },
                 {"url", n => { Url = n.GetStringValue(); } },
             };
         }
@@ -77,7 +77,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             writer.WriteStringValue("sha", Sha);
             writer.WriteIntValue("size", Size);
             writer.WriteStringValue("submodule_git_url", Submodule_git_url);
-            writer.WriteStringValue("type", Type);
+            writer.WriteEnumValue<ContentSubmodule_type>("type", Type);
             writer.WriteStringValue("url", Url);
             writer.WriteAdditionalData(AdditionalData);
         }

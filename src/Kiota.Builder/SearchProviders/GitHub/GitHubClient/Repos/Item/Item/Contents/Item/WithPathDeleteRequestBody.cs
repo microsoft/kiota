@@ -15,7 +15,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         public WithPathDeleteRequestBody_committer Committer { get; set; }
         /// <summary>The commit message.</summary>
         public string Message { get; set; }
-        /// <summary>The blob SHA of the file being replaced.</summary>
+        /// <summary>The blob SHA of the file being deleted.</summary>
         public string Sha { get; set; }
         /// <summary>
         /// Instantiates a new WithPathDeleteRequestBody and sets the default values.
