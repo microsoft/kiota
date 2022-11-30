@@ -1,5 +1,6 @@
 using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos;
 using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Search;
+using Kiota.Builder.SearchProviders.GitHub.GitHubClient.User;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Serialization.Json;
 using Microsoft.Kiota.Serialization.Text;
@@ -25,6 +26,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient {
         }
         /// <summary>Url template to use to build the URL for the current request builder</summary>
         private string UrlTemplate { get; set; }
+        /// <summary>The user property</summary>
+        public UserRequestBuilder User { get =>
+            new UserRequestBuilder(PathParameters, RequestAdapter);
+        }
         /// <summary>
         /// Instantiates a new GitHubClient and sets the default values.
         /// </summary>
