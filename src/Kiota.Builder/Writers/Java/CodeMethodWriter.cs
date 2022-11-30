@@ -439,7 +439,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.WriteLine($"return this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {errorMappingVarName});");
         writer.DecreaseIndent();
         writer.StartBlock("} catch (URISyntaxException ex) {");
-        writer.WriteLine($"java.util.concurrent.CompletableFuture<{signatureReturnType}> {ExecuterExceptionVar} = new java.util.concurrent.CompletableFuture<{signatureReturnType}>();");
+        writer.WriteLine($"final java.util.concurrent.CompletableFuture<{signatureReturnType}> {ExecuterExceptionVar} = new java.util.concurrent.CompletableFuture<{signatureReturnType}>();");
         writer.WriteLine($"{ExecuterExceptionVar}.completeExceptionally(ex);");
         writer.WriteLine($"return {ExecuterExceptionVar};");
         writer.CloseBlock();
