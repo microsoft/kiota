@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where generation would result in wrong indentation in some classes for Python [#1996]((https://github.com/microsoft/kiota/issues/1996).
 - Fixed a bug where error class modules were hardcoded for Python [#1999]((https://github.com/microsoft/kiota/issues/1999)
 - Fixed a bug where generation would sometimes result in wrong original names for query parameters in Python [#2000]((https://github.com/microsoft/kiota/issues/2000).
+- Fixed a bug where Java would fail to compile for endpoints that return collections.
 
 ## [0.7.1] - 2022-11-01
 

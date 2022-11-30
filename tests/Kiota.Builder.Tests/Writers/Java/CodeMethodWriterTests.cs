@@ -910,6 +910,7 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("sendCollectionAsync", result);
+        Assert.Contains("return new java.util.concurrent.CompletableFuture<Iterable<Somecustomtype>>() {{", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
