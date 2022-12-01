@@ -119,7 +119,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         var duplicatedSymbolsUsings = usings.Where(static x => !x.IsExternal)
                                                                 .GroupBy(static x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
-                                                                .Where(static x => x.Count() > 1)
+                                                                .Where(static x => x.DistinctBy(static y => y.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>())
+                                                                                    .Count() > 1)
                                                                 .SelectMany(static x => x)
                                                                 .Union(usings
                                                                         .Where(static x => !x.IsExternal)
