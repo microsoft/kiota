@@ -51,8 +51,7 @@ public class BrowserAccessTokenProvider : IAccessTokenProvider
 		tokenRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 		using var tokenResponse = await HttpClient.SendAsync(tokenRequest, cancellationToken);
 		tokenResponse.EnsureSuccessStatusCode();
-		var tokenContent = await tokenResponse.Content.ReadAsStringAsync(cancellationToken);
-		var result = JsonSerializer.Deserialize<AccessCodeResponse>(tokenContent);
+		var result = await tokenResponse.Content.ReadFromJsonAsync<AccessCodeResponse>(cancellationToken:cancellationToken);
 		if ("authorization_pending".Equals(result?.Error, StringComparison.OrdinalIgnoreCase))
 			return null;
 		else if (!string.IsNullOrEmpty(result?.Error))

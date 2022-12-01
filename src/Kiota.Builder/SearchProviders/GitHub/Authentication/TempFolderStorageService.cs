@@ -47,7 +47,7 @@ public class TempFolderTokenStorageService : ITokenStorageService {
             if (!File.Exists(target))
                 return false;
             var fileDate = File.GetLastWriteTime(target);
-            if(fileDate > DateTime.Now.AddMonths(6)) {
+            if(fileDate > DateTime.Now.AddMonths(-6)) {
                 await DeleteTokenAsync(cancellationToken);
                 return false;
             }

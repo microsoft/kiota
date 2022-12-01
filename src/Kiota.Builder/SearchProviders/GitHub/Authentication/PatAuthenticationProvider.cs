@@ -7,7 +7,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.Authentication;
 public class PatAuthenticationProvider : BaseAuthenticationProvider<PatAccessTokenProvider>
 {
     public PatAuthenticationProvider(string clientId, string scope, IEnumerable<string> validHosts, ILogger logger, ITokenStorageService StorageService) :
-        base(clientId, scope, validHosts, logger, (clientId, scope, validHosts) => new PatAccessTokenProvider {
+        base(clientId, scope, validHosts, logger, (_, _, validHosts) => new PatAccessTokenProvider {
             StorageService = StorageService,
             AllowedHostsValidator = new (validHosts),
         }, false)

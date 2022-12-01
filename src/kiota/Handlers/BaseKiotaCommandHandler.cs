@@ -63,7 +63,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
                                     new List<string> { Configuration.Search.GitHub.ApiBaseUrl.Host },
                                     logger,
                                     GetGitHubPatStorageService(logger));
-    protected async Task<KiotaSearcher> GetKiotaSearcher(ILoggerFactory loggerFactory, CancellationToken cancellationToken) {
+    protected async Task<KiotaSearcher> GetKiotaSearcherAsync(ILoggerFactory loggerFactory, CancellationToken cancellationToken) {
         var logger = loggerFactory.CreateLogger<KiotaSearcher>();
         var deviceCodeSignInCallback = GetIsGitHubDeviceSignedInCallback(logger);
         var patSignInCallBack = GetIsGitHubPatSignedInCallback(logger);
