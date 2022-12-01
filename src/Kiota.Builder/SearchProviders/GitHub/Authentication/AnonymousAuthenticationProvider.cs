@@ -10,7 +10,7 @@ public class AnonymousAuthenticationProvider : IAuthenticationProvider
     public virtual Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object> additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
     {
         request.Headers.Add("User-Agent", $"Kiota/{GetType().Assembly.GetName().Version}");
-        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+        // request.Headers.Add("X-GitHub-Api-Version", "2022-11-28"); does not support cors today
         return Task.CompletedTask;
     }
 }
