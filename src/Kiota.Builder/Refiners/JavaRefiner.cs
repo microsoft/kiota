@@ -17,7 +17,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() => {
             cancellationToken.ThrowIfCancellationRequested();
             LowerCaseNamespaceNames(generatedCode);
-            AddInnerClasses(generatedCode, false, string.Empty);
+            RemoveClassNamePrefixFromNestedClasses(generatedCode);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
@@ -298,9 +298,64 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors);
     }
+    private static void RemoveClassNamePrefixFromNestedClasses(CodeElement currentElement) {
+        if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
+            var prefix = currentClass.Name;
+            var requestConfigClasses = currentClass
+                                    .Methods
+                                    .SelectMany(static x => x.Parameters)
+                                    .Where(static x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
+                                    .SelectMany(static x => x.Type.AllTypes)
+                                    .Select(static x => x.TypeDefinition)
+                                    .OfType<CodeClass>();
+            // ensure we do not miss out the types present in request configuration objects i.e. the query parameters
+            var innerClasses = requestConfigClasses
+                                    .SelectMany(static x => x.Properties)
+                                    .Where(static x => x.IsOfKind(CodePropertyKind.QueryParameters))
+                                    .SelectMany(static x => x.Type.AllTypes)
+                                    .Select(static x => x.TypeDefinition)
+                                    .OfType<CodeClass>().Union(requestConfigClasses)
+                                    .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+            
+            foreach(var innerClass in innerClasses) {
+                    innerClass.Name = innerClass.Name[prefix.Length..];
+                
+                if(innerClass.IsOfKind(CodeClassKind.RequestConfiguration))
+                    RemovePrefixFromQueryProperties(innerClass, prefix);
+            }
+            RemovePrefixFromRequestConfigParameters(currentClass, prefix);
+        }
+        CrawlTree(currentElement, x => RemoveClassNamePrefixFromNestedClasses(x));
+    }
+    private static void RemovePrefixFromQueryProperties(CodeElement currentElement, String prefix) { 
+        if(currentElement is CodeClass currentClass) {            
+            var queryProperty = currentClass
+                                .Properties
+                                .Where(static x=> x.IsOfKind(CodePropertyKind.QueryParameters))
+                                .Select(static x => x.Type)
+                                .OfType<CodeTypeBase>()
+                                .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
 
-    // Namespaces in Java by convention are all lower case, like:
-    // com.microsoft.kiota.serialization
+            foreach(var property in queryProperty) {
+                property.Name = property.Name[prefix.Length..];
+            }
+        }
+    }
+    private static void RemovePrefixFromRequestConfigParameters(CodeElement currentElement, String prefix) {
+        if(currentElement is CodeClass currentClass) {
+            var parameters = currentClass
+                                .Methods
+                                .SelectMany(static x => x.Parameters)
+                                .Where(static x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
+                                .Select(static x=> x.Type)
+                                .OfType<CodeTypeBase>()
+                                .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+
+            foreach(var parameter in parameters) {
+                parameter.Name = parameter.Name[prefix.Length..];
+            }
+        }
+    }
     private static void LowerCaseNamespaceNames(CodeElement currentElement) {
         if (currentElement is CodeNamespace codeNamespace)
         {

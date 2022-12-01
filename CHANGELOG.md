@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug in PHP generation where request bodies would not serialize single elements properly. [#1937](https://github.com/microsoft/kiota/pull/1937)
 - Fixed a bug where request information would always be set from scalar. [#1965](https://github.com/microsoft/kiota/pull/1965)
 - Fixed a bug where path parameters would be missing if no operation was present at the segment the parameter is defined. [#1940](https://github.com/microsoft/kiota/issues/1940)
+- Fixed a bug where nested classes with long names caused compilation errors for java generated libraries. [#1949](https://github.com/microsoft/kiota/issues/1949)
+- Removed use of anonymous classes in java generated libraries to reduce the number of java classes created at compilation time. [#1980](https://github.com/microsoft/kiota/pull/1980)
 - Fixed a bug where generation would result in wrong indentation in some classes for Python [#1996]((https://github.com/microsoft/kiota/issues/1996).
 - Fixed a bug where error class modules were hardcoded for Python [#1999]((https://github.com/microsoft/kiota/issues/1999)
 - Fixed a bug where generation would sometimes result in wrong original names for query parameters in Python [#2000]((https://github.com/microsoft/kiota/issues/2000).

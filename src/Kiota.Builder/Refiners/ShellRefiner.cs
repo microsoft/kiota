@@ -25,7 +25,6 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             );
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             cancellationToken.ThrowIfCancellationRequested();
-            AddInnerClasses(generatedCode, false);
             AddParsableImplementsForModelClasses(generatedCode, "IParsable");
             CapitalizeNamespacesFirstLetters(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();

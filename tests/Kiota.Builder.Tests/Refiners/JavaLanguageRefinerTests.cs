@@ -253,34 +253,6 @@ public class JavaLanguageRefinerTests {
         Assert.Single(collectionRequestBuilder.Properties);
     }
     [Fact]
-    public async Task AddsInnerClasses() {
-        var model = root.AddClass(new CodeClass {
-            Name = "model",
-            Kind = CodeClassKind.Model
-        }).First();
-        var method = model.AddMethod(new CodeMethod {
-            Name = "method1",
-            ReturnType = new CodeType {
-                Name = "string",
-                IsExternal = true
-            }
-        }).First();
-        var parameter = new CodeParameter {
-            Name = "param1",
-            Kind = CodeParameterKind.RequestConfiguration,
-            Type = new CodeType {
-                Name = "SomeCustomType",
-                ActionOf = true,
-                TypeDefinition = new CodeClass {
-                    Name = "SomeCustomType"
-                }
-            }
-        };
-        method.AddParameter(parameter);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.Equal(2, model.GetChildElements(true).Count());
-    }
-    [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutors()
     {
         var model = root.AddClass(new CodeClass

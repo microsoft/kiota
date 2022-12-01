@@ -20,6 +20,7 @@ public class CodeMethodWriterTests : IDisposable {
     private readonly CodeMethod method;
     private readonly CodeClass parentClass;
     private readonly CodeNamespace root;
+    private const string ExecuterExceptionVar = "executionException";
     private const string MethodName = "methodName";
     private const string ReturnTypeName = "Somecustomtype";
     private const string MethodDescription = "some description";
@@ -499,9 +500,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("put(\"5XX\", Error5XX::createFromDiscriminatorValue);", result);
         Assert.Contains("put(\"403\", Error403::createFromDiscriminatorValue);", result);
         Assert.Contains("sendAsync", result);
-        Assert.Contains("return new java.util.concurrent.CompletableFuture<Somecustomtype>() {{", result);
-        Assert.Contains("this.completeExceptionally(ex);", result);
-        Assert.Contains("}};", result);
+        Assert.Contains($"java.util.concurrent.CompletableFuture<Somecustomtype> {ExecuterExceptionVar} = new java.util.concurrent.CompletableFuture<Somecustomtype>();", result);
+        Assert.Contains($"{ExecuterExceptionVar}.completeExceptionally(ex);", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -910,7 +910,7 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("sendCollectionAsync", result);
-        Assert.Contains("return new java.util.concurrent.CompletableFuture<Iterable<Somecustomtype>>() {{", result);
+        Assert.Contains("final java.util.concurrent.CompletableFuture<Iterable<Somecustomtype>> executionException = new java.util.concurrent.CompletableFuture<Iterable<Somecustomtype>>()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
