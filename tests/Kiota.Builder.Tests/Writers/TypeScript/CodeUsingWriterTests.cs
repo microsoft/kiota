@@ -38,5 +38,21 @@ public class CodeUsingWriterTests {
         var result = tw.ToString();
         Assert.Contains("import {Bar as baz} from", result);
     }
-
+    [Fact]
+    public void DoesntAliasRegularSymbols() {
+        var usingWriter = new CodeUsingWriter("foo");
+        var codeClass = root.AddClass(new CodeClass {
+            Name = "bar",
+        }).First();
+        var us = new CodeUsing {
+            Name = "bar",
+            Declaration = new CodeType {
+                Name = "bar",
+                TypeDefinition = codeClass,
+            },
+        };
+        usingWriter.WriteCodeElement(new CodeUsing[] {us}, root, writer);
+        var result = tw.ToString();
+        Assert.Contains("import {Bar} from", result);
+    }
 }
