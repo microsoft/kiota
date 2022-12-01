@@ -35,6 +35,11 @@ stages:
     - job: build
       steps:
       - task: UseDotNet@2
+        displayName: 'Use .NET 2' # needed for ESRP signing
+        inputs:
+          version: 2.x
+
+      - task: UseDotNet@2
         displayName: 'Use .NET 7'
         inputs:
           version: 7.x
