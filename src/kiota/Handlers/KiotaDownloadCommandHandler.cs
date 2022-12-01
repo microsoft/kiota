@@ -42,7 +42,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
             try {
-                var searcher = await GetKiotaSearcher(loggerFactory, cancellationToken).ConfigureAwait(false);
+                var searcher = await GetKiotaSearcherAsync(loggerFactory, cancellationToken).ConfigureAwait(false);
                 var results = await searcher.SearchAsync(searchTerm, version, cancellationToken).ConfigureAwait(false);
                 return await SaveResultsAsync(searchTerm, version, results, logger, cancellationToken);
             } catch (Exception ex) {

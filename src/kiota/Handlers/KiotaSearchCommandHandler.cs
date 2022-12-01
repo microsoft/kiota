@@ -35,7 +35,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
             try {
-                var searcher = await GetKiotaSearcher(loggerFactory, cancellationToken).ConfigureAwait(false);
+                var searcher = await GetKiotaSearcherAsync(loggerFactory, cancellationToken).ConfigureAwait(false);
                 var results = await searcher.SearchAsync(searchTerm, version, cancellationToken);
                 await DisplayResults(searchTerm, version, results, logger, cancellationToken);
                 return 0;

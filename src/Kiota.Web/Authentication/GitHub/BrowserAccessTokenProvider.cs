@@ -1,5 +1,5 @@
 using System.Net.Http.Headers;
-using System.Text.Json;
+using System.Net.Http.Json;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Kiota.Abstractions.Authentication;
 

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text.Json;
+using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
@@ -66,8 +66,7 @@ public class AccessTokenProvider : IAccessTokenProvider
 		tokenRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 		using var tokenResponse = await HttpClient.SendAsync(tokenRequest, cancellationToken);
 		tokenResponse.EnsureSuccessStatusCode();
-		var tokenContent = await tokenResponse.Content.ReadAsStringAsync(cancellationToken);
-		var result = JsonSerializer.Deserialize<AccessCodeResponse>(tokenContent);
+		var result = await tokenResponse.Content.ReadFromJsonAsync<AccessCodeResponse>(cancellationToken: cancellationToken);
 		if ("authorization_pending".Equals(result?.Error, StringComparison.OrdinalIgnoreCase))
 			return null;
 		else if (!string.IsNullOrEmpty(result?.Error))
@@ -86,7 +85,6 @@ public class AccessTokenProvider : IAccessTokenProvider
 		codeRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 		using var codeResponse = await HttpClient.SendAsync(codeRequest, cancellationToken);
 		codeResponse.EnsureSuccessStatusCode();
-		var codeResponseContent = await codeResponse.Content.ReadAsStringAsync(cancellationToken);
-		return JsonSerializer.Deserialize<GitHubDeviceCodeResponse>(codeResponseContent);
+		return await codeResponse.Content.ReadFromJsonAsync<GitHubDeviceCodeResponse>(cancellationToken: cancellationToken);
 	}
 }
