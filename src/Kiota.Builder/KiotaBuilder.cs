@@ -34,14 +34,19 @@ public class KiotaBuilder
 {
     private readonly ILogger<KiotaBuilder> logger;
     private readonly GenerationConfiguration config;
+    private readonly HttpClient httpClient;
     private OpenApiDocument originalDocument;
     private OpenApiDocument openApiDocument;
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
-    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config)
+    public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(config);
+        ArgumentNullException.ThrowIfNull(client);
         this.logger = logger;
         this.config = config;
+        this.httpClient = client;
     }
     private void CleanOutputDirectory()
     {
@@ -222,12 +227,12 @@ public class KiotaBuilder
         Stream input;
         if (inputPath.StartsWith("http"))
             try {
-                using var httpClient = new HttpClient();
                 var cachingProvider = new DocumentCachingProvider(httpClient, logger) {
                     ClearCache = config.ClearCache,
                 };
-                var fileName = Path.GetFileName(inputPath) is string name && !string.IsNullOrEmpty(name) ? name : "description.yml";
-                input = await cachingProvider.GetDocumentAsync(new Uri(inputPath), "generation", fileName, cancellationToken: cancellationToken);
+                var targetUri = new Uri(inputPath);
+                var fileName = targetUri.GetFileName() is string name && !string.IsNullOrEmpty(name) ? name : "description.yml";
+                input = await cachingProvider.GetDocumentAsync(targetUri, "generation", fileName, cancellationToken: cancellationToken);
             } catch (HttpRequestException ex) {
                 throw new InvalidOperationException($"Could not download the file at {inputPath}, reason: {ex.Message}", ex);
             }

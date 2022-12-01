@@ -25,6 +25,7 @@
     <PackageTags>OpenAPI .NET CSharp TypeScript Java Go PHP Python REST API</PackageTags>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\Microsoft.OpenApi.snk</AssemblyOriginatorKeyFile>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

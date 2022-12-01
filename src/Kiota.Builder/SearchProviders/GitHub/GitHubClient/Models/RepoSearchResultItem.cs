@@ -8,6 +8,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
     public class RepoSearchResultItem : IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
+        /// <summary>The allow_auto_merge property</summary>
+        public bool? Allow_auto_merge { get; set; }
+        /// <summary>The allow_forking property</summary>
+        public bool? Allow_forking { get; set; }
         /// <summary>The allow_merge_commit property</summary>
         public bool? Allow_merge_commit { get; set; }
         /// <summary>The allow_rebase_merge property</summary>
@@ -72,6 +76,8 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public string Git_tags_url { get; set; }
         /// <summary>The git_url property</summary>
         public string Git_url { get; set; }
+        /// <summary>The has_discussions property</summary>
+        public bool? Has_discussions { get; set; }
         /// <summary>The has_downloads property</summary>
         public bool? Has_downloads { get; set; }
         /// <summary>The has_issues property</summary>
@@ -90,6 +96,8 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public string Html_url { get; set; }
         /// <summary>The id property</summary>
         public int? Id { get; set; }
+        /// <summary>The is_template property</summary>
+        public bool? Is_template { get; set; }
         /// <summary>The issue_comment_url property</summary>
         public string Issue_comment_url { get; set; }
         /// <summary>The issue_events_url property</summary>
@@ -104,8 +112,8 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public string Language { get; set; }
         /// <summary>The languages_url property</summary>
         public string Languages_url { get; set; }
-        /// <summary>The license property</summary>
-        public LicenseSimple License { get; set; }
+        /// <summary>License Simple</summary>
+        public NullableLicenseSimple License { get; set; }
         /// <summary>The master_branch property</summary>
         public string Master_branch { get; set; }
         /// <summary>The merges_url property</summary>
@@ -124,8 +132,8 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public int? Open_issues { get; set; }
         /// <summary>The open_issues_count property</summary>
         public int? Open_issues_count { get; set; }
-        /// <summary>The owner property</summary>
-        public SimpleUser Owner { get; set; }
+        /// <summary>A GitHub user.</summary>
+        public NullableSimpleUser Owner { get; set; }
         /// <summary>The permissions property</summary>
         public RepoSearchResultItem_permissions Permissions { get; set; }
         /// <summary>The private property</summary>
@@ -170,10 +178,14 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public DateTimeOffset? Updated_at { get; set; }
         /// <summary>The url property</summary>
         public string Url { get; set; }
+        /// <summary>The repository visibility: public, private, or internal.</summary>
+        public string Visibility { get; set; }
         /// <summary>The watchers property</summary>
         public int? Watchers { get; set; }
         /// <summary>The watchers_count property</summary>
         public int? Watchers_count { get; set; }
+        /// <summary>The web_commit_signoff_required property</summary>
+        public bool? Web_commit_signoff_required { get; set; }
         /// <summary>
         /// Instantiates a new repoSearchResultItem and sets the default values.
         /// </summary>
@@ -193,6 +205,8 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// </summary>
         public IDictionary<string, Action<IParseNode>> GetFieldDeserializers() {
             return new Dictionary<string, Action<IParseNode>> {
+                {"allow_auto_merge", n => { Allow_auto_merge = n.GetBoolValue(); } },
+                {"allow_forking", n => { Allow_forking = n.GetBoolValue(); } },
                 {"allow_merge_commit", n => { Allow_merge_commit = n.GetBoolValue(); } },
                 {"allow_rebase_merge", n => { Allow_rebase_merge = n.GetBoolValue(); } },
                 {"allow_squash_merge", n => { Allow_squash_merge = n.GetBoolValue(); } },
@@ -225,6 +239,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
                 {"git_refs_url", n => { Git_refs_url = n.GetStringValue(); } },
                 {"git_tags_url", n => { Git_tags_url = n.GetStringValue(); } },
                 {"git_url", n => { Git_url = n.GetStringValue(); } },
+                {"has_discussions", n => { Has_discussions = n.GetBoolValue(); } },
                 {"has_downloads", n => { Has_downloads = n.GetBoolValue(); } },
                 {"has_issues", n => { Has_issues = n.GetBoolValue(); } },
                 {"has_pages", n => { Has_pages = n.GetBoolValue(); } },
@@ -234,6 +249,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
                 {"hooks_url", n => { Hooks_url = n.GetStringValue(); } },
                 {"html_url", n => { Html_url = n.GetStringValue(); } },
                 {"id", n => { Id = n.GetIntValue(); } },
+                {"is_template", n => { Is_template = n.GetBoolValue(); } },
                 {"issue_comment_url", n => { Issue_comment_url = n.GetStringValue(); } },
                 {"issue_events_url", n => { Issue_events_url = n.GetStringValue(); } },
                 {"issues_url", n => { Issues_url = n.GetStringValue(); } },
@@ -241,7 +257,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
                 {"labels_url", n => { Labels_url = n.GetStringValue(); } },
                 {"language", n => { Language = n.GetStringValue(); } },
                 {"languages_url", n => { Languages_url = n.GetStringValue(); } },
-                {"license", n => { License = n.GetObjectValue<LicenseSimple>(LicenseSimple.CreateFromDiscriminatorValue); } },
+                {"license", n => { License = n.GetObjectValue<NullableLicenseSimple>(NullableLicenseSimple.CreateFromDiscriminatorValue); } },
                 {"master_branch", n => { Master_branch = n.GetStringValue(); } },
                 {"merges_url", n => { Merges_url = n.GetStringValue(); } },
                 {"milestones_url", n => { Milestones_url = n.GetStringValue(); } },
@@ -251,7 +267,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
                 {"notifications_url", n => { Notifications_url = n.GetStringValue(); } },
                 {"open_issues", n => { Open_issues = n.GetIntValue(); } },
                 {"open_issues_count", n => { Open_issues_count = n.GetIntValue(); } },
-                {"owner", n => { Owner = n.GetObjectValue<SimpleUser>(SimpleUser.CreateFromDiscriminatorValue); } },
+                {"owner", n => { Owner = n.GetObjectValue<NullableSimpleUser>(NullableSimpleUser.CreateFromDiscriminatorValue); } },
                 {"permissions", n => { Permissions = n.GetObjectValue<RepoSearchResultItem_permissions>(RepoSearchResultItem_permissions.CreateFromDiscriminatorValue); } },
                 {"private", n => { Private = n.GetBoolValue(); } },
                 {"pulls_url", n => { Pulls_url = n.GetStringValue(); } },
@@ -274,8 +290,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
                 {"trees_url", n => { Trees_url = n.GetStringValue(); } },
                 {"updated_at", n => { Updated_at = n.GetDateTimeOffsetValue(); } },
                 {"url", n => { Url = n.GetStringValue(); } },
+                {"visibility", n => { Visibility = n.GetStringValue(); } },
                 {"watchers", n => { Watchers = n.GetIntValue(); } },
                 {"watchers_count", n => { Watchers_count = n.GetIntValue(); } },
+                {"web_commit_signoff_required", n => { Web_commit_signoff_required = n.GetBoolValue(); } },
             };
         }
         /// <summary>
@@ -284,6 +302,8 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <param name="writer">Serialization writer to use to serialize this model</param>
         public void Serialize(ISerializationWriter writer) {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
+            writer.WriteBoolValue("allow_auto_merge", Allow_auto_merge);
+            writer.WriteBoolValue("allow_forking", Allow_forking);
             writer.WriteBoolValue("allow_merge_commit", Allow_merge_commit);
             writer.WriteBoolValue("allow_rebase_merge", Allow_rebase_merge);
             writer.WriteBoolValue("allow_squash_merge", Allow_squash_merge);
@@ -316,6 +336,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             writer.WriteStringValue("git_refs_url", Git_refs_url);
             writer.WriteStringValue("git_tags_url", Git_tags_url);
             writer.WriteStringValue("git_url", Git_url);
+            writer.WriteBoolValue("has_discussions", Has_discussions);
             writer.WriteBoolValue("has_downloads", Has_downloads);
             writer.WriteBoolValue("has_issues", Has_issues);
             writer.WriteBoolValue("has_pages", Has_pages);
@@ -325,6 +346,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             writer.WriteStringValue("hooks_url", Hooks_url);
             writer.WriteStringValue("html_url", Html_url);
             writer.WriteIntValue("id", Id);
+            writer.WriteBoolValue("is_template", Is_template);
             writer.WriteStringValue("issue_comment_url", Issue_comment_url);
             writer.WriteStringValue("issue_events_url", Issue_events_url);
             writer.WriteStringValue("issues_url", Issues_url);
@@ -332,7 +354,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             writer.WriteStringValue("labels_url", Labels_url);
             writer.WriteStringValue("language", Language);
             writer.WriteStringValue("languages_url", Languages_url);
-            writer.WriteObjectValue<LicenseSimple>("license", License);
+            writer.WriteObjectValue<NullableLicenseSimple>("license", License);
             writer.WriteStringValue("master_branch", Master_branch);
             writer.WriteStringValue("merges_url", Merges_url);
             writer.WriteStringValue("milestones_url", Milestones_url);
@@ -342,7 +364,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             writer.WriteStringValue("notifications_url", Notifications_url);
             writer.WriteIntValue("open_issues", Open_issues);
             writer.WriteIntValue("open_issues_count", Open_issues_count);
-            writer.WriteObjectValue<SimpleUser>("owner", Owner);
+            writer.WriteObjectValue<NullableSimpleUser>("owner", Owner);
             writer.WriteObjectValue<RepoSearchResultItem_permissions>("permissions", Permissions);
             writer.WriteBoolValue("private", Private);
             writer.WriteStringValue("pulls_url", Pulls_url);
@@ -365,8 +387,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             writer.WriteStringValue("trees_url", Trees_url);
             writer.WriteDateTimeOffsetValue("updated_at", Updated_at);
             writer.WriteStringValue("url", Url);
+            writer.WriteStringValue("visibility", Visibility);
             writer.WriteIntValue("watchers", Watchers);
             writer.WriteIntValue("watchers_count", Watchers_count);
+            writer.WriteBoolValue("web_commit_signoff_required", Web_commit_signoff_required);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

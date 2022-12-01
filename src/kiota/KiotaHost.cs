@@ -11,8 +11,8 @@ using Microsoft.Extensions.Logging;
 using kiota.Handlers;
 
 namespace kiota;
-public class KiotaHost {
-    public RootCommand GetRootCommand() {
+public static class KiotaHost {
+    public static RootCommand GetRootCommand() {
         var rootCommand = new RootCommand();
         rootCommand.AddCommand(GetGenerateCommand());
         rootCommand.AddCommand(GetSearchCommand());
@@ -20,7 +20,63 @@ public class KiotaHost {
         rootCommand.AddCommand(GetShowCommand());
         rootCommand.AddCommand(GetInfoCommand());
         rootCommand.AddCommand(GetUpdateCommand());
+        rootCommand.AddCommand(GetLoginCommand());
+        rootCommand.AddCommand(GetLogoutCommand());
         return rootCommand;
+    }
+    private static Command GetGitHubLoginCommand() {
+        var githubLoginCommand = new Command("github", "Logs in to GitHub.");
+        githubLoginCommand.AddCommand(GetGitHubDeviceLoginCommand());
+        githubLoginCommand.AddCommand(GetGitHubPatLoginCommand());
+        return githubLoginCommand;
+    }
+    private static Command GetGitHubDeviceLoginCommand() {
+        var logLevelOption = GetLogLevelOption();
+        var deviceLoginCommand = new Command("device", "Logs in to GitHub using a device code flow.")
+        {
+            logLevelOption,
+        };
+        deviceLoginCommand.Handler = new KiotaGitHubDeviceLoginCommandHandler {
+            LogLevelOption = logLevelOption,
+        };
+        return deviceLoginCommand;
+    }
+    private static Command GetGitHubPatLoginCommand() {
+        var logLevelOption = GetLogLevelOption();
+        var patOption = new Option<string>("--pat", "The personal access token to use to authenticate to GitHub.")
+        {
+            IsRequired = true
+        };
+        var deviceLoginCommand = new Command("pat", "Logs in to GitHub using a Personal Access Token.")
+        {
+            logLevelOption,
+            patOption,
+        };
+        deviceLoginCommand.Handler = new KiotaGitHubPatLoginCommandHandler {
+            LogLevelOption = logLevelOption,
+            PatOption = patOption,
+        };
+        return deviceLoginCommand;
+    }
+    private static Command GetGitHubLogoutCommand() {
+        var logLevelOption = GetLogLevelOption();
+        var githubLogoutCommand = new Command("github", "Logs out of GitHub.") {
+            logLevelOption,
+        };
+        githubLogoutCommand.Handler = new KiotaGitHubLogoutCommandHandler {
+            LogLevelOption = logLevelOption,
+        };
+        return githubLogoutCommand;
+    }
+    private static Command GetLoginCommand() {
+        var loginCommand = new Command("login", "Logs in to the Kiota registries so search/download/show/generate commands can access private API definitions.");
+        loginCommand.AddCommand(GetGitHubLoginCommand());
+        return loginCommand;
+    }
+    private static Command GetLogoutCommand() {
+        var loginCommand = new Command("logout", "Logs out of Kiota registries.");
+        loginCommand.AddCommand(GetGitHubLogoutCommand());
+        return loginCommand;
     }
     private static Command GetInfoCommand() {
         var defaultGenerationConfiguration = new GenerationConfiguration();

@@ -9,10 +9,14 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The admin property</summary>
         public bool? Admin { get; set; }
+        /// <summary>The maintain property</summary>
+        public bool? Maintain { get; set; }
         /// <summary>The pull property</summary>
         public bool? Pull { get; set; }
         /// <summary>The push property</summary>
         public bool? Push { get; set; }
+        /// <summary>The triage property</summary>
+        public bool? Triage { get; set; }
         /// <summary>
         /// Instantiates a new repoSearchResultItem_permissions and sets the default values.
         /// </summary>
@@ -33,8 +37,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public IDictionary<string, Action<IParseNode>> GetFieldDeserializers() {
             return new Dictionary<string, Action<IParseNode>> {
                 {"admin", n => { Admin = n.GetBoolValue(); } },
+                {"maintain", n => { Maintain = n.GetBoolValue(); } },
                 {"pull", n => { Pull = n.GetBoolValue(); } },
                 {"push", n => { Push = n.GetBoolValue(); } },
+                {"triage", n => { Triage = n.GetBoolValue(); } },
             };
         }
         /// <summary>
@@ -44,8 +50,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public void Serialize(ISerializationWriter writer) {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteBoolValue("admin", Admin);
+            writer.WriteBoolValue("maintain", Maintain);
             writer.WriteBoolValue("pull", Pull);
             writer.WriteBoolValue("push", Push);
+            writer.WriteBoolValue("triage", Triage);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

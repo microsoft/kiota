@@ -1,6 +1,6 @@
 {
-  "descriptionHash": "1A252F1952C159E7FD9243A2A5120597FD28DBF0A5691B5860E8016006E9154ED82172D56F26D8C2D1884E2B44BA9B3AE176CC5EF4C9C6FA9A797AC4772F7737",
-  "descriptionLocation": "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json",
+  "descriptionHash": "53CAD9C39EC10C7EA1F10E55050BF89754C56DEF3B9F7A8E5CDF90F860A750E8BD3FA501258A955BAB09382DCA43CA77A13C7024FD555680BA6404E95684E847",
+  "descriptionLocation": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.2022-11-28.json",
   "lockFileVersion": "1.0.0",
   "kiotaVersion": "0.7.1.0",
   "clientClassName": "GitHubClient",
@@ -25,7 +25,8 @@
   ],
   "includePatterns": [
     "**/search/repositories",
-    "**/repos/**/contents/**"
+    "**/repos/**/contents/**",
+    "/user/installations"
   ],
   "excludePatterns": [
     "**/migrations/**",

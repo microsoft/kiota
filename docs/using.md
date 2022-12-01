@@ -19,6 +19,8 @@ Kiota offers the following commands to help you build your API client:
 - [generate](#client-generation): generate a client for any API from its description.
 - [update](#client-update): update existing clients from previous generations.
 - [info](#language-information): show languages and runtime dependencies information.
+- [login](#login): logs in to private API descriptions repositories.
+- [logout](#logout): logs out from private API description repositories.
 
 ## Description search
 
@@ -401,6 +403,45 @@ The generate command accepts optional parameters commonly available on the other
 - [--clean-output](#--clean-output---co)
 - [--log-level](#--log-level---ll)
 - [--output](#--output--o)
+
+## Login
+
+Use kiota login to sign in to private repositories and search for/display/generate clients for private API descriptions. This command makes sub-commands available to sign in to specific authentication providers.
+
+### Login to GitHub
+
+```shell
+kiota login github <device|pat>
+      [(--log-level | --ll) <level>]
+      [(--pat) <patValue>]
+```
+
+Use `kiota login github device` to sign in using a device code, you will be prompted to sign-in using a web browser.
+
+Use `kiota login github pat --pat patValue` to sign in using a Personal Access Token you previously generated. You can use both classic PATs or granular PATs (beta). Classic PATs need the **repo** permission and to be granted access to the target organizations. Granular PATs need a **read-only** permission for the **contents** scope under the **repository** category and they need to be consented for all private repositories or selected private repositories.
+
+> Note: for more information about adding API descriptions to the GitHub index, see [Adding an API to search](add-api.md)
+
+### Optional parameters
+
+The generate command accepts optional parameters commonly available on the other commands:
+
+- [--log-level](#--log-level---ll)
+
+## Logout
+
+Use kiota logout to logout from a private repository containing API descriptions.
+
+```shell
+kiota logout github
+      [(--log-level | --ll) <level>]
+```
+
+### Optional parameters
+
+The generate command accepts optional parameters commonly available on the other commands:
+
+- [--log-level](#--log-level---ll)
 
 ## Common parameters
 

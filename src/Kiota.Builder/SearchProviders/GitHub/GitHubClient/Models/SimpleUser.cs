@@ -4,12 +4,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
-    /// <summary>Simple User</summary>
+    /// <summary>A GitHub user.</summary>
     public class SimpleUser : IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The avatar_url property</summary>
         public string Avatar_url { get; set; }
+        /// <summary>The email property</summary>
+        public string Email { get; set; }
         /// <summary>The events_url property</summary>
         public string Events_url { get; set; }
         /// <summary>The followers_url property</summary>
@@ -26,6 +28,8 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public int? Id { get; set; }
         /// <summary>The login property</summary>
         public string Login { get; set; }
+        /// <summary>The name property</summary>
+        public string Name { get; set; }
         /// <summary>The node_id property</summary>
         public string Node_id { get; set; }
         /// <summary>The organizations_url property</summary>
@@ -66,6 +70,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public IDictionary<string, Action<IParseNode>> GetFieldDeserializers() {
             return new Dictionary<string, Action<IParseNode>> {
                 {"avatar_url", n => { Avatar_url = n.GetStringValue(); } },
+                {"email", n => { Email = n.GetStringValue(); } },
                 {"events_url", n => { Events_url = n.GetStringValue(); } },
                 {"followers_url", n => { Followers_url = n.GetStringValue(); } },
                 {"following_url", n => { Following_url = n.GetStringValue(); } },
@@ -74,6 +79,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
                 {"html_url", n => { Html_url = n.GetStringValue(); } },
                 {"id", n => { Id = n.GetIntValue(); } },
                 {"login", n => { Login = n.GetStringValue(); } },
+                {"name", n => { Name = n.GetStringValue(); } },
                 {"node_id", n => { Node_id = n.GetStringValue(); } },
                 {"organizations_url", n => { Organizations_url = n.GetStringValue(); } },
                 {"received_events_url", n => { Received_events_url = n.GetStringValue(); } },
@@ -93,6 +99,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public void Serialize(ISerializationWriter writer) {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteStringValue("avatar_url", Avatar_url);
+            writer.WriteStringValue("email", Email);
             writer.WriteStringValue("events_url", Events_url);
             writer.WriteStringValue("followers_url", Followers_url);
             writer.WriteStringValue("following_url", Following_url);
@@ -101,6 +108,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             writer.WriteStringValue("html_url", Html_url);
             writer.WriteIntValue("id", Id);
             writer.WriteStringValue("login", Login);
+            writer.WriteStringValue("name", Name);
             writer.WriteStringValue("node_id", Node_id);
             writer.WriteStringValue("organizations_url", Organizations_url);
             writer.WriteStringValue("received_events_url", Received_events_url);

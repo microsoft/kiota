@@ -33,7 +33,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The target property</summary>
         public string Target { get; set; }
         /// <summary>The type property</summary>
-        public string Type { get; set; }
+        public ContentFile_type? Type { get; set; }
         /// <summary>The url property</summary>
         public string Url { get; set; }
         /// <summary>
@@ -67,7 +67,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
                 {"size", n => { Size = n.GetIntValue(); } },
                 {"submodule_git_url", n => { Submodule_git_url = n.GetStringValue(); } },
                 {"target", n => { Target = n.GetStringValue(); } },
-                {"type", n => { Type = n.GetStringValue(); } },
+                {"type", n => { Type = n.GetEnumValue<ContentFile_type>(); } },
                 {"url", n => { Url = n.GetStringValue(); } },
             };
         }
@@ -89,7 +89,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             writer.WriteIntValue("size", Size);
             writer.WriteStringValue("submodule_git_url", Submodule_git_url);
             writer.WriteStringValue("target", Target);
-            writer.WriteStringValue("type", Type);
+            writer.WriteEnumValue<ContentFile_type>("type", Type);
             writer.WriteStringValue("url", Url);
             writer.WriteAdditionalData(AdditionalData);
         }

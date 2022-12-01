@@ -257,6 +257,20 @@
             "stopAtEntry": false
         },
         {
+            "name": "Launch Login (github - device)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/kiota/bin/Debug/net7.0/kiota.dll",
+            "args": ["login",
+                    "github",
+                    "device"
+                ],
+            "cwd": "${workspaceFolder}/src/kiota",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
             "name": ".NET Core Attach",
             "type": "coreclr",
             "request": "attach",

@@ -13,6 +13,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public string Documentation_url { get; set; }
         /// <summary>The message property</summary>
         public new string Message { get; set; }
+        /// <summary>The status property</summary>
+        public string Status { get; set; }
+        /// <summary>The url property</summary>
+        public string Url { get; set; }
         /// <summary>
         /// Instantiates a new BasicError and sets the default values.
         /// </summary>
@@ -34,6 +38,8 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             return new Dictionary<string, Action<IParseNode>> {
                 {"documentation_url", n => { Documentation_url = n.GetStringValue(); } },
                 {"message", n => { Message = n.GetStringValue(); } },
+                {"status", n => { Status = n.GetStringValue(); } },
+                {"url", n => { Url = n.GetStringValue(); } },
             };
         }
         /// <summary>
@@ -44,6 +50,8 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteStringValue("documentation_url", Documentation_url);
             writer.WriteStringValue("message", Message);
+            writer.WriteStringValue("status", Status);
+            writer.WriteStringValue("url", Url);
             writer.WriteAdditionalData(AdditionalData);
         }
     }
