@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [0.8.2] - 2022-12-01
+
+### Changed
+
+- Unblocks nuget release by removing file triggering credscan.
+
 ## [0.8.1] - 2022-12-01
 
 ### Changed
