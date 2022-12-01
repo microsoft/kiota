@@ -135,7 +135,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                                 usingElement.Declaration
                                             .TypeDefinition
                                             .Name)
-                                .GetNamespaceImportSymbol();
+                                .GetNamespaceImportSymbol()
+                                .ToFirstCharacterUpperCase();
     }
     private static void AliasUsingsWithSameSymbol(CodeElement currentElement)
     {
