@@ -119,15 +119,15 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass &&
             currentClass.StartBlock is ClassDeclaration currentDeclaration &&
-            currentDeclaration.Usings.Any(x => !x.IsExternal)) {
-                var duplicatedSymbolsUsings = currentDeclaration.Usings.Where(x => !x.IsExternal)
+            currentDeclaration.Usings.Any(static x => !x.IsExternal)) {
+                var duplicatedSymbolsUsings = currentDeclaration.Usings.Where(static x => !x.IsExternal)
                                                                         .Distinct(usingComparer)
-                                                                        .GroupBy(x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
-                                                                        .Where(x => x.Count() > 1)
-                                                                        .SelectMany(x => x)
+                                                                        .GroupBy(static x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
+                                                                        .Where(static x => x.Count() > 1)
+                                                                        .SelectMany(static x => x)
                                                                         .Union(currentDeclaration
                                                                                 .Usings
-                                                                                .Where(x => !x.IsExternal)
+                                                                                .Where(static x => !x.IsExternal)
                                                                                 .Where(x => x.Declaration
                                                                                                 .Name
                                                                                                 .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
