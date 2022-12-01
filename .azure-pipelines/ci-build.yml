@@ -58,6 +58,10 @@ stages:
           versionSpec: '>=6.1.0'
           checkLatest: true
 
+      - pwsh: dotnet workload restore
+        displayName: 'Restore workloads'
+        workingDirectory: $(Build.SourcesDirectory)
+
       # Build the Product project
       - task: DotNetCoreCLI@2
         displayName: 'build'
