@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [0.8.0] - 2022-12-01
+
+### Added
+
 - Added support for GitHub based API search.[#1866](https://github.com/microsoft/kiota/issues/1866)
 - Added login/logout commands to access API descriptions in private GitHub repositories. [#1983](https://github.com/microsoft/kiota/issues/1983)
 - Added support for scalar request bodies Python [#1571](https://github.com/microsoft/kiota/issues/1571)
