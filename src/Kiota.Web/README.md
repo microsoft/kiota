@@ -8,4 +8,4 @@ chrome --remote-debugging-port=9222 --user-data-dir="$Env:TEMP\blazor-chrome-deb
 ```
 
 Once on the page:
-alt + shit + D
+alt + shift + D
