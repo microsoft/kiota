@@ -29,7 +29,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         WriteFactoryMethodBody(codeElement, returnType, writer);
     }
 
-    private static void WriteFactoryMethodBody(CodeFunction codeElement, string returnType, LanguageWriter writer)
+    private void WriteFactoryMethodBody(CodeFunction codeElement, string returnType, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.OriginalLocalMethod.Parameters.OfKind(CodeParameterKind.ParseNode);
         if(codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
@@ -43,9 +43,10 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             writer.WriteLine("switch (mappingValue) {");
             writer.IncreaseIndent();
             foreach(var mappedType in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings) {
+                var typeName = conventions.GetTypeString(mappedType.Value, codeElement, false, writer);
                 writer.WriteLine($"case \"{mappedType.Key}\":");
                 writer.IncreaseIndent();
-                writer.WriteLine($"return new {mappedType.Value.Name.ToFirstCharacterUpperCase()}();");
+                writer.WriteLine($"return new {typeName.ToFirstCharacterUpperCase()}();");
                 writer.DecreaseIndent();
             }
             writer.CloseBlock();
