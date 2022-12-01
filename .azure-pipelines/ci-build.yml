@@ -78,7 +78,11 @@ stages:
           arguments: '--configuration $(BuildConfiguration) --no-build'
 
       # removing kiota web files before signing as they don't need to be signed
-      - pwsh: rm -r $(Build.SourcesDirectory)\src\Kiota.Web\bin
+      # removing notice as it triggers credscan
+      - pwsh: |
+          rm -r src\Kiota.Web\bin -ErrorAction SilentlyContinue
+          rm tests\Kiota.Web.Tests\bin\Release\net7.0\.playwright\package\ThirdPartyNotices.txt -ErrorAction SilentlyContinue
+        workingDirectory: $(Build.SourcesDirectory)
 
       # CredScan
       - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@2
