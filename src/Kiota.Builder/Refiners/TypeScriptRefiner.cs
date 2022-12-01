@@ -81,21 +81,26 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ParseNode",
                 addUsings: false
             );
-            Func<string, string> factoryNameCallbackFromTypeName = static x => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+            static string factoryNameCallbackFromTypeName(string x) => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
             ReplaceLocalMethodsByGlobalFunctions(
                 generatedCode,
-                x => factoryNameCallbackFromTypeName(x.Parent.Name),
-                x => x.Parent is CodeClass parentClass ? new List<CodeUsing>(parentClass.DiscriminatorInformation
+                static x => factoryNameCallbackFromTypeName(x.Parent.Name),
+                static x => x.Parent is CodeClass parentClass && parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation ?
+                        new List<CodeUsing>(parentClass.DiscriminatorInformation
                                         .DiscriminatorMappings
                                         .Select(static y => y.Value)
                                         .OfType<CodeType>()
                                         .Select(static y => new CodeUsing { Name = y.Name, Declaration = y })) {
-                        new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
-                        new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
-                    }.ToArray() : Array.Empty<CodeUsing>(),
+                            new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
+                            new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
+                        }.ToArray() :
+                        new CodeUsing[] {
+                            new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
+                            new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
+                        },
                 CodeMethodKind.Factory
             );
-            Func<CodeType, string> factoryNameCallbackFromType = x => factoryNameCallbackFromTypeName(x.Name);
+            static string factoryNameCallbackFromType(CodeType x) => factoryNameCallbackFromTypeName(x.Name);
             cancellationToken.ThrowIfCancellationRequested();
             AddStaticMethodsUsingsForDeserializer(
                 generatedCode,
