@@ -163,7 +163,7 @@ public class TypeScriptLanguageRefinerTests {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -176,6 +176,7 @@ public class TypeScriptLanguageRefinerTests {
             },
             IsStatic = true,
         }).First();
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
