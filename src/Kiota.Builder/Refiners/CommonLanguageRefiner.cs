@@ -681,9 +681,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     (parentClass.DiscriminatorInformation?.HasBasicDiscriminatorInformation ?? false)) {
                         if(addUsings)
                             declaration.AddUsings(parentClass.DiscriminatorInformation.DiscriminatorMappings
-                                .Select(x => x.Value)
+                                .Select(static x => x.Value)
                                 .OfType<CodeType>()
-                                .Where(x => x.TypeDefinition != null)
+                                .Where(static x => x.TypeDefinition != null)
                                 .Select(x => new CodeUsing {
                                     Name = x.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name,
                                     Declaration = new CodeType {
@@ -697,7 +697,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
                     currentMethod.ReturnType is CodeType type &&
                     type.TypeDefinition is CodeClass modelClass &&
-                    modelClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory)) is CodeMethod factoryMethod) {
+                    modelClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.Factory)) is CodeMethod factoryMethod) {
                         declaration.AddUsings(new CodeUsing {
                             Name = modelClass.GetImmediateParentOfType<CodeNamespace>().Name,
                             Declaration = new CodeType {

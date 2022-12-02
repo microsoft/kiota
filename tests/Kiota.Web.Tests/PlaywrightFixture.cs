@@ -86,7 +86,7 @@ public class PlaywrightFixture : IAsyncLifetime
         };
         DotnetRunProcess.Start();
         DotnetRunProcess.BeginOutputReadLine();
-        var secondsToWaitForRunToStart = 30;
+        var secondsToWaitForRunToStart = 300;
         while (DotnetUrl == null && secondsToWaitForRunToStart > 0)
         {
             secondsToWaitForRunToStart--;

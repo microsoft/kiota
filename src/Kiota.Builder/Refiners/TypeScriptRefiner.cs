@@ -31,7 +31,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 CodeParameterKind.RequestConfiguration);
             cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
-            AliasUsingsWithSameSymbol(generatedCode);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null, isNullable: true);
             cancellationToken.ThrowIfCancellationRequested();
@@ -81,21 +80,27 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ParseNode",
                 addUsings: false
             );
-            Func<string, string> factoryNameCallbackFromTypeName = static x => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+            static string factoryNameCallbackFromTypeName(string x) => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
             ReplaceLocalMethodsByGlobalFunctions(
                 generatedCode,
-                x => factoryNameCallbackFromTypeName(x.Parent.Name),
-                x => x.Parent is CodeClass parentClass ? new List<CodeUsing>(parentClass.DiscriminatorInformation
+                static x => factoryNameCallbackFromTypeName(x.Parent.Name),
+                static x => x.Parent is CodeClass parentClass && parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation ?
+                        new List<CodeUsing>(parentClass.DiscriminatorInformation
                                         .DiscriminatorMappings
                                         .Select(static y => y.Value)
                                         .OfType<CodeType>()
                                         .Select(static y => new CodeUsing { Name = y.Name, Declaration = y })) {
-                        new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
-                        new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
-                    }.ToArray() : Array.Empty<CodeUsing>(),
+                            new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
+                            new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
+                        }.ToArray() :
+                        new CodeUsing[] {
+                            new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
+                            new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
+                        },
                 CodeMethodKind.Factory
             );
-            Func<CodeType, string> factoryNameCallbackFromType = x => factoryNameCallbackFromTypeName(x.Name);
+            AliasUsingsWithSameSymbol(generatedCode);
+            static string factoryNameCallbackFromType(CodeType x) => factoryNameCallbackFromTypeName(x.Name);
             cancellationToken.ThrowIfCancellationRequested();
             AddStaticMethodsUsingsForDeserializer(
                 generatedCode,
@@ -110,32 +115,49 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
         }, cancellationToken);
     }
-    private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
-    private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {
-        if(currentElement is CodeClass currentClass &&
+    private static void AliasCollidingSymbols(IEnumerable<CodeUsing> usings, string currentSymbolName)
+    {
+        var duplicatedSymbolsUsings = usings.Where(static x => !x.IsExternal)
+                                                                .GroupBy(static x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
+                                                                .Where(static x => x.DistinctBy(static y => y.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>())
+                                                                                    .Count() > 1)
+                                                                .SelectMany(static x => x)
+                                                                .Union(usings
+                                                                        .Where(static x => !x.IsExternal)
+                                                                        .Where(x => x.Declaration
+                                                                                        .Name
+                                                                                        .Equals(currentSymbolName, StringComparison.OrdinalIgnoreCase)))
+                                                                .ToArray();
+        foreach (var usingElement in duplicatedSymbolsUsings)
+            usingElement.Alias = (usingElement.Declaration
+                                            .TypeDefinition
+                                            .GetImmediateParentOfType<CodeNamespace>()
+                                            .Name +
+                                usingElement.Declaration
+                                            .TypeDefinition
+                                            .Name)
+                                .GetNamespaceImportSymbol()
+                                .ToFirstCharacterUpperCase();
+    }
+    private static void AliasUsingsWithSameSymbol(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass &&
             currentClass.StartBlock is ClassDeclaration currentDeclaration &&
-            currentDeclaration.Usings.Any(x => !x.IsExternal)) {
-                var duplicatedSymbolsUsings = currentDeclaration.Usings.Where(x => !x.IsExternal)
-                                                                        .Distinct(usingComparer)
-                                                                        .GroupBy(x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
-                                                                        .Where(x => x.Count() > 1)
-                                                                        .SelectMany(x => x)
-                                                                        .Union(currentDeclaration
-                                                                                .Usings
-                                                                                .Where(x => !x.IsExternal)
-                                                                                .Where(x => x.Declaration
-                                                                                                .Name
-                                                                                                .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
-                foreach(var usingElement in duplicatedSymbolsUsings)
-                        usingElement.Alias = (usingElement.Declaration
-                                                        .TypeDefinition
-                                                        .GetImmediateParentOfType<CodeNamespace>()
-                                                        .Name +
-                                            usingElement.Declaration
-                                                        .TypeDefinition
-                                                        .Name)
-                                            .GetNamespaceImportSymbol();
-            }
+            currentDeclaration.Usings.Any(static x => !x.IsExternal))
+        {
+            AliasCollidingSymbols(currentDeclaration.Usings, currentClass.Name);
+        }
+        else if (currentElement is CodeFunction currentFunction &&
+                    currentFunction.StartBlock is BlockDeclaration currentFunctionDeclaration &&
+                    currentFunctionDeclaration.Usings.Any(static x => !x.IsExternal))
+        {
+            AliasCollidingSymbols(currentFunctionDeclaration.Usings, currentFunction.Name);
+        } else if (currentElement is CodeInterface currentInterface && 
+                    currentInterface.StartBlock is InterfaceDeclaration interfaceDeclaration &&
+                    interfaceDeclaration.Usings.Any(static x => !x.IsExternal))
+        {
+            AliasCollidingSymbols(interfaceDeclaration.Usings, currentInterface.Name);
+        }
         CrawlTree(currentElement, AliasUsingsWithSameSymbol);
     }
     private const string AbstractionsPackageName = "@microsoft/kiota-abstractions";
