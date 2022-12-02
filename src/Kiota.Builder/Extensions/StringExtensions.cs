@@ -39,6 +39,9 @@ namespace Kiota.Builder.Extensions {
             original?.Replace("$value", "Content");
         public static string TrimQuotes(this string original) =>
             original?.Trim('\'', '"');
+        
+        public static string SubStringEnding(this string name, int length) =>
+            (name.Length > length) ? name.Substring(name.Length - length, length).TrimStart('_') : name;
 
         public static string ToSnakeCase(this string name, char separator = '_')
         {

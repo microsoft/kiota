@@ -21,7 +21,7 @@ namespace Kiota.Builder.PathSegmenters {
             return currentElement switch
             {
                 CodeNamespace => "go",
-                _ => GetLastFileNameSegment(currentElement).ToSnakeCase(),
+                _ => GetLastFileNameSegment(currentElement).ToSnakeCase().SubStringEnding(200),
             };
         }
         public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToLowerInvariant();
