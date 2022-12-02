@@ -141,17 +141,15 @@ public class GoRefiner : CommonLanguageRefiner
         }, cancellationToken);
     }
 
-    private static String MODELS_FOLDER = "models";
-    private static String BUILDERS_FOLDER = "builders";
-    
+    private const string MODELS_FOLDER = "models";
     private string MergeOverLappedStrings(string start, string end)
     {
         start = start.ToFirstCharacterUpperCase();
         end = end.ToFirstCharacterUpperCase();
-        var endPattern = end.Substring(0, end.IndexOf("RequestBuilder",StringComparison.CurrentCultureIgnoreCase) + "RequestBuilder".Length);
+        var endPattern = end[..(end.IndexOf("RequestBuilder", StringComparison.CurrentCultureIgnoreCase) + "RequestBuilder".Length)];
 
         if (start.EndsWith(endPattern))
-            return $"{start.Substring(0, start.IndexOf(endPattern))}{end}";
+            return $"{start[..start.IndexOf(endPattern)]}{end}";
             
         return $"{start}{end}";
     }
@@ -180,7 +178,7 @@ public class GoRefiner : CommonLanguageRefiner
         if (parentNames != null) return parentNames;
         
         var currentNamespace = currentElement.GetImmediateParentOfType<CodeNamespace>();
-        if (currentNamespace != null && _configuration.ClientNamespaceName.ToLower().Equals(currentNamespace.Name.ToLower()))
+        if (currentNamespace != null && _configuration.ClientNamespaceName.Equals(currentNamespace.Name, StringComparison.OrdinalIgnoreCase))
         {
             parentNames = currentNamespace;
         }
@@ -202,8 +200,8 @@ public class GoRefiner : CommonLanguageRefiner
                 // rename the nested class and move it to the models namespace
                 var classNameList = getPathsName(codeClass, codeClass.Name);
                 
-                var newClassName = string.Join(String.Empty,classNameList);
-                if (!codeClass.Name.ToLower().Equals(newClassName.ToLower()))
+                var newClassName = string.Join(string.Empty,classNameList);
+                if (!codeClass.Name.Equals(newClassName, StringComparison.OrdinalIgnoreCase))
                 {
                     currentNamespace.RemoveChildElement(codeClass);
                     codeClass.Name = newClassName;
@@ -221,7 +219,7 @@ public class GoRefiner : CommonLanguageRefiner
         if (currentElement is CodeProperty currentProp && currentElement.Parent is CodeClass parentClass && parentClass.IsOfKind(CodeClassKind.RequestConfiguration) && currentProp.IsOfKind(CodePropertyKind.QueryParameters))
         {
             var nameList = getPathsName(parentClass, currentProp.Type.Name.ToFirstCharacterUpperCase());
-            var newTypeName = string.Join(String.Empty,nameList);
+            var newTypeName = string.Join(string.Empty,nameList);
                         
             var type = currentProp.Type;
             type.Name = newTypeName;
@@ -231,7 +229,7 @@ public class GoRefiner : CommonLanguageRefiner
         {
             foreach (var param in codeMethod.Parameters){
                 if (param.IsOfKind(CodeParameterKind.RequestConfiguration)){
-                    var newTypeName = string.Join(String.Empty,getPathsName(param, param.Type.Name.ToFirstCharacterUpperCase()));
+                    var newTypeName = string.Join(string.Empty,getPathsName(param, param.Type.Name.ToFirstCharacterUpperCase()));
                     param.Type.Name = newTypeName;
                     
                     foreach (var ct  in param.Type.AllTypes)
@@ -274,9 +272,11 @@ public class GoRefiner : CommonLanguageRefiner
 
     private static CodeNamespace findParentAsLevel(CodeNamespace rootNameSpace, CodeNamespace currentNameSpace, int childLevel)
     {
-        CodeNamespace checkSpace = currentNameSpace;
-        List<CodeNamespace> position = new List<CodeNamespace>();
-        position.Add(currentNameSpace);
+        var checkSpace = currentNameSpace;
+        var position = new List<CodeNamespace>
+        {
+            currentNameSpace
+        };
         while (checkSpace != null && !checkSpace.IsChildOf(rootNameSpace, true))
         {
             var foundNameSpace = checkSpace.GetImmediateParentOfType<CodeNamespace>(checkSpace.Parent);
@@ -298,7 +298,7 @@ public class GoRefiner : CommonLanguageRefiner
             if (!rootNameSpace.Name.Equals(currentNamespace.Name) && !currentNamespace.IsChildOf(rootNameSpace, true))
             {
                 var classNameList = getPathsName(codeClass, codeClass.Name.ToFirstCharacterUpperCase());
-                var newClassName = string.Join(String.Empty,classNameList);
+                var newClassName = string.Join(string.Empty,classNameList);
                 
                 var nextNameSpace = findParentAsLevel(rootNameSpace, currentNamespace, 1);
                 currentNamespace.RemoveChildElement(codeClass);
