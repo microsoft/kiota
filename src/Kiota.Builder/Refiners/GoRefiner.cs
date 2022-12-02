@@ -142,6 +142,7 @@ public class GoRefiner : CommonLanguageRefiner
     }
 
     private const string MODELS_FOLDER = "models";
+    private const string BUILDERS_FOLDER = "builders";
     private string MergeOverLappedStrings(string start, string end)
     {
         start = start.ToFirstCharacterUpperCase();
@@ -269,42 +270,21 @@ public class GoRefiner : CommonLanguageRefiner
         classNameList.Add(fileName.ToFirstCharacterUpperCase());
         return classNameList;
     }
-
-    private static CodeNamespace findParentAsLevel(CodeNamespace rootNameSpace, CodeNamespace currentNameSpace, int childLevel)
-    {
-        var checkSpace = currentNameSpace;
-        var position = new List<CodeNamespace>
-        {
-            currentNameSpace
-        };
-        while (checkSpace != null && !checkSpace.IsChildOf(rootNameSpace, true))
-        {
-            var foundNameSpace = checkSpace.GetImmediateParentOfType<CodeNamespace>(checkSpace.Parent);
-            checkSpace = foundNameSpace;
-            if (checkSpace != null)
-            {
-                position.Add(checkSpace);
-            }
-        }
-        return position[^childLevel];
-    }
     
     private void FlattenGoFileNames(CodeElement currentElement) {
         
         // add the namespace to the name of the code element and the file name
         if (currentElement is CodeClass codeClass && codeClass.Parent is not null && !codeClass.IsOfKind(CodeClassKind.Model) && codeClass.Parent is CodeNamespace currentNamespace)
         {
+            var classNameList = getPathsName(codeClass, codeClass.Name.ToFirstCharacterUpperCase());
+            var newClassName = string.Join(string.Empty,classNameList);
             var rootNameSpace = findParentNameSpace(codeClass.Parent);
-            if (!rootNameSpace.Name.Equals(currentNamespace.Name) && !currentNamespace.IsChildOf(rootNameSpace, true))
+            var buildersNameSpace = rootNameSpace.FindOrAddNamespace(_configuration.ClientNamespaceName + "." + BUILDERS_FOLDER);
+            if (!rootNameSpace.Name.Equals(currentNamespace.Name) || !codeClass.Name.Equals(newClassName, StringComparison.OrdinalIgnoreCase))
             {
-                var classNameList = getPathsName(codeClass, codeClass.Name.ToFirstCharacterUpperCase());
-                var newClassName = string.Join(string.Empty,classNameList);
-                
-                var nextNameSpace = findParentAsLevel(rootNameSpace, currentNamespace, 1);
                 currentNamespace.RemoveChildElement(codeClass);
                 codeClass.Name = newClassName;
-                codeClass.Parent = nextNameSpace;
-                nextNameSpace.AddClass(codeClass);
+                buildersNameSpace.AddClass(codeClass);
             }
         }
 
