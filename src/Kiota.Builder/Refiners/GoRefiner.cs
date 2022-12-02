@@ -272,23 +272,39 @@ public class GoRefiner : CommonLanguageRefiner
         return classNameList;
     }
 
+    private static CodeNamespace findParentAsLevel(CodeNamespace rootNameSpace, CodeNamespace currentNameSpace, int childLevel)
+    {
+        CodeNamespace checkSpace = currentNameSpace;
+        List<CodeNamespace> position = new List<CodeNamespace>();
+        position.Add(currentNameSpace);
+        while (checkSpace != null && !checkSpace.IsChildOf(rootNameSpace, true))
+        {
+            var foundNameSpace = checkSpace.GetImmediateParentOfType<CodeNamespace>(checkSpace.Parent);
+            checkSpace = foundNameSpace;
+            if (checkSpace != null)
+            {
+                position.Add(checkSpace);
+            }
+        }
+        return position[^childLevel];
+    }
+    
     private void FlattenGoFileNames(CodeElement currentElement) {
         
         // add the namespace to the name of the code element and the file name
         if (currentElement is CodeClass codeClass && codeClass.Parent is not null && !codeClass.IsOfKind(CodeClassKind.Model) && codeClass.Parent is CodeNamespace currentNamespace)
         {
-            var classNameList = getPathsName(codeClass, codeClass.Name.ToFirstCharacterUpperCase());
-            var newClassName = string.Join(String.Empty,classNameList);
-
             var rootNameSpace = findParentNameSpace(codeClass.Parent);
-            var buildersNameSpace = rootNameSpace.FindOrAddNamespace(_configuration.ClientNamespaceName + "." + BUILDERS_FOLDER);
-            
-            if (!rootNameSpace.Name.Equals(currentNamespace.Name) || !codeClass.Name.ToLower().Equals(newClassName.ToLower()))
+            if (!rootNameSpace.Name.Equals(currentNamespace.Name) && !currentNamespace.IsChildOf(rootNameSpace, true))
             {
+                var classNameList = getPathsName(codeClass, codeClass.Name.ToFirstCharacterUpperCase());
+                var newClassName = string.Join(String.Empty,classNameList);
+                
+                var nextNameSpace = findParentAsLevel(rootNameSpace, currentNamespace, 1);
                 currentNamespace.RemoveChildElement(codeClass);
                 codeClass.Name = newClassName;
-                codeClass.Parent = buildersNameSpace;
-                buildersNameSpace.AddClass(codeClass);
+                codeClass.Parent = nextNameSpace;
+                nextNameSpace.AddClass(codeClass);
             }
         }
 
@@ -425,9 +441,9 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota-abstractions-go/serialization", "ParseNode", "Parsable"),
         new (static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer)
+        /*new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer)
             && method.Parent is CodeClass codeClass && codeClass.GetPropertiesOfKind(CodePropertyKind.Custom).Any(static x => !x.ExistsInBaseType),
-            "github.com/microsoft/kiota-abstractions-go", ""),
+            "github.com/microsoft/kiota-abstractions-go", ""),*/
         new (static x => x is CodeMethod method && 
                         method.IsOfKind(CodeMethodKind.RequestGenerator) &&
                         method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) && 
