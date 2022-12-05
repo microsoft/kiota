@@ -75,15 +75,11 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
         if (codeUsing?.IsExternal ?? true)
             return (string.Empty, string.Empty, string.Empty);//it's an external import, add nothing
         var typeDef = codeUsing.Declaration.TypeDefinition;
-
-        var importSymbol = codeUsing.Declaration == null ? codeUsing.Name : codeUsing.Declaration.TypeDefinition switch
-        {
-            CodeFunction f => f.Name.ToFirstCharacterLowerCase(),
-            _ => codeUsing.Declaration.TypeDefinition.Name.ToSnakeCase(),
-        };
-
         if (typeDef == null)
-            return (importSymbol, codeUsing.Alias, ""); // it's relative to the folder, with no declaration (default failsafe)
+            return (null, codeUsing.Alias, ""); // it's relative to the folder, with no declaration (default failsafe)
+        
+        var importSymbol = codeUsing.Declaration == null ? codeUsing.Name : typeDef.Name.ToSnakeCase();
+        
         var importPath = typeDef.GetImmediateParentOfType<CodeNamespace>().Name;
         return (importSymbol, codeUsing.Alias, importPath);
     }
