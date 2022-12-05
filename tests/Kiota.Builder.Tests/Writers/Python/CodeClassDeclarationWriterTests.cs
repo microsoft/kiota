@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
@@ -36,10 +37,17 @@ public class CodeClassDeclarationWriterTests : IDisposable
         GC.SuppressFinalize(this);
     }
     [Fact]
+    public void Defensive() {
+        var codeClassDeclarationWriter = new CodeClassDeclarationWriter(new PythonConventionService());
+        Assert.Throws<ArgumentNullException>(() => codeClassDeclarationWriter.WriteCodeElement(null, writer));
+        var declaration = parentClass.StartBlock;
+        Assert.Throws<ArgumentNullException>(() => codeClassDeclarationWriter.WriteCodeElement(declaration, null));
+    }
+    [Fact]
     public void WritesSimpleDeclaration() {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
-        Assert.Contains("class", result);
+        Assert.Contains("class ParentClass()", result);
     }
     [Fact]
     public void WritesImplementation() {
@@ -65,6 +73,16 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("(some_interface.SomeInterface):", result);
     }
     [Fact]
+    public void WritesInnerClasses() {
+        parentClass.AddInnerClass(new CodeClass {
+            Name = "InnerClass"
+        });
+        var declaration = parentClass.InnerClasses.First().StartBlock;
+        codeElementWriter.WriteCodeElement(declaration, writer);
+        var result = tw.ToString();
+        Assert.Contains("@dataclass", result);
+    }
+    [Fact]
     public void WritesExternalImports() {
         var declaration = parentClass.StartBlock;
         declaration.AddUsings(new CodeUsing {
@@ -77,6 +95,20 @@ public class CodeClassDeclarationWriterTests : IDisposable
         codeElementWriter.WriteCodeElement(declaration, writer);
         var result = tw.ToString();
         Assert.Contains("from util import Objects", result);
+    }
+    [Fact]
+    public void WritesExternalImportsWithoutPath() {
+        var declaration = parentClass.StartBlock;
+        declaration.AddUsings(new CodeUsing {
+            Name = "Objects",
+            Declaration = new () {
+                Name = "-",
+                IsExternal = true,
+            }
+        });
+        codeElementWriter.WriteCodeElement(declaration, writer);
+        var result = tw.ToString();
+        Assert.Contains("import Objects", result);
     }
     [Fact]
     public void WritesInternalImportsSubNamespace() {
