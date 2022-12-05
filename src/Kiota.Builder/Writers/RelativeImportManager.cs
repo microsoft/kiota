@@ -13,8 +13,7 @@ namespace Kiota.Builder.Writers
         private readonly char separator;
         public RelativeImportManager(string namespacePrefix, char namespaceSeparator)
         {
-            if (string.IsNullOrEmpty(namespacePrefix))
-                throw new ArgumentNullException(nameof(namespacePrefix));
+            ArgumentException.ThrowIfNullOrEmpty(namespacePrefix);
             if (namespaceSeparator == default)
                 throw new ArgumentNullException(nameof(namespaceSeparator));
 

@@ -117,7 +117,7 @@ public class ClassDeclaration : ProprietableBlockDeclaration
     } }
 
     public CodeProperty GetOriginalPropertyDefinedFromBaseType(string propertyName) {
-        if (string.IsNullOrEmpty(propertyName)) throw new ArgumentNullException(nameof(propertyName));
+        ArgumentException.ThrowIfNullOrEmpty(propertyName);
 
         if (inherits is CodeType currentInheritsType &&
             currentInheritsType.TypeDefinition is CodeClass currentParentClass)

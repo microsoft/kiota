@@ -23,8 +23,8 @@ public class DocumentCachingProvider {
     }
     public Task<Stream> GetDocumentAsync(Uri documentUri, string intermediateFolderName, string fileName, string accept = null, CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(documentUri);
-        if(string.IsNullOrEmpty(intermediateFolderName)) throw new ArgumentNullException(nameof(intermediateFolderName));
-        if(string.IsNullOrEmpty(fileName)) throw new ArgumentNullException(nameof(fileName));
+        ArgumentException.ThrowIfNullOrEmpty(intermediateFolderName);
+        ArgumentException.ThrowIfNullOrEmpty(fileName);
         return GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, false, accept, cancellationToken);
     }
     private async Task<Stream> GetDocumentInternalAsync(Uri documentUri, string intermediateFolderName, string fileName, bool couldNotDelete, string accept, CancellationToken token) {

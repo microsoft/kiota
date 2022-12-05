@@ -21,10 +21,8 @@ public class BaseAuthenticationProvider<T> : AnonymousAuthenticationProvider whe
         ArgumentNullException.ThrowIfNull(validHosts);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(accessTokenProviderFactory);
-        if (string.IsNullOrEmpty(clientId))
-			throw new ArgumentNullException(nameof(clientId));
-		if (string.IsNullOrEmpty(scope))
-			throw new ArgumentNullException(nameof(scope));
+        ArgumentException.ThrowIfNullOrEmpty(clientId);
+		ArgumentException.ThrowIfNullOrEmpty(scope);
 
         AccessTokenProvider = accessTokenProviderFactory(clientId, scope, validHosts);
         if(enableCache)

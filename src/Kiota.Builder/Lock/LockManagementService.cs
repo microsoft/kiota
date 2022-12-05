@@ -15,15 +15,13 @@ public class LockManagementService : ILockManagementService {
     private const string LockFileName = "kiota-lock.json";
     /// <inheritdoc/>
     public IEnumerable<string> GetDirectoriesContainingLockFile(string searchDirectory) {
-        if(string.IsNullOrEmpty(searchDirectory))
-            throw new ArgumentNullException(nameof(searchDirectory));
+        ArgumentException.ThrowIfNullOrEmpty(searchDirectory);
         var files = Directory.GetFiles(searchDirectory, LockFileName, SearchOption.AllDirectories);
         return files.Select(x => Path.GetDirectoryName(x));
     }
     /// <inheritdoc/>
     public Task<KiotaLock> GetLockFromDirectoryAsync(string directoryPath, CancellationToken cancellationToken = default) {
-        if(string.IsNullOrEmpty(directoryPath))
-            throw new ArgumentNullException(nameof(directoryPath));
+        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
         return GetLockFromDirectoryInternalAsync(directoryPath, cancellationToken);
     }
     private static async Task<KiotaLock> GetLockFromDirectoryInternalAsync(string directoryPath, CancellationToken cancellationToken) {
@@ -44,8 +42,7 @@ public class LockManagementService : ILockManagementService {
     }
     /// <inheritdoc/>
     public Task WriteLockFileAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken = default) {
-        if (string.IsNullOrEmpty(directoryPath))
-            throw new ArgumentNullException(nameof(directoryPath));
+        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
         ArgumentNullException.ThrowIfNull(lockInfo);
         return WriteLockFileInternalAsync(directoryPath, lockInfo, cancellationToken);
     }

@@ -262,12 +262,12 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public void AddErrorMapping(string errorCode, CodeTypeBase type)
     {
         ArgumentNullException.ThrowIfNull(type);
-        if(string.IsNullOrEmpty(errorCode)) throw new ArgumentNullException(nameof(errorCode));
+        ArgumentException.ThrowIfNullOrEmpty(errorCode);
         errorMappings.TryAdd(errorCode, type);
     }
     public CodeTypeBase GetErrorMappingValue(string key)
     {
-        if(string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+        ArgumentException.ThrowIfNullOrEmpty(key);
         if(errorMappings.TryGetValue(key, out var value))
             return value;
         return null;
