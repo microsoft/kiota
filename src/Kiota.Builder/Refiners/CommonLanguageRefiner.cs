@@ -11,7 +11,8 @@ namespace Kiota.Builder.Refiners;
 public abstract class CommonLanguageRefiner : ILanguageRefiner
 {
     protected CommonLanguageRefiner(GenerationConfiguration configuration) {
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        ArgumentNullException.ThrowIfNull(configuration);
+        _configuration = configuration;
     }
     public abstract Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken);
     /// <summary>

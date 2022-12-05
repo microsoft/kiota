@@ -14,9 +14,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private readonly bool _usesBackingStore;
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
-        if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+        ArgumentNullException.ThrowIfNull(codeElement);
         if(codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
-        if(writer == null) throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(writer);
         if(!(codeElement.Parent is CodeClass parentClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, true, writer);

@@ -9,8 +9,8 @@ namespace Kiota.Builder.Writers
 {
     public class RelativeImportManager
     {
-        private readonly string prefix;
-        private readonly char separator;
+        protected readonly string prefix;
+        protected readonly char separator;
         public RelativeImportManager(string namespacePrefix, char namespaceSeparator)
         {
             ArgumentException.ThrowIfNullOrEmpty(namespacePrefix);
