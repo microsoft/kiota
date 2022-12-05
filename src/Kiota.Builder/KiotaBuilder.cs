@@ -738,6 +738,7 @@ public class KiotaBuilder
                 ("string", "time") => "TimeOnly",
                 ("string", "date") => "DateOnly",
                 ("string", "date-time") => "DateTimeOffset",
+                ("string", "uuid") => "Guid",
                 ("string", _) => "string", // covers commonmark and html
                 ("number", "double" or "float" or "decimal") => format.ToLowerInvariant(),
                 ("number" or "integer", "int8") => "sbyte",

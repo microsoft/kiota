@@ -313,7 +313,7 @@ public class GoRefiner : CommonLanguageRefiner
             if(currentMethod.IsOfKind(CodeMethodKind.Factory))
                 currentMethod.ReturnType = new CodeType { Name = "Parsable", IsNullable = false, IsExternal = true };
         }
-        CorrectDateTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
@@ -347,6 +347,13 @@ public class GoRefiner : CommonLanguageRefiner
                                     IsExternal = true,
                                 },
                             })},
+        {"Guid", ("UUID", new CodeUsing {
+                        Name = "UUID",
+                        Declaration = new CodeType {
+                            Name = "github.com/google/UUID",
+                            IsExternal = true,
+                        },
+                    })},
     };
     private static void CorrectPropertyType(CodeProperty currentProperty) {
         if (currentProperty.Type != null) {
@@ -370,7 +377,7 @@ public class GoRefiner : CommonLanguageRefiner
                 currentProperty.Type.Name = "RequestOption";
                 currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
             }
-            CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+            CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
     }
     /// <summary>

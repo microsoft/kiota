@@ -136,11 +136,11 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.DefaultValue = "new List<IRequestOption>()";
         else if(currentProperty.IsOfKind(CodePropertyKind.Headers))
             currentProperty.DefaultValue = "new Dictionary<string, string>()";
-        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     protected static void CorrectMethodType(CodeMethod currentMethod)
     {
-        CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());

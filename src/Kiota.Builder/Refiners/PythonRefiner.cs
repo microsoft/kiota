@@ -137,7 +137,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
         }
-        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
@@ -170,7 +170,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 urlTplParams.Type = unionType;
             }
         }
-        CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                             .Select(x => x.Type)
                                             .Union(new[] { currentMethod.ReturnType})
                                             .ToArray());
