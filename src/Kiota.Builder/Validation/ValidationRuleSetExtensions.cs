@@ -11,5 +11,6 @@ public static class ValidationRuleSetExtensions {
         ruleSet.Add(new GetWithBody());
         ruleSet.Add(new KnownAndNotSupportedFormats());
         ruleSet.Add(new InconsistentTypeFormatPair());
+        ruleSet.Add(new InconsistentTypeFormatPair());
     }
 }
