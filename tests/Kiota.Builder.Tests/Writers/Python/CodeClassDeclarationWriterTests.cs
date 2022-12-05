@@ -150,4 +150,18 @@ public class CodeClassDeclarationWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("message = lazy_import('graphtests.models.message')", result);
     }
+    [Fact]
+    public void WritesInternalImportsNoTypeDef() {
+        var declaration = parentClass.StartBlock;
+        var nUsing = new CodeUsing {
+            Name = "graph",
+            Declaration = new() {
+                Name = "Message"
+            }
+        };
+        declaration.AddUsings(nUsing);
+        codeElementWriter.WriteCodeElement(declaration, writer);
+        var result = tw.ToString();
+        Assert.DoesNotContain("message = lazy_import('graphtests.models.message')", result);
+    }
 }
