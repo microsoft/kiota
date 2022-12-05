@@ -13,7 +13,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
     public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
-        if(writer == null) throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(writer);
         WriteExternalImports(codeElement, writer); // external imports before internal imports
         WriteInternalImports(codeElement, writer);
         
