@@ -211,7 +211,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "new HashMap<>()";
         } 
-        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
         block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
@@ -241,7 +241,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 urlTplParams.Type.Name = "HashMap<String, Object>";
         } else if(currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
             parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
-        CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
@@ -272,6 +272,13 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                             Name = "LocalTime",
                             Declaration = new CodeType {
                                 Name = "java.time",
+                                IsExternal = true,
+                            },
+                        })},
+    {"Guid", ("UUID", new CodeUsing {
+                            Name = "UUID",
+                            Declaration = new CodeType {
+                                Name = "java.util",
                                 IsExternal = true,
                             },
                         })},

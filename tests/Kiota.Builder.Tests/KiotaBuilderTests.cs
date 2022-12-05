@@ -2725,6 +2725,7 @@ paths:
     [InlineData("string", "date", "DateOnly")]
     [InlineData("string", "time", "TimeOnly")]
     [InlineData("string", "base64url", "binary")]
+    [InlineData("string", "uuid", "Guid")]
     // floating points can only be declared as numbers
     [InlineData("number", "double", "double")]
     [InlineData("number", "float", "float")]

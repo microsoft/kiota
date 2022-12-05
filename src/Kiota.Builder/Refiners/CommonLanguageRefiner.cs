@@ -650,11 +650,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, c => AddParsableImplementsForModelClasses(c, className));
     }
-    protected static void CorrectDateTypes(CodeClass parentClass, Dictionary<string, (string, CodeUsing)> dateTypesReplacements, params CodeTypeBase[] types) {
+    protected static void CorrectCoreTypes(CodeClass parentClass, Dictionary<string, (string, CodeUsing)> coreTypesReplacements, params CodeTypeBase[] types) {
         if(parentClass == null)
             return;
-        foreach(var type in types.Where(x => x != null && !string.IsNullOrEmpty(x.Name) && dateTypesReplacements.ContainsKey(x.Name))) {
-            var replacement = dateTypesReplacements[type.Name];
+        foreach(var type in types.Where(x => x != null && !string.IsNullOrEmpty(x.Name) && coreTypesReplacements.ContainsKey(x.Name))) {
+            var replacement = coreTypesReplacements[type.Name];
             if(replacement.Item1 != null)
                 type.Name = replacement.Item1;
             if(replacement.Item2 != null)
