@@ -18,6 +18,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
+using Kiota.Builder.Validation;
 using Kiota.Builder.Writers;
 
 using Microsoft.Extensions.Logging;
@@ -25,7 +26,7 @@ using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Microsoft.OpenApi.Services;
-
+using Microsoft.OpenApi.Validations;
 using HttpMethod = Kiota.Builder.CodeDOM.HttpMethod;
 
 namespace Kiota.Builder;
@@ -80,12 +81,11 @@ public class KiotaBuilder
         // Parse OpenAPI
         sw.Start();
         if (originalDocument == null)
-            openApiDocument = CreateOpenApiDocument(input);
+            openApiDocument = CreateOpenApiDocument(input, generating);
         else
             openApiDocument = new OpenApiDocument(originalDocument);
         StopLogAndReset(sw, $"step {++stepId} - parsing the document - took");
-        if(originalDocument == null)
-            originalDocument = new OpenApiDocument(openApiDocument);
+        originalDocument ??= new OpenApiDocument(openApiDocument);
 
         // Should Generate
         sw.Start();
@@ -207,8 +207,6 @@ public class KiotaBuilder
     }
     private void SetApiRootUrl() {
         config.ApiRootUrl = openApiDocument.Servers.FirstOrDefault()?.Url.TrimEnd('/');
-        if(string.IsNullOrEmpty(config.ApiRootUrl))
-            logger.LogWarning("A servers entry (v3) or host + basePath + schemes properties (v2) was not present in the OpenAPI description. The root URL will need to be set manually with the request adapter.");
     }
     private void StopLogAndReset(Stopwatch sw, string prefix) {
         sw.Stop();
@@ -253,11 +251,14 @@ public class KiotaBuilder
         return input;
     }
 
-    public OpenApiDocument CreateOpenApiDocument(Stream input)
+    public OpenApiDocument CreateOpenApiDocument(Stream input, bool generating = false)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         logger.LogTrace("Parsing OpenAPI file");
+        var ruleSet = ValidationRuleSet.GetDefaultRuleSet();
+        if (generating)
+            ruleSet.AddKiotaValidationRules();
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
             ExtensionParsers = new()
@@ -274,16 +275,20 @@ public class KiotaBuilder
                     OpenApiKiotaExtension.Name,
                     static (i, _ ) => OpenApiKiotaExtension.Parse(i)
                 },
-            }
+            },
+            RuleSet = ruleSet,
         });
         var doc = reader.Read(input, out var diag);
         stopwatch.Stop();
-        if (diag.Errors.Count > 0)
+        if(generating)
+            foreach (var warning in diag.Warnings)
+                logger.LogWarning("OpenAPI warning: {pointer} - {warning}", warning.Pointer, warning.Message);
+        if (diag.Errors.Any())
         {
             logger.LogTrace("{timestamp}ms: Parsed OpenAPI with errors. {count} paths found.", stopwatch.ElapsedMilliseconds, doc?.Paths?.Count ?? 0);
             foreach(var parsingError in diag.Errors)
             {
-                logger.LogError("OpenApi Parsing error: {message}", parsingError.ToString());
+                logger.LogError("OpenAPI error: {pointer} - {message}", parsingError.Pointer, parsingError.Message);
             }
         }
         else
