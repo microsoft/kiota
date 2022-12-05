@@ -639,7 +639,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     
     protected static void AddParsableImplementsForModelClasses(CodeElement currentElement, string className) {
-        if(string.IsNullOrEmpty(className)) throw new ArgumentNullException(nameof(className));
+        ArgumentException.ThrowIfNullOrEmpty(className);
 
         if(currentElement is CodeClass currentClass &&
             currentClass.IsOfKind(CodeClassKind.Model)) {

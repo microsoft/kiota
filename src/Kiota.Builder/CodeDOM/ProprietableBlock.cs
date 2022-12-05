@@ -72,13 +72,11 @@ public class ProprietableBlockDeclaration : BlockDeclaration
             implements.TryAdd(type.Name,type);
     }
     public CodeType FindImplementByName(string name) {
-        if(string.IsNullOrEmpty(name))
-            throw new ArgumentNullException(nameof(name));
+        ArgumentException.ThrowIfNullOrEmpty(name);
         return implements.TryGetValue(name, out var type) ? type : null;
     }
     public void ReplaceImplementByName(string oldName, string newName) {
-        if(string.IsNullOrEmpty(newName))
-            throw new ArgumentNullException(nameof(newName));
+        ArgumentException.ThrowIfNullOrEmpty(newName);
         var impl = FindImplementByName(oldName);
         if(impl != null)
         {
