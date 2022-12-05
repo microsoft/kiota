@@ -8,7 +8,7 @@ namespace Kiota.Builder.Validation;
 
 public class KnownAndNotSupportedFormats : ValidationRule<OpenApiSchema>
 {
-    private static readonly HashSet<string> knownAndUnsupportedFormats = new(StringComparer.OrdinalIgnoreCase) {
+    internal static readonly HashSet<string> knownAndUnsupportedFormats = new(StringComparer.OrdinalIgnoreCase) {
         "email",
         "idn-email",
         "hostname",

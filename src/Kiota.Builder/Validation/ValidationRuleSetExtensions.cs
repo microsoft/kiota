@@ -9,5 +9,7 @@ public static class ValidationRuleSetExtensions {
         ruleSet.Add(new NoServerEntry());
         ruleSet.Add(new MultipleServerEntries());
         ruleSet.Add(new GetWithBody());
+        ruleSet.Add(new KnownAndNotSupportedFormats());
+        ruleSet.Add(new InconsistentTypeFormatPair());
     }
 }
