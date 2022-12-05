@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Validations;
 
+namespace Kiota.Builder.Validation;
 public class MultipleServerEntries : ValidationRule<OpenApiDocument>
 {
     public MultipleServerEntries() : base(static (context, document) =>

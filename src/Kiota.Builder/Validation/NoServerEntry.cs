@@ -4,7 +4,6 @@ using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder.Validation;
 
-
 public class NoServerEntry : ValidationRule<OpenApiDocument>
 {
     public NoServerEntry() : base(static (context, document) =>
