@@ -15,10 +15,15 @@ namespace Kiota.Builder.Extensions {
         public static OpenApiSchema GetResponseSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
         {
             // Return Schema that represents all the possible success responses!
-            return operation.Responses.Where(r => successCodes.Contains(r.Key))
-                                .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
-                                .SelectMany(re => re.Value.Content.GetValidSchemas(structuredMimeTypes))
+            return operation.GetResponseSchemas(successCodes, structuredMimeTypes)
                                 .FirstOrDefault();
+        }
+        internal static IEnumerable<OpenApiSchema> GetResponseSchemas(this OpenApiOperation operation, HashSet<string> successCodesToUse, HashSet<string> structuredMimeTypes)
+        {
+            // Return Schema that represents all the possible success responses!
+            return operation.Responses.Where(r => successCodesToUse.Contains(r.Key))
+                                .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
+                                .SelectMany(re => re.Value.Content.GetValidSchemas(structuredMimeTypes));
         }
         public static OpenApiSchema GetRequestSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
         {
