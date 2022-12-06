@@ -66,6 +66,10 @@ public class KiotaLock {
     /// </summary>
     public HashSet<string> ExcludePatterns { get; set; } = new();
     /// <summary>
+    /// The OpenAPI validation rules to disable during the generation.
+    /// </summary>
+    public HashSet<string> DisabledValidationRules { get; set; } = new();
+    /// <summary>
     /// Updates the passed configuration with the values from the lock file.
     /// </summary>
     /// <param name="config">The configuration to update.</param>
@@ -82,6 +86,7 @@ public class KiotaLock {
         config.IncludePatterns = IncludePatterns;
         config.ExcludePatterns = ExcludePatterns;
         config.OpenAPIFilePath = DescriptionLocation;
+        config.DisabledValidationRules = DisabledValidationRules;
     }
     /// <summary>
     /// Initializes a new instance of the <see cref="KiotaLock"/> class.
@@ -104,5 +109,6 @@ public class KiotaLock {
         IncludePatterns = config.IncludePatterns;
         ExcludePatterns = config.ExcludePatterns;
         DescriptionLocation = config.OpenAPIFilePath;
+        DisabledValidationRules = config.DisabledValidationRules;
     }
 }

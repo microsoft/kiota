@@ -14,12 +14,7 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
     /// <inheritdoc/>
     public bool Equals(OpenApiSchema x, OpenApiSchema y)
     {
-        return (x, y) switch {
-            (null, null) => true,
-            (null, _) => false,
-            (_, null) => false,
-            _ => GetHashCode(x) == GetHashCode(y),
-        };
+        return GetHashCode(x) == GetHashCode(y);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] OpenApiSchema obj) {
@@ -84,12 +79,7 @@ internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscrimin
     /// <inheritdoc/>
     public bool Equals(OpenApiDiscriminator x, OpenApiDiscriminator y)
     {
-        return (x, y) switch {
-            (null, null) => true,
-            (null, _) => false,
-            (_, null) => false,
-            _ => GetHashCode(x) == GetHashCode(y),
-        };
+        return GetHashCode(x) == GetHashCode(y);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] OpenApiDiscriminator obj)
@@ -104,12 +94,7 @@ internal class IOpenApiAnyComparer : IEqualityComparer<IOpenApiAny>
     /// <inheritdoc/>
     public bool Equals(IOpenApiAny x, IOpenApiAny y)
     {
-        return (x, y) switch {
-            (null, null) => true,
-            (null, _) => false,
-            (_, null) => false,
-            _ => GetHashCode(x) == GetHashCode(y),
-        };
+        return GetHashCode(x) == GetHashCode(y);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] IOpenApiAny obj)
