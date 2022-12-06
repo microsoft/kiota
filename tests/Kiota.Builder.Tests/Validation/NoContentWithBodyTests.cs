@@ -29,8 +29,7 @@ paths:
             RuleSet = new (new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
-        // TODO https://github.com/microsoft/OpenAPI.NET/pull/1097 is merged
-        // Assert.Single(diag.Warnings);
+        Assert.Single(diag.Warnings);
     }
     [Fact]
     public void DoesntAddAWarningWhen204WithNoBody() {
