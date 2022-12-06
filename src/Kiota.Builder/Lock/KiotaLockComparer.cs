@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Kiota.Builder.Lock;
@@ -15,10 +16,12 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
         return GetHashCode(x) == GetHashCode(y);
     }
     /// <inheritdoc/>
-    public int GetHashCode(KiotaLock obj)
+    public int GetHashCode([DisallowNull] KiotaLock obj)
     {
         if (obj == null) return 0;
-        return GetVersionHashCode(obj.KiotaVersion) * 43 +
+        return
+            string.Join(",", obj.DisabledValidationRules?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 47 + 
+            GetVersionHashCode(obj.KiotaVersion) * 43 +
             GetVersionHashCode(obj.LockFileVersion) * 41 +
             (obj.DescriptionLocation?.GetHashCode() ?? 0) * 37 +
             (obj.DescriptionHash?.GetHashCode() ?? 0) * 31 +

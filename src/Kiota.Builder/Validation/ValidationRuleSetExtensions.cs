@@ -8,14 +8,19 @@ public static class ValidationRuleSetExtensions {
     public static void AddKiotaValidationRules(this ValidationRuleSet ruleSet, GenerationConfiguration configuration) {
         ArgumentNullException.ThrowIfNull(ruleSet);
         configuration ??= new();
-        ruleSet.Add(new NoServerEntry());
-        ruleSet.Add(new MultipleServerEntries());
-        ruleSet.Add(new GetWithBody());
-        ruleSet.Add(new KnownAndNotSupportedFormats());
-        ruleSet.Add(new InconsistentTypeFormatPair());
-        ruleSet.Add(new InconsistentTypeFormatPair());
-        ruleSet.Add(new UrlFormEncodedComplex());
-        ruleSet.Add(new DivergentResponseSchema(configuration));
-        ruleSet.Add(new MissingDiscriminator(configuration));
+        if (configuration.DisabledValidationRules.Contains("all")) return;
+        
+        ruleSet.AddRuleIfEnabled(configuration, new NoServerEntry());
+        ruleSet.AddRuleIfEnabled(configuration, new MultipleServerEntries());
+        ruleSet.AddRuleIfEnabled(configuration, new GetWithBody());
+        ruleSet.AddRuleIfEnabled(configuration, new KnownAndNotSupportedFormats());
+        ruleSet.AddRuleIfEnabled(configuration, new InconsistentTypeFormatPair());
+        ruleSet.AddRuleIfEnabled(configuration, new UrlFormEncodedComplex());
+        ruleSet.AddRuleIfEnabled(configuration, new DivergentResponseSchema(configuration));
+        ruleSet.AddRuleIfEnabled(configuration, new MissingDiscriminator(configuration));
+    }
+    private static void AddRuleIfEnabled<T>(this ValidationRuleSet ruleSet, GenerationConfiguration configuration, T instance) where T : ValidationRule {
+        if(!configuration.DisabledValidationRules.Contains(instance.GetType().Name))
+            ruleSet.Add(instance);
     }
 }
