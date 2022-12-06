@@ -74,9 +74,9 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
     {         
         var typeDef = codeUsing.Declaration?.TypeDefinition;
         if (typeDef == null)
-            return (null, codeUsing.Alias, ""); // it's relative to the folder, with no declaration (default failsafe)
+            return (codeUsing.Name, codeUsing.Alias, ""); // it's relative to the folder, with no declaration or type definition (default failsafe)
         
-        var importSymbol = codeUsing.Declaration == null ? codeUsing.Name : typeDef.Name.ToSnakeCase();
+        var importSymbol = typeDef.Name.ToSnakeCase();
         
         var importPath = typeDef.GetImmediateParentOfType<CodeNamespace>().Name;
         return (importSymbol, codeUsing.Alias, importPath);
