@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
@@ -12,6 +13,8 @@ public class CodeClassDeclarationWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
+    private readonly CodeNamespace root;
+    private readonly CodeNamespace ns;
     private readonly StringWriter tw;
     private readonly LanguageWriter writer;
     private readonly CodeClassDeclarationWriter codeElementWriter;
@@ -19,11 +22,11 @@ public class CodeClassDeclarationWriterTests : IDisposable
 
     public CodeClassDeclarationWriterTests() {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
-        codeElementWriter = new CodeClassDeclarationWriter(new PythonConventionService(), "graphtests");
+        codeElementWriter = new CodeClassDeclarationWriter(new PythonConventionService());
         tw = new StringWriter();
         writer.SetTextWriter(tw);
-        var root = CodeNamespace.InitRootNamespace();
-        var ns = root.AddNamespace("graphtests.models");
+        root = CodeNamespace.InitRootNamespace();
+        ns = root.AddNamespace("graphtests.models");
         parentClass = new () {
             Name = "parentClass"
         };
@@ -34,10 +37,17 @@ public class CodeClassDeclarationWriterTests : IDisposable
         GC.SuppressFinalize(this);
     }
     [Fact]
+    public void Defensive() {
+        var codeClassDeclarationWriter = new CodeClassDeclarationWriter(new PythonConventionService());
+        Assert.Throws<ArgumentNullException>(() => codeClassDeclarationWriter.WriteCodeElement(null, writer));
+        var declaration = parentClass.StartBlock;
+        Assert.Throws<ArgumentNullException>(() => codeClassDeclarationWriter.WriteCodeElement(declaration, null));
+    }
+    [Fact]
     public void WritesSimpleDeclaration() {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
-        Assert.Contains("class", result);
+        Assert.Contains("class ParentClass()", result);
     }
     [Fact]
     public void WritesImplementation() {
@@ -63,7 +73,17 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("(some_interface.SomeInterface):", result);
     }
     [Fact]
-    public void WritesImports() {
+    public void WritesInnerClasses() {
+        parentClass.AddInnerClass(new CodeClass {
+            Name = "InnerClass"
+        });
+        var declaration = parentClass.InnerClasses.First().StartBlock;
+        codeElementWriter.WriteCodeElement(declaration, writer);
+        var result = tw.ToString();
+        Assert.Contains("@dataclass", result);
+    }
+    [Fact]
+    public void WritesExternalImports() {
         var declaration = parentClass.StartBlock;
         declaration.AddUsings(new CodeUsing {
             Name = "Objects",
@@ -75,5 +95,73 @@ public class CodeClassDeclarationWriterTests : IDisposable
         codeElementWriter.WriteCodeElement(declaration, writer);
         var result = tw.ToString();
         Assert.Contains("from util import Objects", result);
+    }
+    [Fact]
+    public void WritesExternalImportsWithoutPath() {
+        var declaration = parentClass.StartBlock;
+        declaration.AddUsings(new CodeUsing {
+            Name = "Objects",
+            Declaration = new () {
+                Name = "-",
+                IsExternal = true,
+            }
+        });
+        codeElementWriter.WriteCodeElement(declaration, writer);
+        var result = tw.ToString();
+        Assert.Contains("import Objects", result);
+    }
+    [Fact]
+    public void WritesInternalImportsSubNamespace() {
+        var declaration = parentClass.StartBlock;
+        var subNS = ns.AddNamespace($"{ns.Name}.messages");
+        var messageClassDef = new CodeClass {
+            Name = "Message",
+        };
+        subNS.AddClass(messageClassDef);
+        var nUsing = new CodeUsing {
+            Name = messageClassDef.Name,
+            Declaration = new() {
+                Name = messageClassDef.Name,
+                TypeDefinition = messageClassDef,
+            }
+        };
+        declaration.AddUsings(nUsing);
+        codeElementWriter.WriteCodeElement(declaration, writer);
+        var result = tw.ToString();
+        Assert.Contains("message = lazy_import('graphtests.models.messages.message')", result);
+    }
+
+    [Fact]
+    public void WritesInternalImportsSameNamespace() {
+        var declaration = parentClass.StartBlock;
+        var messageClassDef = new CodeClass {
+            Name = "Message",
+        };
+        ns.AddClass(messageClassDef);
+        var nUsing = new CodeUsing {
+            Name = "graph",
+            Declaration = new() {
+                Name = "Message",
+                TypeDefinition = messageClassDef,
+            }
+        };
+        declaration.AddUsings(nUsing);
+        codeElementWriter.WriteCodeElement(declaration, writer);
+        var result = tw.ToString();
+        Assert.Contains("message = lazy_import('graphtests.models.message')", result);
+    }
+    [Fact]
+    public void WritesInternalImportsNoTypeDef() {
+        var declaration = parentClass.StartBlock;
+        var nUsing = new CodeUsing {
+            Name = "graph",
+            Declaration = new() {
+                Name = "Message"
+            }
+        };
+        declaration.AddUsings(nUsing);
+        codeElementWriter.WriteCodeElement(declaration, writer);
+        var result = tw.ToString();
+        Assert.DoesNotContain("message = lazy_import('graphtests.models.message')", result);
     }
 }
