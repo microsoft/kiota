@@ -65,7 +65,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
         return string.IsNullOrEmpty(alias) ? symbol : $"{symbol} as {alias}";
     }
 
-        /// <summary>
+    /// <summary>
     /// Returns the import path for the given using and import context namespace.
     /// </summary>
     /// <param name="codeUsing">The using to import into the current namespace context</param>
