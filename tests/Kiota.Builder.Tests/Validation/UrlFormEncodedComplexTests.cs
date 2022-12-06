@@ -18,14 +18,14 @@ info:
 paths:
   /enumeration:
     get:
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: string
+              format: int32
       responses:
         '200':
-          requestBody:
-            content:
-              application/x-www-form-urlencoded:
-                schema:
-                  type: string
-                  format: int32
           content:
             application/json:
               schema:
@@ -37,8 +37,7 @@ paths:
             RuleSet = new (new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
-        // TODO https://github.com/microsoft/OpenAPI.NET/pull/1097 is merged
-        // Assert.Single(diag.Warnings);
+        Assert.Single(diag.Warnings);
     }
     [Fact]
     public void AddsAWarningWhenUrlEncodedNotObjectResponse() {
@@ -64,8 +63,7 @@ paths:
             RuleSet = new (new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
-        // TODO https://github.com/microsoft/OpenAPI.NET/pull/1097 is merged
-        // Assert.Single(diag.Warnings);
+        Assert.Single(diag.Warnings);
     }
     [Fact]
     public void AddsAWarningWhenUrlEncodedComplexPropertyOnRequestBody() {
@@ -78,19 +76,19 @@ info:
 paths:
   /enumeration:
     get:
-      responses:
-        '200':
-          requestBody:
-            content:
-              application/x-www-form-urlencoded:
-                schema:
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                complex:
                   type: object
                   properties:
-                    complex:
-                      type: object
-                      properties:
-                        prop:
-                          type: string
+                    prop:
+                      type: string
+      responses:
+        '200':
           content:
             application/json:
               schema:
@@ -102,8 +100,7 @@ paths:
             RuleSet = new (new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
-        // TODO https://github.com/microsoft/OpenAPI.NET/pull/1097 is merged
-        // Assert.Single(diag.Warnings);
+        Assert.Single(diag.Warnings);
     }
     [Fact]
     public void AddsAWarningWhenUrlEncodedComplexPropertyOnResponse() {
@@ -134,8 +131,7 @@ paths:
             RuleSet = new (new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
-        // TODO https://github.com/microsoft/OpenAPI.NET/pull/1097 is merged
-        // Assert.Single(diag.Warnings);
+        Assert.Single(diag.Warnings);
     }
     [Fact]
     public void DoesntAddAWarningWhenUrlEncoded() {
