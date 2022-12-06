@@ -258,14 +258,14 @@ public class KiotaBuilder
         logger.LogTrace("Parsing OpenAPI file");
         var ruleSet = ValidationRuleSet.GetDefaultRuleSet();
         if (generating)
-            ruleSet.AddKiotaValidationRules();
+            ruleSet.AddKiotaValidationRules(config);
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
             ExtensionParsers = new()
             {
                 {
                     OpenApiPagingExtension.Name,
-                    (i, _) => OpenApiPagingExtension.Parse(i)
+                    static (i, _) => OpenApiPagingExtension.Parse(i)
                 },
                 {
                     OpenApiEnumValuesDescriptionExtension.Name,
