@@ -71,10 +71,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
     /// <param name="codeUsing">The using to import into the current namespace context</param>
     /// <returns>The import symbol, it's alias if any and the import path</returns>
     private static (string, string, string) GetImportPathForUsing(CodeUsing codeUsing)
-    {
-        if (codeUsing?.IsExternal ?? true)
-            return (string.Empty, string.Empty, string.Empty);//it's an external import, add nothing
-        var typeDef = codeUsing.Declaration.TypeDefinition;
+    {         
+        var typeDef = codeUsing.Declaration?.TypeDefinition;
         if (typeDef == null)
             return (null, codeUsing.Alias, ""); // it's relative to the folder, with no declaration (default failsafe)
         
