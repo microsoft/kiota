@@ -16,5 +16,6 @@ public static class ValidationRuleSetExtensions {
         ruleSet.Add(new InconsistentTypeFormatPair());
         ruleSet.Add(new UrlFormEncodedComplex());
         ruleSet.Add(new DivergentResponseSchema(configuration));
+        ruleSet.Add(new MissingDiscriminator(configuration));
     }
 }
