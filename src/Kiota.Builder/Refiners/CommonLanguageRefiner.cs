@@ -167,7 +167,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
 
     protected static void ReplaceReservedModelTypes(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) => 
-        ReplaceReservedNames(current, provider, replacement,codeElementExceptions: new HashSet<Type>{typeof(CodeNamespace)} ,shouldReplaceCallback: codeElement => codeElement is CodeClass || codeElement is CodeMethod || codeElement is CodeProperty);
+        ReplaceReservedNames(current,
+            provider, 
+            replacement,
+            codeElementExceptions: new HashSet<Type>{typeof(CodeNamespace)} ,
+            shouldReplaceCallback: codeElement => codeElement is CodeClass 
+                                                || codeElement is CodeMethod 
+                                                || codeElement is CodeEnum codeEnum && provider.ReservedNames.Contains(codeEnum.Name) // only replace enum type names not enum member names
+                                                || (codeElement is CodeProperty currentProperty && currentProperty.Type is CodeType propertyType && !propertyType.IsExternal && provider.ReservedNames.Contains(propertyType.Name)));// only replace property type names not property names
     
     protected static void ReplaceReservedNamespaceTypeNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) => 
         ReplaceReservedNames(current, provider, replacement, shouldReplaceCallback: codeElement => codeElement is CodeNamespace || codeElement is CodeClass);
