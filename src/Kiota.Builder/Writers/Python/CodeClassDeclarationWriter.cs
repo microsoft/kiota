@@ -50,13 +50,13 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
     private static void WriteInternalImports(ClassDeclaration codeElement, LanguageWriter writer) {
         var internalImportSymbolsAndPaths = codeElement.Usings
                                                         .Where(x => !x.IsExternal)
-                                                        .Select(x => GetImportPathForUsing(x))
+                                                        .Select(static x => GetImportPathForUsing(x))
                                                         .GroupBy(x => x.Item3)
                                                         .Where(x => !string.IsNullOrEmpty(x.Key))
                                                         .OrderBy(x => x.Key);
         if(internalImportSymbolsAndPaths.Any()){
             foreach (var codeUsing in internalImportSymbolsAndPaths)
-                foreach(var symbol in codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(x => x))
+                foreach(var symbol in codeUsing.Select(static x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(static x => x))
                     writer.WriteLine($"{symbol} = lazy_import('{codeUsing.Key.ToSnakeCase().Replace("._", ".")}.{symbol}')"); 
             writer.WriteLine();
         }
