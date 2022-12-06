@@ -18,10 +18,10 @@ public class MissingDiscriminator : ValidationRule<OpenApiDocument>
                 ValidateSchema(entry.Value, context, idx, entry.Key);
             });
         var inlineSchemasToValidate = document.Paths
-                                        .SelectMany(static x => x.Value.Operations.Values.Select(y => (x.Key, Operation:y)))
+                                        ?.SelectMany(static x => x.Value.Operations.Values.Select(y => (x.Key, Operation:y)))
                                         .SelectMany(x => x.Operation.GetResponseSchemas(OpenApiOperationExtensions.SuccessCodes, configuration.StructuredMimeTypes).Select(y => (x.Key, Schema:y)))
                                         .Where(static x => string.IsNullOrEmpty(x.Schema.Reference?.Id))
-                                        .ToArray();
+                                        .ToArray() ?? Array.Empty<(string, OpenApiSchema)>();
         Parallel.ForEach(inlineSchemasToValidate, entry => {
             ValidateSchema(entry.Schema, context, idx, entry.Key);
         });
