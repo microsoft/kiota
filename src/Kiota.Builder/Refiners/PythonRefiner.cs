@@ -83,6 +83,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
         new (x => x is CodeClass @class, "__future__", "annotations"),
         new (x => x is CodeClass @class, "typing", "Any, Callable, Dict, List, Optional, Union"),
+        new (x => x is CodeClass @class, $"{AbstractionsPackageName}.utils", "lazy_import"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             $"{AbstractionsPackageName}.request_adapter", "RequestAdapter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
