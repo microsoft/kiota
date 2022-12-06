@@ -156,10 +156,10 @@ namespace Kiota.Builder.Tests.CodeDOM {
         public void FindChildByNameThrowsOnEmptyNames() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-            Assert.Throws<ArgumentNullException>(() => {
+            Assert.Throws<ArgumentException>(() => {
                 child.FindChildByName<CodeClass>(string.Empty);
             });
-            Assert.Throws<ArgumentNullException>(() => {
+            Assert.Throws<ArgumentException>(() => {
                 child.FindChildrenByName<CodeClass>(string.Empty);
             });
         }
