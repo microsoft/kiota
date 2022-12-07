@@ -525,18 +525,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
     {
-        var parametersWithDescription = code.Parameters.Where(static x => x.Documentation.DescriptionAvailable);
-        if (code.Documentation.DescriptionAvailable || parametersWithDescription.Any())
-        {
-            writer.WriteLine($"{conventions.DocCommentPrefix}<summary>");
-            if (code.Documentation.DescriptionAvailable)
-                writer.WriteLine($"{conventions.DocCommentPrefix}{code.Documentation.Description.CleanupXMLString()}");
-            if(code.Documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{conventions.DocCommentPrefix}{code.Documentation.DocumentationLabel} <see href=\"{code.Documentation.DocumentationLink}\" />");
-            writer.WriteLine($"{conventions.DocCommentPrefix}</summary>");
-            foreach (var paramWithDescription in parametersWithDescription.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
-                writer.WriteLine($"{conventions.DocCommentPrefix}<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">{paramWithDescription.Documentation.Description.CleanupXMLString()}</param>");
-        }
+        conventions.WriteLongDescription(code.Documentation, writer);
+        foreach (var paramWithDescription in code.Parameters
+                                                .Where(static x => x.Documentation.DescriptionAvailable)
+                                                .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
+            writer.WriteLine($"{conventions.DocCommentPrefix}<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">{paramWithDescription.Documentation.Description.CleanupXMLString()}</param>");
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
