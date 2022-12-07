@@ -61,7 +61,7 @@ paths:
         Assert.Empty(diag.Warnings);
     }
     [Fact]
-    public void AddsAWarningWhenPostWithBody() {
+    public void DoesntAddAWarningWhenPostWithBody() {
         var rule = new GetWithBody();
         var documentTxt = @"openapi: 3.0.1
 info:

@@ -22,7 +22,7 @@ public class BaseAuthenticationProvider<T> : AnonymousAuthenticationProvider whe
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(accessTokenProviderFactory);
         ArgumentException.ThrowIfNullOrEmpty(clientId);
-		ArgumentException.ThrowIfNullOrEmpty(scope);
+        ArgumentException.ThrowIfNullOrEmpty(scope);
 
         AccessTokenProvider = accessTokenProviderFactory(clientId, scope, validHosts);
         if(enableCache)
