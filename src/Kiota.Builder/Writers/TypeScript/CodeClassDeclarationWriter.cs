@@ -21,7 +21,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             var inheritSymbol = conventions.GetTypeString(codeElement.Inherits, codeElement);
             var derivation = (inheritSymbol == null ? string.Empty : $" extends {inheritSymbol}") +
                             (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");
-            conventions.WriteShortDescription((codeElement.Parent as CodeClass).Description, writer);
+            conventions.WriteShortDescription((codeElement.Parent as CodeClass).Documentation.Description, writer);
             writer.WriteLine($"export class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation} {{");
             writer.IncreaseIndent();
         }

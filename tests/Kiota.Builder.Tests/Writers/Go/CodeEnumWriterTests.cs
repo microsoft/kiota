@@ -71,13 +71,15 @@ namespace Kiota.Builder.Tests.Writers.Go {
         [Fact]
         public void WritesEnumOptionDescription() {
             var option = new CodeEnumOption {
-                Description = "Some option description",
+                Documentation = new() {
+                    Description = "Some option description",
+                },
                 Name = "option1",
             };
             currentEnum.AddOption(option);
             writer.Write(currentEnum);
             var result = tw.ToString();
-            Assert.Contains($"// {option.Description}", result);
+            Assert.Contains($"// {option.Documentation.Description}", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
     }

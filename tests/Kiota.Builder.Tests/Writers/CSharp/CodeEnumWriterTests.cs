@@ -53,11 +53,11 @@ namespace Kiota.Builder.Tests.Writers.CSharp {
         }
         [Fact]
         public void WritesEnumOptionDescription() {
-            Option.Description = "Some option description";
+            Option.Documentation.Description = "Some option description";
             currentEnum.AddOption(Option);
             writer.Write(currentEnum);
             var result = tw.ToString();
-            Assert.Contains($"<summary>{Option.Description}</summary>", result);
+            Assert.Contains($"<summary>{Option.Documentation.Description}</summary>", result);
             AssertExtensions.CurlyBracesAreClosed(result, 1);
         }
         [Fact]

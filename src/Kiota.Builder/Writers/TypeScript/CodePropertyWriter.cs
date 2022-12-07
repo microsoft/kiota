@@ -10,7 +10,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
         var isFlagEnum = codeElement.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum currentEnum && currentEnum.Flags;
         var parentClass = codeElement.Parent as CodeClass;
-        conventions.WriteShortDescription(codeElement.Description, writer);
+        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         switch(codeElement.Kind) {
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");

@@ -15,7 +15,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"module {ns.Name.NormalizeNameSpaceName("::")}");
                 writer.IncreaseIndent();
             }
-            conventions.WriteShortDescription(codeElement.Description, writer);
+            conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
             writer.WriteLine($"{codeElement.Name.ToFirstCharacterUpperCase()} = {{");
             writer.IncreaseIndent();
             codeElement.Options.ToList().ForEach(x => writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: :{x.Name.ToFirstCharacterUpperCase()},"));

@@ -359,13 +359,17 @@ public class CodeMethodWriterTests : IDisposable {
     [Fact]
     public void WritesMethodAsyncDescription() {
         
-        method.Description = MethodDescription;
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
+        method.Documentation.Description = MethodDescription;
+        var parameter = new CodeParameter
+        {
+            Documentation = new() {
+                Description = ParamDescription,
+            },
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
         };
         method.AddParameter(parameter);
         writer.Write(method);
@@ -381,14 +385,18 @@ public class CodeMethodWriterTests : IDisposable {
     [Fact]
     public void WritesMethodSyncDescription() {
         
-        method.Description = MethodDescription;
+        method.Documentation.Description = MethodDescription;
         method.IsAsync = false;
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
+        var parameter = new CodeParameter
+        {
+            Documentation = new() {
+                Description = ParamDescription,
+            },
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
         };
         method.AddParameter(parameter);
         writer.Write(method);
@@ -586,7 +594,9 @@ public class CodeMethodWriterTests : IDisposable {
             Name = propName,
             DefaultValue = defaultValue,
             Kind = CodePropertyKind.UrlTemplate,
-            Description = "This property has a description",
+            Documentation = new() {
+                Description = "This property has a description",
+            },
             Type = new CodeType {
                 Name = "string"
             }
@@ -617,7 +627,9 @@ public class CodeMethodWriterTests : IDisposable {
         parentClass.AddProperty(new CodeProperty {
             Name = propName,
             Kind = CodePropertyKind.Custom,
-            Description = "This property has a description",
+            Documentation = new() {
+                Description = "This property has a description",
+            },
             Type = new CodeType {
                 Name = "string"
             }
@@ -629,7 +641,9 @@ public class CodeMethodWriterTests : IDisposable {
             Name = prop2Name,
             DefaultValue = defaultValue,
             Kind = CodePropertyKind.UrlTemplate,
-            Description = "This property has a description",
+            Documentation = new() {
+                Description = "This property has a description",
+            },
             Type = new CodeType {
                 Name = "string"
             }

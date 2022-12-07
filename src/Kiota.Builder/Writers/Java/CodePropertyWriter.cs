@@ -7,7 +7,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
     public CodePropertyWriter(JavaConventionService conventionService) : base(conventionService){}
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
-        conventions.WriteShortDescription(codeElement.Description, writer);
+        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
         var parentClass = codeElement.Parent as CodeClass;
         var defaultValue = string.Empty;

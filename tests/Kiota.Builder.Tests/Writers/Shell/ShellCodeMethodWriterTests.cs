@@ -114,7 +114,9 @@ public class ShellCodeMethodWriterTests : IDisposable
             Kind = CodeParameterKind.QueryParameter,
             Type = stringType,
             DefaultValue = "test",
-            Description = "The q option",
+            Documentation = new() {
+                Description = "The q option",
+            },
             Optional = true
         });
         method.AddPathQueryOrHeaderParameter(new CodeParameter {
@@ -126,7 +128,9 @@ public class ShellCodeMethodWriterTests : IDisposable
             Name = "Test-Header",
             Kind = CodeParameterKind.Headers,
             Type = stringType,
-            Description = "The test header",
+            Documentation = new() {
+                Description = "The test header",
+            },
         });
     }
 
@@ -304,7 +308,7 @@ public class ShellCodeMethodWriterTests : IDisposable
     {
 
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Description = "Test description";
+        method.Documentation.Description = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var stringType = new CodeType
@@ -371,7 +375,7 @@ public class ShellCodeMethodWriterTests : IDisposable
     {
 
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Description = "Test description";
+        method.Documentation.Description = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var userClass = root.AddClass(new CodeClass
@@ -445,7 +449,7 @@ public class ShellCodeMethodWriterTests : IDisposable
     {
 
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Description = "Test description";
+        method.Documentation.Description = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var userClass = root.AddClass(new CodeClass

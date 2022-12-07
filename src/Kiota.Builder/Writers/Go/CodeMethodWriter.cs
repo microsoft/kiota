@@ -230,8 +230,8 @@ namespace Kiota.Builder.Writers.Go {
         }
 
         private void WriteMethodDocumentation(CodeMethod code, string methodName, LanguageWriter writer) {
-            if(!string.IsNullOrEmpty(code.Description))
-                conventions.WriteShortDescription($"{methodName.ToFirstCharacterUpperCase()} {code.Description.ToFirstCharacterLowerCase()}", writer);
+            if(!string.IsNullOrEmpty(code.Documentation.Description))
+                conventions.WriteShortDescription($"{methodName.ToFirstCharacterUpperCase()} {code.Documentation.Description.ToFirstCharacterLowerCase()}", writer);
         }
         private const string TempParamsVarName = "urlParams";
         private static void WriteRawUrlConstructorBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
