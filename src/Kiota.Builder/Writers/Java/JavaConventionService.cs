@@ -85,6 +85,20 @@ public class JavaConventionService : CommonLanguageConventionService
         if(!string.IsNullOrEmpty(description))
             writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
+    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer, IEnumerable<string> additionalRemarks = default) {
+        if(documentation is null) return;
+        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || additionalRemarks.Any()) {
+            writer.WriteLine(DocCommentStart);
+            if(documentation.DescriptionAvailable)
+                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentation.Description)}");
+            foreach(var additionalRemark in additionalRemarks)
+                writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
+
+            if(documentation.ExternalDocumentationAvailable)
+                writer.WriteLine($"{DocCommentPrefix}@see <a href=\"{documentation.DocumentationLink}\">{documentation.DocumentationLabel}</a>");
+            writer.WriteLine(DocCommentEnd);
+        }
+    }
     private static readonly Regex nonAsciiReplaceRegex = new (@"[^\u0000-\u007F]+", RegexOptions.Compiled);
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => 
         string.IsNullOrEmpty(originalDescription) ? 

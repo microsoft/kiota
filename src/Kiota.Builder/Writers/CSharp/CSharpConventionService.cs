@@ -21,6 +21,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 writer.WriteLine($"{DocCommentPrefix}<summary>{description.CleanupXMLString()}</summary>");
         }
         public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer) {
+            if(documentation is null) return;
             if(documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable) {
                 writer.WriteLine($"{DocCommentPrefix}<summary>");
                 if (documentation.DescriptionAvailable)
