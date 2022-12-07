@@ -222,7 +222,8 @@ public static class KiotaHost {
         return outputOption;
     }
     private static Option<List<string>> GetDisableValidationRulesOption() {
-        var option = new Option<List<string>>("--disable-validation-rules", () => new List<string>(), "The OpenAPI description validation rules to disable. Accepts multiple values.");
+        var parameterName = "--disable-validation-rules";
+        var option = new Option<List<string>>(parameterName, () => new List<string>(), "The OpenAPI description validation rules to disable. Accepts multiple values.");
         option.AddAlias("--dvr");
         if(typeof(NoServerEntry).Namespace is string nsName &&
             Assembly.GetAssembly(typeof(NoServerEntry)) is Assembly assembly) {
@@ -234,6 +235,7 @@ public static class KiotaHost {
                                             .Select(static x => x.Name)
                                             .Union(new [] { "All" })
                                             .ToArray();
+            option.AddValidator(x => ValidateKnownValues(x, parameterName, validationRules));
             option.ArgumentHelpName = string.Join(",", validationRules);
         }
         option.Arity = ArgumentArity.ZeroOrMore;
@@ -405,6 +407,13 @@ public static class KiotaHost {
                 !validator.IsMatch(value))
                     input.ErrorMessage = $"{value} is not a valid {parameterName} for the client, the {parameterName} must conform to {pattern}";
         });
+    }
+    private static void ValidateKnownValues(OptionResult input, string parameterName, IEnumerable<string> knownValues) {
+        var knownValuesHash = new HashSet<string>(knownValues, StringComparer.OrdinalIgnoreCase);
+        if(input.Tokens.Any() && input.Tokens.Select(static x => x.Value).SelectMany(static x => x.Split(new [] {','}, StringSplitOptions.RemoveEmptyEntries)).FirstOrDefault(x => !knownValuesHash.Contains(x)) is string unknownValue) {
+            var validOptionsList = knownValues.Aggregate(static (x, y) => x + ", " + y);
+            input.ErrorMessage = $"{unknownValue} is not a supported {parameterName}, supported values are {validOptionsList}";
+        }
     }
     private static void ValidateEnumValue<T>(OptionResult input, string parameterName) where T: struct, Enum {
         if(input.Tokens.Any() && !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _)) {
