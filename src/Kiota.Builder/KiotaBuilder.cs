@@ -1234,6 +1234,8 @@ public class KiotaBuilder
             Name = declarationName,
             Kind = CodeClassKind.Model,
             Documentation = new() {
+                DocumentationLabel = schema.ExternalDocs?.Description,
+                DocumentationLink = schema.ExternalDocs?.Url,
                 Description = schema.Description.CleanupDescription() ?? (string.IsNullOrEmpty(schema.Reference?.Id) ?
                                                         currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel) :
                                                         null),// if it's a referenced component, we shouldn't use the path item description as it makes it indeterministic

@@ -11,6 +11,7 @@ public class CodeInterfaceDeclarationWriter : CodeProprietableBlockDeclarationWr
         var inter = codeElement.Parent as CodeInterface;
         var interName = codeElement.Name.ToFirstCharacterUpperCase();
         conventions.WriteShortDescription($"{interName} {inter.Documentation.Description.ToFirstCharacterLowerCase()}", writer);
+        conventions.WriteLinkDescription(inter.Documentation, writer);
         writer.WriteLine($"type {interName} interface {{");
         writer.IncreaseIndent();
         foreach (var implement in codeElement.Implements) {
