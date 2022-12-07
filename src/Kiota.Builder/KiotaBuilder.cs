@@ -849,9 +849,9 @@ public class KiotaBuilder
             executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
         } else {
             string returnType;
-            if(operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
+            if(operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
                 returnType = voidType;
-            else if (operation.Responses.Any(x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
+            else if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
                 returnType = "string";
             else
                 returnType = "binary";
@@ -982,7 +982,7 @@ public class KiotaBuilder
                 Optional = false,
                 Kind = CodeParameterKind.RequestBody,
                 Documentation = new() {
-                    Description = requestBodySchema.Description.CleanupDescription()
+                    Description = requestBodySchema.Description.CleanupDescription() ?? "The request body"
                 },
             });
             method.RequestBodyContentType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Key;
