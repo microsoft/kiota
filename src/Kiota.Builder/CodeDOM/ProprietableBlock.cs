@@ -28,7 +28,8 @@ public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumen
             StartBlock.Name = name;
         }
     }
-    public string Description {get; set;}
+    public string Description { get => Documentation.Description; set => Documentation.Description = value; }
+    public CodeDocumentation Documentation { get; set; } = new();
     public virtual IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
     {
         if(properties == null || properties.Any(x => x == null))

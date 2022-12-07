@@ -141,7 +141,8 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public IEnumerable<CodeParameter> Parameters { get => parameters.Values.OrderBy(static x => x, parameterOrderComparer); }
     public bool IsStatic {get;set;}
     public bool IsAsync {get;set;} = true;
-    public string Description {get; set;}
+    public string Description { get => Documentation.Description; set => Documentation.Description = value; }
+    public CodeDocumentation Documentation { get; set; } = new();
 
     public PagingInformation PagingInformation
     {
@@ -244,6 +245,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             errorMappings = errorMappings == null ? null : new (errorMappings),
             acceptedResponseTypes = acceptedResponseTypes == null ? null : new (acceptedResponseTypes),
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
+            Documentation = Documentation?.Clone() as CodeDocumentation,
         };
         if(Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());
