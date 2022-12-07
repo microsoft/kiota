@@ -10,7 +10,7 @@ namespace Kiota.Builder.Validation;
 internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
 {
     private static readonly OpenApiDiscriminatorComparer discriminatorComparer = new();
-    private static readonly IOpenApiAnyComparer openApiAnyComparer = new ();
+    private static readonly OpenApiAnyComparer openApiAnyComparer = new ();
     /// <inheritdoc/>
     public bool Equals(OpenApiSchema x, OpenApiSchema y)
     {
@@ -89,7 +89,7 @@ internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscrimin
             (obj.Mapping?.Select(static x => x.Key.GetHashCode() + x.Value.GetHashCode()).Sum() ?? 0) * 83;
     }
 }
-internal class IOpenApiAnyComparer : IEqualityComparer<IOpenApiAny>
+internal class OpenApiAnyComparer : IEqualityComparer<IOpenApiAny>
 {
     /// <inheritdoc/>
     public bool Equals(IOpenApiAny x, IOpenApiAny y)
