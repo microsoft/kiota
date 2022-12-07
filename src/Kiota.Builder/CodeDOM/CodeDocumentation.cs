@@ -39,4 +39,6 @@ public class CodeDocumentation : ICloneable
             DocumentationLabel = DocumentationLabel?.Clone() as string,
         };
     }
+    public bool DescriptionAvailable { get => !string.IsNullOrEmpty(Description); }
+    public bool ExternalDocumentationAvailable { get => DocumentationLink != null && !string.IsNullOrEmpty(DocumentationLabel); }
 }
