@@ -20,6 +20,16 @@ namespace Kiota.Builder.Writers.CSharp {
             if(!string.IsNullOrEmpty(description))
                 writer.WriteLine($"{DocCommentPrefix}<summary>{description.CleanupXMLString()}</summary>");
         }
+        public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer) {
+            if(documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable) {
+                writer.WriteLine($"{DocCommentPrefix}<summary>");
+                if (documentation.DescriptionAvailable)
+                    writer.WriteLine($"{DocCommentPrefix}{documentation.Description.CleanupXMLString()}");
+                if(documentation.ExternalDocumentationAvailable)
+                    writer.WriteLine($"{DocCommentPrefix}{documentation.DocumentationLabel} <see href=\"{documentation.DocumentationLink}\" />");
+                writer.WriteLine($"{DocCommentPrefix}</summary>");
+            }
+        }
         public override string GetAccessModifier(AccessModifier access)
         {
             return access switch {
