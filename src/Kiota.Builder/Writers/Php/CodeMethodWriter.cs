@@ -125,7 +125,7 @@ namespace Kiota.Builder.Writers.Php
 
         private void WriteMethodPhpDocs(CodeMethod codeMethod, LanguageWriter writer, IReadOnlyList<string> orNullReturn)
         {
-            var methodDescription = codeMethod.Description ?? string.Empty;
+            var methodDescription = codeMethod.Documentation.Description ?? string.Empty;
 
             var hasMethodDescription = !string.IsNullOrEmpty(methodDescription.Trim(' '));
             var parametersWithDescription = codeMethod.Parameters;
@@ -175,8 +175,8 @@ namespace Kiota.Builder.Writers.Php
         {
             return codeMethod.Kind switch
             {
-                CodeMethodKind.Setter => $"{conventions.DocCommentPrefix} @param {(isSetterForAdditionalData ? "array<string,mixed> $value": conventions.GetParameterDocNullable(x, x))} {x?.Description}",
-                _ => $"{conventions.DocCommentPrefix}@param {conventions.GetParameterDocNullable(x, x)} {x.Description}"
+                CodeMethodKind.Setter => $"{conventions.DocCommentPrefix} @param {(isSetterForAdditionalData ? "array<string,mixed> $value": conventions.GetParameterDocNullable(x, x))} {x?.Documentation.Description}",
+                _ => $"{conventions.DocCommentPrefix}@param {conventions.GetParameterDocNullable(x, x)} {x.Documentation.Description}"
             };
         }
         

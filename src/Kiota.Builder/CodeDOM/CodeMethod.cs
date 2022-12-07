@@ -82,7 +82,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Access = AccessModifier.Public,
             Kind = CodeMethodKind.IndexerBackwardCompatibility,
             Name = originalIndexer.PathSegment + methodNameSuffix,
-            Description = originalIndexer.Description,
+            Documentation = new () {
+                Description = originalIndexer.Documentation.Description,
+            },
             ReturnType = new CodeType {
                 IsNullable = false,
                 TypeDefinition = indexerClass,
@@ -94,7 +96,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Name = "id",
             Optional = false,
             Kind = CodeParameterKind.Custom,
-            Description = "Unique identifier of the item",
+            Documentation = new() {
+                Description = "Unique identifier of the item",
+            },
             Type = new CodeType {
                 Name = "String",
                 IsNullable = parameterNullable,
@@ -141,7 +145,6 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public IEnumerable<CodeParameter> Parameters { get => parameters.Values.OrderBy(static x => x, parameterOrderComparer); }
     public bool IsStatic {get;set;}
     public bool IsAsync {get;set;} = true;
-    public string Description { get => Documentation.Description; set => Documentation.Description = value; }
     public CodeDocumentation Documentation { get; set; } = new();
 
     public PagingInformation PagingInformation
@@ -233,7 +236,6 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             IsAsync = IsAsync,
             Access = Access,
             IsStatic = IsStatic,
-            Description = Description?.Clone() as string,
             RequestBodyContentType = RequestBodyContentType?.Clone() as string,
             BaseUrl = BaseUrl?.Clone() as string,
             AccessedProperty = AccessedProperty,

@@ -10,7 +10,7 @@ public class CodeIndexerWriter : BaseElementWriter<CodeIndexer, CSharpConvention
         var parentClass = codeElement.Parent as CodeClass;
         var pathParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
-        conventions.WriteShortDescription(codeElement.Description, writer);
+        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         writer.WriteLine($"public {returnType} this[{conventions.GetTypeString(codeElement.IndexType, codeElement)} position] {{ get {{");
         writer.IncreaseIndent();
         conventions.AddParametersAssignment(writer, pathParametersProp.Type, pathParametersProp.Name.ToFirstCharacterUpperCase(), (codeElement.IndexType, codeElement.SerializationName, "position"));

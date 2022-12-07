@@ -12,11 +12,11 @@ namespace Kiota.Builder.Writers.TypeScript {
             if(!codeElement.Options.Any())
                 return;
 
-            conventions.WriteShortDescription(codeElement.Description, writer);
+            conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
             writer.WriteLine($"export enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
             writer.IncreaseIndent();
             codeElement.Options.ToList().ForEach(x => {
-                conventions.WriteShortDescription(x.Description, writer);
+                conventions.WriteShortDescription(x.Documentation.Description, writer);
                 writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()} = \"{x.SerializationName ?? x.Name}\",");
             });
         }

@@ -233,7 +233,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             if(urlTplParams != null &&
                 urlTplParams.Type is CodeType originalType) {
                 originalType.Name = "Record<string, unknown>";
-                urlTplParams.Description = "The raw url or the Url template parameters for the request.";
+                urlTplParams.Documentation.Description = "The raw url or the Url template parameters for the request.";
                 var unionType = new CodeUnionType {
                     Name = "rawUrlOrTemplateParameters",
                     IsNullable = true,

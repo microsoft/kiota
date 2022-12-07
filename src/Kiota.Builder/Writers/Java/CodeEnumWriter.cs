@@ -18,12 +18,12 @@ namespace Kiota.Builder.Writers.Java {
                 "import com.microsoft.kiota.serialization.ValuedEnum;",
                 "import java.util.Objects;",
                 string.Empty);
-            conventions.WriteShortDescription(codeElement.Description, writer);
+            conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
             writer.WriteLine($"public enum {enumName} implements ValuedEnum {{");
             writer.IncreaseIndent();
             var lastEnumOption = enumOptions.Last();
             foreach(var enumOption in enumOptions) {
-                conventions.WriteShortDescription(enumOption.Description, writer);
+                conventions.WriteShortDescription(enumOption.Documentation.Description, writer);
                 writer.WriteLine($"{enumOption.Name.ToFirstCharacterUpperCase()}(\"{enumOption.Name}\"){(enumOption == lastEnumOption ? ";" : ",")}");
             }
             writer.WriteLines("public final String value;",

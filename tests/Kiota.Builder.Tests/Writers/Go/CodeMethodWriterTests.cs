@@ -1140,11 +1140,13 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact(Skip = "descriptions are not supported")]
     public void WritesMethodSyncDescription() {
-        method.Description = MethodDescription;
+        method.Documentation.Description = MethodDescription;
         method.IsAsync = false;
         var parameter = new CodeParameter
         {
-            Description = ParamDescription,
+            Documentation = new() {
+                Description = ParamDescription
+            },
             Name = ParamName,
             Type = new CodeType
             {
@@ -1276,7 +1278,7 @@ public class CodeMethodWriterTests : IDisposable {
                 Name = "string"
             }
         });
-        method.Description = "Some description";
+        method.Documentation.Description = "Some description";
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"// {method.Name.ToFirstCharacterUpperCase()} some description", result);

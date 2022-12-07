@@ -175,7 +175,9 @@ public class SwiftRefiner : CommonLanguageRefiner
             clientNamespace.AddClass(new CodeClass {
                 Name = clientNamespace.Name.Split('.', StringSplitOptions.RemoveEmptyEntries).Last().ToFirstCharacterUpperCase(),
                 Kind = CodeClassKind.BarrelInitializer,
-                Description = "Root class for extensions",
+                Documentation = new() {
+                    Description = "Root class for extensions",
+                },
             });
         }
     }
