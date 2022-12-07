@@ -342,11 +342,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, bool isVoid) {
-        var isDescriptionPresent = !string.IsNullOrEmpty(code.Documentation.Description);
-        var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Documentation.Description));
-        if (isDescriptionPresent || parametersWithDescription.Any()) {
+        var parametersWithDescription = code.Parameters.Where(static x => x.Documentation.DescriptionAvailable);
+        if (code.Documentation.DescriptionAvailable || parametersWithDescription.Any()) {
             writer.WriteLine(localConventions.DocCommentStart);
-            if(isDescriptionPresent)
+            if(code.Documentation.DescriptionAvailable)
                 writer.WriteLine($"{localConventions.DocCommentPrefix}{TypeScriptConventionService.RemoveInvalidDescriptionCharacters(code.Documentation.Description)}");
             foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
                 writer.WriteLine($"{localConventions.DocCommentPrefix}@param {paramWithDescription.Name} {TypeScriptConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.Description)}");
@@ -356,6 +355,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                     writer.WriteLine($"{localConventions.DocCommentPrefix}@returns a Promise of {code.ReturnType.Name.ToFirstCharacterUpperCase()}");
                 else
                     writer.WriteLine($"{localConventions.DocCommentPrefix}@returns a {code.ReturnType.Name}");
+            if(code.Documentation.ExternalDocumentationAvailable)
+                writer.WriteLine($"{localConventions.DocCommentPrefix}@see {{@link {code.Documentation.DocumentationLink}|{code.Documentation.DocumentationLabel}}}");
             writer.WriteLine(localConventions.DocCommentEnd);
         }
     }
