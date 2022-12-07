@@ -800,8 +800,12 @@ public class KiotaBuilder
             Name = operationType.ToString(),
             Kind = CodeMethodKind.RequestExecutor,
             HttpMethod = method,
-            Description = (operation.Description ?? operation.Summary).CleanupDescription(),
             Parent = parentClass,
+            Documentation = new () {
+                DocumentationLink = operation.ExternalDocs?.Url,
+                DocumentationLabel = operation.ExternalDocs?.Description,
+                Description = (operation.Description ?? operation.Summary).CleanupDescription(),
+            }
         };
 
         if (operation.Extensions.TryGetValue(OpenApiPagingExtension.Name, out var extension) && extension is OpenApiPagingExtension pagingExtension)
