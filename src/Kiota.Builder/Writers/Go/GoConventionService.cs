@@ -146,6 +146,7 @@ public class GoConventionService : CommonLanguageConventionService
     }
     public void WriteLinkDescription(CodeDocumentation documentation, LanguageWriter writer)
     {
+        if(documentation is null) return;
         if(documentation.ExternalDocumentationAvailable) {
             WriteShortDescription($"[{documentation.DocumentationLabel}]", writer);
             WriteShortDescription(string.Empty, writer);
