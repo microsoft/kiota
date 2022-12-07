@@ -81,9 +81,9 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private const string AbstractionsPackageName = "kiota_abstractions";
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
-        new (x => x is CodeClass @class, "__future__", "annotations"),
-        new (x => x is CodeClass @class, "typing", "Any, Callable, Dict, List, Optional, Union"),
-        new (x => x is CodeClass @class, $"{AbstractionsPackageName}.utils", "lazy_import"),
+        new (x => x is CodeClass, "__future__", "annotations"),
+        new (x => x is CodeClass, "typing", "Any, Callable, Dict, List, Optional, Union"),
+        new (x => x is CodeClass, $"{AbstractionsPackageName}.utils", "lazy_import"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             $"{AbstractionsPackageName}.request_adapter", "RequestAdapter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -137,7 +137,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
         }
-        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
@@ -170,7 +170,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 urlTplParams.Type = unionType;
             }
         }
-        CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                             .Select(x => x.Type)
                                             .Union(new[] { currentMethod.ReturnType})
                                             .ToArray());

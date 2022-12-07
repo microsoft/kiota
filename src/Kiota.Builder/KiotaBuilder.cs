@@ -18,6 +18,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
+using Kiota.Builder.Validation;
 using Kiota.Builder.Writers;
 
 using Microsoft.Extensions.Logging;
@@ -25,7 +26,7 @@ using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Microsoft.OpenApi.Services;
-
+using Microsoft.OpenApi.Validations;
 using HttpMethod = Kiota.Builder.CodeDOM.HttpMethod;
 
 namespace Kiota.Builder;
@@ -80,12 +81,11 @@ public class KiotaBuilder
         // Parse OpenAPI
         sw.Start();
         if (originalDocument == null)
-            openApiDocument = CreateOpenApiDocument(input);
+            openApiDocument = CreateOpenApiDocument(input, generating);
         else
             openApiDocument = new OpenApiDocument(originalDocument);
         StopLogAndReset(sw, $"step {++stepId} - parsing the document - took");
-        if(originalDocument == null)
-            originalDocument = new OpenApiDocument(openApiDocument);
+        originalDocument ??= new OpenApiDocument(openApiDocument);
 
         // Should Generate
         sw.Start();
@@ -141,7 +141,7 @@ public class KiotaBuilder
     {
         var sw = new Stopwatch();
         // Read input stream
-        string inputPath = config.OpenAPIFilePath;
+        var inputPath = config.OpenAPIFilePath;
 
         try {
             CleanOutputDirectory();
@@ -207,8 +207,6 @@ public class KiotaBuilder
     }
     private void SetApiRootUrl() {
         config.ApiRootUrl = openApiDocument.Servers.FirstOrDefault()?.Url.TrimEnd('/');
-        if(string.IsNullOrEmpty(config.ApiRootUrl))
-            logger.LogWarning("A servers entry (v3) or host + basePath + schemes properties (v2) was not present in the OpenAPI description. The root URL will need to be set manually with the request adapter.");
     }
     private void StopLogAndReset(Stopwatch sw, string prefix) {
         sw.Stop();
@@ -253,18 +251,21 @@ public class KiotaBuilder
         return input;
     }
 
-    public OpenApiDocument CreateOpenApiDocument(Stream input)
+    public OpenApiDocument CreateOpenApiDocument(Stream input, bool generating = false)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         logger.LogTrace("Parsing OpenAPI file");
+        var ruleSet = ValidationRuleSet.GetDefaultRuleSet();
+        if (generating)
+            ruleSet.AddKiotaValidationRules(config);
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
             ExtensionParsers = new()
             {
                 {
                     OpenApiPagingExtension.Name,
-                    (i, _) => OpenApiPagingExtension.Parse(i)
+                    static (i, _) => OpenApiPagingExtension.Parse(i)
                 },
                 {
                     OpenApiEnumValuesDescriptionExtension.Name,
@@ -274,16 +275,20 @@ public class KiotaBuilder
                     OpenApiKiotaExtension.Name,
                     static (i, _ ) => OpenApiKiotaExtension.Parse(i)
                 },
-            }
+            },
+            RuleSet = ruleSet,
         });
         var doc = reader.Read(input, out var diag);
         stopwatch.Stop();
-        if (diag.Errors.Count > 0)
+        if(generating)
+            foreach (var warning in diag.Warnings)
+                logger.LogWarning("OpenAPI warning: {pointer} - {warning}", warning.Pointer, warning.Message);
+        if (diag.Errors.Any())
         {
             logger.LogTrace("{timestamp}ms: Parsed OpenAPI with errors. {count} paths found.", stopwatch.ElapsedMilliseconds, doc?.Paths?.Count ?? 0);
             foreach(var parsingError in diag.Errors)
             {
-                logger.LogError("OpenApi Parsing error: {message}", parsingError.ToString());
+                logger.LogError("OpenAPI error: {pointer} - {message}", parsingError.Pointer, parsingError.Message);
             }
         }
         else
@@ -733,6 +738,7 @@ public class KiotaBuilder
                 ("string", "time") => "TimeOnly",
                 ("string", "date") => "DateOnly",
                 ("string", "date-time") => "DateTimeOffset",
+                ("string", "uuid") => "Guid",
                 ("string", _) => "string", // covers commonmark and html
                 ("number", "double" or "float" or "decimal") => format.ToLowerInvariant(),
                 ("number" or "integer", "int8") => "sbyte",
@@ -1044,7 +1050,7 @@ public class KiotaBuilder
         };
         if(!string.IsNullOrEmpty(schema.Reference?.Id))
             unionType.TargetNamespace = codeNamespace.GetRootNamespace().FindOrAddNamespace(GetModelsNamespaceNameFromReferenceId(schema.Reference.Id));
-        unionType.DiscriminatorInformation.DiscriminatorPropertyName = GetDiscriminatorPropertyName(schema);
+        unionType.DiscriminatorInformation.DiscriminatorPropertyName = schema.GetDiscriminatorPropertyName();
         GetDiscriminatorMappings(currentNode, schema, codeNamespace, null)
             ?.ToList()
             .ForEach(x => unionType.DiscriminatorInformation.AddDiscriminatorMapping(x.Key, x.Value));
@@ -1189,71 +1195,17 @@ public class KiotaBuilder
                                     type.TypeDefinition is CodeClass definition &&
                                     definition.DerivesFrom(newClass)); // only the mappings that derive from the current class
 
-        AddDiscriminatorMethod(newClass, GetDiscriminatorPropertyName(schema), mappings);
+        AddDiscriminatorMethod(newClass, schema.GetDiscriminatorPropertyName(), mappings);
         return newClass;
     }
-    private static string GetDiscriminatorPropertyName(OpenApiSchema schema) {
-        if(schema == null)
-            return string.Empty;
-
-        if (!string.IsNullOrEmpty(schema.Discriminator?.PropertyName))
-            return schema.Discriminator.PropertyName;
-
-        if(schema.OneOf.Any())
-            return schema.OneOf.Select(static x => GetDiscriminatorPropertyName(x)).FirstOrDefault(static x => !string.IsNullOrEmpty(x));
-        if (schema.AnyOf.Any())
-            return schema.AnyOf.Select(static x => GetDiscriminatorPropertyName(x)).FirstOrDefault(static x => !string.IsNullOrEmpty(x));
-        if (schema.AllOf.Any())
-            return GetDiscriminatorPropertyName(schema.AllOf.Last());
-
-        return string.Empty;
-    }
-    private static readonly Func<OpenApiSchema, bool> allOfEvaluatorForMappings = static x => x.Discriminator?.Mapping.Any() ?? false;
     private IEnumerable<KeyValuePair<string, CodeTypeBase>> GetDiscriminatorMappings(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace currentNamespace, CodeClass baseClass) {
-        if(schema == null)
-            return Enumerable.Empty<KeyValuePair<string, CodeTypeBase>>();
-        if(!(schema.Discriminator?.Mapping?.Any() ?? false))
-            if(schema.OneOf.Any())
-                return schema.OneOf.SelectMany(x => GetDiscriminatorMappings(currentNode, x, currentNamespace, baseClass));
-            else if (schema.AnyOf.Any())
-                return schema.AnyOf.SelectMany(x => GetDiscriminatorMappings(currentNode, x, currentNamespace, baseClass));
-            else if (schema.AllOf.Any(allOfEvaluatorForMappings) && schema.AllOf.Last().Equals(schema.AllOf.Last(allOfEvaluatorForMappings)))
-                // ensure the matched AllOf entry is the last in the list
-                return GetDiscriminatorMappings(currentNode, schema.AllOf.Last(allOfEvaluatorForMappings), currentNamespace, baseClass);
-            else if (!string.IsNullOrEmpty(schema.Reference?.Id)) {
-                var result = GetAllInheritanceSchemaReferences(schema.Reference?.Id)
-                            .Select(x => KeyValuePair.Create(x, GetCodeTypeForMapping(currentNode, x, currentNamespace, baseClass, schema)))
-                            .Where(x => x.Value != null)
-                            .ToList();
-                if(GetCodeTypeForMapping(currentNode, schema.Reference?.Id, currentNamespace, baseClass, schema) is CodeTypeBase currentType)
-                    result.Add(KeyValuePair.Create(schema.Reference?.Id, currentType));
-                return result;
-            } else
-                return Enumerable.Empty<KeyValuePair<string, CodeTypeBase>>();
-
-        return schema.Discriminator
-                .Mapping
+        return schema.GetDiscriminatorMappings(inheritanceIndex)
                 .Select(x => KeyValuePair.Create(x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, baseClass, schema)))
                 .Where(static x => x.Value != null);
     }
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex = new ();
     private void InitializeInheritanceIndex() {
-        if(!inheritanceIndex.Any() && openApiDocument?.Components?.Schemas != null) {
-            Parallel.ForEach(openApiDocument.Components.Schemas, entry => {
-                inheritanceIndex.TryAdd(entry.Key, new(StringComparer.OrdinalIgnoreCase));
-                if(entry.Value.AllOf != null)
-                    foreach(var allOfEntry in entry.Value.AllOf.Where(static x => !string.IsNullOrEmpty(x.Reference?.Id))) {
-                        var dependents = inheritanceIndex.GetOrAdd(allOfEntry.Reference.Id, new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase));
-                        dependents.TryAdd(entry.Key, false);
-                    }
-            });
-        }
-    }
-    private IEnumerable<string> GetAllInheritanceSchemaReferences(string currentReferenceId)
-    {
-        if (inheritanceIndex.TryGetValue(currentReferenceId, out var dependents))
-            return dependents.Keys.Union(dependents.Keys.SelectMany(x => GetAllInheritanceSchemaReferences(x))).Distinct(StringComparer.OrdinalIgnoreCase);
-        return Enumerable.Empty<string>();
+        openApiDocument?.InitializeInheritanceIndex(inheritanceIndex);
     }
     public static void AddDiscriminatorMethod(CodeClass newClass, string discriminatorPropertyName, IEnumerable<KeyValuePair<string, CodeTypeBase>> discriminatorMappings) {
         var factoryMethod = new CodeMethod {

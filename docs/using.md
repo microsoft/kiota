@@ -189,6 +189,7 @@ kiota generate (--openapi | -d) <path>
       [(--structured-mime-types | -m) <mime-types>]
       [(--include-path | -i) <glob pattern>]
       [(--exclude-path | -e) <glob pattern>]
+      [(--disable-validation-rules | --dvr) <rule name>]
 ```
 
 > Note: the output directory will also contain a **kiota-lock.json** lock file in addition to client sources. This file contains all the generation parameters for future reference as well as a hash from the description. On subsequent generations, including updates, the generation will be skipped if the description and the parameters have not changed and if clean-output is **false**. The lock file is meant to be committed to the source control with the generated sources.
@@ -255,6 +256,30 @@ One or more module names that implements `IParseNodeFactory`.
 
 ```shell
 kiota generate --deserializer Contoso.Json.CustomDeserializer
+```
+
+#### `--disable-validation-rules (--dvr)`
+
+The name of the OpenAPI description validation rule to disable. Or `all` to disable all validation rules.
+
+Kiota runs a set of validation rules before generating the client to ensure the description contains accurate information to build great client experience.
+
+##### Accepted values
+
+Rules:
+
+- DivergentResponseSchema: returns a warning if an operation defines multiple different successful response schemas. (200, 201, 202, 203)
+- GetWithBody: returns a warning if a GET request has a body defined.
+- InconsistentTypeFormat: returns a warning if an inconsistent type/format pair is defined. (e.g. type: string, format: int32)
+- KnownAndNotSupportedFormats: returns a warning if a known formats is not supported for generation. (e.g. email, uri, ...)
+- MissingDiscriminator: returns a warning if an anyOf or oneOf schema is used without a discriminator property name.
+- MultipleServerEntries: returns a warning if multiple servers are defined.
+- NoContentWithBody: returns a warning if a response schema is defined for a 204 response.
+- NoServerEntry: returns a warning if no servers are defined.
+- UrlFormEncodedComplex: returns a warning if a response of type uri form encoded has a schema that contains complex properties.
+
+```shell
+kiota generate --disable-validation-rules NoServerEntry
 ```
 
 #### `--namespace-name (-n)`

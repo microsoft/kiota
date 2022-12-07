@@ -32,13 +32,13 @@ public class DiscriminatorInformation : CodeElement, ICloneable
     public void AddDiscriminatorMapping(string key, CodeTypeBase type)
     {
         ArgumentNullException.ThrowIfNull(type);
-        if (string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+        ArgumentException.ThrowIfNullOrEmpty(key);
         discriminatorMappings.TryAdd(key, type);
     }
 
     public CodeTypeBase GetDiscriminatorMappingValue(string key)
     {
-        if (string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+        ArgumentException.ThrowIfNullOrEmpty(key);
         if (discriminatorMappings.TryGetValue(key, out var value))
             return value;
         return null;

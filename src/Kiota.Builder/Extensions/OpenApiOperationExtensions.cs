@@ -7,7 +7,7 @@ using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions {
     public static class OpenApiOperationExtensions {
-        private static readonly HashSet<string> successCodes = new(StringComparer.OrdinalIgnoreCase) {"200", "201", "202", "203", "2XX"}; //204 excluded as it won't have a schema
+        internal static readonly HashSet<string> SuccessCodes = new(StringComparer.OrdinalIgnoreCase) {"200", "201", "202", "203", "2XX"}; //204 excluded as it won't have a schema
         /// <summary>
         /// cleans application/vnd.github.mercy-preview+json to application/json
         /// </summary>
@@ -15,10 +15,15 @@ namespace Kiota.Builder.Extensions {
         public static OpenApiSchema GetResponseSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
         {
             // Return Schema that represents all the possible success responses!
-            return operation.Responses.Where(r => successCodes.Contains(r.Key))
-                                .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
-                                .SelectMany(re => re.Value.Content.GetValidSchemas(structuredMimeTypes))
+            return operation.GetResponseSchemas(SuccessCodes, structuredMimeTypes)
                                 .FirstOrDefault();
+        }
+        internal static IEnumerable<OpenApiSchema> GetResponseSchemas(this OpenApiOperation operation, HashSet<string> successCodesToUse, HashSet<string> structuredMimeTypes)
+        {
+            // Return Schema that represents all the possible success responses!
+            return operation.Responses.Where(r => successCodesToUse.Contains(r.Key))
+                                .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
+                                .SelectMany(re => re.Value.Content.GetValidSchemas(structuredMimeTypes));
         }
         public static OpenApiSchema GetRequestSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
         {

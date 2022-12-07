@@ -10,8 +10,7 @@ public class SwiftConventionService : CommonLanguageConventionService
 {
     public SwiftConventionService(string clientNamespaceName)
     {
-        if(string.IsNullOrEmpty(clientNamespaceName))
-            throw new ArgumentNullException(nameof(clientNamespaceName));
+        ArgumentException.ThrowIfNullOrEmpty(clientNamespaceName);
         this.clientNamespaceName = clientNamespaceName;
     }
     // TODO (Swift) reevaluate entire file for Swift
