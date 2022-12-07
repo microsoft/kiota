@@ -1208,6 +1208,29 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesMethodDescriptionLink() {
+        method.Documentation.Description = MethodDescription;
+        method.Documentation.DocumentationLabel = "see more";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        var parameter = new CodeParameter
+        {
+            Documentation = new() {
+                Description = ParamDescription,
+            },
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        };
+        method.AddParameter(parameter);
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("@see <a href=", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void Defensive() {
         var codeMethodWriter = new CodeMethodWriter(new JavaConventionService());
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));

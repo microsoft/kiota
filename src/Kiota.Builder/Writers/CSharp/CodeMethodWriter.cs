@@ -525,7 +525,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
     {
-        var parametersWithDescription = code.Parameters.Where(static x => !string.IsNullOrEmpty(x.Documentation.Description));
+        var parametersWithDescription = code.Parameters.Where(static x => x.Documentation.DescriptionAvailable);
         if (code.Documentation.DescriptionAvailable || parametersWithDescription.Any())
         {
             writer.WriteLine($"{conventions.DocCommentPrefix}<summary>");
