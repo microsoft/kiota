@@ -633,11 +633,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         return collectionCorrectedReturnType;
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
-        var isDescriptionPresent = !string.IsNullOrEmpty(code.Documentation.Description);
-        var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Documentation.Description));
-        if (isDescriptionPresent || parametersWithDescription.Any()) {
+        var parametersWithDescription = code.Parameters.Where(static x => x.Documentation.DescriptionAvailable);
+        if (code.Documentation.DescriptionAvailable || parametersWithDescription.Any()) {
             writer.WriteLine(conventions.DocCommentStart);
-            if(isDescriptionPresent)
+            if(code.Documentation.DescriptionAvailable)
                 writer.WriteLine($"{conventions.DocCommentPrefix}{JavaConventionService.RemoveInvalidDescriptionCharacters(code.Documentation.Description)}");
             foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
                 writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.Description)}");
@@ -646,6 +645,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 writer.WriteLine($"{conventions.DocCommentPrefix}@return a CompletableFuture of {code.ReturnType.Name}");
             else
                 writer.WriteLine($"{conventions.DocCommentPrefix}@return a {code.ReturnType.Name}");
+
+            if(code.Documentation.ExternalDocumentationAvailable)
+                writer.WriteLine($"{conventions.DocCommentPrefix}@see <a href=\"{code.Documentation.DocumentationLink}\">{code.Documentation.DocumentationLabel}</a>");
             writer.WriteLine(conventions.DocCommentEnd);
         }
     }
