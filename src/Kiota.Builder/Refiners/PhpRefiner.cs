@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -33,7 +34,7 @@ public class PhpRefiner: CommonLanguageRefiner
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",
-                addUsings: false
+                addUsings: true
             );
             cancellationToken.ThrowIfCancellationRequested();
             CorrectParameterType(generatedCode);
@@ -240,15 +241,17 @@ public class PhpRefiner: CommonLanguageRefiner
                     .Where(x => x.Declaration
                         .Name
                         .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
-            foreach (var usingElement in duplicatedSymbolsUsings)
+            var symbolsUsing = duplicatedSymbolsUsings as CodeUsing[] ?? duplicatedSymbolsUsings.ToArray();
+            //currentClass.StartBlock.RemoveUsings(symbolsUsing.ToArray());
+            foreach (var usingElement in symbolsUsing)
             {
                 var declaration = usingElement.Declaration.TypeDefinition?.Name;
                 if (string.IsNullOrEmpty(declaration)) continue;
-                var replacement = string.Join(string.Empty, usingElement.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name
+                var replacement = string.Join("\\", usingElement.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name
                     .Split(new[]{'\\', '.'}, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToFirstCharacterUpperCase())
                     .ToArray());
-                usingElement.Alias = $"{replacement}{declaration.ToFirstCharacterUpperCase()}";
+                usingElement.Declaration.Name = $"{(string.IsNullOrEmpty(replacement) ? string.Empty : $"\\{replacement}")}\\{declaration.ToFirstCharacterUpperCase()}";
             }
         }
         CrawlTree(currentElement, AliasUsingWithSameSymbol);

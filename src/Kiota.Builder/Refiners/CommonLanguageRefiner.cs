@@ -683,35 +683,37 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true) {
         if(currentElement is CodeMethod currentMethod &&
             currentMethod.Parent is CodeClass parentClass &&
-            parentClass.StartBlock is ClassDeclaration declaration) {
+            parentClass.StartBlock is ClassDeclaration declaration) { 
+            var parentClassNamespace = parentClass.GetImmediateParentOfType<CodeNamespace>();
                 if(currentMethod.IsOfKind(CodeMethodKind.Factory) &&
                     (parentClass.DiscriminatorInformation?.HasBasicDiscriminatorInformation ?? false)) {
-                        if(addUsings)
-                            declaration.AddUsings(parentClass.DiscriminatorInformation.DiscriminatorMappings
-                                .Select(static x => x.Value)
-                                .OfType<CodeType>()
-                                .Where(static x => x.TypeDefinition != null)
-                                .Select(x => new CodeUsing {
-                                    Name = x.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name,
-                                    Declaration = new CodeType {
-                                        Name = x.TypeDefinition.Name,
-                                        TypeDefinition = x.TypeDefinition,
-                                    },
+                    if(addUsings)
+                        declaration.AddUsings(parentClass.DiscriminatorInformation.DiscriminatorMappings
+                            .Select(static x => x.Value)
+                            .OfType<CodeType>()
+                            .Where(static x => x.TypeDefinition != null)
+                            .Where(x => !x.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name.Equals(parentClassNamespace.Name, StringComparison.OrdinalIgnoreCase))
+                            .Select(x => new CodeUsing {
+                                Name = x.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name,
+                                Declaration = new CodeType {
+                                    Name = x.TypeDefinition.Name,
+                                    TypeDefinition = x.TypeDefinition,
+                                },
                             }).ToArray());
-                        if (currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode, out var parameter))
-                            parameter.Type.Name = parseNodeInterfaceName;
+                    if (currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode, out var parameter))
+                        parameter.Type.Name = parseNodeInterfaceName;
                 } else if (addFactoryMethodImport &&
                     currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
                     currentMethod.ReturnType is CodeType type &&
                     type.TypeDefinition is CodeClass modelClass &&
                     modelClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.Factory)) is CodeMethod factoryMethod) {
-                        declaration.AddUsings(new CodeUsing {
-                            Name = modelClass.GetImmediateParentOfType<CodeNamespace>().Name,
-                            Declaration = new CodeType {
-                                Name = factoryMethod.Name,
-                                TypeDefinition = factoryMethod,
-                            }
-                        });
+                    declaration.AddUsings(new CodeUsing {
+                        Name = modelClass.GetImmediateParentOfType<CodeNamespace>().Name,
+                        Declaration = new CodeType {
+                            Name = factoryMethod.Name,
+                            TypeDefinition = factoryMethod,
+                        }
+                    });
                 }
         }
         CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, parseNodeInterfaceName, addFactoryMethodImport, addUsings));
