@@ -41,7 +41,8 @@ public class PhpRefiner: CommonLanguageRefiner
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",
-                addUsings: true
+                addUsings: true,
+                allowImportFromSameNamespace: false
             );
             var defaultConfiguration = new GenerationConfiguration();
             ReplaceDefaultSerializationModules(generatedCode,
