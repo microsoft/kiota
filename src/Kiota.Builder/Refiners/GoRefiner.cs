@@ -218,16 +218,13 @@ public class GoRefiner : CommonLanguageRefiner
         if (currentElement is CodeMethod codeMethod 
             && codeMethod.IsOfKind(CodeMethodKind.RequestGenerator, CodeMethodKind.RequestExecutor))
         {
-            foreach (var param in codeMethod.Parameters){
-                if (param.IsOfKind(CodeParameterKind.RequestConfiguration)){
-                    var nameList = getPathsName(param, param.Type.Name.ToFirstCharacterUpperCase());
-                    var newTypeName = string.Join(string.Empty,nameList.Count > 1 ?  nameList.Skip(1) : nameList);
-                    param.Type.Name = newTypeName;
+            foreach (var param in codeMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.RequestConfiguration))){
+                 var nameList = getPathsName(param, param.Type.Name.ToFirstCharacterUpperCase());
+                 var newTypeName = string.Join(string.Empty,nameList.Count > 1 ?  nameList.Skip(1) : nameList);
+                 param.Type.Name = newTypeName;
                     
-                    foreach (var ct  in param.Type.AllTypes)
-                        if(!newTypeName.EndsWith(ct.TypeDefinition?.Name.ToFirstCharacterUpperCase(), StringComparison.OrdinalIgnoreCase))
-                            ct.TypeDefinition.Name = newTypeName;
-                }
+                 foreach (var typeDef in param.Type.AllTypes.Select(static x => x.TypeDefinition).Where(x => !newTypeName.EndsWith(x?.Name, StringComparison.OrdinalIgnoreCase)))
+                      typeDef.Name = newTypeName;
             }
             
         }
