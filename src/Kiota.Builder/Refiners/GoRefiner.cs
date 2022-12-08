@@ -225,7 +225,7 @@ public class GoRefiner : CommonLanguageRefiner
                     param.Type.Name = newTypeName;
                     
                     foreach (var ct  in param.Type.AllTypes)
-                        if(ct.TypeDefinition != null  && !newTypeName.EndsWith(ct.TypeDefinition.Name.ToFirstCharacterUpperCase()))
+                        if(!newTypeName.EndsWith(ct.TypeDefinition?.Name.ToFirstCharacterUpperCase(), StringComparison.OrdinalIgnoreCase))
                             ct.TypeDefinition.Name = newTypeName;
                 }
             }
