@@ -421,7 +421,9 @@ public class TypeScriptLanguageRefinerTests {
             Name = "cancelletionToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Description = "Cancellation token to use when cancelling requests",
+            Documentation = new() {
+                Description = "Cancellation token to use when cancelling requests",
+            },
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);

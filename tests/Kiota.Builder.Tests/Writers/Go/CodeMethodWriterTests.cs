@@ -1140,11 +1140,13 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact(Skip = "descriptions are not supported")]
     public void WritesMethodSyncDescription() {
-        method.Description = MethodDescription;
+        method.Documentation.Description = MethodDescription;
         method.IsAsync = false;
         var parameter = new CodeParameter
         {
-            Description = ParamDescription,
+            Documentation = new() {
+                Description = ParamDescription
+            },
             Name = ParamName,
             Type = new CodeType
             {
@@ -1155,6 +1157,29 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("@return a CompletableFuture of", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesMethodDescriptionLink() {
+        method.Documentation.Description = MethodDescription;
+        method.Documentation.DocumentationLabel = "see more";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        var parameter = new CodeParameter
+        {
+            Documentation = new() {
+                Description = ParamDescription,
+            },
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        };
+        method.AddParameter(parameter);
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("[see more]: ", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1276,7 +1301,7 @@ public class CodeMethodWriterTests : IDisposable {
                 Name = "string"
             }
         });
-        method.Description = "Some description";
+        method.Documentation.Description = "Some description";
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"// {method.Name.ToFirstCharacterUpperCase()} some description", result);

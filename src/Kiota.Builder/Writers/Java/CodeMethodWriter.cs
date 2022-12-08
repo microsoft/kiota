@@ -633,21 +633,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         return collectionCorrectedReturnType;
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
-        var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
-        var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
-        if (isDescriptionPresent || parametersWithDescription.Any()) {
-            writer.WriteLine(conventions.DocCommentStart);
-            if(isDescriptionPresent)
-                writer.WriteLine($"{conventions.DocCommentPrefix}{JavaConventionService.RemoveInvalidDescriptionCharacters(code.Description)}");
-            foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
-                writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
-            
-            if(code.IsAsync)
-                writer.WriteLine($"{conventions.DocCommentPrefix}@return a CompletableFuture of {code.ReturnType.Name}");
-            else
-                writer.WriteLine($"{conventions.DocCommentPrefix}@return a {code.ReturnType.Name}");
-            writer.WriteLine(conventions.DocCommentEnd);
-        }
+        var returnRemark = code.IsAsync switch {
+            true => $"@return a CompletableFuture of {code.ReturnType.Name}",
+            false => $"@return a {code.ReturnType.Name}",
+        };
+        conventions.WriteLongDescription(code.Documentation, 
+                                        writer, 
+                                        code.Parameters
+                                            .Where(static x => x.Documentation.DescriptionAvailable)
+                                            .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                            .Select(x => $"@param {x.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
+                                            .Union(new [] { returnRemark }));
+        
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;

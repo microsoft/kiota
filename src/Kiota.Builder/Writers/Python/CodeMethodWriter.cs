@@ -184,7 +184,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .OrderByDescending(static x => x.Kind)
                                         .ThenBy(static x => x.Name)) {
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
-            conventions.WriteInLineDescription(propWithDefault.Description, writer);
+            conventions.WriteInLineDescription(propWithDefault.Documentation.Description, writer);
             writer.WriteLine($"self.{conventions.GetAccessModifier(propWithDefault.Access)}{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
             writer.WriteLine();
         }
@@ -203,7 +203,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .OrderByDescending(static x => x.Kind)
                                         .ThenBy(static x => x.Name)) {
             var returnType = conventions.GetTypeString(propWithoutDefault.Type, propWithoutDefault, true, writer);
-            conventions.WriteInLineDescription(propWithoutDefault.Description, writer);
+            conventions.WriteInLineDescription(propWithoutDefault.Documentation.Description, writer);
             writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
         }
     }
@@ -333,20 +333,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.WriteLine($"writer.write_additional_data_value(self.{additionalDataProperty.Name.ToSnakeCase()})");
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
-        var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
-        var parametersWithDescription = code.Parameters.Where(_ => !string.IsNullOrEmpty(code.Description));
+        var isDescriptionPresent = !string.IsNullOrEmpty(code.Documentation.Description);
+        var parametersWithDescription = code.Parameters.Where(_ => !string.IsNullOrEmpty(code.Documentation.Description));
         var nullablePrefix = code.ReturnType.IsNullable && !isVoid ? "Optional[" : string.Empty;
         var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? "]" : string.Empty;
         if (isDescriptionPresent || parametersWithDescription.Any()) {
             writer.WriteLine(conventions.DocCommentStart);
             if(isDescriptionPresent)
-                writer.WriteLine($"{conventions.DocCommentPrefix}{PythonConventionService.RemoveInvalidDescriptionCharacters(code.Description)}");
+                writer.WriteLine($"{conventions.DocCommentPrefix}{PythonConventionService.RemoveInvalidDescriptionCharacters(code.Documentation.Description)}");
             if(parametersWithDescription.Any()) {
                 writer.WriteLine("Args:");
                 writer.IncreaseIndent();
                 
                 foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
-                    writer.WriteLine($"{conventions.DocCommentPrefix}{paramWithDescription.Name}: {PythonConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
+                    writer.WriteLine($"{conventions.DocCommentPrefix}{paramWithDescription.Name}: {PythonConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.Description)}");
                 writer.DecreaseIndent();
             }
             if(!isVoid)

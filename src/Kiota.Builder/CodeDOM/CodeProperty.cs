@@ -72,7 +72,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
         type = value;
     }}
     public string DefaultValue {get;set;}
-    public string Description {get; set;}
+    public CodeDocumentation Documentation { get; set; } = new();
     public string SerializationName { get; set; }
     public string NamePrefix { get; set; }
     public bool IsNameEscaped { get => !string.IsNullOrEmpty(SerializationName); }

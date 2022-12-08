@@ -46,7 +46,7 @@ public class CodePropertyWriterTests: IDisposable {
     [Fact]
     public void WritesRequestBuilder() {
         property.Kind = CodePropertyKind.RequestBuilder;
-        property.Description = "This is a request builder";
+        property.Documentation.Description = "This is a request builder";
         writer.Write(property);
         var result = tw.ToString();
         Assert.Contains("def property_name(", result);

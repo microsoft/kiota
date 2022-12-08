@@ -157,7 +157,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             if(urlTplParams != null &&
                 urlTplParams.Type is CodeType originalType) {
                 originalType.Name = "Dict[str, Any]";
-                urlTplParams.Description = "The raw url or the Url template parameters for the request.";
+                urlTplParams.Documentation.Description = "The raw url or the Url template parameters for the request.";
                 var unionType = new CodeUnionType {
                     Name = "raw_url_or_template_parameters",
                     IsNullable = true,

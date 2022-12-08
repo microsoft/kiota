@@ -342,22 +342,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, bool isVoid) {
-        var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
-        var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
-        if (isDescriptionPresent || parametersWithDescription.Any()) {
-            writer.WriteLine(localConventions.DocCommentStart);
-            if(isDescriptionPresent)
-                writer.WriteLine($"{localConventions.DocCommentPrefix}{TypeScriptConventionService.RemoveInvalidDescriptionCharacters(code.Description)}");
-            foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
-                writer.WriteLine($"{localConventions.DocCommentPrefix}@param {paramWithDescription.Name} {TypeScriptConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
-            
-            if(!isVoid)
-                if(code.IsAsync)
-                    writer.WriteLine($"{localConventions.DocCommentPrefix}@returns a Promise of {code.ReturnType.Name.ToFirstCharacterUpperCase()}");
-                else
-                    writer.WriteLine($"{localConventions.DocCommentPrefix}@returns a {code.ReturnType.Name}");
-            writer.WriteLine(localConventions.DocCommentEnd);
-        }
+        var returnRemark = (isVoid, code.IsAsync) switch {
+            (true, _) => string.Empty,
+            (false, true) => $"@returns a Promise of {code.ReturnType.Name.ToFirstCharacterUpperCase()}",
+            (false, false) => $"@returns a {code.ReturnType.Name}",
+        };
+        localConventions.WriteLongDescription(code.Documentation, 
+                                            writer, 
+                                            code.Parameters
+                                                .Where(static x => x.Documentation.DescriptionAvailable)
+                                                .OrderBy(static x => x.Name)
+                                                .Select(x => $"@param {x.Name} {TypeScriptConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
+                                                .Union(new[] { returnRemark }));
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {

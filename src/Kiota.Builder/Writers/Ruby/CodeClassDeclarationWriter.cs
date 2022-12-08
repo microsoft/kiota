@@ -43,7 +43,7 @@ namespace  Kiota.Builder.Writers.Ruby {
             }
     
             var derivation = codeElement.Inherits == null ? string.Empty : $" < {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}";
-            conventions.WriteShortDescription((codeElement.Parent as CodeClass).Description, writer);
+            conventions.WriteShortDescription((codeElement.Parent as CodeClass).Documentation.Description, writer);
             writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}");
             writer.IncreaseIndent();
             var mixins = !codeElement.Implements.Any() ? string.Empty : $"include {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}";

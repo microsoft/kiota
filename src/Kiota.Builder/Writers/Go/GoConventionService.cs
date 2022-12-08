@@ -144,6 +144,15 @@ public class GoConventionService : CommonLanguageConventionService
     {
         writer.WriteLine($"{DocCommentPrefix}{description}");
     }
+    public void WriteLinkDescription(CodeDocumentation documentation, LanguageWriter writer)
+    {
+        if(documentation is null) return;
+        if(documentation.ExternalDocumentationAvailable) {
+            WriteShortDescription($"[{documentation.DocumentationLabel}]", writer);
+            WriteShortDescription(string.Empty, writer);
+            WriteShortDescription($"[{documentation.DocumentationLabel}]: {documentation.DocumentationLink}", writer);
+        }
+    }
     #pragma warning disable CA1822 // Method should be static
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default)
     {

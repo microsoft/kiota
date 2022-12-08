@@ -108,7 +108,9 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                             IsExternal = true
                         },
                         Optional = false,
-                        Description = "Discriminator value from the payload",
+                        Documentation = new() {
+                            Description = "Discriminator value from the payload",
+                        },
                         Name = "discriminatorValue"
                     });
                     parentClass.AddMethod(newMethod);

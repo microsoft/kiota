@@ -11,7 +11,9 @@ namespace Kiota.Builder.Tests.CodeDOM {
             var root = CodeNamespace.InitRootNamespace();
             var codeEnum = root.AddEnum(new CodeEnum {
                 Name = "Enum",
-                Description = "some description",
+                Documentation = new() {
+                    Description = "some description",
+                },
                 Flags = true,
             }).First();
             codeEnum.AddOption(new CodeEnumOption { Name = "option1"});

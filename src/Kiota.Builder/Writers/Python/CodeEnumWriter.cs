@@ -18,7 +18,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PythonConventionServic
         }
         else {
             codeElement.Options.ToList().ForEach(x => {
-            conventions.WriteInLineDescription(x.Description, writer);
+            conventions.WriteInLineDescription(x.Documentation.Description, writer);
             writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()} = \"{x.SerializationName ?? x.Name}\",");
             });
         }

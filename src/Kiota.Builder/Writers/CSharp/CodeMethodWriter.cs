@@ -525,17 +525,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
     {
-        var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
-        var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
-        if (isDescriptionPresent || parametersWithDescription.Any())
-        {
-            writer.WriteLine($"{conventions.DocCommentPrefix}<summary>");
-            if (isDescriptionPresent)
-                writer.WriteLine($"{conventions.DocCommentPrefix}{code.Description.CleanupXMLString()}");
-            writer.WriteLine($"{conventions.DocCommentPrefix}</summary>");
-            foreach (var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
-                writer.WriteLine($"{conventions.DocCommentPrefix}<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">{paramWithDescription.Description.CleanupXMLString()}</param>");
-        }
+        conventions.WriteLongDescription(code.Documentation, writer);
+        foreach (var paramWithDescription in code.Parameters
+                                                .Where(static x => x.Documentation.DescriptionAvailable)
+                                                .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
+            writer.WriteLine($"{conventions.DocCommentPrefix}<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">{paramWithDescription.Documentation.Description.CleanupXMLString()}</param>");
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool inherits, bool isVoid)

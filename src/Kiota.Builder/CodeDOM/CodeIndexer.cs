@@ -12,7 +12,7 @@ public class CodeIndexer : CodeTerminal, IDocumentedElement
         returnType = value;
     }}
     public string SerializationName { get; set; }
-    public string Description {get; set;}
+    public CodeDocumentation Documentation { get; set; } = new();
     /// <summary>
     /// The Path segment to use for the method name when using back-compatible methods.
     /// </summary>

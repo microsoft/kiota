@@ -137,7 +137,7 @@ public class GoRefiner : CommonLanguageRefiner
         if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) && currentMethod.Parameters.OfKind(CodeParameterKind.Cancellation) is CodeParameter parameter)
         {
             parameter.Name = ContextParameterName;
-            parameter.Description = ContextVarDescription;
+            parameter.Documentation.Description = ContextVarDescription;
             parameter.Kind = CodeParameterKind.Cancellation;
             parameter.Optional = false;
             parameter.Type.Name = conventions.ContextVarTypeName;
@@ -158,7 +158,9 @@ public class GoRefiner : CommonLanguageRefiner
                 },
                 Kind = CodeParameterKind.Cancellation,
                 Optional = false,
-                Description = ContextVarDescription,
+                Documentation = {
+                    Description = ContextVarDescription,
+                },
             });
         CrawlTree(currentElement, AddContextParameterToGeneratorMethods);
     }
@@ -223,7 +225,7 @@ public class GoRefiner : CommonLanguageRefiner
                     Name = currentProperty.Name,
                     ReturnType = currentProperty.Type,
                     Access = AccessModifier.Public,
-                    Description = currentProperty.Description,
+                    Documentation = currentProperty.Documentation.Clone() as CodeDocumentation,
                     IsAsync = false,
                     Kind = CodeMethodKind.RequestBuilderBackwardCompatibility,
                 });

@@ -311,7 +311,9 @@ public class PythonLanguageRefinerTests {
             Name = "cancellationToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Description = "Cancellation token to use when cancelling requests",
+            Documentation = new() {
+                Description = "Cancellation token to use when cancelling requests",
+            },
             Type = new CodeType { Name = "CancellationToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
