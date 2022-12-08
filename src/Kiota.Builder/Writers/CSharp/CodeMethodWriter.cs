@@ -408,8 +408,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         
         if (requestParams.requestConfiguration != null)
         {
-            writer.WriteLine($"if ({requestParams.requestConfiguration.Name} != null) {{");
-            writer.IncreaseIndent();
+            writer.StartBlock($"if ({requestParams.requestConfiguration.Name} != null) {{");
             writer.WriteLines($"var {RequestConfigVarName} = new {requestParams.requestConfiguration.Type.Name.ToFirstCharacterUpperCase()}();",
                             $"{requestParams.requestConfiguration.Name}.Invoke({RequestConfigVarName});");
             var queryString = requestParams.QueryParameters;
@@ -421,8 +420,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 writer.WriteLine($"{RequestInfoVarName}.AddRequestOptions({RequestConfigVarName}.{options.Name.ToFirstCharacterUpperCase()});");
             if (headers != null)
                 writer.WriteLine($"{RequestInfoVarName}.AddHeaders({RequestConfigVarName}.{headers.Name.ToFirstCharacterUpperCase()});");
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.CloseBlock();
         }
         writer.WriteLine($"return {RequestInfoVarName};");
     }
