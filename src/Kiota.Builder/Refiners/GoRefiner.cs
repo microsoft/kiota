@@ -244,8 +244,8 @@ public class GoRefiner : CommonLanguageRefiner
             .TrimStart('.')
             .Split('.'));
         // add the namespace to the code class Name
-        namespacePathSegments = namespacePathSegments.Select(x => x.ToFirstCharacterUpperCase().Trim())
-            .Where(x => !string.IsNullOrEmpty(x))
+        namespacePathSegments = namespacePathSegments.Select(static x => x.ToFirstCharacterUpperCase().Trim())
+            .Where(static x => !string.IsNullOrEmpty(x))
             .ToList();
             
         // check if the last element contains current name and remove it
@@ -422,16 +422,13 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota-abstractions-go/serialization", "ParseNode", "Parsable"),
         new (static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
-        /*new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer)
-            && method.Parent is CodeClass codeClass && codeClass.GetPropertiesOfKind(CodePropertyKind.Custom).Any(static x => !x.ExistsInBaseType),
-            "github.com/microsoft/kiota-abstractions-go", ""),*/
         new (static x => x is CodeMethod method && 
-                        method.IsOfKind(CodeMethodKind.RequestGenerator) &&
-                        method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) && 
+                         method.IsOfKind(CodeMethodKind.RequestGenerator) &&
+                         method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) && 
                                                     x.Type.IsCollection &&
                                                     x.Type is CodeType pType &&
                                                     (pType.TypeDefinition is CodeClass ||
-                                                    pType.TypeDefinition is CodeInterface)),
+                                                     pType.TypeDefinition is CodeInterface)),
             "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && 
                                             (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
