@@ -500,7 +500,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(current, x => DisableActionOf(x, kinds));
     }
-    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "", bool addToParentNamespace = false) {
+    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "", bool addToParentNamespace = false, Func<string,string,string> nameFactory = default) {
         if(current is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
             var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
             var innerClasses = currentClass
@@ -525,7 +525,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
             foreach (var innerClass in nestedClasses) {
                 var originalClassName = innerClass.Name;
-                if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
+
+                if (nameFactory != default)
+                    innerClass.Name = nameFactory(currentClass.Name, innerClass.Name);
+                else if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
                     innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
 
                 if(addToParentNamespace && parentNamespace.FindChildByName<CodeClass>(innerClass.Name, false) == null)
@@ -540,8 +543,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     innerClass.StartBlock.Inherits = new CodeType { Name = queryParametersBaseClassName, IsExternal = true };
             }
         }
-        CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName, addToParentNamespace));
+        CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName, addToParentNamespace, nameFactory));
     }
+    
     private static readonly CodeUsingComparer usingComparerWithDeclarations = new(true);
     private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new(false);
     protected readonly GenerationConfiguration _configuration;
