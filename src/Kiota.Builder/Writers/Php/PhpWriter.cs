@@ -13,6 +13,7 @@ namespace Kiota.Builder.Writers.Php
             AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService, useBackingStore));
             AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
             AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
         }
     }
 }
