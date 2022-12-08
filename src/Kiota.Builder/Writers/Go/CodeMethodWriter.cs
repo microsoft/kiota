@@ -581,14 +581,6 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLine("return nil");
             writer.CloseBlock();
         }
-
-        private string getSerializerTypeName(CodeProperty property) {
-            var typeName = conventions.GetTypeString(property.Type, property.Parent, true, false, false);
-            if (typeName.Contains("[]")) {
-                typeName = $"{typeName.Replace("[]", "")}Array";
-            }
-            return typeName.ToFirstCharacterUpperCase();
-        }
         
         private static string GetTypeAssertion(string originalReference, string typeImportName, string assignVarName = default, string statusVarName = default) =>
             $"{assignVarName}{(!string.IsNullOrEmpty(statusVarName) && !string.IsNullOrEmpty(assignVarName) ? ", ": string.Empty)}{statusVarName}{(string.IsNullOrEmpty(statusVarName) && string.IsNullOrEmpty(assignVarName) ? string.Empty : " := ")}{originalReference}.({typeImportName})";
@@ -788,34 +780,6 @@ namespace Kiota.Builder.Writers.Go {
                 _ when conventions.StreamTypeName.Equals(propertyTypeNameWithoutImportSymbol, StringComparison.OrdinalIgnoreCase) =>
                     "GetByteArrayValue()",
                 _ => $"GetObjectValue({GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)})",
-            };
-        }
-
-        private (string, string) GetDeserializationMethodNameAndFactory(CodeTypeBase propType, CodeClass parentClass)
-        {
-            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyTypeName = conventions.GetTypeString(propType, parentClass, false, false);
-            var propertyTypeNameWithoutImportSymbol = conventions.TranslateType(propType, false);
-            if(propType is CodeType currentType)
-            {
-                if(isCollection)
-                    if(currentType.TypeDefinition == null)
-                        return ("GetCollectionOfPrimitiveValues" , $"\"{propertyTypeName.ToFirstCharacterLowerCase()}\"");
-                    else if (currentType.TypeDefinition is CodeEnum)
-                        return ("GetCollectionOfEnumValues",
-                            conventions.GetImportedStaticMethodName(propType, parentClass, "Parse"));
-                    else
-                        return ("GetCollectionOfObjectValues", GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol));
-                if (currentType.TypeDefinition is CodeEnum currentEnum) {
-                    return ($"GetEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value" , conventions.GetImportedStaticMethodName(propType, parentClass, "Parse"));
-                }
-            }
-            return propertyTypeNameWithoutImportSymbol switch {
-                _ when conventions.IsPrimitiveType(propertyTypeNameWithoutImportSymbol) => 
-                    ($"Get{propertyTypeNameWithoutImportSymbol.ToFirstCharacterUpperCase()}Value", string.Empty),
-                _ when conventions.StreamTypeName.Equals(propertyTypeNameWithoutImportSymbol, StringComparison.OrdinalIgnoreCase) =>
-                    ("GetByteArrayValue", string.Empty),
-                _ => ("GetObjectValue", GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)),
             };
         }
 

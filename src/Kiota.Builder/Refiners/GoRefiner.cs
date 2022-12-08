@@ -223,7 +223,7 @@ public class GoRefiner : CommonLanguageRefiner
                  var newTypeName = string.Join(string.Empty,nameList.Count > 1 ?  nameList.Skip(1) : nameList);
                  param.Type.Name = newTypeName;
                     
-                 foreach (var typeDef in param.Type.AllTypes.Select(static x => x.TypeDefinition).Where(x => !newTypeName.EndsWith(x?.Name, StringComparison.OrdinalIgnoreCase)))
+                 foreach (var typeDef in param.Type.AllTypes.Select(static x => x.TypeDefinition).Where(x => x != null && !newTypeName.EndsWith(x?.Name, StringComparison.OrdinalIgnoreCase)))
                       typeDef.Name = newTypeName;
             }
             
@@ -343,33 +343,6 @@ public class GoRefiner : CommonLanguageRefiner
             }
         }
         CrawlTree(currentElement, RemoveModelPropertiesThatDependOnSubNamespaces);
-    }
-    private static CodeNamespace FindFirstModelSubnamepaceWithClasses(CodeNamespace currentNamespace) {
-        if(currentNamespace != null)
-        {
-            if(currentNamespace.Classes.Any()) return currentNamespace;
-            foreach (var subNS in currentNamespace.Namespaces)
-            {
-                var result = FindFirstModelSubnamepaceWithClasses(subNS);
-                if (result != null) return result;
-            }
-        }
-        return null;
-    }
-    private static CodeNamespace FindRootModelsNamespace(CodeNamespace currentNamespace) {
-        if(currentNamespace != null)
-        {
-            if(!string.IsNullOrEmpty(currentNamespace.Name) &&
-               currentNamespace.Name.EndsWith("Models", StringComparison.OrdinalIgnoreCase))
-                return currentNamespace;
-            foreach(var subNS in currentNamespace.Namespaces)
-            {
-                var result = FindRootModelsNamespace(subNS);
-                if(result != null)
-                    return result;
-            }
-        }
-        return null;
     }
     private static void ReplaceRequestBuilderPropertiesByMethods(CodeElement currentElement) {
         if(currentElement is CodeProperty currentProperty &&
