@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
@@ -141,75 +139,62 @@ public class GoRefiner : CommonLanguageRefiner
         }, cancellationToken);
     }
 
-    private static String MODELS_FOLDER = "models";
-    private static String BUILDERS_FOLDER = "builders";
-    
     private string MergeOverLappedStrings(string start, string end)
     {
+        var search = "RequestBuilder";
         start = start.ToFirstCharacterUpperCase();
         end = end.ToFirstCharacterUpperCase();
-        var endPattern = end.Substring(0, end.IndexOf("RequestBuilder",StringComparison.CurrentCultureIgnoreCase) + "RequestBuilder".Length);
+        var endPattern = end.Contains(search) ? end[..(end.IndexOf(search, StringComparison.OrdinalIgnoreCase) + search.Length)] : end;
 
         if (start.EndsWith(endPattern))
-            return $"{start.Substring(0, start.IndexOf(endPattern))}{end}";
+            return $"{start[..start.IndexOf(endPattern, StringComparison.OrdinalIgnoreCase)]}{end}";
             
         return $"{start}{end}";
     }
 
     private static void CorrectTypes(CodeElement currentElement)
     {
-        if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestBuilderBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters) && currentElement.Parent is CodeClass parentClass)
+        if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestBuilderBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters) && currentElement.Parent is CodeClass _)
         {
             var currentNamespace = currentMethod.GetImmediateParentOfType<CodeNamespace>();
-            if (currentNamespace.Depth > 0)
-            {
-                var codeType = currentMethod.ReturnType;
-                if (codeType is CodeType ct && !ct.Name.Equals(ct.TypeDefinition?.Name))
-                {
-                    ct.Name = ct.TypeDefinition?.Name;
-                }
-            }
+            if (currentNamespace.Depth > 0 && currentMethod.ReturnType is CodeType ct && !ct.Name.Equals(ct.TypeDefinition?.Name))
+                ct.Name = ct.TypeDefinition?.Name;
         }
         CrawlTree(currentElement, CorrectTypes);
     }
     
-    private CodeNamespace parentNames;
-    private CodeNamespace findParentNameSpace(CodeElement currentElement)
+    private CodeNamespace _clientNameSpace;
+    private CodeNamespace findClientNameSpace(CodeElement currentElement)
     {
+        if (_clientNameSpace != null) return _clientNameSpace;
         if (currentElement == null) return null;
-        if (parentNames != null) return parentNames;
-        
+
         var currentNamespace = currentElement.GetImmediateParentOfType<CodeNamespace>();
-        if (currentNamespace != null && _configuration.ClientNamespaceName.ToLower().Equals(currentNamespace.Name.ToLower()))
+        if (currentNamespace != null && (_configuration.ClientNamespaceName.Equals(currentNamespace.Name, StringComparison.OrdinalIgnoreCase) || currentElement.Parent == null))
         {
-            parentNames = currentNamespace;
+            _clientNameSpace = currentNamespace;
         }
 
-        return findParentNameSpace(currentElement.Parent);
+        return findClientNameSpace(currentElement.Parent);
     }
 
     private void FlattenNestedHierarchy(CodeElement currentElement) {
-        // move all models and request builders nested to the top level domain
-        if (currentElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model))
-        {
-            // if the parent is not the models namespace rename and move it
+        if (currentElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model)) {
+            // if the parent is not the models namespace rename and move it to package root
             var currentNamespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
-            var parentNameSpace = findParentNameSpace(currentNamespace);
+            var parentNameSpace = findClientNameSpace(currentNamespace);
 
-            var modelNameSpace = parentNameSpace.FindOrAddNamespace(_configuration.ClientNamespaceName + "." + MODELS_FOLDER);
-            if (!modelNameSpace.Name.Equals(currentNamespace.Name) && !currentNamespace.IsChildOf(modelNameSpace))
+            var modelNameSpace = parentNameSpace.FindOrAddNamespace($"{_configuration.ClientNamespaceName}.models");
+            var packageRootNameSpace = findNameSpaceAtLevel(parentNameSpace, currentNamespace, 1);
+            if (!packageRootNameSpace.Name.Equals(currentNamespace.Name) && !currentNamespace.IsChildOf(modelNameSpace))
             {
-                // rename the nested class and move it to the models namespace
                 var classNameList = getPathsName(codeClass, codeClass.Name);
-                
-                var newClassName = string.Join(String.Empty,classNameList);
-                if (!codeClass.Name.ToLower().Equals(newClassName.ToLower()))
-                {
-                    currentNamespace.RemoveChildElement(codeClass);
-                    codeClass.Name = newClassName;
-                    codeClass.Parent = modelNameSpace;
-                    modelNameSpace.AddClass(codeClass);
-                }
+                var newClassName = string.Join(string.Empty,classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
+
+                currentNamespace.RemoveChildElement(codeClass);
+                codeClass.Name = newClassName;
+                codeClass.Parent = packageRootNameSpace;
+                packageRootNameSpace.AddClass(codeClass);
             }
         }
 
@@ -218,24 +203,29 @@ public class GoRefiner : CommonLanguageRefiner
 
     private void FlattenGoParamsFileNames(CodeElement currentElement)
     {
-        if (currentElement is CodeProperty currentProp && currentElement.Parent is CodeClass parentClass && parentClass.IsOfKind(CodeClassKind.RequestConfiguration) && currentProp.IsOfKind(CodePropertyKind.QueryParameters))
+        if (currentElement is CodeProperty currentProp 
+            && currentElement.Parent is CodeClass parentClass 
+            && parentClass.IsOfKind(CodeClassKind.RequestConfiguration) 
+            && currentProp.IsOfKind(CodePropertyKind.QueryParameters))
         {
             var nameList = getPathsName(parentClass, currentProp.Type.Name.ToFirstCharacterUpperCase());
-            var newTypeName = string.Join(String.Empty,nameList);
+            var newTypeName = string.Join(string.Empty,nameList.Count > 1 ? nameList.Skip(1) : nameList);
                         
             var type = currentProp.Type;
             type.Name = newTypeName;
         }
 
-        if (currentElement is CodeMethod codeMethod && codeMethod.IsOfKind(CodeMethodKind.RequestGenerator, CodeMethodKind.RequestExecutor))
+        if (currentElement is CodeMethod codeMethod 
+            && codeMethod.IsOfKind(CodeMethodKind.RequestGenerator, CodeMethodKind.RequestExecutor))
         {
             foreach (var param in codeMethod.Parameters){
                 if (param.IsOfKind(CodeParameterKind.RequestConfiguration)){
-                    var newTypeName = string.Join(String.Empty,getPathsName(param, param.Type.Name.ToFirstCharacterUpperCase()));
+                    var nameList = getPathsName(param, param.Type.Name.ToFirstCharacterUpperCase());
+                    var newTypeName = string.Join(string.Empty,nameList.Count > 1 ?  nameList.Skip(1) : nameList);
                     param.Type.Name = newTypeName;
                     
                     foreach (var ct  in param.Type.AllTypes)
-                        if(!newTypeName.EndsWith(ct.TypeDefinition.Name.ToFirstCharacterUpperCase()))
+                        if(ct.TypeDefinition != null  && !newTypeName.EndsWith(ct.TypeDefinition.Name.ToFirstCharacterUpperCase()))
                             ct.TypeDefinition.Name = newTypeName;
                 }
             }
@@ -254,53 +244,44 @@ public class GoRefiner : CommonLanguageRefiner
             .TrimStart('.')
             .Split('.'));
         // add the namespace to the code class Name
-        namespacePathSegments = namespacePathSegments.Where(x => !string.IsNullOrEmpty(x))
-            .Select(x => x.ToFirstCharacterUpperCase().Trim())
+        namespacePathSegments = namespacePathSegments.Select(x => x.ToFirstCharacterUpperCase().Trim())
+            .Where(x => !string.IsNullOrEmpty(x))
             .ToList();
             
-        var classNameList = new List<string>(namespacePathSegments);
-        if (classNameList.Count > 0)
-        {
-            // check if the last element contains a name and remove it
-            var lastElement = classNameList.Last();
-            if (removeDuplicate && fileName.ToFirstCharacterUpperCase().Contains(lastElement))
-            {
-                classNameList.RemoveAt(classNameList.Count - 1);
-            }
-        }
-        classNameList.Add(fileName.ToFirstCharacterUpperCase());
-        return classNameList;
+        // check if the last element contains current name and remove it
+        if (namespacePathSegments.Count > 0 && removeDuplicate && fileName.ToFirstCharacterUpperCase().Contains(namespacePathSegments.Last()))
+            namespacePathSegments.RemoveAt(namespacePathSegments.Count - 1);
+        
+        namespacePathSegments.Add(fileName.ToFirstCharacterUpperCase());
+        return namespacePathSegments;
     }
 
-    private static CodeNamespace findParentAsLevel(CodeNamespace rootNameSpace, CodeNamespace currentNameSpace, int childLevel)
-    {
-        CodeNamespace checkSpace = currentNameSpace;
-        List<CodeNamespace> position = new List<CodeNamespace>();
-        position.Add(currentNameSpace);
-        while (checkSpace != null && !checkSpace.IsChildOf(rootNameSpace, true))
+    private static CodeNamespace findNameSpaceAtLevel(CodeNamespace rootNameSpace, CodeNamespace currentNameSpace, int level) {
+        var namespaceList = new List<CodeNamespace> { currentNameSpace };
+
+        var mySpace = currentNameSpace;
+        while (mySpace.Parent is CodeNamespace parentNameSpace && !parentNameSpace.Name.Equals(rootNameSpace.Name, StringComparison.OrdinalIgnoreCase))
         {
-            var foundNameSpace = checkSpace.GetImmediateParentOfType<CodeNamespace>(checkSpace.Parent);
-            checkSpace = foundNameSpace;
-            if (checkSpace != null)
-            {
-                position.Add(checkSpace);
-            }
+            namespaceList.Add(parentNameSpace);
+            mySpace = parentNameSpace;
         }
-        return position[^childLevel];
+
+        return namespaceList[^level];
     }
     
     private void FlattenGoFileNames(CodeElement currentElement) {
-        
         // add the namespace to the name of the code element and the file name
-        if (currentElement is CodeClass codeClass && codeClass.Parent is not null && !codeClass.IsOfKind(CodeClassKind.Model) && codeClass.Parent is CodeNamespace currentNamespace)
+        if (currentElement is CodeClass codeClass 
+            && codeClass.Parent is CodeNamespace currentNamespace 
+            && !codeClass.IsOfKind(CodeClassKind.Model))
         {
-            var rootNameSpace = findParentNameSpace(codeClass.Parent);
+            var rootNameSpace = findClientNameSpace(codeClass.Parent);
             if (!rootNameSpace.Name.Equals(currentNamespace.Name) && !currentNamespace.IsChildOf(rootNameSpace, true))
             {
                 var classNameList = getPathsName(codeClass, codeClass.Name.ToFirstCharacterUpperCase());
-                var newClassName = string.Join(String.Empty,classNameList);
+                var newClassName = string.Join(string.Empty,classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
                 
-                var nextNameSpace = findParentAsLevel(rootNameSpace, currentNamespace, 1);
+                var nextNameSpace = findNameSpaceAtLevel(rootNameSpace, currentNamespace, 1);
                 currentNamespace.RemoveChildElement(codeClass);
                 codeClass.Name = newClassName;
                 codeClass.Parent = nextNameSpace;

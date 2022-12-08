@@ -218,7 +218,6 @@ namespace Kiota.Builder.Writers.Go {
                 if(propertyType.IsCollection) {
                     var isInterfaceType = propertyType.TypeDefinition is CodeInterface;
                     WriteCollectionCast(propertyTypeImportName, valueVarName, "cast", writer, isInterfaceType ? string.Empty : "*", !isInterfaceType);
-                    //WriteCollectionCast(propertyTypeImportName, valueVarName, "cast", writer, !isInterfaceType);
                     valueVarName = "cast";
                 }
                 writer.WriteLine($"{ResultVarName}.{property.Setter.Name.ToFirstCharacterUpperCase()}({valueVarName})");
@@ -561,14 +560,12 @@ namespace Kiota.Builder.Writers.Go {
         }
 
         private void WriteFieldDeserializer(CodeProperty property, LanguageWriter writer, CodeClass parentClass, string parsableImportSymbol) {
-            writer.WriteLine($"res[\"{property.SerializationName ?? property.Name.ToFirstCharacterLowerCase()}\"] = func (n {parsableImportSymbol}) error {{");
-            writer.IncreaseIndent();
+            writer.StartBlock($"res[\"{property.SerializationName ?? property.Name.ToFirstCharacterLowerCase()}\"] = func (n {parsableImportSymbol}) error {{");
             var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
             var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
             writer.WriteLine($"val, err := n.{deserializationMethodName}");
             WriteReturnError(writer);
-            writer.WriteLine("if val != nil {");
-            writer.IncreaseIndent();
+            writer.StartBlock("if val != nil {");
             var (valueArgument, pointerSymbol, dereference) = (property.Type.AllTypes.First().TypeDefinition, property.Type.IsCollection) switch {
                 (CodeClass, false) or (CodeEnum, false) => (GetTypeAssertion("val", $"*{propertyTypeImportName}"), string.Empty, true),
                 (CodeClass, true) or (CodeEnum, true) => ("res", "*", true),

@@ -525,12 +525,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
             foreach (var innerClass in nestedClasses) {
                 var originalClassName = innerClass.Name;
-                
-                if(nameFactory == default && prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
-                    innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
 
                 if (nameFactory != default)
                     innerClass.Name = nameFactory(currentClass.Name, innerClass.Name);
+                else if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
+                    innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
 
                 if(addToParentNamespace && parentNamespace.FindChildByName<CodeClass>(innerClass.Name, false) == null)
                 { // the query parameters class is already a child of the request executor method parent class
