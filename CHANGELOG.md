@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Adds description validation rules to help users get the best client experience. [#2019](https://github.com/microsoft/kiota/issues/2019)
-- Adds support for external documentation links on request execution methods. [#2036](https://github.com/microsoft/kiota/issues/2036)
+- Added description validation rules to help users get the best client experience. [#2019](https://github.com/microsoft/kiota/issues/2019)
+- Added support for external documentation links on request execution methods. [#2036](https://github.com/microsoft/kiota/issues/2036)
+- Added support for multi-valued headers in CSharp, TypeScript, Go, and Java. [#2032](https://github.com/microsoft/kiota/issues/2032)
 
 ### Changed
 
