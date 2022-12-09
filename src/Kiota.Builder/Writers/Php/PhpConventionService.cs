@@ -172,7 +172,7 @@ namespace Kiota.Builder.Writers.Php
                 codeElement.Usings?
                     .Where(x => x.Declaration != null && (x.Declaration.IsExternal ||
                                 !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)))
-                    .Where(x => string.IsNullOrEmpty(x.Alias))
+                    .Where(static x => string.IsNullOrEmpty(x.Alias))
                     .Select(x =>
                     {
                         string namespaceValue;
