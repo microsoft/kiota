@@ -63,7 +63,7 @@ namespace Kiota.Builder.Writers.Php
             {
                 "boolean" => "bool",
                 "double" => "float",
-                "decimal" or "byte" => "string",
+                "decimal" or "byte" or "guid" => "string",
                 "integer" or "int32" or "int64" or "sbyte" => "int",
                 "object" or "string" or "array" or "float" or "void" => typeName.ToLowerInvariant(),
                 "binary" => "StreamInterface",
