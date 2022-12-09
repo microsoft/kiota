@@ -286,7 +286,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
         Assert.Contains("requestInfo.urlTemplate = ", result);
         Assert.Contains("requestInfo.pathParameters = ", result);
-        Assert.Contains("requestInfo.headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("requestInfo.headers[\"Accept\"] = [\"application/json\"]", result);
         Assert.Contains("if (c)", result);
         Assert.Contains("requestInfo.addRequestHeaders", result);
         Assert.Contains("requestInfo.addRequestOptions", result);
@@ -308,7 +308,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
         Assert.Contains("requestInfo.urlTemplate = ", result);
         Assert.Contains("requestInfo.pathParameters = ", result);
-        Assert.Contains("requestInfo.headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("requestInfo.headers[\"Accept\"] = [\"application/json\"]", result);
         Assert.Contains("if (c)", result);
         Assert.Contains("requestInfo.addRequestHeaders", result);
         Assert.Contains("requestInfo.addRequestOptions", result);
