@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Adds description validation rules to help users get the best client experience. [#2019](https://github.com/microsoft/kiota/issues/2019)
+- Adds support for external documentation links on request execution methods. [#2036](https://github.com/microsoft/kiota/issues/2036)
+
 ### Changed
 
 - Fixed colliding imports for factory methods in TypeScript. [#2009](https://github.com/microsoft/kiota/issues/2009)

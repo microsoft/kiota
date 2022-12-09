@@ -11,7 +11,8 @@ namespace Kiota.Builder.Refiners;
 public abstract class CommonLanguageRefiner : ILanguageRefiner
 {
     protected CommonLanguageRefiner(GenerationConfiguration configuration) {
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        ArgumentNullException.ThrowIfNull(configuration);
+        _configuration = configuration;
     }
     public abstract Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken);
     /// <summary>
@@ -116,7 +117,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 IsAsync = false,
                 Kind = CodeMethodKind.Getter,
                 ReturnType = currentProperty.Type.Clone() as CodeTypeBase,
-                Description = $"Gets the {propertyOriginalName} property value. {currentProperty.Description}",
+                Documentation = new () {
+                    Description = $"Gets the {propertyOriginalName} property value. {currentProperty.Documentation.Description}",
+                },
                 AccessedProperty = currentProperty,
             }).First();
             currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
@@ -125,7 +128,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Access = AccessModifier.Public,
                 IsAsync = false,
                 Kind = CodeMethodKind.Setter,
-                Description = $"Sets the {propertyOriginalName} property value. {currentProperty.Description}",
+                Documentation = new () {
+                    Description = $"Sets the {propertyOriginalName} property value. {currentProperty.Documentation.Description}",
+                },
                 AccessedProperty = currentProperty,
                 ReturnType = new CodeType {
                     Name = "void",
@@ -139,7 +144,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             setter.AddParameter(new CodeParameter {
                 Name = "value",
                 Kind = CodeParameterKind.SetterValue,
-                Description = $"Value to set for the {current.Name} property.",
+                Documentation = new () {
+                    Description = $"Value to set for the {current.Name} property.",
+                },
                 Optional = parameterAsOptional,
                 Type = currentProperty.Type.Clone() as CodeTypeBase,
             });
@@ -161,7 +168,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Name = "void"
                 },
                 IsAsync = false,
-                Description = $"Instantiates a new {current.Name} and sets the default values."
+                Documentation = new () {
+                    Description = $"Instantiates a new {current.Name} and sets the default values.",
+                },
             });
         CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited, forceAdd, classKindsToExclude));
     }
@@ -384,12 +393,17 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             newClass = @namespace.AddClass(new CodeClass
             {
                 Name = codeComposedType.Name,
-                Description = description
+                Documentation = new() {
+                    Description = description,
+                },
             }).Last();
         } else if (codeComposedType.TargetNamespace is CodeNamespace targetNamespace) {
             newClass = targetNamespace.AddClass(new CodeClass {
                                     Name = codeComposedType.Name,
-                                    Description = description})
+                                    Documentation = new() {
+                                        Description = description
+                                        },
+                                    })
                                 .First();
             newClass.AddUsing(codeClass.Usings
                                         .Where(static x => x.IsExternal)
@@ -400,7 +414,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 codeComposedType.Name = $"{codeComposedType.Name}Wrapper";
             newClass = codeClass.AddInnerClass(new CodeClass {
                                     Name = codeComposedType.Name,
-                                    Description = description})
+                                    Documentation = new() {
+                                        Description = description
+                                        },
+                                    })
                                 .First();
         }
         newClass.AddProperty(codeComposedType
@@ -408,7 +425,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 .Select(x => new CodeProperty {
                                     Name = x.Name,
                                     Type = x,
-                                    Description = $"Composed type representation for type {x.Name}"
+                                    Documentation = new() {
+                                        Description = $"Composed type representation for type {x.Name}"
+                                    },
                                 }).ToArray());
         if(codeComposedType.Types.All(static x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
                                 x.TypeDefinition is CodeEnum || x.TypeDefinition is null))
@@ -417,7 +436,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             newClass.AddProperty(new CodeProperty {
                 Name = "serializationHint",
                 Type = new CodeType { Name = "string" },
-                Description = "Serialization hint for the current wrapper.",
+                Documentation = new() {
+                    Description = "Serialization hint for the current wrapper.",
+                },
                 Access = AccessModifier.Public,
                 Kind = CodePropertyKind.SerializationHint,
             });
@@ -479,7 +500,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(current, x => DisableActionOf(x, kinds));
     }
-    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "", bool addToParentNamespace = false) {
+    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "", bool addToParentNamespace = false, Func<string,string,string> nameFactory = default) {
         if(current is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
             var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
             var innerClasses = currentClass
@@ -504,7 +525,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
             foreach (var innerClass in nestedClasses) {
                 var originalClassName = innerClass.Name;
-                if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
+
+                if (nameFactory != default)
+                    innerClass.Name = nameFactory(currentClass.Name, innerClass.Name);
+                else if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
                     innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
 
                 if(addToParentNamespace && parentNamespace.FindChildByName<CodeClass>(innerClass.Name, false) == null)
@@ -519,8 +543,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     innerClass.StartBlock.Inherits = new CodeType { Name = queryParametersBaseClassName, IsExternal = true };
             }
         }
-        CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName, addToParentNamespace));
+        CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName, addToParentNamespace, nameFactory));
     }
+    
     private static readonly CodeUsingComparer usingComparerWithDeclarations = new(true);
     private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new(false);
     protected readonly GenerationConfiguration _configuration;
@@ -623,7 +648,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Name = "rawUrl",
                 Type = new CodeType { Name = "string", IsExternal = true },
                 Optional = false,
-                Description = "The raw URL to use for the request builder.",
+                Documentation = new() {
+                    Description = "The raw URL to use for the request builder.",
+                },
                 Kind = CodeParameterKind.RawUrl,
             });
             parentClass.AddMethod(overloadCtor);
@@ -639,7 +666,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     
     protected static void AddParsableImplementsForModelClasses(CodeElement currentElement, string className) {
-        if(string.IsNullOrEmpty(className)) throw new ArgumentNullException(nameof(className));
+        ArgumentException.ThrowIfNullOrEmpty(className);
 
         if(currentElement is CodeClass currentClass &&
             currentClass.IsOfKind(CodeClassKind.Model)) {
@@ -650,11 +677,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, c => AddParsableImplementsForModelClasses(c, className));
     }
-    protected static void CorrectDateTypes(CodeClass parentClass, Dictionary<string, (string, CodeUsing)> dateTypesReplacements, params CodeTypeBase[] types) {
+    protected static void CorrectCoreTypes(CodeClass parentClass, Dictionary<string, (string, CodeUsing)> coreTypesReplacements, params CodeTypeBase[] types) {
         if(parentClass == null)
             return;
-        foreach(var type in types.Where(x => x != null && !string.IsNullOrEmpty(x.Name) && dateTypesReplacements.ContainsKey(x.Name))) {
-            var replacement = dateTypesReplacements[type.Name];
+        foreach(var type in types.Where(x => x != null && !string.IsNullOrEmpty(x.Name) && coreTypesReplacements.ContainsKey(x.Name))) {
+            var replacement = coreTypesReplacements[type.Name];
             if(replacement.Item1 != null)
                 type.Name = replacement.Item1;
             if(replacement.Item2 != null)
@@ -970,7 +997,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     IsAsync = false,
                     IsStatic = false,
                     Kind = CodeMethodKind.QueryParametersMapper,
-                    Description = "Maps the query parameters names to their encoded names for the URI template parsing.",
+                    Documentation = new() {
+                        Description = "Maps the query parameters names to their encoded names for the URI template parsing.",
+                    },
                 }).First();
                 method.AddParameter(new CodeParameter {
                     Name = parameterName,
@@ -980,7 +1009,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         IsNullable = true,
                     },
                     Optional = false,
-                    Description = "The original query parameter name in the class.",
+                    Documentation = new() {
+                        Description = "The original query parameter name in the class.",
+                    },
                 });
             }
         CrawlTree(currentElement, x => AddQueryParameterMapperMethod(x, methodName, parameterName));

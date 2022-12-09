@@ -193,7 +193,7 @@ public class PhpRefiner: CommonLanguageRefiner
             currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
             currentProperty.Type.Name = "array";
         }
-        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
 
     private static void CorrectMethodType(CodeMethod method)
@@ -202,7 +202,7 @@ public class PhpRefiner: CommonLanguageRefiner
         {
             method.ReturnType.Name = "array";
         }
-        CorrectDateTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
+        CorrectCoreTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
             .Select(static x => x.Type)
             .Union(new[] { method.ReturnType})
             .ToArray());

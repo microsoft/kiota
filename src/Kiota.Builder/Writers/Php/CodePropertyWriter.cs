@@ -28,7 +28,7 @@ namespace Kiota.Builder.Writers.Php
 
         private void WritePropertyDocComment(CodeProperty codeProperty, LanguageWriter writer)
         {
-            var propertyDescription = codeProperty.Description;
+            var propertyDescription = codeProperty.Documentation.Description;
             var hasDescription = !string.IsNullOrEmpty(propertyDescription);
 
             var collectionKind = codeProperty.Type.IsArray || codeProperty.Type.IsCollection;
@@ -59,7 +59,7 @@ namespace Kiota.Builder.Writers.Php
 
         private void WriteRequestBuilderBody(CodeProperty codeElement, LanguageWriter writer, string returnType, string propertyAccess, string propertyName)
         {
-            conventions.WriteShortDescription(codeElement.Description, writer);
+            conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
             writer.WriteLine($"{propertyAccess} function {propertyName}(): {returnType} {{");
             writer.IncreaseIndent();
             conventions.AddRequestBuilderBody(returnType, writer);

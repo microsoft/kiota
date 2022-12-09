@@ -80,8 +80,7 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
         return returnedValue as T;
     }
     public IEnumerable<T> FindChildrenByName<T>(string childName) where T: ICodeElement {
-        if(string.IsNullOrEmpty(childName))
-            throw new ArgumentNullException(nameof(childName));
+        ArgumentException.ThrowIfNullOrEmpty(childName);
 
         if(InnerChildElements.Any()) {
             var result = new List<T>();
@@ -96,8 +95,7 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
         return Enumerable.Empty<T>();
     }
     public T FindChildByName<T>(string childName, bool findInChildElements = true) where T: ICodeElement {
-        if(string.IsNullOrEmpty(childName))
-            throw new ArgumentNullException(nameof(childName));
+        ArgumentException.ThrowIfNullOrEmpty(childName);
         
         if(!InnerChildElements.Any())
             return default;

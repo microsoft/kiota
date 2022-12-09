@@ -89,7 +89,7 @@ components:
         var firstOption = enumDef.Options.First();
         Assert.Equal("Standard_LRS", firstOption.SerializationName);
         Assert.Equal("StandardLocalRedundancy", firstOption.Name);
-        Assert.NotEmpty(firstOption.Description);
+        Assert.NotEmpty(firstOption.Documentation.Description);
        
         File.Delete(tempFilePath);
     }
@@ -2725,6 +2725,7 @@ paths:
     [InlineData("string", "date", "DateOnly")]
     [InlineData("string", "time", "TimeOnly")]
     [InlineData("string", "base64url", "binary")]
+    [InlineData("string", "uuid", "Guid")]
     // floating points can only be declared as numbers
     [InlineData("number", "double", "double")]
     [InlineData("number", "float", "float")]
@@ -3422,7 +3423,7 @@ paths:
         Assert.NotNull(modelsNS);
         var responseClass = modelsNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model));
         Assert.NotNull(responseClass);
-        Assert.Null(responseClass.Description);
+        Assert.Null(responseClass.Documentation.Description);
     }
     [Fact]
     public void CleansUpInvalidDescriptionCharacters(){
@@ -3482,7 +3483,7 @@ paths:
         Assert.NotNull(modelsNS);
         var responseClass = modelsNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model));
         Assert.NotNull(responseClass);
-        Assert.Equal("some description with invalid characters: ", responseClass.Description);
+        Assert.Equal("some description with invalid characters: ", responseClass.Documentation.Description);
     }
     [InlineData("application/json")]
     [InlineData("application/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8")]
@@ -3595,15 +3596,15 @@ paths:
         Assert.NotNull(modelsSubNS);
         var responseClass = modelsSubNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model));
         Assert.NotNull(responseClass);
-        Assert.Equal("some description", responseClass.Description);
+        Assert.Equal("some description", responseClass.Documentation.Description);
 
         responseClass = modelsSubNS.Classes.FirstOrDefault(c => c.IsOfKind(CodeClassKind.RequestBuilder));
         Assert.NotNull(responseClass);
-        Assert.Equal("some path item description", responseClass.Description);
+        Assert.Equal("some path item description", responseClass.Documentation.Description);
 
         var responseProperty = codeModel.FindNamespaceByName("TestSdk").Classes.SelectMany(c=> c.Properties).FirstOrDefault(p => p.Kind == CodePropertyKind.RequestBuilder);
         Assert.NotNull(responseProperty);
-        Assert.Equal("some path item description", responseProperty.Description);
+        Assert.Equal("some path item description", responseProperty.Documentation.Description);
     }
 
     [InlineData("application/json", "206", true, "default", "binary")]

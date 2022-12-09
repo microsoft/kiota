@@ -19,7 +19,7 @@ namespace Kiota.Builder.Writers.Go {
             writer.DecreaseIndent();
             writer.WriteLine(")");
             var typeName = codeElement.Name.ToFirstCharacterUpperCase();
-            conventions.WriteShortDescription(codeElement.Description, writer);
+            conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
             writer.WriteLines($"type {typeName} int",
                             string.Empty,
                             "const (");
@@ -27,8 +27,8 @@ namespace Kiota.Builder.Writers.Go {
             var iotaSuffix = $" {typeName} = iota";
             var enumOptions = codeElement.Options;
             foreach (var item in enumOptions) {
-                if(!string.IsNullOrEmpty(item.Description))
-                    writer.WriteLine($"// {item.Description}");
+                if(!string.IsNullOrEmpty(item.Documentation.Description))
+                    writer.WriteLine($"// {item.Documentation.Description}");
                 writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{iotaSuffix}");
                 if (!string.IsNullOrEmpty(iotaSuffix))
                     iotaSuffix = string.Empty;

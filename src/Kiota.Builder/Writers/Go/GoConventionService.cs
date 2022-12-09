@@ -84,8 +84,8 @@ public class GoConventionService : CommonLanguageConventionService
             "byte" => "byte",
             "sbyte" => "int8",
             "boolean" => "bool",
-            "guid" when includeImportSymbol => "uuid.UUID",
-            "guid" when !includeImportSymbol => "UUID",
+            "Guid" when includeImportSymbol => "uuid.UUID",
+            "Guid" when !includeImportSymbol => "UUID",
             "DateTimeOffset" or "Time" when includeImportSymbol => "i336074805fc853987abe6f7fe3ad97a6a6f3077a16391fec744f671a015fbd7e.Time",
             "DateTimeOffset" or "Time" when !includeImportSymbol => "Time",
             "DateOnly" or "TimeOnly" or "ISODuration" when includeImportSymbol => $"{SerializationHash}.{type.Name}",
@@ -99,7 +99,7 @@ public class GoConventionService : CommonLanguageConventionService
     }
     public bool IsPrimitiveType(string typeName) {
         return typeName.TrimCollectionAndPointerSymbols() switch {
-            "void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "guid" or "DateTimeOffset"
+            "void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "Guid" or "DateTimeOffset"
             or "bool" or "int32" or "int64" or "float32" or "float64" or "UUID" or "Time" or "decimal" or "TimeOnly"
             or "DateOnly" or "ISODuration" or "uint8" => true,
             "byte" when !typeName.StartsWith("[]") => true,
@@ -143,6 +143,15 @@ public class GoConventionService : CommonLanguageConventionService
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
         writer.WriteLine($"{DocCommentPrefix}{description}");
+    }
+    public void WriteLinkDescription(CodeDocumentation documentation, LanguageWriter writer)
+    {
+        if(documentation is null) return;
+        if(documentation.ExternalDocumentationAvailable) {
+            WriteShortDescription($"[{documentation.DocumentationLabel}]", writer);
+            WriteShortDescription(string.Empty, writer);
+            WriteShortDescription($"[{documentation.DocumentationLabel}]: {documentation.DocumentationLink}", writer);
+        }
     }
     #pragma warning disable CA1822 // Method should be static
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default)

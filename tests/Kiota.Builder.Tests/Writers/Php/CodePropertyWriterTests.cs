@@ -28,7 +28,11 @@ namespace Kiota.Builder.Tests.Writers.Php
             languageWriter.SetTextWriter(stringWriter);
             parentClass = new CodeClass
             {
-                Name = "ParentClass", Description = "This is an amazing class", Kind = CodeClassKind.Model
+                Name = "ParentClass",
+                Documentation = new() {
+                    Description = "This is an amazing class",
+                },
+                Kind = CodeClassKind.Model
             };
             root.AddClass(parentClass);
             propertyWriter = new CodePropertyWriter(new PhpConventionService());
@@ -60,7 +64,9 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = "message",
                 Access = AccessModifier.Public,
-                Description = "I can get your messages.",
+                Documentation = new() {
+                    Description = "I can get your messages.",
+                },
                 Type = new CodeType
                 {
                     Name = "MessageRequestBuilder"
@@ -80,7 +86,9 @@ namespace Kiota.Builder.Tests.Writers.Php
         {
             var property = new CodeProperty
             {
-                Description = "Additional data dictionary",
+                Documentation = new() {
+                    Description = "Additional data dictionary",
+                },
                 Name = "additionalData",
                 Kind = CodePropertyKind.AdditionalData,
                 Access = AccessModifier.Private,
