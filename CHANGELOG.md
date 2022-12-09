@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds support for external documentation links on request execution methods. [#2036](https://github.com/microsoft/kiota/issues/2036)
 
 ### Changed
-
+- Fixed issue with wrong imports for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)
+- Fix issue where discriminator types were never getting imported for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)
+- Fix issue where class aliasing was never working as expected for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)
 - Fixed colliding imports for factory methods in TypeScript. [#2009](https://github.com/microsoft/kiota/issues/2009)
 - Switched to lazy loading module imports in Python. [#2007](https://github.com/microsoft/kiota/issues/2007)
 - Caters for type names being used from System namespace in CSharp generation [#2021](https://github.com/microsoft/kiota/issues/2021)
