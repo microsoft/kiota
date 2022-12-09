@@ -242,7 +242,6 @@ public class PhpRefiner: CommonLanguageRefiner
                         .Name
                         .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
             var symbolsUsing = duplicatedSymbolsUsings as CodeUsing[] ?? duplicatedSymbolsUsings.ToArray();
-            // currentClass.StartBlock.RemoveUsings(symbolsUsing.ToArray());
             foreach (var usingElement in symbolsUsing)
             {
                 var declaration = usingElement.Declaration.TypeDefinition?.Name;
