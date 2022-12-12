@@ -41,7 +41,7 @@ public class GoLanguageRefinerTests {
     }
     [Fact]
     public async Task TrimsCircularDiscriminatorReferences() {
-        var modelsNS = root.AddNamespace("models");
+        var modelsNS = root.AddNamespace("ApiSdk.models");
         var baseModel = modelsNS.AddClass(new CodeClass {
             Kind = CodeClassKind.Model,
             Name = "BaseModel",
@@ -220,7 +220,7 @@ public class GoLanguageRefinerTests {
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
 
-        Assert.Contains("Error4XX", requestBuilder.StartBlock.Usings.Select(x => x.Declaration?.Name));
+        Assert.DoesNotContain("Error4XX", requestBuilder.StartBlock.Usings.Select(x => x.Declaration?.Name));
     }
     [Fact]
     public async Task AddsUsingsForDiscriminatorTypes() {
@@ -320,7 +320,9 @@ public class GoLanguageRefinerTests {
             Name = "cancelletionToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Description = "Cancellation token to use when cancelling requests",
+            Documentation = new() {
+                Description = "Cancellation token to use when cancelling requests",
+            },
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);

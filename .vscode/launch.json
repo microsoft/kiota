@@ -164,7 +164,7 @@
             "program": "${workspaceFolder}/src/kiota/bin/Debug/net7.0/kiota.dll",
             "args": ["generate",
                  "--openapi",
-                 "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Users.yml",
+                 "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
                  "--language",
                  "shell",
                  "-o",

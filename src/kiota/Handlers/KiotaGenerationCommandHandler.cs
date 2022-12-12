@@ -25,6 +25,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
     public required Option<bool> AdditionalDataOption { get;init; }
     public required Option<List<string>> SerializerOption { get;init; }
     public required Option<List<string>> DeserializerOption { get;init; }
+    public required Option<List<string>> DisabledValidationRulesOption { get;init; }
     public required Option<bool> CleanOutputOption { get;init; }
     public required Option<List<string>> StructuredMimeTypesOption { get;init; }
     public override async Task<int> InvokeAsync(InvocationContext context)
@@ -41,6 +42,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         List<string> deserializer = context.ParseResult.GetValueForOption(DeserializerOption) ?? new List<string>();
         List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption) ?? new List<string>();
         List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption) ?? new List<string>();
+        List<string> disabledValidationRules = context.ParseResult.GetValueForOption(DisabledValidationRulesOption) ?? new List<string>();
         bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
         List<string> structuredMimeTypes = context.ParseResult.GetValueForOption(StructuredMimeTypesOption) ?? new List<string>();
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
@@ -59,6 +61,11 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
             Configuration.Generation.IncludePatterns = includePatterns.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if(excludePatterns.Any())
             Configuration.Generation.ExcludePatterns = excludePatterns.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if(disabledValidationRules.Any())
+            Configuration.Generation.DisabledValidationRules = disabledValidationRules
+                                                                    .Select(x => x.TrimQuotes())
+                                                                    .SelectMany(x => x.Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries))
+                                                                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
         if(structuredMimeTypes.Any())
             Configuration.Generation.StructuredMimeTypes = structuredMimeTypes.SelectMany(x => x.Split(new[] {' '}))
                                                             .Select(x => x.TrimQuotes())

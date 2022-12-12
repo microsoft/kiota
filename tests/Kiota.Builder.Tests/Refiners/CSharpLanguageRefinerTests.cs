@@ -90,6 +90,41 @@ public class CSharpLanguageRefinerTests {
         Assert.Equal("alias", property.Name);
         Assert.DoesNotContain("@", property.Name); // classname will be capitalized
     }
+    
+    [Theory]
+    [InlineData("integer")]
+    [InlineData("boolean")]
+    [InlineData("tuple")]
+    [InlineData("single")]
+    [InlineData("random")]
+    [InlineData("buffer")]
+    [InlineData("convert")]
+    [InlineData("action")]
+    [InlineData("valueType")]
+    public async Task EscapesReservedTypeNames(string typeName) {
+        // Arrange
+        var model = root.AddClass(new CodeClass {
+            Name = typeName,
+            Kind = CodeClassKind.Model,
+        }).First();
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = typeName,// this a keyword
+            Type = new CodeType
+            {
+                Name = typeName,
+                IsExternal = true
+            }
+        }).First();
+        // Act
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        // Assert
+        Assert.NotEqual(typeName, model.Name);
+        Assert.Equal($"{typeName}Object", model.Name);//our defined model is renamed
+        Assert.Equal(typeName, property.Type.Name);//external type is unchanged
+        Assert.Equal(typeName, property.Name);//external type property name is unchanged
+    }
+    
     [Fact]
     public async Task EscapesReservedKeywordsForReservedNamespaceNameSegments() {
         var subNS = root.AddNamespace($"{root.Name}.task"); // otherwise the import gets trimmed
@@ -207,7 +242,9 @@ public class CSharpLanguageRefinerTests {
             Name = "cancelletionToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Description = "Cancellation token to use when cancelling requests",
+            Documentation = new() {
+                Description = "Cancellation token to use when cancelling requests",
+            },
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);

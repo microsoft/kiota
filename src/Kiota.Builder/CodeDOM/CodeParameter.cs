@@ -57,7 +57,7 @@ public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable
         type = value;
     }}
     public bool Optional {get;set;}
-    public string Description {get; set;}
+    public CodeDocumentation Documentation { get; set; } = new();
     public string DefaultValue {get; set;}
     public string SerializationName { get; set; }
     public object Clone()
@@ -67,10 +67,10 @@ public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable
             Kind = Kind,
             Name = Name.Clone() as string,
             Type = Type?.Clone() as CodeTypeBase,
-            Description = Description?.Clone() as string,
             DefaultValue = DefaultValue?.Clone() as string,
             Parent = Parent,
             SerializationName = SerializationName?.Clone() as string,
+            Documentation = Documentation?.Clone() as CodeDocumentation,
         };
     }
 }

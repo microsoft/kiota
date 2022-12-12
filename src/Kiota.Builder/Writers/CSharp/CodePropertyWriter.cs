@@ -13,7 +13,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         var simpleBody = $"get; {setterAccessModifier}set;";
         var propertyType = conventions.GetTypeString(codeElement.Type, codeElement);
         var defaultValue = string.Empty;
-        conventions.WriteShortDescription(codeElement.Description, writer);
+        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         switch(codeElement.Kind) {
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ get =>");

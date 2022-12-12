@@ -9,6 +9,9 @@ using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Logging;
 using kiota.Handlers;
+using Kiota.Builder.Validation;
+using System.Reflection;
+using Microsoft.OpenApi.Validations;
 
 namespace kiota;
 public static class KiotaHost {
@@ -218,6 +221,26 @@ public static class KiotaHost {
         outputOption.ArgumentHelpName = "path";
         return outputOption;
     }
+    private static Option<List<string>> GetDisableValidationRulesOption() {
+        var parameterName = "--disable-validation-rules";
+        var option = new Option<List<string>>(parameterName, () => new List<string>(), "The OpenAPI description validation rules to disable. Accepts multiple values.");
+        option.AddAlias("--dvr");
+        if(typeof(NoServerEntry).Namespace is string nsName &&
+            Assembly.GetAssembly(typeof(NoServerEntry)) is Assembly assembly) {
+            var validationRules = assembly.GetTypes()
+                                            .Where(x => nsName.Equals(x.Namespace, StringComparison.OrdinalIgnoreCase) &&
+                                                        x.IsClass &&
+                                                        !x.IsAbstract &&
+                                                        x.IsSubclassOf(typeof(ValidationRule)))
+                                            .Select(static x => x.Name)
+                                            .Union(new [] { "All" })
+                                            .ToArray();
+            option.AddValidator(x => ValidateKnownValues(x, parameterName, validationRules));
+            option.ArgumentHelpName = string.Join(",", validationRules);
+        }
+        option.Arity = ArgumentArity.ZeroOrMore;
+        return option;
+    }
     private static Option<string> GetDescriptionOption(string defaultValue) {
         var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_CONTAINER");
         var runsInContainer = !string.IsNullOrEmpty(kiotaInContainerRaw) && bool.TryParse(kiotaInContainerRaw, out var kiotaInContainer) && kiotaInContainer;
@@ -284,6 +307,8 @@ public static class KiotaHost {
 
         var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultConfiguration.IncludePatterns, defaultConfiguration.ExcludePatterns);
 
+        var dvrOption = GetDisableValidationRulesOption();
+
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
 
         var command = new Command ("generate", "Generates a REST HTTP API client from an OpenAPI description file.") {
@@ -301,6 +326,7 @@ public static class KiotaHost {
             structuredMimeTypesOption,
             includePatterns,
             excludePatterns,
+            dvrOption,
             clearCacheOption,
         };
         command.Handler = new KiotaGenerationCommandHandler {
@@ -318,6 +344,7 @@ public static class KiotaHost {
             StructuredMimeTypesOption = structuredMimeTypesOption,
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
+            DisabledValidationRulesOption = dvrOption,
             ClearCacheOption = clearCacheOption,
         };
         return command;
@@ -380,6 +407,13 @@ public static class KiotaHost {
                 !validator.IsMatch(value))
                     input.ErrorMessage = $"{value} is not a valid {parameterName} for the client, the {parameterName} must conform to {pattern}";
         });
+    }
+    private static void ValidateKnownValues(OptionResult input, string parameterName, IEnumerable<string> knownValues) {
+        var knownValuesHash = new HashSet<string>(knownValues, StringComparer.OrdinalIgnoreCase);
+        if(input.Tokens.Any() && input.Tokens.Select(static x => x.Value).SelectMany(static x => x.Split(new [] {','}, StringSplitOptions.RemoveEmptyEntries)).FirstOrDefault(x => !knownValuesHash.Contains(x)) is string unknownValue) {
+            var validOptionsList = knownValues.Aggregate(static (x, y) => x + ", " + y);
+            input.ErrorMessage = $"{unknownValue} is not a supported {parameterName}, supported values are {validOptionsList}";
+        }
     }
     private static void ValidateEnumValue<T>(OptionResult input, string parameterName) where T: struct, Enum {
         if(input.Tokens.Any() && !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _)) {

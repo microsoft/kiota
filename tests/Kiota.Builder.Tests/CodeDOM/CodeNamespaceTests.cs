@@ -56,7 +56,7 @@ namespace Kiota.Builder.Tests.CodeDOM
             Assert.Throws<ArgumentNullException>(() => {
                 root.AddNamespace(null);
             });
-            Assert.Throws<ArgumentNullException>(() => {
+            Assert.Throws<ArgumentException>(() => {
                 root.AddNamespace(string.Empty);
             });
         }

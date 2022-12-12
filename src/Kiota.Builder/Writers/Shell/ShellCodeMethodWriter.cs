@@ -309,9 +309,9 @@ namespace Kiota.Builder.Writers.Shell
                     optionBuilder.Append($", getDefaultValue: ()=> {defaultValue}");
                 }
 
-                if (!string.IsNullOrEmpty(option.Description))
+                if (!string.IsNullOrEmpty(option.Documentation.Description))
                 {
-                    optionBuilder.Append($", description: \"{option.Description}\"");
+                    optionBuilder.Append($", description: \"{option.Documentation.Description}\"");
                 }
 
                 optionBuilder.Append(") {");
@@ -338,8 +338,8 @@ namespace Kiota.Builder.Writers.Shell
 
         private static void WriteCommandDescription(CodeMethod codeElement, LanguageWriter writer)
         {
-            if (!string.IsNullOrWhiteSpace(codeElement.Description))
-                writer.WriteLine($"command.Description = \"{codeElement.Description}\";");
+            if (!string.IsNullOrWhiteSpace(codeElement.Documentation.Description))
+                writer.WriteLine($"command.Description = \"{codeElement.Documentation.Description}\";");
         }
 
         private void WriteContainerCommand(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, string name)
