@@ -199,7 +199,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if(currentProperty.IsOfKind(CodePropertyKind.Options))
             currentProperty.Type.Name = "RequestOption[]";
         else if(currentProperty.IsOfKind(CodePropertyKind.Headers))
-            currentProperty.Type.Name = "Record<string, string>";
+            currentProperty.Type.Name = "Record<string, string[]>";
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
             currentProperty.Type.Name = "Record<string, unknown>";

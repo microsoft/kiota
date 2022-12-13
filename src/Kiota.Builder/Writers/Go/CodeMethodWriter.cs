@@ -732,7 +732,7 @@ namespace Kiota.Builder.Writers.Go {
                 }
                 if(headers != null) {
                     var headersName = $"{requestParams.requestConfiguration.Name}.{headers.Name.ToFirstCharacterUpperCase()}";
-                    writer.WriteLine($"{RequestInfoVarName}.AddRequestHeaders({headersName})");
+                    writer.WriteLine($"{RequestInfoVarName}.Headers.AddAll({headersName})");
                 }
                 if(options != null) {
                     var optionsName = $"{requestParams.requestConfiguration.Name}.{options.Name.ToFirstCharacterUpperCase()}";

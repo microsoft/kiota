@@ -313,7 +313,6 @@ public class JavaLanguageRefinerTests {
         const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
         const string dateTimeOffsetDefaultName = "DateTimeOffset";
         const string additionalDataDefaultName = "new Dictionary<string, object>()";
-        const string headersDefaultName = "IDictionary<string, string>";
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -335,13 +334,6 @@ public class JavaLanguageRefinerTests {
             Kind = CodePropertyKind.AdditionalData,
             Type = new CodeType {
                 Name = additionalDataDefaultName
-            }
-        }, new () {
-            Name = "headers",
-            Kind = CodePropertyKind.Headers,
-            Type = new CodeType
-            {
-                Name = headersDefaultName
             }
         });
         const string additionalDataHolderDefaultName = "IAdditionalDataHolder";
@@ -378,15 +370,14 @@ public class JavaLanguageRefinerTests {
             }
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.Empty(model.Properties.Where(x => requestAdapterDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => factoryDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => additionalDataDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => headersDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Methods.Where(x => deserializeDefaultName.Equals(x.ReturnType.Name)));
-        Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.StartBlock.Implements.Where(x => additionalDataHolderDefaultName.Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
-        Assert.Contains( additionalDataHolderDefaultName[1..], model.StartBlock.Implements.Select(x => x.Name).ToList());
+        Assert.Empty(model.Properties.Where(static x => requestAdapterDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(static x => factoryDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(static x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(static x => additionalDataDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Methods.Where(static x => deserializeDefaultName.Equals(x.ReturnType.Name)));
+        Assert.Empty(model.Methods.SelectMany(static x => x.Parameters).Where(static x => serializerDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.StartBlock.Implements.Where(static x => additionalDataHolderDefaultName.Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
+        Assert.Contains( additionalDataHolderDefaultName[1..], model.StartBlock.Implements.Select(static x => x.Name).ToList());
     }
     [Fact]
     public async Task AddsMethodsOverloads() {

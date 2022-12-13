@@ -9,8 +9,6 @@ using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Go;
 
-using Moq;
-
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Go;
@@ -37,11 +35,13 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
-        method = new CodeMethod {
+        method = new CodeMethod
+        {
             Name = MethodName,
-        };
-        method.ReturnType = new CodeType {
-            Name = ReturnTypeName
+            ReturnType = new CodeType
+            {
+                Name = ReturnTypeName
+            }
         };
         parentClass.AddMethod(method);
     }
@@ -875,7 +875,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
-        Assert.Contains("requestInfo.AddRequestHeaders(", result);
+        Assert.Contains("requestInfo.Headers.AddAll(", result);
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
@@ -911,7 +911,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
-        Assert.Contains("requestInfo.AddRequestHeaders(", result);
+        Assert.Contains("requestInfo.Headers.AddAll(", result);
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
@@ -945,7 +945,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
-        Assert.Contains("requestInfo.AddRequestHeaders(", result);
+        Assert.Contains("requestInfo.Headers.AddAll(", result);
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
@@ -981,7 +981,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
-        Assert.Contains("requestInfo.AddRequestHeaders(", result);
+        Assert.Contains("requestInfo.Headers.AddAll(", result);
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);

@@ -437,7 +437,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if(isCollection)
         {
             if(conventions.IsPrimitiveType(returnType)) return "send_collection_of_primitive_async";
-            return $"send_collection_async({returnType})";
+            return $"send_collection_async";
         }
 
         if(isStream || conventions.IsPrimitiveType(returnType)) return "send_primitive_async";

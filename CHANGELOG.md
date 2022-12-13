@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Adds description validation rules to help users get the best client experience. [#2019](https://github.com/microsoft/kiota/issues/2019)
-- Adds support for external documentation links on request execution methods. [#2036](https://github.com/microsoft/kiota/issues/2036)
+- Added description validation rules to help users get the best client experience. [#2019](https://github.com/microsoft/kiota/issues/2019)
+- Added support for external documentation links on request execution methods. [#2036](https://github.com/microsoft/kiota/issues/2036)
+- Added support for multi-valued headers in CSharp, TypeScript, Go, and Java. [#2032](https://github.com/microsoft/kiota/issues/2032)
 
 ### Changed
 - Fixed issue with wrong imports for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed colliding imports for factory methods in TypeScript. [#2009](https://github.com/microsoft/kiota/issues/2009)
 - Switched to lazy loading module imports in Python. [#2007](https://github.com/microsoft/kiota/issues/2007)
 - Caters for type names being used from System namespace in CSharp generation [#2021](https://github.com/microsoft/kiota/issues/2021)
+- Fixed wrong send request method name for collections in Python. [#2057](https://github.com/microsoft/kiota/issues/2057)
 
 ## [0.8.3] - 2022-12-01
 

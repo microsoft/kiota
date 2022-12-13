@@ -960,7 +960,7 @@ public class KiotaBuilder
             Documentation = new() {
                 Description = "Request headers",
             },
-            Type = new CodeType { Name = "IDictionary<string, string>", IsExternal = true },
+            Type = new CodeType { Name = "RequestHeaders", IsExternal = true },
         },
         new CodeProperty {
             Name = "options",
