@@ -6,6 +6,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
 
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Kiota.Builder.Tests.Refiners;
 public class GoLanguageRefinerTests {
@@ -250,7 +251,8 @@ public class GoLanguageRefinerTests {
             TypeDefinition = childModel,
         });
         Assert.Empty(parentModel.StartBlock.Usings);
-        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
+        var ns = root.AddNamespace("ApiSdk/models");
+        ns.AddClass(childModel);// so the interface copy refiner goes through
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Equal(childModel, parentModel.StartBlock.Usings.First(x => x.Declaration.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
         Assert.Null(parentModel.StartBlock.Usings.FirstOrDefault(x => x.Declaration.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)));

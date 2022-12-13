@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
@@ -118,6 +119,60 @@ namespace Kiota.Builder.Tests.Refiners
             await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true}, root);
             Assert.Equal("BackingStoreFactory", backingStoreParameter.Type.Name);
             Assert.Equal("null", backingStoreParameter.DefaultValue);
+        }
+
+        [Fact]
+        public async Task ImportsClassForDiscriminatorReturns()
+        {
+            var modelClass = new CodeClass
+            {
+                Name = "Entity",
+                Parent = root,
+                Kind = CodeClassKind.Model,
+                DiscriminatorInformation = new DiscriminatorInformation
+                {
+                    Name = "createFromDiscriminatorValue", DiscriminatorPropertyName = "@odata.type",
+                }
+            };
+            var parentClass = new CodeClass { Name = "ParentClass", Kind = CodeClassKind.Model, Parent = root };
+            var subNamespace = root.AddNamespace("Security");
+            subNamespace.Parent = root;
+            root.AddClass(modelClass);
+
+            var securityClass = new CodeClass { Name = "Security", Parent = subNamespace, Kind = CodeClassKind.Model };
+            var codeMethod = new CodeMethod
+            {
+                Name = "createFromDiscriminatorValue",
+                Kind = CodeMethodKind.Factory,
+                ReturnType = new CodeType { TypeDefinition = modelClass, Name = "Entity" }
+            };
+            codeMethod.AddParameter(new CodeParameter
+            {
+                Name = "parseNode",
+                Type = new CodeType { Name = "ParseNode", IsExternal = true, },
+                Kind = CodeParameterKind.ParseNode
+            });
+            modelClass.DiscriminatorInformation.AddDiscriminatorMapping("#models.security",
+                new CodeType { Name = "Security", TypeDefinition = securityClass, });
+            var tagClass = new CodeClass { Name = "Tag", Kind = CodeClassKind.Model, Parent = modelClass.Parent };
+            root.AddClass(tagClass);
+
+            modelClass.DiscriminatorInformation.AddDiscriminatorMapping("#models.security.Tag",
+                new CodeType { Name = "Tag", TypeDefinition = tagClass, });
+            modelClass.DiscriminatorInformation.AddDiscriminatorMapping("#models.ParentClass",
+                new CodeType { Name = "ParentClass", TypeDefinition = parentClass, });
+
+            modelClass.DiscriminatorInformation.AddDiscriminatorMapping("#models.entity",
+                new CodeType { Name = "Entity", TypeDefinition = modelClass, });
+            modelClass.AddMethod(codeMethod);
+            securityClass.StartBlock.Inherits = new CodeType
+            {
+                Name = "Entity", IsExternal = false, TypeDefinition = modelClass
+            };
+            Assert.Empty(modelClass.Usings);
+            subNamespace.AddClass(securityClass);
+            await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+            Assert.Equal(2, modelClass.Usings.Count());
         }
     }
 }
