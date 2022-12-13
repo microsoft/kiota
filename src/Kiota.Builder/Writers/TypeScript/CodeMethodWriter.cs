@@ -402,13 +402,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, currentElement, writer)})",
         };
     }
-    private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeElement currentElement, LanguageWriter writer) {
-        var propertyType = localConventions.GetTypeString(targetClassType, currentElement, false, writer);
+    private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeMethod currentElement, LanguageWriter writer) {
+        var returnType = localConventions.GetTypeString(targetClassType, currentElement, false, writer);
         var targetClassName = localConventions.TranslateType(targetClassType);
-        if(targetClassName.Equals(propertyType, StringComparison.OrdinalIgnoreCase))
-            return $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
-        
-        return propertyType.ToFirstCharacterUpperCase();// static function is aliased
+        var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+        if (targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
+            return resultName;
+        if (targetClassType is CodeType currentType &&
+            currentType.TypeDefinition is CodeClass definitionClass &&
+            definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
+            parentNamespace.FindChildByName<CodeFunction>(resultName) is CodeFunction factoryMethod) {
+            var methodName = localConventions.GetTypeString(new CodeType {
+                Name = resultName,
+                TypeDefinition = factoryMethod
+            }, currentElement, false, writer);
+            return methodName.ToFirstCharacterUpperCase();// static function is aliased
+        }
+        throw new InvalidOperationException($"Unable to find factory method for {targetClassName}");
     }
     private string GetSerializationMethodName(CodeTypeBase propType, CodeElement currentElement, LanguageWriter writer) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
