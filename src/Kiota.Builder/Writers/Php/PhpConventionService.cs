@@ -227,11 +227,5 @@ namespace Kiota.Builder.Writers.Php
                 ?.Distinct(_usingDeclarationNameComparer)
                 ?.Count() > 1;
         }
-
-        private static string MakeNamespaceAliasVariable(string name)
-        {
-            var parts = name.Split(new[]{'\\', '.'}, StringSplitOptions.RemoveEmptyEntries);
-            return string.Join(string.Empty, parts.Select(x => x.ToFirstCharacterUpperCase()).ToArray());
-        }
     }
 }
