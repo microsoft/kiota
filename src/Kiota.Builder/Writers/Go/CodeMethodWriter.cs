@@ -700,7 +700,7 @@ namespace Kiota.Builder.Writers.Go {
                         $"{RequestInfoVarName}.PathParameters = {GetPropertyCall(urlTemplateParamsProperty, "\"\"")}",
                         $"{RequestInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
             if(codeElement.AcceptedResponseTypes.Any())
-                writer.WriteLine($"{RequestInfoVarName}.Headers[\"Accept\"] = \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\"");
+                writer.WriteLine($"{RequestInfoVarName}.Headers.Add(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\")");
             if(requestParams.requestBody != null) {
                 var bodyParamReference = $"{requestParams.requestBody.Name.ToFirstCharacterLowerCase()}";
                 var collectionSuffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
