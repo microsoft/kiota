@@ -535,7 +535,7 @@ namespace Kiota.Builder.Writers.Php
             return "sendAsync";
         }
         
-        private static void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer){
+        private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer){
             var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
             if(parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null) {
                 writer.WriteLines($"$mappingValueNode = ${parseNodeParameter.Name.ToFirstCharacterLowerCase()}->getChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\");",
@@ -545,7 +545,7 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine("switch ($mappingValue) {");
                 writer.IncreaseIndent();
                 foreach(var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings) {
-                    writer.WriteLine($"case '{mappedType.Key}': return new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}();");
+                    writer.WriteLine($"case '{mappedType.Key}': return new {conventions.GetTypeString(mappedType.Value.AllTypes.First(), parentClass)}();");
                 }
                 writer.CloseBlock();
                 writer.CloseBlock();

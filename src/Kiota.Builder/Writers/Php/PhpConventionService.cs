@@ -50,7 +50,7 @@ namespace Kiota.Builder.Writers.Php
                 var typeName = TranslateType(currentType);
                 if (!currentType.IsExternal && IsSymbolDuplicated(typeName, targetElement))
                 {
-                    return $"{MakeNamespaceAliasVariable(currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name.ToFirstCharacterUpperCase())}{typeName.ToFirstCharacterUpperCase()}";
+                    return $"\\{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name.ReplaceDotsWithSlashInNamespaces()}\\{typeName.ToFirstCharacterUpperCase()}";
                 }
             }
             return code is {IsCollection: true} ? "array" : TranslateType(code);
@@ -63,7 +63,7 @@ namespace Kiota.Builder.Writers.Php
             {
                 "boolean" => "bool",
                 "double" => "float",
-                "decimal" or "byte" => "string",
+                "decimal" or "byte" or "guid" => "string",
                 "integer" or "int32" or "int64" or "sbyte" => "int",
                 "object" or "string" or "array" or "float" or "void" => typeName.ToLowerInvariant(),
                 "binary" => "StreamInterface",
@@ -172,6 +172,7 @@ namespace Kiota.Builder.Writers.Php
                 codeElement.Usings?
                     .Where(x => x.Declaration != null && (x.Declaration.IsExternal ||
                                 !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)))
+                    .Where(static x => string.IsNullOrEmpty(x.Alias))
                     .Select(x =>
                     {
                         string namespaceValue;
@@ -179,11 +180,11 @@ namespace Kiota.Builder.Writers.Php
                         {
                             namespaceValue = string.IsNullOrEmpty(x.Declaration.Name) ? string.Empty : $"{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}\\";
                             return
-                                $"use {namespaceValue}{x.Name.ReplaceDotsWithSlashInNamespaces()}{(!string.IsNullOrEmpty(x.Alias) ? $" as {x.Alias}" : string.Empty)};";
+                                $"use {namespaceValue}{x.Name.ReplaceDotsWithSlashInNamespaces()};";
                         }
                         namespaceValue = string.IsNullOrEmpty(x.Name) ? string.Empty : $"{x.Name.ReplaceDotsWithSlashInNamespaces()}\\";
                             return
-                                $"use {namespaceValue}{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}{(!string.IsNullOrEmpty(x.Alias) ? $" as {x.Alias}" : string.Empty)};";
+                                $"use {namespaceValue}{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()};";
                     })
                         .Distinct()
                     .OrderBy(x => x)
@@ -217,20 +218,14 @@ namespace Kiota.Builder.Writers.Php
         }
         
         private static bool IsSymbolDuplicated(string symbol, CodeElement targetElement) {
-            var targetClass = targetElement as CodeClass ?? targetElement.GetImmediateParentOfType<CodeClass>();
-            if (targetClass.Parent is CodeClass parentClass) 
+            var targetClass = targetElement as CodeClass ?? targetElement?.GetImmediateParentOfType<CodeClass>();
+            if (targetClass?.Parent is CodeClass parentClass) 
                 targetClass = parentClass;
-            return targetClass.StartBlock
+            return targetClass?.StartBlock
                 ?.Usings
                 ?.Where(x => !x.IsExternal && symbol.Equals(x.Declaration.TypeDefinition.Name, StringComparison.OrdinalIgnoreCase))
                 ?.Distinct(_usingDeclarationNameComparer)
                 ?.Count() > 1;
-        }
-
-        private static string MakeNamespaceAliasVariable(string name)
-        {
-            var parts = name.Split(new[]{'\\', '.'}, StringSplitOptions.RemoveEmptyEntries);
-            return string.Join(string.Empty, parts.Select(x => x.ToFirstCharacterUpperCase()).ToArray());
         }
     }
 }
