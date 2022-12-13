@@ -409,6 +409,8 @@ public class GoRefiner : CommonLanguageRefiner
         new (static x => x is CodeMethod method && (method.IsOfKind(CodeMethodKind.RequestExecutor) || method.IsOfKind(CodeMethodKind.RequestGenerator)), "context","*context"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             "github.com/microsoft/kiota-abstractions-go/serialization", "MergeDeserializersForIntersectionWrapper"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
+            "github.com/microsoft/kiota-abstractions-go", "RequestHeaders"),
     };//TODO add backing store types once we have them defined
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
         block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");
@@ -498,8 +500,7 @@ public class GoRefiner : CommonLanguageRefiner
                 if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                     currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
             } else if(currentProperty.IsOfKind(CodePropertyKind.Headers)) {
-                currentProperty.Type.Name = "map[string]string";
-                currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
+                currentProperty.DefaultValue = $"New{currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
             } else if(currentProperty.IsOfKind(CodePropertyKind.Options)) {
                 currentProperty.Type.IsNullable = false;
                 currentProperty.Type.Name = "RequestOption";

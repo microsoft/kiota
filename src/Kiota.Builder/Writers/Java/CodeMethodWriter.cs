@@ -487,7 +487,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.WriteLines($"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")};",
                         $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "null")};");
         if(codeElement.AcceptedResponseTypes.Any())
-            writer.WriteLine($"{RequestInfoVarName}.addRequestHeader(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\");");
+            writer.WriteLine($"{RequestInfoVarName}.headers.add(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\");");
         
         if(requestParams.requestBody != null) {
             var toArrayPostfix = requestParams.requestBody.Type.IsCollection ? $".toArray(new {requestParams.requestBody.Type.Name.ToFirstCharacterUpperCase()}[0])" : string.Empty;
@@ -514,7 +514,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             }
             if(headers != null) {
                 var headersName = $"{RequestConfigVarName}.{headers.Name.ToFirstCharacterLowerCase()}";
-                writer.WriteLine($"{RequestInfoVarName}.addRequestHeaders({headersName});");
+                writer.WriteLine($"{RequestInfoVarName}.headers.putAll({headersName});");
             }
             if(options != null) {
                 var optionsName = $"{RequestConfigVarName}.{options.Name.ToFirstCharacterLowerCase()}";
