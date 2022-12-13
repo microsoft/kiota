@@ -193,7 +193,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "Error5XX",
         }).First();
         var error401 = root.AddClass(new CodeClass{
-            Name = "Error401",
+            Name = "Error403",
         }).First();
         method.AddErrorMapping("4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX});
         method.AddErrorMapping("5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX});

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a generation issue in TypeScript where static methods imports could collide.
 - Fixed a generation issue in Go with the accept headers definition.
 - Fixed a generation issue in Go and TypeScript with UUID properties.
 - Fixed issue with wrong imports for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)
