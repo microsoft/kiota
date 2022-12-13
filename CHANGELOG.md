@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a generation issue in Go with the accept headers definition.
-- Fixed a generation issue in Go with UUID properties.
+- Fixed a generation issue in Go and TypeScript with UUID properties.
 - Fixed issue with wrong imports for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)
 - Fix issue where discriminator types were never getting imported for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)
 - Fix issue where class aliasing was never working as expected for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)

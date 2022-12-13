@@ -106,7 +106,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     {
         return type.Name switch  {
             "integer" or "int64" or "float" or "double" or "byte" or "sbyte" or "decimal" => "number",
-            "binary" => "string",
+            "binary" or "Guid" => "string",
             "String" or "Object" or "Boolean" or "Void" or "string" or "object" or "boolean" or "void" => type.Name.ToFirstCharacterLowerCase(), // little casing hack
             _ => (type.TypeDefinition?.Name ?? type.Name).ToFirstCharacterUpperCase() ?? "object",
         };
