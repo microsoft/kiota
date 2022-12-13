@@ -125,4 +125,21 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         if(!string.IsNullOrEmpty(description))
             writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
+    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer, IEnumerable<string> additionalRemarks = default) {
+        if(documentation is null) return;
+        if(additionalRemarks == default)
+            additionalRemarks = Enumerable.Empty<string>();
+        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || additionalRemarks.Any()) {
+            writer.WriteLine(DocCommentStart);
+            if(documentation.DescriptionAvailable)
+                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentation.Description)}");
+            foreach(var additionalRemark in additionalRemarks.Where(static x => !string.IsNullOrEmpty(x)))
+                writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
+            
+            if(documentation.ExternalDocumentationAvailable)
+                writer.WriteLine($"{DocCommentPrefix}@see {{@link {documentation.DocumentationLink}|{documentation.DocumentationLabel}}}");
+            writer.WriteLine(DocCommentEnd);
+        }
+    }
+
 }

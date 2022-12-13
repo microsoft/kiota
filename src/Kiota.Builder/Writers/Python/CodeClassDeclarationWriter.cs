@@ -13,7 +13,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
     public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
-        if(writer == null) throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(writer);
         WriteExternalImports(codeElement, writer); // external imports before internal imports
         WriteInternalImports(codeElement, writer);
         
@@ -25,7 +25,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
         }
         writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}({derivation}):");
         writer.IncreaseIndent();
-        conventions.WriteShortDescription((codeElement.Parent as CodeClass)?.Description, writer);
+        conventions.WriteShortDescription((codeElement.Parent as CodeClass)?.Documentation.Description, writer);
     }
     
     private static void WriteExternalImports(ClassDeclaration codeElement, LanguageWriter writer) {

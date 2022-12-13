@@ -199,7 +199,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if(currentProperty.IsOfKind(CodePropertyKind.Options))
             currentProperty.Type.Name = "RequestOption[]";
         else if(currentProperty.IsOfKind(CodePropertyKind.Headers))
-            currentProperty.Type.Name = "Record<string, string>";
+            currentProperty.Type.Name = "Record<string, string[]>";
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
             currentProperty.Type.Name = "Record<string, unknown>";
@@ -212,7 +212,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
         }
-        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
@@ -233,7 +233,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             if(urlTplParams != null &&
                 urlTplParams.Type is CodeType originalType) {
                 originalType.Name = "Record<string, unknown>";
-                urlTplParams.Description = "The raw url or the Url template parameters for the request.";
+                urlTplParams.Documentation.Description = "The raw url or the Url template parameters for the request.";
                 var unionType = new CodeUnionType {
                     Name = "rawUrlOrTemplateParameters",
                     IsNullable = true,
@@ -247,7 +247,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         } else if(currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
             parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
-        CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());

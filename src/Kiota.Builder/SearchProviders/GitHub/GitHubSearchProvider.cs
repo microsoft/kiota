@@ -57,8 +57,7 @@ public class GitHubSearchProvider : ISearchProvider
         get; set;
     }
     public Task<IDictionary<string, SearchResult>> SearchAsync(string term, string version, CancellationToken cancellationToken) {
-        if (string.IsNullOrEmpty(term))
-            throw new ArgumentNullException(nameof(term));
+        ArgumentException.ThrowIfNullOrEmpty(term);
         return SearchAsyncInternal(term, cancellationToken);
     }
     private static bool BlockListContainsRepo(Tuple<HashSet<string>, HashSet<string>> blockLists, string organization, string repo) =>

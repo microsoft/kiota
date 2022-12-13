@@ -487,7 +487,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.WriteLines($"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")};",
                         $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "null")};");
         if(codeElement.AcceptedResponseTypes.Any())
-            writer.WriteLine($"{RequestInfoVarName}.addRequestHeader(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\");");
+            writer.WriteLine($"{RequestInfoVarName}.headers.add(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\");");
         
         if(requestParams.requestBody != null) {
             var toArrayPostfix = requestParams.requestBody.Type.IsCollection ? $".toArray(new {requestParams.requestBody.Type.Name.ToFirstCharacterUpperCase()}[0])" : string.Empty;
@@ -514,7 +514,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             }
             if(headers != null) {
                 var headersName = $"{RequestConfigVarName}.{headers.Name.ToFirstCharacterLowerCase()}";
-                writer.WriteLine($"{RequestInfoVarName}.addRequestHeaders({headersName});");
+                writer.WriteLine($"{RequestInfoVarName}.headers.putAll({headersName});");
             }
             if(options != null) {
                 var optionsName = $"{RequestConfigVarName}.{options.Name.ToFirstCharacterLowerCase()}";
@@ -633,21 +633,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         return collectionCorrectedReturnType;
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
-        var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
-        var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
-        if (isDescriptionPresent || parametersWithDescription.Any()) {
-            writer.WriteLine(conventions.DocCommentStart);
-            if(isDescriptionPresent)
-                writer.WriteLine($"{conventions.DocCommentPrefix}{JavaConventionService.RemoveInvalidDescriptionCharacters(code.Description)}");
-            foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
-                writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
-            
-            if(code.IsAsync)
-                writer.WriteLine($"{conventions.DocCommentPrefix}@return a CompletableFuture of {code.ReturnType.Name}");
-            else
-                writer.WriteLine($"{conventions.DocCommentPrefix}@return a {code.ReturnType.Name}");
-            writer.WriteLine(conventions.DocCommentEnd);
-        }
+        var returnRemark = code.IsAsync switch {
+            true => $"@return a CompletableFuture of {code.ReturnType.Name}",
+            false => $"@return a {code.ReturnType.Name}",
+        };
+        conventions.WriteLongDescription(code.Documentation, 
+                                        writer, 
+                                        code.Parameters
+                                            .Where(static x => x.Documentation.DescriptionAvailable)
+                                            .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                            .Select(x => $"@param {x.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
+                                            .Union(new [] { returnRemark }));
+        
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;

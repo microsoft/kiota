@@ -19,7 +19,7 @@ namespace Kiota.Builder.Writers.Go {
                     suffix = $" `uriparametername:\"{codeElement.SerializationName}\"`";
                     goto default;
                 default:
-                    conventions.WriteShortDescription(codeElement.Description, writer);
+                    conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
                     writer.WriteLine($"{propertyName} {returnType}{suffix}");
                 break;
             }

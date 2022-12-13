@@ -48,11 +48,13 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = MethodName,
                 IsAsync = true,
-                Description = "This is a very good method to try all the good things"
-            };
-            method.ReturnType = new CodeType
-            {
-                Name = ReturnTypeName
+                Documentation = new() {
+                    Description = "This is a very good method to try all the good things",
+                },
+                ReturnType = new CodeType
+                {
+                    Name = ReturnTypeName
+                }
             };
             _refiner = new PhpRefiner(new GenerationConfiguration {Language = GenerationLanguage.PHP});
             parentClass.AddMethod(method);
@@ -67,7 +69,9 @@ namespace Kiota.Builder.Tests.Writers.Php
                     Name = "urlTemplate",
                     Access = AccessModifier.Protected,
                     DefaultValue = "https://graph.microsoft.com/v1.0/",
-                    Description = "The URL template",
+                    Documentation = new() {
+                        Description = "The URL template",
+                    },
                     Kind = CodePropertyKind.UrlTemplate,
                     Type = new CodeType {Name = "string"}
                 },
@@ -76,7 +80,9 @@ namespace Kiota.Builder.Tests.Writers.Php
                     Name = "pathParameters",
                     Access = AccessModifier.Protected,
                     DefaultValue = "[]",
-                    Description = "The Path parameters.",
+                    Documentation = new() {
+                        Description = "The Path parameters.",
+                    },
                     Kind = CodePropertyKind.PathParameters,
                     Type = new CodeType {Name = "array"}
                 },
@@ -84,7 +90,9 @@ namespace Kiota.Builder.Tests.Writers.Php
                 {
                     Name = "requestAdapter",
                     Access = AccessModifier.Protected,
-                    Description = "The request Adapter",
+                    Documentation = new() {
+                        Description = "The request Adapter",
+                    },
                     Kind = CodePropertyKind.RequestAdapter,
                     Type = new CodeType
                     {
@@ -163,7 +171,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         [Fact]
         public void WriteMethodWithNoDescription()
         {
-            method.Description = null;
+            method.Documentation.Description = null;
             _codeMethodWriter.WriteCodeElement(method, languageWriter);
             var result = stringWriter.ToString();
             
@@ -195,7 +203,9 @@ namespace Kiota.Builder.Tests.Writers.Php
                     IsExternal = true,
                     Name = "StreamInterface"
                 },
-                Description = "This will send a POST request",
+                Documentation = new() {
+                    Description = "This will send a POST request",
+                },
                 Kind = CodeMethodKind.RequestExecutor
             };
             codeMethod.AddParameter(new CodeParameter
@@ -263,7 +273,10 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 new CodeProperty { Name = "status", Type = new CodeType { Name = "Status", TypeDefinition = new CodeEnum
                 {
-                    Name = "Status", Description = "Status Enum"
+                    Name = "Status", 
+                    Documentation = new() {
+                        Description = "Status Enum",
+                    },
                 }}, Access = AccessModifier.Private },
                 "$writer->writeEnumValue('status', $this->getStatus());"
             },
@@ -271,7 +284,11 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 new CodeProperty { Name = "architectures", Type = new CodeType
                 {
-                    Name = "Architecture", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array, TypeDefinition = new CodeEnum { Name = "Architecture", Description = "Arch Enum, accepts x64, x86, hybrid"}
+                    Name = "Architecture", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array, TypeDefinition = new CodeEnum { Name = "Architecture", 
+                    Documentation = new() {
+                        Description = "Arch Enum, accepts x64, x86, hybrid"
+                    },
+                    }
                 }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
                 "$writer->writeCollectionOfEnumValues('architectures', $this->getArchitectures());"
             },
@@ -494,7 +511,9 @@ namespace Kiota.Builder.Tests.Writers.Php
                 Name = "messageById",
                 Access = AccessModifier.Public,
                 Kind = CodeMethodKind.IndexerBackwardCompatibility,
-                Description = "Get messages by a specific ID.",
+                Documentation = new() {
+                    Description = "Get messages by a specific ID.",
+                },
                 OriginalIndexer = new CodeIndexer
                 {
                     Name = "messageById",
@@ -585,7 +604,10 @@ namespace Kiota.Builder.Tests.Writers.Php
                 {
                     Name = "EmailAddress", TypeDefinition = new CodeClass
                     {
-                        Name = "EmailAddress", Kind = CodeClassKind.Model, Description = "Email", Parent = GetParentClassInStaticContext()
+                        Name = "EmailAddress", Kind = CodeClassKind.Model, 
+                        Documentation = new() {
+                            Description = "Email",
+                        }, Parent = GetParentClassInStaticContext()
                     }, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
                 "'users' => fn(ParseNode $n) => $o->setUsers($n->getCollectionOfObjectValues([EmailAddress::class, 'createFromDiscriminatorValue'])),"
             },
@@ -611,7 +633,9 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = "getDeserializationFields",
                 Kind = CodeMethodKind.Deserializer,
-                Description = "Just some random method",
+                Documentation = new() {
+                    Description = "Just some random method",
+                },
                 ReturnType = new CodeType
                 {
                     IsNullable = false,
@@ -656,7 +680,9 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = "getDeserializationFields",
                 Kind = CodeMethodKind.Deserializer,
-                Description = "Just some random method",
+                Documentation = new() {
+                    Description = "Just some random method",
+                },
                 ReturnType = new CodeType
                 {
                     IsNullable = false,
@@ -691,7 +717,9 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = "constructor",
                 Access = AccessModifier.Public,
-                Description = "The constructor for this class",
+                Documentation = new() {
+                    Description = "The constructor for this class",
+                },
                 ReturnType = new CodeType {Name = "void"},
                 Kind = CodeMethodKind.Constructor
             };
@@ -718,7 +746,9 @@ namespace Kiota.Builder.Tests.Writers.Php
             var getter = new CodeMethod
             {
                 Name = "getEmailAddress",
-                Description = "This method gets the emailAddress",
+                Documentation = new() {
+                    Description = "This method gets the emailAddress",
+                },
                 ReturnType = new CodeType
                 {
                     Name = "emailAddress",
@@ -745,7 +775,9 @@ namespace Kiota.Builder.Tests.Writers.Php
             var getter = new CodeMethod
             {
                 Name = "getAdditionalData",
-                Description = "This method gets the emailAddress",
+                Documentation = new() {
+                    Description = "This method gets the emailAddress",
+                },
                 ReturnType = new CodeType
                 {
                     Name = "additionalData",
@@ -1007,7 +1039,9 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = "backingStore",
                 Optional = true,
-                Description = "The backing store to use for the models.",
+                Documentation = new(){
+                    Description = "The backing store to use for the models.",
+                },
                 Kind = CodeParameterKind.BackingStore,
                 Type = new CodeType
                 {
@@ -1053,7 +1087,9 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = "constructor",
                 Access = AccessModifier.Public,
-                Description = "The constructor for this class",
+                Documentation = new() {
+                    Description = "The constructor for this class",
+                },
                 ReturnType = new CodeType {Name = "void"},
                 Kind = CodeMethodKind.Constructor
             };

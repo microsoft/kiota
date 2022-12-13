@@ -119,6 +119,8 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             "Microsoft.Kiota.Abstractions", "QueryParameterAttribute"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             "Microsoft.Kiota.Abstractions.Serialization", "ParseNodeHelper"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
+            "Microsoft.Kiota.Abstractions", "RequestHeaders"),
     };
     protected static void CapitalizeNamespacesFirstLetters(CodeElement current) {
         if(current is CodeNamespace currentNamespace)
@@ -135,12 +137,12 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         if(currentProperty.IsOfKind(CodePropertyKind.Options))
             currentProperty.DefaultValue = "new List<IRequestOption>()";
         else if(currentProperty.IsOfKind(CodePropertyKind.Headers))
-            currentProperty.DefaultValue = "new Dictionary<string, string>()";
-        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+            currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     protected static void CorrectMethodType(CodeMethod currentMethod)
     {
-        CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());

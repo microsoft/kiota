@@ -224,25 +224,25 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer) {
-            var methodName = (code.Kind switch {
+            var methodName = code.Kind switch {
                 CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => "initialize",
                 CodeMethodKind.Getter => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
                 CodeMethodKind.Setter => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
                 _ => code.Name.ToSnakeCase()
-            });
+            };
             var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code).ToSnakeCase()).ToList());
             writer.WriteLine($"def {methodName.ToSnakeCase()}({parameters}) ");
             writer.IncreaseIndent();
         }
         private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
-            var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
-            var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
+            var isDescriptionPresent = !string.IsNullOrEmpty(code.Documentation.Description);
+            var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Documentation.Description));
             if (isDescriptionPresent || parametersWithDescription.Any()) {
                 writer.WriteLine(conventions.DocCommentStart);
                 if(isDescriptionPresent)
-                    writer.WriteLine($"{conventions.DocCommentPrefix}{RubyConventionService.RemoveInvalidDescriptionCharacters(code.Description)}");
+                    writer.WriteLine($"{conventions.DocCommentPrefix}{RubyConventionService.RemoveInvalidDescriptionCharacters(code.Documentation.Description)}");
                 foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
-                    writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name} {RubyConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
+                    writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name} {RubyConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.Description)}");
                 
                 if(code.IsAsync)
                     writer.WriteLine($"{conventions.DocCommentPrefix}@return a CompletableFuture of {code.ReturnType.Name.ToSnakeCase()}");
