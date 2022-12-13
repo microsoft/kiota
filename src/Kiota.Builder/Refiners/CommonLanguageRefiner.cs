@@ -719,7 +719,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                             .Select(static x => x.Value)
                             .OfType<CodeType>()
                             .Where(static x => x.TypeDefinition != null)
-                            .Where(x => !x.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name.Equals(parentClassNamespace.Name, StringComparison.OrdinalIgnoreCase))
+                            .Where(x => x.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != parentClassNamespace)
                             .Select(x => new CodeUsing {
                                 Name = x.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name,
                                 Declaration = new CodeType {
