@@ -480,7 +480,7 @@ public class GoRefiner : CommonLanguageRefiner
         {"Guid", ("UUID", new CodeUsing {
                         Name = "UUID",
                         Declaration = new CodeType {
-                            Name = "github.com/google/UUID",
+                            Name = "github.com/google/uuid",
                             IsExternal = true,
                         },
                     })},

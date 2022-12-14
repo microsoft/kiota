@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for multi-valued headers in CSharp, TypeScript, Go, and Java. [#2032](https://github.com/microsoft/kiota/issues/2032)
 
 ### Changed
+
+- Fixed a generation issue in TypeScript where static methods imports could collide.
+- Fixed a generation issue in Go with the accept headers definition.
+- Fixed a generation issue in Go and TypeScript with UUID properties.
 - Fixed issue with wrong imports for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)
 - Fix issue where discriminator types were never getting imported for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)
 - Fix issue where class aliasing was never working as expected for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)

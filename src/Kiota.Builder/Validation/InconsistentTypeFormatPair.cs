@@ -24,6 +24,8 @@ public class InconsistentTypeFormatPair : ValidationRule<OpenApiSchema>
             "int64",
             "int8",
             "uint8",
+            "int16",
+            "uint16",
         },
         ["number"] = new(StringComparer.OrdinalIgnoreCase) {
             "float",
@@ -33,6 +35,8 @@ public class InconsistentTypeFormatPair : ValidationRule<OpenApiSchema>
             "int64",
             "int8",
             "uint8",
+            "int16",
+            "uint16",
         },
     };
     private static readonly HashSet<string> escapedTypes = new(StringComparer.OrdinalIgnoreCase) {
