@@ -192,12 +192,12 @@ public class CodeMethodWriterTests : IDisposable {
         var error5XX = root.AddClass(new CodeClass{
             Name = "Error5XX",
         }).First();
-        var error401 = root.AddClass(new CodeClass{
+        var error403 = root.AddClass(new CodeClass{
             Name = "Error403",
         }).First();
         method.AddErrorMapping("4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX});
         method.AddErrorMapping("5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX});
-        method.AddErrorMapping("403", new CodeType {Name = "Error403", TypeDefinition = error401});
+        method.AddErrorMapping("403", new CodeType {Name = "Error403", TypeDefinition = error403});
         AddRequestBodyParameters();
         writer.Write(method);
         var result = tw.ToString();
