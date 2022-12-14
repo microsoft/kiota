@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
-    /// <summary>Content File</summary>
+    /// <summary>
+    /// Content File
+    /// </summary>
     public class ContentFile : IAdditionalDataHolder, IParsable {
         /// <summary>The _links property</summary>
         public ContentFile__links _links { get; set; }
@@ -23,7 +25,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The name property</summary>
         public string Name { get; set; }
         /// <summary>The path property</summary>
-        public string PathObject { get; set; }
+        public string Path { get; set; }
         /// <summary>The sha property</summary>
         public string Sha { get; set; }
         /// <summary>The size property</summary>
@@ -62,7 +64,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
                 {"git_url", n => { Git_url = n.GetStringValue(); } },
                 {"html_url", n => { Html_url = n.GetStringValue(); } },
                 {"name", n => { Name = n.GetStringValue(); } },
-                {"path", n => { PathObject = n.GetStringValue(); } },
+                {"path", n => { Path = n.GetStringValue(); } },
                 {"sha", n => { Sha = n.GetStringValue(); } },
                 {"size", n => { Size = n.GetIntValue(); } },
                 {"submodule_git_url", n => { Submodule_git_url = n.GetStringValue(); } },
@@ -84,7 +86,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             writer.WriteStringValue("git_url", Git_url);
             writer.WriteStringValue("html_url", Html_url);
             writer.WriteStringValue("name", Name);
-            writer.WriteStringValue("path", PathObject);
+            writer.WriteStringValue("path", Path);
             writer.WriteStringValue("sha", Sha);
             writer.WriteIntValue("size", Size);
             writer.WriteStringValue("submodule_git_url", Submodule_git_url);

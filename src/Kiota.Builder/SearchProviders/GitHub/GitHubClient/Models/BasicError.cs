@@ -5,14 +5,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
-    /// <summary>Basic Error</summary>
+    /// <summary>
+    /// Basic Error
+    /// </summary>
     public class BasicError : ApiException, IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The documentation_url property</summary>
         public string Documentation_url { get; set; }
         /// <summary>The message property</summary>
-        public new string Message { get; set; }
+        public string Message { get; set; }
         /// <summary>The status property</summary>
         public string Status { get; set; }
         /// <summary>The url property</summary>

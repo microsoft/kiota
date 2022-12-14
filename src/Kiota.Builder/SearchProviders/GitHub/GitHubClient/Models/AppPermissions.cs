@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
-    /// <summary>The permissions granted to the user-to-server access token.</summary>
+    /// <summary>
+    /// The permissions granted to the user-to-server access token.
+    /// </summary>
     public class AppPermissions : IAdditionalDataHolder, IParsable {
         /// <summary>The level of permission to grant the access token for GitHub Actions workflows, workflow runs, and artifacts.</summary>
         public AppPermissions_actions? Actions { get; set; }
@@ -30,7 +32,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public AppPermissions_organization_administration? Organization_administration { get; set; }
         /// <summary>The level of permission to grant the access token to view and manage announcement banners for an organization.</summary>
         public AppPermissions_organization_announcement_banners? Organization_announcement_banners { get; set; }
-        /// <summary>The level of permission to grant the access token for custom roles management. This property is in beta and is subject to change.</summary>
+        /// <summary>The level of permission to grant the access token for organization custom roles management. This property is in beta and is subject to change.</summary>
         public AppPermissions_organization_custom_roles? Organization_custom_roles { get; set; }
         /// <summary>The level of permission to grant the access token to manage the post-receive hooks for an organization.</summary>
         public AppPermissions_organization_hooks? Organization_hooks { get; set; }

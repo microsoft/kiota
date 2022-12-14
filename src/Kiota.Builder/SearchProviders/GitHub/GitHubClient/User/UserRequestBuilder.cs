@@ -6,7 +6,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.User {
-    /// <summary>Builds and executes requests for operations under \user</summary>
+    /// <summary>
+    /// Builds and executes requests for operations under \user
+    /// </summary>
     public class UserRequestBuilder {
         /// <summary>The installations property</summary>
         public InstallationsRequestBuilder Installations { get =>

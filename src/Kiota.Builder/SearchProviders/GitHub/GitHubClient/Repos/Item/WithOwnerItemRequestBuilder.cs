@@ -6,7 +6,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item {
-    /// <summary>Builds and executes requests for operations under \repos\{owner}</summary>
+    /// <summary>
+    /// Builds and executes requests for operations under \repos\{owner}
+    /// </summary>
     public class WithOwnerItemRequestBuilder {
         /// <summary>Path parameters for the request</summary>
         private Dictionary<string, object> PathParameters { get; set; }

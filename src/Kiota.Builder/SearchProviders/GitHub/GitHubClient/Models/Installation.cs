@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
-    /// <summary>Installation</summary>
+    /// <summary>
+    /// Installation
+    /// </summary>
     public class Installation : IAdditionalDataHolder, IParsable {
         /// <summary>The access_tokens_url property</summary>
         public string Access_tokens_url { get; set; }
@@ -117,7 +119,9 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             writer.WriteDateTimeOffsetValue("updated_at", Updated_at);
             writer.WriteAdditionalData(AdditionalData);
         }
-        /// <summary>Composed type wrapper for classes simpleUser, enterprise</summary>
+        /// <summary>
+        /// Composed type wrapper for classes simpleUser, enterprise
+        /// </summary>
         public class Installations : IAdditionalDataHolder, IParsable {
             /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
             public IDictionary<string, object> AdditionalData { get; set; }
