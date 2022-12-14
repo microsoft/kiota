@@ -872,7 +872,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
         Assert.Contains("requestInfo.UrlTemplate = ", result);
         Assert.Contains("requestInfo.PathParameters", result);
-        Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
         Assert.Contains("requestInfo.Headers.AddAll(", result);
@@ -908,7 +908,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
         Assert.Contains("requestInfo.UrlTemplate = ", result);
         Assert.Contains("requestInfo.PathParameters", result);
-        Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
         Assert.Contains("requestInfo.Headers.AddAll(", result);
@@ -942,7 +942,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
         Assert.Contains("requestInfo.UrlTemplate = ", result);
         Assert.Contains("requestInfo.PathParameters", result);
-        Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
         Assert.Contains("requestInfo.Headers.AddAll(", result);
@@ -978,7 +978,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
         Assert.Contains("requestInfo.UrlTemplate = ", result);
         Assert.Contains("requestInfo.PathParameters", result);
-        Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
         Assert.Contains("requestInfo.Headers.AddAll(", result);

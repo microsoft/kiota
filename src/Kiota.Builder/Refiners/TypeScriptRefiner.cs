@@ -99,7 +99,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                         },
                 CodeMethodKind.Factory
             );
-            AliasUsingsWithSameSymbol(generatedCode);
             static string factoryNameCallbackFromType(CodeType x) => factoryNameCallbackFromTypeName(x.Name);
             cancellationToken.ThrowIfCancellationRequested();
             AddStaticMethodsUsingsForDeserializer(
@@ -110,6 +109,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 factoryNameCallbackFromType
             );
+            AliasUsingsWithSameSymbol(generatedCode);
             AddQueryParameterMapperMethod(
                 generatedCode
             );

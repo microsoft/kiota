@@ -60,7 +60,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             return null;
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None || !includeCollectionInformation ? string.Empty : "[]";
         if(code is CodeComposedTypeBase currentUnion && currentUnion.Types.Any())
-            return currentUnion.Types.Select(x => GetTypeString(x, targetElement)).Aggregate((x, y) => $"{x} | {y}") + collectionSuffix;
+            return string.Join(" | ", currentUnion.Types.Select(x => GetTypeString(x, targetElement))) + collectionSuffix;
         if(code is CodeType currentType) {
             var typeName = GetTypeAlias(currentType, targetElement) ?? TranslateType(currentType);
             if (code.ActionOf)
@@ -106,7 +106,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     {
         return type.Name switch  {
             "integer" or "int64" or "float" or "double" or "byte" or "sbyte" or "decimal" => "number",
-            "binary" => "string",
+            "binary" or "Guid" => "string",
             "String" or "Object" or "Boolean" or "Void" or "string" or "object" or "boolean" or "void" => type.Name.ToFirstCharacterLowerCase(), // little casing hack
             _ => (type.TypeDefinition?.Name ?? type.Name).ToFirstCharacterUpperCase() ?? "object",
         };
