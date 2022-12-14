@@ -6,7 +6,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item {
-    /// <summary>Builds and executes requests for operations under \repos\{owner}\{repo}</summary>
+    /// <summary>
+    /// Builds and executes requests for operations under \repos\{owner}\{repo}
+    /// </summary>
     public class WithRepoItemRequestBuilder {
         /// <summary>The contents property</summary>
         public ContentsRequestBuilder Contents { get =>

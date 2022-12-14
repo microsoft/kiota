@@ -5,7 +5,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
-    /// <summary>Validation Error</summary>
+    /// <summary>
+    /// Validation Error
+    /// </summary>
     public class ValidationError : ApiException, IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
@@ -14,7 +16,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The errors property</summary>
         public List<ValidationError_errors> Errors { get; set; }
         /// <summary>The message property</summary>
-        public new string Message { get; set; }
+        public string Message { get; set; }
         /// <summary>
         /// Instantiates a new ValidationError and sets the default values.
         /// </summary>

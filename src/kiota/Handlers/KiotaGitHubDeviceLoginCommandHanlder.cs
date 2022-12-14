@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.CommandLine.Invocation;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using kiota.Authentication.GitHub.DeviceCode;
@@ -45,7 +46,7 @@ internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
             URI = Configuration.Search.GitHub.ApiBaseUrl,
         };
         await authenticationProvider.AuthenticateRequestAsync(dummyRequest, cancellationToken: cancellationToken);
-        if(dummyRequest.Headers.TryGetValue("Authorization", out var authHeaderValue) && authHeaderValue is string authHeader && authHeader.StartsWith("bearer", StringComparison.OrdinalIgnoreCase)) {
+        if(dummyRequest.Headers.TryGetValue("Authorization", out var authHeaderValue) && authHeaderValue.FirstOrDefault() is string authHeader && authHeader.StartsWith("bearer", StringComparison.OrdinalIgnoreCase)) {
             DisplaySuccess("Authentication successful.");
             await ListOutRepositoriesAsync(authenticationProvider, cancellationToken);
             DisplayManageInstallationHint();

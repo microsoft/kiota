@@ -60,7 +60,9 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             writer.WriteObjectValue<Repositories>("value", Value);
             writer.WriteAdditionalData(AdditionalData);
         }
-        /// <summary>Composed type wrapper for classes string, integer, string</summary>
+        /// <summary>
+        /// Composed type wrapper for classes string, integer, string
+        /// </summary>
         public class Repositories : IAdditionalDataHolder, IParsable {
             /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
             public IDictionary<string, object> AdditionalData { get; set; }

@@ -435,7 +435,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             KiotaBuilder.AddSerializationMembers(newClass, true, usesBackingStore);
             newClass.AddProperty(new CodeProperty {
                 Name = "serializationHint",
-                Type = new CodeType { Name = "string" },
+                Type = new CodeType { 
+                    Name = "string" , 
+                    IsExternal = true
+                },
                 Documentation = new() {
                     Description = "Serialization hint for the current wrapper.",
                 },

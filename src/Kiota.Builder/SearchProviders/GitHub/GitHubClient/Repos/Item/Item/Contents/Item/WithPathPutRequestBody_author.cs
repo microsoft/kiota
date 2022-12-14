@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Contents.Item {
-    /// <summary>The author of the file. Default: The `committer` or the authenticated user if you omit `committer`.</summary>
+    /// <summary>
+    /// The author of the file. Default: The `committer` or the authenticated user if you omit `committer`.
+    /// </summary>
     public class WithPathPutRequestBody_author : IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }

@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
-    /// <summary>Repo Search Result Item</summary>
+    /// <summary>
+    /// Repo Search Result Item
+    /// </summary>
     public class RepoSearchResultItem : IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
@@ -145,7 +147,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The releases_url property</summary>
         public string Releases_url { get; set; }
         /// <summary>The score property</summary>
-        public double? Score { get; set; }
+        public long? Score { get; set; }
         /// <summary>The size property</summary>
         public int? Size { get; set; }
         /// <summary>The ssh_url property</summary>
@@ -273,7 +275,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
                 {"pulls_url", n => { Pulls_url = n.GetStringValue(); } },
                 {"pushed_at", n => { Pushed_at = n.GetDateTimeOffsetValue(); } },
                 {"releases_url", n => { Releases_url = n.GetStringValue(); } },
-                {"score", n => { Score = n.GetDoubleValue(); } },
+                {"score", n => { Score = n.GetLongValue(); } },
                 {"size", n => { Size = n.GetIntValue(); } },
                 {"ssh_url", n => { Ssh_url = n.GetStringValue(); } },
                 {"stargazers_count", n => { Stargazers_count = n.GetIntValue(); } },
@@ -370,7 +372,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             writer.WriteStringValue("pulls_url", Pulls_url);
             writer.WriteDateTimeOffsetValue("pushed_at", Pushed_at);
             writer.WriteStringValue("releases_url", Releases_url);
-            writer.WriteDoubleValue("score", Score);
+            writer.WriteLongValue("score", Score);
             writer.WriteIntValue("size", Size);
             writer.WriteStringValue("ssh_url", Ssh_url);
             writer.WriteIntValue("stargazers_count", Stargazers_count);
