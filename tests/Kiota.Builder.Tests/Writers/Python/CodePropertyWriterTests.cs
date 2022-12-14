@@ -49,6 +49,7 @@ public class CodePropertyWriterTests: IDisposable {
         property.Documentation.Description = "This is a request builder";
         writer.Write(property);
         var result = tw.ToString();
+        Assert.Contains("@property", result);
         Assert.Contains("def property_name(", result);
         Assert.Contains("This is a request builder", result);
         Assert.Contains($"return {TypeName.ToLower()}.{TypeName}(", result);
@@ -60,6 +61,7 @@ public class CodePropertyWriterTests: IDisposable {
         property.Kind = CodePropertyKind.QueryParameters;
         writer.Write(property);
         var result = tw.ToString();
+        Assert.DoesNotContain("@property", result);
         Assert.Contains($"property_name: Optional[{TypeName.ToLower()}.{TypeName}]", result);
     }
     [Fact]
