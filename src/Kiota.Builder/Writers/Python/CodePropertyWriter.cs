@@ -15,6 +15,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
         */
         switch(codeElement.Kind) {
             case CodePropertyKind.RequestBuilder:
+                writer.WriteLine("@property");
                 writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}(self) -> {returnType}:");
                 writer.IncreaseIndent();
                 conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
