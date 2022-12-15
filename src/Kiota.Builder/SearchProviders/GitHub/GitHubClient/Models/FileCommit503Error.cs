@@ -13,7 +13,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The documentation_url property</summary>
         public string Documentation_url { get; set; }
         /// <summary>The message property</summary>
-        public string Message { get; set; }
+        public new string Message { get; set; }
         /// <summary>
         /// Instantiates a new FileCommit503Error and sets the default values.
         /// </summary>
