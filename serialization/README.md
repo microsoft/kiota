@@ -12,6 +12,13 @@ Your project will need a reference to the abstraction package to build and run, 
 - [PHP](https://github.com/microsoft/kiota-serialization-json-php) : relies on the native JSON capabilities for JSON deserialization
 - [Python](https://github.com/microsoft/kiota-serialization-json-python) : relies on the native JSON capabilities.
 
+## Application/x-www-form-urlencoded
+
+- [Dotnet](https://github.com/microsoft/kiota-serialization-form-dotnet).
+- [Go](https://github.com/microsoft/kiota-serialization-form-go).
+- [Java](https://github.com/microsoft/kiota-java/tree/main/components/serialization/form).
+- [TypeScript](https://github.com/microsoft/kiota-typescript/tree/main/packages/serialization/form).
+
 ## Text/plain
 
 - [Dotnet](https://github.com/microsoft/kiota-serialization-text-dotnet)

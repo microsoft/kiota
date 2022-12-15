@@ -3625,15 +3625,15 @@ paths:
     [InlineData("application/json", "2XX", false, "default", "binary")]
     [InlineData("application/xml", "204", true, "default", "void")]
     [InlineData("application/xml", "204", false, "default", "void")]
-    [InlineData("application/xml", "200", true, "default", "Myobject")]
+    [InlineData("application/xml", "200", true, "default", "binary")] // MyObject when we support xml deserialization
     [InlineData("application/xml", "200", false, "default", "binary")]
     [InlineData("text/xml", "204", true, "default", "void")]
     [InlineData("text/xml", "204", false, "default", "void")]
-    [InlineData("text/xml", "200", true, "default", "Myobject")]
+    [InlineData("text/xml", "200", true, "default", "binary")] // MyObject when we support xml deserialization
     [InlineData("text/xml", "200", false, "default", "binary")]
     [InlineData("text/yaml", "204", true, "default", "void")]
     [InlineData("text/yaml", "204", false, "default", "void")]
-    [InlineData("text/yaml", "200", true, "default", "Myobject")]
+    [InlineData("text/yaml", "200", true, "default", "binary")] // MyObject when we support xml deserialization
     [InlineData("text/yaml", "200", false, "default", "binary")]
     [InlineData("application/octet-stream", "204", true, "default", "void")]
     [InlineData("application/octet-stream", "204", false, "default", "void")]
@@ -3953,11 +3953,11 @@ paths:
     [InlineData("application/json", true, "default", "Myobject")]
     [InlineData("application/json", false, "default", "binary")]
     [InlineData("application/xml", false, "default", "binary")]
-    [InlineData("application/xml", true, "default", "Myobject")]
+    [InlineData("application/xml", true, "default", "binary")] //MyObject when we support it
     [InlineData("text/xml", false, "default", "binary")]
-    [InlineData("text/xml", true, "default", "Myobject")]
+    [InlineData("text/xml", true, "default", "binary")] //MyObject when we support it
     [InlineData("text/yaml", false, "default", "binary")]
-    [InlineData("text/yaml", true, "default", "Myobject")]
+    [InlineData("text/yaml", true, "default", "binary")] //MyObject when we support it
     [InlineData("application/octet-stream", true, "default", "binary")]
     [InlineData("application/octet-stream", false, "default", "binary")]
     [InlineData("text/html", true, "default", "binary")]

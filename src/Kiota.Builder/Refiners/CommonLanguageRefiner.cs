@@ -20,10 +20,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     ///     It also updates the module names to replace the fully qualified class name by the class name without the namespace.
     /// </summary>
     protected void AddSerializationModulesImport(CodeElement generatedCode, string[] serializationWriterFactoryInterfaceAndRegistrationFullName = default, string[] parseNodeFactoryInterfaceAndRegistrationFullName = default, char separator = '.') {
-        if(serializationWriterFactoryInterfaceAndRegistrationFullName == null)
-            serializationWriterFactoryInterfaceAndRegistrationFullName = Array.Empty<string>();
-        if(parseNodeFactoryInterfaceAndRegistrationFullName == null)
-            parseNodeFactoryInterfaceAndRegistrationFullName = Array.Empty<string>();
+        serializationWriterFactoryInterfaceAndRegistrationFullName ??= Array.Empty<string>();
+        parseNodeFactoryInterfaceAndRegistrationFullName ??= Array.Empty<string>();
         if(generatedCode is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
             currentMethod.Parent is CodeClass currentClass &&
@@ -62,7 +60,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)) {
                 var modules = propertyGetter.Invoke(currentMethod);
                 if(modules.Count == initialNames.Count &&
-                    modules.All(x => initialNames.Contains(x))) {
+                    modules.All(initialNames.Contains)) {
                     propertySetter.Invoke(currentMethod, moduleNames);
                     return true;
             }

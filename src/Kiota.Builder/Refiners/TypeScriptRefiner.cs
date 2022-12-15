@@ -52,7 +52,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 defaultConfiguration.Serializers,
                 new (StringComparer.OrdinalIgnoreCase) {
                     "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory",
-                    "@microsoft/kiota-serialization-text.TextSerializationWriterFactory"
+                    "@microsoft/kiota-serialization-text.TextSerializationWriterFactory",
+                    "@microsoft/kiota-serialization-form.FormSerializationWriterFactory",
                 }
             );
             ReplaceDefaultDeserializationModules(
@@ -60,7 +61,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 defaultConfiguration.Deserializers,
                 new (StringComparer.OrdinalIgnoreCase) {
                     "@microsoft/kiota-serialization-json.JsonParseNodeFactory",
-                    "@microsoft/kiota-serialization-text.TextParseNodeFactory"
+                    "@microsoft/kiota-serialization-text.TextParseNodeFactory",
+                    "@microsoft/kiota-serialization-form.FormParseNodeFactory",
                 }
             );
             AddSerializationModulesImport(generatedCode,
