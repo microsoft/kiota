@@ -30,7 +30,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.0.0-rc.1" />
     <PackageReference Include="Microsoft.Kiota.Http.HttpClientLibrary" Version="1.0.0-preview.13" />
-    <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.0.0-preview.7" />
+    <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.0.0-rc.1" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Text" Version="1.0.0-preview.4" />
     <PackageReference Include="Microsoft.OpenApi" Version="1.4.5" />
     <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.4.5" />
