@@ -244,11 +244,11 @@ The fully qualified class names for deserializers. Defaults to the following val
 
 | Language   | Default deserializers                                           |
 |------------|-----------------------------------------------------------------|
-| C#         | `Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory`, `Microsoft.Kiota.Serialization.Text.TextParseNodeFactory`      |
-| Go         | `github.com/microsoft/kiota-serialization-json-go/json.JsonParseNodeFactory`, `github.com/microsoft/kiota-serialization-text-go/text.TextParseNodeFactory` |
-| Java       | `com.microsoft.kiota.serialization.JsonParseNodeFactory`, `com.microsoft.kiota.serialization.TextParseNodeFactory`        |
+| C#         | `Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory`, `Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory`, `Microsoft.Kiota.Serialization.Text.TextParseNodeFactory`      |
+| Go         | `github.com/microsoft/kiota-serialization-form-go/FormParseNodeFactory`, `github.com/microsoft/kiota-serialization-json-go/JsonParseNodeFactory`, `github.com/microsoft/kiota-serialization-text-go/TextParseNodeFactory` |
+| Java       | `com.microsoft.kiota.serialization.TextParseNodeFactory`, `com.microsoft.kiota.serialization.JsonParseNodeFactory`, `com.microsoft.kiota.serialization.TextParseNodeFactory`        |
 | Ruby       | `microsoft_kiota_serialization/json_parse_node_factory`         |
-| TypeScript | `@microsoft/kiota-serialization-json.JsonParseNodeFactory`, `@microsoft/kiota-serialization-text.TextParseNodeFactory`      |
+| TypeScript | `@microsoft/kiota-serialization-form.FormParseNodeFactory`, `@microsoft/kiota-serialization-json.JsonParseNodeFactory`, `@microsoft/kiota-serialization-text.TextParseNodeFactory`      |
 
 ##### Accepted values
 
@@ -308,11 +308,11 @@ The fully qualified class names for deserializers. Defaults to the following val
 
 | Language   | Default deserializer                                            |
 |------------|-----------------------------------------------------------------|
-| C#         | `Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory`, `Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory` |
-| Go         | `github.com/microsoft/kiota-serialization-json-go/json.JsonSerializationWriterFactory`, `github.com/microsoft/kiota-serialization-text-go/text.TextSerializationWriterFactory` |
-| Java       | `com.microsoft.kiota.serialization.JsonSerializationWriterFactory`, `com.microsoft.kiota.serialization.TextSerializationWriterFactory` |
+| C#         | `Microsoft.Kiota.Serialization.Form.FormSerializationWriterFactory`, `Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory`, `Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory` |
+| Go         | `github.com/microsoft/kiota-serialization-form-go/FormSerializationWriterFactory`, `github.com/microsoft/kiota-serialization-json-go/JsonSerializationWriterFactory`, `github.com/microsoft/kiota-serialization-text-go/TextSerializationWriterFactory` |
+| Java       | `com.microsoft.kiota.serialization.FormSerializationWriterFactory`, `com.microsoft.kiota.serialization.JsonSerializationWriterFactory`, `com.microsoft.kiota.serialization.TextSerializationWriterFactory` |
 | Ruby       | `microsoft_kiota_serialization/json_serialization_writer_factory` |
-| TypeScript | `@microsoft/kiota-serialization-json.JsonSerializationWriterFactory`, `@microsoft/kiota-serialization-text.TextSerializationWriterFactory` |
+| TypeScript | `@microsoft/kiota-serialization-form.FormSerializationWriterFactory`, `@microsoft/kiota-serialization-json.JsonSerializationWriterFactory`, `@microsoft/kiota-serialization-text.TextSerializationWriterFactory` |
 
 ##### Accepted values
 
@@ -329,10 +329,8 @@ The MIME types to use for structured data model generation. Accepts multiple val
 Default values :
 
 - `application/json`
-- `application/xml`
+- `application/x-www-form-urlencoded`
 - `text/plain`
-- `text/xml`
-- `text/yaml`
 
 > Note: Only request body types or response types with a defined schema will generate models, other entries will default back to stream/byte array.
 

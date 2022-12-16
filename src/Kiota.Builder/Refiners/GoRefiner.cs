@@ -99,13 +99,17 @@ public class GoRefiner : CommonLanguageRefiner
                 defaultConfiguration.Serializers,
                 new (StringComparer.OrdinalIgnoreCase) {
                     "github.com/microsoft/kiota-serialization-json-go.JsonSerializationWriterFactory",
-                    "github.com/microsoft/kiota-serialization-text-go.TextSerializationWriterFactory"});
+                    "github.com/microsoft/kiota-serialization-text-go.TextSerializationWriterFactory",
+                    "github.com/microsoft/kiota-serialization-form-go.FormSerializationWriterFactory",
+                });
             ReplaceDefaultDeserializationModules(
                 generatedCode,
                 defaultConfiguration.Deserializers,
                 new (StringComparer.OrdinalIgnoreCase) {
                     "github.com/microsoft/kiota-serialization-json-go.JsonParseNodeFactory",
-                    "github.com/microsoft/kiota-serialization-text-go.TextParseNodeFactory"});
+                    "github.com/microsoft/kiota-serialization-text-go.TextParseNodeFactory",
+                    "github.com/microsoft/kiota-serialization-form-go.FormParseNodeFactory",
+                });
             AddSerializationModulesImport(
                 generatedCode,
                 new[] {"github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer"},

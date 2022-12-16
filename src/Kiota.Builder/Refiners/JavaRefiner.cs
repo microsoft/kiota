@@ -57,14 +57,18 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 defaultConfiguration.Serializers,
                 new (StringComparer.OrdinalIgnoreCase) {
                     "com.microsoft.kiota.serialization.JsonSerializationWriterFactory",
-                    "com.microsoft.kiota.serialization.TextSerializationWriterFactory"}
+                    "com.microsoft.kiota.serialization.TextSerializationWriterFactory",
+                    "com.microsoft.kiota.serialization.FormSerializationWriterFactory",
+                }
             );
             ReplaceDefaultDeserializationModules(
                 generatedCode,
                 defaultConfiguration.Deserializers,
                 new (StringComparer.OrdinalIgnoreCase) {
                     "com.microsoft.kiota.serialization.JsonParseNodeFactory",
-                    "com.microsoft.kiota.serialization.TextParseNodeFactory"}
+                    "com.microsoft.kiota.serialization.FormParseNodeFactory",
+                    "com.microsoft.kiota.serialization.TextParseNodeFactory"
+                }
             );
             AddSerializationModulesImport(generatedCode,
                                         new [] { "com.microsoft.kiota.ApiClientBuilder",

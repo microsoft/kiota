@@ -16,7 +16,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The errors property</summary>
         public List<ValidationError_errors> Errors { get; set; }
         /// <summary>The message property</summary>
-        public string Message { get; set; }
+        public new string Message { get; set; }
         /// <summary>
         /// Instantiates a new ValidationError and sets the default values.
         /// </summary>
