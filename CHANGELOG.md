@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for auto-registration of serializers in Ruby. [#478](https://github.com/microsoft/kiota/issues/478)
+
 ### Changed
 
 - Fixed a bug in Ruby where the request adapter URL would be overwritten by the client defaults. [#1647](https://github.com/microsoft/kiota/issues/1647)
