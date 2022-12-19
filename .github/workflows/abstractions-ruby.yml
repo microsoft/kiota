@@ -16,8 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
-        ruby-version: [2.5, 2.6, 2.7, '3.0', head, jruby, jruby-head, truffleruby, truffleruby-head]
+        ruby-version: ['2.7', '3.0', '3.1', head, jruby, jruby-head, truffleruby, truffleruby-head]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -32,7 +31,7 @@ jobs:
         run: bundle exec rake
         working-directory: ${{ env.relativePath }}
       - name: Upload artifacts for ruby version 3 and ubuntu
-        if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
+        if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.1'}}
         uses: actions/upload-artifact@v3
         with:
           name: drop
@@ -51,8 +50,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ruby/setup-ruby@v1
         with:
-           # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
-          ruby-version: '3.0'
+          ruby-version: '3.1'
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
           bundler: 'latest'
           cache-version: 1
@@ -83,8 +81,7 @@ jobs:
   #     - uses: actions/checkout@v3
   #     - uses: ruby/setup-ruby@v1
   #       with:
-  #          # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
-  #         ruby-version: '3.0'
+  #         ruby-version: '3.1'
   #         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
   #     - run: bundle exec rake
   #     - name: Publish to RubyGems
