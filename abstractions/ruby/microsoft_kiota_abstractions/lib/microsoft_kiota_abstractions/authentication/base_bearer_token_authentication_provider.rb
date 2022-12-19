@@ -7,7 +7,6 @@ require_relative './access_token_provider'
 module MicrosoftKiotaAbstractions
   # Provides a base class for implementing AuthenticationProvider for Bearer token scheme
   class BaseBearerTokenAuthenticationProvider
-    include MicrosoftKiotaAbstractions::AccessTokenProvider
     include MicrosoftKiotaAbstractions::AuthenticationProvider
     include Concurrent::Async
     def initialize(access_token_provider)

@@ -10,17 +10,21 @@ module MicrosoftKiotaNethttplibrary
 
     attr_accessor :authentication_provider, :content_type_header_key, :parse_node_factory, :serialization_writer_factory, :client
     
-    # TODO: When #478 is implemented then parse_node_factory and serialization_writer_factory should default to nil
-    def initialize(authentication_provider, parse_node_factory, serialization_writer_factory, client = Net::HTTP)
+    def initialize(authentication_provider, parse_node_factory=MicrosoftKiotaAbstractions::ParseNodeFactoryRegistry.default_instance, serialization_writer_factory=MicrosoftKiotaAbstractions::SerializationWriterFactoryRegistry.default_instance, client = Net::HTTP)
 
       if !authentication_provider
         raise StandardError , 'authentication provider cannot be null'
       end
       @authentication_provider = authentication_provider
       @content_type_header_key = 'Content-Type'
-      # TODO: When #478 is implemented get the static factories if @parse_node_factory and @serialization_writer_factory are nil
-      @parse_node_factory = parse_node_factory 
+      @parse_node_factory = parse_node_factory
+      if @parse_node_factory.nil?
+        @parse_node_factory = MicrosoftKiotaAbstractions::ParseNodeFactoryRegistry.default_instance
+      end
       @serialization_writer_factory = serialization_writer_factory 
+      if @serialization_writer_factory.nil?
+        @serialization_writer_factory = MicrosoftKiotaAbstractions::SerializationWriterFactoryRegistry.default_instance
+      end
       @client = client
       @base_url = ''
     end

@@ -116,4 +116,12 @@ RSpec.describe MicrosoftKiotaAbstractions do
     expect(url5).to eq(false)
     expect(url6).to eq(false)
   end
+
+  it 'tests the default instance for ParseNodeFactoryRegistry is set' do
+    expect(MicrosoftKiotaAbstractions::ParseNodeFactoryRegistry.default_instance).to_not be_nil
+  end
+
+  it 'tests the default instance for SerializationWriterFactoryRegistry is set' do
+    expect(MicrosoftKiotaAbstractions::SerializationWriterFactoryRegistry.default_instance).to_not be_nil
+  end
 end
