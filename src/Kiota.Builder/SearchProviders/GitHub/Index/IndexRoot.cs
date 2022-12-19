@@ -8,7 +8,7 @@ public class IndexRoot {
 public class IndexApiEntry {
     public string Name { get; set; }
     public string Description { get; set; }
-    public string BaseUrl { get; set; }
+    public string BaseURL { get; set; }
     public List<IndexApiProperty> Properties { get; set; }
 }
 public class IndexApiProperty {

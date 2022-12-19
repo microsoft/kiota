@@ -112,7 +112,7 @@ public class GitHubSearchProvider : ISearchProvider
             return new Tuple<HashSet<string>, HashSet<string>>(new HashSet<string>(StringComparer.OrdinalIgnoreCase), new HashSet<string>(StringComparer.OrdinalIgnoreCase));
         }
     }
-    private const string OpenApiPropertyKey = "x-openapi";
+    private const string OpenApiPropertyKey = "X-openapi";
     private static readonly Lazy<IDeserializer> _deserializer = new(() => new DeserializerBuilder()
                 .WithNamingConvention(new YamlNamingConvention())
                 .IgnoreUnmatchedProperties()
@@ -148,12 +148,12 @@ public class GitHubSearchProvider : ISearchProvider
             var results = indexFile.Apis.Where(static x => x.Properties.Any(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase)))
                                 .Select(x =>
                                 {
-                                    var baseUrl = new Uri(x.BaseUrl);
+                                    var baseUrl = new Uri(x.BaseURL);
                                     var hostAndPath = baseUrl.Host + baseUrl.AbsolutePath;
                                     return new Tuple<string, SearchResult>($"{org}/{repo}/{hostAndPath}",
                                         new SearchResult(x.Name,
                                             x.Description,
-                                            new Uri(x.BaseUrl),
+                                            new Uri(x.BaseURL),
                                             new Uri(x.Properties.FirstOrDefault(y => OpenApiPropertyKey.Equals(y.Type, StringComparison.OrdinalIgnoreCase))?.Url),
                                             new()));
                                 })
