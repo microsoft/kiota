@@ -130,12 +130,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         }
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer) {
-        writer.WriteLine($"def  {codeElement.AccessedProperty?.Name?.ToSnakeCase()}=({codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()})");
+        writer.WriteLine($"def {codeElement.AccessedProperty?.Name?.ToSnakeCase()}=({codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()})");
         writer.IncreaseIndent();
         writer.WriteLine($"@{codeElement.AccessedProperty?.Name?.ToSnakeCase()} = {codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}");
     }
     private static void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer) {
-        writer.WriteLine($"def  {codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
+        writer.WriteLine($"def {codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
         writer.IncreaseIndent();
         writer.WriteLine($"return @{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
     }
