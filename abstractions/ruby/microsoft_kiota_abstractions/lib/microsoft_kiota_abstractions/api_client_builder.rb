@@ -4,25 +4,16 @@ require_relative "serialization/serialization_writer_factory"
 require_relative "serialization/serialization_writer_factory_registry"
 
 module MicrosoftKiotaAbstractions
-    module ApiClientBuilder
+  class ApiClientBuilder
+    def self.register_default_serializer(factory_class)
+      factory = factory_class.new()
+      MicrosoftKiotaAbstractions::SerializationWriterFactoryRegistry.default_instance.content_type_associated_factories[factory.get_valid_content_type()] = factory
+    end
 
-      def register_default_serializer(factory_class)
-        begin
-            factory = factory_class.new()
-            MicrosoftKiotaAbstractions::SerializationWriterFactoryRegistry.default_instance.content_type_associated_factories[factory.get_valid_content_type(), factory]
-        rescue => exception
-            raise exception
-        end
-      end
-
-      def register_default_deserializer(factory_class)
-        begin
-            factory = factory_class.new()
-            MicrosoftKiotaAbstractions::ParseNodeFactoryRegistry.default_instance.content_type_associated_factories[factory.get_valid_content_type(), factory]
-        rescue => exception
-            raise exception
-        end
-      end
+    def self.register_default_deserializer(factory_class)
+      factory = factory_class.new()
+      MicrosoftKiotaAbstractions::ParseNodeFactoryRegistry.default_instance.content_type_associated_factories[factory.get_valid_content_type()] = factory
     end
   end
+end
   
