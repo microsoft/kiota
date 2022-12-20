@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'concurrent'
 require 'microsoft_kiota_abstractions'
 require 'oauth2'
 require_relative 'extensions/oauth2_ext'
@@ -13,7 +12,6 @@ require_relative 'contexts/oauth_custom_flow'
 module MicrosoftKiotaAuthenticationOAuth
   # Access Token Provider class implementation
   class OAuthAccessTokenProvider
-    include Concurrent::Async
     # This is the initializer for OAuthAccessTokenProvider.
     # :params
     #   token_request_context: a instance of one of our token request context or a custom implementation
@@ -53,23 +51,25 @@ module MicrosoftKiotaAuthenticationOAuth
 
       raise StandardError, 'Only https is supported' if parsed_url.scheme != 'https'
 
-      if @cached_token
-        token = OAuth2::AccessToken.from_hash(@token_request_context.oauth_provider, @cached_token) 
-        return token.token if !token.nil? && !token.expired?
+      Fiber.new do
+        if @cached_token
+          token = OAuth2::AccessToken.from_hash(@token_request_context.oauth_provider, @cached_token) 
+          return token.token if !token.nil? && !token.expired?
 
-        if token.expired?
-          token = token.refresh!
-          @cached_token = token.to_hash
-          return token.token
+          if token.expired?
+            token = token.refresh!
+            @cached_token = token.to_hash
+            return token.token
+          end
         end
+
+        token = nil
+        token = @token_request_context.get_token
+
+        @cached_token = token.to_hash unless token.nil?
+        token = token.token unless token.nil?
+        token
       end
-
-      token = nil
-      token = @token_request_context.get_token
-
-      @cached_token = token.to_hash unless token.nil?
-      token = token.token unless token.nil?
-      token
     end
 
     attr_reader :scopes, :host_validator
