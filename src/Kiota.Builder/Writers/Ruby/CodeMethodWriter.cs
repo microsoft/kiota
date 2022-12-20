@@ -283,6 +283,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         return propertyType switch
         {
             "string" or "boolean" or "number" or "float" or "Guid" => $"get_{propertyType.ToSnakeCase()}_value()",
+            "binary" or "Binary" => "get_string_value()", //TODO: add support for binary
             "DateTimeOffset" or "DateTime" => "get_date_time_value()",
             "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => "get_duration_value()",
             "DateOnly" or "Date" => "get_date_value()",
@@ -318,6 +319,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         return propertyType switch
         {
             "string" or "boolean" or "number" or "float" or "Guid" => $"write_{propertyType.ToSnakeCase()}_value",
+            "binary" => "write_string_value", //TODO: add support for binary
             "DateTimeOffset" or "DateTime" => "write_date_time_value",
             "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => "write_duration_value",
             "DateOnly" or "Date" => "write_date_value",
