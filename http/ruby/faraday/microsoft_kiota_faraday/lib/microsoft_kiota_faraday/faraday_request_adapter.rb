@@ -2,8 +2,8 @@ require 'microsoft_kiota_abstractions'
 require 'net/https'
 require 'net/http'
 
-module MicrosoftKiotaNethttplibrary
-  class NetHttpRequestAdapter
+module MicrosoftKiotaFaraday
+  class FaradayRequestAdapter
     include MicrosoftKiotaAbstractions::RequestAdapter
 
     attr_accessor :authentication_provider, :content_type_header_key, :parse_node_factory, :serialization_writer_factory, :client

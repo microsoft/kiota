@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-require_relative "lib/microsoft_kiota_nethttplibrary/version"
+require_relative "lib/microsoft_kiota_faraday/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "microsoft_kiota_nethttplibrary"
-  spec.version       = MicrosoftKiotaNethttplibrary::VERSION
+  spec.name          = "microsoft_kiota_faraday"
+  spec.version       = MicrosoftKiotaFaraday::VERSION
   spec.authors       = 'Microsoft Corporation'
   spec.email         = 'graphsdkpub@microsoft.com'
-  spec.description   = 'Kiota HttpCore implementation with net/http'
-  spec.summary       = "Microsoft Kiota nethttp - Kiota Ruby http core library for running requests"
+  spec.description   = 'Kiota HttpCore implementation with Faraday'
+  spec.summary       = "Microsoft Kiota Faraday - Kiota Ruby http request adapter for running requests"
   spec.homepage      = 'https://microsoft.github.io/kiota/'
   spec.license       = 'MIT'
   spec.metadata      = {

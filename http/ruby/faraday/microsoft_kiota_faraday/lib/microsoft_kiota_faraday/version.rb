@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
-module MicrosoftKiotaNethttplibrary
+module MicrosoftKiotaFaraday
   VERSION = '0.3.0'
 end

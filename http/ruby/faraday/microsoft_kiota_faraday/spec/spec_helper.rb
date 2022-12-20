@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "microsoft_kiota_nethttplibrary"
+require "microsoft_kiota_faraday"
 
 Dir["#{File.dirname(__FILE__)}/./../lib/*.rb"].each { |f| load(f) }
 
