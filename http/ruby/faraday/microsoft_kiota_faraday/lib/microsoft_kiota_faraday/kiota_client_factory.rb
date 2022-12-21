@@ -1,9 +1,12 @@
 require 'net/https'
 require 'faraday'
+require_relative 'middleware/parameters_name_decoding_handler'
 module MicrosoftKiotaFaraday
     class KiotaClientFactory
         def self.get_default_middleware()
-            #TODO
+            return [
+                MicrosoftKiotaFaraday::Middleware::ParametersNameDecodingHandler
+            ]
         end
 
         def self.get_default_http_client(middleware=nil)
@@ -14,12 +17,10 @@ module MicrosoftKiotaFaraday
                 builder.adapter Faraday.default_adapter
                 builder.ssl.verify = true
                 builder.ssl.verify_mode = OpenSSL::SSL::VERIFY_PEER
+                middleware.each do |middleware|
+                    builder.use middleware
+                end
             end
-            
-            #TODO iterate over the middleware
-            # conn.use Faraday::Response::RaiseError
-            # https://lostisland.github.io/faraday/middleware/
-            # https://stackoverflow.com/questions/31075517/adding-params-in-faraday-middleware
             conn
         end
     end

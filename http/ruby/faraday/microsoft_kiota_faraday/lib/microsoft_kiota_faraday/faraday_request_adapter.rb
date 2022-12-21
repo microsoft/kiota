@@ -97,8 +97,14 @@ module MicrosoftKiotaFaraday
         request.headers = Faraday::Utils::Headers.new
         request_info.headers.select{|k,v| request.headers[k] = v }
       end
-      if request_info.content != nil
-        request.body = request_info.content # TODO the json serialization writer returns a string at the moment, change to body_stream when this is fixed
+      request.body = request_info.content unless request_info.content.nil? || request_info.content.empty?
+      # TODO the json serialization writer returns a string at the moment, change to body_stream when this is fixed
+      request_options = request_info.get_request_options
+      if !request_options.nil? && !request_options.empty? then
+        request.options = Faraday::RequestOptions.new
+        request_options.each do |value|
+          request.options.context[value.key] = value
+        end
       end
       request
     end

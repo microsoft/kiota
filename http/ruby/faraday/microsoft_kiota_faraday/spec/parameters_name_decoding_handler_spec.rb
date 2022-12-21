@@ -12,11 +12,11 @@ RSpec.describe MicrosoftKiotaFaraday do
 
         handler = MicrosoftKiotaFaraday::Middleware::ParametersNameDecodingHandler.new()
         values.each do |key, value|
-            request = Faraday::Request.create(:get) do |req|
-                req.path = URI.parse("https://graph.microsoft.com/v1.0/users#{key}")
-            end
-            handler.call(request)
-            expect(request.path.to_s).to eq("https://graph.microsoft.com/v1.0/users#{value}")
+            env = {
+                url: URI.parse("https://graph.microsoft.com/v1.0/users#{key}")
+            }
+            handler.call(env)
+            expect(env[:url].to_s).to eq("https://graph.microsoft.com/v1.0/users#{value}")
         end
     end
 
@@ -31,13 +31,15 @@ RSpec.describe MicrosoftKiotaFaraday do
         option = MicrosoftKiotaFaraday::Middleware::ParametersNameDecodingOption.new(false)
         handler = MicrosoftKiotaFaraday::Middleware::ParametersNameDecodingHandler.new(nil, option)
         values.each do |key, value|
-            request = Faraday::Request.create(:get) do |req|
-                req.path = URI.parse("https://graph.microsoft.com/v1.0/users#{key}")
-                req.options = Faraday::RequestOptions.new
-                req.options.context = { }
-            end
-            handler.call(request)
-            expect(request.path.to_s).to eq("https://graph.microsoft.com/v1.0/users#{value}")
+            env = {
+                url: URI.parse("https://graph.microsoft.com/v1.0/users#{key}"),
+                request: {
+                    context: {
+                    }
+                }
+            }
+            handler.call(env)
+            expect(env[:url].to_s).to eq("https://graph.microsoft.com/v1.0/users#{value}")
         end
     end
 
@@ -52,13 +54,16 @@ RSpec.describe MicrosoftKiotaFaraday do
         option = MicrosoftKiotaFaraday::Middleware::ParametersNameDecodingOption.new(false)
         handler = MicrosoftKiotaFaraday::Middleware::ParametersNameDecodingHandler.new()
         values.each do |key, value|
-            request = Faraday::Request.create(:get) do |req|
-                req.path = URI.parse("https://graph.microsoft.com/v1.0/users#{key}")
-                req.options = Faraday::RequestOptions.new
-                req.options.context = { option.get_key => option }
-            end
-            handler.call(request)
-            expect(request.path.to_s).to eq("https://graph.microsoft.com/v1.0/users#{value}")
+            env = {
+                url: URI.parse("https://graph.microsoft.com/v1.0/users#{key}"),
+                request: {
+                    context: {
+                        option.get_key => option 
+                    }
+                }
+            }
+            handler.call(env)
+            expect(env[:url].to_s).to eq("https://graph.microsoft.com/v1.0/users#{value}")
         end
     end
 end
