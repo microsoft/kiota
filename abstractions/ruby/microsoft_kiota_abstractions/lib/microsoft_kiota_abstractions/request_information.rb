@@ -33,6 +33,46 @@ module MicrosoftKiotaAbstractions
       end
     end
 
+    def add_request_options(request_options_to_add)
+      unless request_options_to_add.nil? then
+        @request_options ||= Hash.new
+        unless request_options_to_add.kind_of?(Array) then
+          request_options_to_add = [request_options_to_add]
+        end
+        request_options_to_add.each do |request_option|
+          key = request_option.get_key
+          @request_options[key] = request_option
+        end
+      end
+    end
+
+    def get_request_options()
+      if @request_options.nil? then
+        return []
+      else
+        return @request_options.values
+      end
+    end
+
+    def get_request_option(key)
+      if @request_options.nil? || key.nil? || key.empty? then
+        return nil
+      else
+        return @request_options[key]
+      end
+    end
+
+    def remove_request_options(keys)
+      unless keys.nil? || @request_options.nil? then
+        unless keys.kind_of?(Array) then
+          keys = [keys]
+        end
+        keys.each do |key|
+          @request_options.delete(key)
+        end
+      end
+    end
+
     def http_method=(method)
       @http_method = HttpMethod::HTTP_METHOD[method]
     end
