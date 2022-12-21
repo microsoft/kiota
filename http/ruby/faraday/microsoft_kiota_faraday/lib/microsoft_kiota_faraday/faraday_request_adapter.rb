@@ -1,6 +1,7 @@
 require 'microsoft_kiota_abstractions'
-require 'net/https'
+require 'faraday'
 require 'net/http'
+require_relative 'kiota_client_factory'
 
 module MicrosoftKiotaFaraday
   class FaradayRequestAdapter
@@ -8,7 +9,7 @@ module MicrosoftKiotaFaraday
 
     attr_accessor :authentication_provider, :content_type_header_key, :parse_node_factory, :serialization_writer_factory, :client
     
-    def initialize(authentication_provider, parse_node_factory=MicrosoftKiotaAbstractions::ParseNodeFactoryRegistry.default_instance, serialization_writer_factory=MicrosoftKiotaAbstractions::SerializationWriterFactoryRegistry.default_instance, client = Net::HTTP)
+    def initialize(authentication_provider, parse_node_factory=MicrosoftKiotaAbstractions::ParseNodeFactoryRegistry.default_instance, serialization_writer_factory=MicrosoftKiotaAbstractions::SerializationWriterFactoryRegistry.default_instance, client = KiotaClientFactory::get_default_http_client)
 
       if !authentication_provider
         raise StandardError , 'authentication provider cannot be null'
@@ -24,6 +25,9 @@ module MicrosoftKiotaFaraday
         @serialization_writer_factory = MicrosoftKiotaAbstractions::SerializationWriterFactoryRegistry.default_instance
       end
       @client = client
+      if @client.nil?
+        @client = KiotaClientFactory::get_default_http_client
+      end
       @base_url = ''
     end
 
@@ -47,12 +51,7 @@ module MicrosoftKiotaFaraday
       Fiber.new do
         @authentication_provider.authenticate_request(request_info).resume
         request = self.get_request_from_request_info(request_info)
-        uri = request_info.uri
-
-        http = @client.new(uri.host, uri.port)
-        http.use_ssl = true
-        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-        response = http.request(request)
+        response = @client.run_request(request.http_method, request.path, request.body, request.headers)
 
         if response_handler
           response_handler.handle_response_async(response).resume;
@@ -73,38 +72,40 @@ module MicrosoftKiotaFaraday
       request_info.path_parameters['baseurl'] = @base_url
       case request_info.http_method
         when :GET
-          request = @client::Get.new(request_info.uri.request_uri)
+          request = @client.build_request(:get)
         when :POST
-          request = @client::Post.new(request_info.uri.request_uri)
+          request = @client.build_request(:post)
         when :PATCH
-          request = @client::Patch.new(request_info.uri.request_uri)
+          request = @client.build_request(:patch)
         when :DELETE
-          request = @client::Delete.new(request_info.uri.request_uri)
+          request = @client.build_request(:delete)
         when :OPTIONS
-          request = @client::Options.new(request_info.uri.request_uri)
+          request = @client.build_request(:options)
         when :CONNECT
-          request = @client::Connect.new(request_info.uri.request_uri)
+          request = @client.build_request(:connect)
         when :PUT
-          request = @client::Put.new(request_info.uri.request_uri)
+          request = @client.build_request(:put)
         when :TRACE
-          request = @client::Trace.new(request_info.uri.request_uri)
+          request = @client.build_request(:trace)
         when :HEAD
-          request = @client::Head.new(request_info.uri.request_uri)
+          request = @client.build_request(:head)
         else
           raise StandardError, 'unsupported http method'
       end
+      request.path = request_info.uri
       if request_info.headers.instance_of? Hash
-        request_info.headers.select{|k,v| request[k] = v }
+        request.headers = Faraday::Utils::Headers.new
+        request_info.headers.select{|k,v| request.headers[k] = v }
       end
       if request_info.content != nil
-        request.body = request_info.content # the json serialization writer returns a string at the moment, change to body_stream when this is fixed
+        request.body = request_info.content # TODO the json serialization writer returns a string at the moment, change to body_stream when this is fixed
       end
       request
     end
 
     def get_response_content_type(response)
       begin
-        response['content-type'].split(';')[0].downcase()
+        response.headers['content-type'].split(';')[0].downcase()
       rescue
         return nil
       end
