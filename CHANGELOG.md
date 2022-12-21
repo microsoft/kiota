@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support for auto-registration of serializers in Ruby. [#478](https://github.com/microsoft/kiota/issues/478)
+- Added support for middleware infrastructure in Ruby. [#1650](https://github.com/microsoft/kiota/issues/1650)
 
 ### Changed
 
