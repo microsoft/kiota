@@ -34,17 +34,21 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
-        method = new CodeMethod {
+        method = new CodeMethod
+        {
             Name = MethodName,
+            ReturnType = new CodeType
+            {
+                Name = ReturnTypeName
+            }
         };
-        method.ReturnType = new CodeType {
-            Name = ReturnTypeName
-        };
-        voidMethod = new CodeMethod {
+        voidMethod = new CodeMethod
+        {
             Name = MethodName,
-        };
-        voidMethod.ReturnType = new CodeType {
-            Name = "void"
+            ReturnType = new CodeType
+            {
+                Name = "void"
+            }
         };
         parentClass.AddMethod(voidMethod);
         parentClass.AddMethod(method);
@@ -211,6 +215,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("request_info.url_template", result);
         Assert.Contains("http_method = :GET", result);
         Assert.Contains("set_query_string_parameters_from_raw_object", result);
+        Assert.Contains("add_request_options", result);
         Assert.Contains("set_content_from_parsable", result);
         Assert.Contains("return request_info", result);
     }
@@ -464,13 +469,15 @@ public class CodeMethodWriterTests : IDisposable {
             Kind = CodeParameterKind.RequestAdapter,
             Type = coreProp.Type,
         });
-        var backingStoreParam = new CodeParameter {
+        var backingStoreParam = new CodeParameter
+        {
             Name = "backingStore",
             Kind = CodeParameterKind.BackingStore,
-        };
-        backingStoreParam.Type = new CodeType {
-            Name = "BackingStore",
-            IsExternal = true,
+            Type = new CodeType
+            {
+                Name = "BackingStore",
+                IsExternal = true,
+            }
         };
         method.AddParameter(backingStoreParam);
         var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
