@@ -52,6 +52,9 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                                         new [] { "microsoft_kiota_abstractions.ApiClientBuilder",
                                                 "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
                                         new [] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
+            AddQueryParameterMapperMethod(
+                generatedCode
+            );
         }, cancellationToken);
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {

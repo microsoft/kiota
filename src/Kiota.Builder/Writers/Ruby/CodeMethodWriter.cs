@@ -58,6 +58,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 WriteMethodPrototype(codeElement, writer);
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 break;
+            case CodeMethodKind.QueryParametersMapper:
+                WriteMethodPrototype(codeElement, writer);
+                WriteQueryParametersMapper(codeElement, parentClass, writer);
+                break;
             case CodeMethodKind.RequestBuilderWithParameters:
                 WriteRequestBuilderBody(parentClass, codeElement, writer);
                 break;
@@ -68,6 +72,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 writer.WriteLine("return nil;");
             break;
         }
+        writer.CloseBlock("end");
+    }
+    private static void WriteQueryParametersMapper(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
+        var parameter = codeElement.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.QueryParametersMapperParameter));
+        if(parameter == null) throw new InvalidOperationException("QueryParametersMapper should have a parameter of type QueryParametersMapper");
+        var parameterName = parameter.Name.ToFirstCharacterLowerCase();
+        writer.StartBlock($"case {parameterName.ToSnakeCase()}");
+        var escapedProperties = parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.QueryParameter) && x.IsNameEscaped);
+        foreach(var escapedProperty in escapedProperties) {
+            writer.StartBlock($"when \"{escapedProperty.Name}\"");
+            writer.WriteLine($"return \"{escapedProperty.SerializationName}\"");
+            writer.DecreaseIndent();
+        }
+        writer.StartBlock("else");
+        writer.WriteLine($"return {parameterName}");
+        writer.DecreaseIndent();
         writer.CloseBlock("end");
     }
     private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
