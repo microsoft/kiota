@@ -26,7 +26,7 @@ namespace Kiota.Builder.Writers.Ruby {
                     writer.WriteLine($"attr_accessor :{codeElement.Name.ToSnakeCase()}");
                     break;
                 default:
-                    writer.WriteLine($"@{codeElement.Name.ToSnakeCase()}");
+                    writer.WriteLine($"@{codeElement.NamePrefix}{codeElement.Name.ToSnakeCase()}");
                 break;
             }
         }
