@@ -21,12 +21,19 @@ module MicrosoftKiotaAbstractions
       if !content_type
         raise Exception.new 'content type cannot be undefined or empty'
       end
-      factory = @content_type_associated_factories[content_type]
+      vendor_specific_content_type = content_type.split(';').first
+      factory = @content_type_associated_factories[vendor_specific_content_type]
       if factory
-        return factory.get_serialization_writer(content_type)
-      else
-        raise Exception.new "Content type #{contentType} does not have a factory to be serialized"
+        return factory.get_serialization_writer(vendor_specific_content_type)
       end
+
+      clean_content_type = vendor_specific_content_type.gsub(/[^\/]+\+/i, '')
+      factory = @content_type_associated_factories[clean_content_type]
+      if factory
+        return factory.get_serialization_writer(clean_content_type)
+      end
+
+      raise Exception.new "Content type #{contentType} does not have a factory to be serialized"
     end
     
   end
