@@ -102,11 +102,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                             })},
     };
     private static void CorrectPropertyType(CodeProperty currentProperty) {
-        if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
-            currentProperty.Type.IsNullable = true;
-            if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
-                currentProperty.DefaultValue = "Hash.new";
-        } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
+        if(currentProperty.IsOfKind(CodePropertyKind.PathParameters, CodePropertyKind.AdditionalData)) {
             currentProperty.Type.IsNullable = true;
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "Hash.new";
