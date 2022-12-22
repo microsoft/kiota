@@ -178,7 +178,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         }
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer) {
-        var parameterName = codeElement.Parameters.First(static x => x.IsOfKind(CodeParameterKind.SetterValue)).Name.ToSnakeCase();
+        var parameterName = codeElement.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.SetterValue))?.Name.ToSnakeCase();
         writer.WriteLine($"@{codeElement.AccessedProperty.NamePrefix}{codeElement.AccessedProperty?.Name?.ToSnakeCase()} = {parameterName}");
     }
     private static void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer) {
