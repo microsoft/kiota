@@ -43,10 +43,9 @@ module MicrosoftKiotaFaraday
       @serialization_writer_factory
     end
 
-    def send_async(request_info, type, response_handler)
-      if !request_info
-        raise StandardError, 'requestInfo cannot be null'
-      end
+    def send_async(request_info, factory, response_handler)
+      raise StandardError, 'request_info cannot be null' unless request_info
+      raise StandardError, 'factory cannot be null' unless factory
 
       Fiber.new do
         @authentication_provider.authenticate_request(request_info).resume
@@ -58,12 +57,9 @@ module MicrosoftKiotaFaraday
         else
           payload = response.body
           response_content_type = self.get_response_content_type(response);
-
-          unless response_content_type
-            raise StandardError, 'no response content type found for deserialization'
-          end
+          raise StandardError, 'no response content type found for deserialization' unless response_content_type
           root_node = @parse_node_factory.get_parse_node(response_content_type, payload)
-          root_node.get_object_value(type)
+          root_node.get_object_value(factory)
         end
       end
     end

@@ -231,7 +231,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     }
     private static void AddNullChecks(CodeMethod codeElement, LanguageWriter writer) {
         if(!codeElement.IsOverload)
-            foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name))
+            foreach(var parameter in codeElement.Parameters.Where(static x => !x.Optional).OrderBy(static x => x.Name))
                 writer.WriteLine($"Objects.requireNonNull({parameter.Name.ToFirstCharacterLowerCase()});");
     }
     private static void WriteRequestBuilderConstructorCall(CodeMethod codeElement, LanguageWriter writer)

@@ -78,15 +78,17 @@ module MicrosoftKiotaSerialization
       end
     end
 
-    def get_collection_of_object_values(type)
+    def get_collection_of_object_values(factory)
+      raise StandardError, 'Factory cannot be null' if factory.nil?
       @current_node.map do |x|
         current_parse_node = JsonParseNode.new(x)
-        current_parse_node.get_object_value(type)
+        current_parse_node.get_object_value(factory)
       end
     end
 
-    def get_object_value(type)
-      item = type.new
+    def get_object_value(factory)
+      raise StandardError, 'Factory cannot be null' if factory.nil?
+      item = factory.call(self)
       assign_field_values(item)
       item
     rescue StandardError => e

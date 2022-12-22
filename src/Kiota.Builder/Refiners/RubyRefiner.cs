@@ -115,7 +115,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "microsoft_kiota_abstractions", "RequestAdapter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            "microsoft_kiota_abstractions", "HttpMethod", "RequestInformation"), //TODO add request options once ruby supports it
+            "microsoft_kiota_abstractions", "HttpMethod", "RequestInformation", "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "microsoft_kiota_abstractions", "ResponseHandler"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
@@ -164,6 +164,9 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(current, c => AddNamespaceModuleImports(c, clientNamespaceName));
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
-        block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = "MicrosoftKiotaAbstractions::AdditionalDataHolder"); 
-        }
+        block.Implements
+            .Where(static x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase))
+            .ToList()
+            .ForEach(static x => x.Name = "MicrosoftKiotaAbstractions::AdditionalDataHolder"); 
+    }
 }
