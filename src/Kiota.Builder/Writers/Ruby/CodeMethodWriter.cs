@@ -92,8 +92,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private static void AddNullChecks(CodeMethod codeElement, LanguageWriter writer) {
         if(!codeElement.IsOverload)
-            foreach(var parameter in codeElement.Parameters.Where(static x => !x.Optional).OrderBy(static x => x.Name))
-                writer.WriteLine($"raise StandardError, '{parameter.Name.ToSnakeCase()} cannot be null' if {parameter.Name.ToSnakeCase()}.nil?");
+            foreach(var parameter in codeElement.Parameters
+                                                .Where(static x => !x.Optional)
+                                                .Select(static x => x.Name.ToSnakeCase())
+                                                .OrderBy(static x => x))
+                writer.WriteLine($"raise StandardError, '{parameter} cannot be null' if {parameter}.nil?");
     }
     private static void WriteQueryParametersMapper(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
