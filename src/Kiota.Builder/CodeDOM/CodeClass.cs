@@ -43,9 +43,9 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             var existingIndexer = InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
             if(existingIndexer != null) {
                 RemoveChildElement(existingIndexer);
-                AddRange(CodeMethod.FromIndexer(existingIndexer, this, $"By{existingIndexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", true));
+                AddRange(CodeMethod.FromIndexer(existingIndexer, $"By{existingIndexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", true));
             }
-            AddRange(CodeMethod.FromIndexer(indexer, this, $"By{indexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", false));
+            AddRange(CodeMethod.FromIndexer(indexer, $"By{indexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", false));
         } else
             AddRange(indexer);
     }
