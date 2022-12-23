@@ -14,7 +14,7 @@ public class DiscriminatorInformation : CodeElement, ICloneable
     {
         get
         {
-            return (Parent is not CodeUnionType &&
+            return (Parent is not CodeComposedTypeBase &&
                     Parent?.GetImmediateParentOfType<CodeClass>() is CodeClass parentClass ?
                         discriminatorMappings.Where(x => x.Value is not CodeType currentType || currentType.TypeDefinition != parentClass) :
                         discriminatorMappings)
