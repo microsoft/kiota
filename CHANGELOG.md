@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a bug in Ruby where the request adapter URL would be overwritten by the client defaults. [#1647](https://github.com/microsoft/kiota/issues/1647)
 - Replaced concurrent-ruby by Fibers in Ruby libraries to implement proper asynchronous execution of requests.
+- Replaced response_handler parameter by a request option in Ruby. [#1860](https://github.com/microsoft/kiota/issues/1860)
 
 ## [0.9.0] - 2022-12-19
 
