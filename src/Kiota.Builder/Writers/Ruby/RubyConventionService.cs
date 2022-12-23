@@ -57,10 +57,12 @@ namespace Kiota.Builder.Writers.Ruby {
         #pragma warning disable CA1822 // Method should be static
         public string GetNormalizedNamespacePrefixForType(CodeTypeBase type)
         {
-            if(type is CodeType xType && 
-               (xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeEnum) &&
-               xType.TypeDefinition.Parent is CodeNamespace ns)
-                return $"{ns.Name.NormalizeNameSpaceName("::")}::";
+            if(type is CodeType xType)
+                if ((xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeEnum) &&
+                    xType.TypeDefinition.Parent is CodeNamespace ns)
+                    return $"{ns.Name.NormalizeNameSpaceName("::")}::";
+                else if (xType.TypeDefinition is CodeType definition && definition.IsExternal && !string.IsNullOrEmpty(definition.Name))
+                    return $"{definition.Name}::";
             return string.Empty;
         }
         #pragma warning restore CA1822 // Method should be static

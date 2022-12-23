@@ -236,7 +236,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         writer.WriteLine(")");
         var isStream = conventions.StreamTypeName.Equals(StringComparison.OrdinalIgnoreCase);
         var genericTypeForSendMethod = GetSendRequestMethodName(isStream);
-        writer.WriteLine($"return @request_adapter.{genericTypeForSendMethod}(request_info, {returnType}, response_handler)");
+        var errorMappingVarName = "nil";
+        if(codeElement.ErrorMappings.Any()) {
+            errorMappingVarName = "error_mapping";
+            writer.WriteLine($"{errorMappingVarName} = Hash.new");
+            foreach(var errorMapping in codeElement.ErrorMappings) {
+                writer.WriteLine($"{errorMappingVarName}[\"{errorMapping.Key.ToUpperInvariant()}\"] = {getDeserializationLambda(errorMapping.Value as CodeType)}");
+            }
+        }
+        writer.WriteLine($"return @request_adapter.{genericTypeForSendMethod}(request_info, {returnType}, {errorMappingVarName}, response_handler)");
     }
 
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer) {
@@ -349,7 +357,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         };
     }
     private static string getDeserializationLambda(CodeType targetType) {
-        return $"lambda {{|pn| {targetType.TypeDefinition?.Parent?.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{targetType.Name.ToFirstCharacterUpperCase()}.create_from_discriminator_value(pn) }}";
+        var nsPrefix = targetType.TypeDefinition?.Parent?.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase();
+        if(!string.IsNullOrEmpty(nsPrefix))
+            nsPrefix += "::";
+        return $"lambda {{|pn| {nsPrefix}{targetType.Name.ToFirstCharacterUpperCase()}.create_from_discriminator_value(pn) }}";
     }
     private static string TranslateObjectType(string typeName)
     {
