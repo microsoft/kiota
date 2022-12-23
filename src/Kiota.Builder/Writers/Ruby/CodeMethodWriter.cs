@@ -118,7 +118,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
     {
         var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
-        conventions.AddRequestBuilderBody(parentClass, importSymbol, writer, prefix: "return ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+        conventions.AddRequestBuilderBody(parentClass, importSymbol, writer, prefix: "return ", pathParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
     }
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
@@ -162,22 +162,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         }
         if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
             AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
-            if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
-                var pathParametersParam = currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters);
-                var pathParametersParamName = pathParametersParam.Name.ToSnakeCase();
-                writer.WriteLine($"if {pathParametersParamName}.is_a? String");
-                writer.IncreaseIndent();
-                writer.WriteLine($"{pathParametersParamName} = {{ \"request-raw-url\" => {pathParametersParamName} }}");
-                writer.CloseBlock("end");
-            }
-            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer);
+            var pathParametersParamName = currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters)?.Name.ToSnakeCase();
+            if(parentClass.IsOfKind(CodeClassKind.RequestBuilder))
+                writer.WriteLine($"{pathParametersParamName} = {{ \"request-raw-url\" => {pathParametersParamName} }} if {pathParametersParamName}.is_a? String");
+            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, $" if {pathParametersParamName}.is_a? Hash");
         }
     }
-    private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
-        var property = parentClass.GetPropertyOfKind(propertyKind);
-        var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
-        if(property != null && parameter != null) {
-            writer.WriteLine($"@{property.NamePrefix}{property.Name.ToSnakeCase()} = {parameter.Name.ToSnakeCase()}");
+    private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string controlSuffix = default) {
+        if(parentClass.GetPropertyOfKind(propertyKind) is CodeProperty property &&
+             currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind)) is CodeParameter parameter) {
+            writer.WriteLine($"@{property.NamePrefix}{property.Name.ToSnakeCase()} = {parameter.Name.ToSnakeCase()}{controlSuffix}");
         }
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer) {
