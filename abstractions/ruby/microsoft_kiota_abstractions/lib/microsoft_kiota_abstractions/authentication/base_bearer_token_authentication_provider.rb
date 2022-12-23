@@ -16,12 +16,11 @@ module MicrosoftKiotaAbstractions
     AUTHORIZATION_HEADER_KEY = 'Authorization'
     def authenticate_request(request, additional_properties = {})
       raise StandardError, 'Request cannot be null' if request.nil?
-      return if request.headers.key?(AUTHORIZATION_HEADER_KEY)
 
       Fiber.new do
         token = @access_token_provider.get_authorization_token(request.uri, additional_properties).resume
-        request.headers[AUTHORIZATION_HEADER_KEY] = "Bearer #{token}" unless token.nil? || token.empty?
-      end
+        request.headers.add(AUTHORIZATION_HEADER_KEY, "Bearer #{token}") unless token.nil? || token.empty?
+      end unless request.headers.get_all.key?(AUTHORIZATION_HEADER_KEY)
     end
   end
 end

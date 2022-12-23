@@ -30,7 +30,7 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
   
-  spec.add_runtime_dependency 'microsoft_kiota_abstractions', '~> 0.10.0', '>= 0.10.0'
+  spec.add_runtime_dependency 'microsoft_kiota_abstractions', '~> 0.11.0', '>= 0.11.0'
   spec.add_runtime_dependency 'oauth2', '~> 2.0'
   spec.add_development_dependency 'rake', '~> 13.0'
   spec.add_development_dependency 'rspec', '~> 3.0'
