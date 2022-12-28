@@ -37,11 +37,11 @@ module MicrosoftKiotaAbstractions
       raise NotImplementedError.new
     end
 
-    def get_collection_of_object_values(type)
+    def get_collection_of_object_values(factory)
       raise NotImplementedError.new
     end
 
-    def get_object_value(type)
+    def get_object_value(factory)
       raise NotImplementedError.new
     end
 

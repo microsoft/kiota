@@ -26,7 +26,9 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
         {
-            var defaultValue = parameter.Optional ? $"={(parameter.DefaultValue ?? "nil")}" : string.Empty;
+            var defaultValue = parameter.Optional && (targetElement is not CodeMethod currentMethod || !currentMethod.IsOfKind(CodeMethodKind.Setter)) ? 
+                $"={parameter.DefaultValue ?? "nil"}" :
+                string.Empty;
             return $"{parameter.Name}{defaultValue}";
         }
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)

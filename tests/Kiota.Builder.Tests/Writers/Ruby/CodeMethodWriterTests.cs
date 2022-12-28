@@ -210,6 +210,175 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesModelFactoryBody() {
+        var parentModel = root.AddClass(new CodeClass {
+            Name = "parentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass {
+            Name = "childModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        childModel.StartBlock.Inherits = new CodeType {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+                        Name = "childModel",
+                        TypeDefinition = childModel,
+                    });
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        factoryMethod.AddParameter(new CodeParameter {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
+        Assert.Contains("unless (mapping_value_node.nil?) do", result);
+        Assert.Contains("mapping_value = mapping_value_node.get_string_value", result);
+        Assert.Contains("case mapping_value", result);
+        Assert.Contains("when \"ns.childmodel\"", result);
+        Assert.Contains("return ChildModel.new", result);
+        Assert.Contains("return ParentModel.new", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void DoesntWriteFactorySwitchOnMissingParameter() {
+        var parentModel = root.AddClass(new CodeClass {
+            Name = "parentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass {
+            Name = "childModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        childModel.StartBlock.Inherits = new CodeType {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+                        Name = "childModel",
+                        TypeDefinition = childModel,
+                    });
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        Assert.Throws<InvalidOperationException>(() => writer.Write(factoryMethod));
+    }
+    [Fact]
+    public void DoesntWriteFactorySwitchOnEmptyPropertyName() {
+        var parentModel = root.AddClass(new CodeClass {
+            Name = "parentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass {
+            Name = "childModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        childModel.StartBlock.Inherits = new CodeType {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+                        Name = "childModel",
+                        TypeDefinition = childModel,
+                    });
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = string.Empty;
+        factoryMethod.AddParameter(new CodeParameter {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
+        Assert.DoesNotContain("unless (mapping_value_node.nil?) do", result);
+        Assert.DoesNotContain("mapping_value = mapping_value_node.get_string_value", result);
+        Assert.DoesNotContain("case mapping_value", result);
+        Assert.DoesNotContain("when \"ns.childmodel\"", result);
+        Assert.Contains("return ParentModel.new", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void DoesntWriteFactorySwitchOnEmptyMappings() {
+        var parentModel = root.AddClass(new CodeClass {
+            Name = "parentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        factoryMethod.AddParameter(new CodeParameter {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
+        Assert.DoesNotContain("unless (mapping_value_node.nil?) do", result);
+        Assert.DoesNotContain("mapping_value = mapping_value_node.get_string_value", result);
+        Assert.DoesNotContain("case mapping_value", result);
+        Assert.DoesNotContain("when \"ns.childmodel\"", result);
+        Assert.Contains("return ParentModel.new", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesRequestGeneratorBody() {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
