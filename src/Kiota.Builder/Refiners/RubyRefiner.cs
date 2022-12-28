@@ -126,26 +126,26 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         
     }
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "microsoft_kiota_abstractions", "RequestAdapter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             "microsoft_kiota_abstractions", "HttpMethod", "RequestInformation", "RequestOption"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "microsoft_kiota_abstractions", "ResponseHandler"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             "microsoft_kiota_abstractions", "SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "microsoft_kiota_abstractions", "ParseNode"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             "microsoft_kiota_abstractions", "Parsable"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "microsoft_kiota_abstractions", "Parsable"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(static y => y.IsOfKind(CodePropertyKind.AdditionalData)),
             "microsoft_kiota_abstractions", "AdditionalDataHolder"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
-                    method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                    method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.BackingStore)),
             "microsoft_kiota_abstractions", "BackingStoreFactory", "BackingStoreFactorySingleton"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             "microsoft_kiota_abstractions", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
     };
     protected static void AddInheritedAndMethodTypesImports(CodeElement currentElement) {
@@ -153,7 +153,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             && currentClass.StartBlock.Inherits != null) {
             currentClass.AddUsing(new CodeUsing { Name = currentClass.StartBlock.Inherits.Name, Declaration = currentClass.StartBlock.Inherits});
         }
-        CrawlTree(currentElement, x => AddInheritedAndMethodTypesImports(x));
+        CrawlTree(currentElement, AddInheritedAndMethodTypesImports);
     }
 
     protected void AddNamespaceModuleImports(CodeElement current, string clientNamespaceName) {
