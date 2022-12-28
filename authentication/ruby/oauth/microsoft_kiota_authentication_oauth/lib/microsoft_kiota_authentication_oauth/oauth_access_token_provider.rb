@@ -67,8 +67,7 @@ module MicrosoftKiotaAuthenticationOAuth
         token = @token_request_context.get_token
 
         @cached_token = token.to_hash unless token.nil?
-        token = token.token unless token.nil?
-        token
+        return token.token unless token.nil?
       end
     end
 
