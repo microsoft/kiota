@@ -17,8 +17,8 @@ module MicrosoftKiotaFaraday
                 builder.adapter Faraday.default_adapter
                 builder.ssl.verify = true
                 builder.ssl.verify_mode = OpenSSL::SSL::VERIFY_PEER
-                middleware.each do |middleware|
-                    builder.use middleware
+                middleware.each do |handler|
+                    builder.use handler
                 end
             end
             conn
