@@ -125,10 +125,21 @@ module MicrosoftKiotaAbstractions
     end
     
     def set_query_string_parameters_from_raw_object(q)
-      if !q
+      if !q || q.is_a?(Hash) || q.is_a?(Array)
         return
       end
-      q.select{|x,y| self.query_parameters[x.to_s] = y.to_s}
+      q.class.instance_methods(false).select{|x|
+        method_name = x.to_s
+        unless method_name == "compare_by_identity" || method_name == "get_query_parameter" || method_name.end_with?("=") || method_name.end_with?("?") || method_name.end_with?("!") then
+          begin
+            key = q.get_query_parameter(method_name)
+          rescue => exception
+            key = method_name
+          end
+          value = eval("q.#{method_name}")
+          self.query_parameters[key] = value unless value.nil?
+        end
+      }
     end
 
   end

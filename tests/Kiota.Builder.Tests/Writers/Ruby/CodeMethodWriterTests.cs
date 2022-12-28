@@ -487,6 +487,40 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("enableBackingStore", result);
     }
     [Fact]
+    public void WritesNameMapperMethod() {
+        method.Kind = CodeMethodKind.QueryParametersMapper;
+        method.IsAsync = false;
+        parentClass.AddProperty(new CodeProperty {
+            Name = "select",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "%24select"
+        },
+        new CodeProperty {
+            Name = "expand",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "%24expand"
+        },
+        new CodeProperty {
+            Name = "filter",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "%24filter"
+        });
+        method.AddParameter(new CodeParameter{
+            Kind = CodeParameterKind.QueryParametersMapperParameter,
+            Name = "originalName",
+            Type = new CodeType {
+                Name = "string",
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("original_name", result);
+        Assert.Contains("case", result);
+        Assert.Contains("when \"select\"", result);
+        Assert.Contains("return \"%24select\"", result);
+        Assert.Contains("else", result);
+    }
+    [Fact]
     public void DoesntWriteReadOnlyPropertiesInSerializerBody() {
         method.Kind = CodeMethodKind.Serializer;
         AddSerializationProperties();
