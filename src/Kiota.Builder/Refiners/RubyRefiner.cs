@@ -61,6 +61,16 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddQueryParameterMapperMethod(
                 generatedCode
             );
+            AddParentClassToErrorClasses(
+                    generatedCode,
+                    "ApiError",
+                    "MicrosoftKiotaAbstractions"
+            );
+            AddDiscriminatorMappingsUsingsToParentClasses(
+                generatedCode,
+                "ParseNode",
+                addUsings: true
+            );
         }, cancellationToken);
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {

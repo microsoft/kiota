@@ -3,9 +3,8 @@ require_relative 'response_handler'
 
 module MicrosoftKiotaAbstractions
   module RequestAdapter
-    include ResponseHandler
 
-    def send_async(request_info, factory, response_handler)
+    def send_async(request_info, factory, errors_mapping, response_handler)
       raise NotImplementedError.new
     end
 

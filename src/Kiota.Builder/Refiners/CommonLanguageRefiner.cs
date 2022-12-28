@@ -698,6 +698,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 throw new InvalidOperationException("This error class already inherits from another class. Update the description to remove that inheritance.");
             declaration.Inherits = new CodeType {
                 Name = parentClassName,
+                TypeDefinition = new CodeType {
+                    Name = parentClassNamespace,
+                    IsExternal = true,
+                }
             };
             declaration.AddUsings(new CodeUsing {
                 Name = parentClassName,

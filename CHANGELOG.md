@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for vendor specific serialization in Ruby. [#1661](https://github.com/microsoft/kiota/issues/1661)
 - Added support for default properties values in Ruby. [#1725](https://github.com/microsoft/kiota/issues/1725)
 - Added support for discriminated types deserialization (inheritance) in Ruby. [#1652](https://github.com/microsoft/kiota/issues/1652)
+- Added support for error mapping in Ruby. [#1653](https://github.com/microsoft/kiota/issues/1653)
 
 ### Changed
 

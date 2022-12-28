@@ -43,7 +43,7 @@ module MicrosoftKiotaFaraday
       @serialization_writer_factory
     end
 
-    def send_async(request_info, factory, response_handler)
+    def send_async(request_info, factory, errors_mapping, response_handler)
       raise StandardError, 'request_info cannot be null' unless request_info
       raise StandardError, 'factory cannot be null' unless factory
 
@@ -55,13 +55,35 @@ module MicrosoftKiotaFaraday
         if response_handler
           response_handler.handle_response_async(response).resume;
         else
-          payload = response.body
-          response_content_type = self.get_response_content_type(response);
-          raise StandardError, 'no response content type found for deserialization' unless response_content_type
-          root_node = @parse_node_factory.get_parse_node(response_content_type, payload)
+          self.throw_if_failed_reponse(response, errors_mapping)
+          root_node = self.get_root_parse_node(response)
           root_node.get_object_value(factory)
         end
       end
+    end
+
+    def get_root_parse_node(response)
+      raise StandardError, 'response cannot be null' unless response
+      response_content_type = self.get_response_content_type(response);
+      raise StandardError, 'no response content type found for deserialization' unless response_content_type
+      return @parse_node_factory.get_parse_node(response_content_type, response.body)
+    end
+
+    def throw_if_failed_reponse(response, errors_mapping)
+      raise StandardError, 'response cannot be null' unless response
+
+      status_code = response.status;
+      if status_code < 400 then
+        return
+      end
+      error_factory = errors_mapping[status_code] unless errors_mapping.nil?
+      error_factory = errors_mapping['4XX'] unless !error_factory.nil? || errors_mapping.nil? || status_code > 500
+      error_factory = errors_mapping['5XX'] unless !error_factory.nil? || errors_mapping.nil? || status_code < 500 || status_code > 600
+      raise MicrosoftKiotaAbstractions::ApiError, 'The server returned an unexpected status code and no error factory is registered for this code:' + status_code.to_s if error_factory.nil?
+      root_node = self.get_root_parse_node(response)
+      error = root_node.get_object_value(error_factory) unless root_node.nil?
+      raise error unless error.nil?
+      raise MicrosoftKiotaAbstractions::ApiError, 'The server returned an unexpected status code:' + status_code.to_s
     end
 
     def get_request_from_request_info(request_info)
