@@ -148,12 +148,12 @@ public class GitHubSearchProvider : ISearchProvider
             var results = indexFile.Apis.Where(static x => x.Properties.Any(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase)))
                                 .Select(x =>
                                 {
-                                    var baseUrl = new Uri(x.BaseURL);
-                                    var hostAndPath = baseUrl.Host + baseUrl.AbsolutePath;
-                                    return new Tuple<string, SearchResult>($"{org}/{repo}/{hostAndPath}",
+                                    var baseUrl = string.IsNullOrEmpty(x.BaseURL) ? null : new Uri(x.BaseURL);
+                                    var hostAndPath = baseUrl == null ? string.Empty : $"/{baseUrl.Host}{baseUrl.AbsolutePath}";
+                                    return new Tuple<string, SearchResult>($"{org}/{repo}{hostAndPath}",
                                         new SearchResult(x.Name,
                                             x.Description,
-                                            new Uri(x.BaseURL),
+                                            baseUrl,
                                             new Uri(x.Properties.FirstOrDefault(y => OpenApiPropertyKey.Equals(y.Type, StringComparison.OrdinalIgnoreCase))?.Url),
                                             new()));
                                 })
