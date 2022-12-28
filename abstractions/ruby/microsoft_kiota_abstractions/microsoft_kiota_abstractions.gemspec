@@ -28,6 +28,9 @@ Gem::Specification.new do |spec|
   spec.bindir        = 'bin'
   spec.executables   = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
-  spec.add_dependency 'addressable', '~> 2.7', '>= 2.7.0'
-  spec.add_dependency 'iso8601', '~> 0.13.0'
+  spec.add_runtime_dependency 'addressable', '~> 2.7', '>= 2.7.0'
+  spec.add_runtime_dependency 'iso8601', '~> 0.13.0'
+  spec.add_development_dependency 'rake', '~> 13.0'
+  spec.add_development_dependency 'rspec', '~> 3.0'
+  spec.add_development_dependency 'rubocop'
 end

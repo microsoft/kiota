@@ -6,6 +6,7 @@ require_relative "microsoft_kiota_abstractions/authentication/anonymous_authenti
 require_relative "microsoft_kiota_abstractions/http_method"
 require_relative "microsoft_kiota_abstractions/api_client_builder"
 require_relative "microsoft_kiota_abstractions/request_adapter"
+require_relative "microsoft_kiota_abstractions/request_option"
 require_relative "microsoft_kiota_abstractions/request_information"
 require_relative "microsoft_kiota_abstractions/response_handler"
 require_relative "microsoft_kiota_abstractions/version"
