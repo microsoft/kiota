@@ -96,7 +96,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         {"TimeSpan", ("MicrosoftKiotaAbstractions::ISODuration", new CodeUsing {
                                         Name = "MicrosoftKiotaAbstractions::ISODuration",
                                         Declaration = new CodeType {
-                                            Name = "github.com/microsoft/kiota/abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions/serialization",
+                                            Name = "microsoft_kiota_abstractions",
                                             IsExternal = true,
                                         },
                                     })},
