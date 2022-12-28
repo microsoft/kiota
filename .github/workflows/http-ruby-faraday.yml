@@ -1,4 +1,4 @@
-name: Ruby http nethttp
+name: Ruby http faraday
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     env:
-      relativePath: ./http/ruby/nethttp/microsoft_kiota_nethttplibrary
+      relativePath: ./http/ruby/faraday/microsoft_kiota_faraday
       BUNDLE_HTTPS://RUBYGEMS__PKG__GITHUB__COM/MICROSOFT/: "${{ secrets.PUBLISH_GH_USERNAME }}:${{ secrets.PUBLISH_GH_TOKEN }}"
       BUNDLE_RUBYGEMS__PKG__GITHUB__COM: "${{ secrets.PUBLISH_GH_USERNAME }}:${{ secrets.PUBLISH_GH_TOKEN }}" #needed for jruby-head
     strategy:
@@ -46,7 +46,7 @@ jobs:
       name: staging_feeds
     runs-on: ubuntu-latest
     env:
-      relativePath: ./http/ruby/nethttp/microsoft_kiota_nethttplibrary
+      relativePath: ./http/ruby/faraday/microsoft_kiota_faraday
       BUNDLE_HTTPS://RUBYGEMS__PKG__GITHUB__COM/MICROSOFT/: "${{ secrets.PUBLISH_GH_USERNAME }}:${{ secrets.PUBLISH_GH_TOKEN }}"
     needs: [build]
     steps:
@@ -78,7 +78,7 @@ jobs:
   #     name: production_feeds
   #   runs-on: ubuntu-latest
   #   env:
-  #     relativePath: ./http/ruby/nethttp/microsoft_kiota_nethttplibrary
+  #     relativePath: ./http/ruby/faraday/microsoft_kiota_faraday
   #   needs: [build]
   #   steps:
   #     - uses: actions/checkout@v3
