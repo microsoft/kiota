@@ -33,7 +33,13 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 _configuration.UsesBackingStore,
                 true,
                 string.Empty,
+                string.Empty,
                 string.Empty);
+            AddConstructorsForDefaultValues(
+                generatedCode,
+                true,
+                false,
+                new[] { CodeClassKind.RequestConfiguration });
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
             var defaultConfiguration = new GenerationConfiguration();
@@ -96,11 +102,12 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                             })},
     };
     private static void CorrectPropertyType(CodeProperty currentProperty) {
-        if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
+        if(currentProperty.IsOfKind(CodePropertyKind.PathParameters, CodePropertyKind.AdditionalData)) {
             currentProperty.Type.IsNullable = true;
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "Hash.new";
-        } 
+        }
+
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         
     }

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for middleware infrastructure in Ruby. [#1650](https://github.com/microsoft/kiota/issues/1650)
 - Added support for query parameters names aliasing in Ruby. [#1664](https://github.com/microsoft/kiota/issues/1664)
 - Added support for vendor specific serialization in Ruby. [#1661](https://github.com/microsoft/kiota/issues/1661)
+- Added support for default properties values in Ruby. [#1725](https://github.com/microsoft/kiota/issues/1725)
 
 ### Changed
 

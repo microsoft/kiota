@@ -98,7 +98,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-        var requestAdapterPropertyName = requestAdapterProperty.Name.ToSnakeCase();
+        var requestAdapterPropertyName = requestAdapterProperty.NamePrefix +  requestAdapterProperty.Name.ToSnakeCase();
         WriteSerializationRegistration(parentClass, method.SerializerModules, writer, "register_default_serializer");
         WriteSerializationRegistration(parentClass, method.DeserializerModules, writer, "register_default_deserializer");
         if (method.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestAdapter)) is CodeParameter requestAdapterParameter)
@@ -126,8 +126,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                                                         CodePropertyKind.RequestBuilder,
                                                                         CodePropertyKind.UrlTemplate,
                                                                         CodePropertyKind.PathParameters)
-                                        .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                        .OrderBy(x => x.Name)) {
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        .OrderBy(static x => x.Name)) {
+            writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
+        }
+        foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData,
+                                                                        CodePropertyKind.Custom) //additional data and custom properties rely on accessors
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        .OrderBy(static x => x.Name)) {
             writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
         }
         if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
@@ -147,23 +153,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var property = parentClass.GetPropertyOfKind(propertyKind);
         var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
         if(property != null && parameter != null) {
-            writer.WriteLine($"@{property.Name.ToSnakeCase()} = {parameter.Name.ToSnakeCase()}");
+            writer.WriteLine($"@{property.NamePrefix}{property.Name.ToSnakeCase()} = {parameter.Name.ToSnakeCase()}");
         }
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer) {
         writer.WriteLine($"def {codeElement.AccessedProperty?.Name?.ToSnakeCase()}=({codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()})");
         writer.IncreaseIndent();
-        writer.WriteLine($"@{codeElement.AccessedProperty?.Name?.ToSnakeCase()} = {codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}");
+        writer.WriteLine($"@{codeElement.AccessedProperty.NamePrefix}{codeElement.AccessedProperty?.Name?.ToSnakeCase()} = {codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}");
     }
     private static void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer) {
         writer.WriteLine($"def {codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
         writer.IncreaseIndent();
-        writer.WriteLine($"return @{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
+        writer.WriteLine($"return @{codeElement.AccessedProperty.NamePrefix}{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         var prefix = conventions.GetNormalizedNamespacePrefixForType(codeElement.ReturnType);
-        writer.WriteLines($"{conventions.TempDictionaryVarName} = @{pathParametersProperty.Name.ToSnakeCase()}.clone",
+        writer.WriteLines($"{conventions.TempDictionaryVarName} = @{pathParametersProperty.NamePrefix}{pathParametersProperty.Name.ToSnakeCase()}.clone",
                         $"{conventions.TempDictionaryVarName}[\"{codeElement.OriginalIndexer.SerializationName}\"] = id");
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, $"return {prefix}");
     }
@@ -173,8 +179,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         else
             writer.WriteLine("return {");
         writer.IncreaseIndent();
-        foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType)) {
-            writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\" => lambda {{|n| @{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
+        foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                            .Where(static x => !x.ExistsInBaseType)
+                                            .OrderBy(static x => x.Name)) {
+            writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\" => lambda {{|n| @{otherProp.NamePrefix}{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
         }
         writer.DecreaseIndent();
         if(parentClass.StartBlock.Inherits != null)
@@ -250,16 +258,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         }
         writer.WriteLine("return request_info");
     }
-    private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"@{property.Name.ToSnakeCase()}";
+    private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"@{property.NamePrefix}{property.Name.ToSnakeCase()}";
     private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
         var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
         if(parentClass.StartBlock.Inherits != null)
             writer.WriteLine("super");
-        foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly)) {
+        foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                            .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
+                                            .OrderBy(static x => x.Name)) {
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", @{otherProp.Name.ToSnakeCase()})");
         }
         if(additionalDataProperty != null)
-            writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.Name.ToSnakeCase()})");
+            writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.NamePrefix}{additionalDataProperty.Name.ToSnakeCase()})");
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer) {

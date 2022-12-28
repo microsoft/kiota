@@ -76,47 +76,54 @@ public class CodeMethodWriterTests : IDisposable {
         });
     }
     private void AddSerializationProperties() {
-        var addData = parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty {
             Name = "additionalData",
             Kind = CodePropertyKind.AdditionalData,
-        }).First();
-        addData.Type = new CodeType {
-            Name = "string"
-        };
+            Type = new CodeType {
+                Name = "string"
+            }
+        });
         var dummyProp = parentClass.AddProperty(new CodeProperty {
             Name = "dummyProp",
+            Type = new CodeType {
+                Name = "string"
+            }
         }).First();
-        dummyProp.Type = new CodeType {
-            Name = "string"
-        };
-        var dummyCollectionProp = parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty {
             Name = "dummyColl",
-        }).First();
-        dummyCollectionProp.Type = new CodeType {
-            Name = "string",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-        };
-        var dummyComplexCollection = parentClass.AddProperty(new CodeProperty {
-            Name = "dummyComplexColl"
-        }).First();
-        dummyComplexCollection.Type = new CodeType {
-            Name = "Complex",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-            TypeDefinition = new CodeClass {
-                Name = "SomeComplexType",
-                Parent = root.AddNamespace("models")
+            Type = new CodeType {
+                Name = "string",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
             }
-        };
-        var dummyEnumProp = parentClass.AddProperty(new CodeProperty {
+        });
+        parentClass.AddProperty(new CodeProperty {
+            Name = "dummyComplexColl",
+            Type = new CodeType {
+                Name = "Complex",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                TypeDefinition = new CodeClass {
+                    Name = "SomeComplexType",
+                    Parent = root.AddNamespace("models")
+                }
+            }
+        });
+        parentClass.AddProperty(new CodeProperty {
             Name = "dummyEnumCollection",
-        }).First();
-        dummyEnumProp.Type = new CodeType {
-            Name = "SomeEnum",
-            TypeDefinition = new CodeEnum {
-                Name = "EnumType",
-                Parent = root.AddNamespace("models")
+            Type = new CodeType {
+                Name = "SomeEnum",
+                TypeDefinition = new CodeEnum {
+                    Name = "EnumType",
+                    Parent = root.AddNamespace("models")
+                }
             }
-        };
+        });
+        parentClass.AddProperty(new CodeProperty {
+            Name = "definedInParent",
+            Type = new CodeType {
+                Name = "string"
+            },
+            OriginalPropertyFromBaseType = dummyProp,
+        });
     }
     private void AddInheritanceClass() {
         parentClass.StartBlock.Inherits = new CodeType {
@@ -228,6 +235,7 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("super.merge({", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -240,6 +248,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("get_collection_of_primitive_values", result);
         Assert.Contains("get_collection_of_object_values", result);
         Assert.Contains("get_enum_value", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public void WritesInheritedSerializerBody() {
@@ -263,6 +272,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("write_collection_of_object_values", result);
         Assert.Contains("write_enum_value", result);
         Assert.Contains("write_additional_data", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

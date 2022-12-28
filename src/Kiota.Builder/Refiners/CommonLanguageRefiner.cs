@@ -93,7 +93,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         return false;
     }
-    protected void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix) {
+    protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_") {
         if(!(propertyKindsToAddAccessors?.Any() ?? true)) return;
         if(current is CodeProperty currentProperty &&
             !currentProperty.ExistsInBaseType &&
@@ -104,7 +104,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 parentClass.RemoveChildElement(currentProperty);
             else {
                 currentProperty.Access = AccessModifier.Private;
-                currentProperty.NamePrefix = "_";
+                if (!string.IsNullOrEmpty(fieldPrefix))
+                    currentProperty.NamePrefix = fieldPrefix;
             }
             var propertyOriginalName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
                                         .ToFirstCharacterLowerCase();
@@ -149,7 +150,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Type = currentProperty.Type.Clone() as CodeTypeBase,
             });
         }
-        CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors, removeProperty, parameterAsOptional, getterPrefix, setterPrefix));
+        CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors, removeProperty, parameterAsOptional, getterPrefix, setterPrefix, fieldPrefix));
     }
     protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited, bool forceAdd = false, CodeClassKind[] classKindsToExclude = null) {
         if(current is CodeClass currentClass &&
