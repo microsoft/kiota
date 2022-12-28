@@ -33,7 +33,7 @@ RSpec.describe MicrosoftKiotaAbstractions do
         expect(request_info.query_parameters["select"]).to be_nil
     end
 
-    it "adds doesn't fail adding query parameters with anonymous object" do
+    it "doesn't fail adding query parameters with anonymous object" do
         request_info = MicrosoftKiotaAbstractions::RequestInformation.new
         query_parameters = {
             select: "foo,bar"
