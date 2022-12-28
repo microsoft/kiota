@@ -1,12 +1,10 @@
 require 'microsoft_kiota_abstractions'
 require 'net/https'
 require 'net/http'
-require 'concurrent'
 
 module MicrosoftKiotaNethttplibrary
   class NetHttpRequestAdapter
     include MicrosoftKiotaAbstractions::RequestAdapter
-    include Concurrent::Async
 
     attr_accessor :authentication_provider, :content_type_header_key, :parse_node_factory, :serialization_writer_factory, :client
     
@@ -46,27 +44,28 @@ module MicrosoftKiotaNethttplibrary
         raise StandardError, 'requestInfo cannot be null'
       end
 
-      request = self.get_request_from_request_info(request_info)
-      uri = request_info.uri
-      @authentication_provider.await.authenticate_request(request_info)
+      Fiber.new do
+        @authentication_provider.authenticate_request(request_info).resume
+        request = self.get_request_from_request_info(request_info)
+        uri = request_info.uri
 
-      http = @client.new(uri.host, uri.port)
-      http.use_ssl = true
-      http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-      request.headers = request_info.headers
-      response = http.request(request)
+        http = @client.new(uri.host, uri.port)
+        http.use_ssl = true
+        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+        response = http.request(request)
 
-      if response_handler
-        return response_handler.await.handle_response_async(response);
-      else
-        payload = response.body
-        response_content_type = self.get_response_content_type(response);
+        if response_handler
+          response_handler.handle_response_async(response).resume;
+        else
+          payload = response.body
+          response_content_type = self.get_response_content_type(response);
 
-        unless response_content_type
-          raise StandardError, 'no response content type found for deserialization'
+          unless response_content_type
+            raise StandardError, 'no response content type found for deserialization'
+          end
+          root_node = @parse_node_factory.get_parse_node(response_content_type, payload)
+          root_node.get_object_value(type)
         end
-        root_node = @parse_node_factory.get_parse_node(response_content_type, payload)
-        root_node.get_object_value(type)
       end
     end
 
