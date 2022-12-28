@@ -2,6 +2,7 @@ require 'microsoft_kiota_abstractions'
 require 'faraday'
 require 'net/http'
 require_relative 'kiota_client_factory'
+require_relative 'middleware/response_handler_option'
 
 module MicrosoftKiotaFaraday
   class FaradayRequestAdapter
@@ -43,7 +44,7 @@ module MicrosoftKiotaFaraday
       @serialization_writer_factory
     end
 
-    def send_async(request_info, factory, errors_mapping, response_handler)
+    def send_async(request_info, factory, errors_mapping)
       raise StandardError, 'request_info cannot be null' unless request_info
       raise StandardError, 'factory cannot be null' unless factory
 
@@ -52,14 +53,17 @@ module MicrosoftKiotaFaraday
         request = self.get_request_from_request_info(request_info)
         response = @client.run_request(request.http_method, request.path, request.body, request.headers)
 
-        if response_handler
-          response_handler.handle_response_async(response).resume;
-        else
-          self.throw_if_failed_reponse(response, errors_mapping)
-          root_node = self.get_root_parse_node(response)
-          root_node.get_object_value(factory)
-        end
+        response_handler = self.get_response_handler(request_info)
+        response_handler.call(response).resume unless response_handler.nil?
+        self.throw_if_failed_reponse(response, errors_mapping)
+        root_node = self.get_root_parse_node(response)
+        root_node.get_object_value(factory)
       end
+    end
+
+    def get_response_handler(request_info)
+      option = request_info.get_request_option(MicrosoftKiotaFaraday::Middleware::ResponseHandlerOption::RESPONSE_HANDLER_KEY) unless request_info.nil?
+      return option.async_callback unless !option || option.nil?
     end
 
     def get_root_parse_node(response)

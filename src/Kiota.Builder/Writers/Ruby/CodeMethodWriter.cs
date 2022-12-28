@@ -77,7 +77,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
         if(writeDiscriminatorValueRead) {
             writer.WriteLine($"{NodeVarName} = {parseNodeParameter.Name.ToSnakeCase()}.get_child_node(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")");
-            writer.StartBlock($"unless ({NodeVarName}.nil?) do");
+            writer.StartBlock($"unless {NodeVarName}.nil? then");
             writer.WriteLine($"{DiscriminatorMappingVarName} = {NodeVarName}.get_string_value");
             writer.StartBlock($"case {DiscriminatorMappingVarName}");
             foreach(var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings.OrderBy(static x => x.Key)) {
@@ -230,7 +230,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             .Select(static x => x.Name.ToSnakeCase());
         if(requestInfoParameters.Any()) {
             writer.IncreaseIndent();
-            writer.WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x}, {y}"));
+            writer.WriteLine(requestInfoParameters.Aggregate(static (x,y) => $"{x}, {y}"));
             writer.DecreaseIndent();
         }
         writer.WriteLine(")");
@@ -244,7 +244,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 writer.WriteLine($"{errorMappingVarName}[\"{errorMapping.Key.ToUpperInvariant()}\"] = {getDeserializationLambda(errorMapping.Value as CodeType)}");
             }
         }
-        writer.WriteLine($"return @request_adapter.{genericTypeForSendMethod}(request_info, {returnType}, {errorMappingVarName}, response_handler)");
+        writer.WriteLine($"return @request_adapter.{genericTypeForSendMethod}(request_info, {returnType}, {errorMappingVarName})");
     }
 
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer) {

@@ -71,6 +71,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ParseNode",
                 addUsings: true
             );
+            RemoveHandlerFromRequestBuilder(generatedCode);
         }, cancellationToken);
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {

@@ -268,7 +268,7 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.Contains("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
-        Assert.Contains("unless (mapping_value_node.nil?) do", result);
+        Assert.Contains("unless mapping_value_node.nil? then", result);
         Assert.Contains("mapping_value = mapping_value_node.get_string_value", result);
         Assert.Contains("case mapping_value", result);
         Assert.Contains("when \"ns.childmodel\"", result);
