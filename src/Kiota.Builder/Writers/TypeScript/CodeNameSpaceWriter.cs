@@ -87,7 +87,7 @@ namespace Kiota.Builder.Writers.TypeScript
             }
 
             /*
-             * 3. Print all remaining classes which have not been visted or those do not have any parent/child relationship.
+             * 3. Print all remaining classes which have not been visited or those do not have any parent/child relationship.
              */
             foreach (var className in classes.Where(c => c.IsOfKind(CodeClassKind.Model) && !visited.Contains(c.Name)).Select(x => x.Name))
             {
