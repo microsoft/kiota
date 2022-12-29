@@ -21,17 +21,17 @@ RSpec.describe MicrosoftKiotaSerialization do
     data = file.read
     file.close
     message_response = MicrosoftKiotaSerialization::JsonParseNodeFactory.new.get_parse_node("application/json", data)
-    object_value = message_response.get_object_value(Files::MessagesResponse)
+    object_value = message_response.get_object_value(lambda {|pn| Files::MessageCollectionResponse.create_from_discriminator_value(pn)})
     
     ## Object Value tests
-    expect(object_value.instance_of? Files::MessagesResponse).to eq(true)
+    expect(object_value.instance_of? Files::MessageCollectionResponse).to eq(true)
     expect(object_value.value[0].instance_of? Files::Message).to eq(true)
     expect(object_value.value[0].body.instance_of? Files::ItemBody).to eq(true)
     expect(object_value.value[0].cc_recipients[0].instance_of? Files::Recipient).to eq(true)
     expect(object_value.value[0].cc_recipients[0].email_address.instance_of? Files::EmailAddress).to eq(true)
 
     ## String tests
-    expect(object_value.next_link.instance_of? String).to eq(true)
+    expect(object_value.odata_next_link.instance_of? String).to eq(true)
     expect(object_value.value[0].body_preview.instance_of? String).to eq(true)
     
     ## Boolean tests
@@ -64,7 +64,7 @@ RSpec.describe MicrosoftKiotaSerialization do
     data = file.read
     file.close
     message_response = MicrosoftKiotaSerialization::JsonParseNodeFactory.new().get_parse_node("application/json", data)
-    object_value = message_response.get_object_value(Files::MessagesResponse)
+    object_value = message_response.get_object_value(lambda {|pn| Files::MessageCollectionResponse.create_from_discriminator_value(pn)})
     serializer = MicrosoftKiotaSerialization::JsonSerializationWriterFactory.new().get_serialization_writer("application/json")
     object_value.serialize(serializer)
     expect(object_value.value[0].id.to_s == serializer.writer["value"][0]["id"]).to eq(true)
