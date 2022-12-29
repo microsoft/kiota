@@ -474,26 +474,36 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, CodeNamespace rootNamespace, bool parameterNullable, string methodNameSuffix = default) {
         if(currentElement is CodeIndexer currentIndexer &&
-            currentElement.Parent is CodeClass currentParentClass) {
-            currentParentClass.RemoveChildElement(currentElement);
-            foreach(var returnType in currentIndexer.ReturnType.AllTypes)
+            currentElement.Parent is CodeClass indexerParentClass) {
+                indexerParentClass.RemoveChildElement(currentElement);
                 AddIndexerMethod(rootNamespace,
-                                currentParentClass,
-                                returnType.TypeDefinition as CodeClass,
+                                indexerParentClass,
                                 methodNameSuffix,
                                 parameterNullable,
                                 currentIndexer);
         }
         CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, rootNamespace, parameterNullable, methodNameSuffix));
     }
-    private static void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable, CodeIndexer currentIndexer) {
+    private static void AddIndexerMethod(CodeElement currentElement, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable, CodeIndexer currentIndexer) {
         if(currentElement is CodeProperty currentProperty &&
-            currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass) &&
+            currentProperty.IsOfKind(CodePropertyKind.RequestBuilder) &&
+            currentProperty.Type is CodeType currentPropertyType &&
+            currentPropertyType.TypeDefinition == indexerClass &&
             currentProperty.Parent is CodeClass parentClass)
         {
-            parentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, indexerClass, methodNameSuffix, parameterNullable));
+            parentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameSuffix, parameterNullable));
         }
-        CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, methodNameSuffix, parameterNullable, currentIndexer));
+        else if(currentElement is CodeMethod currentMethod &&
+            currentMethod.ReturnType is CodeType currentMethodType &&
+            currentMethodType.TypeDefinition == indexerClass &&
+            currentMethod.Parent is CodeClass parentClassForMethod)
+        {
+            if (currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility))
+                indexerClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameSuffix, parameterNullable)); //we already went one up with the previous indexer
+            else if(currentMethod.IsOfKind(CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.RequestBuilderBackwardCompatibility))
+                parentClassForMethod.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameSuffix, parameterNullable));
+        }
+        CrawlTree(currentElement, c => AddIndexerMethod(c, indexerClass, methodNameSuffix, parameterNullable, currentIndexer));
     }
     internal void DisableActionOf(CodeElement current, params CodeParameterKind[] kinds) {
         if(current is CodeMethod currentMethod)

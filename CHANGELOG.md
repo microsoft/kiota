@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for discriminated types deserialization (inheritance) in Ruby. [#1652](https://github.com/microsoft/kiota/issues/1652)
 - Added support for error mapping in Ruby. [#1653](https://github.com/microsoft/kiota/issues/1653)
 - Added support for multi-valued request headers in Ruby. [#2054](https://github.com/microsoft/kiota/issues/2054)
+- Added support for composed types generation in Ruby.
 
 ### Changed
 
@@ -24,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug in Ruby where the request adapter URL would be overwritten by the client defaults. [#1647](https://github.com/microsoft/kiota/issues/1647)
 - Replaced concurrent-ruby by Fibers in Ruby libraries to implement proper asynchronous execution of requests.
 - Replaced response_handler parameter by a request option in Ruby. [#1860](https://github.com/microsoft/kiota/issues/1860)
+- Fixed a bug where conversion of intersection types to wrappers would fail.
+- Fixed raw url initialization in Ruby.
+- Fixed a bug where subsequent indexers would fail to convert properly for languages not supporting indexers. [#1666](https://github.com/microsoft/kiota/issues/1666)
 
 ## [0.9.0] - 2022-12-19
 

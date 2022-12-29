@@ -232,8 +232,8 @@ public class JavaLanguageRefinerTests {
         requestBuilder.SetIndexer(new CodeIndexer {
             Name = "idx",
             ReturnType = new CodeType {
-                Name = "model",
-                TypeDefinition = model,
+                Name = requestBuilder.Name,
+                TypeDefinition = requestBuilder,
             },
         });
         var collectionRequestBuilder = root.AddClass(new CodeClass {
@@ -241,6 +241,7 @@ public class JavaLanguageRefinerTests {
         }).First();
         collectionRequestBuilder.AddProperty(new CodeProperty {
             Name = "collection",
+            Kind = CodePropertyKind.RequestBuilder,
             Type = new CodeType {
                 Name = "requestBuilder",
                 TypeDefinition = requestBuilder,
@@ -249,7 +250,7 @@ public class JavaLanguageRefinerTests {
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.Single(requestBuilder.Properties);
         Assert.Empty(requestBuilder.GetChildElements(true).OfType<CodeIndexer>());
-        Assert.Single(collectionRequestBuilder.Methods.Where(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)));
+        Assert.Single(collectionRequestBuilder.Methods.Where(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)));
         Assert.Single(collectionRequestBuilder.Properties);
     }
     [Fact]

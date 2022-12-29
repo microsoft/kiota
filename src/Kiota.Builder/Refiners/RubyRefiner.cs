@@ -18,6 +18,9 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, true);
             RemoveCancellationParameter(generatedCode);
+            ConvertUnionTypesToWrapper(generatedCode, 
+                _configuration.UsesBackingStore
+            );
             cancellationToken.ThrowIfCancellationRequested();
             AddParsableImplementsForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
             AddInheritedAndMethodTypesImports(generatedCode);

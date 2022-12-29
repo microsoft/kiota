@@ -72,10 +72,9 @@ public class PagingInformation : ICloneable
 
 public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
 {
-    public static CodeMethod FromIndexer(CodeIndexer originalIndexer, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable)
+    public static CodeMethod FromIndexer(CodeIndexer originalIndexer, string methodNameSuffix, bool parameterNullable)
     {
         ArgumentNullException.ThrowIfNull(originalIndexer);
-        ArgumentNullException.ThrowIfNull(indexerClass);
         var method = new CodeMethod {
             IsAsync = false,
             IsStatic = false,
@@ -85,11 +84,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Documentation = new () {
                 Description = originalIndexer.Documentation.Description,
             },
-            ReturnType = new CodeType {
-                IsNullable = false,
-                TypeDefinition = indexerClass,
-                Name = indexerClass.Name,
-            },
+            ReturnType = originalIndexer.ReturnType,
             OriginalIndexer = originalIndexer,
         };
         var parameter = new CodeParameter {
