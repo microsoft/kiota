@@ -16,6 +16,11 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() => {
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
+            var classesToDisambiguate = new HashSet<CodeClass>();
+            var suffix = "Model";
+            DisambiguateClassesWithNamespaceNames(generatedCode, classesToDisambiguate, suffix);
+            UpdateReferencesToDisambiguatedClasses(generatedCode, classesToDisambiguate, suffix);
+            cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, true);
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, 
@@ -23,7 +28,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             cancellationToken.ThrowIfCancellationRequested();
             AddParsableImplementsForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
-            AddInheritedAndMethodTypesImports(generatedCode);
+            // AddInheritedAndMethodTypesImports(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
@@ -69,6 +74,8 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                     "ApiError",
                     "MicrosoftKiotaAbstractions"
             );
+            cancellationToken.ThrowIfCancellationRequested();
+            RemoveDiscriminatorMappingsThatDependOnSubNameSpace(generatedCode);
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",
@@ -76,6 +83,65 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             RemoveHandlerFromRequestBuilder(generatedCode);
         }, cancellationToken);
+    }
+    private static void DisambiguateClassesWithNamespaceNames(CodeElement currentElement, HashSet<CodeClass> classesToUpdate, string suffix) {
+        if(currentElement is CodeClass currentClass && 
+            currentClass.IsOfKind(CodeClassKind.Model) &&
+            currentClass.StartBlock is ClassDeclaration currentDeclaration &&
+            currentClass.Parent is CodeNamespace currentNamespace &&
+            currentNamespace.FindChildByName<CodeNamespace>($"{currentNamespace.Name}.{currentClass.Name}") is CodeNamespace subNamespace) {
+                currentNamespace.RemoveChildElement(currentClass);
+                currentClass.Name = $"{currentClass.Name}{suffix}";
+                currentNamespace.AddClass(currentClass);
+                classesToUpdate.Add(currentClass);
+        }
+        CrawlTree(currentElement, x => DisambiguateClassesWithNamespaceNames(x, classesToUpdate, suffix));
+    }
+    private static void UpdateReferencesToDisambiguatedClasses(CodeElement currentElement, HashSet<CodeClass> classesToUpdate, string suffix) {
+        if (!classesToUpdate.Any()) return;
+        if (currentElement is CodeProperty currentProperty &&
+            currentProperty.Type is CodeType propertyType &&
+            propertyType.TypeDefinition is CodeClass propertyTypeClass &&
+            classesToUpdate.Contains(propertyTypeClass))
+                propertyType.Name = $"{propertyType.Name}{suffix}";
+        else if (currentElement is CodeMethod currentMethod &&
+            currentMethod.ReturnType is CodeType returnType &&
+            returnType.TypeDefinition is CodeClass returnTypeClass &&
+            classesToUpdate.Contains(returnTypeClass))
+                returnType.Name = $"{returnType.Name}{suffix}";
+        else if (currentElement is CodeParameter currentParameter &&
+            currentParameter.Type is CodeType parameterType &&
+            parameterType.TypeDefinition is CodeClass parameterTypeClass &&
+            classesToUpdate.Contains(parameterTypeClass))
+                parameterType.Name = $"{parameterType.Name}{suffix}";
+        else if (currentElement is CodeClass currentClass &&
+            currentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation) {
+                if (currentClass.StartBlock.Inherits?.TypeDefinition is CodeClass parentClass &&
+                    classesToUpdate.Contains(parentClass)) //TODO update usings as well
+                    currentClass.StartBlock.Inherits.Name = $"{currentClass.StartBlock.Inherits.Name}{suffix}";
+                currentClass.DiscriminatorInformation
+                            .DiscriminatorMappings
+                            .Select(static x => x.Value)
+                            .OfType<CodeType>()
+                            .Where(x => x.TypeDefinition is CodeClass typeClass && classesToUpdate.Contains(typeClass))
+                            .ToList()
+                            .ForEach(x => x.Name = $"{x.Name}{suffix}");
+            }
+        CrawlTree(currentElement, x => UpdateReferencesToDisambiguatedClasses(x, classesToUpdate, suffix));
+    }
+    private static void RemoveDiscriminatorMappingsThatDependOnSubNameSpace(CodeElement currentElement) {
+        if (currentElement is CodeClass currentClass &&
+            currentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation &&
+            currentClass.Parent is CodeNamespace classNameSpace)
+                currentClass.DiscriminatorInformation.RemoveDiscriminatorMapping(currentClass.DiscriminatorInformation
+                                                    .DiscriminatorMappings
+                                                    .Where(x => x.Value is CodeType mapping &&
+                                                                mapping.TypeDefinition is CodeClass mappingClass &&
+                                                                mappingClass.Parent is CodeNamespace mappingClassNamespace &&
+                                                                mappingClassNamespace.IsChildOf(classNameSpace))
+                                                    .Select(static x => x.Key)
+                                                    .ToArray());
+        CrawlTree(currentElement, RemoveDiscriminatorMappingsThatDependOnSubNameSpace);
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         if(currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
@@ -148,34 +214,38 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             "microsoft_kiota_abstractions", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
     };
-    protected static void AddInheritedAndMethodTypesImports(CodeElement currentElement) {
+    private static void AddInheritedAndMethodTypesImports(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
             && currentClass.StartBlock.Inherits != null) {
             currentClass.AddUsing(new CodeUsing { Name = currentClass.StartBlock.Inherits.Name, Declaration = currentClass.StartBlock.Inherits});
         }
         CrawlTree(currentElement, AddInheritedAndMethodTypesImports);
     }
-
-    protected void AddNamespaceModuleImports(CodeElement current, string clientNamespaceName) {
-        const string dot = ".";
+    private static void AddNamespaceModuleImports(CodeElement current, string clientNamespaceName) {
         if(current is CodeClass currentClass) {
-            var Module = currentClass.GetImmediateParentOfType<CodeNamespace>();
-            if(!string.IsNullOrEmpty(Module.Name)){
-                var modulesProperties = Module.Name.Replace(clientNamespaceName+dot, string.Empty).Split(dot);
-                for (int i = modulesProperties.Length - 1; i >= 0; i--){
-                    var prefix = string.Concat(Enumerable.Repeat("../", modulesProperties.Length -i-1));
-                    var usingName = modulesProperties[i].ToSnakeCase();
-                    currentClass.AddUsing(new CodeUsing { 
-                        Name = usingName,
-                        Declaration = new CodeType {
-                            IsExternal = false,
-                            Name = $"{(string.IsNullOrEmpty(prefix) ? "./" : prefix)}{usingName}",
-                        }
-                    });
-                }
-            }
+            var module = currentClass.GetImmediateParentOfType<CodeNamespace>();
+            AddModules(module, clientNamespaceName, (usingToAdd) => {
+                currentClass.AddUsing(usingToAdd);
+            });
         }
         CrawlTree(current, c => AddNamespaceModuleImports(c, clientNamespaceName));
+    }
+    private const string Dot = ".";
+    private static void AddModules(CodeNamespace module, string clientNamespaceName, Action<CodeUsing> callback) {
+        if(!string.IsNullOrEmpty(module.Name)){
+            var modulesProperties = module.Name.Replace(clientNamespaceName+Dot, string.Empty).Split(Dot);
+            for (int i = modulesProperties.Length - 1; i >= 0; i--){
+                var prefix = string.Concat(Enumerable.Repeat("../", modulesProperties.Length -i-1));
+                var usingName = modulesProperties[i].ToSnakeCase();
+                callback(new CodeUsing { 
+                    Name = usingName,
+                    Declaration = new CodeType {
+                        IsExternal = false,
+                        Name = $"{(string.IsNullOrEmpty(prefix) ? "./" : prefix)}{usingName}",
+                    }
+                });
+            }
+        }
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
         block.Implements
