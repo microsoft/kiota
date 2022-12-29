@@ -201,7 +201,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 ReplaceReservedCodeUsingNamespaceSegmentNames(currentDeclaration, provider, replacement);
             if(provider.ReservedNames.Contains(currentDeclaration.Inherits?.Name))
                 currentDeclaration.Inherits.Name = replacement(currentDeclaration.Inherits.Name);
-            if(currentClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
+            if(currentClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Value.Name).Any(provider.ReservedNames.Contains))
                 ReplaceMappingNames(currentClass.DiscriminatorInformation.DiscriminatorMappings, provider, replacement);
         } else if(current is CodeNamespace currentNamespace &&
             isNotInExceptions &&
