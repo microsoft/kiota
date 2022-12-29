@@ -9,11 +9,19 @@ module MicrosoftKiotaFaraday
             ]
         end
 
-        def self.get_default_http_client(middleware=nil)
+        def self.get_default_http_client(middleware=nil, default_middleware_options=Array.new)
             if middleware.nil? #empty is fine in case the user doesn't want to use any middleware
                 middleware = self.get_default_middleware()
             end
-            conn = Faraday::Connection.new do |builder|
+            connection_options = Hash.new
+            connection_options[:request] = Hash.new
+            connection_options[:request][:context] = Hash.new
+            unless default_middleware_options.nil? || default_middleware_options.empty? then
+                default_middleware_options.each do |value|
+                    connection_options[:request][:context][value.get_key] = value
+                end
+            end
+            conn = Faraday::Connection.new(nil, connection_options) do |builder|
                 builder.adapter Faraday.default_adapter
                 builder.ssl.verify = true
                 builder.ssl.verify_mode = OpenSSL::SSL::VERIFY_PEER
