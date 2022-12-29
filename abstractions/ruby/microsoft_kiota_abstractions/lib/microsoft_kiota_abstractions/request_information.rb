@@ -1,14 +1,21 @@
 require 'uri'
 require 'addressable/template'
 require_relative 'http_method'
+require_relative 'request_headers'
 
 module MicrosoftKiotaAbstractions
   class RequestInformation
-    attr_reader :content, :http_method
-    attr_accessor :url_template
+    attr_reader :content, :http_method, :headers
+    attr_accessor :url_template, :path_parameters, :query_parameters
     @@binary_content_type = 'application/octet-stream'
     @@content_type_header = 'Content-Type'
     @@raw_url_key = 'request-raw-url'
+
+    def initialize()
+      @headers = RequestHeaders.new
+      @query_parameters = Hash.new
+      @path_parameters = Hash.new
+    end
     
     def uri=(arg)
       if arg.nil? || arg.empty?
@@ -77,35 +84,15 @@ module MicrosoftKiotaAbstractions
       @http_method = HttpMethod::HTTP_METHOD[method]
     end
 
-    def query_parameters
-      @query_parameters ||= Hash.new
-    end
-
-    def headers
-      @headers ||= Hash.new
-    end
-
-    def path_parameters
-      @path_parameters ||= Hash.new
-    end
-
-    def path_parameters=(value)
-      @path_parameters = value
-    end
-
-    def headers=(value)
-      @headers = value
-    end
-
     def set_stream_content(value = $stdin)
       @content = value
-      self.headers[@@content_type_header] = @@binary_content_type
+      @headers.add(@@content_type_header, @@binary_content_type)
     end
 
     def set_content_from_parsable(request_adapter, content_type, values)
       begin
         writer  = request_adapter.get_serialization_writer_factory().get_serialization_writer(content_type)
-        headers[@@content_type_header] = content_type
+        @headers.add(@@content_type_header, content_type)
         if values != nil && values.kind_of?(Array)
           writer.write_collection_of_object_values(nil, values)
         else
@@ -117,11 +104,8 @@ module MicrosoftKiotaAbstractions
       end
     end
 
-    def set_headers_from_raw_object(h)
-      if !h
-        return
-      end
-      h.select{|x,y| self.headers[x.to_s] = y.to_s}
+    def add_headers_from_raw_object(h)
+      h.select{|x,y| @headers.add(x.to_s, y)} unless !h
     end
     
     def set_query_string_parameters_from_raw_object(q)

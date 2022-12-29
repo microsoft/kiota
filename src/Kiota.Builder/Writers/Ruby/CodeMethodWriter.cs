@@ -258,7 +258,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                             $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}",
                             $"request_info.http_method = :{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
         if(codeElement.AcceptedResponseTypes.Any())
-            writer.WriteLine($"request_info.headers['Accept'] = '{string.Join(", ", codeElement.AcceptedResponseTypes)}'");
+            writer.WriteLine($"request_info.headers.add('Accept', '{string.Join(", ", codeElement.AcceptedResponseTypes)}')");
         if (requestParams.requestConfiguration != null)
         {
             var queryString = requestParams.QueryParameters;
@@ -268,7 +268,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 writer.WriteLine($"unless {requestParams.requestConfiguration.Name.ToSnakeCase()}.nil?"); 
                 writer.IncreaseIndent();
                 if(headers != null)
-                    writer.WriteLine($"request_info.set_headers_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
+                    writer.WriteLine($"request_info.add_headers_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
                 if(queryString != null)
                     writer.WriteLine($"request_info.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
                 if (options != null)

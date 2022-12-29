@@ -115,9 +115,17 @@ module MicrosoftKiotaFaraday
           raise StandardError, 'unsupported http method'
       end
       request.path = request_info.uri
-      if request_info.headers.instance_of? Hash
+      unless request_info.headers.nil? then
         request.headers = Faraday::Utils::Headers.new
-        request_info.headers.select{|k,v| request.headers[k] = v }
+        request_info.headers.get_all.select{|k,v| 
+          if v.kind_of? Array then
+            request.headers[k] = v.join(',')
+          elsif v.kind_of? String then
+            request.headers[k] = v
+          else
+            request.headers[k] = v.to_s
+          end
+        }
       end
       request.body = request_info.content unless request_info.content.nil? || request_info.content.empty?
       # TODO the json serialization writer returns a string at the moment, change to body_stream when this is fixed

@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
 module MicrosoftKiotaAbstractions
-  VERSION = "0.10.0"
+  VERSION = "0.11.0"
 end

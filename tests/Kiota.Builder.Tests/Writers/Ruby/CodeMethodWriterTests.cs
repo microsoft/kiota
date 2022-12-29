@@ -349,7 +349,7 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.DoesNotContain("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
-        Assert.DoesNotContain("unless (mapping_value_node.nil?) do", result);
+        Assert.DoesNotContain("unless mapping_value_node.nil? then", result);
         Assert.DoesNotContain("mapping_value = mapping_value_node.get_string_value", result);
         Assert.DoesNotContain("case mapping_value", result);
         Assert.DoesNotContain("when \"ns.childmodel\"", result);
@@ -387,7 +387,7 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.DoesNotContain("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
-        Assert.DoesNotContain("unless (mapping_value_node.nil?) do", result);
+        Assert.DoesNotContain("unless mapping_value_node.nil? then", result);
         Assert.DoesNotContain("mapping_value = mapping_value_node.get_string_value", result);
         Assert.DoesNotContain("case mapping_value", result);
         Assert.DoesNotContain("when \"ns.childmodel\"", result);
@@ -398,6 +398,7 @@ public class CodeMethodWriterTests : IDisposable {
     public void WritesRequestGeneratorBody() {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
+        method.AcceptedResponseTypes = new () {"application/json"};
         AddRequestProperties();
         AddRequestBodyParameters();
         writer.Write(method);
@@ -406,7 +407,9 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("request_info.path_parameters", result);
         Assert.Contains("request_info.url_template", result);
         Assert.Contains("http_method = :GET", result);
+        Assert.Contains("request_info.headers.add('Accept', 'application/json')", result);
         Assert.Contains("set_query_string_parameters_from_raw_object", result);
+        Assert.Contains("add_headers_from_raw_object", result);
         Assert.Contains("add_request_options", result);
         Assert.Contains("set_content_from_parsable", result);
         Assert.Contains("return request_info", result);
