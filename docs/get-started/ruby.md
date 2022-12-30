@@ -10,13 +10,9 @@ parent: Get started
 
 ## Initializing target project
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota/tree/main/abstractions/ruby/microsoft_kiota_abstractions), [authentication](https://github.com/microsoft/kiota/tree/main/authentication/ruby/oauth/microsoft_kiota_authentication_oauth), [http](https://github.com/microsoft/kiota/tree/main/http/ruby/nethttp/microsoft_kiota_nethttplibrary), and [serialization](https://github.com/microsoft/kiota/tree/main/serialization/ruby/json/microsoft_kiota_serialization) packages from the GitHub feed.
+Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota-abstractions-ruby), [authentication](https://github.com/microsoft/kiota-authentication-oauth-ruby), [http](https://github.com/microsoft/kiota-http-ruby), and [serialization JSON](https://github.com/microsoft/kiota-serialization-json-ruby) packages.
 
-### Getting access to the packages
-
-> **Note:** This is a temporary requirement while Kiota is in preview.
-
-#### Install Bundler
+### Install Bundler
 
 1. To install bundler, execute the following line in the root directory of your project:
 
@@ -26,44 +22,28 @@ Before you can compile and run the target project, you will need to initialize i
 
 2. Create a gemfile named **Gemfile** in the root directory of your project.
 
-#### Getting your Personal Access Token
-
-1. Navigate to [New personal access token](https://github.com/settings/tokens/new) and generate a new token. (permissions: `package:read`, `repo`).
-2. Copy the token, you will need it later.
-3. Enable SSO for the Microsoft org on the token if you are a Microsoft employee.
-
-#### Installing the necessary packages
+### Installing the necessary packages
 
 1. In your project, update your `Gemfile` with the required information. Add these lines to your application's Gemfile:
 
     ````ruby
     source 'https://rubygems.org'
-    git_source(:github) { |repo_name| "https://rubygems.pkg.github.com/microsoft" }
 
-    source "https://rubygems.pkg.github.com/microsoft" do
-        gem "microsoft_kiota_abstractions"
-        gem "microsoft_kiota_serialization"
-        gem "microsoft_kiota_authentication_oauth"
-        gem "microsoft_kiota_nethttplibrary"
-    end
+    gem "microsoft_kiota_abstractions"
+    gem "microsoft_kiota_serialization_json"
+    gem "microsoft_kiota_authentication_oauth"
+    gem "microsoft_kiota_faraday"
     ````
 
     Only the first package, `microsoft_kiota_abstractions`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
 
-2. Use `bundler config` to globally specify the authentication information.
-    Execute this line:
-
-    ````shell
-    bundle config https://rubygems.pkg.github.com/microsoft/kiota USERNAME:TOKEN
-    ````
-
-3. Finally, install your gems. Execute this line:
+2. Finally, install your gems. Execute this line:
 
     ````shell
     bundle install
     ````
 
-### Generating the SDK
+### Generating the client
 
 Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** and add the contents of the [Sample OpenAPI description](https://github.com/microsoft/kiota/blob/main/docs/get-started/reference-openapi.md).
 
@@ -103,10 +83,10 @@ Follow the instructions in [Register an application for Microsoft identity platf
 
     ````ruby
     # frozen_string_literal: true
-    require 'microsoft_kiota_serialization'
+    require 'microsoft_kiota_serialization_json'
     require 'microsoft_kiota_abstractions'
     require 'microsoft_kiota_authentication_oauth'
-    require 'microsoft_kiota_nethttplibrary'
+    require 'microsoft_kiota_faraday'
     require_relative './client/api_client'
 
     tenant_id = 'TENANT_ID'
@@ -123,10 +103,10 @@ Follow the instructions in [Register an application for Microsoft identity platf
 
     auth_provider = MicrosoftKiotaAuthenticationOAuth::OAuthAuthenticationProvider.new(token_request_context, allowed_hosts, graph_scopes)
 
-    request_adapter = MicrosoftKiotaNethttplibrary::NetHttpRequestAdapter.new(auth_provider, MicrosoftKiotaSerialization::JsonParseNodeFactory.new, MicrosoftKiotaSerialization::JsonSerializationWriterFactory.new)
+    request_adapter = MicrosoftKiotaNethttplibrary::NetHttpRequestAdapter.new(auth_provider)
 
     client = Graph::ApiClient.new(request_adapter)
-    me = client.me.get
+    me = client.me.get.resume
     puts "Hi! My name is #{me.display_name}, and my ID is #{me.id}."
 
     ````
