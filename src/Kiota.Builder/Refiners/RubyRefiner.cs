@@ -87,7 +87,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         if(currentElement is CodeClass currentClass && 
             currentClass.IsOfKind(CodeClassKind.Model) &&
             currentClass.Parent is CodeNamespace currentNamespace &&
-            currentNamespace.FindChildByName<CodeNamespace>($"{currentNamespace.Name}.{currentClass.Name}") is CodeNamespace) {
+            currentNamespace.FindChildByName<CodeNamespace>($"{currentNamespace.Name}.{currentClass.Name}") is not null) {
                 currentNamespace.RemoveChildElement(currentClass);
                 currentClass.Name = $"{currentClass.Name}{suffix}";
                 currentNamespace.AddClass(currentClass);
@@ -102,28 +102,33 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             propertyType.TypeDefinition is CodeClass propertyTypeClass &&
             classesToUpdate.Contains(propertyTypeClass))
                 propertyType.Name = $"{propertyType.Name}{suffix}";
-        else if (currentElement is CodeMethod currentMethod &&
-            currentMethod.ReturnType is CodeType returnType &&
-            returnType.TypeDefinition is CodeClass returnTypeClass &&
-            classesToUpdate.Contains(returnTypeClass))
-                returnType.Name = $"{returnType.Name}{suffix}";
-        else if (currentElement is CodeParameter currentParameter &&
-            currentParameter.Type is CodeType parameterType &&
-            parameterType.TypeDefinition is CodeClass parameterTypeClass &&
-            classesToUpdate.Contains(parameterTypeClass))
-                parameterType.Name = $"{parameterType.Name}{suffix}";
-        else if (currentElement is CodeClass currentClass &&
-            currentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation) {
-                if (currentClass.StartBlock.Inherits?.TypeDefinition is CodeClass parentClass &&
-                    classesToUpdate.Contains(parentClass)) //TODO update usings as well
-                    currentClass.StartBlock.Inherits.Name = $"{currentClass.StartBlock.Inherits.Name}{suffix}";
-                currentClass.DiscriminatorInformation
-                            .DiscriminatorMappings
-                            .Select(static x => x.Value)
-                            .OfType<CodeType>()
-                            .Where(x => x.TypeDefinition is CodeClass typeClass && classesToUpdate.Contains(typeClass))
-                            .ToList()
-                            .ForEach(x => x.Name = $"{x.Name}{suffix}");
+        else if (currentElement is CodeMethod currentMethod) {
+            if (currentMethod.ReturnType is CodeType returnType &&
+                returnType.TypeDefinition is CodeClass returnTypeClass &&
+                classesToUpdate.Contains(returnTypeClass))
+                    returnType.Name = $"{returnType.Name}{suffix}";
+            currentMethod.Parameters.Where(x => x.Type is CodeType parameterType &&
+                                                parameterType.TypeDefinition is CodeClass parameterTypeClass &&
+                                                classesToUpdate.Contains(parameterTypeClass))
+                                    .ToList()
+                                    .ForEach(x => x.Type.Name = $"{x.Type.Name}{suffix}");
+        } else if (currentElement is CodeClass currentClass) {
+            if (currentClass.StartBlock.Inherits?.TypeDefinition is CodeClass parentClass &&
+                    classesToUpdate.Contains(parentClass))
+                currentClass.StartBlock.Inherits.Name = $"{currentClass.StartBlock.Inherits.Name}{suffix}";
+            currentClass.DiscriminatorInformation
+                        .DiscriminatorMappings
+                        .Select(static x => x.Value)
+                        .OfType<CodeType>()
+                        .Where(x => x.TypeDefinition is CodeClass typeClass && classesToUpdate.Contains(typeClass))
+                        .ToList()
+                        .ForEach(x => x.Name = $"{x.Name}{suffix}");
+            currentClass.Usings
+                        .Where(static x => !x.IsExternal)
+                        .Select(static x => x.Declaration)
+                        .Where(x => x.TypeDefinition is CodeClass typeClass && classesToUpdate.Contains(typeClass))
+                        .ToList()
+                        .ForEach(x => x.Name = $"{x.Name}{suffix}");
             }
         CrawlTree(currentElement, x => UpdateReferencesToDisambiguatedClasses(x, classesToUpdate, suffix));
     }
