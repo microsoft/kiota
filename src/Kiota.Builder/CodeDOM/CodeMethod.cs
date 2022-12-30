@@ -109,8 +109,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public HashSet<string> AcceptedResponseTypes {
         get
         {
-            if(acceptedResponseTypes == null)
-                acceptedResponseTypes = new(StringComparer.OrdinalIgnoreCase);
+            acceptedResponseTypes ??= new(StringComparer.OrdinalIgnoreCase);
             return acceptedResponseTypes;
         }
         set
@@ -127,7 +126,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     private readonly ConcurrentDictionary<string, CodeParameter> parameters = new ();
     public void RemoveParametersByKind(params CodeParameterKind[] kinds) {
         parameters.Where(p => p.Value.IsOfKind(kinds))
-                            .Select(x => x.Key)
+                            .Select(static x => x.Key)
                             .ToList()
                             .ForEach(x => parameters.Remove(x, out var _));
     }

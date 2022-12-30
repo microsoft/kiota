@@ -118,5 +118,11 @@ module MicrosoftKiotaSerialization
       items = get_enum_values(type).map(&:to_sym)
       items[0] if items.length.positive?
     end
+
+    def get_child_node(name)
+      raise StandardError, 'Name cannot be null' if name.nil? || name.empty?
+      raw_value = @current_node[name]
+      return JsonParseNode.new(raw_value) if raw_value
+    end
   end
 end

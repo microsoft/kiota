@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for error mapping in Ruby. [#1653](https://github.com/microsoft/kiota/issues/1653)
 - Added support for multi-valued request headers in Ruby. [#2054](https://github.com/microsoft/kiota/issues/2054)
 - Added support for composed types generation in Ruby.
+- Added missing get child node method in Ruby for deserialization.
+- Added declaration of module classes in Ruby.
 
 ### Changed
 
@@ -28,6 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where conversion of intersection types to wrappers would fail.
 - Fixed raw url initialization in Ruby.
 - Fixed a bug where subsequent indexers would fail to convert properly for languages not supporting indexers. [#1666](https://github.com/microsoft/kiota/issues/1666)
+- Fixed a bug where the ISO duration import would be incorrect in Ruby.
+- Fixed a bug where default middleware options would not be assigned in Ruby.
+- Fixed a bug where request options would not be mapped properly in Ruby.
+- Fixed a bug where the main module would be missing in Ruby and TypeScript.
+- Fixed a bug where class names could conflict with module names in Ruby.
+- Fixed a bug where modules listing would be not be deterministic in Ruby and TypeScript.
 
 ## [0.9.0] - 2022-12-19
 

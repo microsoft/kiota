@@ -52,6 +52,10 @@ module MicrosoftKiotaAbstractions
     def get_enum_value(type)
       raise NotImplementedError.new
     end
+
+    def get_child_node(name)
+      raise NotImplementedError.new
+    end
     
   end
 end

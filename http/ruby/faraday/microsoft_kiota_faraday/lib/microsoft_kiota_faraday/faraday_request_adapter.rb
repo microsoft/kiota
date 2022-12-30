@@ -131,9 +131,9 @@ module MicrosoftKiotaFaraday
       # TODO the json serialization writer returns a string at the moment, change to body_stream when this is fixed
       request_options = request_info.get_request_options
       if !request_options.nil? && !request_options.empty? then
-        request.options = Faraday::RequestOptions.new
+        request.options = Faraday::RequestOptions.new if request.options.nil?
         request_options.each do |value|
-          request.options.context[value.key] = value
+          request.options.context[value.get_key] = value
         end
       end
       request

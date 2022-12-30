@@ -104,19 +104,6 @@ public class RubyLanguageRefinerTests {
         Assert.Contains("escaped", model.Name);
     }
     [Fact]
-    public async Task AddInheritedAndMethodTypesImports() {
-        var model = root.AddClass(new CodeClass {
-            Name = "model",
-            Kind = CodeClassKind.Model
-        }).First();
-        var declaration = model.StartBlock;
-        declaration.Inherits = new (){
-            Name = "someInterface"
-        };
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-        Assert.Single(declaration.Usings.Where(usingDef => "someInterface".Equals(usingDef.Declaration?.Name, StringComparison.OrdinalIgnoreCase)));
-    }
-    [Fact]
     public async Task ReplacesDateTimeOffsetByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",

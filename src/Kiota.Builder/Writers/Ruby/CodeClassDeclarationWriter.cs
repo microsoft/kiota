@@ -25,7 +25,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
                                         .Where(static x => !string.IsNullOrEmpty(x))
                                         .GroupBy(static x => x)
                                         .Select(static x => x.Key)
-                                        .Order())
+                                        .Order(StringComparer.OrdinalIgnoreCase))
                 writer.WriteLine($"require '{codeUsing}'");
                     
             foreach (var relativePath in codeElement.Usings
@@ -35,7 +35,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
                                             relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
                                         .Select(static x => x.Item3)
                                         .Distinct()
-                                        .Order())
+                                        .Order(StringComparer.OrdinalIgnoreCase))
                 writer.WriteLine($"require_relative '{relativePath.ToSnakeCase()}'");
         }
         writer.WriteLine();
