@@ -12,18 +12,20 @@ public static class NamespaceClassNamesProvider {
     /// </summary>
     /// <param name="codeNamespace"> Code Namespace to get the classes for</param>
     /// <returns> List of class names in the code name space ordered based on inheritance</returns>
-    public static List<string> SortClassesInOrderOfInheritance(CodeNamespace codeNamespace)
+    public static void WriteClassesInOrderOfInheritance(CodeNamespace codeNamespace, Action<string> callbackToWriteImport)
     {
-        return codeNamespace.Classes.Where(c => c.IsOfKind(CodeClassKind.Model))
-                                                .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase) //ordering is important to get a deterministic output
+        var writtenClassNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var inheritanceBranches = codeNamespace.Classes.Where(c => c.IsOfKind(CodeClassKind.Model))
                                                 .Select(static x => x.GetInheritanceTree(true))
-                                                .SelectMany(static x => x)
-                                                .Select(static x => x.Name)
-                                                .Concat(codeNamespace.Classes.Where(c => c.IsOfKind(CodeClassKind.Model) && c.StartBlock.Inherits is null)
-                                                    .Select(static x => x.Name)
-                                                    .Order(StringComparer.OrdinalIgnoreCase)) //ordering is important to get a deterministic output
-                                                .Distinct(StringComparer.OrdinalIgnoreCase)
                                                 .ToList();
-
+        var maxDepth = inheritanceBranches.Any() ? inheritanceBranches.Max(static x => x.Count) : 0;
+        for(var depth = 0; depth < maxDepth; depth++) {
+            foreach(var name in inheritanceBranches
+                                                .Where(x => x.Count > depth)
+                                                .Select(x => x[depth].Name)
+                                                .Order(StringComparer.OrdinalIgnoreCase)) //order is important to get a deterministic output
+                if(writtenClassNames.Add(name))
+                    callbackToWriteImport(name);
+        }
     }
 }

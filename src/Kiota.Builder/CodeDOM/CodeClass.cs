@@ -88,8 +88,8 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     public List<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false) {
         var parentClass = GetParentClass();
         if(parentClass == null || (currentNamespaceOnly && parentClass.GetImmediateParentOfType<CodeNamespace>() != GetImmediateParentOfType<CodeNamespace>()))
-            return new List<CodeClass>();
-        var result = parentClass.GetInheritanceTree();
+            return new List<CodeClass>() { this };
+        var result = parentClass.GetInheritanceTree(currentNamespaceOnly);
         result.Add(this);
         return result;
     }

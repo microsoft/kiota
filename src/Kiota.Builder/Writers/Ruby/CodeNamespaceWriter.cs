@@ -11,9 +11,7 @@ public class CodeNamespaceWriter : BaseElementWriter<CodeNamespace, RubyConventi
     {
         foreach(var childModel in codeElement.GetChildElements(true).OfType<CodeEnum>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
             writer.WriteLine($"require_relative '{childModel.Name.ToSnakeCase()}'");
-        var sortedClassNames = NamespaceClassNamesProvider.SortClassesInOrderOfInheritance(codeElement);
-        foreach (var className in sortedClassNames)
-            writer.WriteLine($"require_relative '{className.ToSnakeCase()}'");
+        NamespaceClassNamesProvider.WriteClassesInOrderOfInheritance(codeElement, x => writer.WriteLine($"require_relative '{x.ToSnakeCase()}'"));
         writer.StartBlock($"module {codeElement.Name.NormalizeNameSpaceName("::")}");
         writer.CloseBlock("end");
     }

@@ -14,11 +14,6 @@ public class CodeNameSpaceWriter : BaseElementWriter<CodeNamespace, TypeScriptCo
     /// <param name="writer"></param>
     public override void WriteCodeElement(CodeNamespace codeElement, LanguageWriter writer)
     {
-        var sortedClassNames = NamespaceClassNamesProvider.SortClassesInOrderOfInheritance(codeElement);
-
-        foreach (var className in sortedClassNames)
-        {
-            writer.WriteLine($"export * from './{className.ToFirstCharacterLowerCase()}'");
-        }
+        NamespaceClassNamesProvider.WriteClassesInOrderOfInheritance(codeElement, x => writer.WriteLine($"export * from './{x.ToFirstCharacterLowerCase()}'"));
     }
 }
