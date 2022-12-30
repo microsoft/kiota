@@ -28,7 +28,6 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             cancellationToken.ThrowIfCancellationRequested();
             AddParsableImplementsForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
-            // AddInheritedAndMethodTypesImports(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
@@ -87,9 +86,8 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void DisambiguateClassesWithNamespaceNames(CodeElement currentElement, HashSet<CodeClass> classesToUpdate, string suffix) {
         if(currentElement is CodeClass currentClass && 
             currentClass.IsOfKind(CodeClassKind.Model) &&
-            currentClass.StartBlock is ClassDeclaration currentDeclaration &&
             currentClass.Parent is CodeNamespace currentNamespace &&
-            currentNamespace.FindChildByName<CodeNamespace>($"{currentNamespace.Name}.{currentClass.Name}") is CodeNamespace subNamespace) {
+            currentNamespace.FindChildByName<CodeNamespace>($"{currentNamespace.Name}.{currentClass.Name}") is CodeNamespace) {
                 currentNamespace.RemoveChildElement(currentClass);
                 currentClass.Name = $"{currentClass.Name}{suffix}";
                 currentNamespace.AddClass(currentClass);
