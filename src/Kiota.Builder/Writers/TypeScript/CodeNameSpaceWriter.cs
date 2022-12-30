@@ -14,7 +14,7 @@ public class CodeNameSpaceWriter : BaseElementWriter<CodeNamespace, TypeScriptCo
     /// <param name="writer"></param>
     public override void WriteCodeElement(CodeNamespace codeElement, LanguageWriter writer)
     {
-        var sortedClassNames = NamespaceClassNamesProvider.SortClassesInOrderOfInheritance(codeElement.Classes);
+        var sortedClassNames = NamespaceClassNamesProvider.SortClassesInOrderOfInheritance(codeElement);
 
         foreach (var className in sortedClassNames)
         {

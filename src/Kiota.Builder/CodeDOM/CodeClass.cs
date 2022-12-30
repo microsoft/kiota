@@ -85,7 +85,14 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             return true;
         return parent.DerivesFrom(codeClass);
     }
-    
+    public List<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false) {
+        var parentClass = GetParentClass();
+        if(parentClass == null || (currentNamespaceOnly && parentClass.GetImmediateParentOfType<CodeNamespace>() != GetImmediateParentOfType<CodeNamespace>()))
+            return new List<CodeClass>();
+        var result = parentClass.GetInheritanceTree();
+        result.Add(this);
+        return result;
+    }
     public CodeClass GetGreatestGrandparent(CodeClass startClassToSkip = null) {
         var parentClass = GetParentClass();
         if(parentClass == null)
