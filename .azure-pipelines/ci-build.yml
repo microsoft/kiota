@@ -10,7 +10,6 @@ trigger:
       'authentication/**',
       'serialization/**',
       'http/**',
-      'cli/**',
       '**.md',
       '.vscode/**',
       '**.svg'
@@ -36,6 +35,11 @@ stages:
     - job: build
       steps:
       - task: UseDotNet@2
+        displayName: 'Use .NET 2' # needed for ESRP signing
+        inputs:
+          version: 2.x
+
+      - task: UseDotNet@2
         displayName: 'Use .NET 7'
         inputs:
           version: 7.x
@@ -59,6 +63,10 @@ stages:
           versionSpec: '>=6.1.0'
           checkLatest: true
 
+      - pwsh: dotnet workload restore
+        displayName: 'Restore workloads'
+        workingDirectory: $(Build.SourcesDirectory)
+
       # Build the Product project
       - task: DotNetCoreCLI@2
         displayName: 'build'
@@ -75,7 +83,12 @@ stages:
           arguments: '--configuration $(BuildConfiguration) --no-build'
 
       # removing kiota web files before signing as they don't need to be signed
-      - pwsh: rm -r $(Build.SourcesDirectory)\src\Kiota.Web\bin
+      # removing triggers to credscan
+      - pwsh: |
+          rm -r src\Kiota.Web\bin -ErrorAction SilentlyContinue -Verbose
+          rm tests\Kiota.Web.Tests\bin\Release\net7.0\.playwright\package\ThirdPartyNotices.txt -ErrorAction SilentlyContinue -Verbose
+          rm src\Kiota.Web\README.md -ErrorAction SilentlyContinue -Verbose
+        workingDirectory: $(Build.SourcesDirectory)
 
       # CredScan
       - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@2

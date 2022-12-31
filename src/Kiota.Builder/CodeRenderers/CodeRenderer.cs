@@ -17,7 +17,8 @@ namespace Kiota.Builder.CodeRenderers
     {
         public CodeRenderer(GenerationConfiguration configuration)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            ArgumentNullException.ThrowIfNull(configuration);
+            _configuration = configuration;
             _rendererElementComparer = configuration.ShouldRenderMethodsOutsideOfClasses ? new CodeElementOrderComparerWithExternalMethods() : new CodeElementOrderComparer();
         }
         public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile, CancellationToken cancellationToken)
@@ -54,7 +55,8 @@ namespace Kiota.Builder.CodeRenderers
             if (!string.IsNullOrEmpty(codeNamespace.Name) &&
                 !string.IsNullOrEmpty(root.Name) &&
                 _configuration.ShouldWriteNamespaceIndices &&
-                !_configuration.ClientNamespaceName.StartsWith(codeNamespace.Name, StringComparison.OrdinalIgnoreCase) &&
+                (!_configuration.ClientNamespaceName.StartsWith(codeNamespace.Name, StringComparison.OrdinalIgnoreCase) || 
+                _configuration.ClientNamespaceName.Equals(codeNamespace.Name, StringComparison.OrdinalIgnoreCase)) && // we want a barrel for the root namespace
                 ShouldRenderNamespaceFile(codeNamespace))
             {
                 await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace), cancellationToken);
@@ -67,7 +69,7 @@ namespace Kiota.Builder.CodeRenderers
             writer.Write(element);
             if (!(element is CodeNamespace))
                 foreach (var childElement in element.GetChildElements()
-                                                   .OrderBy(x => x, _rendererElementComparer))
+                                                   .Order(_rendererElementComparer))
                 {
                     RenderCode(writer, childElement);
                 }
@@ -78,7 +80,7 @@ namespace Kiota.Builder.CodeRenderers
         {
             // if the module already has a class with the same name, it's going to be declared automatically
             var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
-            return (_configuration.ShouldWriteBarrelsIfClassExists || codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null);
+            return _configuration.ShouldWriteBarrelsIfClassExists || codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null;
         }
 
         public static CodeRenderer GetCodeRender(GenerationConfiguration config)

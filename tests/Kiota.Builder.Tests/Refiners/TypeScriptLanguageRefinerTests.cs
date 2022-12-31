@@ -163,7 +163,7 @@ public class TypeScriptLanguageRefinerTests {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -176,6 +176,7 @@ public class TypeScriptLanguageRefinerTests {
             },
             IsStatic = true,
         }).First();
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
@@ -420,7 +421,9 @@ public class TypeScriptLanguageRefinerTests {
             Name = "cancelletionToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Description = "Cancellation token to use when cancelling requests",
+            Documentation = new() {
+                Description = "Cancellation token to use when cancelling requests",
+            },
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);

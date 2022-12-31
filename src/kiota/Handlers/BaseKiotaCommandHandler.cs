@@ -4,17 +4,33 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
+using kiota.Authentication.GitHub.DeviceCode;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace kiota.Handlers;
 
 internal abstract class BaseKiotaCommandHandler : ICommandHandler
 {
-    public Option<LogLevel> LogLevelOption { get;set; }
+    protected TempFolderCachingAccessTokenProvider GetGitHubDeviceStorageService(ILogger logger) => new(){
+        Logger = logger,
+        ApiBaseUrl = Configuration.Search.GitHub.ApiBaseUrl,
+        Concrete = null,
+        AppId = Configuration.Search.GitHub.AppId,
+    };
+    protected static TempFolderTokenStorageService GetGitHubPatStorageService(ILogger logger) => new() {
+        Logger = logger,
+        FileName = "pat-api.github.com"
+    };
+    internal static readonly HttpClient httpClient = new();
+    public required Option<LogLevel> LogLevelOption { get;init; }
     protected KiotaConfiguration Configuration { get => ConfigurationFactory.Value; }
     private readonly Lazy<KiotaConfiguration> ConfigurationFactory = new (() => {
         var builder = new ConfigurationBuilder();
@@ -25,6 +41,42 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         configuration.Bind(configObject);
         return configObject;
     });
+    private const string GitHubScope = "repo";
+    private Func<CancellationToken, Task<bool>> GetIsGitHubDeviceSignedInCallback(ILogger logger) => (cancellationToken) => {
+        var provider = GetGitHubDeviceStorageService(logger);
+        return provider.TokenStorageService.Value.IsTokenPresentAsync(cancellationToken);
+    };
+    private static Func<CancellationToken, Task<bool>> GetIsGitHubPatSignedInCallback(ILogger logger) => (cancellationToken) => {
+        var provider = GetGitHubPatStorageService(logger);
+        return provider.IsTokenPresentAsync(cancellationToken);
+    };
+    private IAuthenticationProvider GetGitHubAuthenticationProvider(ILogger logger)  =>
+        new DeviceCodeAuthenticationProvider(Configuration.Search.GitHub.AppId,
+                                            GitHubScope,
+                                            new List<string> { Configuration.Search.GitHub.ApiBaseUrl.Host },
+                                            httpClient,
+                                            DisplayGitHubDeviceCodeLoginMessage,
+                                            logger);
+    private IAuthenticationProvider GetGitHubPatAuthenticationProvider(ILogger logger)  =>
+        new PatAuthenticationProvider(Configuration.Search.GitHub.AppId,
+                                    GitHubScope,
+                                    new List<string> { Configuration.Search.GitHub.ApiBaseUrl.Host },
+                                    logger,
+                                    GetGitHubPatStorageService(logger));
+    protected async Task<KiotaSearcher> GetKiotaSearcherAsync(ILoggerFactory loggerFactory, CancellationToken cancellationToken) {
+        var logger = loggerFactory.CreateLogger<KiotaSearcher>();
+        var deviceCodeSignInCallback = GetIsGitHubDeviceSignedInCallback(logger);
+        var patSignInCallBack = GetIsGitHubPatSignedInCallback(logger);
+        var isDeviceCodeSignedIn = await deviceCodeSignInCallback(cancellationToken).ConfigureAwait(false);
+        var isPatSignedIn = await patSignInCallBack(cancellationToken).ConfigureAwait(false);
+        var (provider, callback) = (isDeviceCodeSignedIn, isPatSignedIn) switch {
+            (true, _) => (GetGitHubAuthenticationProvider(logger), deviceCodeSignInCallback),
+            (_, true) => (GetGitHubPatAuthenticationProvider(logger), patSignInCallBack),
+            (_, _) => (null, null)
+        };
+
+        return new KiotaSearcher(logger, Configuration.Search, httpClient, provider, callback);
+    }
     public int Invoke(InvocationContext context)
     {
         return InvokeAsync(context).GetAwaiter().GetResult();
@@ -71,9 +123,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         return true;
     });
     protected bool TutorialMode => tutorialMode.Value;
-    private static void DisplayHint(params string[] messages) {
-        Console.WriteLine();
-        DisplayMessages(ConsoleColor.Blue, messages);
+    private void DisplayHint(params string[] messages) {
+        if(TutorialMode) {
+            Console.WriteLine();
+            DisplayMessages(ConsoleColor.Blue, messages);
+        }
     }
     private static void DisplayMessages(ConsoleColor color, params string[] messages) {
         Console.ForegroundColor = color;
@@ -94,25 +148,21 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         DisplayMessages(ConsoleColor.White, messages);
     }
     protected void DisplayDownloadHint(string searchTerm, string version) {
-        if(TutorialMode) {
-            var example = string.IsNullOrEmpty(version) ?
-                $"Example: kiota download {searchTerm} -o <output path>" :
-                $"Example: kiota download {searchTerm} -v {version} -o <output path>";
-            DisplayHint("Hint: use kiota download to download the OpenAPI description.", example);
-        }
+        var example = string.IsNullOrEmpty(version) ?
+            $"Example: kiota download {searchTerm} -o <output path>" :
+            $"Example: kiota download {searchTerm} -v {version} -o <output path>";
+        DisplayHint("Hint: use kiota download to download the OpenAPI description.", example);
     }
-    protected void DisplayShowHint(string searchTerm, string version, string path = null) {
-        if(TutorialMode) {
-            var example = path switch {
-                _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path}",
-                _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm}",
-                _ => $"Example: kiota show -k {searchTerm} -v {version}",
-            };
-            DisplayHint("Hint: use kiota show to display a tree of paths present in the OpenAPI description.", example);
-        }
+    protected void DisplayShowHint(string searchTerm, string version, string? path = null) {
+        var example = path switch {
+            _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path}",
+            _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm}",
+            _ => $"Example: kiota show -k {searchTerm} -v {version}",
+        };
+        DisplayHint("Hint: use kiota show to display a tree of paths present in the OpenAPI description.", example);
     }
-    protected void DisplayShowAdvancedHint(string searchTerm, string version, IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path = null) {
-        if(TutorialMode && !includePaths.Any() && !excludePaths.Any()) {
+    protected void DisplayShowAdvancedHint(string searchTerm, string version, IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string? path = null) {
+        if(!includePaths.Any() && !excludePaths.Any()) {
             var example = path switch {
                 _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path} --include-path **/foo",
                 _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm} --include-path **/foo",
@@ -121,8 +171,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
             DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths displayed.", example);
         }
     }
-    protected void DisplaySearchHint(string firstKey, string version) {
-        if (TutorialMode &&!string.IsNullOrEmpty(firstKey)) {
+    protected void DisplaySearchAddHint() {
+        DisplayHint("Hint: add your own API to the search result https://aka.ms/kiota/addapi.");
+    }
+    protected void DisplaySearchHint(string? firstKey, string version) {
+        if (!string.IsNullOrEmpty(firstKey)) {
             var example = string.IsNullOrEmpty(version) ?
                 $"Example: kiota search {firstKey}" :
                 $"Example: kiota search {firstKey} -v {version}";
@@ -130,35 +183,49 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         }
     }
     protected void DisplayGenerateHint(string path, IEnumerable<string> includedPaths, IEnumerable<string> excludedPaths) {
-        if(TutorialMode) {
-            var includedPathsSuffix = ((includedPaths?.Any() ?? false)? " -i " : string.Empty) + string.Join(" -i ", includedPaths);
-            var excludedPathsSuffix = ((excludedPaths?.Any() ?? false)? " -e " : string.Empty) + string.Join(" -e ", excludedPaths);
-            var example = $"Example: kiota generate -l <language> -o <output path> -d {path}{includedPathsSuffix}{excludedPathsSuffix}";
-            DisplayHint("Hint: use kiota generate to generate a client for the OpenAPI description.", example);
-        }
+        var includedPathsSuffix = (includedPaths.Any()? " -i " : string.Empty) + string.Join(" -i ", includedPaths);
+        var excludedPathsSuffix = (excludedPaths.Any()? " -e " : string.Empty) + string.Join(" -e ", excludedPaths);
+        var example = $"Example: kiota generate -l <language> -o <output path> -d {path}{includedPathsSuffix}{excludedPathsSuffix}";
+        DisplayHint("Hint: use kiota generate to generate a client for the OpenAPI description.", example);
     }
     protected void DisplayGenerateAdvancedHint(IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path) {
-        if(TutorialMode && !includePaths.Any() && !excludePaths.Any()) {
+        if(!includePaths.Any() && !excludePaths.Any()) {
             DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths generated.",
                         $"Example: kiota generate --include-path **/foo -d {path}");
         }
     }
     protected void DisplayInfoHint(GenerationLanguage language, string path) {
-        if(TutorialMode) {
-            DisplayHint("Hint: use the info command to get the list of dependencies you need to add to your project.",
-                        $"Example: kiota info -d {path} -l {language}");
-        }
+        DisplayHint("Hint: use the info command to get the list of dependencies you need to add to your project.",
+                    $"Example: kiota info -d {path} -l {language}");
     }
     protected void DisplayCleanHint(string commandName) {
-        if(TutorialMode) {
-            DisplayHint("Hint: to force the generation to overwrite an existing client pass the --clean-output switch.",
-                        $"Example: kiota {commandName} --clean-output");
+        DisplayHint("Hint: to force the generation to overwrite an existing client pass the --clean-output switch.",
+                    $"Example: kiota {commandName} --clean-output");
+    }
+    protected void DisplayInfoAdvancedHint() {
+        DisplayHint("Hint: use the language argument to get the list of dependencies you need to add to your project.",
+                    "Example: kiota info -l <language>");
+    }
+    protected void DisplayGitHubLogoutHint() {
+        DisplayHint("Hint: use the logout command to sign out of GitHub.",
+                    "Example: kiota logout github");
+    }
+    protected void DisplayManageInstallationHint() {
+        DisplayHint($"Hint: go to {Configuration.Search.GitHub.AppManagement} to manage your which organizations and repositories Kiota has access to.");
+    }
+    protected void DisplaySearchBasicHint() {
+        DisplayHint("Hint: use the search command to search for an OpenAPI description.",
+                    "Example: kiota search <search term>");
+    }
+    protected async Task DisplayLoginHint(ILogger logger, CancellationToken token) {
+        var deviceCodeAuthProvider = GetGitHubDeviceStorageService(logger);
+        var patStorage = GetGitHubPatStorageService(logger);
+        if(!await deviceCodeAuthProvider.TokenStorageService.Value.IsTokenPresentAsync(token) && !await patStorage.IsTokenPresentAsync(token)) {
+            DisplayHint("Hint: use the login command to sign in to GitHub and access private OpenAPI descriptions.",
+                        "Example: kiota login github");
         }
     }
-    protected void DisplayInfoAdvanced() {
-        if(TutorialMode) {
-            DisplayHint("Hint: use the language argument to get the list of dependencies you need to add to your project.",
-                        "Example: kiota info -l <language>");
-        }
+    protected static void DisplayGitHubDeviceCodeLoginMessage(Uri uri, string code) {
+        DisplayInfo($"Please go to {uri} and enter the code {code} to authenticate.");
     }
 }

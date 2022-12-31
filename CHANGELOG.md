@@ -8,18 +8,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- Added support for auto-registration of serializers in Ruby. [#478](https://github.com/microsoft/kiota/issues/478)
+- Added support for middleware infrastructure in Ruby. [#1650](https://github.com/microsoft/kiota/issues/1650)
+- Added support for query parameters names aliasing in Ruby. [#1664](https://github.com/microsoft/kiota/issues/1664)
+- Added support for vendor specific serialization in Ruby. [#1661](https://github.com/microsoft/kiota/issues/1661)
+- Added support for default properties values in Ruby. [#1725](https://github.com/microsoft/kiota/issues/1725)
+- Added support for discriminated types deserialization (inheritance) in Ruby. [#1652](https://github.com/microsoft/kiota/issues/1652)
+- Added support for error mapping in Ruby. [#1653](https://github.com/microsoft/kiota/issues/1653)
+- Added support for multi-valued request headers in Ruby. [#2054](https://github.com/microsoft/kiota/issues/2054)
+- Added support for composed types generation in Ruby.
+- Added missing get child node method in Ruby for deserialization.
+- Added declaration of module classes in Ruby.
+
+### Changed
+
+- Fixed a bug where a missing baseURL would make search fail. [#2095](https://github.com/microsoft/kiota/issues/2095)
+- Fixed a bug in Ruby where the request adapter URL would be overwritten by the client defaults. [#1647](https://github.com/microsoft/kiota/issues/1647)
+- Replaced concurrent-ruby by Fibers in Ruby libraries to implement proper asynchronous execution of requests.
+- Replaced response_handler parameter by a request option in Ruby. [#1860](https://github.com/microsoft/kiota/issues/1860)
+- Fixed a bug where conversion of intersection types to wrappers would fail.
+- Fixed raw url initialization in Ruby.
+- Fixed a bug where subsequent indexers would fail to convert properly for languages not supporting indexers. [#1666](https://github.com/microsoft/kiota/issues/1666)
+- Fixed a bug where the ISO duration import would be incorrect in Ruby.
+- Fixed a bug where default middleware options would not be assigned in Ruby.
+- Fixed a bug where request options would not be mapped properly in Ruby.
+- Fixed a bug where the main module would be missing in Ruby and TypeScript.
+- Fixed a bug where class names could conflict with module names in Ruby.
+- Fixed a bug where modules listing would be not be deterministic in Ruby and TypeScript.
+- Moved Ruby libraries to their own repositories.
+
+## [0.9.0] - 2022-12-19
+
+### Added
+
+- Added description validation rules to help users get the best client experience. [#2019](https://github.com/microsoft/kiota/issues/2019)
+- Added support for external documentation links on request execution methods. [#2036](https://github.com/microsoft/kiota/issues/2036)
+- Added support for multi-valued headers in CSharp, TypeScript, Go, and Java. [#2032](https://github.com/microsoft/kiota/issues/2032)
+
+### Changed
+
+- Fixed a generation issue in TypeScript where static methods imports could collide.
+- Fixed a generation issue in Go with the accept headers definition.
+- Fixed a generation issue in Go and TypeScript with UUID properties.
+- Fixed issue with wrong imports for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)
+- Fix issue where discriminator types were never getting imported for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)
+- Fix issue where class aliasing was never working as expected for PHP. [#2049](https://github.com/microsoft/kiota/pull/2049)
+- Fixed colliding imports for factory methods in TypeScript. [#2009](https://github.com/microsoft/kiota/issues/2009)
+- Switched to lazy loading module imports in Python. [#2007](https://github.com/microsoft/kiota/issues/2007)
+- Caters for type names being used from System namespace in CSharp generation [#2021](https://github.com/microsoft/kiota/issues/2021)
+- Fixed wrong send request method name for collections in Python. [#2057](https://github.com/microsoft/kiota/issues/2057)
+- Implemented request builders with no parameters as properties in Python. [#2024](https://github.com/microsoft/kiota/issues/2024)
+
+## [0.8.3] - 2022-12-01
+
+### Changed
+
+- Unblocks nuget release by removing file triggering credscan.
+
+## [0.8.2] - 2022-12-01
+
+### Changed
+
+- Unblocks nuget release by removing file triggering credscan.
+
+## [0.8.1] - 2022-12-01
+
+### Changed
+
+- Fixes publishing workflow missing workload restore commands.
+
+## [0.8.0] - 2022-12-01
+
+### Added
+
+- Added support for GitHub based API search.[#1866](https://github.com/microsoft/kiota/issues/1866)
+- Added login/logout commands to access API descriptions in private GitHub repositories. [#1983](https://github.com/microsoft/kiota/issues/1983)
 - Added support for scalar request bodies Python [#1571](https://github.com/microsoft/kiota/issues/1571)
 - Sets property defaults in constructor and removes duplicate properties defined in base types from model serialization and deserialization methods in Python. [#1726](https://github.com/microsoft/kiota/issues/1726)
 - Added support for scalar request bodies in PHP [#1937](https://github.com/microsoft/kiota/pull/1937)
 - Added accept header for all schematized requests Python. [#1617](https://github.com/microsoft/kiota/issues/1617)
+- Added optional backing store support for PHP. [#1976](https://github.com/microsoft/kiota/pull/1976)
+- Fixed a bug where OdataErrors had wrong inherited class name in Python.
+- Fixed a bug where empty path parameters dictionary would throw an error in request builders in Python.
 
 ### Changed
 
+- Fixed a bug where readonly properties would fail to deserialize for TypeScript.
 - Fixed a bug where array buffers nullability would wrongly be defined for TypeScript.
 - Fixed a bug where parameter comments would appear in summary tag comments in dotnet. [#1945](https://github.com/microsoft/kiota/issues/1945)
 - Fixed a bug in PHP generation where request bodies would not serialize single elements properly. [#1937](https://github.com/microsoft/kiota/pull/1937)
 - Fixed a bug where request information would always be set from scalar. [#1965](https://github.com/microsoft/kiota/pull/1965)
 - Fixed a bug where path parameters would be missing if no operation was present at the segment the parameter is defined. [#1940](https://github.com/microsoft/kiota/issues/1940)
+- Fixed a bug where nested classes with long names caused compilation errors for java generated libraries. [#1949](https://github.com/microsoft/kiota/issues/1949)
+- Removed use of anonymous classes in java generated libraries to reduce the number of java classes created at compilation time. [#1980](https://github.com/microsoft/kiota/pull/1980)
+- Fixed a bug where generation would result in wrong indentation in some classes for Python [#1996]((https://github.com/microsoft/kiota/issues/1996).
+- Fixed a bug where error class modules were hardcoded for Python [#1999]((https://github.com/microsoft/kiota/issues/1999)
+- Fixed a bug where generation would sometimes result in wrong original names for query parameters in Python [#2000]((https://github.com/microsoft/kiota/issues/2000).
+- Fixed a bug where Java would fail to compile for endpoints that return collections.
 
 ## [0.7.1] - 2022-11-01
 

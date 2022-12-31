@@ -12,19 +12,16 @@ public class CodeUsingWriter {
     }
     public void WriteCodeElement(IEnumerable<CodeUsing> usings, CodeNamespace parentNamespace, LanguageWriter writer ) {
         var externalImportSymbolsAndPaths = usings
-                                                .Where(x => x.IsExternal)
-                                                .Select(x => (x.Name, string.Empty, x.Declaration?.Name));
+                                                .Where(static x => x.IsExternal)
+                                                .Select(static x => (x.Name, string.Empty, x.Declaration?.Name));
         var internalImportSymbolsAndPaths = usings
-                                                .Where(x => !x.IsExternal)
+                                                .Where(static x => !x.IsExternal)
                                                 .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNamespace));
         var importSymbolsAndPaths = externalImportSymbolsAndPaths.Union(internalImportSymbolsAndPaths)
-                                                                .GroupBy(x => x.Item3)
-                                                                .OrderBy(x => x.Key);
-        foreach (var codeUsing in importSymbolsAndPaths)
-            if (!string.IsNullOrWhiteSpace(codeUsing.Key))
-            {
-                writer.WriteLine($"import {{{codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(x => x).Aggregate((x, y) => x + ", " + y)}}} from '{codeUsing.Key}';");
-            }
+                                                                .GroupBy(static x => x.Item3)
+                                                                .OrderBy(static x => x.Key);
+        foreach (var codeUsing in importSymbolsAndPaths.Where(static x => !string.IsNullOrWhiteSpace(x.Key)))
+            writer.WriteLine($"import {{{codeUsing.Select(static x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(static x => x).Aggregate(static (x, y) => x + ", " + y)}}} from '{codeUsing.Key}';");
 
         writer.WriteLine();
     }

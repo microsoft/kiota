@@ -16,11 +16,13 @@ public class GenerationConfiguration : ICloneable {
     public bool IncludeAdditionalData { get; set; } = true;
     public HashSet<string> Serializers { get; set; } = new(2, StringComparer.OrdinalIgnoreCase){
         "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
-        "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory"
+        "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory",
+        "Microsoft.Kiota.Serialization.Form.FormSerializationWriterFactory",
     };
     public HashSet<string> Deserializers { get; set; } = new(2, StringComparer.OrdinalIgnoreCase) {
         "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
-        "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory"
+        "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory",
+        "Microsoft.Kiota.Serialization.Form.FormParseNodeFactory",
     };
     public bool ShouldWriteNamespaceIndices { get { return BarreledLanguages.Contains(Language); } }
     public bool ShouldWriteBarrelsIfClassExists { get { return BarreledLanguagesWithConstantFileName.Contains(Language); } }
@@ -39,16 +41,13 @@ public class GenerationConfiguration : ICloneable {
     public bool CleanOutput { get; set;}
     public HashSet<string> StructuredMimeTypes { get; set; } = new(5, StringComparer.OrdinalIgnoreCase) {
         "application/json",
-        "application/xml",
         "text/plain",
-        "text/xml",
-        "text/yaml",
+        "application/x-www-form-urlencoded",
     };
-    public HashSet<string> IncludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase) {
-    };
-    public HashSet<string> ExcludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase) {
-    };
+    public HashSet<string> IncludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
+    public HashSet<string> ExcludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
     public bool ClearCache { get; set; }
+    public HashSet<string> DisabledValidationRules { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
     public object Clone()
     {
         return new GenerationConfiguration {
@@ -68,6 +67,7 @@ public class GenerationConfiguration : ICloneable {
             IncludePatterns = new(IncludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             ExcludePatterns = new(ExcludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             ClearCache = ClearCache,
+            DisabledValidationRules = new(DisabledValidationRules ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
         };
     }
 }

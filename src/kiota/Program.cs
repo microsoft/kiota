@@ -7,7 +7,7 @@ namespace kiota
     {
         static Task<int> Main(string[] args)
         {
-            return new KiotaHost().GetRootCommand().InvokeAsync(args);
+            return KiotaHost.GetRootCommand().InvokeAsync(args);
         }
     }
 }

@@ -38,9 +38,10 @@ public class CodeEnumWriterTests :IDisposable {
         Assert.Contains(optionName, result);
     }
     [Fact]
-    public void DoesntWriteAnythingOnNoOption() {
+    public void WritesNullStatementOnNoOption() {
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.Empty(result);
+        Assert.Contains("(Enum):", result);
+        Assert.Contains("pass", result);
     }
 }

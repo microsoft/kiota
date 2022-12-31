@@ -10,9 +10,10 @@ namespace Kiota.Builder.Writers.Php
             var conventionService = new PhpConventionService();
             AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
-            AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService, useBackingStore));
             AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
             AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
         }
     }
 }

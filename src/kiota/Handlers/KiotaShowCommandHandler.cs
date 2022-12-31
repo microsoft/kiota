@@ -13,32 +13,30 @@ using System.Text;
 namespace kiota.Handlers;
 internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
 {
-    public Option<string> DescriptionOption { get;set; }
-    public Option<string> SearchTermOption { get; set; }
-    public Option<string> VersionOption { get; set; }
-    public Option<uint> MaxDepthOption { get; set; }
-    public Option<List<string>> IncludePatternsOption { get; set; }
-    public Option<List<string>> ExcludePatternsOption { get; set; }
-    public Option<bool> ClearCacheOption { get; set; }
+    public required Option<string> DescriptionOption { get;init; }
+    public required Option<string> SearchTermOption { get; init; }
+    public required Option<string> VersionOption { get; init; }
+    public required Option<uint> MaxDepthOption { get; init; }
+    public required Option<List<string>> IncludePatternsOption { get; init; }
+    public required Option<List<string>> ExcludePatternsOption { get; init; }
+    public required Option<bool> ClearCacheOption { get; init; }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
-        string openapi = context.ParseResult.GetValueForOption(DescriptionOption);
-        string searchTerm = context.ParseResult.GetValueForOption(SearchTermOption);
-        string version = context.ParseResult.GetValueForOption(VersionOption);
+        string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
+        string searchTerm = context.ParseResult.GetValueForOption(SearchTermOption) ?? string.Empty;
+        string version = context.ParseResult.GetValueForOption(VersionOption) ?? string.Empty;
         uint maxDepth = context.ParseResult.GetValueForOption(MaxDepthOption);
-        List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption);
-        List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption);
+        List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption) ?? new List<string>();
+        List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption) ?? new List<string>();
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
-        CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
+        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
 
-        Configuration.Search.SearchTerm = searchTerm;
-        Configuration.Search.Version = version;
         Configuration.Search.ClearCache = clearCache;
         using (loggerFactory) {
             var descriptionProvided = !string.IsNullOrEmpty(openapi) && string.IsNullOrEmpty(searchTerm);
-            var (searchResultDescription, statusCode) = await GetDescriptionFromSearch(openapi, searchTerm, loggerFactory, logger, cancellationToken);
+            var (searchResultDescription, statusCode) = await GetDescriptionFromSearch(openapi, searchTerm, version, loggerFactory, logger, cancellationToken);
             if (statusCode.HasValue) {
                 return statusCode.Value;
             }
@@ -54,7 +52,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             Configuration.Generation.ExcludePatterns = excludePatterns.ToHashSet();
             Configuration.Generation.ClearCache = clearCache;
             try {
-                var urlTreeNode = await new KiotaBuilder(logger, Configuration.Generation).GetUrlTreeNodeAsync(cancellationToken);
+                var urlTreeNode = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GetUrlTreeNodeAsync(cancellationToken);
 
                 var builder = new StringBuilder();
                 RenderNode(urlTreeNode, maxDepth, builder);

@@ -232,8 +232,8 @@ public class JavaLanguageRefinerTests {
         requestBuilder.SetIndexer(new CodeIndexer {
             Name = "idx",
             ReturnType = new CodeType {
-                Name = "model",
-                TypeDefinition = model,
+                Name = requestBuilder.Name,
+                TypeDefinition = requestBuilder,
             },
         });
         var collectionRequestBuilder = root.AddClass(new CodeClass {
@@ -241,6 +241,7 @@ public class JavaLanguageRefinerTests {
         }).First();
         collectionRequestBuilder.AddProperty(new CodeProperty {
             Name = "collection",
+            Kind = CodePropertyKind.RequestBuilder,
             Type = new CodeType {
                 Name = "requestBuilder",
                 TypeDefinition = requestBuilder,
@@ -249,36 +250,8 @@ public class JavaLanguageRefinerTests {
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.Single(requestBuilder.Properties);
         Assert.Empty(requestBuilder.GetChildElements(true).OfType<CodeIndexer>());
-        Assert.Single(collectionRequestBuilder.Methods.Where(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)));
+        Assert.Single(collectionRequestBuilder.Methods.Where(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)));
         Assert.Single(collectionRequestBuilder.Properties);
-    }
-    [Fact]
-    public async Task AddsInnerClasses() {
-        var model = root.AddClass(new CodeClass {
-            Name = "model",
-            Kind = CodeClassKind.Model
-        }).First();
-        var method = model.AddMethod(new CodeMethod {
-            Name = "method1",
-            ReturnType = new CodeType {
-                Name = "string",
-                IsExternal = true
-            }
-        }).First();
-        var parameter = new CodeParameter {
-            Name = "param1",
-            Kind = CodeParameterKind.RequestConfiguration,
-            Type = new CodeType {
-                Name = "SomeCustomType",
-                ActionOf = true,
-                TypeDefinition = new CodeClass {
-                    Name = "SomeCustomType"
-                }
-            }
-        };
-        method.AddParameter(parameter);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.Equal(2, model.GetChildElements(true).Count());
     }
     [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutors()
@@ -302,7 +275,9 @@ public class JavaLanguageRefinerTests {
             Name = "cancelletionToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Description = "Cancellation token to use when cancelling requests",
+            Documentation = new() {
+                Description = "Cancellation token to use when cancelling requests",
+            },
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
@@ -339,7 +314,6 @@ public class JavaLanguageRefinerTests {
         const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
         const string dateTimeOffsetDefaultName = "DateTimeOffset";
         const string additionalDataDefaultName = "new Dictionary<string, object>()";
-        const string headersDefaultName = "IDictionary<string, string>";
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -361,13 +335,6 @@ public class JavaLanguageRefinerTests {
             Kind = CodePropertyKind.AdditionalData,
             Type = new CodeType {
                 Name = additionalDataDefaultName
-            }
-        }, new () {
-            Name = "headers",
-            Kind = CodePropertyKind.Headers,
-            Type = new CodeType
-            {
-                Name = headersDefaultName
             }
         });
         const string additionalDataHolderDefaultName = "IAdditionalDataHolder";
@@ -404,15 +371,14 @@ public class JavaLanguageRefinerTests {
             }
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.Empty(model.Properties.Where(x => requestAdapterDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => factoryDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => additionalDataDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => headersDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Methods.Where(x => deserializeDefaultName.Equals(x.ReturnType.Name)));
-        Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.StartBlock.Implements.Where(x => additionalDataHolderDefaultName.Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
-        Assert.Contains( additionalDataHolderDefaultName[1..], model.StartBlock.Implements.Select(x => x.Name).ToList());
+        Assert.Empty(model.Properties.Where(static x => requestAdapterDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(static x => factoryDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(static x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(static x => additionalDataDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Methods.Where(static x => deserializeDefaultName.Equals(x.ReturnType.Name)));
+        Assert.Empty(model.Methods.SelectMany(static x => x.Parameters).Where(static x => serializerDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.StartBlock.Implements.Where(static x => additionalDataHolderDefaultName.Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
+        Assert.Contains( additionalDataHolderDefaultName[1..], model.StartBlock.Implements.Select(static x => x.Name).ToList());
     }
     [Fact]
     public async Task AddsMethodsOverloads() {

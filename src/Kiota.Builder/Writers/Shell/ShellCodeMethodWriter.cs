@@ -10,11 +10,11 @@ using Kiota.Builder.Writers.CSharp;
 
 namespace Kiota.Builder.Writers.Shell
 {
-    class ShellCodeMethodWriter : CodeMethodWriter
+    partial class ShellCodeMethodWriter : CodeMethodWriter
     {
-        private static Regex delimitedRegex = new Regex("(?<=[a-z])[-_\\.]+([A-Za-z])", RegexOptions.Compiled);
-        private static Regex camelCaseRegex = new Regex("(?<=[a-z])([A-Z])", RegexOptions.Compiled);
-        private static Regex uppercaseRegex = new Regex("([A-Z])", RegexOptions.Compiled);
+        private static readonly Regex delimitedRegex = ShellDelimitedRegex();
+        private static readonly Regex camelCaseRegex = ShellCamelCaseRegex();
+        private static readonly Regex uppercaseRegex = ShellUppercaseRegex();
         private const string allParamType = "bool";
         private const string allParamName = "all";
         private const string cancellationTokenParamType = "CancellationToken";
@@ -141,7 +141,7 @@ namespace Kiota.Builder.Writers.Shell
 
             writer.WriteLine($"command.SetHandler(async ({invocationContextParamName}) => {{");
             writer.IncreaseIndent();
-            for (int i = 0; i < availableOptions.Count; i++)
+            for (var i = 0; i < availableOptions.Count; i++)
             {
                 var (paramType, paramName, parameter) = parameters[i];
                 writer.WriteLine($"var {paramName.ToFirstCharacterLowerCase()} = {availableOptions[i]};");
@@ -309,9 +309,9 @@ namespace Kiota.Builder.Writers.Shell
                     optionBuilder.Append($", getDefaultValue: ()=> {defaultValue}");
                 }
 
-                if (!string.IsNullOrEmpty(option.Description))
+                if (!string.IsNullOrEmpty(option.Documentation.Description))
                 {
-                    optionBuilder.Append($", description: \"{option.Description}\"");
+                    optionBuilder.Append($", description: \"{option.Documentation.Description}\"");
                 }
 
                 optionBuilder.Append(") {");
@@ -338,8 +338,8 @@ namespace Kiota.Builder.Writers.Shell
 
         private static void WriteCommandDescription(CodeMethod codeElement, LanguageWriter writer)
         {
-            if (!string.IsNullOrWhiteSpace(codeElement.Description))
-                writer.WriteLine($"command.Description = \"{codeElement.Description}\";");
+            if (!string.IsNullOrWhiteSpace(codeElement.Documentation.Description))
+                writer.WriteLine($"command.Description = \"{codeElement.Documentation.Description}\";");
         }
 
         private void WriteContainerCommand(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, string name)
@@ -482,7 +482,7 @@ namespace Kiota.Builder.Writers.Shell
             if (pageInfo != null)
             {
                 writer.WriteLine($"var pagingData = new PageLinkData(requestInfo, null, itemName: \"{pageInfo.ItemName}\", nextLinkName: \"{pageInfo.NextLinkName}\");");
-                writer.WriteLine($"{(isVoid ? string.Empty : "var pageResponse = ")}await {pagingServiceParamName}.GetPagedDataAsync((info, handler, token) => RequestAdapter.{requestMethod}(info, cancellationToken: token, responseHandler: handler), pagingData, {allParamName}, {cancellationTokenParamName});");
+                writer.WriteLine($"{(isVoid ? string.Empty : "var pageResponse = ")}await {pagingServiceParamName}.GetPagedDataAsync((info, token) => RequestAdapter.{requestMethod}(info, cancellationToken: token), pagingData, {allParamName}, {cancellationTokenParamName});");
                 writer.WriteLine("var response = pageResponse?.Response;");
             }
             else
@@ -500,8 +500,8 @@ namespace Kiota.Builder.Writers.Shell
                 foreach (var param in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.QueryParameter)))
                 {
                     var paramName = NormalizeToIdentifier(param.Name);
-                    bool isStringParam = "string".Equals(param.Type.Name, StringComparison.OrdinalIgnoreCase) && !param.Type.IsCollection;
-                    bool indentParam = true;
+                    var isStringParam = "string".Equals(param.Type.Name, StringComparison.OrdinalIgnoreCase) && !param.Type.IsCollection;
+                    var indentParam = true;
                     if (isStringParam)
                     {
                         writer.Write($"if (!string.IsNullOrEmpty({paramName})) ");
@@ -555,5 +555,12 @@ namespace Kiota.Builder.Writers.Shell
 
             return result.ToLower();
         }
+
+        [GeneratedRegex("(?<=[a-z])[-_\\.]+([A-Za-z])", RegexOptions.Compiled)]
+        private static partial Regex ShellDelimitedRegex();
+        [GeneratedRegex("(?<=[a-z])([A-Z])", RegexOptions.Compiled)]
+        private static partial Regex ShellCamelCaseRegex();
+        [GeneratedRegex("([A-Z])", RegexOptions.Compiled)]
+        private static partial Regex ShellUppercaseRegex();
     }
 }

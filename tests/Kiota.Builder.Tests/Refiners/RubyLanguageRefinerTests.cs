@@ -44,7 +44,9 @@ public class RubyLanguageRefinerTests {
             Name = "cancellationToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Description = "Cancellation token to use when cancelling requests",
+            Documentation = new (){
+                Description = "Cancellation token to use when cancelling requests",
+            },
             Type = new CodeType { Name = "CancellationToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
@@ -100,19 +102,6 @@ public class RubyLanguageRefinerTests {
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
         Assert.NotEqual("break", model.Name);
         Assert.Contains("escaped", model.Name);
-    }
-    [Fact]
-    public async Task AddInheritedAndMethodTypesImports() {
-        var model = root.AddClass(new CodeClass {
-            Name = "model",
-            Kind = CodeClassKind.Model
-        }).First();
-        var declaration = model.StartBlock;
-        declaration.Inherits = new (){
-            Name = "someInterface"
-        };
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-        Assert.Single(declaration.Usings.Where(usingDef => "someInterface".Equals(usingDef.Declaration?.Name, StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
     public async Task ReplacesDateTimeOffsetByNativeType() {

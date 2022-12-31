@@ -109,37 +109,6 @@ public class PythonLanguageRefinerTests {
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
-    [Fact]
-    public async Task AddsUsingsForDiscriminatorTypes() {
-        var parentModel = root.AddClass(new CodeClass {
-            Name = "parentModel",
-            Kind = CodeClassKind.Model,
-        }).First();
-        var childModel = root.AddClass(new CodeClass {
-            Name = "childModel",
-            Kind = CodeClassKind.Model,
-        }).First();
-        (childModel.StartBlock).Inherits = new CodeType {
-            Name = "parentModel",
-            TypeDefinition = parentModel,
-        };
-        var factoryMethod = parentModel.AddMethod(new CodeMethod {
-            Name = "factory",
-            Kind = CodeMethodKind.Factory,
-            ReturnType = new CodeType {
-                Name = "parentModel",
-                TypeDefinition = parentModel,
-            },
-            IsStatic = true,
-        }).First();
-        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
-                        Name = "childModel",
-                        TypeDefinition = childModel,
-                    });
-        Assert.False(factoryMethod.Parent is CodeFunction);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-        Assert.Equal(childModel, (factoryMethod.Parent as CodeFunction).StartBlock.Usings.First(x => x.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
-    }
 #endregion
 #region python
     private const string HttpCoreDefaultName = "IRequestAdapter";
@@ -148,7 +117,7 @@ public class PythonLanguageRefinerTests {
     private const string PathParametersDefaultName = "Dictionary<string, object>";
     private const string PathParametersDefaultValue = "new Dictionary<string, object>";
     private const string DateTimeOffsetDefaultName = "DateTimeOffset";
-    private const string AddiationalDataDefaultName = "Dictionary<string, object>";
+    private const string AdditionalDataDefaultName = "Dictionary<string, object>";
     private const string HandlerDefaultName = "IResponseHandler";
     [Fact]
     public async Task EscapesReservedKeywords() {
@@ -191,7 +160,7 @@ public class PythonLanguageRefinerTests {
             Name = "additionalData",
             Kind = CodePropertyKind.AdditionalData,
             Type = new CodeType {
-                Name = AddiationalDataDefaultName
+                Name = AdditionalDataDefaultName
             }
         }, new () {
             Name = "pathParameters",
@@ -248,7 +217,7 @@ public class PythonLanguageRefinerTests {
         Assert.Empty(model.Properties.Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => FactoryDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => DateTimeOffsetDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => AddiationalDataDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(x => AdditionalDataDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => PathParametersDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => PathParametersDefaultValue.Equals(x.DefaultValue)));
         Assert.Empty(model.Methods.Where(x => DeserializeDefaultName.Equals(x.ReturnType.Name)));
@@ -320,46 +289,6 @@ public class PythonLanguageRefinerTests {
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("timedelta", method.ReturnType.Name);
     }
-        [Fact]
-    public async Task AliasesDuplicateUsingSymbols() {
-        var model = graphNS.AddClass(new CodeClass {
-            Name = "model",
-            Kind = CodeClassKind.Model
-        }).First();
-        var modelsNS = graphNS.AddNamespace($"{graphNS.Name}.models");
-        var source1 = modelsNS.AddClass(new CodeClass {
-            Name = "source",
-            Kind = CodeClassKind.Model
-        }).First();
-        var submodelsNS = modelsNS.AddNamespace($"{modelsNS.Name}.submodels");
-        var source2 = submodelsNS.AddClass(new CodeClass {
-            Name = "source",
-            Kind = CodeClassKind.Model
-        }).First();
-
-        var using1 = new CodeUsing {
-            Name = modelsNS.Name,
-            Declaration = new CodeType {
-                Name = source1.Name,
-                TypeDefinition = source1,
-                IsExternal = false,
-            }
-        };
-        var using2 = new CodeUsing {
-            Name = submodelsNS.Name,
-            Declaration = new CodeType {
-                Name = source2.Name,
-                TypeDefinition = source2,
-                IsExternal = false,
-            }
-        };
-        model.AddUsing(using1);
-        model.AddUsing(using2);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-        Assert.NotEmpty(using1.Alias);
-        Assert.NotEmpty(using2.Alias);
-        Assert.NotEqual(using1.Alias, using2.Alias);
-    }
     [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutors()
     {
@@ -382,7 +311,9 @@ public class PythonLanguageRefinerTests {
             Name = "cancellationToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Description = "Cancellation token to use when cancelling requests",
+            Documentation = new() {
+                Description = "Cancellation token to use when cancelling requests",
+            },
             Type = new CodeType { Name = "CancellationToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);

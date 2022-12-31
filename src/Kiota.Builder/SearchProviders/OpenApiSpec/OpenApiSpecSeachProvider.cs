@@ -12,8 +12,7 @@ public class OpenApiSpecSearchProvider : ISearchProvider
     public HashSet<string> KeysToExclude { get; set; }
     public Task<IDictionary<string, SearchResult>> SearchAsync(string term, string version, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(term))
-            throw new ArgumentNullException(nameof(term));
+        ArgumentException.ThrowIfNullOrEmpty(term);
         
         if (term.Split(new char[] {' ', '-'}, StringSplitOptions.RemoveEmptyEntries).Any(x => Keywords.Contains(x))) {
             return Task.FromResult<IDictionary<string, SearchResult>>(new Dictionary<string, SearchResult> {

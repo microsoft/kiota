@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
@@ -18,10 +17,15 @@ public class GoRefiner : CommonLanguageRefiner
         _configuration.NamespaceNameSeparator = "/";
         return Task.Run(() => {
             cancellationToken.ThrowIfCancellationRequested();
+            FlattenNestedHierarchy(generatedCode);
+            FlattenGoParamsFileNames(generatedCode);
+            FlattenGoFileNames(generatedCode);
             AddInnerClasses(
                 generatedCode,
                 true,
-                null);
+                null,
+            false,
+            MergeOverLappedStrings);
             ReplaceIndexersByMethodsWithParameter(
                 generatedCode,
                 generatedCode,
@@ -95,13 +99,17 @@ public class GoRefiner : CommonLanguageRefiner
                 defaultConfiguration.Serializers,
                 new (StringComparer.OrdinalIgnoreCase) {
                     "github.com/microsoft/kiota-serialization-json-go.JsonSerializationWriterFactory",
-                    "github.com/microsoft/kiota-serialization-text-go.TextSerializationWriterFactory"});
+                    "github.com/microsoft/kiota-serialization-text-go.TextSerializationWriterFactory",
+                    "github.com/microsoft/kiota-serialization-form-go.FormSerializationWriterFactory",
+                });
             ReplaceDefaultDeserializationModules(
                 generatedCode,
                 defaultConfiguration.Deserializers,
                 new (StringComparer.OrdinalIgnoreCase) {
                     "github.com/microsoft/kiota-serialization-json-go.JsonParseNodeFactory",
-                    "github.com/microsoft/kiota-serialization-text-go.TextParseNodeFactory"});
+                    "github.com/microsoft/kiota-serialization-text-go.TextParseNodeFactory",
+                    "github.com/microsoft/kiota-serialization-form-go.FormParseNodeFactory",
+                });
             AddSerializationModulesImport(
                 generatedCode,
                 new[] {"github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer"},
@@ -131,14 +139,165 @@ public class GoRefiner : CommonLanguageRefiner
             );
             RemoveHandlerFromRequestBuilder(generatedCode);
             AddContextParameterToGeneratorMethods(generatedCode);
+            CorrectTypes(generatedCode);
         }, cancellationToken);
+    }
+
+    private string MergeOverLappedStrings(string start, string end)
+    {
+        var search = "RequestBuilder";
+        start = start.ToFirstCharacterUpperCase();
+        end = end.ToFirstCharacterUpperCase();
+        var endPattern = end.Contains(search) ? end[..(end.IndexOf(search, StringComparison.OrdinalIgnoreCase) + search.Length)] : end;
+
+        if (start.EndsWith(endPattern))
+            return $"{start[..start.IndexOf(endPattern, StringComparison.OrdinalIgnoreCase)]}{end}";
+            
+        return $"{start}{end}";
+    }
+
+    private static void CorrectTypes(CodeElement currentElement)
+    {
+        if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestBuilderBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters) && currentElement.Parent is CodeClass _)
+        {
+            var currentNamespace = currentMethod.GetImmediateParentOfType<CodeNamespace>();
+            if (currentNamespace.Depth > 0 && currentMethod.ReturnType is CodeType ct && !ct.Name.Equals(ct.TypeDefinition?.Name))
+                ct.Name = ct.TypeDefinition?.Name;
+        }
+        CrawlTree(currentElement, CorrectTypes);
+    }
+    
+    private CodeNamespace _clientNameSpace;
+    private CodeNamespace findClientNameSpace(CodeElement currentElement)
+    {
+        if (_clientNameSpace != null) return _clientNameSpace;
+        if (currentElement == null) return null;
+
+        var currentNamespace = currentElement.GetImmediateParentOfType<CodeNamespace>();
+        if (currentNamespace != null && (_configuration.ClientNamespaceName.Equals(currentNamespace.Name, StringComparison.OrdinalIgnoreCase) || currentElement.Parent == null))
+        {
+            _clientNameSpace = currentNamespace;
+        }
+
+        return findClientNameSpace(currentElement.Parent);
+    }
+
+    private void FlattenNestedHierarchy(CodeElement currentElement) {
+        if (currentElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model)) {
+            // if the parent is not the models namespace rename and move it to package root
+            var currentNamespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
+            var parentNameSpace = findClientNameSpace(currentNamespace);
+
+            var modelNameSpace = parentNameSpace.FindOrAddNamespace($"{_configuration.ClientNamespaceName}.models");
+            var packageRootNameSpace = findNameSpaceAtLevel(parentNameSpace, currentNamespace, 1);
+            if (!packageRootNameSpace.Name.Equals(currentNamespace.Name) && !currentNamespace.IsChildOf(modelNameSpace))
+            {
+                var classNameList = getPathsName(codeClass, codeClass.Name);
+                var newClassName = string.Join(string.Empty,classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
+
+                currentNamespace.RemoveChildElement(codeClass);
+                codeClass.Name = newClassName;
+                codeClass.Parent = packageRootNameSpace;
+                packageRootNameSpace.AddClass(codeClass);
+            }
+        }
+
+        CrawlTree(currentElement, FlattenNestedHierarchy);
+    }
+
+    private void FlattenGoParamsFileNames(CodeElement currentElement)
+    {
+        if (currentElement is CodeProperty currentProp 
+            && currentElement.Parent is CodeClass parentClass 
+            && parentClass.IsOfKind(CodeClassKind.RequestConfiguration) 
+            && currentProp.IsOfKind(CodePropertyKind.QueryParameters))
+        {
+            var nameList = getPathsName(parentClass, currentProp.Type.Name.ToFirstCharacterUpperCase());
+            var newTypeName = string.Join(string.Empty,nameList.Count > 1 ? nameList.Skip(1) : nameList);
+                        
+            var type = currentProp.Type;
+            type.Name = newTypeName;
+        }
+
+        if (currentElement is CodeMethod codeMethod 
+            && codeMethod.IsOfKind(CodeMethodKind.RequestGenerator, CodeMethodKind.RequestExecutor))
+        {
+            foreach (var param in codeMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.RequestConfiguration))){
+                 var nameList = getPathsName(param, param.Type.Name.ToFirstCharacterUpperCase());
+                 var newTypeName = string.Join(string.Empty,nameList.Count > 1 ?  nameList.Skip(1) : nameList);
+                 param.Type.Name = newTypeName;
+                    
+                 foreach (var typeDef in param.Type.AllTypes.Select(static x => x.TypeDefinition).Where(x => x != null && !newTypeName.EndsWith(x?.Name, StringComparison.OrdinalIgnoreCase)))
+                      typeDef.Name = newTypeName;
+            }
+            
+        }
+
+        CrawlTree(currentElement, FlattenGoParamsFileNames);
+    }
+
+    private List<string> getPathsName(CodeElement codeClass, string fileName, bool removeDuplicate = true)
+    {
+        // update the code class name to include the entire path
+        var currentNamespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
+        var namespacePathSegments = new List<string>(currentNamespace.Name
+            .Replace(_configuration.ClientNamespaceName, string.Empty)
+            .TrimStart('.')
+            .Split('.'));
+        // add the namespace to the code class Name
+        namespacePathSegments = namespacePathSegments.Select(static x => x.ToFirstCharacterUpperCase().Trim())
+            .Where(static x => !string.IsNullOrEmpty(x))
+            .ToList();
+            
+        // check if the last element contains current name and remove it
+        if (namespacePathSegments.Count > 0 && removeDuplicate && fileName.ToFirstCharacterUpperCase().Contains(namespacePathSegments.Last()))
+            namespacePathSegments.RemoveAt(namespacePathSegments.Count - 1);
+        
+        namespacePathSegments.Add(fileName.ToFirstCharacterUpperCase());
+        return namespacePathSegments;
+    }
+
+    private static CodeNamespace findNameSpaceAtLevel(CodeNamespace rootNameSpace, CodeNamespace currentNameSpace, int level) {
+        var namespaceList = new List<CodeNamespace> { currentNameSpace };
+
+        var mySpace = currentNameSpace;
+        while (mySpace.Parent is CodeNamespace parentNameSpace && !parentNameSpace.Name.Equals(rootNameSpace.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            namespaceList.Add(parentNameSpace);
+            mySpace = parentNameSpace;
+        }
+
+        return namespaceList[^level];
+    }
+    
+    private void FlattenGoFileNames(CodeElement currentElement) {
+        // add the namespace to the name of the code element and the file name
+        if (currentElement is CodeClass codeClass 
+            && codeClass.Parent is CodeNamespace currentNamespace 
+            && !codeClass.IsOfKind(CodeClassKind.Model))
+        {
+            var rootNameSpace = findClientNameSpace(codeClass.Parent);
+            if (!rootNameSpace.Name.Equals(currentNamespace.Name) && !currentNamespace.IsChildOf(rootNameSpace, true))
+            {
+                var classNameList = getPathsName(codeClass, codeClass.Name.ToFirstCharacterUpperCase());
+                var newClassName = string.Join(string.Empty,classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
+                
+                var nextNameSpace = findNameSpaceAtLevel(rootNameSpace, currentNamespace, 1);
+                currentNamespace.RemoveChildElement(codeClass);
+                codeClass.Name = newClassName;
+                codeClass.Parent = nextNameSpace;
+                nextNameSpace.AddClass(codeClass);
+            }
+        }
+
+        CrawlTree(currentElement, FlattenGoFileNames);
     }
     
     protected static void RenameCancellationParameter(CodeElement currentElement){
         if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) && currentMethod.Parameters.OfKind(CodeParameterKind.Cancellation) is CodeParameter parameter)
         {
             parameter.Name = ContextParameterName;
-            parameter.Description = ContextVarDescription;
+            parameter.Documentation.Description = ContextVarDescription;
             parameter.Kind = CodeParameterKind.Cancellation;
             parameter.Optional = false;
             parameter.Type.Name = conventions.ContextVarTypeName;
@@ -159,7 +318,9 @@ public class GoRefiner : CommonLanguageRefiner
                 },
                 Kind = CodeParameterKind.Cancellation,
                 Optional = false,
-                Description = ContextVarDescription,
+                Documentation = {
+                    Description = ContextVarDescription,
+                },
             });
         CrawlTree(currentElement, AddContextParameterToGeneratorMethods);
     }
@@ -187,33 +348,6 @@ public class GoRefiner : CommonLanguageRefiner
         }
         CrawlTree(currentElement, RemoveModelPropertiesThatDependOnSubNamespaces);
     }
-    private static CodeNamespace FindFirstModelSubnamepaceWithClasses(CodeNamespace currentNamespace) {
-        if(currentNamespace != null)
-        {
-            if(currentNamespace.Classes.Any()) return currentNamespace;
-            foreach (var subNS in currentNamespace.Namespaces)
-            {
-                var result = FindFirstModelSubnamepaceWithClasses(subNS);
-                if (result != null) return result;
-            }
-        }
-        return null;
-    }
-    private static CodeNamespace FindRootModelsNamespace(CodeNamespace currentNamespace) {
-        if(currentNamespace != null)
-        {
-            if(!string.IsNullOrEmpty(currentNamespace.Name) &&
-               currentNamespace.Name.EndsWith("Models", StringComparison.OrdinalIgnoreCase))
-                return currentNamespace;
-            foreach(var subNS in currentNamespace.Namespaces)
-            {
-                var result = FindRootModelsNamespace(subNS);
-                if(result != null)
-                    return result;
-            }
-        }
-        return null;
-    }
     private static void ReplaceRequestBuilderPropertiesByMethods(CodeElement currentElement) {
         if(currentElement is CodeProperty currentProperty &&
             currentProperty.IsOfKind(CodePropertyKind.RequestBuilder) &&
@@ -224,7 +358,7 @@ public class GoRefiner : CommonLanguageRefiner
                     Name = currentProperty.Name,
                     ReturnType = currentProperty.Type,
                     Access = AccessModifier.Public,
-                    Description = currentProperty.Description,
+                    Documentation = currentProperty.Documentation.Clone() as CodeDocumentation,
                     IsAsync = false,
                     Kind = CodeMethodKind.RequestBuilderBackwardCompatibility,
                 });
@@ -262,16 +396,13 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota-abstractions-go/serialization", "ParseNode", "Parsable"),
         new (static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer)
-            && method.Parent is CodeClass codeClass && codeClass.GetPropertiesOfKind(CodePropertyKind.Custom).Any(static x => !x.ExistsInBaseType),
-            "github.com/microsoft/kiota-abstractions-go", ""),
         new (static x => x is CodeMethod method && 
-                        method.IsOfKind(CodeMethodKind.RequestGenerator) &&
-                        method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) && 
+                         method.IsOfKind(CodeMethodKind.RequestGenerator) &&
+                         method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) && 
                                                     x.Type.IsCollection &&
                                                     x.Type is CodeType pType &&
                                                     (pType.TypeDefinition is CodeClass ||
-                                                    pType.TypeDefinition is CodeInterface)),
+                                                     pType.TypeDefinition is CodeInterface)),
             "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && 
                                             (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
@@ -282,6 +413,8 @@ public class GoRefiner : CommonLanguageRefiner
         new (static x => x is CodeMethod method && (method.IsOfKind(CodeMethodKind.RequestExecutor) || method.IsOfKind(CodeMethodKind.RequestGenerator)), "context","*context"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             "github.com/microsoft/kiota-abstractions-go/serialization", "MergeDeserializersForIntersectionWrapper"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
+            "github.com/microsoft/kiota-abstractions-go", "RequestHeaders"),
     };//TODO add backing store types once we have them defined
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
         block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");
@@ -314,7 +447,7 @@ public class GoRefiner : CommonLanguageRefiner
             if(currentMethod.IsOfKind(CodeMethodKind.Factory))
                 currentMethod.ReturnType = new CodeType { Name = "Parsable", IsNullable = false, IsExternal = true };
         }
-        CorrectDateTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
@@ -348,6 +481,13 @@ public class GoRefiner : CommonLanguageRefiner
                                     IsExternal = true,
                                 },
                             })},
+        {"Guid", ("UUID", new CodeUsing {
+                        Name = "UUID",
+                        Declaration = new CodeType {
+                            Name = "github.com/google/uuid",
+                            IsExternal = true,
+                        },
+                    })},
     };
     private static void CorrectPropertyType(CodeProperty currentProperty) {
         if (currentProperty.Type != null) {
@@ -364,14 +504,13 @@ public class GoRefiner : CommonLanguageRefiner
                 if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                     currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
             } else if(currentProperty.IsOfKind(CodePropertyKind.Headers)) {
-                currentProperty.Type.Name = "map[string]string";
-                currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
+                currentProperty.DefaultValue = $"New{currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
             } else if(currentProperty.IsOfKind(CodePropertyKind.Options)) {
                 currentProperty.Type.IsNullable = false;
                 currentProperty.Type.Name = "RequestOption";
                 currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
             }
-            CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+            CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
     }
     /// <summary>

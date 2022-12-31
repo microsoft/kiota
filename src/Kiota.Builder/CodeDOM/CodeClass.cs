@@ -43,9 +43,9 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             var existingIndexer = InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
             if(existingIndexer != null) {
                 RemoveChildElement(existingIndexer);
-                AddRange(CodeMethod.FromIndexer(existingIndexer, this, $"By{existingIndexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", true));
+                AddRange(CodeMethod.FromIndexer(existingIndexer, $"By{existingIndexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", true));
             }
-            AddRange(CodeMethod.FromIndexer(indexer, this, $"By{indexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", false));
+            AddRange(CodeMethod.FromIndexer(indexer, $"By{indexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", false));
         } else
             AddRange(indexer);
     }
@@ -85,7 +85,14 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             return true;
         return parent.DerivesFrom(codeClass);
     }
-    
+    public List<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false) {
+        var parentClass = GetParentClass();
+        if(parentClass == null || (currentNamespaceOnly && parentClass.GetImmediateParentOfType<CodeNamespace>() != GetImmediateParentOfType<CodeNamespace>()))
+            return new List<CodeClass>() { this };
+        var result = parentClass.GetInheritanceTree(currentNamespaceOnly);
+        result.Add(this);
+        return result;
+    }
     public CodeClass GetGreatestGrandparent(CodeClass startClassToSkip = null) {
         var parentClass = GetParentClass();
         if(parentClass == null)
@@ -117,7 +124,7 @@ public class ClassDeclaration : ProprietableBlockDeclaration
     } }
 
     public CodeProperty GetOriginalPropertyDefinedFromBaseType(string propertyName) {
-        if (string.IsNullOrEmpty(propertyName)) throw new ArgumentNullException(nameof(propertyName));
+        ArgumentException.ThrowIfNullOrEmpty(propertyName);
 
         if (inherits is CodeType currentInheritsType &&
             currentInheritsType.TypeDefinition is CodeClass currentParentClass)

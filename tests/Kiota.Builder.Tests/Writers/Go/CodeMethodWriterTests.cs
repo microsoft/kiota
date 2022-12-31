@@ -9,8 +9,6 @@ using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Go;
 
-using Moq;
-
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Go;
@@ -37,11 +35,13 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
-        method = new CodeMethod {
+        method = new CodeMethod
+        {
             Name = MethodName,
-        };
-        method.ReturnType = new CodeType {
-            Name = ReturnTypeName
+            ReturnType = new CodeType
+            {
+                Name = ReturnTypeName
+            }
         };
         parentClass.AddMethod(method);
     }
@@ -571,7 +571,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("m.requestAdapter.SendEnumCollectionAsync", result);
         Assert.Contains("ParseSomeEnum", result);
         Assert.DoesNotContain("val[i] = *(v.(*SomeEnum))", result);
-        Assert.Contains("val := i2ae4187f7daee263371cb1c977df639813ab50ffa529013b7437480d1ec0158f.CollectionCast[SomeEnum](res)", result);
+        Assert.Contains("val[i] = v.(SomeEnum)", result);
         Assert.Contains("return nil, err", result);
         Assert.DoesNotContain("if res == nil", result);
         Assert.DoesNotContain("return nil, nil", result);
@@ -620,8 +620,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("if val, err := parseNode.GetStringValue(); val != nil {", result);
         Assert.Contains("result.SetStringValue(val)", result);
         Assert.Contains("else if val, err := parseNode.GetCollectionOfObjectValues(CreateComplexType2FromDiscriminatorValue); val != nil {", result);
-        Assert.Contains("cast := i2ae4187f7daee263371cb1c977df639813ab50ffa529013b7437480d1ec0158f.CollectionValueCast[ComplexType2](val)", result);
-        Assert.DoesNotContain("for i, v := range val", result);
+        Assert.Contains("cast := make([]ComplexType2, len(val))", result);
+        Assert.Contains("for i, v := range val", result);
         Assert.Contains("result.SetComplexType2Value(cast)", result);
         Assert.Contains("return result, nil", result);
         Assert.DoesNotContain("return NewUnionTypeWrapper(), nil", result);
@@ -665,8 +665,9 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("if val, err := parseNode.GetStringValue(); val != nil {", result);
         Assert.Contains("result.SetStringValue(val)", result);
         Assert.Contains("else if val, err := parseNode.GetCollectionOfObjectValues(CreateComplexType2FromDiscriminatorValue); val != nil {", result);
-        Assert.Contains("cast := i2ae4187f7daee263371cb1c977df639813ab50ffa529013b7437480d1ec0158f.CollectionValueCast[ComplexType2](val)", result);
-        Assert.DoesNotContain("for i, v := range val", result);
+        Assert.Contains("cast := make([]ComplexType2, len(val))", result);
+        Assert.Contains("cast[i] = *(v.(*ComplexType2))", result);
+        Assert.Contains("for i, v := range val", result);
         Assert.Contains("result.SetComplexType2Value(cast)", result);
         Assert.Contains("return result, nil", result);
         Assert.DoesNotContain("return NewIntersectionTypeWrapper(), nil", result);
@@ -871,10 +872,10 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
         Assert.Contains("requestInfo.UrlTemplate = ", result);
         Assert.Contains("requestInfo.PathParameters", result);
-        Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
-        Assert.Contains("requestInfo.AddRequestHeaders(", result);
+        Assert.Contains("requestInfo.Headers.AddAll(", result);
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
@@ -907,10 +908,10 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
         Assert.Contains("requestInfo.UrlTemplate = ", result);
         Assert.Contains("requestInfo.PathParameters", result);
-        Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
-        Assert.Contains("requestInfo.AddRequestHeaders(", result);
+        Assert.Contains("requestInfo.Headers.AddAll(", result);
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
@@ -941,10 +942,10 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
         Assert.Contains("requestInfo.UrlTemplate = ", result);
         Assert.Contains("requestInfo.PathParameters", result);
-        Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
-        Assert.Contains("requestInfo.AddRequestHeaders(", result);
+        Assert.Contains("requestInfo.Headers.AddAll(", result);
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
@@ -977,10 +978,10 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
         Assert.Contains("requestInfo.UrlTemplate = ", result);
         Assert.Contains("requestInfo.PathParameters", result);
-        Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
-        Assert.Contains("requestInfo.AddRequestHeaders(", result);
+        Assert.Contains("requestInfo.Headers.AddAll(", result);
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
@@ -1006,10 +1007,12 @@ public class CodeMethodWriterTests : IDisposable {
         AddSerializationProperties();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("SetCollectionOfPrimitiveValues(\"string\" , m.SetDummyColl)", result);
-        Assert.Contains("SetCollectionOfObjectValues(CreateComplexFromDiscriminatorValue , m.SetDummyComplexColl)", result);
-        Assert.Contains("SetEnumValue(ParseSomeEnum , m.SetDummyEnumCollection)", result);
-        Assert.Contains("SetStringValue(m.SetDummyProp)", result);
+        Assert.Contains("res := make([]string, len(val))", result);
+        Assert.Contains("res[i] = *(v.(*string))", result);
+        Assert.Contains("res := make([]Complex, len(val))", result);
+        Assert.Contains("res[i] = *(v.(*Complex))", result);
+        Assert.Contains("m.SetDummyEnumCollection(val.(*SomeEnum))", result);
+        Assert.Contains("m.SetDummyProp(val)", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
@@ -1140,11 +1143,13 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact(Skip = "descriptions are not supported")]
     public void WritesMethodSyncDescription() {
-        method.Description = MethodDescription;
+        method.Documentation.Description = MethodDescription;
         method.IsAsync = false;
         var parameter = new CodeParameter
         {
-            Description = ParamDescription,
+            Documentation = new() {
+                Description = ParamDescription
+            },
             Name = ParamName,
             Type = new CodeType
             {
@@ -1155,6 +1160,29 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("@return a CompletableFuture of", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesMethodDescriptionLink() {
+        method.Documentation.Description = MethodDescription;
+        method.Documentation.DocumentationLabel = "see more";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        var parameter = new CodeParameter
+        {
+            Documentation = new() {
+                Description = ParamDescription,
+            },
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        };
+        method.AddParameter(parameter);
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("[see more]: ", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1276,7 +1304,7 @@ public class CodeMethodWriterTests : IDisposable {
                 Name = "string"
             }
         });
-        method.Description = "Some description";
+        method.Documentation.Description = "Some description";
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"// {method.Name.ToFirstCharacterUpperCase()} some description", result);

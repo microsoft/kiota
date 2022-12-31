@@ -16,11 +16,18 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() => {
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
+            var classesToDisambiguate = new HashSet<CodeClass>();
+            var suffix = "Model";
+            DisambiguateClassesWithNamespaceNames(generatedCode, classesToDisambiguate, suffix);
+            UpdateReferencesToDisambiguatedClasses(generatedCode, classesToDisambiguate, suffix);
+            cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, true);
             RemoveCancellationParameter(generatedCode);
+            ConvertUnionTypesToWrapper(generatedCode, 
+                _configuration.UsesBackingStore
+            );
             cancellationToken.ThrowIfCancellationRequested();
             AddParsableImplementsForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
-            AddInheritedAndMethodTypesImports(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
@@ -33,7 +40,13 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 _configuration.UsesBackingStore,
                 true,
                 string.Empty,
+                string.Empty,
                 string.Empty);
+            AddConstructorsForDefaultValues(
+                generatedCode,
+                true,
+                false,
+                new[] { CodeClassKind.RequestConfiguration });
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
             var defaultConfiguration = new GenerationConfiguration();
@@ -42,22 +55,101 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 defaultConfiguration.Serializers,
                 new (StringComparer.OrdinalIgnoreCase) {
-                    "microsoft_kiota_serialization.JsonSerializationWriterFactory"});
+                    "microsoft_kiota_serialization_json.JsonSerializationWriterFactory"});
             ReplaceDefaultDeserializationModules(
                 generatedCode,
                 defaultConfiguration.Deserializers,
                 new (StringComparer.OrdinalIgnoreCase) {
-                    "microsoft_kiota_serialization.JsonParseNodeFactory"});
+                    "microsoft_kiota_serialization_json.JsonParseNodeFactory"});
             AddSerializationModulesImport(generatedCode,
                                         new [] { "microsoft_kiota_abstractions.ApiClientBuilder",
                                                 "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
                                         new [] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
+            AddQueryParameterMapperMethod(
+                generatedCode
+            );
+            AddParentClassToErrorClasses(
+                    generatedCode,
+                    "ApiError",
+                    "MicrosoftKiotaAbstractions"
+            );
+            cancellationToken.ThrowIfCancellationRequested();
+            RemoveDiscriminatorMappingsThatDependOnSubNameSpace(generatedCode);
+            AddDiscriminatorMappingsUsingsToParentClasses(
+                generatedCode,
+                "ParseNode",
+                addUsings: true
+            );
+            RemoveHandlerFromRequestBuilder(generatedCode);
         }, cancellationToken);
+    }
+    private static void DisambiguateClassesWithNamespaceNames(CodeElement currentElement, HashSet<CodeClass> classesToUpdate, string suffix) {
+        if(currentElement is CodeClass currentClass && 
+            currentClass.IsOfKind(CodeClassKind.Model) &&
+            currentClass.Parent is CodeNamespace currentNamespace &&
+            currentNamespace.FindChildByName<CodeNamespace>($"{currentNamespace.Name}.{currentClass.Name}") is not null) {
+                currentNamespace.RemoveChildElement(currentClass);
+                currentClass.Name = $"{currentClass.Name}{suffix}";
+                currentNamespace.AddClass(currentClass);
+                classesToUpdate.Add(currentClass);
+        }
+        CrawlTree(currentElement, x => DisambiguateClassesWithNamespaceNames(x, classesToUpdate, suffix));
+    }
+    private static void UpdateReferencesToDisambiguatedClasses(CodeElement currentElement, HashSet<CodeClass> classesToUpdate, string suffix) {
+        if (!classesToUpdate.Any()) return;
+        if (currentElement is CodeProperty currentProperty &&
+            currentProperty.Type is CodeType propertyType &&
+            propertyType.TypeDefinition is CodeClass propertyTypeClass &&
+            classesToUpdate.Contains(propertyTypeClass))
+                propertyType.Name = $"{propertyType.Name}{suffix}";
+        else if (currentElement is CodeMethod currentMethod) {
+            if (currentMethod.ReturnType is CodeType returnType &&
+                returnType.TypeDefinition is CodeClass returnTypeClass &&
+                classesToUpdate.Contains(returnTypeClass))
+                    returnType.Name = $"{returnType.Name}{suffix}";
+            currentMethod.Parameters.Where(x => x.Type is CodeType parameterType &&
+                                                parameterType.TypeDefinition is CodeClass parameterTypeClass &&
+                                                classesToUpdate.Contains(parameterTypeClass))
+                                    .ToList()
+                                    .ForEach(x => x.Type.Name = $"{x.Type.Name}{suffix}");
+        } else if (currentElement is CodeClass currentClass) {
+            if (currentClass.StartBlock.Inherits?.TypeDefinition is CodeClass parentClass &&
+                    classesToUpdate.Contains(parentClass))
+                currentClass.StartBlock.Inherits.Name = $"{currentClass.StartBlock.Inherits.Name}{suffix}";
+            currentClass.DiscriminatorInformation
+                        .DiscriminatorMappings
+                        .Select(static x => x.Value)
+                        .OfType<CodeType>()
+                        .Where(x => x.TypeDefinition is CodeClass typeClass && classesToUpdate.Contains(typeClass))
+                        .ToList()
+                        .ForEach(x => x.Name = $"{x.Name}{suffix}");
+            currentClass.Usings
+                        .Where(static x => !x.IsExternal)
+                        .Select(static x => x.Declaration)
+                        .Where(x => x.TypeDefinition is CodeClass typeClass && classesToUpdate.Contains(typeClass))
+                        .ToList()
+                        .ForEach(x => x.Name = $"{x.Name}{suffix}");
+            }
+        CrawlTree(currentElement, x => UpdateReferencesToDisambiguatedClasses(x, classesToUpdate, suffix));
+    }
+    private static void RemoveDiscriminatorMappingsThatDependOnSubNameSpace(CodeElement currentElement) {
+        if (currentElement is CodeClass currentClass &&
+            currentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation &&
+            currentClass.Parent is CodeNamespace classNameSpace)
+                currentClass.DiscriminatorInformation.RemoveDiscriminatorMapping(currentClass.DiscriminatorInformation
+                                                    .DiscriminatorMappings
+                                                    .Where(x => x.Value is CodeType mapping &&
+                                                                mapping.TypeDefinition is CodeClass mappingClass &&
+                                                                mappingClass.Parent is CodeNamespace mappingClassNamespace &&
+                                                                mappingClassNamespace.IsChildOf(classNameSpace))
+                                                    .Select(static x => x.Key)
+                                                    .ToArray());
+        CrawlTree(currentElement, RemoveDiscriminatorMappingsThatDependOnSubNameSpace);
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         if(currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
             parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
-        CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                     .Select(x => x.Type)
                                     .Union(new[] { currentMethod.ReturnType})
                                     .ToArray());
@@ -73,7 +165,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         {"TimeSpan", ("MicrosoftKiotaAbstractions::ISODuration", new CodeUsing {
                                         Name = "MicrosoftKiotaAbstractions::ISODuration",
                                         Declaration = new CodeType {
-                                            Name = "github.com/microsoft/kiota/abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions/serialization",
+                                            Name = "microsoft_kiota_abstractions",
                                             IsExternal = true,
                                         },
                                     })},
@@ -93,67 +185,75 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                             })},
     };
     private static void CorrectPropertyType(CodeProperty currentProperty) {
-        if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
+        if(currentProperty.IsOfKind(CodePropertyKind.PathParameters, CodePropertyKind.AdditionalData)) {
             currentProperty.Type.IsNullable = true;
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "Hash.new";
-        } 
-        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        }
+
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         
     }
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "microsoft_kiota_abstractions", "RequestAdapter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            "microsoft_kiota_abstractions", "HttpMethod", "RequestInformation"), //TODO add request options once ruby supports it
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+            "microsoft_kiota_abstractions", "HttpMethod", "RequestInformation", "RequestOption"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "microsoft_kiota_abstractions", "ResponseHandler"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             "microsoft_kiota_abstractions", "SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "microsoft_kiota_abstractions", "ParseNode"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             "microsoft_kiota_abstractions", "Parsable"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "microsoft_kiota_abstractions", "Parsable"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(static y => y.IsOfKind(CodePropertyKind.AdditionalData)),
             "microsoft_kiota_abstractions", "AdditionalDataHolder"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
-                    method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                    method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.BackingStore)),
             "microsoft_kiota_abstractions", "BackingStoreFactory", "BackingStoreFactorySingleton"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             "microsoft_kiota_abstractions", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
     };
-    protected static void AddInheritedAndMethodTypesImports(CodeElement currentElement) {
+    private static void AddInheritedAndMethodTypesImports(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
             && currentClass.StartBlock.Inherits != null) {
             currentClass.AddUsing(new CodeUsing { Name = currentClass.StartBlock.Inherits.Name, Declaration = currentClass.StartBlock.Inherits});
         }
-        CrawlTree(currentElement, x => AddInheritedAndMethodTypesImports(x));
+        CrawlTree(currentElement, AddInheritedAndMethodTypesImports);
     }
-
-    protected void AddNamespaceModuleImports(CodeElement current, string clientNamespaceName) {
-        const string dot = ".";
+    private static void AddNamespaceModuleImports(CodeElement current, string clientNamespaceName) {
         if(current is CodeClass currentClass) {
-            var Module = currentClass.GetImmediateParentOfType<CodeNamespace>();
-            if(!string.IsNullOrEmpty(Module.Name)){
-                var modulesProperties = Module.Name.Replace(clientNamespaceName+dot, string.Empty).Split(dot);
-                for (int i = modulesProperties.Length - 1; i >= 0; i--){
-                    var prefix = string.Concat(Enumerable.Repeat("../", modulesProperties.Length -i-1));
-                    var usingName = modulesProperties[i].ToSnakeCase();
-                    currentClass.AddUsing(new CodeUsing { 
-                        Name = usingName,
-                        Declaration = new CodeType {
-                            IsExternal = false,
-                            Name = $"{(string.IsNullOrEmpty(prefix) ? "./" : prefix)}{usingName}",
-                        }
-                    });
-                }
-            }
+            var module = currentClass.GetImmediateParentOfType<CodeNamespace>();
+            AddModules(module, clientNamespaceName, (usingToAdd) => {
+                currentClass.AddUsing(usingToAdd);
+            });
         }
         CrawlTree(current, c => AddNamespaceModuleImports(c, clientNamespaceName));
     }
-    private static void CorrectImplements(ProprietableBlockDeclaration block) {
-        block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = "MicrosoftKiotaAbstractions::AdditionalDataHolder"); 
+    private const string Dot = ".";
+    private static void AddModules(CodeNamespace module, string clientNamespaceName, Action<CodeUsing> callback) {
+        if(!string.IsNullOrEmpty(module.Name)){
+            var modulesProperties = module.Name.Replace(clientNamespaceName+Dot, string.Empty).Split(Dot);
+            for (int i = modulesProperties.Length - 1; i >= 0; i--){
+                var prefix = string.Concat(Enumerable.Repeat("../", modulesProperties.Length -i-1));
+                var usingName = modulesProperties[i].ToSnakeCase();
+                callback(new CodeUsing { 
+                    Name = usingName,
+                    Declaration = new CodeType {
+                        IsExternal = false,
+                        Name = $"{(string.IsNullOrEmpty(prefix) ? "./" : prefix)}{usingName}",
+                    }
+                });
+            }
         }
+    }
+    private static void CorrectImplements(ProprietableBlockDeclaration block) {
+        block.Implements
+            .Where(static x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase))
+            .ToList()
+            .ForEach(static x => x.Name = "MicrosoftKiotaAbstractions::AdditionalDataHolder"); 
+    }
 }

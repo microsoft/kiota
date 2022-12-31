@@ -8,6 +8,7 @@ has_children: true
 
 Kiota can be accessed in the following ways.
 
+- [Run in browser (experimental)](#run-in-browser)
 - [Download binaries](#download-binaries)
 - [Install as .NET tool](#install-as-net-tool)
 - [Run in Docker](#run-in-docker)
@@ -49,10 +50,16 @@ generate --language typescript -n gfx -d \
 https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml
 ```
 
+## Run in browser
+
+You can run kiota with a modern web browser by navigating to [app.kiota.dev](https://app.kiota.dev).
+
+> Note: This feature is experimental and performances for large API descriptions might be impacted, should you run into issues, we suggest you revert to using the CLI.
+
 ## Build Kiota
 
 1. Clone the current repository.
-1. Install the [.NET SDK 6.0](https://dotnet.microsoft.com/download).
+1. Install the [.NET SDK 7.0](https://get.dot.net/7).
 1. Open the solution with Visual Studio and right click *publish* **--or--** execute the following command:
 
     ```shell

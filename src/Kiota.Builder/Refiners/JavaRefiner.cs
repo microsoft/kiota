@@ -17,7 +17,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() => {
             cancellationToken.ThrowIfCancellationRequested();
             LowerCaseNamespaceNames(generatedCode);
-            AddInnerClasses(generatedCode, false, string.Empty);
+            RemoveClassNamePrefixFromNestedClasses(generatedCode);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
@@ -57,14 +57,18 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 defaultConfiguration.Serializers,
                 new (StringComparer.OrdinalIgnoreCase) {
                     "com.microsoft.kiota.serialization.JsonSerializationWriterFactory",
-                    "com.microsoft.kiota.serialization.TextSerializationWriterFactory"}
+                    "com.microsoft.kiota.serialization.TextSerializationWriterFactory",
+                    "com.microsoft.kiota.serialization.FormSerializationWriterFactory",
+                }
             );
             ReplaceDefaultDeserializationModules(
                 generatedCode,
                 defaultConfiguration.Deserializers,
                 new (StringComparer.OrdinalIgnoreCase) {
                     "com.microsoft.kiota.serialization.JsonParseNodeFactory",
-                    "com.microsoft.kiota.serialization.TextParseNodeFactory"}
+                    "com.microsoft.kiota.serialization.FormParseNodeFactory",
+                    "com.microsoft.kiota.serialization.TextParseNodeFactory"
+                }
             );
             AddSerializationModulesImport(generatedCode,
                                         new [] { "com.microsoft.kiota.ApiClientBuilder",
@@ -108,7 +112,9 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                             IsExternal = true
                         },
                         Optional = false,
-                        Description = "Discriminator value from the payload",
+                        Documentation = new() {
+                            Description = "Discriminator value from the payload",
+                        },
                         Name = "discriminatorValue"
                     });
                     parentClass.AddMethod(newMethod);
@@ -174,14 +180,14 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             "com.microsoft.kiota.store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
             "java.util", "Collections"),
-        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
-            "java.util", "HashMap"),
         new (static x => x is CodeProperty prop && "decimal".Equals(prop.Type.Name, StringComparison.OrdinalIgnoreCase) ||
                 x is CodeMethod method && "decimal".Equals(method.ReturnType.Name, StringComparison.OrdinalIgnoreCase) ||
                 x is CodeParameter para && "decimal".Equals(para.Type.Name, StringComparison.OrdinalIgnoreCase),
             "java.math", "BigDecimal"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(prop.SerializationName),
                 "com.microsoft.kiota", "QueryParameter"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
+                "com.microsoft.kiota", "RequestHeaders"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             "com.microsoft.kiota.serialization", "ParseNodeHelper"),
     };
@@ -196,8 +202,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "java.util.List<RequestOption>"; //fully qualified name to avoid conflict with generated types
             currentProperty.DefaultValue = "Collections.emptyList()";
         } else if (currentProperty.IsOfKind(CodePropertyKind.Headers)) {
-            currentProperty.Type.Name = "HashMap<String, String>";
-            currentProperty.DefaultValue = "new HashMap<>()";
+            currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
         } else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter))
             currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
         else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
@@ -211,7 +216,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "new HashMap<>()";
         } 
-        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
         block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
@@ -241,7 +246,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 urlTplParams.Type.Name = "HashMap<String, Object>";
         } else if(currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
             parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
-        CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
@@ -275,6 +280,13 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                 IsExternal = true,
                             },
                         })},
+    {"Guid", ("UUID", new CodeUsing {
+                            Name = "UUID",
+                            Declaration = new CodeType {
+                                Name = "java.util",
+                                IsExternal = true,
+                            },
+                        })},
     };
     private void InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass) {
@@ -298,9 +310,64 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors);
     }
+    private static void RemoveClassNamePrefixFromNestedClasses(CodeElement currentElement) {
+        if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
+            var prefix = currentClass.Name;
+            var requestConfigClasses = currentClass
+                                    .Methods
+                                    .SelectMany(static x => x.Parameters)
+                                    .Where(static x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
+                                    .SelectMany(static x => x.Type.AllTypes)
+                                    .Select(static x => x.TypeDefinition)
+                                    .OfType<CodeClass>();
+            // ensure we do not miss out the types present in request configuration objects i.e. the query parameters
+            var innerClasses = requestConfigClasses
+                                    .SelectMany(static x => x.Properties)
+                                    .Where(static x => x.IsOfKind(CodePropertyKind.QueryParameters))
+                                    .SelectMany(static x => x.Type.AllTypes)
+                                    .Select(static x => x.TypeDefinition)
+                                    .OfType<CodeClass>().Union(requestConfigClasses)
+                                    .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+            
+            foreach(var innerClass in innerClasses) {
+                    innerClass.Name = innerClass.Name[prefix.Length..];
+                
+                if(innerClass.IsOfKind(CodeClassKind.RequestConfiguration))
+                    RemovePrefixFromQueryProperties(innerClass, prefix);
+            }
+            RemovePrefixFromRequestConfigParameters(currentClass, prefix);
+        }
+        CrawlTree(currentElement, x => RemoveClassNamePrefixFromNestedClasses(x));
+    }
+    private static void RemovePrefixFromQueryProperties(CodeElement currentElement, String prefix) { 
+        if(currentElement is CodeClass currentClass) {            
+            var queryProperty = currentClass
+                                .Properties
+                                .Where(static x=> x.IsOfKind(CodePropertyKind.QueryParameters))
+                                .Select(static x => x.Type)
+                                .OfType<CodeTypeBase>()
+                                .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
 
-    // Namespaces in Java by convention are all lower case, like:
-    // com.microsoft.kiota.serialization
+            foreach(var property in queryProperty) {
+                property.Name = property.Name[prefix.Length..];
+            }
+        }
+    }
+    private static void RemovePrefixFromRequestConfigParameters(CodeElement currentElement, String prefix) {
+        if(currentElement is CodeClass currentClass) {
+            var parameters = currentClass
+                                .Methods
+                                .SelectMany(static x => x.Parameters)
+                                .Where(static x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
+                                .Select(static x=> x.Type)
+                                .OfType<CodeTypeBase>()
+                                .Where(x => x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+
+            foreach(var parameter in parameters) {
+                parameter.Name = parameter.Name[prefix.Length..];
+            }
+        }
+    }
     private static void LowerCaseNamespaceNames(CodeElement currentElement) {
         if (currentElement is CodeNamespace codeNamespace)
         {

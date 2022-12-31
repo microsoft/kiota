@@ -114,7 +114,9 @@ public class ShellCodeMethodWriterTests : IDisposable
             Kind = CodeParameterKind.QueryParameter,
             Type = stringType,
             DefaultValue = "test",
-            Description = "The q option",
+            Documentation = new() {
+                Description = "The q option",
+            },
             Optional = true
         });
         method.AddPathQueryOrHeaderParameter(new CodeParameter {
@@ -126,7 +128,9 @@ public class ShellCodeMethodWriterTests : IDisposable
             Name = "Test-Header",
             Kind = CodeParameterKind.Headers,
             Type = stringType,
-            Description = "The test header",
+            Documentation = new() {
+                Description = "The test header",
+            },
         });
     }
 
@@ -304,7 +308,7 @@ public class ShellCodeMethodWriterTests : IDisposable
     {
 
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Description = "Test description";
+        method.Documentation.Description = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var stringType = new CodeType
@@ -371,7 +375,7 @@ public class ShellCodeMethodWriterTests : IDisposable
     {
 
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Description = "Test description";
+        method.Documentation.Description = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var userClass = root.AddClass(new CodeClass
@@ -428,7 +432,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
         Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var pagingData = new PageLinkData(requestInfo, null, itemName: \"item\", nextLinkName: \"nextLink\");", result);
-        Assert.Contains("var pageResponse = await pagingService.GetPagedDataAsync((info, handler, token) => RequestAdapter.SendNoContentAsync(info, cancellationToken: token, responseHandler: handler), pagingData, all, cancellationToken);", result);
+        Assert.Contains("var pageResponse = await pagingService.GetPagedDataAsync((info, token) => RequestAdapter.SendNoContentAsync(info, cancellationToken: token), pagingData, all, cancellationToken);", result);
         Assert.Contains("formatterOptions = output.GetOutputFormatterOptions(new FormatterOptionsModel(!jsonNoIndent));", result);
         Assert.Contains("IOutputFormatter? formatter = null;", result);
         Assert.Contains("if (pageResponse?.StatusCode >= 200 && pageResponse?.StatusCode < 300) {", result);
@@ -445,7 +449,7 @@ public class ShellCodeMethodWriterTests : IDisposable
     {
 
         method.Kind = CodeMethodKind.CommandBuilder;
-        method.Description = "Test description";
+        method.Documentation.Description = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var userClass = root.AddClass(new CodeClass

@@ -6,14 +6,43 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
 
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Kiota.Builder.Tests.Refiners;
 public class GoLanguageRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLangRefinerTests
     [Fact]
+    public async Task AddsInnerClasses() {
+        var model = root.AddClass(new CodeClass {
+            Name = "model",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var method = model.AddMethod(new CodeMethod {
+            Name = "method1",
+            ReturnType = new CodeType {
+                Name = "string",
+                IsExternal = true
+            }
+        }).First();
+        var parameter = new CodeParameter {
+            Name = "param1",
+            Kind = CodeParameterKind.RequestConfiguration,
+            Type = new CodeType {
+                Name = "SomeCustomType",
+                ActionOf = true,
+                TypeDefinition = new CodeClass {
+                    Name = "SomeCustomType"
+                }
+            }
+        };
+        method.AddParameter(parameter);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Equal(2, model.GetChildElements(true).Count());
+    }
+    [Fact]
     public async Task TrimsCircularDiscriminatorReferences() {
-        var modelsNS = root.AddNamespace("models");
+        var modelsNS = root.AddNamespace("ApiSdk.models");
         var baseModel = modelsNS.AddClass(new CodeClass {
             Kind = CodeClassKind.Model,
             Name = "BaseModel",
@@ -192,7 +221,7 @@ public class GoLanguageRefinerTests {
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
 
-        Assert.Contains("Error4XX", requestBuilder.StartBlock.Usings.Select(x => x.Declaration?.Name));
+        Assert.DoesNotContain("Error4XX", requestBuilder.StartBlock.Usings.Select(x => x.Declaration?.Name));
     }
     [Fact]
     public async Task AddsUsingsForDiscriminatorTypes() {
@@ -222,7 +251,8 @@ public class GoLanguageRefinerTests {
             TypeDefinition = childModel,
         });
         Assert.Empty(parentModel.StartBlock.Usings);
-        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
+        var ns = root.AddNamespace("ApiSdk/models");
+        ns.AddClass(childModel);// so the interface copy refiner goes through
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Equal(childModel, parentModel.StartBlock.Usings.First(x => x.Declaration.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
         Assert.Null(parentModel.StartBlock.Usings.FirstOrDefault(x => x.Declaration.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)));
@@ -292,7 +322,9 @@ public class GoLanguageRefinerTests {
             Name = "cancelletionToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Description = "Cancellation token to use when cancelling requests",
+            Documentation = new() {
+                Description = "Cancellation token to use when cancelling requests",
+            },
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
@@ -436,7 +468,6 @@ public class GoLanguageRefinerTests {
         const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
         const string dateTimeOffsetDefaultName = "DateTimeOffset";
         const string additionalDataDefaultName = "new Dictionary<string, object>()";
-        const string headersDefaultName = "IDictionary<string, string>";
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -458,12 +489,6 @@ public class GoLanguageRefinerTests {
             Kind = CodePropertyKind.AdditionalData,
             Type = new CodeType {
                 Name = additionalDataDefaultName
-            }
-        }, new() {
-            Name = "headers",
-            Kind = CodePropertyKind.Headers,
-            Type = new CodeType {
-                Name = headersDefaultName
             }
         });
         var executorMethod = model.AddMethod(new CodeMethod {
@@ -522,13 +547,12 @@ public class GoLanguageRefinerTests {
         }).First();
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Empty(model.Properties.Where(x => requestAdapterDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => factoryDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => additionalDataDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => headersDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Methods.Where(x => deserializeDefaultName.Equals(x.ReturnType.Name)));
-        Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(static x => requestAdapterDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(static x => factoryDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(static x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(static x => additionalDataDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Methods.Where(static x => deserializeDefaultName.Equals(x.ReturnType.Name)));
+        Assert.Empty(model.Methods.SelectMany(static x => x.Parameters).Where(static x => serializerDefaultName.Equals(x.Type.Name)));
         Assert.Equal("make(map[string]string)", pathParamsProp.DefaultValue);
         Assert.Equal("map[string]string", pathParamsProp.Type.Name);
         Assert.False(rawUrlParam.Type.IsNullable);

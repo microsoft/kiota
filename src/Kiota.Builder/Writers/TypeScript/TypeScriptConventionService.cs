@@ -58,9 +58,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null) {
         if(code is null)
             return null;
-        var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "[]";
+        var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None || !includeCollectionInformation ? string.Empty : "[]";
         if(code is CodeComposedTypeBase currentUnion && currentUnion.Types.Any())
-            return currentUnion.Types.Select(x => GetTypeString(x, targetElement)).Aggregate((x, y) => $"{x} | {y}") + collectionSuffix;
+            return string.Join(" | ", currentUnion.Types.Select(x => GetTypeString(x, targetElement))) + collectionSuffix;
         if(code is CodeType currentType) {
             var typeName = GetTypeAlias(currentType, targetElement) ?? TranslateType(currentType);
             if (code.ActionOf)
@@ -106,7 +106,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     {
         return type.Name switch  {
             "integer" or "int64" or "float" or "double" or "byte" or "sbyte" or "decimal" => "number",
-            "binary" => "string",
+            "binary" or "Guid" => "string",
             "String" or "Object" or "Boolean" or "Void" or "string" or "object" or "boolean" or "void" => type.Name.ToFirstCharacterLowerCase(), // little casing hack
             _ => (type.TypeDefinition?.Name ?? type.Name).ToFirstCharacterUpperCase() ?? "object",
         };
@@ -125,4 +125,21 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         if(!string.IsNullOrEmpty(description))
             writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
+    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer, IEnumerable<string> additionalRemarks = default) {
+        if(documentation is null) return;
+        if(additionalRemarks == default)
+            additionalRemarks = Enumerable.Empty<string>();
+        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || additionalRemarks.Any()) {
+            writer.WriteLine(DocCommentStart);
+            if(documentation.DescriptionAvailable)
+                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentation.Description)}");
+            foreach(var additionalRemark in additionalRemarks.Where(static x => !string.IsNullOrEmpty(x)))
+                writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
+            
+            if(documentation.ExternalDocumentationAvailable)
+                writer.WriteLine($"{DocCommentPrefix}@see {{@link {documentation.DocumentationLink}|{documentation.DocumentationLabel}}}");
+            writer.WriteLine(DocCommentEnd);
+        }
+    }
+
 }
