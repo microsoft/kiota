@@ -6,7 +6,7 @@ Your project will need a reference to the abstraction package to build and run, 
 - [Dotnet](https://github.com/microsoft/kiota-abstractions-dotnet)
 - [Java](https://github.com/microsoft/kiota-java/tree/main/components/abstractions)
 - [Go](https://github.com/microsoft/kiota-abstractions-go)
-- [Ruby](./ruby/microsoft_kiota_abstractions)
+- [Ruby](https://github.com/microsoft/kiota-abstractions-ruby)
 - [TypeScript](https://github.com/microsoft/kiota-typescript/tree/main/packages/abstractions)
 - [PHP](https://github.com/microsoft/kiota-abstractions-php)
 - [Python](https://github.com/microsoft/kiota-abstractions-python)

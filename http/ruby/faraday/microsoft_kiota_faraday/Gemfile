@@ -1,8 +1,0 @@
-# frozen_string_literal: true
-
-source "https://rubygems.org"
-source 'https://rubygems.pkg.github.com/microsoft'
-
-gemspec
-
-# gem "microsoft_kiota_abstractions", path: "../../../../abstractions/ruby/microsoft_kiota_abstractions"

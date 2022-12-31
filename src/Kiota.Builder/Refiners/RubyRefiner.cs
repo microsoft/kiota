@@ -55,12 +55,12 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 defaultConfiguration.Serializers,
                 new (StringComparer.OrdinalIgnoreCase) {
-                    "microsoft_kiota_serialization.JsonSerializationWriterFactory"});
+                    "microsoft_kiota_serialization_json.JsonSerializationWriterFactory"});
             ReplaceDefaultDeserializationModules(
                 generatedCode,
                 defaultConfiguration.Deserializers,
                 new (StringComparer.OrdinalIgnoreCase) {
-                    "microsoft_kiota_serialization.JsonParseNodeFactory"});
+                    "microsoft_kiota_serialization_json.JsonParseNodeFactory"});
             AddSerializationModulesImport(generatedCode,
                                         new [] { "microsoft_kiota_abstractions.ApiClientBuilder",
                                                 "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
