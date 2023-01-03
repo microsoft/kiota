@@ -71,7 +71,8 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddParentClassToErrorClasses(
                     generatedCode,
                     "ApiError",
-                    "MicrosoftKiotaAbstractions"
+                    "MicrosoftKiotaAbstractions",
+                    true
             );
             cancellationToken.ThrowIfCancellationRequested();
             RemoveDiscriminatorMappingsThatDependOnSubNameSpace(generatedCode);

@@ -700,7 +700,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 parentClass.AddUsing(replacement.Item2.Clone() as CodeUsing);
         }
     }
-    protected static void AddParentClassToErrorClasses(CodeElement currentElement, string parentClassName, string parentClassNamespace) {
+    protected static void AddParentClassToErrorClasses(CodeElement currentElement, string parentClassName, string parentClassNamespace, bool addNamespaceToInheritDeclaration = false) {
         if(currentElement is CodeClass currentClass &&
             currentClass.IsErrorDefinition &&
             currentClass.StartBlock is ClassDeclaration declaration) {
@@ -708,11 +708,13 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 throw new InvalidOperationException("This error class already inherits from another class. Update the description to remove that inheritance.");
             declaration.Inherits = new CodeType {
                 Name = parentClassName,
-                TypeDefinition = new CodeType {
+            };
+            if (addNamespaceToInheritDeclaration) {
+                declaration.Inherits.TypeDefinition = new CodeType {
                     Name = parentClassNamespace,
                     IsExternal = true,
-                }
-            };
+                };
+            }
             declaration.AddUsings(new CodeUsing {
                 Name = parentClassName,
                 Declaration = new CodeType {
@@ -721,7 +723,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 }
             });
         }
-        CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace));
+        CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace, addNamespaceToInheritDeclaration));
     }
     protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true) {
         if(currentElement is CodeMethod currentMethod &&
