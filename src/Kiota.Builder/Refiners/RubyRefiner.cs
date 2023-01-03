@@ -15,7 +15,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         return Task.Run(() => {
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
+            ReplaceIndexersByMethodsWithParameter(generatedCode, false, "_by_id");
             var classesToDisambiguate = new HashSet<CodeClass>();
             var suffix = "Model";
             DisambiguateClassesWithNamespaceNames(generatedCode, classesToDisambiguate, suffix);

@@ -19,7 +19,6 @@ public class SwiftRefiner : CommonLanguageRefiner
             AddRootClassForExtensions(generatedCode);
             ReplaceIndexersByMethodsWithParameter(
                 generatedCode,
-                generatedCode,
                 false,
                 "ById");
             cancellationToken.ThrowIfCancellationRequested();

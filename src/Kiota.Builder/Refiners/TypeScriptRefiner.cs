@@ -15,7 +15,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         return Task.Run(() => {
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
+            ReplaceIndexersByMethodsWithParameter(generatedCode, false, "ById");
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");

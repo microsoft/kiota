@@ -19,7 +19,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             LowerCaseNamespaceNames(generatedCode);
             RemoveClassNamePrefixFromNestedClasses(generatedCode);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
-            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
+            ReplaceIndexersByMethodsWithParameter(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, 

@@ -94,12 +94,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Documentation = new() {
                 Description = "Unique identifier of the item",
             },
-            Type = new CodeType {
-                Name = "String",
-                IsNullable = parameterNullable,
-                IsExternal = true,
-            },
+            Type = originalIndexer.IndexType.Clone() as CodeTypeBase,
         };
+        parameter.Type.IsNullable = parameterNullable;
         method.AddParameter(parameter);
         return method;
     }
