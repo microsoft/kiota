@@ -7,7 +7,6 @@
             PathSegmenter = new MarkdownPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new MarkdownConventionService();
             AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
-            AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeIndexerWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));

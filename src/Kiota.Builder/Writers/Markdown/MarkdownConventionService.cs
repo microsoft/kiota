@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers.Markdown {
     public class MarkdownConventionService : CommonLanguageConventionService {
         public override string StreamTypeName => "stream";
         public override string VoidTypeName => "void";
-        public override string DocCommentPrefix => "/// ";
+        public override string DocCommentPrefix => "";
         private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset", "TimeSpan", "Date","Time", "sbyte", "byte" };
         public static readonly char NullableMarker = '?';
         public static string NullableMarkerAsString => "?";
@@ -75,9 +75,7 @@ namespace Kiota.Builder.Writers.Markdown {
         }
         public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
-            if(code is CodeComposedTypeBase)
-                throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
-            else if (code is CodeType currentType) {
+             if (code is CodeType currentType) {
                 var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
                 var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) ? NullableMarkerAsString : string.Empty;
                 var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex && includeCollectionInformation ? "List<" : string.Empty;
@@ -91,7 +89,7 @@ namespace Kiota.Builder.Writers.Markdown {
                 else
                     return $"{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}";
             }
-            else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+            else return $"type of type {code.GetType()} is unknown";
         }
         private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
         {
@@ -167,6 +165,16 @@ namespace Kiota.Builder.Writers.Markdown {
                 _ => type.Name?.ToFirstCharacterUpperCase() ?? "object",
             };
         }
+        public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer) {
+            if(documentation is null) return;
+            if(documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable) {
+                if (documentation.DescriptionAvailable)
+                    writer.WriteLine($"{DocCommentPrefix}{documentation.Description.CleanupXMLString()}");
+                if(documentation.ExternalDocumentationAvailable)
+                    writer.WriteLine($"{DocCommentPrefix}{documentation.DocumentationLabel} <see href=\"{documentation.DocumentationLink}\" />");
+            }
+        }
+
         public bool IsPrimitiveType(string typeName) {
             if (string.IsNullOrEmpty(typeName)) return false;
             typeName = typeName.StripArraySuffix().TrimEnd('?').ToLowerInvariant();

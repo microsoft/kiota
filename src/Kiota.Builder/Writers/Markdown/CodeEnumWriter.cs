@@ -19,12 +19,12 @@ namespace Kiota.Builder.Writers.Markdown {
             }
             if (codeElement.Flags)
                 writer.WriteLine("[Flags]");
-            conventions.WriteShortDescription(codeElement.Description, writer);
+            conventions.WriteLongDescription(codeElement.Documentation, writer);
             writer.WriteLine($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
             writer.IncreaseIndent();
             var idx = 0;
             foreach(var option in codeElement.Options) {
-                conventions.WriteShortDescription(option.Description, writer);
+                conventions.WriteLongDescription(option.Documentation, writer);
                 writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
                 idx++;
             }

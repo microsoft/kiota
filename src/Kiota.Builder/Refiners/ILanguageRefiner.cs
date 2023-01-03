@@ -37,6 +37,9 @@ public interface ILanguageRefiner
             case GenerationLanguage.Python:
                 await new PythonRefiner(config).Refine(generatedCode, cancellationToken);
                 break;
+            case GenerationLanguage.Markdown:
+                await new MarkdownRefiner(config).Refine(generatedCode, cancellationToken);
+                break;
         }
     }
 }
