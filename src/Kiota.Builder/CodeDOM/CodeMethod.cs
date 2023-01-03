@@ -84,9 +84,10 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Documentation = new () {
                 Description = originalIndexer.Documentation.Description,
             },
-            ReturnType = originalIndexer.ReturnType,
+            ReturnType = originalIndexer.ReturnType.Clone() as CodeTypeBase,
             OriginalIndexer = originalIndexer,
         };
+        method.ReturnType.IsNullable = false;
         var parameter = new CodeParameter {
             Name = "id",
             Optional = false,
