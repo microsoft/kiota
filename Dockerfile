@@ -5,7 +5,7 @@ COPY ./src ./kiota/src
 WORKDIR /app/kiota
 RUN dotnet publish ./src/kiota/kiota.csproj -c Release
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/runtime:7.0 as runtime
+FROM mcr.microsoft.com/dotnet/runtime:7.0 as runtime
 WORKDIR /app
 
 COPY --from=build-env /app/kiota/src/kiota/bin/Release/net7.0 ./
