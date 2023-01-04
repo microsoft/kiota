@@ -54,7 +54,11 @@ public class KiotaBuilder
         if(config.CleanOutput && Directory.Exists(config.OutputPath))
         {
             logger.LogInformation("Cleaning output directory {path}", config.OutputPath);
-            Directory.Delete(config.OutputPath, true);
+            // not using Directory.Delete on the main directory because it's locked when mapped in a container
+            foreach(var subDir in Directory.EnumerateDirectories(config.OutputPath))
+                Directory.Delete(subDir, true);
+            foreach(var subFile in Directory.EnumerateFiles(config.OutputPath))
+                File.Delete(subFile);
         }
     }
     public async Task<OpenApiUrlTreeNode> GetUrlTreeNodeAsync(CancellationToken cancellationToken) {
