@@ -37,6 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where class names could conflict with module names in Ruby.
 - Fixed a bug where modules listing would be not be deterministic in Ruby and TypeScript.
 - Moved Ruby libraries to their own repositories.
+- Fixed a regression where errors would be missing their parent types.
+- Fixed a regression where indexers replacement would fail.
 
 ## [0.9.0] - 2022-12-19
 

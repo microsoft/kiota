@@ -84,9 +84,10 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Documentation = new () {
                 Description = originalIndexer.Documentation.Description,
             },
-            ReturnType = originalIndexer.ReturnType,
+            ReturnType = originalIndexer.ReturnType.Clone() as CodeTypeBase,
             OriginalIndexer = originalIndexer,
         };
+        method.ReturnType.IsNullable = false;
         var parameter = new CodeParameter {
             Name = "id",
             Optional = false,
@@ -94,12 +95,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Documentation = new() {
                 Description = "Unique identifier of the item",
             },
-            Type = new CodeType {
-                Name = "String",
-                IsNullable = parameterNullable,
-                IsExternal = true,
-            },
+            Type = originalIndexer.IndexType.Clone() as CodeTypeBase,
         };
+        parameter.Type.IsNullable = parameterNullable;
         method.AddParameter(parameter);
         return method;
     }

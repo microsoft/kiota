@@ -219,9 +219,9 @@ public class GoLanguageRefinerTests {
             Name = "Error4XX",
             TypeDefinition = errorClass,
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { ClientNamespaceName = "main", Language = GenerationLanguage.Go }, root);
 
-        Assert.DoesNotContain("Error4XX", requestBuilder.StartBlock.Usings.Select(x => x.Declaration?.Name));
+        Assert.Contains("Error4XX", requestBuilder.StartBlock.Usings.Select(static x => x.Declaration?.Name));
     }
     [Fact]
     public async Task AddsUsingsForDiscriminatorTypes() {

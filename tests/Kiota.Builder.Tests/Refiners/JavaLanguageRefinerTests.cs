@@ -217,7 +217,9 @@ public class JavaLanguageRefinerTests {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var requestBuilder = root.AddClass(new CodeClass {
+        var collectionNS = root.AddNamespace("collection");
+        var itemsNs = collectionNS.AddNamespace($"{collectionNS.Name}.items");
+        var requestBuilder = itemsNs.AddClass(new CodeClass {
             Name = "requestBuilder",
             Kind = CodeClassKind.RequestBuilder
         }).First();
@@ -235,15 +237,19 @@ public class JavaLanguageRefinerTests {
                 Name = requestBuilder.Name,
                 TypeDefinition = requestBuilder,
             },
+            IndexType = new CodeType {
+                Name = "string",
+            },
         });
-        var collectionRequestBuilder = root.AddClass(new CodeClass {
-            Name = "CollectionRequestBUilder",
+        var collectionRequestBuilder = collectionNS.AddClass(new CodeClass {
+            Name = "CollectionRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
         }).First();
         collectionRequestBuilder.AddProperty(new CodeProperty {
             Name = "collection",
             Kind = CodePropertyKind.RequestBuilder,
             Type = new CodeType {
-                Name = "requestBuilder",
+                Name = requestBuilder.Name,
                 TypeDefinition = requestBuilder,
             },
         });

@@ -17,6 +17,10 @@ public class GoRefiner : CommonLanguageRefiner
         _configuration.NamespaceNameSeparator = "/";
         return Task.Run(() => {
             cancellationToken.ThrowIfCancellationRequested();
+            ReplaceIndexersByMethodsWithParameter(
+                generatedCode,
+                false,
+                "ById");
             FlattenNestedHierarchy(generatedCode);
             FlattenGoParamsFileNames(generatedCode);
             FlattenGoFileNames(generatedCode);
@@ -26,11 +30,6 @@ public class GoRefiner : CommonLanguageRefiner
                 null,
             false,
             MergeOverLappedStrings);
-            ReplaceIndexersByMethodsWithParameter(
-                generatedCode,
-                generatedCode,
-                false,
-                "ById");
             RenameCancellationParameter(generatedCode);
             RemoveDiscriminatorMappingsTargetingSubNamespaces(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
@@ -158,7 +157,7 @@ public class GoRefiner : CommonLanguageRefiner
 
     private static void CorrectTypes(CodeElement currentElement)
     {
-        if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.RequestBuilderBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters) && currentElement.Parent is CodeClass _)
+        if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility, CodeMethodKind.RequestBuilderBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters) && currentElement.Parent is CodeClass _)
         {
             var currentNamespace = currentMethod.GetImmediateParentOfType<CodeNamespace>();
             if (currentNamespace.Depth > 0 && currentMethod.ReturnType is CodeType ct && !ct.Name.Equals(ct.TypeDefinition?.Name))
@@ -188,7 +187,7 @@ public class GoRefiner : CommonLanguageRefiner
             var currentNamespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
             var parentNameSpace = findClientNameSpace(currentNamespace);
 
-            var modelNameSpace = parentNameSpace.FindOrAddNamespace($"{_configuration.ClientNamespaceName}.models");
+            var modelNameSpace = parentNameSpace.FindNamespaceByName($"{_configuration.ClientNamespaceName}.models");
             var packageRootNameSpace = findNameSpaceAtLevel(parentNameSpace, currentNamespace, 1);
             if (!packageRootNameSpace.Name.Equals(currentNamespace.Name) && !currentNamespace.IsChildOf(modelNameSpace))
             {
