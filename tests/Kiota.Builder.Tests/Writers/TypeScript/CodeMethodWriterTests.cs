@@ -192,12 +192,12 @@ public class CodeMethodWriterTests : IDisposable {
         var error5XX = root.AddClass(new CodeClass{
             Name = "Error5XX",
         }).First();
-        var error401 = root.AddClass(new CodeClass{
-            Name = "Error401",
+        var error403 = root.AddClass(new CodeClass{
+            Name = "Error403",
         }).First();
         method.AddErrorMapping("4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX});
         method.AddErrorMapping("5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX});
-        method.AddErrorMapping("403", new CodeType {Name = "Error403", TypeDefinition = error401});
+        method.AddErrorMapping("403", new CodeType {Name = "Error403", TypeDefinition = error403});
         AddRequestBodyParameters();
         writer.Write(method);
         var result = tw.ToString();
@@ -286,7 +286,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
         Assert.Contains("requestInfo.urlTemplate = ", result);
         Assert.Contains("requestInfo.pathParameters = ", result);
-        Assert.Contains("requestInfo.headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("requestInfo.headers[\"Accept\"] = [\"application/json\"]", result);
         Assert.Contains("if (c)", result);
         Assert.Contains("requestInfo.addRequestHeaders", result);
         Assert.Contains("requestInfo.addRequestOptions", result);
@@ -308,7 +308,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
         Assert.Contains("requestInfo.urlTemplate = ", result);
         Assert.Contains("requestInfo.pathParameters = ", result);
-        Assert.Contains("requestInfo.headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("requestInfo.headers[\"Accept\"] = [\"application/json\"]", result);
         Assert.Contains("if (c)", result);
         Assert.Contains("requestInfo.addRequestHeaders", result);
         Assert.Contains("requestInfo.addRequestOptions", result);
@@ -371,13 +371,17 @@ public class CodeMethodWriterTests : IDisposable {
     [Fact]
     public void WritesMethodAsyncDescription() {
         
-        method.Description = MethodDescription;
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
+        method.Documentation.Description = MethodDescription;
+        var parameter = new CodeParameter
+        {
+            Documentation = new() {
+                Description = ParamDescription,
+            },
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
         };
         method.AddParameter(parameter);
         writer.Write(method);
@@ -394,19 +398,46 @@ public class CodeMethodWriterTests : IDisposable {
     [Fact]
     public void WritesMethodSyncDescription() {
         
-        method.Description = MethodDescription;
+        method.Documentation.Description = MethodDescription;
         method.IsAsync = false;
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
+        var parameter = new CodeParameter
+        {
+            Documentation = new() {
+                Description = ParamDescription,
+            },
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
         };
         method.AddParameter(parameter);
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("@returns a Promise of", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesMethodDescriptionLink() {
+        method.Documentation.Description = MethodDescription;
+        method.Documentation.DocumentationLabel = "see more";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        var parameter = new CodeParameter
+        {
+            Documentation = new() {
+                Description = ParamDescription,
+            },
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        };
+        method.AddParameter(parameter);
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("@see {@link", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

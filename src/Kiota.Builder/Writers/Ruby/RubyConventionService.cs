@@ -26,7 +26,9 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
         {
-            var defaultValue = parameter.Optional ? $"={(parameter.DefaultValue ?? "nil")}" : string.Empty;
+            var defaultValue = parameter.Optional && (targetElement is not CodeMethod currentMethod || !currentMethod.IsOfKind(CodeMethodKind.Setter)) ? 
+                $"={parameter.DefaultValue ?? "nil"}" :
+                string.Empty;
             return $"{parameter.Name}{defaultValue}";
         }
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
@@ -55,20 +57,22 @@ namespace Kiota.Builder.Writers.Ruby {
         #pragma warning disable CA1822 // Method should be static
         public string GetNormalizedNamespacePrefixForType(CodeTypeBase type)
         {
-            if(type is CodeType xType && 
-               (xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeEnum) &&
-               xType.TypeDefinition.Parent is CodeNamespace ns)
-                return $"{ns.Name.NormalizeNameSpaceName("::")}::";
+            if(type is CodeType xType)
+                if ((xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeEnum) &&
+                    xType.TypeDefinition.Parent is CodeNamespace ns)
+                    return $"{ns.Name.NormalizeNameSpaceName("::")}::";
+                else if (xType.TypeDefinition is CodeType definition && definition.IsExternal && !string.IsNullOrEmpty(definition.Name))
+                    return $"{definition.Name}::";
             return string.Empty;
         }
         #pragma warning restore CA1822 // Method should be static
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");
         #pragma warning disable CA1822 // Method should be static
         internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, string prefix = default, IEnumerable<CodeParameter> pathParameters = default) {
-            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            var pathParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-            var urlTemplateParams = urlTemplateVarName ?? $"@{pathParametersProperty.Name.ToSnakeCase()}";
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}";
+            var urlTemplateParams = urlTemplateVarName ?? $"@{pathParametersProp.Name.ToSnakeCase()}";
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(static x => $"{x.Name}"))}";
             writer.WriteLine($"{prefix}{returnType.ToFirstCharacterUpperCase()}.new({urlTemplateParams}, @{requestAdapterProp.Name.ToSnakeCase()}{pathParametersSuffix})");
         }
         #pragma warning restore CA1822 // Method should be static

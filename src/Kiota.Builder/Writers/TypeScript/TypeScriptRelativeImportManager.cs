@@ -31,7 +31,7 @@ namespace Kiota.Builder.Writers.TypeScript
                 return (importSymbol, codeUsing.Alias, "./"); // it's relative to the folder, with no declaration (default failsafe)
             var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
                 typeDef.GetImmediateParentOfType<CodeNamespace>());
-            var isCodeUsingAModel = codeUsing.Declaration?.TypeDefinition is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model);
+            var isCodeUsingAModel = codeUsing.Declaration?.TypeDefinition is CodeInterface;
             if (importPath == "./" && isCodeUsingAModel)
             {
                 importPath += "index";

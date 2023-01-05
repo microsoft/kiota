@@ -5,6 +5,8 @@ using System.Globalization;
 using Microsoft.JSInterop;
 using Microsoft.Fast.Components.FluentUI;
 using BlazorApplicationInsights;
+using Kiota.Builder.Configuration;
+using Kiota.Web.Authentication.GitHub;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -12,10 +14,14 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
-
 builder.Services.AddLocalization();
 builder.Services.AddFluentUIComponents();
 builder.Services.AddBlazorApplicationInsights();
+var configObject = new KiotaConfiguration();
+builder.Configuration.Bind(configObject);
+builder.Services.AddSingleton(configObject);
+builder.Services.AddPatAuthentication();
+builder.Services.AddSearchService();
 
 var host = builder.Build();
 

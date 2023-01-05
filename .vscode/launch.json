@@ -157,6 +157,23 @@
             "stopAtEntry": false
         },
         {
+            "name": "Launch CLI (CSharp)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/kiota/bin/Debug/net7.0/kiota.dll",
+            "args": ["generate",
+                 "--openapi",
+                 "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+                 "--language",
+                 "shell",
+                 "-o",
+                 "${workspaceFolder}/samples/msgraph-mail/dotnet-cli", "--clean-output"],
+            "cwd": "${workspaceFolder}/src/kiota",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
             "name": "Launch Search",
             "type": "coreclr",
             "request": "launch",
@@ -164,6 +181,19 @@
             "program": "${workspaceFolder}/src/kiota/bin/Debug/net7.0/kiota.dll",
             "args": ["search",
                  "microsoft"
+                ],
+            "cwd": "${workspaceFolder}/src/kiota",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Launch Search (GitHub)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/kiota/bin/Debug/net7.0/kiota.dll",
+            "args": ["search",
+                 "test"
                 ],
             "cwd": "${workspaceFolder}/src/kiota",
             "console": "internalConsole",
@@ -221,6 +251,20 @@
             "args": ["update",
                     "-o",
                     "${workspaceFolder}/samples"
+                ],
+            "cwd": "${workspaceFolder}/src/kiota",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Launch Login (github - device)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/kiota/bin/Debug/net7.0/kiota.dll",
+            "args": ["login",
+                    "github",
+                    "device"
                 ],
             "cwd": "${workspaceFolder}/src/kiota",
             "console": "internalConsole",

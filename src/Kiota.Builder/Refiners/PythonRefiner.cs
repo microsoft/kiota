@@ -19,7 +19,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             DisableActionOf(generatedCode, 
             CodeParameterKind.RequestConfiguration);
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
+            ReplaceIndexersByMethodsWithParameter(generatedCode, false, "_by_id");
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
@@ -81,36 +81,37 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private const string AbstractionsPackageName = "kiota_abstractions";
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
-        new (x => x is CodeClass @class, "__future__", "annotations"),
-        new (x => x is CodeClass @class, "typing", "Any, Callable, Dict, List, Optional, Union"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+        new (static x => x is CodeClass, "__future__", "annotations"),
+        new (static x => x is CodeClass, "typing", "Any, Callable, Dict, List, Optional, Union"),
+        new (static x => x is CodeClass, $"{AbstractionsPackageName}.utils", "lazy_import"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             $"{AbstractionsPackageName}.request_adapter", "RequestAdapter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             $"{AbstractionsPackageName}.method", "Method"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             $"{AbstractionsPackageName}.request_information", "RequestInformation"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             $"{AbstractionsPackageName}.request_option", "RequestOption"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             $"{AbstractionsPackageName}.response_handler", "ResponseHandler"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             $"{AbstractionsPackageName}.serialization", "SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             $"{AbstractionsPackageName}.serialization", "ParseNode"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.IndexerBackwardCompatibility),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.IndexerBackwardCompatibility),
             $"{AbstractionsPackageName}.get_path_parameters", "get_path_parameters"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             $"{AbstractionsPackageName}.serialization", "Parsable", "ParsableFactory"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             $"{AbstractionsPackageName}.serialization", "Parsable"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(static x => x.IsOfKind(CodePropertyKind.AdditionalData)),
             $"{AbstractionsPackageName}.serialization", "AdditionalDataHolder"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
             $"{AbstractionsPackageName}.store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
-        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             $"{AbstractionsPackageName}.store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
-        new (x => x is CodeClass && x.Parent is CodeClass, "dataclasses", "dataclass"),
+        new (static x => x is CodeClass && x.Parent is CodeClass, "dataclasses", "dataclass"),
         
     };
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
@@ -136,7 +137,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
         }
-        CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
@@ -156,7 +157,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             if(urlTplParams != null &&
                 urlTplParams.Type is CodeType originalType) {
                 originalType.Name = "Dict[str, Any]";
-                urlTplParams.Description = "The raw url or the Url template parameters for the request.";
+                urlTplParams.Documentation.Description = "The raw url or the Url template parameters for the request.";
                 var unionType = new CodeUnionType {
                     Name = "raw_url_or_template_parameters",
                     IsNullable = true,
@@ -169,7 +170,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 urlTplParams.Type = unionType;
             }
         }
-        CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                             .Select(x => x.Type)
                                             .Union(new[] { currentMethod.ReturnType})
                                             .ToArray());

@@ -49,9 +49,10 @@ namespace Kiota.Builder.CodeDOM
         public IEnumerable<CodeNamespace> Namespaces => InnerChildElements.Values.OfType<CodeNamespace>();
         public IEnumerable<CodeClass> Classes => InnerChildElements.Values.OfType<CodeClass>();
         public IEnumerable<CodeEnum> Enums => InnerChildElements.Values.OfType<CodeEnum>();
+        public IEnumerable<CodeFunction> Functions => InnerChildElements.Values.OfType<CodeFunction>();
         public IEnumerable<CodeInterface> CodeInterfaces => InnerChildElements.Values.OfType<CodeInterface>();
         public CodeNamespace FindNamespaceByName(string nsName) {
-            if(string.IsNullOrEmpty(nsName)) throw new ArgumentNullException(nameof(nsName));
+            ArgumentException.ThrowIfNullOrEmpty(nsName);
             if(nsName.Equals(Name)) return this;
             var result = FindChildByName<CodeNamespace>(nsName, false);
             if(result == null)
@@ -64,8 +65,7 @@ namespace Kiota.Builder.CodeDOM
         }
         public CodeNamespace FindOrAddNamespace(string nsName) => FindNamespaceByName(nsName) ?? AddNamespace(nsName);
         public CodeNamespace AddNamespace(string namespaceName) {
-            if(string.IsNullOrEmpty(namespaceName))
-                throw new ArgumentNullException(nameof(namespaceName));
+            ArgumentException.ThrowIfNullOrEmpty(namespaceName);
             var namespaceNameSegments = namespaceName.Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
             var lastPresentSegmentIndex = default(int);
             var lastPresentSegmentNamespace = GetRootNamespace();
@@ -135,8 +135,7 @@ namespace Kiota.Builder.CodeDOM
         public NamespaceDifferentialTracker GetDifferential(CodeNamespace importNamespace, string namespacePrefix, char separator = '.')
         {
             ArgumentNullException.ThrowIfNull(importNamespace);
-            if(string.IsNullOrEmpty(namespacePrefix))
-                throw new ArgumentNullException(nameof(namespacePrefix));
+            ArgumentException.ThrowIfNullOrEmpty(namespacePrefix);
             if (this == importNamespace || Name.Equals(importNamespace.Name, StringComparison.OrdinalIgnoreCase)) // we're in the same namespace
                 return new();
             var prefixLength = namespacePrefix.Length;

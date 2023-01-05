@@ -42,9 +42,9 @@ namespace Kiota.Builder.CodeDOM
         public bool IsChildOf(CodeElement codeElement, bool immediateOnly = false)
         {
             ArgumentNullException.ThrowIfNull(codeElement);
-            if(this.Parent == codeElement) return true;
-            if(immediateOnly || this.Parent == null) return false;
-            return this.Parent.IsChildOf(codeElement, immediateOnly);
+            if(Parent == codeElement) return true;
+            if(immediateOnly || Parent == null) return false;
+            return Parent.IsChildOf(codeElement, immediateOnly);
         }
     }
 }

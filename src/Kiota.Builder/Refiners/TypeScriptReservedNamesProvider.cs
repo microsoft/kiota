@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Kiota.Builder.Refiners {
@@ -28,6 +28,7 @@ namespace Kiota.Builder.Refiners {
             "instanceOf",
             "new",
             "null",
+            "package",
             "return",
             "super",
             "switch",

@@ -25,7 +25,6 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             );
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             cancellationToken.ThrowIfCancellationRequested();
-            AddInnerClasses(generatedCode, false);
             AddParsableImplementsForModelClasses(generatedCode, "IParsable");
             CapitalizeNamespacesFirstLetters(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
@@ -91,7 +90,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
                 var rootMethod = new CodeMethod
                 {
                     Name = "BuildRootCommand",
-                    Description = clientConstructor.Description,
+                    Documentation = clientConstructor.Documentation.Clone() as CodeDocumentation,
                     IsAsync = false,
                     Kind = CodeMethodKind.CommandBuilder,
                     ReturnType = new CodeType { Name = "Command", IsExternal = true },
@@ -117,7 +116,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 
             clone.IsAsync = false;
             clone.Name = $"Build{cmdName}Command";
-            clone.Description = requestMethod.Description;
+            clone.Documentation = requestMethod.Documentation.Clone() as CodeDocumentation;
             clone.ReturnType = CreateCommandType();
             clone.Kind = CodeMethodKind.CommandBuilder;
             clone.OriginalMethod = requestMethod;
@@ -138,11 +137,10 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
                 IsAsync = false,
                 Kind = CodeMethodKind.CommandBuilder,
                 OriginalIndexer = indexer,
-                Description = indexer.Description,
+                Documentation = indexer.Documentation.Clone() as CodeDocumentation,
+                // ReturnType setter assigns the parent
+                ReturnType = CreateCommandType()
             };
-
-            // ReturnType setter assigns the parent
-            method.ReturnType = CreateCommandType();
             currentClass.AddMethod(method);
             currentClass.RemoveChildElement(indexer);
         }
@@ -164,12 +162,12 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             IsAsync = false,
             Name = $"Build{navProperty.Name.ToFirstCharacterUpperCase()}Command",
             Kind = CodeMethodKind.CommandBuilder,
-            Description = navProperty.Description
+            Documentation = navProperty.Documentation.Clone() as CodeDocumentation,
+            ReturnType = CreateCommandType(),
+            AccessedProperty = navProperty,
+            SimpleName = navProperty.Name,
+            Parent = parent
         };
-        codeMethod.ReturnType = CreateCommandType();
-        codeMethod.AccessedProperty = navProperty;
-        codeMethod.SimpleName = navProperty.Name;
-        codeMethod.Parent = parent;
         return codeMethod;
     }
 

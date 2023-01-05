@@ -14,7 +14,7 @@ public class DiscriminatorInformation : CodeElement, ICloneable
     {
         get
         {
-            return (Parent is not CodeUnionType &&
+            return (Parent is not CodeComposedTypeBase &&
                     Parent?.GetImmediateParentOfType<CodeClass>() is CodeClass parentClass ?
                         discriminatorMappings.Where(x => x.Value is not CodeType currentType || currentType.TypeDefinition != parentClass) :
                         discriminatorMappings)
@@ -32,13 +32,13 @@ public class DiscriminatorInformation : CodeElement, ICloneable
     public void AddDiscriminatorMapping(string key, CodeTypeBase type)
     {
         ArgumentNullException.ThrowIfNull(type);
-        if (string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+        ArgumentException.ThrowIfNullOrEmpty(key);
         discriminatorMappings.TryAdd(key, type);
     }
 
     public CodeTypeBase GetDiscriminatorMappingValue(string key)
     {
-        if (string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+        ArgumentException.ThrowIfNullOrEmpty(key);
         if (discriminatorMappings.TryGetValue(key, out var value))
             return value;
         return null;

@@ -12,31 +12,3 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
-- package-ecosystem: bundler
-  directory: "/abstractions/ruby/microsoft_kiota_abstractions"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  labels:
-    - Ruby
-- package-ecosystem: bundler
-  directory: "/serialization/ruby/json/microsoft_kiota_serialization"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  labels:
-    - Ruby
-- package-ecosystem: bundler
-  directory: "/http/ruby/nethttp/microsoft_kiota_nethttplibrary"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  labels:
-    - Ruby
-- package-ecosystem: nuget
-  directory: "/cli/commons"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  labels:
-    - CLI

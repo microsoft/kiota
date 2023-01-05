@@ -19,6 +19,8 @@ Kiota offers the following commands to help you build your API client:
 - [generate](#client-generation): generate a client for any API from its description.
 - [update](#client-update): update existing clients from previous generations.
 - [info](#language-information): show languages and runtime dependencies information.
+- [login](#login): logs in to private API descriptions repositories.
+- [logout](#logout): logs out from private API description repositories.
 
 ## Description search
 
@@ -187,6 +189,7 @@ kiota generate (--openapi | -d) <path>
       [(--structured-mime-types | -m) <mime-types>]
       [(--include-path | -i) <glob pattern>]
       [(--exclude-path | -e) <glob pattern>]
+      [(--disable-validation-rules | --dvr) <rule name>]
 ```
 
 > Note: the output directory will also contain a **kiota-lock.json** lock file in addition to client sources. This file contains all the generation parameters for future reference as well as a hash from the description. On subsequent generations, including updates, the generation will be skipped if the description and the parameters have not changed and if clean-output is **false**. The lock file is meant to be committed to the source control with the generated sources.
@@ -241,11 +244,11 @@ The fully qualified class names for deserializers. Defaults to the following val
 
 | Language   | Default deserializers                                           |
 |------------|-----------------------------------------------------------------|
-| C#         | `Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory`, `Microsoft.Kiota.Serialization.Text.TextParseNodeFactory`      |
-| Go         | `github.com/microsoft/kiota-serialization-json-go/json.JsonParseNodeFactory`, `github.com/microsoft/kiota-serialization-text-go/text.TextParseNodeFactory` |
-| Java       | `com.microsoft.kiota.serialization.JsonParseNodeFactory`, `com.microsoft.kiota.serialization.TextParseNodeFactory`        |
+| C#         | `Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory`, `Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory`, `Microsoft.Kiota.Serialization.Text.TextParseNodeFactory`      |
+| Go         | `github.com/microsoft/kiota-serialization-form-go/FormParseNodeFactory`, `github.com/microsoft/kiota-serialization-json-go/JsonParseNodeFactory`, `github.com/microsoft/kiota-serialization-text-go/TextParseNodeFactory` |
+| Java       | `com.microsoft.kiota.serialization.TextParseNodeFactory`, `com.microsoft.kiota.serialization.JsonParseNodeFactory`, `com.microsoft.kiota.serialization.TextParseNodeFactory`        |
 | Ruby       | `microsoft_kiota_serialization/json_parse_node_factory`         |
-| TypeScript | `@microsoft/kiota-serialization-json.JsonParseNodeFactory`, `@microsoft/kiota-serialization-text.TextParseNodeFactory`      |
+| TypeScript | `@microsoft/kiota-serialization-form.FormParseNodeFactory`, `@microsoft/kiota-serialization-json.JsonParseNodeFactory`, `@microsoft/kiota-serialization-text.TextParseNodeFactory`      |
 
 ##### Accepted values
 
@@ -253,6 +256,30 @@ One or more module names that implements `IParseNodeFactory`.
 
 ```shell
 kiota generate --deserializer Contoso.Json.CustomDeserializer
+```
+
+#### `--disable-validation-rules (--dvr)`
+
+The name of the OpenAPI description validation rule to disable. Or `all` to disable all validation rules.
+
+Kiota runs a set of validation rules before generating the client to ensure the description contains accurate information to build great client experience.
+
+##### Accepted values
+
+Rules:
+
+- DivergentResponseSchema: returns a warning if an operation defines multiple different successful response schemas. (200, 201, 202, 203)
+- GetWithBody: returns a warning if a GET request has a body defined.
+- InconsistentTypeFormat: returns a warning if an inconsistent type/format pair is defined. (e.g. type: string, format: int32)
+- KnownAndNotSupportedFormats: returns a warning if a known formats is not supported for generation. (e.g. email, uri, ...)
+- MissingDiscriminator: returns a warning if an anyOf or oneOf schema is used without a discriminator property name.
+- MultipleServerEntries: returns a warning if multiple servers are defined.
+- NoContentWithBody: returns a warning if a response schema is defined for a 204 response.
+- NoServerEntry: returns a warning if no servers are defined.
+- UrlFormEncodedComplex: returns a warning if a response of type uri form encoded has a schema that contains complex properties.
+
+```shell
+kiota generate --disable-validation-rules NoServerEntry
 ```
 
 #### `--namespace-name (-n)`
@@ -281,11 +308,11 @@ The fully qualified class names for deserializers. Defaults to the following val
 
 | Language   | Default deserializer                                            |
 |------------|-----------------------------------------------------------------|
-| C#         | `Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory`, `Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory` |
-| Go         | `github.com/microsoft/kiota-serialization-json-go/json.JsonSerializationWriterFactory`, `github.com/microsoft/kiota-serialization-text-go/text.TextSerializationWriterFactory` |
-| Java       | `com.microsoft.kiota.serialization.JsonSerializationWriterFactory`, `com.microsoft.kiota.serialization.TextSerializationWriterFactory` |
+| C#         | `Microsoft.Kiota.Serialization.Form.FormSerializationWriterFactory`, `Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory`, `Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory` |
+| Go         | `github.com/microsoft/kiota-serialization-form-go/FormSerializationWriterFactory`, `github.com/microsoft/kiota-serialization-json-go/JsonSerializationWriterFactory`, `github.com/microsoft/kiota-serialization-text-go/TextSerializationWriterFactory` |
+| Java       | `com.microsoft.kiota.serialization.FormSerializationWriterFactory`, `com.microsoft.kiota.serialization.JsonSerializationWriterFactory`, `com.microsoft.kiota.serialization.TextSerializationWriterFactory` |
 | Ruby       | `microsoft_kiota_serialization/json_serialization_writer_factory` |
-| TypeScript | `@microsoft/kiota-serialization-json.JsonSerializationWriterFactory`, `@microsoft/kiota-serialization-text.TextSerializationWriterFactory` |
+| TypeScript | `@microsoft/kiota-serialization-form.FormSerializationWriterFactory`, `@microsoft/kiota-serialization-json.JsonSerializationWriterFactory`, `@microsoft/kiota-serialization-text.TextSerializationWriterFactory` |
 
 ##### Accepted values
 
@@ -302,10 +329,8 @@ The MIME types to use for structured data model generation. Accepts multiple val
 Default values :
 
 - `application/json`
-- `application/xml`
+- `application/x-www-form-urlencoded`
 - `text/plain`
-- `text/xml`
-- `text/yaml`
 
 > Note: Only request body types or response types with a defined schema will generate models, other entries will default back to stream/byte array.
 
@@ -401,6 +426,45 @@ The generate command accepts optional parameters commonly available on the other
 - [--clean-output](#--clean-output---co)
 - [--log-level](#--log-level---ll)
 - [--output](#--output--o)
+
+## Login
+
+Use kiota login to sign in to private repositories and search for/display/generate clients for private API descriptions. This command makes sub-commands available to sign in to specific authentication providers.
+
+### Login to GitHub
+
+```shell
+kiota login github <device|pat>
+      [(--log-level | --ll) <level>]
+      [(--pat) <patValue>]
+```
+
+Use `kiota login github device` to sign in using a device code, you will be prompted to sign-in using a web browser.
+
+Use `kiota login github pat --pat patValue` to sign in using a Personal Access Token you previously generated. You can use both classic PATs or granular PATs (beta). Classic PATs need the **repo** permission and to be granted access to the target organizations. Granular PATs need a **read-only** permission for the **contents** scope under the **repository** category and they need to be consented for all private repositories or selected private repositories.
+
+> Note: for more information about adding API descriptions to the GitHub index, see [Adding an API to search](add-api.md)
+
+### Optional parameters
+
+The generate command accepts optional parameters commonly available on the other commands:
+
+- [--log-level](#--log-level---ll)
+
+## Logout
+
+Use kiota logout to logout from a private repository containing API descriptions.
+
+```shell
+kiota logout github
+      [(--log-level | --ll) <level>]
+```
+
+### Optional parameters
+
+The generate command accepts optional parameters commonly available on the other commands:
+
+- [--log-level](#--log-level---ll)
 
 ## Common parameters
 

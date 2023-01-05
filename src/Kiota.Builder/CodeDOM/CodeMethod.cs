@@ -72,35 +72,32 @@ public class PagingInformation : ICloneable
 
 public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
 {
-    public static CodeMethod FromIndexer(CodeIndexer originalIndexer, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable)
+    public static CodeMethod FromIndexer(CodeIndexer originalIndexer, string methodNameSuffix, bool parameterNullable)
     {
         ArgumentNullException.ThrowIfNull(originalIndexer);
-        ArgumentNullException.ThrowIfNull(indexerClass);
         var method = new CodeMethod {
             IsAsync = false,
             IsStatic = false,
             Access = AccessModifier.Public,
             Kind = CodeMethodKind.IndexerBackwardCompatibility,
             Name = originalIndexer.PathSegment + methodNameSuffix,
-            Description = originalIndexer.Description,
-            ReturnType = new CodeType {
-                IsNullable = false,
-                TypeDefinition = indexerClass,
-                Name = indexerClass.Name,
+            Documentation = new () {
+                Description = originalIndexer.Documentation.Description,
             },
+            ReturnType = originalIndexer.ReturnType.Clone() as CodeTypeBase,
             OriginalIndexer = originalIndexer,
         };
+        method.ReturnType.IsNullable = false;
         var parameter = new CodeParameter {
             Name = "id",
             Optional = false,
             Kind = CodeParameterKind.Custom,
-            Description = "Unique identifier of the item",
-            Type = new CodeType {
-                Name = "String",
-                IsNullable = parameterNullable,
-                IsExternal = true,
+            Documentation = new() {
+                Description = "Unique identifier of the item",
             },
+            Type = originalIndexer.IndexType.Clone() as CodeTypeBase,
         };
+        parameter.Type.IsNullable = parameterNullable;
         method.AddParameter(parameter);
         return method;
     }
@@ -110,8 +107,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public HashSet<string> AcceptedResponseTypes {
         get
         {
-            if(acceptedResponseTypes == null)
-                acceptedResponseTypes = new(StringComparer.OrdinalIgnoreCase);
+            acceptedResponseTypes ??= new(StringComparer.OrdinalIgnoreCase);
             return acceptedResponseTypes;
         }
         set
@@ -128,7 +124,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     private readonly ConcurrentDictionary<string, CodeParameter> parameters = new ();
     public void RemoveParametersByKind(params CodeParameterKind[] kinds) {
         parameters.Where(p => p.Value.IsOfKind(kinds))
-                            .Select(x => x.Key)
+                            .Select(static x => x.Key)
                             .ToList()
                             .ForEach(x => parameters.Remove(x, out var _));
     }
@@ -141,7 +137,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public IEnumerable<CodeParameter> Parameters { get => parameters.Values.OrderBy(static x => x, parameterOrderComparer); }
     public bool IsStatic {get;set;}
     public bool IsAsync {get;set;} = true;
-    public string Description {get; set;}
+    public CodeDocumentation Documentation { get; set; } = new();
 
     public PagingInformation PagingInformation
     {
@@ -232,7 +228,6 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             IsAsync = IsAsync,
             Access = Access,
             IsStatic = IsStatic,
-            Description = Description?.Clone() as string,
             RequestBodyContentType = RequestBodyContentType?.Clone() as string,
             BaseUrl = BaseUrl?.Clone() as string,
             AccessedProperty = AccessedProperty,
@@ -244,6 +239,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             errorMappings = errorMappings == null ? null : new (errorMappings),
             acceptedResponseTypes = acceptedResponseTypes == null ? null : new (acceptedResponseTypes),
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
+            Documentation = Documentation?.Clone() as CodeDocumentation,
         };
         if(Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());
@@ -262,12 +258,12 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public void AddErrorMapping(string errorCode, CodeTypeBase type)
     {
         ArgumentNullException.ThrowIfNull(type);
-        if(string.IsNullOrEmpty(errorCode)) throw new ArgumentNullException(nameof(errorCode));
+        ArgumentException.ThrowIfNullOrEmpty(errorCode);
         errorMappings.TryAdd(errorCode, type);
     }
     public CodeTypeBase GetErrorMappingValue(string key)
     {
-        if(string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+        ArgumentException.ThrowIfNullOrEmpty(key);
         if(errorMappings.TryGetValue(key, out var value))
             return value;
         return null;

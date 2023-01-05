@@ -19,7 +19,6 @@ public class SwiftRefiner : CommonLanguageRefiner
             AddRootClassForExtensions(generatedCode);
             ReplaceIndexersByMethodsWithParameter(
                 generatedCode,
-                generatedCode,
                 false,
                 "ById");
             cancellationToken.ThrowIfCancellationRequested();
@@ -103,7 +102,7 @@ public class SwiftRefiner : CommonLanguageRefiner
             if(currentMethod.IsOfKind(CodeMethodKind.Factory))
                 currentMethod.ReturnType = new CodeType { Name = "Parsable", IsNullable = false, IsExternal = true };
         }
-        CorrectDateTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
@@ -160,7 +159,7 @@ public class SwiftRefiner : CommonLanguageRefiner
                 currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
             } else if(currentProperty.IsOfKind(CodePropertyKind.QueryParameter) && currentProperty.Parent is CodeClass parentClass)
                 currentProperty.Type.Name = $"{parentClass.Name}{currentProperty.Type.Name}";
-            CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+            CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
     }
 
@@ -175,7 +174,9 @@ public class SwiftRefiner : CommonLanguageRefiner
             clientNamespace.AddClass(new CodeClass {
                 Name = clientNamespace.Name.Split('.', StringSplitOptions.RemoveEmptyEntries).Last().ToFirstCharacterUpperCase(),
                 Kind = CodeClassKind.BarrelInitializer,
-                Description = "Root class for extensions",
+                Documentation = new() {
+                    Description = "Root class for extensions",
+                },
             });
         }
     }

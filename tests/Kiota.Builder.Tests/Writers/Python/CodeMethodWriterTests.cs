@@ -233,9 +233,9 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.Contains("request_info", result);
         Assert.Contains("error_mapping: Dict[str, ParsableFactory] =", result);
-        Assert.Contains("\"4XX\": o_data_error.Error4XX.get_from_discriminator_value()", result);
-        Assert.Contains("\"5XX\": o_data_error.Error5XX.get_from_discriminator_value()", result);
-        Assert.Contains("\"403\": o_data_error.Error403.get_from_discriminator_value()", result);
+        Assert.Contains("\"4XX\": error4_x_x.Error4XX", result);
+        Assert.Contains("\"5XX\": error5_x_x.Error5XX", result);
+        Assert.Contains("\"403\": error403.Error403", result);
         Assert.Contains("send_async", result);
         Assert.Contains("raise Exception", result);
     }
@@ -359,13 +359,17 @@ public class CodeMethodWriterTests : IDisposable {
     [Fact]
     public void WritesMethodAsyncDescription() {
         
-        method.Description = MethodDescription;
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
+        method.Documentation.Description = MethodDescription;
+        var parameter = new CodeParameter
+        {
+            Documentation = new() {
+                Description = ParamDescription,
+            },
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
         };
         method.AddParameter(parameter);
         writer.Write(method);
@@ -381,14 +385,18 @@ public class CodeMethodWriterTests : IDisposable {
     [Fact]
     public void WritesMethodSyncDescription() {
         
-        method.Description = MethodDescription;
+        method.Documentation.Description = MethodDescription;
         method.IsAsync = false;
-        var parameter = new CodeParameter{
-            Description = ParamDescription,
-            Name = ParamName
-        };
-        parameter.Type = new CodeType {
-            Name = "string"
+        var parameter = new CodeParameter
+        {
+            Documentation = new() {
+                Description = ParamDescription,
+            },
+            Name = ParamName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
         };
         method.AddParameter(parameter);
         writer.Write(method);
@@ -586,7 +594,9 @@ public class CodeMethodWriterTests : IDisposable {
             Name = propName,
             DefaultValue = defaultValue,
             Kind = CodePropertyKind.UrlTemplate,
-            Description = "This property has a description",
+            Documentation = new() {
+                Description = "This property has a description",
+            },
             Type = new CodeType {
                 Name = "string"
             }
@@ -617,7 +627,9 @@ public class CodeMethodWriterTests : IDisposable {
         parentClass.AddProperty(new CodeProperty {
             Name = propName,
             Kind = CodePropertyKind.Custom,
-            Description = "This property has a description",
+            Documentation = new() {
+                Description = "This property has a description",
+            },
             Type = new CodeType {
                 Name = "string"
             }
@@ -629,7 +641,9 @@ public class CodeMethodWriterTests : IDisposable {
             Name = prop2Name,
             DefaultValue = defaultValue,
             Kind = CodePropertyKind.UrlTemplate,
-            Description = "This property has a description",
+            Documentation = new() {
+                Description = "This property has a description",
+            },
             Type = new CodeType {
                 Name = "string"
             }
@@ -721,10 +735,16 @@ public class CodeMethodWriterTests : IDisposable {
             SerializationName = "%24expand"
         },
         new CodeProperty {
+            Name = "select-from",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "select%2Dfrom"
+        },
+        new CodeProperty {
             Name = "filter",
             Kind = CodePropertyKind.QueryParameter,
             SerializationName = "%24filter"
         });
+        
         method.AddParameter(new CodeParameter{
             Kind = CodeParameterKind.QueryParametersMapperParameter,
             Name = "originalName",
@@ -734,11 +754,13 @@ public class CodeMethodWriterTests : IDisposable {
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("if not original_name:", result);
+        Assert.Contains("if original_name is None:", result);
         Assert.Contains("if original_name == \"select\":", result);
         Assert.Contains("return \"%24select\"", result);
         Assert.Contains("if original_name == \"expand\":", result);
         Assert.Contains("return \"%24expand\"", result);
+        Assert.Contains("if original_name == \"select_from\":", result);
+        Assert.Contains("return \"select%2Dfrom\"", result);
         Assert.Contains("if original_name == \"filter\":", result);
         Assert.Contains("return \"%24filter\"", result);
         Assert.Contains("return original_name", result);

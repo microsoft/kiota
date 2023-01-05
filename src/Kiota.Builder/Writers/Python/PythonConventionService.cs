@@ -105,6 +105,8 @@ public class PythonConventionService : CommonLanguageConventionService
             return type.TypeDefinition?.Name.ToFirstCharacterUpperCase();
         if (type.Name.Contains("QueryParameters"))
             return type.Name;
+        if (type.Name.Contains("APIError"))
+            return type.Name;
         return type.Name switch  {
             "String" or "string" => "str",
             "integer" or "int32" or "int64" or "byte" or "sbyte" => "int",
@@ -132,8 +134,7 @@ public class PythonConventionService : CommonLanguageConventionService
     }
 
     private string WriteInlineDeclaration(CodeType currentType, CodeElement targetElement, LanguageWriter writer) {
-        if (writer == null)
-            throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(writer);
         writer.IncreaseIndent(4);
         var childElements = (currentType?.TypeDefinition as CodeClass)
                                     ?.Properties

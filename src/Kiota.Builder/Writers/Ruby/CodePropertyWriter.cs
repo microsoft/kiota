@@ -7,7 +7,7 @@ namespace Kiota.Builder.Writers.Ruby {
         public CodePropertyWriter(RubyConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
         {
-            conventions.WriteShortDescription(codeElement.Description, writer);
+            conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
             var parentClass = codeElement.Parent as CodeClass;
             switch(codeElement.Kind) {
@@ -19,8 +19,14 @@ namespace Kiota.Builder.Writers.Ruby {
                     writer.DecreaseIndent();
                     writer.WriteLine("end");
                 break;
+                case CodePropertyKind.QueryParameter:
+                case CodePropertyKind.QueryParameters:
+                case CodePropertyKind.Headers:
+                case CodePropertyKind.Options:
+                    writer.WriteLine($"attr_accessor :{codeElement.Name.ToSnakeCase()}");
+                    break;
                 default:
-                    writer.WriteLine($"@{codeElement.Name.ToSnakeCase()}");
+                    writer.WriteLine($"@{codeElement.NamePrefix}{codeElement.Name.ToSnakeCase()}");
                 break;
             }
         }

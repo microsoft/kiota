@@ -15,7 +15,7 @@ public class CodeClassDeclarationWriter : CodeProprietableBlockDeclarationWriter
                                         .Where(x => x != null);
         var derivation = derivedTypes.Any() ? ": " +  derivedTypes.Select(x => x.ToFirstCharacterUpperCase()).Aggregate((x, y) => $"{x}, {y}") + " " : string.Empty;
         if(codeElement.Parent is CodeClass parentClass)
-            conventions.WriteShortDescription(parentClass.Description, writer);
+            conventions.WriteShortDescription(parentClass.Documentation.Description, writer);
         writer.WriteLine($"public class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}{{");
         writer.IncreaseIndent();
     }

@@ -9,8 +9,10 @@ namespace Kiota.Builder.PathSegmenters {
     public abstract class CommonPathSegmenter : IPathSegmenter {
         protected CommonPathSegmenter(string rootPath, string clientNamespaceName)
         {
-            ClientNamespaceName = clientNamespaceName ?? throw new ArgumentNullException(nameof(clientNamespaceName));
-            RootPath = (rootPath?.Contains(Path.DirectorySeparatorChar) ?? true ? rootPath : rootPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)) ?? throw new ArgumentNullException(nameof(rootPath));
+            ArgumentException.ThrowIfNullOrEmpty(rootPath);
+            ArgumentException.ThrowIfNullOrEmpty(clientNamespaceName);
+            ClientNamespaceName = clientNamespaceName;
+            RootPath = rootPath.Contains(Path.DirectorySeparatorChar) ? rootPath : rootPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
         }
         private readonly string ClientNamespaceName;
         private readonly string RootPath;

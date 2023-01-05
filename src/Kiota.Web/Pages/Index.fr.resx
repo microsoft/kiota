@@ -76,13 +76,22 @@
   <data name="MR_Description" xml:space="preserve">
     <value>Description</value>
   </data>
-  <data name="MR_Versions" xml:space="preserve">
-    <value>Version(s)</value>
+  <data name="MR_Actions" xml:space="preserve">
+    <value>Actions</value>
   </data>
   <data name="GoToGenerate" xml:space="preserve">
     <value>Générer un client</value>
   </data>
+  <data name="GoToShow" xml:space="preserve">
+    <value>Afficher</value>
+  </data>
   <data name="NoResults" xml:space="preserve">
     <value>Aucun résulat.</value>
+  </data>
+  <data name="SelectVersion" xml:space="preserve">
+    <value>Sélectionez une version</value>
+  </data>
+  <data name="NoSearch" xml:space="preserve">
+    <value>Souhaitez-vous ajouter votre API aux résultats?</value>
   </data>
 </root>

@@ -12,14 +12,14 @@ using Microsoft.Extensions.Logging;
 namespace kiota.Handlers;
 
 internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler {
-    public Option<string> OutputOption { get;set; }
-    public Option<bool> CleanOutputOption { get;set; }
-    public Option<bool> ClearCacheOption { get; set; }
+    public required Option<string> OutputOption { get;init; }
+    public required Option<bool> CleanOutputOption { get;init; }
+    public required Option<bool> ClearCacheOption { get; init; }
     public override async Task<int> InvokeAsync(InvocationContext context) {
-        string output = context.ParseResult.GetValueForOption(OutputOption);
+        string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
-        CancellationToken cancellationToken = (CancellationToken)context.BindingContext.GetService(typeof(CancellationToken));
+        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
         AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
         var searchPath = GetAbsolutePath(output);
         var lockService = new LockManagementService();
@@ -36,13 +36,13 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler {
                 var locks = await Task.WhenAll(lockFileDirectoryPaths.Select(x => lockService.GetLockFromDirectoryAsync(x, cancellationToken)
                                                                                 .ContinueWith(t => (lockInfo: t.Result, lockDirectoryPath: x), cancellationToken)));
                 var configurations = locks.Select(x => {
-                                            var config = Configuration.Generation.Clone() as GenerationConfiguration;
+                                            var config = Configuration.Generation.Clone() is GenerationConfiguration c ? c : throw new InvalidOperationException("failed to clone the configuration");
                                             x.lockInfo.UpdateGenerationConfigurationFromLock(config);
                                             config.OutputPath = x.lockDirectoryPath;
                                             return config;
                                         }).ToArray();
                 var results = await Task.WhenAll(configurations
-                                        .Select(x => new KiotaBuilder(logger, x)
+                                        .Select(x => new KiotaBuilder(logger, x, httpClient)
                                                     .GenerateClientAsync(cancellationToken)));
                 foreach (var (lockInfo, lockDirectoryPath) in locks)
                     DisplaySuccess($"Update of {lockInfo.ClientClassName} client for {lockInfo.Language} at {lockDirectoryPath} completed");

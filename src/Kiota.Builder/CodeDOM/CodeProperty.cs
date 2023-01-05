@@ -73,7 +73,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, ICloneable, 
         type = value;
     }}
     public string DefaultValue {get;set;}
-    public string Description {get; set;}
+    public CodeDocumentation Documentation { get; set; } = new();
     public string SerializationName { get; set; }
     public string NamePrefix { get; set; }
     public bool IsNameEscaped { get => !string.IsNullOrEmpty(SerializationName); }
@@ -87,7 +87,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, ICloneable, 
             Getter = Getter?.Clone() as CodeMethod,
             Setter = Setter?.Clone() as CodeMethod,
             DefaultValue = DefaultValue,
-            Description = Description,
+            Documentation = Documentation,
             NamePrefix = NamePrefix,
             Parent = Parent,
             Name = Name,

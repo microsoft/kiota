@@ -163,7 +163,7 @@ public class TypeScriptLanguageRefinerTests {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -176,6 +176,7 @@ public class TypeScriptLanguageRefinerTests {
             },
             IsStatic = true,
         }).First();
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
@@ -300,15 +301,28 @@ public class TypeScriptLanguageRefinerTests {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        model.AddMethod(new CodeMethod
+        {
+            IsStatic = true,
+            Kind = CodeMethodKind.Serializer
+        });
+
+        model.AddMethod(new CodeMethod
+        {
+            IsStatic = true,
+            Kind = CodeMethodKind.Deserializer
+        });
+        var codeProperty = model.AddProperty(new CodeProperty {
             Name = "method",
-            ReturnType = new CodeType {
-                Name = "DateTimeOffset"
+            Type = new CodeType {
+                Name = "DateTimeOffset",
+                IsExternal = true
             },
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-        Assert.NotEmpty(model.StartBlock.Usings);
-        Assert.Equal("Date", method.ReturnType.Name);
+        var modelInterface = root.FindChildByName<CodeInterface>("model");
+        Assert.NotEmpty(modelInterface.StartBlock.Usings);
+        Assert.Equal("Date", codeProperty.Type.Name);
     }
     [Fact]
     public async Task ReplacesDateOnlyByNativeType() {
@@ -420,7 +434,9 @@ public class TypeScriptLanguageRefinerTests {
             Name = "cancelletionToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Description = "Cancellation token to use when cancelling requests",
+            Documentation = new() {
+                Description = "Cancellation token to use when cancelling requests",
+            },
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
