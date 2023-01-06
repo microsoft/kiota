@@ -436,6 +436,8 @@ namespace Kiota.Builder.Writers.Go {
             }
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom rely on accessors
                                             .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                            // do not apply the default value if the type is composed as the default value may not necessarily which type to use
+                                            .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                                             .OrderBy(static x => x.Name)) {
                 var defaultValueReference = propWithDefault.DefaultValue;
                 if(defaultValueReference.StartsWith("\"")) {
