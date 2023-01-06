@@ -182,14 +182,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
     {
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+        var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterUpperCase();
         WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
         if (!string.IsNullOrEmpty(method.BaseUrl)) {
-            writer.WriteLine($"if (string.IsNullOrEmpty({requestAdapterPropertyName}.BaseUrl)) {{");
-            writer.IncreaseIndent();
+            writer.StartBlock($"if (string.IsNullOrEmpty({requestAdapterPropertyName}.BaseUrl)) {{");
             writer.WriteLine($"{requestAdapterPropertyName}.BaseUrl = \"{method.BaseUrl}\";");
+            if(pathParametersProperty != null)
+                writer.WriteLine($"{pathParametersProperty.Name.ToFirstCharacterUpperCase()}.TryAdd(\"baseurl\", \"{method.BaseUrl}\");");
             writer.CloseBlock();
         }
         if (backingStoreParameter != null)
