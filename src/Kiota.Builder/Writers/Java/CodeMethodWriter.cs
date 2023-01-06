@@ -275,6 +275,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         }
         foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        // do not apply the default value if the type is composed as the default value may not necessarily which type to use
+                                        .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                                         .OrderBy(static x => x.Name)) {
             var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() ?? $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
             var defaultValue = propWithDefault.DefaultValue;

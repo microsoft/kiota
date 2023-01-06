@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -1402,6 +1402,48 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains($"this.{propName} = {defaultValue}", result);
         Assert.Contains("new Map<String, String>(pathParameters)", result);
+    }
+    [Fact]
+    public void DoesNotWriteConstructorWithDefaultFromComposedType()
+    {
+        method.Kind = CodeMethodKind.Constructor;
+        var defaultValue = "\"Test Value\"";
+        var propName = "size";
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = unionTypeWrapper }
+        });
+        var sType = new CodeType
+        {
+            Name = "string",
+        };
+        var arrayType = new CodeType
+        {
+            Name = "array",
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(sType);
+        unionTypeWrapper.OriginalComposedType.AddType(arrayType);
+
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+        Assert.DoesNotContain(defaultValue, result);//ensure the composed type is not referenced
     }
     [Fact]
     public void WritesRawUrlConstructor() {
