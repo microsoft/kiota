@@ -183,7 +183,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     {
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-        var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
+        var backingStoreParameter = method.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.BackingStore));
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterUpperCase();
         WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");

@@ -671,14 +671,23 @@ public class CodeMethodWriterTests : IDisposable {
     public void WritesApiConstructor() {
         method.Kind = CodeMethodKind.ClientConstructor;
         method.IsAsync = false;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0";
+        parentClass.AddProperty(new CodeProperty {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType {
+                Name = "Dictionary<string, string>",
+                IsExternal = true,
+            }
+        });
         var coreProp = parentClass.AddProperty(new CodeProperty {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "HttpCore",
+                IsExternal = true,
+            }
         }).First();
-        coreProp.Type = new CodeType {
-            Name = "HttpCore",
-            IsExternal = true,
-        };
         method.AddParameter(new CodeParameter {
             Name = "core",
             Kind = CodeParameterKind.RequestAdapter,
@@ -691,6 +700,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("constructor", result);
         Assert.Contains("registerDefaultSerializer", result);
         Assert.Contains("registerDefaultDeserializer", result);
+        Assert.Contains($"[\"baseurl\"] = \"{method.BaseUrl}\"", result);
+        Assert.Contains($"baseUrl = \"{method.BaseUrl}\"", result);
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore() {
