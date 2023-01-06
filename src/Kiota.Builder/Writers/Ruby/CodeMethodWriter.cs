@@ -122,12 +122,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+        var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         var requestAdapterPropertyName = requestAdapterProperty.NamePrefix +  requestAdapterProperty.Name.ToSnakeCase();
         WriteSerializationRegistration(parentClass, method.SerializerModules, writer, "register_default_serializer");
         WriteSerializationRegistration(parentClass, method.DeserializerModules, writer, "register_default_deserializer");
         if (method.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestAdapter)) is CodeParameter requestAdapterParameter)
             writer.WriteLine($"@{requestAdapterPropertyName} = {requestAdapterParameter.Name.ToSnakeCase()}");
         if(!string.IsNullOrEmpty(method.BaseUrl)) {
+            if(pathParametersProperty != null)
+                writer.WriteLine($"@{pathParametersProperty.Name.ToSnakeCase()}['baseurl'] = '{method.BaseUrl}'");
             writer.StartBlock($"if @{requestAdapterPropertyName}.get_base_url.nil? || @{requestAdapterPropertyName}.get_base_url.empty?");
             writer.WriteLine($"@{requestAdapterPropertyName}.set_base_url('{method.BaseUrl}')");
             writer.CloseBlock("end");
