@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a bug in dotnet where default values for Enum properties with special characters would not match the model. [#2091](https://github.com/microsoft/kiota/issues/2091)
 - Sets the base url to make use of request information easier in CSharp/Java/TypeScript/Go/Ruby. [#2061](https://github.com/microsoft/kiota/issues/2061)
+- Renamed CreateXXXRequestInformation methods to ToXXXRequestInformation for a better auto-completion experience. [#2071](https://github.com/microsoft/kiota/issues/2071)
+- Renamed Go request adapter methods to remove the async suffix. [#2084](https://github.com/microsoft/kiota/issues/2084)
 
 ## [0.10.0] - 2023-01-04
 
@@ -49,7 +51,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved Ruby libraries to their own repositories.
 - Fixed a regression where errors would be missing their parent types.
 - Fixed a regression where indexers replacement would fail.
-- Renamed CreateXXXRequestInformation methods to ToXXXRequestInformation for a better auto-completion experience. [#2071](https://github.com/microsoft/kiota/issues/2071)
 
 ## [0.9.0] - 2022-12-19
 

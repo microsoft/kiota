@@ -600,14 +600,14 @@ namespace Kiota.Builder.Writers.Go {
         
         private static string getSendMethodName(string returnType, CodeMethod codeElement, bool isPrimitive, bool isBinary, bool isEnum) {
             return returnType switch {
-                "void" => "SendNoContentAsync",
-                _ when string.IsNullOrEmpty(returnType) => "SendNoContentAsync",
-                _ when codeElement.ReturnType.IsCollection && isPrimitive => "SendPrimitiveCollectionAsync",
-                _ when isPrimitive || isBinary => "SendPrimitiveAsync",
-                _ when codeElement.ReturnType.IsCollection && !isEnum => "SendCollectionAsync",
-                _ when codeElement.ReturnType.IsCollection && isEnum => "SendEnumCollectionAsync",
-                _ when isEnum => "SendEnumAsync",
-                _ => "SendAsync"
+                "void" => "SendNoContent",
+                _ when string.IsNullOrEmpty(returnType) => "SendNoContent",
+                _ when codeElement.ReturnType.IsCollection && isPrimitive => "SendPrimitiveCollection",
+                _ when isPrimitive || isBinary => "SendPrimitive",
+                _ when codeElement.ReturnType.IsCollection && !isEnum => "SendCollection",
+                _ when codeElement.ReturnType.IsCollection && isEnum => "SendEnumCollection",
+                _ when isEnum => "SendEnum",
+                _ => "Send"
             };
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, string returnType, CodeClass parentClass, LanguageWriter writer) {

@@ -43,7 +43,7 @@ namespace Kiota.Builder.Tests.Writers.Go {
             Assert.Contains("return []string{", result);
             Assert.Contains("[i]", result);
             Assert.Contains("func Parse", result);
-            Assert.Contains("(v string) (interface{}, error)", result);
+            Assert.Contains("(v string) (any, error)", result);
             Assert.Contains("switch v", result);
             Assert.Contains("default", result);
             Assert.Contains("result :=", result);
