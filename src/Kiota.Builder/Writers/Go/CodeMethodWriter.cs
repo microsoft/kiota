@@ -399,11 +399,11 @@ namespace Kiota.Builder.Writers.Go {
             WriteSerializationRegistration(method.SerializerModules, writer, parentClass, "RegisterDefaultSerializer", "SerializationWriterFactory");
             WriteSerializationRegistration(method.DeserializerModules, writer, parentClass, "RegisterDefaultDeserializer", "ParseNodeFactory");
             if (!string.IsNullOrEmpty(method.BaseUrl)) {
-                if(pathParametersProperty != null)
-                    writer.WriteLine($"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}[\"baseurl\"] = \"{method.BaseUrl}\"");
                 writer.StartBlock($"if m.{requestAdapterPropertyName}.GetBaseUrl() == \"\" {{");
                 writer.WriteLine($"m.{requestAdapterPropertyName}.SetBaseUrl(\"{method.BaseUrl}\")");
                 writer.CloseBlock();
+                if(pathParametersProperty != null)
+                    writer.WriteLine($"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}[\"baseurl\"] = m.{requestAdapterPropertyName}.GetBaseUrl()");
             }
             if(backingStoreParameter != null)
                 writer.WriteLine($"m.{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");

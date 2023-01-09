@@ -126,11 +126,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
         if(!string.IsNullOrEmpty(method.BaseUrl)) {
-            if(pathParametersProperty != null)
-                writer.WriteLine($"this.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}[\"baseurl\"] = \"{method.BaseUrl}\";");
             writer.StartBlock($"if ({requestAdapterPropertyName}.baseUrl === undefined || {requestAdapterPropertyName}.baseUrl === \"\") {{");
             writer.WriteLine($"{requestAdapterPropertyName}.baseUrl = \"{method.BaseUrl}\";");
             writer.CloseBlock();
+            if(pathParametersProperty != null)
+                writer.WriteLine($"this.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}[\"baseurl\"] = {requestAdapterPropertyName}.baseUrl;");
         }
         if(backingStoreParameter != null)
             writer.WriteLine($"this.{requestAdapterPropertyName}.enableBackingStore({backingStoreParameter.Name});");

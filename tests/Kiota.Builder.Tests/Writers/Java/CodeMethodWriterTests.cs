@@ -1502,7 +1502,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains("registerDefaultSerializer", result);
         Assert.Contains("registerDefaultDeserializer", result);
-        Assert.Contains($"put(\"baseurl\", \"{method.BaseUrl}\")", result);
+        Assert.Contains($"put(\"baseurl\", core.getBaseUrl())", result);
         Assert.Contains($"setBaseUrl(\"{method.BaseUrl}\")", result);
     }
     [Fact]

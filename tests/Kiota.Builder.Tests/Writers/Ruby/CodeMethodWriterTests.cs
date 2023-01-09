@@ -701,7 +701,7 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(coreProp.Name, result);
-        Assert.Contains($"['baseurl'] = '{method.BaseUrl}'", result);
+        Assert.Contains($"['baseurl'] = @core.get_base_url", result);
         Assert.Contains($"set_base_url('{method.BaseUrl}')", result);
     }
     [Fact]

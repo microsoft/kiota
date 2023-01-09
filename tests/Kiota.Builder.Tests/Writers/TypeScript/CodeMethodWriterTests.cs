@@ -700,7 +700,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("constructor", result);
         Assert.Contains("registerDefaultSerializer", result);
         Assert.Contains("registerDefaultDeserializer", result);
-        Assert.Contains($"[\"baseurl\"] = \"{method.BaseUrl}\"", result);
+        Assert.Contains($"[\"baseurl\"] = core.baseUrl", result);
         Assert.Contains($"baseUrl = \"{method.BaseUrl}\"", result);
     }
     [Fact]

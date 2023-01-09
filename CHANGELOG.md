@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved Ruby libraries to their own repositories.
 - Fixed a regression where errors would be missing their parent types.
 - Fixed a regression where indexers replacement would fail.
+- Renamed CreateXXXRequestInformation methods to ToXXXRequestInformation for a better auto-completion experience. [#2071](https://github.com/microsoft/kiota/issues/2071)
 
 ## [0.9.0] - 2022-12-19
 

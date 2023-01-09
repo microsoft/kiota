@@ -129,11 +129,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (method.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestAdapter)) is CodeParameter requestAdapterParameter)
             writer.WriteLine($"@{requestAdapterPropertyName} = {requestAdapterParameter.Name.ToSnakeCase()}");
         if(!string.IsNullOrEmpty(method.BaseUrl)) {
-            if(pathParametersProperty != null)
-                writer.WriteLine($"@{pathParametersProperty.Name.ToSnakeCase()}['baseurl'] = '{method.BaseUrl}'");
             writer.StartBlock($"if @{requestAdapterPropertyName}.get_base_url.nil? || @{requestAdapterPropertyName}.get_base_url.empty?");
             writer.WriteLine($"@{requestAdapterPropertyName}.set_base_url('{method.BaseUrl}')");
             writer.CloseBlock("end");
+            if(pathParametersProperty != null)
+                writer.WriteLine($"@{pathParametersProperty.Name.ToSnakeCase()}['baseurl'] = @{requestAdapterPropertyName}.get_base_url");
         }
     }
     private static void WriteSerializationRegistration(CodeClass parentClass, HashSet<string> serializationClassNames, LanguageWriter writer, string methodName)

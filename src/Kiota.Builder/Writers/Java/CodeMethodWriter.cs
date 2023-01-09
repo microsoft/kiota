@@ -250,11 +250,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
         if(!string.IsNullOrEmpty(method.BaseUrl)) {
-            if(pathParametersProperty != null)
-                writer.WriteLine($"{pathParametersProperty.Name.ToFirstCharacterLowerCase()}.put(\"baseurl\", \"{method.BaseUrl}\");");
             writer.StartBlock($"if ({requestAdapterPropertyName}.getBaseUrl() == null || {requestAdapterPropertyName}.getBaseUrl().isEmpty()) {{");
             writer.WriteLine($"{requestAdapterPropertyName}.setBaseUrl(\"{method.BaseUrl}\");");
             writer.CloseBlock();
+            if(pathParametersProperty != null)
+                writer.WriteLine($"{pathParametersProperty.Name.ToFirstCharacterLowerCase()}.put(\"baseurl\", {requestAdapterPropertyName}.getBaseUrl());");
         }
         if(backingStoreParameter != null)
             writer.WriteLine($"this.{requestAdapterPropertyName}.enableBackingStore({backingStoreParameter.Name});");

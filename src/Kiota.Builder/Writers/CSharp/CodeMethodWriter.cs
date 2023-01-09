@@ -188,11 +188,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
         if (!string.IsNullOrEmpty(method.BaseUrl)) {
-            if(pathParametersProperty != null)
-                writer.WriteLine($"{pathParametersProperty.Name.ToFirstCharacterUpperCase()}.TryAdd(\"baseurl\", \"{method.BaseUrl}\");");
             writer.StartBlock($"if (string.IsNullOrEmpty({requestAdapterPropertyName}.BaseUrl)) {{");
             writer.WriteLine($"{requestAdapterPropertyName}.BaseUrl = \"{method.BaseUrl}\";");
             writer.CloseBlock();
+            if(pathParametersProperty != null)
+                writer.WriteLine($"{pathParametersProperty.Name.ToFirstCharacterUpperCase()}.TryAdd(\"baseurl\", {requestAdapterPropertyName}.BaseUrl);");
         }
         if (backingStoreParameter != null)
             writer.WriteLine($"{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
