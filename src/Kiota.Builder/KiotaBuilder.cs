@@ -890,7 +890,7 @@ public class KiotaBuilder
         logger.LogTrace("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
 
         var generatorMethod = new CodeMethod {
-            Name = $"Create{operationType.ToString().ToFirstCharacterUpperCase()}RequestInformation",
+            Name = $"To{operationType.ToString().ToFirstCharacterUpperCase()}RequestInformation",
             Kind = CodeMethodKind.RequestGenerator,
             IsAsync = false,
             HttpMethod = method,
