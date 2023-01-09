@@ -14,8 +14,8 @@ namespace Kiota.Builder.PathSegmenters {
             ClientNamespaceName = clientNamespaceName;
             RootPath = rootPath.Contains(Path.DirectorySeparatorChar) ? rootPath : rootPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
         }
-        private readonly string ClientNamespaceName;
-        private readonly string RootPath;
+        protected readonly string ClientNamespaceName;
+        protected readonly string RootPath;
         public abstract string FileSuffix { get; }
         public abstract string NormalizeNamespaceSegment(string segmentName);
         public abstract string NormalizeFileName(CodeElement currentElement);
@@ -29,10 +29,10 @@ namespace Kiota.Builder.PathSegmenters {
                                             .Split('.'));
             namespacePathSegments.AddRange(GetAdditionalSegment(currentElement, fileName)); //Union removes duplicates so we're building a list instead to conserve those.
             namespacePathSegments = namespacePathSegments.Where(x => !string.IsNullOrEmpty(x))
-                                            .Select(x => NormalizeNamespaceSegment(x))
+                                            .Select(NormalizeNamespaceSegment)
                                             .ToList();
             var targetPath = Path.Combine(RootPath, namespacePathSegments.Any() ? namespacePathSegments                                           
-                                            .Aggregate((x, y) => $"{x}{Path.DirectorySeparatorChar}{y}") : string.Empty,
+                                            .Aggregate(static (x, y) => $"{x}{Path.DirectorySeparatorChar}{y}") : string.Empty,
                                             fileName + FileSuffix);
             var directoryPath = Path.GetDirectoryName(targetPath);
             Directory.CreateDirectory(directoryPath);

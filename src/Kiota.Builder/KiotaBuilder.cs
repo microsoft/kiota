@@ -462,7 +462,7 @@ public class KiotaBuilder
             }
             else
             {
-                var description = child.Value.GetPathItemDescription(Constants.DefaultOpenApiLabel);
+                var description = child.Value.GetPathItemDescription(Constants.DefaultOpenApiLabel).CleanupDescription();
                 var prop = CreateProperty(propIdentifier, propType, kind: CodePropertyKind.RequestBuilder); // we should add the type definition here but we can't as it might not have been generated yet
                 if (!string.IsNullOrWhiteSpace(description))
                 {
@@ -517,16 +517,18 @@ public class KiotaBuilder
     private static void AddPathParametersToMethod(OpenApiUrlTreeNode currentNode, CodeMethod methodToAdd, bool asOptional) {
         foreach(var parameter in currentNode.GetPathParametersForCurrentSegment()) {
             var codeName = parameter.Name.SanitizeParameterNameForCodeSymbols();
-            var mParameter = new CodeParameter {
+            var mParameter = new CodeParameter
+            {
                 Name = codeName,
                 Optional = asOptional,
-                Documentation = new() {
+                Documentation = new()
+                {
                     Description = parameter.Description.CleanupDescription(),
                 },
                 Kind = CodeParameterKind.Path,
                 SerializationName = parameter.Name.Equals(codeName) ? default : parameter.Name.SanitizeParameterNameForUrlTemplate(),
+                Type = GetPrimitiveType(parameter.Schema ?? parameter.Content.Values.FirstOrDefault()?.Schema)
             };
-            mParameter.Type = GetPrimitiveType(parameter.Schema ?? parameter.Content.Values.FirstOrDefault()?.Schema);
             mParameter.Type.CollectionKind = parameter.Schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
             // not using the content schema as RFC6570 will serialize arrays as CSVs and content expects a JSON array, we failsafe to opaque string, it could be improved by involving the serialization layers.
             methodToAdd.AddParameter(mParameter);
@@ -714,7 +716,7 @@ public class KiotaBuilder
         };
     }
 
-    private CodeProperty CreateProperty(string childIdentifier, string childType, OpenApiSchema typeSchema = null, CodeTypeBase existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
+    private CodeProperty CreateProperty(string childIdentifier, string childType, OpenApiSchema propertySchema = null, CodeTypeBase existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
     {
         var propertyName = childIdentifier.CleanupSymbolName();
         var prop = new CodeProperty
@@ -722,22 +724,22 @@ public class KiotaBuilder
             Name = propertyName,
             Kind = kind,
             Documentation = new() {
-                Description = typeSchema?.Description.CleanupDescription() ?? $"The {propertyName} property",
+                Description = propertySchema?.Description.CleanupDescription() ?? $"The {propertyName} property",
             },
-            ReadOnly = typeSchema?.ReadOnly ?? false,
+            ReadOnly = propertySchema?.ReadOnly ?? false,
         };
         if(propertyName != childIdentifier)
             prop.SerializationName = childIdentifier;
         if(kind == CodePropertyKind.Custom &&
-            typeSchema?.Default is OpenApiString stringDefaultValue &&
+            propertySchema?.Default is OpenApiString stringDefaultValue &&
             !string.IsNullOrEmpty(stringDefaultValue.Value))
             prop.DefaultValue = $"\"{stringDefaultValue.Value}\"";
 
         if (existingType != null)
             prop.Type = existingType;
         else {
-            prop.Type = GetPrimitiveType(typeSchema, childType);
-            prop.Type.CollectionKind = typeSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default;
+            prop.Type = GetPrimitiveType(propertySchema, childType);
+            prop.Type.CollectionKind = propertySchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default;
             logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
         }
         return prop;
@@ -1048,6 +1050,11 @@ public class KiotaBuilder
             className = (currentSchema.GetSchemaName() ?? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, schema: schema, requestBody: isRequestBody)).CleanupSymbolName();
             codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace, codeDeclaration as CodeClass);
         }
+        if (codeDeclaration is CodeClass currentClass &&
+            string.IsNullOrEmpty(currentClass.Documentation.Description) &&
+            string.IsNullOrEmpty(schema.AllOf.LastOrDefault()?.Description) &&
+            !string.IsNullOrEmpty(schema.Description))
+            currentClass.Documentation.Description = schema.Description.CleanupDescription(); // the last allof entry often is not a reference and doesn't have a description.
 
         return new CodeType {
             TypeDefinition = codeDeclaration,
@@ -1188,7 +1195,9 @@ public class KiotaBuilder
                 var newEnum = new CodeEnum {
                     Name = declarationName,//TODO set the flag property
                     Documentation = new() {
-                        Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel),
+                        Description = schema.Description.CleanupDescription() ?? (string.IsNullOrEmpty(schema.Reference?.Id) ?
+                                                        currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel) :
+                                                        null), // if it's a referenced component, we shouldn't use the path item description as it makes it indeterministic
                     },
                 };
                 SetEnumOptions(schema, newEnum);
@@ -1226,13 +1235,9 @@ public class KiotaBuilder
         return currentNamespace;
     }
     private CodeClass AddModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass inheritsFrom = null) {
-        var referencedAllOfs = schema.AllOf.Where(x => x.Reference != null);
-        if(inheritsFrom == null && referencedAllOfs.Any()) {// any non-reference would be the current class in some description styles
-            var parentSchema = referencedAllOfs.FirstOrDefault();
-            if(parentSchema != null) {
-                var parentClassNamespace = GetShortestNamespace(currentNamespace, parentSchema);
-                inheritsFrom = AddModelDeclarationIfDoesntExist(currentNode, parentSchema, parentSchema.GetSchemaName().CleanupSymbolName(), parentClassNamespace) as CodeClass;
-            }
+        if(inheritsFrom == null && schema.AllOf.FirstOrDefault(static x => x.Reference != null) is OpenApiSchema parentSchema) {// any non-reference would be the current class in some description styles
+            var parentClassNamespace = GetShortestNamespace(currentNamespace, parentSchema);
+            inheritsFrom = AddModelDeclarationIfDoesntExist(currentNode, parentSchema, parentSchema.GetSchemaName().CleanupSymbolName(), parentClassNamespace) as CodeClass;
         }
         var newClass = currentNamespace.AddClass(new CodeClass {
             Name = declarationName,
@@ -1240,9 +1245,7 @@ public class KiotaBuilder
             Documentation = new() {
                 DocumentationLabel = schema.ExternalDocs?.Description,
                 DocumentationLink = schema.ExternalDocs?.Url,
-                Description = schema.Description.CleanupDescription() ?? (string.IsNullOrEmpty(schema.Reference?.Id) ?
-                                                        currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel) :
-                                                        null),// if it's a referenced component, we shouldn't use the path item description as it makes it indeterministic
+                Description = schema.Description.CleanupDescription(),
             },
         }).First();
         if(inheritsFrom != null)
@@ -1329,7 +1332,7 @@ public class KiotaBuilder
                                     try {
                                     #endif
                                         var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, default, typeNameForInlineSchema: className);
-                                        return CreateProperty(x.Key, definition.Name, typeSchema: propertySchema, existingType: definition);
+                                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
                                     #if RELEASE
                                     } catch (InvalidSchemaException ex) {
                                         throw new InvalidOperationException($"Error creating property {x.Key} for model {model.Name} in API path {currentNode.Path}, the schema is invalid.", ex);

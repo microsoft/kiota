@@ -1,16 +1,13 @@
 ﻿using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 
-namespace Kiota.Builder.CodeRenderers
+namespace Kiota.Builder.CodeRenderers;
+public class TypeScriptCodeRenderer : CodeRenderer
 {
-    public class TypeScriptCodeRenderer : CodeRenderer
+    public TypeScriptCodeRenderer(GenerationConfiguration configuration) : base(configuration) { }
+    public override bool ShouldRenderNamespaceFile(CodeNamespace codeNamespace)
     {
-        public TypeScriptCodeRenderer(GenerationConfiguration configuration) : base(configuration) { }
-        public override bool ShouldRenderNamespaceFile(CodeNamespace codeNamespace)
-        {
-            return codeNamespace.Classes.Any(c => c.IsOfKind(CodeClassKind.Model));
-        }
+        return codeNamespace.Classes.Any(static c => c.IsOfKind(CodeClassKind.Model));
     }
 }
