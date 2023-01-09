@@ -31,7 +31,7 @@ namespace Kiota.Builder.CodeRenderers
             if(!cancellationToken.IsCancellationRequested)
                 await sw.FlushAsync(); // streamwriter doesn't not have a cancellation token overload https://github.com/dotnet/runtime/issues/64340
         }
-        // We created barrells for codenamespaces. Skipping for empty namespaces, ones created for users, and ones with same namspace as class name.
+        // We created barrells for codenamespaces. Skipping for empty namespaces, ones created for users, and ones with same namespace as class name.
         public async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root, CancellationToken cancellationToken)
         {
             if(cancellationToken.IsCancellationRequested) return;
@@ -53,7 +53,6 @@ namespace Kiota.Builder.CodeRenderers
         }
         private async Task RenderBarrel(LanguageWriter writer, CodeNamespace root, CodeNamespace codeNamespace, CancellationToken cancellationToken) {
             if (!string.IsNullOrEmpty(codeNamespace.Name) &&
-                !string.IsNullOrEmpty(root.Name) &&
                 _configuration.ShouldWriteNamespaceIndices &&
                 (!_configuration.ClientNamespaceName.StartsWith(codeNamespace.Name, StringComparison.OrdinalIgnoreCase) || 
                 _configuration.ClientNamespaceName.Equals(codeNamespace.Name, StringComparison.OrdinalIgnoreCase)) && // we want a barrel for the root namespace
@@ -67,7 +66,7 @@ namespace Kiota.Builder.CodeRenderers
         private void RenderCode(LanguageWriter writer, CodeElement element)
         {
             writer.Write(element);
-            if (!(element is CodeNamespace))
+            if (element is not CodeNamespace)
                 foreach (var childElement in element.GetChildElements()
                                                    .Order(_rendererElementComparer))
                 {
