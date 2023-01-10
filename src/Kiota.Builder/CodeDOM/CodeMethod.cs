@@ -150,19 +150,26 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// </summary>
     public IEnumerable<CodeParameter> PathQueryAndHeaderParameters
     {
-        get; private set;
+        get => pathQueryAndHeaderParameters.Values;
     }
+    private readonly Dictionary<string, CodeParameter> pathQueryAndHeaderParameters = new(StringComparer.OrdinalIgnoreCase);
     public void AddPathQueryOrHeaderParameter(params CodeParameter[] parameters)
     {
         if (parameters == null || !parameters.Any()) return;
-        foreach (var parameter in parameters)
+        foreach (var parameter in parameters.OrderByDescending(static x => x.Kind)) //guarantees that path parameters are added first and other are deduplicated
         {
             EnsureElementsAreChildren(parameter);
+            if (!pathQueryAndHeaderParameters.TryAdd(parameter.Name, parameter)) {
+                if(parameter.IsOfKind(CodeParameterKind.QueryParameter))
+                    parameter.Name += "-query-parameter";
+                else if(parameter.IsOfKind(CodeParameterKind.Headers))
+                    parameter.Name += "-header";
+                else
+                    continue;
+                pathQueryAndHeaderParameters.Add(parameter.Name, parameter);
+            }
+
         }
-        if (PathQueryAndHeaderParameters == null)
-            PathQueryAndHeaderParameters = new List<CodeParameter>(parameters);
-        else if (PathQueryAndHeaderParameters is List<CodeParameter> cast)
-            cast.AddRange(parameters);
     }
     /// <summary>
     /// The property this method accesses to when it's a getter or setter.

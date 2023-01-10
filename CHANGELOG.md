@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sets the base url to make use of request information easier in CSharp/Java/TypeScript/Go/Ruby. [#2061](https://github.com/microsoft/kiota/issues/2061)
 - Renamed CreateXXXRequestInformation methods to ToXXXRequestInformation for a better auto-completion experience. [#2071](https://github.com/microsoft/kiota/issues/2071)
 - Renamed Go request adapter methods to remove the async suffix. [#2084](https://github.com/microsoft/kiota/issues/2084)
+- Fixed a bug where CLI query/header/path parameters would not be deduplicated. [#2059](https://github.com/microsoft/kiota/issues/2059)
 
 ## [0.10.0] - 2023-01-04
 
