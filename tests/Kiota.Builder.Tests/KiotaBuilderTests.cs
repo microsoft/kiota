@@ -869,7 +869,7 @@ paths:
             .SingleOrDefault(cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == Builder.CodeDOM.HttpMethod.Get)?
             .PathQueryAndHeaderParameters;
         Assert.Equal(3, parameters.Count());
-        Assert.NotNull(parameters.SingleOrDefault(p => "id-query-parameter".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.QueryParameter));
+        Assert.NotNull(parameters.SingleOrDefault(p => "id-query".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.QueryParameter));
         Assert.Null(parameters.SingleOrDefault(p => "id".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.QueryParameter));
         Assert.NotNull(parameters.SingleOrDefault(p => "id".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.Path));
         Assert.Null(parameters.SingleOrDefault(p => "id-query".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.Path));
