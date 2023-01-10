@@ -161,7 +161,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             EnsureElementsAreChildren(parameter);
             if (!pathQueryAndHeaderParameters.TryAdd(parameter.Name, parameter)) {
                 if(parameter.IsOfKind(CodeParameterKind.QueryParameter))
-                    parameter.Name += "-query-parameter";
+                    parameter.Name += "-query";
                 else if(parameter.IsOfKind(CodeParameterKind.Headers))
                     parameter.Name += "-header";
                 else

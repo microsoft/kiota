@@ -872,7 +872,7 @@ paths:
         Assert.NotNull(parameters.SingleOrDefault(p => "id-query-parameter".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.QueryParameter));
         Assert.Null(parameters.SingleOrDefault(p => "id".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.QueryParameter));
         Assert.NotNull(parameters.SingleOrDefault(p => "id".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.Path));
-        Assert.Null(parameters.SingleOrDefault(p => "id-query-parameter".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.Path));
+        Assert.Null(parameters.SingleOrDefault(p => "id-query".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.Path));
         Assert.NotNull(parameters.SingleOrDefault(p => "id-header".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.Headers));
         Assert.Null(parameters.SingleOrDefault(p => "id".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.Headers));
     }
