@@ -570,13 +570,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var includeNullableReferenceType = code.Parameters.Any( codeParameter => codeParameter.IsOfKind(CodeParameterKind.RequestConfiguration));
         if (includeNullableReferenceType)
         {
-            parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer)
+            var nullableParameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer)
                                                           .Select(p => p.IsOfKind(CodeParameterKind.RequestConfiguration) ? 
                                                                                         GetParameterSignatureWithNullableRefType(p,code): 
                                                                                         conventions.GetParameterSignature(p, code))
                                                           .ToList());
             writer.WriteLine("#if NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER",false);
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({nullableParameters}){baseSuffix} {{");
             writer.WriteLine("#else",false);
         }
         
