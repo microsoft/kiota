@@ -450,7 +450,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
                                         .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
+            var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
+            var isNullableReferenceType = !conventions.GetTypeString(otherProp.Type, otherProp).EndsWith("?") && serializationMethodName.Contains("WriteObject", StringComparison.OrdinalIgnoreCase);
+            if (isNullableReferenceType)
+            {
+                writer.WriteLine("#if NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER",false);
+                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method,true)}(\"{otherProp.SerializationName ?? otherProp.Name}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
+                writer.WriteLine("#else",false);
+            }
+        
+            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.SerializationName ?? otherProp.Name}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
+        
+            if (isNullableReferenceType)
+                writer.WriteLine("#endif",false);
+            
         }
     }
     private void WriteSerializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
@@ -554,9 +567,33 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             baseSuffix = " : base()";
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)).ToList());
         var methodName = isConstructor ? code.Parent.Name.ToFirstCharacterUpperCase() : code.Name.ToFirstCharacterUpperCase();
+        var includeNullableReferenceType = code.Parameters.Any( codeParameter => codeParameter.IsOfKind(CodeParameterKind.RequestConfiguration));
+        if (includeNullableReferenceType)
+        {
+            parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer)
+                                                          .Select(p => p.IsOfKind(CodeParameterKind.RequestConfiguration) ? 
+                                                                                        GetParameterSignatureWithNullableRefType(p,code): 
+                                                                                        conventions.GetParameterSignature(p, code))
+                                                          .ToList());
+            writer.WriteLine("#if NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER",false);
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
+            writer.WriteLine("#else",false);
+        }
+        
         writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
+        
+        if (includeNullableReferenceType)
+            writer.WriteLine("#endif",false);
+
     }
-    private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method)
+
+    private string GetParameterSignatureWithNullableRefType(CodeParameter parameter, CodeElement targetElement)
+    {
+        var signatureSegments = conventions.GetParameterSignature(parameter, targetElement).Split(" ", StringSplitOptions.RemoveEmptyEntries);
+        return $"{signatureSegments[0]}? {string.Join(" ",signatureSegments[1..])}";
+
+    }
+    private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method, bool includeNullableRef = false)
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = conventions.GetTypeString(propType, method, false);
@@ -577,7 +614,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             "byte[]" => "WriteByteArrayValue",
             _ when conventions.IsPrimitiveType(propertyType) => $"Write{propertyType.TrimEnd(CSharpConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value",
-            _ => $"WriteObjectValue<{propertyType.ToFirstCharacterUpperCase()}>",
+            _ => $"WriteObjectValue<{propertyType.ToFirstCharacterUpperCase()}{(includeNullableRef ? "?": string.Empty)}>",
         };
     }
 }

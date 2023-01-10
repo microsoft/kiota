@@ -57,7 +57,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 ).ToArray());
         }
         #pragma warning restore CA1822 // Method should be static
-        internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
+        private static bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
             return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
         }
         private static HashSet<string> _namespaceSegmentsNames;
