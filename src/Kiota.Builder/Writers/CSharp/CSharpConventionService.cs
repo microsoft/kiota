@@ -13,7 +13,8 @@ namespace Kiota.Builder.Writers.CSharp {
         public override string VoidTypeName => "void";
         public override string DocCommentPrefix => "/// ";
         private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset", "TimeSpan", "Date","Time", "sbyte", "byte" };
-        public static readonly char NullableMarker = '?';
+        public const char NullableMarker = '?';
+        public const string NullableEnableDirective = "NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER";
         public static string NullableMarkerAsString => "?";
         public override string ParseNodeInterfaceName => "IParseNode";
         public override void WriteShortDescription(string description, LanguageWriter writer) {

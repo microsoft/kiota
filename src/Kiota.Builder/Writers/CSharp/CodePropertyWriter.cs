@@ -13,7 +13,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         if (isNullableReferenceType)
         {
-            writer.WriteLine("#if NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER",false);
+            writer.WriteLine($"#if {CSharpConventionService.NullableEnableDirective}",false);
             WritePropertyInternal(codeElement, writer, $"{propertyType}?");
             writer.WriteLine("#else",false);
         }

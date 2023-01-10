@@ -380,7 +380,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains(AsyncKeyword, result);
         Assert.Contains("await", result);
         Assert.Contains("cancellationToken", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void WritesRequestExecutorBodyForCollection() {
@@ -402,7 +402,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("SendCollectionAsync", result);
         Assert.Contains("return collectionResult.ToList()", result);
         Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void DoesntCreateDictionaryOnEmptyErrorMapping() {
@@ -413,7 +413,7 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.DoesNotContain("var errorMapping = new Dictionary<string, Func<IParsable>>", result);
         Assert.Contains("default", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void WritesModelFactoryBodyForUnionModels() {
@@ -647,7 +647,7 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.Contains("SendCollectionAsync", result);
         Assert.Contains("cancellationToken", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void WritesRequestGeneratorBodyForScalar() {
@@ -671,7 +671,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.AddRequestOptions(requestConfig.O)", result);
         Assert.Contains("SetContentFromScalar", result);
         Assert.Contains("return requestInfo;", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void WritesRequestGeneratorBodyForParsable() {
@@ -695,7 +695,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.AddRequestOptions(requestConfig.O)", result);
         Assert.Contains("SetContentFromParsable", result);
         Assert.Contains("return requestInfo;", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void WritesRequestGeneratorBodyForScalarCollection() {
@@ -711,7 +711,7 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("SetContentFromScalarCollection", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void WritesInheritedDeSerializerBody() {

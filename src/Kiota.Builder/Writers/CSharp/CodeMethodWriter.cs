@@ -454,7 +454,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             var isNullableReferenceType = !conventions.GetTypeString(otherProp.Type, otherProp).EndsWith("?") && serializationMethodName.Contains("WriteObject", StringComparison.OrdinalIgnoreCase);
             if (isNullableReferenceType)
             {
-                writer.WriteLine("#if NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER",false);
+                writer.WriteLine($"#if {CSharpConventionService.NullableEnableDirective}",false);
                 writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method,true)}(\"{otherProp.SerializationName ?? otherProp.Name}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
                 writer.WriteLine("#else",false);
             }
@@ -575,7 +575,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                                                                         GetParameterSignatureWithNullableRefType(p,code): 
                                                                                         conventions.GetParameterSignature(p, code))
                                                           .ToList());
-            writer.WriteLine("#if NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER",false);
+            writer.WriteLine($"#if {CSharpConventionService.NullableEnableDirective}",false);
             writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({nullableParameters}){baseSuffix} {{");
             writer.WriteLine("#else",false);
         }
