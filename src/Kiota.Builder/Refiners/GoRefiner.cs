@@ -495,7 +495,7 @@ public class GoRefiner : CommonLanguageRefiner
             else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
                 currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
             else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
-                currentProperty.Type.Name = "map[string]interface{}";
+                currentProperty.Type.Name = "map[string]any";
                 currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
             } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
                 currentProperty.Type.IsNullable = true;

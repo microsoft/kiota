@@ -520,9 +520,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("\"4XX\": CreateError4XXFromDiscriminatorValue", result);
         Assert.Contains("\"5XX\": CreateError5XXFromDiscriminatorValue", result);
         Assert.Contains("\"403\": CreateError403FromDiscriminatorValue", result);
-        Assert.Contains("m.requestAdapter.SendAsync", result);
         Assert.Contains("ctx context.Context,", result);
-        Assert.Contains("m.requestAdapter.SendAsync(ctx,", result);
+        Assert.Contains("m.requestAdapter.Send(ctx,", result);
         Assert.Contains("return res.(", result);
         Assert.Contains("err != nil", result);
         Assert.Contains("return nil, err", result);
@@ -543,8 +542,8 @@ public class CodeMethodWriterTests : IDisposable {
         };
         writer.Write(method);
         var result = tw.ToString();
-        Assert.DoesNotContain("m.requestAdapter.SendAsync", result);
-        Assert.Contains("m.requestAdapter.SendEnumAsync", result);
+        Assert.DoesNotContain("m.requestAdapter.Send(", result);
+        Assert.Contains("m.requestAdapter.SendEnum", result);
         Assert.Contains("ParseSomeEnum", result);
         Assert.Contains("return nil, err", result);
         Assert.Contains("if res == nil", result);
@@ -566,9 +565,9 @@ public class CodeMethodWriterTests : IDisposable {
         };
         writer.Write(method);
         var result = tw.ToString();
-        Assert.DoesNotContain("m.requestAdapter.SendAsync", result);
-        Assert.DoesNotContain("m.requestAdapter.SendEnumAsync", result);
-        Assert.Contains("m.requestAdapter.SendEnumCollectionAsync", result);
+        Assert.DoesNotContain("m.requestAdapter.Send(", result);
+        Assert.DoesNotContain("m.requestAdapter.SendEnum(", result);
+        Assert.Contains("m.requestAdapter.SendEnumCollection", result);
         Assert.Contains("ParseSomeEnum", result);
         Assert.DoesNotContain("val[i] = *(v.(*SomeEnum))", result);
         Assert.Contains("val[i] = v.(SomeEnum)", result);
