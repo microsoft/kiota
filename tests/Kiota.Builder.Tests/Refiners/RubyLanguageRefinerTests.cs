@@ -185,7 +185,7 @@ public class RubyLanguageRefinerTests {
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
         Assert.Single(declaration.Usings.Where(static x => "Message".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase)));
-        Assert.Single(declaration.Usings.Where(static x => "./graph".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(declaration.Usings.Where(static x => "graph".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase)));
     }
     #endregion
 }

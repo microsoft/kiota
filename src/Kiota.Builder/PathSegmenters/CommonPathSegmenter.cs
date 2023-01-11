@@ -19,9 +19,10 @@ namespace Kiota.Builder.PathSegmenters {
         public abstract string FileSuffix { get; }
         public abstract string NormalizeNamespaceSegment(string segmentName);
         public abstract string NormalizeFileName(CodeElement currentElement);
+        public virtual string NormalizePath(string fullPath) => fullPath;
         public virtual IEnumerable<string> GetAdditionalSegment(CodeElement currentElement, string fileName) => Enumerable.Empty<string>();
         protected static string GetLastFileNameSegment(CodeElement currentElement) => currentElement.Name.Split('.').Last();
-        public string GetPath(CodeNamespace currentNamespace, CodeElement currentElement) {
+        public string GetPath(CodeNamespace currentNamespace, CodeElement currentElement, bool shouldNormalizePath = true) {
             var fileName = NormalizeFileName(currentElement);
             var namespacePathSegments = new List<string>(currentNamespace.Name
                                             .Replace(ClientNamespaceName, string.Empty)
@@ -34,6 +35,8 @@ namespace Kiota.Builder.PathSegmenters {
             var targetPath = Path.Combine(RootPath, namespacePathSegments.Any() ? namespacePathSegments                                           
                                             .Aggregate(static (x, y) => $"{x}{Path.DirectorySeparatorChar}{y}") : string.Empty,
                                             fileName + FileSuffix);
+            if (shouldNormalizePath)
+                targetPath = NormalizePath(targetPath);
             var directoryPath = Path.GetDirectoryName(targetPath);
             Directory.CreateDirectory(directoryPath);
             return targetPath;

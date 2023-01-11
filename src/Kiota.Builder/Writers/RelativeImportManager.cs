@@ -11,7 +11,8 @@ namespace Kiota.Builder.Writers
     {
         protected readonly string prefix;
         protected readonly char separator;
-        public RelativeImportManager(string namespacePrefix, char namespaceSeparator)
+        private readonly Func<CodeNamespace, CodeElement, string> NormalizeFileNameCallback;
+        public RelativeImportManager(string namespacePrefix, char namespaceSeparator, Func<CodeNamespace, CodeElement, string> normalizeFileNameCallback = null)
         {
             ArgumentException.ThrowIfNullOrEmpty(namespacePrefix);
             if (namespaceSeparator == default)
@@ -19,6 +20,7 @@ namespace Kiota.Builder.Writers
 
             prefix = namespacePrefix;
             separator = namespaceSeparator;
+            NormalizeFileNameCallback = normalizeFileNameCallback;
         }
         /// <summary>
         /// Returns the relative import path for the given using and import context namespace.
@@ -42,10 +44,9 @@ namespace Kiota.Builder.Writers
                 return (importSymbol, codeUsing.Alias, "./"); // it's relative to the folder, with no declaration (default failsafe)
             var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
                 typeDef.GetImmediateParentOfType<CodeNamespace>());
-            if (string.IsNullOrEmpty(importPath))
-                importPath += codeUsing.Name;
-            else
-                importPath += codeUsing.Declaration.Name.ToFirstCharacterLowerCase();
+            importPath += NormalizeFileNameCallback == null ? 
+                            (string.IsNullOrEmpty(importPath) ? codeUsing.Name :  codeUsing.Declaration.Name.ToFirstCharacterLowerCase()) :
+                            NormalizeFileNameCallback(codeUsing.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>(), codeUsing.Declaration);
             return (importSymbol, codeUsing.Alias, importPath);
         }
         protected string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)
@@ -64,7 +65,7 @@ namespace Kiota.Builder.Writers
         protected static string GetRemainingImportPath(IEnumerable<string> remainingSegments)
         {
             if (remainingSegments.Any())
-                return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate((x, y) => $"{x}/{y}") + '/';
+                return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate(static (x, y) => $"{x}/{y}") + '/';
             return string.Empty;
         }
     }

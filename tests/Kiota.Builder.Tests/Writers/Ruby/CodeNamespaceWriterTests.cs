@@ -13,6 +13,7 @@ namespace Kiota.Builder.Tests.Writers.Ruby {
     {
         private const string DefaultPath = "./";
         private const string DefaultName = "name";
+        private const string ClientNamespaceName = "graph";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeNamespaceWriter codeElementWriter;
@@ -20,7 +21,7 @@ namespace Kiota.Builder.Tests.Writers.Ruby {
         private readonly CodeNamespace childNamespace;
 
         public CodeNamespaceWriterTests() {
-            codeElementWriter = new CodeNamespaceWriter(new RubyConventionService());
+            codeElementWriter = new CodeNamespaceWriter(new RubyConventionService(), new(Path.GetTempFileName(), ClientNamespaceName));
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
