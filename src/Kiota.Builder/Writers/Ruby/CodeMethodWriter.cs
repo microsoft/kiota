@@ -321,7 +321,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.WriteLine(conventions.DocCommentStart);
             if(isDescriptionPresent)
                 writer.WriteLine($"{conventions.DocCommentPrefix}{RubyConventionService.RemoveInvalidDescriptionCharacters(code.Documentation.Description)}");
-            foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
+            foreach(var paramWithDescription in parametersWithDescription.OrderBy(static x => x.Name))
                 writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name} {RubyConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.Description)}");
             
             if(code.IsAsync)

@@ -3,13 +3,18 @@ using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.PathSegmenters;
 
 namespace  Kiota.Builder.Writers.Ruby;
 public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, RubyConventionService>
 {
     private readonly RelativeImportManager relativeImportManager;
-    public CodeClassDeclarationWriter(RubyConventionService conventionService, string clientNamespaceName) : base(conventionService){
-        relativeImportManager = new RelativeImportManager(clientNamespaceName, '.');
+    public CodeClassDeclarationWriter(RubyConventionService conventionService, string clientNamespaceName, RubyPathSegmenter pathSegmenter) : base(conventionService){
+        ArgumentNullException.ThrowIfNull(pathSegmenter);
+        relativeImportManager = new RelativeImportManager(
+                                    clientNamespaceName,
+                                    '.',
+                                    pathSegmenter.GetRelativeFileName);
     }
     
     
@@ -30,6 +35,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
                     
             foreach (var relativePath in codeElement.Usings
                                         .Where(static x => !x.IsExternal)
+                                        .DistinctBy(static x => $"{x.Name}{x.Declaration.Name}", StringComparer.OrdinalIgnoreCase)
                                         .Select(x => x.Declaration?.Name?.StartsWith('.') ?? false ? 
                                             (string.Empty, string.Empty, x.Declaration.Name) :
                                             relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))

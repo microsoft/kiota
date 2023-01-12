@@ -48,7 +48,8 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 false,
                 new[] { CodeClassKind.RequestConfiguration });
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
-            AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
+            if (generatedCode.FindNamespaceByName(_configuration.ClientNamespaceName)?.Parent is CodeNamespace parentOfClientNS)
+                AddNamespaceModuleImports(parentOfClientNS, generatedCode);
             var defaultConfiguration = new GenerationConfiguration();
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceDefaultSerializationModules(
@@ -225,30 +226,27 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, AddInheritedAndMethodTypesImports);
     }
-    private static void AddNamespaceModuleImports(CodeElement current, string clientNamespaceName) {
+    private static void AddNamespaceModuleImports(CodeNamespace clientNamespaceParent, CodeElement current) {
         if(current is CodeClass currentClass) {
             var module = currentClass.GetImmediateParentOfType<CodeNamespace>();
-            AddModules(module, clientNamespaceName, (usingToAdd) => {
+            AddModules(clientNamespaceParent, module, (usingToAdd) => {
                 currentClass.AddUsing(usingToAdd);
             });
         }
-        CrawlTree(current, c => AddNamespaceModuleImports(c, clientNamespaceName));
+        CrawlTree(current, c => AddNamespaceModuleImports(clientNamespaceParent, c));
     }
-    private const string Dot = ".";
-    private static void AddModules(CodeNamespace module, string clientNamespaceName, Action<CodeUsing> callback) {
-        if(!string.IsNullOrEmpty(module.Name)){
-            var modulesProperties = module.Name.Replace(clientNamespaceName+Dot, string.Empty).Split(Dot);
-            for (int i = modulesProperties.Length - 1; i >= 0; i--){
-                var prefix = string.Concat(Enumerable.Repeat("../", modulesProperties.Length -i-1));
-                var usingName = modulesProperties[i].ToSnakeCase();
-                callback(new CodeUsing { 
-                    Name = usingName,
-                    Declaration = new CodeType {
-                        IsExternal = false,
-                        Name = $"{(string.IsNullOrEmpty(prefix) ? "./" : prefix)}{usingName}",
-                    }
-                });
-            }
+    private static void AddModules(CodeNamespace clientNamespaceParent, CodeNamespace module, Action<CodeUsing> callback) {
+        var definition = module;
+        while(definition != clientNamespaceParent && !string.IsNullOrEmpty(definition?.Name)) {
+            callback(new CodeUsing { 
+                Name = definition.Name,
+                Declaration = new CodeType {
+                    IsExternal = false,
+                    Name = definition.Name,
+                    TypeDefinition = definition,
+                }
+            });
+            definition = definition.Parent as CodeNamespace;
         }
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
