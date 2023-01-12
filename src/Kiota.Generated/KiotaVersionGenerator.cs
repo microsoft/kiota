@@ -10,7 +10,7 @@ public class KiotaVersionGenerator : ISourceGenerator
     public void Execute(GeneratorExecutionContext context)
     {
         var mainSyntaxTree = context.Compilation.SyntaxTrees
-                            .First(x => x.HasCompilationUnitRoot);
+                            .First(static x => x.HasCompilationUnitRoot);
 
         var directory = Path.GetDirectoryName(mainSyntaxTree.FilePath);
 
