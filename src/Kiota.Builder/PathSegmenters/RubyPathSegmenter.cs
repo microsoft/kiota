@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -19,4 +20,20 @@ public class RubyPathSegmenter : CommonPathSegmenter
     public override string FileSuffix => ".rb";
     public override string NormalizeFileName(CodeElement currentElement) => GetLastFileNameSegment(currentElement).ToSnakeCase();
     public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToSnakeCase();
+    public override string NormalizePath(string fullPath) =>
+        ExceedsMaxPathLength(fullPath) && Path.GetDirectoryName(fullPath) is string directoryName ? 
+            Path.Combine(directoryName,
+                        ShortenFileName(directoryName, Path.GetFileName(fullPath)) + FileSuffix) :
+            fullPath;
+    private string ShortenFileName(string directoryName, string currentFileName) =>
+        currentFileName.Replace(FileSuffix, string.Empty)
+                        .ShortenFileName(Math.Min(MaxFilePathLength - directoryName.Length, MaxFileNameLength));
+    private static readonly int MaxFilePathLength = 230;
+    private static readonly int MaxFileNameLength = 98; // brute force tested
+    public bool ExceedsMaxPathLength(string fullPath) =>
+        (fullPath.Length - RootPath.Length) > MaxFilePathLength || Path.GetFileName(fullPath).Length > MaxFileNameLength;
+    public string GetRelativeFileName(CodeNamespace currentNamespace, CodeElement currentElement) =>
+        ExceedsMaxPathLength(GetPath(currentNamespace, currentElement, false)) ?
+            Path.GetFileName(GetPath(currentNamespace, currentElement, true)).Replace(FileSuffix, string.Empty) :
+            NormalizeFileName(currentElement);
 }

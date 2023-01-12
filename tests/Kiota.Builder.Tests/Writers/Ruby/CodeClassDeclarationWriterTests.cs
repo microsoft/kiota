@@ -13,13 +13,14 @@ namespace Kiota.Builder.Tests.Writers.Ruby {
     {
         private const string DefaultPath = "./";
         private const string DefaultName = "name";
+        private const string ClientNamespaceName = "graph";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeClassDeclarationWriter codeElementWriter;
         private readonly CodeClass parentClass;
 
         public CodeClassDeclarationWriterTests() {
-            codeElementWriter = new CodeClassDeclarationWriter(new RubyConventionService(), "graph");
+            codeElementWriter = new CodeClassDeclarationWriter(new RubyConventionService(), ClientNamespaceName, new(Path.GetTempPath(), ClientNamespaceName));
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);

@@ -7,9 +7,10 @@ public class RubyWriter : LanguageWriter
     {
         PathSegmenter = new RubyPathSegmenter(rootPath, clientNamespaceName);
         var conventionService = new RubyConventionService();
-        AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
+        var pathSegmenter = new RubyPathSegmenter(rootPath, clientNamespaceName);
+        AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName, pathSegmenter));
         AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
-        AddOrReplaceCodeElementWriter(new CodeNamespaceWriter(conventionService));
+        AddOrReplaceCodeElementWriter(new CodeNamespaceWriter(conventionService, pathSegmenter));
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
