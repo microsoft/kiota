@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Adds support for nullable reference types in dotnet for projects running Netstandard 2.1/Net 6.0 and above []()
+
 ### Changed
 
 - Fixed a bug in ruby where file names or paths could be too long to be packaged.

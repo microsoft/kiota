@@ -451,19 +451,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .OrderBy(static x => x.Name))
         {
             var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
-            var isNullableReferenceType = !conventions.GetTypeString(otherProp.Type, otherProp).EndsWith("?") && serializationMethodName.Contains("WriteObject", StringComparison.OrdinalIgnoreCase);
-            if (isNullableReferenceType)
-            {
-                writer.WriteLine($"#if {CSharpConventionService.NullableEnableDirective}",false);
-                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method,true)}(\"{otherProp.SerializationName ?? otherProp.Name}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
-                writer.WriteLine("#else",false);
-            }
-        
             writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.SerializationName ?? otherProp.Name}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
-        
-            if (isNullableReferenceType)
-                writer.WriteLine("#endif",false);
-            
         }
     }
     private void WriteSerializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
@@ -570,13 +558,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var includeNullableReferenceType = code.Parameters.Any( codeParameter => codeParameter.IsOfKind(CodeParameterKind.RequestConfiguration));
         if (includeNullableReferenceType)
         {
+            var completeReturnTypeWithNullable = string.IsNullOrEmpty(genericTypeSuffix) ? completeReturnType : $"{completeReturnType[..^2]}?{genericTypeSuffix} ";
             var nullableParameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer)
                                                           .Select(p => p.IsOfKind(CodeParameterKind.RequestConfiguration) ? 
                                                                                         GetParameterSignatureWithNullableRefType(p,code): 
                                                                                         conventions.GetParameterSignature(p, code))
                                                           .ToList());
             writer.WriteLine($"#if {CSharpConventionService.NullableEnableDirective}",false);
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({nullableParameters}){baseSuffix} {{");
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnTypeWithNullable}{methodName}({nullableParameters}){baseSuffix} {{");
             writer.WriteLine("#else",false);
         }
         
@@ -591,7 +580,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     {
         var signatureSegments = conventions.GetParameterSignature(parameter, targetElement).Split(" ", StringSplitOptions.RemoveEmptyEntries);
         return $"{signatureSegments[0]}? {string.Join(" ",signatureSegments[1..])}";
-
     }
     private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method, bool includeNullableRef = false)
     {
