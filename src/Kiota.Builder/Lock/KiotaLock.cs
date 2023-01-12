@@ -24,7 +24,7 @@ public class KiotaLock {
     /// <summary>
     /// The version of the Kiota generator that generated this client.
     /// </summary>
-    public string KiotaVersion { get; set; } = Assembly.GetEntryAssembly().GetName().Version.ToString();
+    public string KiotaVersion { get; set; } = Kiota.Generated.KiotaVersion.Current();
     /// <summary>
     /// The main class name for this client.
     /// </summary>
