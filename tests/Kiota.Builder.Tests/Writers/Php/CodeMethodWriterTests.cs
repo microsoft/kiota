@@ -1041,6 +1041,15 @@ namespace Kiota.Builder.Tests.Writers.Php
                 Parent = parentClass,
                 Kind = CodeMethodKind.ClientConstructor
             };
+            codeMethod.BaseUrl = "https://graph.microsoft.com/v1.0";
+            parentClass.AddProperty(new CodeProperty {
+                Name = "pathParameters",
+                Kind = CodePropertyKind.PathParameters,
+                Type = new CodeType {
+                    Name = "array",
+                    IsExternal = true,
+                }
+            });
 
             codeMethod.AddParameter(new CodeParameter
             {
@@ -1060,6 +1069,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             var result = stringWriter.ToString();
             Assert.Contains("$this->requestAdapter = $requestAdapter", result);
             Assert.Contains("public function __construct(RequestAdapter $requestAdapter)", result);
+            Assert.Contains($"$this->pathParameters['baseUrl'] = $this->requestAdapter->getBaseUrl();", result);
         }
 
         [Fact]
