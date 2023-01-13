@@ -30,7 +30,7 @@
 
 @if (SearchResults.Any()) {
     <div id="results">
-        <FluentDataGrid id="manualGrid" GenerateHeader=GenerateHeaderOption.None GridTemplateColumns="1fr 4fr 1fr" TItem=string>
+        <FluentDataGrid TGridItem="KeyValuePair<string, SearchResult>" id="manualGrid" GenerateHeader=GenerateHeaderOption.None GridTemplateColumns="1fr 4fr 1fr" TItem=string>
             <FluentDataGridRow RowType="DataGridRowType.Header">
                 <FluentDataGridCell GridColumn=1 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Key"]</FluentDataGridCell>
                 <FluentDataGridCell GridColumn=2 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Description"]</FluentDataGridCell>
@@ -51,14 +51,10 @@
                 }
         </FluentDataGrid>
         @if(ShowVersionSelector) {
-            <FluentDialog @ondismiss=OnDialogDismiss>
+            <FluentDialog @ondialogdismiss=OnDialogDismiss>
                 <div class="dialog-content">
                     <h2>@Loc["SelectVersion"]</h2>
-                    <FluentSelect Id="selectedversion" @bind-Value=@SelectedVersion Required=@true>
-                        @foreach(var version in AvailableVersions) {
-                            <FluentOption Value=@version>@version</FluentOption>
-                        }
-                    </FluentSelect>
+                    <FluentSelect Id="selectedversion" @bind-Value=@SelectedVersion Required=@true Items="@AvailableVersions" />
                     <FluentDivider Role=DividerRole.Presentation></FluentDivider>
                     <FluentButton Appearance="Appearance.Accent" @onclick=@GoToGenerateWithVersion>@Loc["GoToGenerate"]</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" @onclick=@GoToShowWithVersion>@Loc["GoToShow"]</FluentButton>

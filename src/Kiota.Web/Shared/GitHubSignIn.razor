@@ -18,7 +18,7 @@
         <FluentTooltip Anchor="signinbtn" Position=TooltipPosition.Bottom>@Loc["ToolTip"]</FluentTooltip>
     }
 </div>
-<FluentDialog Modal="true" @ondismiss=OnPatSetDialogDismiss @bind-Hidden=@PatSetDialogHidden>
+<FluentDialog Modal="true" @ondialogdismiss=OnPatSetDialogDismiss @bind-Hidden=@PatSetDialogHidden>
     <div class="gh-dialog-content">
         <h2>@Loc["PersonalAccessTokenHeader"]</h2>
         <h3>@Loc["PersonalAccessTokenInstructions"]</h3>
