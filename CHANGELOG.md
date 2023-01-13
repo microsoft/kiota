@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The Lock file uses a project version coming from a Source Generator instead of the one looked up with reflection. [#2147](https://github.com/microsoft/kiota/issues/2147)
 - Fixed a bug in ruby where file names or paths could be too long to be packaged.
 - Fixed a bug where models descriptions would be undeterministic. [#2130](https://github.com/microsoft/kiota/issues/2130)
 - Fixed a bug in dotnet where default values for Enum properties with special characters would not match the model. [#2091](https://github.com/microsoft/kiota/issues/2091)
