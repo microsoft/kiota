@@ -34,16 +34,13 @@
         <span>@Loc["ExcludePatterns"]</span>
     </FluentTextArea>
     <label for="language">@Loc["Language"]</label><br />
-    <FluentSelect Id="language" @bind-Value="@Language" Required=@true>
-        @foreach (var item in Enum.GetValues<GenerationLanguage>().OrderBy(static x => x.ToString(), StringComparer.OrdinalIgnoreCase))
-        {
-            if (configuration?.Languages?.TryGetValue(item.ToString(), out var languageInfo) ?? false) {
-                <FluentOption Value=@item Selected=@(Language.HasValue && Language.Value == item)>@item - @languageInfo.MaturityLevel</FluentOption>
-            } else {
-                <FluentOption Value=@item Selected=@(Language.HasValue && Language.Value == item)>@item</FluentOption>
-            }
-        }
-    </FluentSelect>
+    <FluentSelect
+        TOption="GenerationLanguage?" 
+        Id="language"
+        @bind-SelectedOption="@Language"
+        Required=@true
+        Items="Enum.GetValues<GenerationLanguage>().Select(static x => new Nullable<GenerationLanguage>(x)).OrderBy(static x => x.ToString(), StringComparer.OrdinalIgnoreCase)"
+        OptionText="@(x => (configuration?.Languages?.TryGetValue(x.ToString(), out var languageInfo) ?? false) ? $"{x} - {languageInfo.MaturityLevel}" : x.ToString())" />
     <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
     <FluentCheckbox @bind-Value=@AdditionalData>@Loc["AdditionalData"]</FluentCheckbox>
     <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
