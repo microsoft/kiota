@@ -506,6 +506,7 @@ namespace Kiota.Builder.Writers.Php
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod codeMethod, LanguageWriter writer)
         {
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             WriteSerializationRegistration(codeMethod.SerializerModules, writer, "registerDefaultSerializer");
             WriteSerializationRegistration(codeMethod.DeserializerModules, writer, "registerDefaultDeserializer");
             if(!string.IsNullOrEmpty(codeMethod.BaseUrl)) {
@@ -513,6 +514,8 @@ namespace Kiota.Builder.Writers.Php
                 writer.IncreaseIndent();
                 writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl}');");
                 writer.CloseBlock();
+                if (pathParametersProperty != null)
+                    writer.WriteLine($"{GetPropertyCall(pathParametersProperty, default)}['baseUrl'] = {GetPropertyCall(requestAdapterProperty, string.Empty)}->getBaseUrl();");
             }
             var backingStoreParam = codeMethod.Parameters.OfKind(CodeParameterKind.BackingStore);
             if (backingStoreParam != null)
