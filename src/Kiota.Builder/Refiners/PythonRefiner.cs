@@ -76,6 +76,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddQueryParameterMapperMethod(
                 generatedCode
             );
+            RemoveHandlerFromRequestBuilder(generatedCode);
         }, cancellationToken);
     }
 
