@@ -555,11 +555,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             baseSuffix = " : base()";
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)).ToList());
         var methodName = isConstructor ? code.Parent.Name.ToFirstCharacterUpperCase() : code.Name.ToFirstCharacterUpperCase();
-        var includeNullableReferenceType = code.Parameters.Any( codeParameter => codeParameter.IsOfKind(CodeParameterKind.RequestConfiguration));
+        var includeNullableReferenceType = code.Parameters.Any(static codeParameter => codeParameter.IsOfKind(CodeParameterKind.RequestConfiguration));
         if (includeNullableReferenceType)
         {
             var completeReturnTypeWithNullable = string.IsNullOrEmpty(genericTypeSuffix) ? completeReturnType : $"{completeReturnType[..^2]}?{genericTypeSuffix} ";
-            var nullableParameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer)
+            var nullableParameters = string.Join(", ", code.Parameters.OrderBy(static x => x, parameterOrderComparer)
                                                           .Select(p => p.IsOfKind(CodeParameterKind.RequestConfiguration) ? 
                                                                                         GetParameterSignatureWithNullableRefType(p,code): 
                                                                                         conventions.GetParameterSignature(p, code))
