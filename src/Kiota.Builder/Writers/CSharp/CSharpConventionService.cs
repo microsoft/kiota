@@ -13,7 +13,8 @@ namespace Kiota.Builder.Writers.CSharp {
         public override string VoidTypeName => "void";
         public override string DocCommentPrefix => "/// ";
         private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset", "TimeSpan", "Date","Time", "sbyte", "byte" };
-        public static readonly char NullableMarker = '?';
+        public const char NullableMarker = '?';
+        public const string NullableEnableDirective = "NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER";
         public static string NullableMarkerAsString => "?";
         public override string ParseNodeInterfaceName => "IParseNode";
         public override void WriteShortDescription(string description, LanguageWriter writer) {
@@ -57,7 +58,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 ).ToArray());
         }
         #pragma warning restore CA1822 // Method should be static
-        internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
+        private static bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
             return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
         }
         private static HashSet<string> _namespaceSegmentsNames;
