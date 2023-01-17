@@ -276,7 +276,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .Select(x => x?.Name.ToSnakeCase()).Where(x => x != null);
         if(requestInfoParameters.Any()) {
             writer.IncreaseIndent();
-            writer.WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x}, {y}"));
+            writer.WriteLine(requestInfoParameters.Aggregate(static (x,y) => $"{x}, {y}"));
             writer.DecreaseIndent();
         }
         writer.WriteLine(")");
@@ -298,7 +298,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     writer.IncreaseIndent();
     writer.WriteLine("raise Exception(\"Http core is null\") ");
     writer.DecreaseIndent();
-    writer.WriteLine($"return await self.request_adapter.{genericTypeForSendMethod}(request_info,{newFactoryParameter} response_handler, {errorMappingVarName})");
+    writer.WriteLine($"return await self.request_adapter.{genericTypeForSendMethod}(request_info,{newFactoryParameter} {errorMappingVarName})");
     }
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName) {
         if(!codeElement.ReturnType.IsCollection) return fullTypeName;
