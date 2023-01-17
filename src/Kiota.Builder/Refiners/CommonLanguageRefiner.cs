@@ -833,9 +833,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     private static void AddStaticMethodImportToClass(CodeClass parentClass, CodeType returnType, Func<CodeType, string> functionNameCallback) {
         var staticMethodName = functionNameCallback.Invoke(returnType);
-        var staticMethodNS = returnType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
-        var staticMethod = staticMethodNS.FindChildByName<CodeFunction>(staticMethodName, false);
-        if(staticMethod != null)
+        if(returnType.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace staticMethodNS &&
+            staticMethodNS.FindChildByName<CodeFunction>(staticMethodName, false) is CodeFunction staticMethod)
             parentClass.AddUsing(new CodeUsing{
                 Name = staticMethodName,
                 Declaration = new CodeType {
