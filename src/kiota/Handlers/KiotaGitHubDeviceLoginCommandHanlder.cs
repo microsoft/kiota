@@ -58,7 +58,7 @@ internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
             return 1;
         }
     }
-    private static async Task ListOutRepositoriesAsync(IAuthenticationProvider authProvider, CancellationToken cancellationToken) {
+    private async Task ListOutRepositoriesAsync(IAuthenticationProvider authProvider, CancellationToken cancellationToken) {
         var requestAdapter = new HttpClientRequestAdapter(authProvider, httpClient: httpClient);
         var client = new GitHubClient(requestAdapter);
         var installations = await client.User.Installations.GetAsync(cancellationToken: cancellationToken);
