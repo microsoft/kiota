@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <Target Name="DoSthAfterPublish1" AfterTargets="Publish">
