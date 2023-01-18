@@ -116,7 +116,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         return path.Replace('\\', '/');
     }
     private readonly Lazy<bool> tutorialMode = new(() => {
-        var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_TUTORIAL");
+        var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_TUTORIAL_ENABLED");
         if (!string.IsNullOrEmpty(kiotaInContainerRaw) && bool.TryParse(kiotaInContainerRaw, out var kiotaTutorial)) {
             return kiotaTutorial;
         }
@@ -124,7 +124,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     });
     protected bool TutorialMode => tutorialMode.Value;
     private readonly Lazy<bool> consoleSwapColors = new(() => {
-        var kiotaSwapColorsRaw = Environment.GetEnvironmentVariable("KIOTA_CONSOLE_SWAP_COLORS");
+        var kiotaSwapColorsRaw = Environment.GetEnvironmentVariable("KIOTA_CONSOLE_COLORS_SWAP");
         if (!string.IsNullOrEmpty(kiotaSwapColorsRaw) && bool.TryParse(kiotaSwapColorsRaw, out var kiotaSwapColors)) {
             return kiotaSwapColors;
         }
@@ -132,11 +132,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     });
     protected bool SwapColors => consoleSwapColors.Value;
     private readonly Lazy<bool> consoleNoColors = new(() => {
-        var kiotaNoColorsRaw = Environment.GetEnvironmentVariable("KIOTA_CONSOLE_NO_COLORS");
+        var kiotaNoColorsRaw = Environment.GetEnvironmentVariable("KIOTA_CONSOLE_COLORS_ENABLED");
         if (!string.IsNullOrEmpty(kiotaNoColorsRaw) && bool.TryParse(kiotaNoColorsRaw, out var kiotaNoColors)) {
             return kiotaNoColors;
         }
-        return false;
+        return true;
     });
     protected bool NoColors => consoleNoColors.Value;
     

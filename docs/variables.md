@@ -10,7 +10,6 @@ The table below provides the list of environment variables that can be used to c
 
 | Environment variable name | Description | Default value |
 |---|---|---|
-| KIOTA_CONSOLE_NO_COLORS | Turn off the output colorization | false |
-| KIOTA_CONSOLE_SWAP_COLORS | Swap the color of the output | false |
-| KIOTA_TUTORIAL | Displays additional hints after commands execution | true |
-
+| KIOTA_CONSOLE_COLORS_ENABLED | Whether to enable the output colorization | true |
+| KIOTA_CONSOLE_COLORS_SWAP | Whether to invert the color scheme of the output | false |
+| KIOTA_TUTORIAL_ENABLED | Whether to display additional hints after commands execution | true |
