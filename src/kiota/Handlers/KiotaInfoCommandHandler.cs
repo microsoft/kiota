@@ -81,7 +81,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler {
         var layout = new StackLayoutView { view };
         console.Append(layout);
     }
-    private static void ShowLanguageInformation(GenerationLanguage language, LanguagesInformation informationSource) {
+    private void ShowLanguageInformation(GenerationLanguage language, LanguagesInformation informationSource) {
         if (informationSource.TryGetValue(language.ToString(), out var languageInformation)) {
             DisplayInfo($"The language {language} is currently in {languageInformation.MaturityLevel} maturity level.",
                         "After generating code for this language, you need to install the following packages:");
