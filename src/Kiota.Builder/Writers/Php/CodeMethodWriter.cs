@@ -130,36 +130,34 @@ namespace Kiota.Builder.Writers.Php
             var methodDescription = codeMethod.Documentation.Description ?? string.Empty;
 
             var hasMethodDescription = !string.IsNullOrEmpty(methodDescription.Trim(' '));
-            var parametersWithDescription = codeMethod.Parameters;
-            var withDescription = parametersWithDescription as CodeParameter[] ?? parametersWithDescription.ToArray();
+            var parameters = codeMethod.Parameters;
+            var withDescription = parameters as CodeParameter[] ?? parameters.ToArray();
             if (!hasMethodDescription && !withDescription.Any())
             {
                 return;
             }
-
-            writer.WriteLine(conventions.DocCommentStart);
             var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
                 StringComparison.OrdinalIgnoreCase) && !codeMethod.IsOfKind(CodeMethodKind.RequestExecutor);
-            if(hasMethodDescription){
-                writer.WriteLine(
-                    $"{conventions.DocCommentPrefix}{methodDescription}");
-            }
 
             var accessedProperty = codeMethod.AccessedProperty;
             var isSetterForAdditionalData = (codeMethod.IsOfKind(CodeMethodKind.Setter) &&
                                              accessedProperty.IsOfKind(CodePropertyKind.AdditionalData));
-            
-            withDescription.Select(x => GetParameterDocString(codeMethod, x, isSetterForAdditionalData))
-                .ToList()
-                .ForEach(x => writer.WriteLine(x));
+
+            var parametersWithDescription = withDescription
+                .Where(x => x.Documentation.DescriptionAvailable)
+                .Select(x => GetParameterDocString(codeMethod, x, isSetterForAdditionalData))
+                .ToList();
             var returnDocString = GetDocCommentReturnType(codeMethod, accessedProperty);
             if (!isVoidable)
-            {
-                writer.WriteLine((codeMethod.Kind == CodeMethodKind.RequestExecutor)
-                    ? $"{conventions.DocCommentPrefix}@return Promise"
-                    : $"{conventions.DocCommentPrefix}@return {returnDocString}{orNullReturn[1]}");
-            }
-            writer.WriteLine(conventions.DocCommentEnd);
+                returnDocString = (codeMethod.Kind == CodeMethodKind.RequestExecutor)
+                    ? "@return Promise"
+                    : $"@return {returnDocString}{orNullReturn[1]}";
+            else returnDocString = String.Empty;
+            conventions.WriteLongDescription(codeMethod.Documentation,
+                writer,
+                parametersWithDescription.Union(new []{returnDocString})
+                );
+
         }
 
         private string GetDocCommentReturnType(CodeMethod codeMethod, CodeProperty accessedProperty)
@@ -177,8 +175,8 @@ namespace Kiota.Builder.Writers.Php
         {
             return codeMethod.Kind switch
             {
-                CodeMethodKind.Setter => $"{conventions.DocCommentPrefix} @param {(isSetterForAdditionalData ? "array<string,mixed> $value": conventions.GetParameterDocNullable(x, x))} {x?.Documentation.Description}",
-                _ => $"{conventions.DocCommentPrefix}@param {conventions.GetParameterDocNullable(x, x)} {x.Documentation.Description}"
+                CodeMethodKind.Setter => $"@param {(isSetterForAdditionalData ? "array<string,mixed> $value": conventions.GetParameterDocNullable(x, x))} {x?.Documentation.Description}",
+                _ => $"@param {conventions.GetParameterDocNullable(x, x)} {x.Documentation.Description}"
             };
         }
         
