@@ -205,6 +205,8 @@ namespace Kiota.Builder.Tests.Writers.Php
                 },
                 Documentation = new() {
                     Description = "This will send a POST request",
+                    DocumentationLink = new Uri("https://learn.microsoft.com/"),
+                    DocumentationLabel = "Learning"
                 },
                 Kind = CodeMethodKind.RequestExecutor
             };
@@ -249,6 +251,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("Promise", result);
             Assert.Contains("$requestInfo = $this->createPostRequestInformation();", result);
             Assert.Contains("RejectedPromise", result);
+            Assert.Contains("@link https://learn.microsoft.com/ Learning", result);
             Assert.Contains("catch(Exception $ex)", result);
             Assert.Contains("'403' => [Error403::class, 'createFromDiscriminatorValue']", result);
             Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, StreamInterface::class, $responseHandler, $errorMappings);", result);

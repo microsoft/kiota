@@ -134,6 +134,28 @@ namespace Kiota.Builder.Writers.Php
             }
         }
 
+        public void WriteLongDescription(CodeDocumentation codeDocumentation, LanguageWriter writer, IEnumerable<string> additionalRemarks = default)
+        {
+            if (codeDocumentation is null) return;
+            additionalRemarks ??= Enumerable.Empty<string>();
+
+            var enumerableArray = additionalRemarks as string[] ?? additionalRemarks.ToArray();
+            if (codeDocumentation.DescriptionAvailable || codeDocumentation.ExternalDocumentationAvailable ||
+                enumerableArray.Any())
+            {
+                writer.WriteLine(DocCommentStart);
+                if(codeDocumentation.DescriptionAvailable)
+                    writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(codeDocumentation.Description)}");
+                foreach(var additionalRemark in enumerableArray.Where(static x => !string.IsNullOrEmpty(x)))
+                    writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
+
+                if(codeDocumentation.ExternalDocumentationAvailable)
+                    writer.WriteLine($"{DocCommentPrefix}@link {codeDocumentation.DocumentationLink} {codeDocumentation.DocumentationLabel}");
+                writer.WriteLine(DocCommentEnd);
+            }
+
+        }
+
         public void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default, CodeElement method = default)
         {
             var codeMethod = method as CodeMethod;
