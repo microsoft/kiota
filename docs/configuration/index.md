@@ -8,8 +8,8 @@ has_children: false
 
 This is a list of available options for the Kiota CLI.
 
-| Environment Variable  | result  |
-|---|---|
-| KIOTA_TUTORIAL | Displays additional hints |
-| KIOTA_CONSOLE_SWAP_COLORS | Swap the color of the output |
-| KIOTA_CONSOLE_NO_COLORS | Turn off the output colorization |
+| Environment Variable  | Description | Default value |
+|---|---|---|
+| KIOTA_TUTORIAL | Displays additional hints | true |
+| KIOTA_CONSOLE_SWAP_COLORS | Swap the color of the output | false |
+| KIOTA_CONSOLE_NO_COLORS | Turn off the output colorization | false |
