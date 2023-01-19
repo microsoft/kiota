@@ -75,21 +75,23 @@ namespace Kiota.Builder.Extensions {
         ///<summary>
         /// Returns the class name for the node with more or less precision depending on the provided arguments
         ///</summary>
-        public static string GetClassName(this OpenApiUrlTreeNode currentNode, HashSet<string> structuredMimeTypes, string suffix = default, string prefix = default, OpenApiOperation operation = default, OpenApiResponse response = default, OpenApiSchema schema = default, bool requestBody = false) {
+        public static string GetClassName(this OpenApiUrlTreeNode currentNode, HashSet<string> structuredMimeTypes, string? suffix = default, string? prefix = default, OpenApiOperation? operation = default, OpenApiResponse? response = default, OpenApiSchema? schema = default, bool requestBody = false) {
             var rawClassName = schema?.Reference?.GetClassName() ??
                                 (requestBody ? null : response?.GetResponseSchema(structuredMimeTypes)?.Reference?.GetClassName()) ??
                                 (requestBody ? operation?.GetRequestSchema(structuredMimeTypes) : operation?.GetResponseSchema(structuredMimeTypes))?.Reference?.GetClassName() ?? 
                                 CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier();
-            if(stripExtensionForIndexersRegex.IsMatch(rawClassName))
-                rawClassName = stripExtensionForIndexersRegex.Replace(rawClassName, string.Empty);
-            if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName)) {
-                rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
-                if(rawClassName == WithKeyword) // in case the single parameter doesn't follow {classname-id} we get the previous segment
-                    rawClassName = currentNode.Path
-                                            .Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
-                                            .SkipLast(1)
-                                            .Last()
-                                            .ToFirstCharacterUpperCase();
+            if (!string.IsNullOrEmpty(rawClassName)) {
+                if(stripExtensionForIndexersRegex.IsMatch(rawClassName))
+                    rawClassName = stripExtensionForIndexersRegex.Replace(rawClassName, string.Empty);
+                if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName)) {
+                    rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
+                    if(rawClassName == WithKeyword) // in case the single parameter doesn't follow {classname-id} we get the previous segment
+                        rawClassName = currentNode.Path
+                                                .Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
+                                                .SkipLast(1)
+                                                .Last()
+                                                .ToFirstCharacterUpperCase();
+                }
             }
 
             var classNameSegments = rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries).AsEnumerable() ?? Enumerable.Empty<string>();

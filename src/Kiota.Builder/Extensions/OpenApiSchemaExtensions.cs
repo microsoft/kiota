@@ -47,26 +47,26 @@ public static class OpenApiSchemaExtensions {
         return isReference;
     }
 
-    public static bool IsArray(this OpenApiSchema schema)
+    public static bool IsArray(this OpenApiSchema? schema)
     {
         return (schema?.Type?.Equals("array", StringComparison.OrdinalIgnoreCase) ?? false) && schema?.Items != null;
     }
 
-    public static bool IsObject(this OpenApiSchema schema)
+    public static bool IsObject(this OpenApiSchema? schema)
     {
         return schema?.Type?.Equals("object", StringComparison.OrdinalIgnoreCase) ?? false;
     }
-    public static bool IsAnyOf(this OpenApiSchema schema)
+    public static bool IsAnyOf(this OpenApiSchema? schema)
     {
         return schema?.AnyOf?.Count(IsSemanticallyMeaningful) > 1;
     }
 
-    public static bool IsAllOf(this OpenApiSchema schema)
+    public static bool IsAllOf(this OpenApiSchema? schema)
     {
         return schema?.AllOf?.Count(IsSemanticallyMeaningful) > 1;
     }
 
-    public static bool IsOneOf(this OpenApiSchema schema)
+    public static bool IsOneOf(this OpenApiSchema? schema)
     {
         return schema?.OneOf?.Count(IsSemanticallyMeaningful) > 1;
     }
