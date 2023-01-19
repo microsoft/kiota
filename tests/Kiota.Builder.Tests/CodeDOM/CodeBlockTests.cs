@@ -130,7 +130,10 @@ namespace Kiota.Builder.Tests.CodeDOM {
             };
             var overload = method.Clone() as CodeMethod;
             overload.AddParameter(new CodeParameter {
-                Name = "param1"
+                Name = "param1",
+                Type = new CodeType {
+                    Name = "string"
+                }
             });
             codeClass.AddMethod(method, overload);
         }

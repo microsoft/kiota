@@ -50,7 +50,10 @@ namespace Kiota.Builder.Tests.CodeDOM {
                 Name = "method1"
             };
             method.AddParameter(new CodeParameter {
-                Name = "param1"
+                Name = "param1",
+                Type = new CodeType {
+                    Name = "string"
+                }
             });
             var clone = method.Clone() as CodeMethod;
             Assert.Equal(method.Name, clone.Name);
@@ -65,6 +68,9 @@ namespace Kiota.Builder.Tests.CodeDOM {
             method.AddParameter(new CodeParameter {
                 Name = "param1",
                 Kind = CodeParameterKind.Custom,
+                Type = new CodeType {
+                    Name = "string"
+                }
             });
             Assert.NotNull(method.Parameters.OfKind(CodeParameterKind.Custom));
             Assert.Null(method.Parameters.OfKind(CodeParameterKind.RequestBody));

@@ -1185,13 +1185,15 @@ public class CodeMethodWriterTests : IDisposable {
             Kind = CodeParameterKind.RequestAdapter,
             Type = coreProp.Type,
         });
-        var backingStoreParam = new CodeParameter {
+        var backingStoreParam = new CodeParameter
+        {
             Name = "backingStore",
             Kind = CodeParameterKind.BackingStore,
-        };
-        backingStoreParam.Type = new CodeType {
-            Name = "IBackingStore",
-            IsExternal = true,
+            Type = new CodeType
+            {
+                Name = "IBackingStore",
+                IsExternal = true,
+            }
         };
         method.AddParameter(backingStoreParam);
         var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);

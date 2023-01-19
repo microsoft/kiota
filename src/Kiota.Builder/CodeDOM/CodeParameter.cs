@@ -51,10 +51,10 @@ public enum CodeParameterKind
 
 public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable, IDocumentedElement
 {
-    private CodeTypeBase? type;
-    public CodeTypeBase? Type {get => type; set {
-        EnsureElementsAreChildren(type);
+    private CodeTypeBase type;
+    public required CodeTypeBase Type {get => type; set {
         type = value;
+        EnsureElementsAreChildren(type);
     }}
     public bool Optional {get;set;}
     public CodeDocumentation Documentation { get; set; } = new();
@@ -66,11 +66,11 @@ public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable
             Optional = Optional,
             Kind = Kind,
             Name = Name,
-            Type = Type?.Clone() as CodeTypeBase,
             DefaultValue = DefaultValue,
             Parent = Parent,
             SerializationName = SerializationName,
             Documentation = (CodeDocumentation)Documentation.Clone(),
+            Type = (CodeTypeBase)Type.Clone(),
         };
     }
 }

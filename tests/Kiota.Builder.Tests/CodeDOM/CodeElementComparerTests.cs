@@ -20,7 +20,10 @@ namespace Kiota.Builder.Tests.CodeDOM {
             };
             codeClass.AddMethod(method);
             method.AddParameter(new CodeParameter {
-                Name = "param"
+                Name = "param",
+                Type = new CodeType {
+                    Name = "string"
+                }
             });
             var dataSet = new List<Tuple<CodeElement, CodeElement, int>> {
                 new(null, null, 0),
@@ -48,7 +51,10 @@ namespace Kiota.Builder.Tests.CodeDOM {
                 Name = "Method"
             };
             method.AddParameter(new CodeParameter {
-                Name = "param"
+                Name = "param",
+                Type = new CodeType {
+                    Name = "string"
+                }
             });
             codeClass.AddMethod(method);
             var dataSet = new List<Tuple<CodeElement, CodeElement, int>> {
