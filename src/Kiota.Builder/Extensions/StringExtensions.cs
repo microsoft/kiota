@@ -141,7 +141,7 @@ public static class StringExtensions
     ///<summary>
     /// Cleanup regex that removes all special characters from ASCII 0-127
     ///</summary>
-    private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*+,./:;<=>?@\[\]\\^`{}|~-](?<followingLetter>\w)?", RegexOptions.Compiled);
+    private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*+,./:;<=>?@\[\]\\^`{}|~-](?<followingLetter>\w)?", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
     private const string CleanupGroupName = "followingLetter";
     public static string CleanupSymbolName(this string original)
     {
@@ -161,7 +161,7 @@ public static class StringExtensions
 
         return result;
     }
-    private static readonly Regex NumbersSpellingRegex = new(@"^(?<number>\d+)", RegexOptions.Compiled);
+    private static readonly Regex NumbersSpellingRegex = new(@"^(?<number>\d+)", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
     private static readonly Dictionary<char, string> SpelledOutNumbers = new() {
         {'0', "Zero"},
         {'1', "One"},

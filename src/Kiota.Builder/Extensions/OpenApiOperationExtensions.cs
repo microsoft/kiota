@@ -11,7 +11,7 @@ namespace Kiota.Builder.Extensions {
         /// <summary>
         /// cleans application/vnd.github.mercy-preview+json to application/json
         /// </summary>
-        private static readonly Regex vendorSpecificCleanup = new(@"[^/]+\+", RegexOptions.Compiled);
+        private static readonly Regex vendorSpecificCleanup = new(@"[^/]+\+", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
         public static OpenApiSchema GetResponseSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
         {
             // Return Schema that represents all the possible success responses!

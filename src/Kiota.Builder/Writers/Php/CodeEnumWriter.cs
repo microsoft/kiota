@@ -49,10 +49,10 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"public const {GetEnumValueName(enumProperty.Name)} = '{enumProperty.SerializationName ?? enumProperty.Name}';");
             }
         }
-        
+        private static readonly Regex _enumValueNameRegex = new ("([A-Z]{1})", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
         private static string GetEnumValueName(string original)
         {
-            return Regex.Replace(original, "([A-Z]{1})", "_$1").Trim('_').ToUpperInvariant();
+            return _enumValueNameRegex.Replace(original, "_$1").Trim('_').ToUpperInvariant();
         }
         
     }

@@ -101,7 +101,7 @@ public class JavaConventionService : CommonLanguageConventionService
             writer.WriteLine(DocCommentEnd);
         }
     }
-    private static readonly Regex nonAsciiReplaceRegex = new (@"[^\u0000-\u007F]+", RegexOptions.Compiled);
+    private static readonly Regex nonAsciiReplaceRegex = new (@"[^\u0000-\u007F]+", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => 
         string.IsNullOrEmpty(originalDescription) ? 
             originalDescription :

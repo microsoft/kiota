@@ -253,6 +253,8 @@ public static class KiotaHost {
         descriptionOption.ArgumentHelpName = "path";
         return descriptionOption;
     }
+    private static readonly Regex classNameRegex = new (@"^[a-zA-Z_][\w_-]+", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+    private static readonly Regex namespaceNameRegex = new (@"^[\w][\w\._-]+", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
     private static Command GetGenerateCommand()
     {
         var defaultConfiguration = new GenerationConfiguration();
@@ -268,12 +270,12 @@ public static class KiotaHost {
         var classOption = new Option<string>("--class-name", () => defaultConfiguration.ClientClassName, "The class name to use for the core client class.");
         classOption.AddAlias("-c");
         classOption.ArgumentHelpName = "name";
-        AddStringRegexValidator(classOption, @"^[a-zA-Z_][\w_-]+", "class name");
+        AddStringRegexValidator(classOption, classNameRegex, "class name");
 
         var namespaceOption = new Option<string>("--namespace-name", () => defaultConfiguration.ClientNamespaceName, "The namespace to use for the core client class specified with the --class-name option.");
         namespaceOption.AddAlias("-n");
         namespaceOption.ArgumentHelpName = "name";
-        AddStringRegexValidator(namespaceOption, @"^[\w][\w\._-]+", "namespace name");
+        AddStringRegexValidator(namespaceOption, namespaceNameRegex, "namespace name");
 
         var logLevelOption = GetLogLevelOption();
 
@@ -399,13 +401,12 @@ public static class KiotaHost {
         clearCacheOption.AddAlias("--cc");
         return clearCacheOption;
     }
-    private static void AddStringRegexValidator(Option<string> option, string pattern, string parameterName) {
-        var validator = new Regex(pattern);
+    private static void AddStringRegexValidator(Option<string> option, Regex validator, string parameterName) {
         option.AddValidator(input => {
             var value = input.GetValueForOption(option);
             if(string.IsNullOrEmpty(value) ||
                 !validator.IsMatch(value))
-                    input.ErrorMessage = $"{value} is not a valid {parameterName} for the client, the {parameterName} must conform to {pattern}";
+                    input.ErrorMessage = $"{value} is not a valid {parameterName} for the client, the {parameterName} must conform to {validator}";
         });
     }
     private static void ValidateKnownValues(OptionResult input, string parameterName, IEnumerable<string> knownValues) {
