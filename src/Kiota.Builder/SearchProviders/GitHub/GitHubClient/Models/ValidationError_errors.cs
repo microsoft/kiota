@@ -8,17 +8,37 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The code property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Code { get; set; }
+#else
         public string Code { get; set; }
+#endif
         /// <summary>The field property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Field { get; set; }
+#else
         public string Field { get; set; }
+#endif
         /// <summary>The index property</summary>
         public int? Index { get; set; }
         /// <summary>The message property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Message { get; set; }
+#else
         public string Message { get; set; }
+#endif
         /// <summary>The resource property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Resource { get; set; }
+#else
         public string Resource { get; set; }
+#endif
         /// <summary>The value property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public Repositories? Value { get; set; }
+#else
         public Repositories Value { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new ValidationError_errors and sets the default values.
         /// </summary>
@@ -71,7 +91,11 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             /// <summary>Serialization hint for the current wrapper.</summary>
             public string SerializationHint { get; set; }
             /// <summary>Composed type representation for type string</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+            public string? String { get; set; }
+#else
             public string String { get; set; }
+#endif
             /// <summary>
             /// Instantiates a new repositories and sets the default values.
             /// </summary>

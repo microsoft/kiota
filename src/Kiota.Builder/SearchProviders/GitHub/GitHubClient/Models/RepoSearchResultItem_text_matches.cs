@@ -8,15 +8,35 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The fragment property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Fragment { get; set; }
+#else
         public string Fragment { get; set; }
+#endif
         /// <summary>The matches property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public List<RepoSearchResultItem_text_matches_matches>? Matches { get; set; }
+#else
         public List<RepoSearchResultItem_text_matches_matches> Matches { get; set; }
+#endif
         /// <summary>The object_type property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Object_type { get; set; }
+#else
         public string Object_type { get; set; }
+#endif
         /// <summary>The object_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Object_url { get; set; }
+#else
         public string Object_url { get; set; }
+#endif
         /// <summary>The property property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Property { get; set; }
+#else
         public string Property { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new repoSearchResultItem_text_matches and sets the default values.
         /// </summary>

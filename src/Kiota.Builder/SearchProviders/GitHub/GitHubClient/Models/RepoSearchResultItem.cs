@@ -21,45 +21,109 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The allow_squash_merge property</summary>
         public bool? Allow_squash_merge { get; set; }
         /// <summary>The archive_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Archive_url { get; set; }
+#else
         public string Archive_url { get; set; }
+#endif
         /// <summary>The archived property</summary>
         public bool? Archived { get; set; }
         /// <summary>The assignees_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Assignees_url { get; set; }
+#else
         public string Assignees_url { get; set; }
+#endif
         /// <summary>The blobs_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Blobs_url { get; set; }
+#else
         public string Blobs_url { get; set; }
+#endif
         /// <summary>The branches_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Branches_url { get; set; }
+#else
         public string Branches_url { get; set; }
+#endif
         /// <summary>The clone_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Clone_url { get; set; }
+#else
         public string Clone_url { get; set; }
+#endif
         /// <summary>The collaborators_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Collaborators_url { get; set; }
+#else
         public string Collaborators_url { get; set; }
+#endif
         /// <summary>The comments_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Comments_url { get; set; }
+#else
         public string Comments_url { get; set; }
+#endif
         /// <summary>The commits_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Commits_url { get; set; }
+#else
         public string Commits_url { get; set; }
+#endif
         /// <summary>The compare_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Compare_url { get; set; }
+#else
         public string Compare_url { get; set; }
+#endif
         /// <summary>The contents_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Contents_url { get; set; }
+#else
         public string Contents_url { get; set; }
+#endif
         /// <summary>The contributors_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Contributors_url { get; set; }
+#else
         public string Contributors_url { get; set; }
+#endif
         /// <summary>The created_at property</summary>
         public DateTimeOffset? Created_at { get; set; }
         /// <summary>The default_branch property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Default_branch { get; set; }
+#else
         public string Default_branch { get; set; }
+#endif
         /// <summary>The delete_branch_on_merge property</summary>
         public bool? Delete_branch_on_merge { get; set; }
         /// <summary>The deployments_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Deployments_url { get; set; }
+#else
         public string Deployments_url { get; set; }
+#endif
         /// <summary>The description property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Description { get; set; }
+#else
         public string Description { get; set; }
+#endif
         /// <summary>Returns whether or not this repository disabled.</summary>
         public bool? Disabled { get; set; }
         /// <summary>The downloads_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Downloads_url { get; set; }
+#else
         public string Downloads_url { get; set; }
+#endif
         /// <summary>The events_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Events_url { get; set; }
+#else
         public string Events_url { get; set; }
+#endif
         /// <summary>The fork property</summary>
         public bool? Fork { get; set; }
         /// <summary>The forks property</summary>
@@ -67,17 +131,41 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The forks_count property</summary>
         public int? Forks_count { get; set; }
         /// <summary>The forks_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Forks_url { get; set; }
+#else
         public string Forks_url { get; set; }
+#endif
         /// <summary>The full_name property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Full_name { get; set; }
+#else
         public string Full_name { get; set; }
+#endif
         /// <summary>The git_commits_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Git_commits_url { get; set; }
+#else
         public string Git_commits_url { get; set; }
+#endif
         /// <summary>The git_refs_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Git_refs_url { get; set; }
+#else
         public string Git_refs_url { get; set; }
+#endif
         /// <summary>The git_tags_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Git_tags_url { get; set; }
+#else
         public string Git_tags_url { get; set; }
+#endif
         /// <summary>The git_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Git_url { get; set; }
+#else
         public string Git_url { get; set; }
+#endif
         /// <summary>The has_discussions property</summary>
         public bool? Has_discussions { get; set; }
         /// <summary>The has_downloads property</summary>
@@ -91,97 +179,241 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The has_wiki property</summary>
         public bool? Has_wiki { get; set; }
         /// <summary>The homepage property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Homepage { get; set; }
+#else
         public string Homepage { get; set; }
+#endif
         /// <summary>The hooks_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Hooks_url { get; set; }
+#else
         public string Hooks_url { get; set; }
+#endif
         /// <summary>The html_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Html_url { get; set; }
+#else
         public string Html_url { get; set; }
+#endif
         /// <summary>The id property</summary>
         public int? Id { get; set; }
         /// <summary>The is_template property</summary>
         public bool? Is_template { get; set; }
         /// <summary>The issue_comment_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Issue_comment_url { get; set; }
+#else
         public string Issue_comment_url { get; set; }
+#endif
         /// <summary>The issue_events_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Issue_events_url { get; set; }
+#else
         public string Issue_events_url { get; set; }
+#endif
         /// <summary>The issues_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Issues_url { get; set; }
+#else
         public string Issues_url { get; set; }
+#endif
         /// <summary>The keys_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Keys_url { get; set; }
+#else
         public string Keys_url { get; set; }
+#endif
         /// <summary>The labels_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Labels_url { get; set; }
+#else
         public string Labels_url { get; set; }
+#endif
         /// <summary>The language property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Language { get; set; }
+#else
         public string Language { get; set; }
+#endif
         /// <summary>The languages_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Languages_url { get; set; }
+#else
         public string Languages_url { get; set; }
+#endif
         /// <summary>License Simple</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public NullableLicenseSimple? License { get; set; }
+#else
         public NullableLicenseSimple License { get; set; }
+#endif
         /// <summary>The master_branch property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Master_branch { get; set; }
+#else
         public string Master_branch { get; set; }
+#endif
         /// <summary>The merges_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Merges_url { get; set; }
+#else
         public string Merges_url { get; set; }
+#endif
         /// <summary>The milestones_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Milestones_url { get; set; }
+#else
         public string Milestones_url { get; set; }
+#endif
         /// <summary>The mirror_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Mirror_url { get; set; }
+#else
         public string Mirror_url { get; set; }
+#endif
         /// <summary>The name property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Name { get; set; }
+#else
         public string Name { get; set; }
+#endif
         /// <summary>The node_id property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Node_id { get; set; }
+#else
         public string Node_id { get; set; }
+#endif
         /// <summary>The notifications_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Notifications_url { get; set; }
+#else
         public string Notifications_url { get; set; }
+#endif
         /// <summary>The open_issues property</summary>
         public int? Open_issues { get; set; }
         /// <summary>The open_issues_count property</summary>
         public int? Open_issues_count { get; set; }
         /// <summary>A GitHub user.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public NullableSimpleUser? Owner { get; set; }
+#else
         public NullableSimpleUser Owner { get; set; }
+#endif
         /// <summary>The permissions property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public RepoSearchResultItem_permissions? Permissions { get; set; }
+#else
         public RepoSearchResultItem_permissions Permissions { get; set; }
+#endif
         /// <summary>The private property</summary>
         public bool? Private { get; set; }
         /// <summary>The pulls_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Pulls_url { get; set; }
+#else
         public string Pulls_url { get; set; }
+#endif
         /// <summary>The pushed_at property</summary>
         public DateTimeOffset? Pushed_at { get; set; }
         /// <summary>The releases_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Releases_url { get; set; }
+#else
         public string Releases_url { get; set; }
+#endif
         /// <summary>The score property</summary>
-        public double? Score { get; set; }
+        public long? Score { get; set; }
         /// <summary>The size property</summary>
         public int? Size { get; set; }
         /// <summary>The ssh_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Ssh_url { get; set; }
+#else
         public string Ssh_url { get; set; }
+#endif
         /// <summary>The stargazers_count property</summary>
         public int? Stargazers_count { get; set; }
         /// <summary>The stargazers_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Stargazers_url { get; set; }
+#else
         public string Stargazers_url { get; set; }
+#endif
         /// <summary>The statuses_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Statuses_url { get; set; }
+#else
         public string Statuses_url { get; set; }
+#endif
         /// <summary>The subscribers_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Subscribers_url { get; set; }
+#else
         public string Subscribers_url { get; set; }
+#endif
         /// <summary>The subscription_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Subscription_url { get; set; }
+#else
         public string Subscription_url { get; set; }
+#endif
         /// <summary>The svn_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Svn_url { get; set; }
+#else
         public string Svn_url { get; set; }
+#endif
         /// <summary>The tags_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Tags_url { get; set; }
+#else
         public string Tags_url { get; set; }
+#endif
         /// <summary>The teams_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Teams_url { get; set; }
+#else
         public string Teams_url { get; set; }
+#endif
         /// <summary>The temp_clone_token property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Temp_clone_token { get; set; }
+#else
         public string Temp_clone_token { get; set; }
+#endif
         /// <summary>The text_matches property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public List<RepoSearchResultItem_text_matches>? Text_matches { get; set; }
+#else
         public List<RepoSearchResultItem_text_matches> Text_matches { get; set; }
+#endif
         /// <summary>The topics property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public List<string>? Topics { get; set; }
+#else
         public List<string> Topics { get; set; }
+#endif
         /// <summary>The trees_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Trees_url { get; set; }
+#else
         public string Trees_url { get; set; }
+#endif
         /// <summary>The updated_at property</summary>
         public DateTimeOffset? Updated_at { get; set; }
         /// <summary>The url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Url { get; set; }
+#else
         public string Url { get; set; }
+#endif
         /// <summary>The repository visibility: public, private, or internal.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Visibility { get; set; }
+#else
         public string Visibility { get; set; }
+#endif
         /// <summary>The watchers property</summary>
         public int? Watchers { get; set; }
         /// <summary>The watchers_count property</summary>
@@ -275,7 +507,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
                 {"pulls_url", n => { Pulls_url = n.GetStringValue(); } },
                 {"pushed_at", n => { Pushed_at = n.GetDateTimeOffsetValue(); } },
                 {"releases_url", n => { Releases_url = n.GetStringValue(); } },
-                {"score", n => { Score = n.GetDoubleValue(); } },
+                {"score", n => { Score = n.GetLongValue(); } },
                 {"size", n => { Size = n.GetIntValue(); } },
                 {"ssh_url", n => { Ssh_url = n.GetStringValue(); } },
                 {"stargazers_count", n => { Stargazers_count = n.GetIntValue(); } },
@@ -372,7 +604,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             writer.WriteStringValue("pulls_url", Pulls_url);
             writer.WriteDateTimeOffsetValue("pushed_at", Pushed_at);
             writer.WriteStringValue("releases_url", Releases_url);
-            writer.WriteDoubleValue("score", Score);
+            writer.WriteLongValue("score", Score);
             writer.WriteIntValue("size", Size);
             writer.WriteStringValue("ssh_url", Ssh_url);
             writer.WriteIntValue("stargazers_count", Stargazers_count);

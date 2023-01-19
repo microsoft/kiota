@@ -8,25 +8,65 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The author property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public FileCommit_commit_author? Author { get; set; }
+#else
         public FileCommit_commit_author Author { get; set; }
+#endif
         /// <summary>The committer property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public FileCommit_commit_committer? Committer { get; set; }
+#else
         public FileCommit_commit_committer Committer { get; set; }
+#endif
         /// <summary>The html_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Html_url { get; set; }
+#else
         public string Html_url { get; set; }
+#endif
         /// <summary>The message property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Message { get; set; }
+#else
         public string Message { get; set; }
+#endif
         /// <summary>The node_id property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Node_id { get; set; }
+#else
         public string Node_id { get; set; }
+#endif
         /// <summary>The parents property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public List<FileCommit_commit_parents>? Parents { get; set; }
+#else
         public List<FileCommit_commit_parents> Parents { get; set; }
+#endif
         /// <summary>The sha property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Sha { get; set; }
+#else
         public string Sha { get; set; }
+#endif
         /// <summary>The tree property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public FileCommit_commit_tree? Tree { get; set; }
+#else
         public FileCommit_commit_tree Tree { get; set; }
+#endif
         /// <summary>The url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Url { get; set; }
+#else
         public string Url { get; set; }
+#endif
         /// <summary>The verification property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public FileCommit_commit_verification? Verification { get; set; }
+#else
         public FileCommit_commit_verification Verification { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new FileCommit_commit and sets the default values.
         /// </summary>

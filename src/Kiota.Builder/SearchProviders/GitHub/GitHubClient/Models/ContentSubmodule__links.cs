@@ -8,11 +8,23 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The git property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Git { get; set; }
+#else
         public string Git { get; set; }
+#endif
         /// <summary>The html property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Html { get; set; }
+#else
         public string Html { get; set; }
+#endif
         /// <summary>The self property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Self { get; set; }
+#else
         public string Self { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new ContentSubmodule__links and sets the default values.
         /// </summary>

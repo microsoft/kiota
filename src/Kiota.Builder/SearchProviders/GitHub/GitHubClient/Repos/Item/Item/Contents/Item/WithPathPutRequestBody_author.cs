@@ -11,11 +11,23 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The date property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Date { get; set; }
+#else
         public string Date { get; set; }
+#endif
         /// <summary>The email of the author or committer of the commit. You&apos;ll receive a `422` status code if `email` is omitted.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Email { get; set; }
+#else
         public string Email { get; set; }
+#endif
         /// <summary>The name of the author or committer of the commit. You&apos;ll receive a `422` status code if `name` is omitted.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Name { get; set; }
+#else
         public string Name { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new WithPathPutRequestBody_author and sets the default values.
         /// </summary>

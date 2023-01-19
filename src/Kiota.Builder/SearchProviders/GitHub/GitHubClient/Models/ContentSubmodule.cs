@@ -9,29 +9,65 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
     /// </summary>
     public class ContentSubmodule : IAdditionalDataHolder, IParsable {
         /// <summary>The _links property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public ContentSubmodule__links? _links { get; set; }
+#else
         public ContentSubmodule__links _links { get; set; }
+#endif
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The download_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Download_url { get; set; }
+#else
         public string Download_url { get; set; }
+#endif
         /// <summary>The git_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Git_url { get; set; }
+#else
         public string Git_url { get; set; }
+#endif
         /// <summary>The html_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Html_url { get; set; }
+#else
         public string Html_url { get; set; }
+#endif
         /// <summary>The name property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Name { get; set; }
+#else
         public string Name { get; set; }
+#endif
         /// <summary>The path property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Path { get; set; }
+#else
         public string Path { get; set; }
+#endif
         /// <summary>The sha property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Sha { get; set; }
+#else
         public string Sha { get; set; }
+#endif
         /// <summary>The size property</summary>
         public int? Size { get; set; }
         /// <summary>The submodule_git_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Submodule_git_url { get; set; }
+#else
         public string Submodule_git_url { get; set; }
+#endif
         /// <summary>The type property</summary>
         public ContentSubmodule_type? Type { get; set; }
         /// <summary>The url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Url { get; set; }
+#else
         public string Url { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new ContentSubmodule and sets the default values.
         /// </summary>

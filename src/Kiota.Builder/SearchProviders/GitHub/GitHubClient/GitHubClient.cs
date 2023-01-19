@@ -2,6 +2,7 @@ using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos;
 using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Search;
 using Kiota.Builder.SearchProviders.GitHub.GitHubClient.User;
 using Microsoft.Kiota.Abstractions;
+using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.Kiota.Serialization.Json;
 using Microsoft.Kiota.Serialization.Text;
 using System;
@@ -48,6 +49,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient {
             if (string.IsNullOrEmpty(RequestAdapter.BaseUrl)) {
                 RequestAdapter.BaseUrl = "https://api.github.com";
             }
+            PathParameters.TryAdd("baseurl", RequestAdapter.BaseUrl);
         }
     }
 }

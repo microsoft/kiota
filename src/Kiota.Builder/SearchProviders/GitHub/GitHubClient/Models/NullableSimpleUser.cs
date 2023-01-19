@@ -11,47 +11,123 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The avatar_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Avatar_url { get; set; }
+#else
         public string Avatar_url { get; set; }
+#endif
         /// <summary>The email property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Email { get; set; }
+#else
         public string Email { get; set; }
+#endif
         /// <summary>The events_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Events_url { get; set; }
+#else
         public string Events_url { get; set; }
+#endif
         /// <summary>The followers_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Followers_url { get; set; }
+#else
         public string Followers_url { get; set; }
+#endif
         /// <summary>The following_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Following_url { get; set; }
+#else
         public string Following_url { get; set; }
+#endif
         /// <summary>The gists_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Gists_url { get; set; }
+#else
         public string Gists_url { get; set; }
+#endif
         /// <summary>The gravatar_id property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Gravatar_id { get; set; }
+#else
         public string Gravatar_id { get; set; }
+#endif
         /// <summary>The html_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Html_url { get; set; }
+#else
         public string Html_url { get; set; }
+#endif
         /// <summary>The id property</summary>
         public int? Id { get; set; }
         /// <summary>The login property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Login { get; set; }
+#else
         public string Login { get; set; }
+#endif
         /// <summary>The name property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Name { get; set; }
+#else
         public string Name { get; set; }
+#endif
         /// <summary>The node_id property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Node_id { get; set; }
+#else
         public string Node_id { get; set; }
+#endif
         /// <summary>The organizations_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Organizations_url { get; set; }
+#else
         public string Organizations_url { get; set; }
+#endif
         /// <summary>The received_events_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Received_events_url { get; set; }
+#else
         public string Received_events_url { get; set; }
+#endif
         /// <summary>The repos_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Repos_url { get; set; }
+#else
         public string Repos_url { get; set; }
+#endif
         /// <summary>The site_admin property</summary>
         public bool? Site_admin { get; set; }
         /// <summary>The starred_at property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Starred_at { get; set; }
+#else
         public string Starred_at { get; set; }
+#endif
         /// <summary>The starred_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Starred_url { get; set; }
+#else
         public string Starred_url { get; set; }
+#endif
         /// <summary>The subscriptions_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Subscriptions_url { get; set; }
+#else
         public string Subscriptions_url { get; set; }
+#endif
         /// <summary>The type property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Type { get; set; }
+#else
         public string Type { get; set; }
+#endif
         /// <summary>The url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Url { get; set; }
+#else
         public string Url { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new nullableSimpleUser and sets the default values.
         /// </summary>

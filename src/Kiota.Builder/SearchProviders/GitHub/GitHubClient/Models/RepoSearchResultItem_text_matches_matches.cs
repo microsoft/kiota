@@ -8,9 +8,17 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The indices property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public List<int?>? Indices { get; set; }
+#else
         public List<int?> Indices { get; set; }
+#endif
         /// <summary>The text property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Text { get; set; }
+#else
         public string Text { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new repoSearchResultItem_text_matches_matches and sets the default values.
         /// </summary>

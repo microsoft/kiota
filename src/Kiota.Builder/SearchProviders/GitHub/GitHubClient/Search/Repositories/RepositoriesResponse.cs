@@ -11,7 +11,11 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Search.Repositories 
         /// <summary>The incomplete_results property</summary>
         public bool? Incomplete_results { get; set; }
         /// <summary>The items property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public List<RepoSearchResultItem>? Items { get; set; }
+#else
         public List<RepoSearchResultItem> Items { get; set; }
+#endif
         /// <summary>The total_count property</summary>
         public int? Total_count { get; set; }
         /// <summary>

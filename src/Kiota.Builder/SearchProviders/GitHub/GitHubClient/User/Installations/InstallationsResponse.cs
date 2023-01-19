@@ -9,7 +9,11 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.User.Installations {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The installations property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public List<Installation>? Installations { get; set; }
+#else
         public List<Installation> Installations { get; set; }
+#endif
         /// <summary>The total_count property</summary>
         public int? Total_count { get; set; }
         /// <summary>

@@ -11,25 +11,53 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The avatar_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Avatar_url { get; set; }
+#else
         public string Avatar_url { get; set; }
+#endif
         /// <summary>The created_at property</summary>
         public DateTimeOffset? Created_at { get; set; }
         /// <summary>A short description of the enterprise.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Description { get; set; }
+#else
         public string Description { get; set; }
+#endif
         /// <summary>The html_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Html_url { get; set; }
+#else
         public string Html_url { get; set; }
+#endif
         /// <summary>Unique identifier of the enterprise</summary>
         public int? Id { get; set; }
         /// <summary>The name of the enterprise.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Name { get; set; }
+#else
         public string Name { get; set; }
+#endif
         /// <summary>The node_id property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Node_id { get; set; }
+#else
         public string Node_id { get; set; }
+#endif
         /// <summary>The slug url identifier for the enterprise.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Slug { get; set; }
+#else
         public string Slug { get; set; }
+#endif
         /// <summary>The updated_at property</summary>
         public DateTimeOffset? Updated_at { get; set; }
         /// <summary>The enterprise&apos;s website URL.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+        public string? Website_url { get; set; }
+#else
         public string Website_url { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new Enterprise and sets the default values.
         /// </summary>
