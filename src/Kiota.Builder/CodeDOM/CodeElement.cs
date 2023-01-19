@@ -13,7 +13,7 @@ namespace Kiota.Builder.CodeDOM
         public int GetNamespaceDepth(int currentDepth = 0) {
             return this switch {
                 _ when Parent is null => currentDepth,
-                CodeNamespace ns => ns.Parent.GetNamespaceDepth(++currentDepth),
+                CodeNamespace ns => ns.Parent.GetNamespaceDepth(1+currentDepth),
                 _ => Parent.GetNamespaceDepth(currentDepth),
             };
         }

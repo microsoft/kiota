@@ -4525,7 +4525,7 @@ paths:
             }
         }, _httpClient);
         var filters = builder.BuildGlobPatterns();
-        builder.FilterPathsByPatterns(document, filters.Item1, filters.Item2);
+        KiotaBuilder.FilterPathsByPatterns(document, filters.Item1, filters.Item2);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.Null(codeModel.FindNamespaceByName("TestSdk.groups"));
@@ -4606,7 +4606,7 @@ paths:
             }
         }, _httpClient);
         var filters = builder.BuildGlobPatterns();
-        builder.FilterPathsByPatterns(document, filters.Item1, filters.Item2);
+        KiotaBuilder.FilterPathsByPatterns(document, filters.Item1, filters.Item2);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.Null(codeModel.FindNamespaceByName("TestSdk.groups"));

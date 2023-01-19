@@ -150,7 +150,7 @@ namespace Kiota.Builder.Writers.Shell
             writer.IncreaseIndent();
             for (var i = 0; i < availableOptions.Count; i++)
             {
-                var (paramType, paramName, parameter) = parameters[i];
+                var (_, paramName, _) = parameters[i];
                 writer.WriteLine($"var {paramName.ToFirstCharacterLowerCase()} = {availableOptions[i]};");
             }
 
@@ -295,7 +295,7 @@ namespace Kiota.Builder.Writers.Shell
             }
         }
 
-        private List<string> WriteExecutableCommandOptions(LanguageWriter writer, List<(string, string, CodeParameter)> parametersList)
+        private static List<string> WriteExecutableCommandOptions(LanguageWriter writer, List<(string, string, CodeParameter)> parametersList)
         {
             var availableOptions = new List<string>();
             foreach (var (optionType, name, option) in parametersList)
@@ -435,7 +435,7 @@ namespace Kiota.Builder.Writers.Shell
             if (requestBodyParam != null)
             {
                 var requestBodyParamType = requestBodyParam?.Type as CodeType;
-                if (requestBodyParamType?.TypeDefinition is CodeClass requestBodyParamTypeDef)
+                if (requestBodyParamType?.TypeDefinition is CodeClass)
                 {
                     writer.WriteLine($"using var stream = new MemoryStream(Encoding.UTF8.GetBytes({requestBodyParam.Name}));");
                     writer.WriteLine($"var parseNode = ParseNodeFactoryRegistry.DefaultInstance.GetRootParseNode(\"{generatorMethod.RequestBodyContentType}\", stream);");

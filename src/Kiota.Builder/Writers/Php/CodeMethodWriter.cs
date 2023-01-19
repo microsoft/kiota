@@ -600,7 +600,7 @@ namespace Kiota.Builder.Writers.Php
             var isStream = returnType.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase);
             var isCollection = codeElement.ReturnType.IsCollection;
             var methodName = GetSendRequestMethodName(returnsVoid, isStream, isCollection, returnType);
-            var returnTypeFactory = codeElement.ReturnType is CodeType {TypeDefinition: CodeClass}
+            var returnTypeFactory = codeElement.ReturnType is CodeType rt && rt.TypeDefinition is CodeClass
                 ? $", [{returnType}::class, '{CreateDiscriminatorMethodName}']"
                 : string.Empty;
             var returnWithCustomType =

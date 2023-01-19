@@ -35,9 +35,9 @@ namespace Kiota.Builder.Writers.Php
 
         public override string ParseNodeInterfaceName => "ParseNode";
 
-        public string DocCommentStart => "/**";
+        public const string DocCommentStart = "/**";
 
-        public string DocCommentEnd => "*/";
+        public const string DocCommentEnd = "*/";
         internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval", "int", "double", "decimal", "bool"};
         
         internal readonly HashSet<string> CustomTypes = new(StringComparer.OrdinalIgnoreCase) {"Date", "DateTime", "StreamInterface", "Byte", "Time"};
@@ -170,7 +170,7 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLines($"return new {returnType}($this->{RemoveDollarSignFromPropertyName(PathParametersPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(RequestAdapterPropertyName)}{joined});");
         }
 
-        private string RemoveDollarSignFromPropertyName(string propertyName)
+        private static string RemoveDollarSignFromPropertyName(string propertyName)
         {
             if (string.IsNullOrEmpty(propertyName) || propertyName.Length < 2)
             {

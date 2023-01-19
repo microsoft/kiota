@@ -12,7 +12,7 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
-        if (codeElement.Parent?.Parent is CodeNamespace ns)
+        if (codeElement.Parent?.Parent is CodeNamespace)
         {
             var importSegments = codeElement
                                     .Usings

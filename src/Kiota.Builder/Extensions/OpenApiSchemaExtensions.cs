@@ -30,11 +30,10 @@ public static class OpenApiSchemaExtensions {
         return Enumerable.Empty<string>();
     }
     private static IEnumerable<string> FlattenIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter) {
-        var resultSet = schemas;
-        if(schemas.Count == 1 && string.IsNullOrEmpty(schemas.First().Title))
-            resultSet = schemas.FlattenEmptyEntries(subsequentGetter, 1);
-        
-        return resultSet.Select(x => x.Title).Where(x => !string.IsNullOrEmpty(x));
+        return (schemas.Count == 1 && string.IsNullOrEmpty(schemas.First().Title) ?
+                    schemas.FlattenEmptyEntries(subsequentGetter, 1) :
+                    schemas)
+            .Select(static x => x.Title).Where(static x => !string.IsNullOrEmpty(x));
     }
 
     public static string GetSchemaName(this OpenApiSchema schema) {
@@ -126,15 +125,15 @@ public static class OpenApiSchemaExtensions {
 
         return Enumerable.Empty<string>();
     }
-    internal static IList<OpenApiSchema> FlattenEmptyEntries(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter, int? maxDepth = default) {
-        if(schemas == null) return default;
+    internal static IEnumerable<OpenApiSchema> FlattenEmptyEntries(this IEnumerable<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter, int? maxDepth = default) {
+        if(schemas == null) return Enumerable.Empty<OpenApiSchema>();
         ArgumentNullException.ThrowIfNull(subsequentGetter);
 
         if((maxDepth ?? 1) <= 0)
             return schemas;
 
         var result = schemas.ToList();
-        var permutations = new Dictionary<OpenApiSchema, IList<OpenApiSchema>>();
+        var permutations = new Dictionary<OpenApiSchema, IEnumerable<OpenApiSchema>>();
         foreach(var item in result)
         {
             var subsequentItems = subsequentGetter(item);

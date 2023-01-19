@@ -33,12 +33,12 @@ public class LockManagementService : ILockManagementService {
         return null;
     }
     /// <inheritdoc/>
-    public async Task<KiotaLock> GetLockFromStreamAsync(Stream stream, CancellationToken cancellationToken = default) {
+    public Task<KiotaLock> GetLockFromStreamAsync(Stream stream, CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(stream);
-        return await GetLockFromStreamInternalAsync(stream, cancellationToken);
+        return GetLockFromStreamInternalAsync(stream, cancellationToken);
     }
-    private static ValueTask<KiotaLock> GetLockFromStreamInternalAsync(Stream stream, CancellationToken cancellationToken) {
-        return JsonSerializer.DeserializeAsync<KiotaLock>(stream, options, cancellationToken);
+    private static async Task<KiotaLock> GetLockFromStreamInternalAsync(Stream stream, CancellationToken cancellationToken) {
+        return await JsonSerializer.DeserializeAsync<KiotaLock>(stream, options, cancellationToken);
     }
     /// <inheritdoc/>
     public Task WriteLockFileAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken = default) {
