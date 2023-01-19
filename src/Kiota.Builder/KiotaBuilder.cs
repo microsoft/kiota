@@ -821,6 +821,21 @@ public class KiotaBuilder
             }
         }
     }
+    private CodeTypeBase GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeClass parentClass) {
+        if (schema != null)
+        {
+            return CreateModelDeclarations(currentNode, schema, operation, parentClass, "Response");
+        } else {
+            string returnType;
+            if(operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
+                returnType = voidType;
+            else if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
+                returnType = "string";
+            else
+                returnType = "binary";
+            return new CodeType { Name = returnType, IsExternal = true, };
+        }
+    }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
         var parameterClass = CreateOperationParameterClass(currentNode, operationType, operation, parentClass);
@@ -843,7 +858,8 @@ public class KiotaBuilder
                 DocumentationLink = operation.ExternalDocs?.Url,
                 DocumentationLabel = operation.ExternalDocs?.Description ?? string.Empty,
                 Description = (operation.Description ?? operation.Summary).CleanupDescription(),
-            }
+            },
+            ReturnType = GetExecutorMethodReturnType(currentNode, schema, operation, parentClass),
         };
 
         if (operation.Extensions.TryGetValue(OpenApiPagingExtension.Name, out var extension) && extension is OpenApiPagingExtension pagingExtension)
@@ -857,21 +873,6 @@ public class KiotaBuilder
         }
 
         AddErrorMappingsForExecutorMethod(currentNode, operation, executorMethod);
-        if (schema != null)
-        {
-            var returnType = CreateModelDeclarations(currentNode, schema, operation, executorMethod, "Response");
-            executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
-        } else {
-            string returnType;
-            if(operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
-                returnType = voidType;
-            else if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
-                returnType = "string";
-            else
-                returnType = "binary";
-            executorMethod.ReturnType = new CodeType { Name = returnType, IsExternal = true, };
-        }
-
         AddRequestConfigurationProperties(parameterClass, requestConfigClass);
         AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, executorMethod);
         parentClass.AddMethod(executorMethod);

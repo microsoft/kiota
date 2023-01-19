@@ -82,6 +82,9 @@ public class CodeMethodWriterTests : IDisposable {
             },
             Setter = new CodeMethod {
                 Name = "SetAdditionalData",
+                ReturnType = new CodeType {
+                    Name = "string"
+                }
             }
         });
         parentClass.AddProperty(new CodeProperty {
@@ -97,6 +100,9 @@ public class CodeMethodWriterTests : IDisposable {
             },
             Setter = new CodeMethod {
                 Name = "SetDummyProp",
+                ReturnType = new CodeType {
+                    Name = "string"
+                }
             },
         });
         parentClass.AddProperty(new CodeProperty{
@@ -137,9 +143,15 @@ public class CodeMethodWriterTests : IDisposable {
             },
             Getter = new CodeMethod {
                 Name = "GetDummyComplexColl",
+                ReturnType = new CodeType {
+                    Name = "string"
+                }
             },
             Setter = new CodeMethod {
                 Name = "SetDummyComplexColl",
+                ReturnType = new CodeType {
+                    Name = "void",
+                }
             }
         });
         parentClass.AddProperty(new CodeProperty{
@@ -152,9 +164,15 @@ public class CodeMethodWriterTests : IDisposable {
             },
             Getter = new CodeMethod {
                 Name = "GetDummyEnumCollection",
+                ReturnType = new CodeType {
+                    Name = "string"
+                }
             },
             Setter = new CodeMethod {
                 Name = "SetDummyEnumCollection",
+                ReturnType = new CodeType {
+                    Name = "void",
+                }
             }
         });
         parentClass.AddProperty(new CodeProperty {
@@ -1454,7 +1472,11 @@ public class CodeMethodWriterTests : IDisposable {
                 Name = "string"
             }
         });
-        method.OriginalMethod = new ();
+        method.OriginalMethod = new () {
+            ReturnType = new CodeType {
+                Name = "string"
+            }
+        };
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);

@@ -127,6 +127,9 @@ namespace Kiota.Builder.Tests.CodeDOM {
             var method = new CodeMethod {
                 Name = "method",
                 Kind = CodeMethodKind.RequestExecutor,
+                ReturnType = new CodeType {
+                    Name = "string"
+                }
             };
             var overload = method.Clone() as CodeMethod;
             overload.AddParameter(new CodeParameter {
@@ -150,7 +153,10 @@ namespace Kiota.Builder.Tests.CodeDOM {
             };
             var indexer = new CodeMethod {
                 Name = "method",
-                Kind = CodeMethodKind.IndexerBackwardCompatibility
+                Kind = CodeMethodKind.IndexerBackwardCompatibility,
+                ReturnType = new CodeType {
+                    Name = "string"
+                }
             };
             codeClass.AddProperty(property);
             codeClass.AddMethod(indexer);

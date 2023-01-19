@@ -128,7 +128,10 @@ public class CodeClassTests {
         });
         Assert.Single(codeClass.GetChildElements(true));
         codeClass.AddMethod(new CodeMethod {
-            Name = "submethod"
+            Name = "submethod",
+            ReturnType = new CodeType {
+                Name = "string"
+            }
         });
         Assert.Equal(2, codeClass.GetChildElements(true).Count());
         codeClass.AddProperty(new CodeProperty {

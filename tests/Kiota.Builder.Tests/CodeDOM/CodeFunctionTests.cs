@@ -11,6 +11,9 @@ public class CodeFunctionTests {
     public void Defensive() {
         var method = new CodeMethod {
             Name = "class",
+            ReturnType = new CodeType {
+                Name = "string"
+            }
         };
         Assert.Throws<ArgumentNullException>(() => new CodeFunction(null));
         Assert.Throws<InvalidOperationException>(() => new CodeFunction(method));

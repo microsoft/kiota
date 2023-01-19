@@ -84,7 +84,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Documentation = new () {
                 Description = originalIndexer.Documentation.Description,
             },
-            ReturnType = originalIndexer.ReturnType?.Clone() as CodeTypeBase,
+            ReturnType = (CodeTypeBase)originalIndexer.ReturnType.Clone(),
             OriginalIndexer = originalIndexer,
         };
         if (method.ReturnType is not null)
@@ -106,8 +106,10 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public string RequestBodyContentType { get; set; } = string.Empty;
     public HashSet<string> AcceptedResponseTypes = new(StringComparer.OrdinalIgnoreCase);
     public AccessModifier Access {get;set;} = AccessModifier.Public;
-    private CodeTypeBase? returnType;
-    public CodeTypeBase? ReturnType {get => returnType;set {
+    #nullable disable // exposing property is required
+    private CodeTypeBase returnType;
+    #nullable enable
+    public required CodeTypeBase ReturnType {get => returnType;set {
         EnsureElementsAreChildren(value);
         returnType = value;
     }}
@@ -218,7 +220,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         var method = new CodeMethod {
             Kind = Kind,
-            ReturnType = ReturnType?.Clone() as CodeTypeBase,
+            ReturnType = (CodeTypeBase)ReturnType.Clone(),
             Name = Name,
             HttpMethod = HttpMethod,
             IsAsync = IsAsync,

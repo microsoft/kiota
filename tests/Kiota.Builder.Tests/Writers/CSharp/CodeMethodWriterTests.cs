@@ -35,6 +35,9 @@ public class CodeMethodWriterTests : IDisposable {
         root.AddClass(parentClass);
         method = new CodeMethod {
             Name = MethodName,
+            ReturnType = new CodeType {
+                Name = "void"
+            }
         };
         var model = root.AddClass(new CodeClass {
             Name = ReturnTypeName,

@@ -38,11 +38,11 @@ public class ShellCodeMethodWriterTests : IDisposable
         root.AddClass(parentClass);
         method = new CodeMethod
         {
-            Name = MethodName
-        };
-        method.ReturnType = new CodeType
-        {
-            Name = ReturnTypeName
+            Name = MethodName,
+            ReturnType = new CodeType
+            {
+                Name = ReturnTypeName
+            }
         };
         parentClass.AddMethod(method);
     }
@@ -140,7 +140,10 @@ public class ShellCodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.CommandBuilder;
         method.OriginalMethod = new CodeMethod
         {
-            Kind = CodeMethodKind.ClientConstructor
+            Kind = CodeMethodKind.ClientConstructor,
+            ReturnType = new CodeType {
+                Name = "RootCommand",
+            }
         };
 
         writer.Write(method);
@@ -158,11 +161,17 @@ public class ShellCodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.CommandBuilder;
         method.OriginalMethod = new CodeMethod
         {
-            Kind = CodeMethodKind.ClientConstructor
+            Kind = CodeMethodKind.ClientConstructor,
+            ReturnType = new CodeType {
+                Name = "RootCommand",
+            }
         };
         parentClass.AddMethod(new CodeMethod {
             Name = "BuildUserCommand",
-            Kind = CodeMethodKind.CommandBuilder
+            Kind = CodeMethodKind.CommandBuilder,
+            ReturnType = new CodeType {
+                Name = "Command",
+            }
         });
 
         writer.Write(method);
@@ -318,7 +327,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Kind = CodeMethodKind.RequestGenerator,
             Name = "CreateGetRequestInformation",
-            HttpMethod = method.HttpMethod
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
         };
         method.OriginalMethod = new CodeMethod
         {
@@ -391,7 +401,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Kind = CodeMethodKind.RequestGenerator,
             Name = "CreateGetRequestInformation",
-            HttpMethod = method.HttpMethod
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
         };
         method.OriginalMethod = new CodeMethod
         {
@@ -465,7 +476,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Kind = CodeMethodKind.RequestGenerator,
             Name = "CreateGetRequestInformation",
-            HttpMethod = method.HttpMethod
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
         };
         method.OriginalMethod = new CodeMethod
         {
@@ -529,7 +541,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Kind = CodeMethodKind.RequestGenerator,
             Name = "CreatePostRequestInformation",
-            HttpMethod = method.HttpMethod
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
         };
         method.OriginalMethod = new CodeMethod
         {
@@ -594,7 +607,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Kind = CodeMethodKind.RequestGenerator,
             Name = "CreatePostRequestInformation",
-            HttpMethod = method.HttpMethod
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
         };
         method.OriginalMethod = new CodeMethod
         {
@@ -652,7 +666,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Kind = CodeMethodKind.RequestGenerator,
             Name = "CreatePostRequestInformation",
-            HttpMethod = method.HttpMethod
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
         };
         method.OriginalMethod = new CodeMethod
         {
@@ -703,7 +718,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         var generatorMethod = new CodeMethod {
             Kind = CodeMethodKind.RequestGenerator,
             Name = "CreateDeleteRequestInformation",
-            HttpMethod = method.HttpMethod
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
         };
         method.OriginalMethod = new CodeMethod {
             Kind = CodeMethodKind.RequestExecutor,
@@ -748,7 +764,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Kind = CodeMethodKind.RequestGenerator,
             Name = "CreateGetRequestInformation",
-            HttpMethod = method.HttpMethod
+            HttpMethod = method.HttpMethod,
+            ReturnType = streamType,
         };
         method.OriginalMethod = new CodeMethod
         {
@@ -797,7 +814,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         var generatorMethod = new CodeMethod {
             Kind = CodeMethodKind.RequestGenerator,
             Name = "CreatePostRequestInformation",
-            HttpMethod = method.HttpMethod
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType
         };
         method.OriginalMethod = new CodeMethod {
             Kind = CodeMethodKind.RequestExecutor,

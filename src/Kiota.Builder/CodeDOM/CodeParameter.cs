@@ -51,10 +51,12 @@ public enum CodeParameterKind
 
 public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable, IDocumentedElement
 {
+    #nullable disable // exposing property is required
     private CodeTypeBase type;
+    #nullable enable
     public required CodeTypeBase Type {get => type; set {
+        EnsureElementsAreChildren(value);
         type = value;
-        EnsureElementsAreChildren(type);
     }}
     public bool Optional {get;set;}
     public CodeDocumentation Documentation { get; set; } = new();

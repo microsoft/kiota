@@ -33,11 +33,13 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
-        method = new CodeMethod {
+        method = new CodeMethod
+        {
             Name = MethodName,
-        };
-        method.ReturnType = new CodeType {
-            Name = ReturnTypeName
+            ReturnType = new CodeType
+            {
+                Name = ReturnTypeName
+            }
         };
         parentClass.AddMethod(method);
     }

@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
@@ -69,12 +68,12 @@ namespace Kiota.Builder.Tests.Refiners
             }).First();
             var method = model.AddMethod(new CodeMethod
             {
-                Name = "method"
+                Name = "method",
+                ReturnType = new CodeType
+                {
+                    Name = "binary"
+                }
             }).First();
-            method.ReturnType = new CodeType
-            {
-                Name = "binary"
-            };
             await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP}, root);
             Assert.Equal("StreamInterface", method.ReturnType.Name);
         }
@@ -86,11 +85,11 @@ namespace Kiota.Builder.Tests.Refiners
                 Name = "model",
                 Kind = CodeClassKind.Model
             }).First();
-            var requestBuilder = root.AddClass(new CodeClass
+            root.AddClass(new CodeClass
             {
                 Name = "rb",
                 Kind = CodeClassKind.RequestBuilder,
-            }).First();
+            });
             await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
             Assert.NotEmpty(model.StartBlock.Usings);
         }
@@ -99,7 +98,11 @@ namespace Kiota.Builder.Tests.Refiners
         public async Task ChangesBackingStoreParameterTypeInApiClientConstructor()
         {
             var apiClientClass = new CodeClass { Name = "ApiClient", Kind = CodeClassKind.Custom };
-            var constructor = new CodeMethod { Name = "ApiClientConstructor", Kind = CodeMethodKind.ClientConstructor};
+            var constructor = new CodeMethod { 
+                Name = "ApiClientConstructor",
+                Kind = CodeMethodKind.ClientConstructor,
+                ReturnType = new CodeType { Name = "string" },
+            };
             var backingStoreParameter = new CodeParameter
             {
                 Name = "BackingStore",
