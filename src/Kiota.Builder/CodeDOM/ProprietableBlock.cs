@@ -15,7 +15,7 @@ public interface IProprietableBlock : ICodeElement {}
 /// </summary>
 public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumentedElement, IProprietableBlock where T : Enum where U : ProprietableBlockDeclaration, new()
 {
-    private string name;
+    private string name = string.Empty;
     /// <summary>
     /// Name of Class
     /// </summary>
@@ -37,11 +37,13 @@ public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumen
             throw new ArgumentOutOfRangeException(nameof(properties));
         return AddRange(properties);
     }
+    #nullable disable
     public T Kind { get; set; }
+    #nullable enable
     public bool IsOfKind(params T[] kinds) {
         return kinds?.Contains(Kind) ?? false;
     }
-    public CodeProperty GetPropertyOfKind(params CodePropertyKind[] kind) =>
+    public CodeProperty? GetPropertyOfKind(params CodePropertyKind[] kind) =>
     Properties.FirstOrDefault(x => x.IsOfKind(kind));
     public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>().OrderBy(static x => x.Name);
     public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>().OrderBy(static x => x.Name);
@@ -71,7 +73,7 @@ public class ProprietableBlockDeclaration : BlockDeclaration
         foreach(var type in types)
             implements.TryAdd(type.Name,type);
     }
-    public CodeType FindImplementByName(string name) {
+    public CodeType? FindImplementByName(string name) {
         ArgumentException.ThrowIfNullOrEmpty(name);
         return implements.TryGetValue(name, out var type) ? type : null;
     }

@@ -109,7 +109,7 @@ namespace Kiota.Builder.Extensions {
             "txt",
         };
         private static readonly Regex descriptionCleanupRegex = new (@"[\r\n\t]", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
-        public static string CleanupDescription(this string description) => string.IsNullOrEmpty(description) ? description : descriptionCleanupRegex.Replace(description, string.Empty);
+        public static string CleanupDescription(this string description) => string.IsNullOrEmpty(description) ? string.Empty : descriptionCleanupRegex.Replace(description, string.Empty);
         public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string defaultValue = default) =>
         !string.IsNullOrEmpty(label) && (currentNode?.PathItems.ContainsKey(label) ?? false) ?
                 (currentNode.PathItems[label].Description ??

@@ -9,11 +9,11 @@ namespace Kiota.Builder.CodeDOM
     /// </summary>
     public abstract class CodeElement : ICodeElement
     {
-        public CodeElement Parent { get; set; }
+        public CodeElement? Parent { get; set; }
         public int GetNamespaceDepth(int currentDepth = 0) {
             return this switch {
                 _ when Parent is null => currentDepth,
-                CodeNamespace ns => ns.Parent.GetNamespaceDepth(1+currentDepth),
+                CodeNamespace ns => ns.Parent?.GetNamespaceDepth(1+currentDepth) ?? currentDepth,
                 _ => Parent.GetNamespaceDepth(currentDepth),
             };
         }
@@ -22,12 +22,12 @@ namespace Kiota.Builder.CodeDOM
         public virtual string Name
         {
             get; set;
-        }
-        protected void EnsureElementsAreChildren(params ICodeElement[] elements) {
+        } = string.Empty;
+        protected void EnsureElementsAreChildren(params ICodeElement?[] elements) {
             foreach(var element in elements.Where(x => x != null && (x.Parent == null || x.Parent != this)))
-                element.Parent = this;
+                element!.Parent = this;
         }
-        public T GetImmediateParentOfType<T>(CodeElement item = null)
+        public T GetImmediateParentOfType<T>(CodeElement? item = null)
         {
             if(item == null)
                 return GetImmediateParentOfType<T>(this);

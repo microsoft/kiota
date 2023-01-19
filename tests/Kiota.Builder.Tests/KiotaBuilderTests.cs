@@ -3509,7 +3509,7 @@ paths:
         Assert.NotNull(modelsNS);
         var responseClass = modelsNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model));
         Assert.NotNull(responseClass);
-        Assert.Null(responseClass.Documentation.Description);
+        Assert.Empty(responseClass.Documentation.Description);
     }
     [Fact]
     public void CleansUpInvalidDescriptionCharacters(){

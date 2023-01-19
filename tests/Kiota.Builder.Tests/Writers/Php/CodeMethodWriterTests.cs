@@ -172,7 +172,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         [Fact]
         public void WriteMethodWithNoDescription()
         {
-            method.Documentation.Description = null;
+            method.Documentation.Description = string.Empty;
             _codeMethodWriter.WriteCodeElement(method, languageWriter);
             var result = stringWriter.ToString();
             

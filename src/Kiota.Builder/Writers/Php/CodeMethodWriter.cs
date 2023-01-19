@@ -129,9 +129,9 @@ namespace Kiota.Builder.Writers.Php
 
         private void WriteMethodPhpDocs(CodeMethod codeMethod, LanguageWriter writer, IReadOnlyList<string> orNullReturn)
         {
-            var methodDescription = codeMethod.Documentation.Description ?? string.Empty;
+            var methodDescription = codeMethod.Documentation.Description;
 
-            var hasMethodDescription = !string.IsNullOrEmpty(methodDescription.Trim(' '));
+            var hasMethodDescription = !string.IsNullOrEmpty(methodDescription.Trim());
             var parameters = codeMethod.Parameters;
             var withDescription = parameters as CodeParameter[] ?? parameters.ToArray();
             if (!hasMethodDescription && !withDescription.Any())
@@ -142,8 +142,8 @@ namespace Kiota.Builder.Writers.Php
                 StringComparison.OrdinalIgnoreCase) && !codeMethod.IsOfKind(CodeMethodKind.RequestExecutor);
 
             var accessedProperty = codeMethod.AccessedProperty;
-            var isSetterForAdditionalData = (codeMethod.IsOfKind(CodeMethodKind.Setter) &&
-                                             accessedProperty.IsOfKind(CodePropertyKind.AdditionalData));
+            var isSetterForAdditionalData = codeMethod.IsOfKind(CodeMethodKind.Setter) &&
+                                             accessedProperty.IsOfKind(CodePropertyKind.AdditionalData);
 
             var parametersWithDescription = withDescription
                 .Where(x => x.Documentation.DescriptionAvailable)
@@ -234,7 +234,6 @@ namespace Kiota.Builder.Writers.Php
                 WriteSerializerBodyForInheritedModel(parentClass, writer, extendsModelClass);
         
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
-        
             if(additionalDataProperty != null)
                 writer.WriteLine($"$writer->writeAdditionalData($this->{additionalDataProperty.Getter.Name}());");
         }
@@ -496,7 +495,7 @@ namespace Kiota.Builder.Writers.Php
                     .Where(static x => !x.ExistsInBaseType && x.Setter != null)
                     .OrderBy(static x => x.Name)
                     .Select(x => 
-                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => fn(ParseNode $n) => $o->{x.Setter.Name.ToFirstCharacterLowerCase()}($n->{GetDeserializationMethodName(x.Type, method)}),")
+                        $"'{x.WireName}' => fn(ParseNode $n) => $o->{x.Setter!.Name.ToFirstCharacterLowerCase()}($n->{GetDeserializationMethodName(x.Type, method)}),")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
             }

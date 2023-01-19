@@ -47,25 +47,25 @@ public class PagingInformation : ICloneable
     public string ItemName
     {
         get; set;
-    }
+    } = string.Empty;
 
     public string NextLinkName
     {
         get; set;
-    }
+    } = string.Empty;
 
     public string OperationName
     {
         get; set;
-    }
+    } = string.Empty;
 
     public object Clone()
     {
         return new PagingInformation
         {
-            ItemName = ItemName?.Clone() as string,
-            NextLinkName = NextLinkName?.Clone() as string,
-            OperationName = OperationName?.Clone() as string,
+            ItemName = ItemName,
+            NextLinkName = NextLinkName,
+            OperationName = OperationName,
         };
     }
 }
@@ -84,10 +84,11 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Documentation = new () {
                 Description = originalIndexer.Documentation.Description,
             },
-            ReturnType = originalIndexer.ReturnType.Clone() as CodeTypeBase,
+            ReturnType = originalIndexer.ReturnType?.Clone() as CodeTypeBase,
             OriginalIndexer = originalIndexer,
         };
-        method.ReturnType.IsNullable = false;
+        if (method.ReturnType is not null)
+            method.ReturnType.IsNullable = false;
         var parameter = new CodeParameter {
             Name = "id",
             Optional = false,
@@ -95,29 +96,18 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Documentation = new() {
                 Description = "Unique identifier of the item",
             },
-            Type = originalIndexer.IndexType.Clone() as CodeTypeBase,
+            Type = originalIndexer.IndexType?.Clone() is CodeTypeBase indexType ? indexType : throw new InvalidOperationException("index type is null"),
         };
         parameter.Type.IsNullable = parameterNullable;
         method.AddParameter(parameter);
         return method;
     }
     public HttpMethod? HttpMethod {get;set;}
-    public string RequestBodyContentType { get; set; }
-    private HashSet<string> acceptedResponseTypes;
-    public HashSet<string> AcceptedResponseTypes {
-        get
-        {
-            acceptedResponseTypes ??= new(StringComparer.OrdinalIgnoreCase);
-            return acceptedResponseTypes;
-        }
-        set
-        {
-            acceptedResponseTypes = value;
-        }
-    }
+    public string RequestBodyContentType { get; set; } = string.Empty;
+    public HashSet<string> AcceptedResponseTypes = new(StringComparer.OrdinalIgnoreCase);
     public AccessModifier Access {get;set;} = AccessModifier.Public;
-    private CodeTypeBase returnType;
-    public CodeTypeBase ReturnType {get => returnType;set {
+    private CodeTypeBase? returnType;
+    public CodeTypeBase? ReturnType {get => returnType;set {
         EnsureElementsAreChildren(value);
         returnType = value;
     }}
@@ -139,7 +129,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public bool IsAsync {get;set;} = true;
     public CodeDocumentation Documentation { get; set; } = new();
 
-    public PagingInformation PagingInformation
+    public PagingInformation? PagingInformation
     {
         get; set;
     }
@@ -174,12 +164,12 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// <summary>
     /// The property this method accesses to when it's a getter or setter.
     /// </summary>
-    public CodeProperty AccessedProperty { get; set; }
+    public CodeProperty? AccessedProperty { get; set; }
     public bool IsAccessor { 
         get => IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter);
     }
-    public HashSet<string> SerializerModules { get; set; }
-    public HashSet<string> DeserializerModules { get; set; }
+    public HashSet<string> SerializerModules { get; set; } = new (StringComparer.OrdinalIgnoreCase);
+    public HashSet<string> DeserializerModules { get; set; } = new (StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// Indicates whether this method is an overload for another method.
     /// </summary>
@@ -187,17 +177,16 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// <summary>
     /// Provides a reference to the original method that this method is an overload of.
     /// </summary>
-    public CodeMethod OriginalMethod { get; set; }
+    public CodeMethod? OriginalMethod { get; set; }
     /// <summary>
     /// The original indexer codedom element this method replaces when it is of kind IndexerBackwardCompatibility.
     /// </summary>
-    public CodeIndexer OriginalIndexer { get; set; }
+    public CodeIndexer? OriginalIndexer { get; set; }
     /// <summary>
     /// The base url for every request read from the servers property on the description.
     /// Only provided for constructor on Api client
     /// </summary>
-    public string BaseUrl { get; set;
-    }
+    public string BaseUrl { get; set; } = string.Empty;
 
     /// <summary>
     /// This is currently used for CommandBuilder methods to get the original name without the Build prefix & Command suffix.
@@ -219,7 +208,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     }
     public void ReplaceErrorMapping(CodeTypeBase oldType, CodeTypeBase newType)
     {
-        var codes = errorMappings.Where(x => x.Value == oldType).Select(x => x.Key).ToArray();
+        var codes = errorMappings.Where(x => x.Value == oldType).Select(static x => x.Key).ToArray();
         foreach (var code in codes)
         {
             errorMappings[code] = newType;
@@ -230,26 +219,26 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         var method = new CodeMethod {
             Kind = Kind,
             ReturnType = ReturnType?.Clone() as CodeTypeBase,
-            Name = Name.Clone() as string,
+            Name = Name,
             HttpMethod = HttpMethod,
             IsAsync = IsAsync,
             Access = Access,
             IsStatic = IsStatic,
-            RequestBodyContentType = RequestBodyContentType?.Clone() as string,
-            BaseUrl = BaseUrl?.Clone() as string,
+            RequestBodyContentType = RequestBodyContentType,
+            BaseUrl = BaseUrl,
             AccessedProperty = AccessedProperty,
-            SerializerModules = SerializerModules == null ? null : new (SerializerModules),
-            DeserializerModules = DeserializerModules == null ? null : new (DeserializerModules),
+            SerializerModules = new (SerializerModules, StringComparer.OrdinalIgnoreCase),
+            DeserializerModules = new (DeserializerModules, StringComparer.OrdinalIgnoreCase),
             OriginalMethod = OriginalMethod,
             Parent = Parent,
             OriginalIndexer = OriginalIndexer,
-            errorMappings = errorMappings == null ? null : new (errorMappings),
-            acceptedResponseTypes = acceptedResponseTypes == null ? null : new (acceptedResponseTypes),
+            errorMappings = new (errorMappings),
+            AcceptedResponseTypes = new (AcceptedResponseTypes, StringComparer.OrdinalIgnoreCase),
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
-            Documentation = Documentation?.Clone() as CodeDocumentation,
+            Documentation = (CodeDocumentation)Documentation.Clone(),
         };
         if(Parameters?.Any() ?? false)
-            method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());
+            method.AddParameter(Parameters.Select(x => (CodeParameter)x.Clone()).ToArray());
         return method;
     }
 
@@ -267,12 +256,5 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         ArgumentNullException.ThrowIfNull(type);
         ArgumentException.ThrowIfNullOrEmpty(errorCode);
         errorMappings.TryAdd(errorCode, type);
-    }
-    public CodeTypeBase GetErrorMappingValue(string key)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(key);
-        if(errorMappings.TryGetValue(key, out var value))
-            return value;
-        return null;
     }
 }

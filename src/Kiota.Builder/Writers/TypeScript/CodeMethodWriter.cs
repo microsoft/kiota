@@ -248,7 +248,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
        writer.WriteLine($"return {{{(inherits? $"...super.{codeElement.Name.ToFirstCharacterLowerCase()}(),": string.Empty)}");
         writer.IncreaseIndent();
         foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType)) {
-            writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\": n => {{ this.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement, writer)}; }},");
+            writer.WriteLine($"\"{otherProp.WireName}\": n => {{ this.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement, writer)}; }},");
         }
         writer.DecreaseIndent();
         writer.WriteLine("};");
@@ -340,7 +340,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
             var otherPropName = otherProp.Name.ToFirstCharacterLowerCase();
             var undefinedPrefix = isCollectionOfEnum ? $"this.{otherPropName} && " : string.Empty;
-            writer.WriteLine($"{undefinedPrefix}writer.{GetSerializationMethodName(otherProp.Type, parentClass, writer)}(\"{otherProp.SerializationName ?? otherPropName}\", {spreadOperator}this.{otherPropName});");
+            writer.WriteLine($"{undefinedPrefix}writer.{GetSerializationMethodName(otherProp.Type, parentClass, writer)}(\"{otherProp.WireName}\", {spreadOperator}this.{otherPropName});");
         }
         if(additionalDataProperty != null)
             writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");

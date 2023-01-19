@@ -17,7 +17,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             writer.IncreaseIndent();
             codeElement.Options.ToList().ForEach(x => {
                 conventions.WriteShortDescription(x.Documentation.Description, writer);
-                writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()} = \"{x.SerializationName ?? x.Name}\",");
+                writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()} = \"{x.WireName}\",");
             });
         }
     }

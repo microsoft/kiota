@@ -45,7 +45,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                 break;
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
             case CodePropertyKind.Custom when backingStoreProperty != null:
-                var backingStoreKey = codeElement.SerializationName ?? codeElement.Name.ToFirstCharacterLowerCase();
+                var backingStoreKey = codeElement.WireName;
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"get {{ return {backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Get<{propertyType}>(\"{backingStoreKey}\"); }}");

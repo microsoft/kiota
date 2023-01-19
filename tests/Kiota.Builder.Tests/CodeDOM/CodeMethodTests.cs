@@ -17,8 +17,6 @@ namespace Kiota.Builder.Tests.CodeDOM {
             Assert.False(method.IsOfKind(Array.Empty<CodeMethodKind>()));
             Assert.Throws<ArgumentNullException>(() => method.AddErrorMapping(null, new CodeType{Name = "class"}));
             Assert.Throws<ArgumentNullException>(() => method.AddErrorMapping("oin", null));
-            Assert.Throws<ArgumentNullException>(() => method.GetErrorMappingValue(null));
-            Assert.Null(method.GetErrorMappingValue("oin"));
         }
         [Fact]
         public void IsOfKind() {

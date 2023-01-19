@@ -41,7 +41,7 @@ namespace Kiota.Builder.Writers.Java {
                             "switch(searchValue) {");
             writer.IncreaseIndent();
             writer.Write(enumOptions
-                        .Select(x => $"case \"{x.SerializationName ?? x.Name}\": return {x.Name.ToFirstCharacterUpperCase()};")
+                        .Select(x => $"case \"{x.WireName}\": return {x.Name.ToFirstCharacterUpperCase()};")
                         .Aggregate((x, y) => $"{x}{LanguageWriter.NewLine}{writer.GetIndent()}{y}") + LanguageWriter.NewLine);
             writer.WriteLine("default: return null;");
             writer.CloseBlock();

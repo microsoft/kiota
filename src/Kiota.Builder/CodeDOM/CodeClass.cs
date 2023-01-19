@@ -35,7 +35,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     /// <summary>
     /// Original composed type this class was generated for.
     /// </summary>
-    public CodeComposedTypeBase OriginalComposedType { get; set; }
+    public CodeComposedTypeBase? OriginalComposedType { get; set; }
     public void SetIndexer(CodeIndexer indexer)
     {
         ArgumentNullException.ThrowIfNull(indexer);
@@ -51,9 +51,9 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     }
     public override IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties) {
         var result = base.AddProperty(properties);
-        foreach(var addedPropertyTuple in result.Select(x => new Tuple<CodeProperty, CodeProperty>(x, StartBlock.GetOriginalPropertyDefinedFromBaseType(x.Name)))
+        foreach(var addedPropertyTuple in result.Select(x => new Tuple<CodeProperty, CodeProperty?>(x, StartBlock.GetOriginalPropertyDefinedFromBaseType(x.Name)))
                                         .Where(static x => x.Item2 != null))
-            addedPropertyTuple.Item1.OriginalPropertyFromBaseType = addedPropertyTuple.Item2;
+            addedPropertyTuple.Item1.OriginalPropertyFromBaseType = addedPropertyTuple.Item2!;
 
         return result;
     }
@@ -73,7 +73,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             throw new ArgumentOutOfRangeException(nameof(codeInterfaces));
         return AddRange(codeInterfaces);
     }
-    public CodeClass GetParentClass() {
+    public CodeClass? GetParentClass() {
         return StartBlock.Inherits?.TypeDefinition as CodeClass;
     }
     public bool DerivesFrom(CodeClass codeClass) {
@@ -93,20 +93,20 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         result.Add(this);
         return result;
     }
-    public CodeClass GetGreatestGrandparent(CodeClass startClassToSkip = null) {
+    public CodeClass? GetGreatestGrandparent(CodeClass? startClassToSkip = default) {
         var parentClass = GetParentClass();
         if(parentClass == null)
             return startClassToSkip != null && startClassToSkip == this ? null : this;
         // we don't want to return the current class if this is the start node in the inheritance tree and doesn't have parent
         return parentClass.GetGreatestGrandparent(startClassToSkip);
     }
-    private DiscriminatorInformation _discriminatorInformation;
+    private DiscriminatorInformation? _discriminatorInformation;
     /// <inheritdoc />
     public DiscriminatorInformation DiscriminatorInformation { 
         get {
             if (_discriminatorInformation == null)
                 DiscriminatorInformation = new DiscriminatorInformation();
-            return _discriminatorInformation;
+            return _discriminatorInformation!;
         } 
         set {
             ArgumentNullException.ThrowIfNull(value);
@@ -117,13 +117,13 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
 }
 public class ClassDeclaration : ProprietableBlockDeclaration
 {
-    private CodeType inherits;
-    public CodeType Inherits { get => inherits; set {
+    private CodeType? inherits;
+    public CodeType? Inherits { get => inherits; set {
         EnsureElementsAreChildren(value);
         inherits = value;
     } }
 
-    public CodeProperty GetOriginalPropertyDefinedFromBaseType(string propertyName) {
+    public CodeProperty? GetOriginalPropertyDefinedFromBaseType(string propertyName) {
         ArgumentException.ThrowIfNullOrEmpty(propertyName);
 
         if (inherits is CodeType currentInheritsType &&

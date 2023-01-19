@@ -310,7 +310,7 @@ namespace Kiota.Builder.Writers.Shell
                 optionBuilder.Append("(\"");
                 if (name.Length > 1) optionBuilder.Append('-');
                 optionBuilder.Append($"-{NormalizeToOption(option.Name)}\"");
-                if (option.DefaultValue != null)
+                if (!string.IsNullOrEmpty(option.DefaultValue))
                 {
                     var defaultValue = optionType == "string" ? $"\"{option.DefaultValue}\"" : option.DefaultValue;
                     optionBuilder.Append($", getDefaultValue: ()=> {defaultValue}");

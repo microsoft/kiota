@@ -315,7 +315,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .Where(static x => !x.ExistsInBaseType)
                                         .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
+            writer.WriteLine($"{{\"{otherProp.WireName}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
         }
         writer.CloseBlock("};");
     }
@@ -450,7 +450,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .OrderBy(static x => x.Name))
         {
             var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
-            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.SerializationName ?? otherProp.Name}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
+            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
         }
     }
     private void WriteSerializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)

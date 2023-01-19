@@ -74,9 +74,8 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         var (provider, callback) = (isDeviceCodeSignedIn, isPatSignedIn) switch {
             (true, _) => (GetGitHubAuthenticationProvider(logger), deviceCodeSignInCallback),
             (_, true) => (GetGitHubPatAuthenticationProvider(logger), patSignInCallBack),
-            (_, _) => (null, null)
+            (_, _) => (null, (CancellationToken cts) => Task.FromResult(false))
         };
-
         return new KiotaSearcher(logger, Configuration.Search, httpClient, provider, callback);
     }
     public int Invoke(InvocationContext context)

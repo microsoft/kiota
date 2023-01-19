@@ -1,4 +1,3 @@
-
 using System;
 
 namespace Kiota.Builder.CodeDOM;
@@ -14,11 +13,11 @@ public class CodeDocumentation : ICloneable
     public string Description
     {
         get; set;
-    }
+    } = string.Empty;
     /// <summary>
     /// The external documentation link for this method.
     /// </summary>
-    public Uri DocumentationLink
+    public Uri? DocumentationLink
     {
         get; set;
     }
@@ -28,15 +27,15 @@ public class CodeDocumentation : ICloneable
     public string DocumentationLabel
     {
         get; set;
-    }
+    } = string.Empty;
 
     /// <inheritdoc/>
     public object Clone()
     {
         return new CodeDocumentation {
-            Description = Description?.Clone() as string,
+            Description = Description,
             DocumentationLink = DocumentationLink == null ? null : new (DocumentationLink.ToString()),
-            DocumentationLabel = DocumentationLabel?.Clone() as string,
+            DocumentationLabel = DocumentationLabel,
         };
     }
     public bool DescriptionAvailable { get => !string.IsNullOrEmpty(Description); }

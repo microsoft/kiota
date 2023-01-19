@@ -273,7 +273,7 @@ namespace Kiota.Builder.Writers.Go {
                 WriteReturnError(writer);
             }
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly && x.Getter != null)) {
-                WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase(), $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", !inherits, writer);
+                WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.WireName, $"m.{otherProp.Getter.Name.ToFirstCharacterUpperCase()}()", !inherits, writer);
             }
         }
         private void WriteSerializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer)
@@ -577,7 +577,7 @@ namespace Kiota.Builder.Writers.Go {
         }
 
         private void WriteFieldDeserializer(CodeProperty property, LanguageWriter writer, CodeClass parentClass, string parsableImportSymbol) {
-            writer.StartBlock($"res[\"{property.SerializationName ?? property.Name.ToFirstCharacterLowerCase()}\"] = func (n {parsableImportSymbol}) error {{");
+            writer.StartBlock($"res[\"{property.WireName}\"] = func (n {parsableImportSymbol}) error {{");
             var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
             var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
             writer.WriteLine($"val, err := n.{deserializationMethodName}");

@@ -46,7 +46,7 @@ namespace Kiota.Builder.Writers.Php
             writer.IncreaseIndent();
             foreach (var enumProperty     in enumProperties)
             {
-                writer.WriteLine($"public const {GetEnumValueName(enumProperty.Name)} = '{enumProperty.SerializationName ?? enumProperty.Name}';");
+                writer.WriteLine($"public const {GetEnumValueName(enumProperty.Name)} = '{enumProperty.WireName}';");
             }
         }
         private static readonly Regex _enumValueNameRegex = new ("([A-Z]{1})", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));

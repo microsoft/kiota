@@ -24,9 +24,9 @@ public class GitHubSearchProvider : ISearchProvider
     private readonly DocumentCachingProvider documentCachingProvider;
     private readonly ILogger _logger;
     private readonly Uri _blockListUrl;
-    private readonly IAuthenticationProvider _authenticatedAuthenticationProvider;
+    private readonly IAuthenticationProvider? _authenticatedAuthenticationProvider;
     private readonly Func<CancellationToken, Task<bool>> _isSignedInCallback;
-    public GitHubSearchProvider(HttpClient httpClient, ILogger logger, bool clearCache, GitHubConfiguration configuration, IAuthenticationProvider authenticatedAuthenticationProvider, Func<CancellationToken, Task<bool>> isSignedInCallBack)
+    public GitHubSearchProvider(HttpClient httpClient, ILogger logger, bool clearCache, GitHubConfiguration configuration, IAuthenticationProvider? authenticatedAuthenticationProvider, Func<CancellationToken, Task<bool>> isSignedInCallBack)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(configuration);
@@ -41,6 +41,7 @@ public class GitHubSearchProvider : ISearchProvider
         _blockListUrl = configuration.BlockListUrl;
         _authenticatedAuthenticationProvider = authenticatedAuthenticationProvider;
         _isSignedInCallback = isSignedInCallBack;
+        KeysToExclude = new(StringComparer.OrdinalIgnoreCase);
     }
     private readonly HttpClient _httpClient;
     public string ProviderKey => "github";
@@ -60,8 +61,8 @@ public class GitHubSearchProvider : ISearchProvider
         ArgumentException.ThrowIfNullOrEmpty(term);
         return SearchAsyncInternal(term, cancellationToken);
     }
-    private static bool BlockListContainsRepo(Tuple<HashSet<string>, HashSet<string>> blockLists, string organization, string repo) =>
-        blockLists.Item1.Contains(organization) || blockLists.Item2.Contains($"{organization}/{repo}");
+    private static bool BlockListContainsRepo(Tuple<HashSet<string>, HashSet<string>> blockLists, string? organization, string? repo) =>
+        !string.IsNullOrEmpty(organization) && blockLists.Item1.Contains(organization) || blockLists.Item2.Contains($"{organization}/{repo}");
     private async Task<IDictionary<string, SearchResult>> SearchAsyncInternal(string term, CancellationToken cancellationToken)
     {
         var blockLists = await GetBlockLists(cancellationToken);
@@ -87,12 +88,12 @@ public class GitHubSearchProvider : ISearchProvider
         var results = (await Task.WhenAll(_topics.Select(x => GetAllReposForTerm(gitHubClient, term, x, cancellationToken)))
                                 .ConfigureAwait(false))
                         .SelectMany(static x => x)
-                        .Where(x => !BlockListContainsRepo(blockLists, x.Owner.Login, x.Name))
+                        .Where(x => x is not null && !BlockListContainsRepo(blockLists, x.Owner?.Login, x.Name))
                         .DistinctBy(static x => x.Url, StringComparer.OrdinalIgnoreCase)
                         .ToList();
 
         var searchResults = GetDictionaryResultFromMultipleSources(await Task.WhenAll(results.Join(_indexFileInfos, x => true, x => true, (repo, indexFileInfo) => (repo, indexFileInfo))
-                                                    .Select(x => GetSearchResultsFromRepo(gitHubClient, x.repo.Owner.Login, x.repo.Name, x.indexFileInfo.Key, x.indexFileInfo.Value, cancellationToken))).ConfigureAwait(false));
+                                                    .Select(x => GetSearchResultsFromRepo(gitHubClient, x.repo.Owner?.Login, x.repo.Name, x.indexFileInfo.Key, x.indexFileInfo.Value, cancellationToken))).ConfigureAwait(false));
 
         return searchResults;
     }
@@ -117,7 +118,7 @@ public class GitHubSearchProvider : ISearchProvider
                 .WithNamingConvention(new YamlNamingConvention())
                 .IgnoreUnmatchedProperties()
                 .Build());
-    private static T deserializeDocumentFromJson<T>(Stream document) => JsonSerializer.Deserialize<T>(document, new JsonSerializerOptions
+    private static T? deserializeDocumentFromJson<T>(Stream document) => JsonSerializer.Deserialize<T>(document, new JsonSerializerOptions
     {
         PropertyNameCaseInsensitive = true,
     });
@@ -127,12 +128,14 @@ public class GitHubSearchProvider : ISearchProvider
         return _deserializer.Value.Deserialize<T>(reader);
     }
     private const string DownloadUrlKey = "download_url";
-    private async Task<IEnumerable<Tuple<string, SearchResult>>> GetSearchResultsFromRepo(GitHubClient.GitHubClient gitHubClient, string org, string repo, string fileName, string accept, CancellationToken cancellationToken)
+    private async Task<IEnumerable<Tuple<string, SearchResult>>> GetSearchResultsFromRepo(GitHubClient.GitHubClient gitHubClient, string? org, string? repo, string fileName, string accept, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrEmpty(org) || string.IsNullOrEmpty(repo))
+            return Enumerable.Empty<Tuple<string, SearchResult>>();
         try
         {
             var response = await gitHubClient.Repos[org][repo].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            if (!response.AdditionalData.TryGetValue(DownloadUrlKey, out var rawDownloadUrl) || rawDownloadUrl is not string downloadUrl || string.IsNullOrEmpty(downloadUrl))
+            if (response == null || !response.AdditionalData.TryGetValue(DownloadUrlKey, out var rawDownloadUrl) || rawDownloadUrl is not string downloadUrl || string.IsNullOrEmpty(downloadUrl))
                 return Enumerable.Empty<Tuple<string, SearchResult>>();
             var targetUrl = new Uri(downloadUrl);
             await using var document = await documentCachingProvider.GetDocumentAsync(targetUrl, "search", targetUrl.GetFileName(), accept, cancellationToken);
@@ -150,11 +153,12 @@ public class GitHubSearchProvider : ISearchProvider
                                 {
                                     var baseUrl = string.IsNullOrEmpty(x.BaseURL) ? null : new Uri(x.BaseURL);
                                     var hostAndPath = baseUrl == null ? string.Empty : $"/{baseUrl.Host}{baseUrl.AbsolutePath}";
+                                    var property = x.Properties.FirstOrDefault(y => OpenApiPropertyKey.Equals(y.Type, StringComparison.OrdinalIgnoreCase));
                                     return new Tuple<string, SearchResult>($"{org}/{repo}{hostAndPath}",
                                         new SearchResult(x.Name,
                                             x.Description,
                                             baseUrl,
-                                            new Uri(x.Properties.FirstOrDefault(y => OpenApiPropertyKey.Equals(y.Type, StringComparison.OrdinalIgnoreCase))?.Url),
+                                            string.IsNullOrEmpty(property?.Url) ? null : new Uri(property!.Url),
                                             new()));
                                 })
                                 .ToList();
@@ -184,21 +188,22 @@ public class GitHubSearchProvider : ISearchProvider
         originalResults.RemoveAll(x => x.Properties.Any(y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase) && keysToRemove.Contains(y.Url)));
         resultsToUpdate.Where(static x => x.Item2 is not null).ToList().ForEach(x => {
             var resultToUpdate = originalResults.FirstOrDefault(z => z.Properties.Any(y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase) && x.Item1.Equals(y.Url, StringComparison.OrdinalIgnoreCase)));
-            if(resultToUpdate?.Properties.FirstOrDefault(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase)) is IndexApiProperty propertyToUpdate)
+            if(resultToUpdate?.Properties.FirstOrDefault(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase)) is IndexApiProperty propertyToUpdate &&
+                !string.IsNullOrEmpty(x.Item2))
                 propertyToUpdate.Url = x.Item2;
         });
     }
-    private async Task<Tuple<string, string>> GetUrlForRelativeDescription(IndexApiEntry searchResult, GitHubClient.GitHubClient gitHubClient, string org, string repo, CancellationToken cancellationToken) {
+    private async Task<Tuple<string, string?>> GetUrlForRelativeDescription(IndexApiEntry searchResult, GitHubClient.GitHubClient gitHubClient, string org, string repo, CancellationToken cancellationToken) {
         var originalUrl = searchResult.Properties.First(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase)).Url;
         try {
             var fileName = originalUrl.TrimStart('/');
             var response = await gitHubClient.Repos[org][repo].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            if (response.AdditionalData.TryGetValue(DownloadUrlKey, out var rawDownloadUrl) && rawDownloadUrl is string downloadUrl && !string.IsNullOrEmpty(downloadUrl))
-                return new Tuple<string, string>(originalUrl, downloadUrl);
+            if (response != null && response.AdditionalData.TryGetValue(DownloadUrlKey, out var rawDownloadUrl) && rawDownloadUrl is string downloadUrl && !string.IsNullOrEmpty(downloadUrl))
+                return new Tuple<string, string?>(originalUrl, downloadUrl);
         } catch (BasicError) {
             _logger.LogInformation("Unable to find {fileName} in {org}/{repo}", originalUrl, org, repo);
         }
-        return new Tuple<string, string>(originalUrl, null);
+        return new Tuple<string, string?>(originalUrl, null);
     }
     private static async Task<List<RepoSearchResultItem>> GetAllReposForTerm(GitHubClient.GitHubClient gitHubClient, string term, string topic, CancellationToken cancellationToken)
     {
@@ -212,7 +217,10 @@ public class GitHubSearchProvider : ISearchProvider
                 x.QueryParameters.Q = $"{term} topic:{topic}";
                 x.QueryParameters.Page = pageNumber;
             }, cancellationToken).ConfigureAwait(false);
-            results.AddRange(reposPage.Items);
+            if (reposPage == null)
+                break;
+            if(reposPage.Items != null)
+                results.AddRange(reposPage.Items);
             shouldContinue = results.Count < reposPage.Total_count;
             pageNumber++;
         } while (shouldContinue);

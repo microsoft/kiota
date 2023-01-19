@@ -12,9 +12,9 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
     private static readonly OpenApiDiscriminatorComparer discriminatorComparer = new();
     private static readonly OpenApiAnyComparer openApiAnyComparer = new ();
     /// <inheritdoc/>
-    public bool Equals(OpenApiSchema x, OpenApiSchema y)
+    public bool Equals(OpenApiSchema? x, OpenApiSchema? y)
     {
-        return GetHashCode(x) == GetHashCode(y);
+        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] OpenApiSchema obj) {
@@ -38,9 +38,9 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
                 (SumUnchecked(obj.OneOf.Select(x => GetHashCodeInternal(x, visitedSchemas))) * 17) +
                 (SumUnchecked(obj.AnyOf.Select(x => GetHashCodeInternal(x, visitedSchemas))) * 11) +
                 (SumUnchecked(obj.AllOf.Select(x => GetHashCodeInternal(x, visitedSchemas))) * 7) +
-                (obj.Format?.GetHashCode() ?? 0) * 5 +
-                (obj.Type?.GetHashCode() ?? 0) * 3 +
-                (obj.Title?.GetHashCode() ?? 0) * 2;
+                (string.IsNullOrEmpty(obj.Format) ? 0 : obj.Format.GetHashCode()) * 5 +
+                (string.IsNullOrEmpty(obj.Type) ? 0 : obj.Type.GetHashCode()) * 3 +
+                (string.IsNullOrEmpty(obj.Title) ? 0 : obj.Title.GetHashCode()) * 2;
         }
         /**
          ignored properties since they don't impact generation:
@@ -77,29 +77,29 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
 internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscriminator>
 {
     /// <inheritdoc/>
-    public bool Equals(OpenApiDiscriminator x, OpenApiDiscriminator y)
+    public bool Equals(OpenApiDiscriminator? x, OpenApiDiscriminator? y)
     {
-        return GetHashCode(x) == GetHashCode(y);
+        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] OpenApiDiscriminator obj)
     {
         if (obj == null) return 0;
-        return (obj.PropertyName?.GetHashCode() ?? 0) * 89 +
-            (obj.Mapping?.Select(static x => x.Key.GetHashCode() + x.Value.GetHashCode()).Sum() ?? 0) * 83;
+        return (string.IsNullOrEmpty(obj.PropertyName) ? 0 : obj.PropertyName.GetHashCode()) * 89 +
+            (obj.Mapping?.Select(static x => x.Key.GetHashCode() + (string.IsNullOrEmpty(x.Value) ? 0 : x.Value.GetHashCode())).Sum() ?? 0) * 83;
     }
 }
 internal class OpenApiAnyComparer : IEqualityComparer<IOpenApiAny>
 {
     /// <inheritdoc/>
-    public bool Equals(IOpenApiAny x, IOpenApiAny y)
+    public bool Equals(IOpenApiAny? x, IOpenApiAny? y)
     {
-        return GetHashCode(x) == GetHashCode(y);
+        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] IOpenApiAny obj)
     {
-        if (obj == null) return 0;
-        return obj.ToString().GetHashCode() * 97;
+        if (obj == null || obj.ToString() is not string stringValue || string.IsNullOrEmpty(stringValue)) return 0;
+        return stringValue.GetHashCode() * 97;
     }
 }

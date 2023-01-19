@@ -27,7 +27,7 @@ public class DiscriminatorInformation : CodeElement, ICloneable
     public string DiscriminatorPropertyName
     {
         get; set;
-    }
+    } = string.Empty;
 
     public void AddDiscriminatorMapping(string key, CodeTypeBase type)
     {
@@ -36,7 +36,7 @@ public class DiscriminatorInformation : CodeElement, ICloneable
         discriminatorMappings.TryAdd(key, type);
     }
 
-    public CodeTypeBase GetDiscriminatorMappingValue(string key)
+    public CodeTypeBase? GetDiscriminatorMappingValue(string key)
     {
         ArgumentException.ThrowIfNullOrEmpty(key);
         if (discriminatorMappings.TryGetValue(key, out var value))
@@ -55,9 +55,9 @@ public class DiscriminatorInformation : CodeElement, ICloneable
         return new DiscriminatorInformation
         {
             DiscriminatorPropertyName = DiscriminatorPropertyName,
-            discriminatorMappings = discriminatorMappings == null ? null : new(discriminatorMappings),
+            discriminatorMappings = new(discriminatorMappings, StringComparer.OrdinalIgnoreCase),
             Parent = Parent,
-            Name = Name?.Clone() as string,
+            Name = Name,
         };
     }
     public bool HasBasicDiscriminatorInformation => !string.IsNullOrEmpty(DiscriminatorPropertyName) && discriminatorMappings.Any();

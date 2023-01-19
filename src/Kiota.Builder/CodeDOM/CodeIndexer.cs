@@ -1,20 +1,20 @@
 ﻿namespace Kiota.Builder.CodeDOM;
 public class CodeIndexer : CodeTerminal, IDocumentedElement
 {
-    private CodeTypeBase indexType;
-    public CodeTypeBase IndexType {get => indexType; set {
+    private CodeTypeBase? indexType;
+    public CodeTypeBase? IndexType {get => indexType; set {
         EnsureElementsAreChildren(value);
         indexType = value;
     }}
-    private CodeTypeBase returnType;
-    public CodeTypeBase ReturnType {get => returnType; set {
+    private CodeTypeBase? returnType;
+    public CodeTypeBase? ReturnType {get => returnType; set {
         EnsureElementsAreChildren(value);
         returnType = value;
     }}
-    public string SerializationName { get; set; }
+    public string SerializationName { get; set; } = string.Empty;
     public CodeDocumentation Documentation { get; set; } = new();
     /// <summary>
     /// The Path segment to use for the method name when using back-compatible methods.
     /// </summary>
-    public string PathSegment { get; set; }
+    public string PathSegment { get; set; } = string.Empty;
 }

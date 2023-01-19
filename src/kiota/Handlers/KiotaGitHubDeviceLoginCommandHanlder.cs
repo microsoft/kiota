@@ -62,10 +62,10 @@ internal class KiotaGitHubDeviceLoginCommandHandler : BaseKiotaCommandHandler
         var requestAdapter = new HttpClientRequestAdapter(authProvider, httpClient: httpClient);
         var client = new GitHubClient(requestAdapter);
         var installations = await client.User.Installations.GetAsync(cancellationToken: cancellationToken);
-        if (installations?.Total_count > 0) {
+        if (installations?.Total_count > 0 && installations.Installations != null) {
             DisplayInfo("Kiota is installed to the following organizations/accounts:");
             foreach (var installation in installations.Installations)
-                DisplayInfo($"- {installation.Account.SimpleUser.Login} ({installation.Repository_selection} repositories){(installation.Suspended_at != null ? " (suspended)" : string.Empty)}");
+                DisplayInfo($"- {installation?.Account?.SimpleUser?.Login} ({installation?.Repository_selection} repositories){(installation?.Suspended_at != null ? " (suspended)" : string.Empty)}");
         } else {
             DisplayWarning("Kiota is not installed to any GitHub organization/account.");
         }

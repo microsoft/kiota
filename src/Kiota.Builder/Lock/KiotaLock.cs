@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Kiota.Builder.Configuration;
 
 namespace Kiota.Builder.Lock;
@@ -12,11 +11,11 @@ public class KiotaLock {
     /// <summary>
     /// The OpenAPI description hash that generated this client.
     /// </summary>
-    public string DescriptionHash { get; set; }
+    public string DescriptionHash { get; set; } = string.Empty;
     /// <summary>
     /// The location of the OpenAPI description file.
     /// </summary>
-    public string DescriptionLocation { get; set; }
+    public string DescriptionLocation { get; set; } = string.Empty;
     /// <summary>
     /// The version of the lock file schema.
     /// </summary>
@@ -28,15 +27,15 @@ public class KiotaLock {
     /// <summary>
     /// The main class name for this client.
     /// </summary>
-    public string ClientClassName { get; set; }
+    public string ClientClassName { get; set; } = string.Empty;
     /// <summary>
     /// The main namespace for this client.
     /// </summary>
-    public string ClientNamespaceName { get; set; }
+    public string ClientNamespaceName { get; set; } = string.Empty;
     /// <summary>
     /// The language for this client.
     /// </summary>
-    public string Language { get; set; }
+    public string Language { get; set; } = string.Empty;
     /// <summary>
     /// Whether the backing store was used for this client.
     /// </summary>

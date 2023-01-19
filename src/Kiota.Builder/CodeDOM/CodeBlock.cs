@@ -51,14 +51,15 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
         return result;
     }
     private T HandleDuplicatedExceptions<T>(T element, CodeElement returnedValue) where T: CodeElement {
-        var added = returnedValue == element;
-        if(!added && element is CodeMethod currentMethod)
+        if (returnedValue == element)
+            return element;
+        if(element is CodeMethod currentMethod)
             if(currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) &&
                 returnedValue is CodeProperty cProp &&
-                cProp.IsOfKind(CodePropertyKind.RequestBuilder)) {
+                cProp.IsOfKind(CodePropertyKind.RequestBuilder) &&
+                InnerChildElements.GetOrAdd($"{element.Name}-indexerbackcompat", element) is T result) {
                 // indexer retrofitted to method in the parent request builder on the path and conflicting with the collection request builder property
-                returnedValue = InnerChildElements.GetOrAdd($"{element.Name}-indexerbackcompat", element);
-                added = true;
+                    return result;
             } else if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor) &&
                      returnedValue is CodeMethod existingMethod) {
                 var currentMethodParameterNames = currentMethod.Parameters.Select(static x => x.Name).ToHashSet();
@@ -69,15 +70,14 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
                                                 .Any()) {
                     // allows for methods overload
                     var methodOverloadNameSuffix = currentMethodParameterNames.Any() ? currentMethodParameterNames.OrderBy(static x => x).Aggregate(static (x, y) => x + y) : "1";
-                    returnedValue = InnerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", element);
-                    added = true;
+                    if (InnerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", element) is T result2)
+                        return result2;
                 }
             }
+        if (element.GetType() == returnedValue.GetType())
+            return (T)returnedValue;
 
-        if(!added && returnedValue.GetType() != element.GetType())
-            throw new InvalidOperationException($"the current dom node already contains a child with name {returnedValue.Name} and of type {returnedValue.GetType().Name}");
-
-        return returnedValue as T;
+        throw new InvalidOperationException($"the current dom node already contains a child with name {returnedValue.Name} and of type {returnedValue.GetType().Name}");
     }
     public IEnumerable<T> FindChildrenByName<T>(string childName) where T: ICodeElement {
         ArgumentException.ThrowIfNullOrEmpty(childName);
@@ -94,7 +94,7 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
 
         return Enumerable.Empty<T>();
     }
-    public T FindChildByName<T>(string childName, bool findInChildElements = true) where T: ICodeElement {
+    public T? FindChildByName<T>(string childName, bool findInChildElements = true) where T: ICodeElement {
         ArgumentException.ThrowIfNullOrEmpty(childName);
         
         if(!InnerChildElements.Any())
@@ -133,7 +133,7 @@ public class BlockDeclaration : CodeTerminal
         if(names == null || names.Any(x => string.IsNullOrEmpty(x)))
             throw new ArgumentNullException(nameof(names));
         var namesAsHashSet = names.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach(var usingToRemove in usings.Keys.Where(x => namesAsHashSet.Contains(x.Declaration?.Name)))
+        foreach(var usingToRemove in usings.Keys.Where(x => !string.IsNullOrEmpty(x.Declaration?.Name) && namesAsHashSet.Contains(x.Declaration!.Name)))
             usings.TryRemove(usingToRemove, out var _);
     }
 }

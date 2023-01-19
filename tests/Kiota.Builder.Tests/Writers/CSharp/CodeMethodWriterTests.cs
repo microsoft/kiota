@@ -87,7 +87,8 @@ public class CodeMethodWriterTests : IDisposable {
             }
         });
         var dummyUCaseProp = parentClass.AddProperty(new CodeProperty {
-            Name = "DummyUCaseProp",
+            Name = "dummyUCaseProp",
+            SerializationName = "DummyUCaseProp",
         }).First();
         dummyUCaseProp.Type = new CodeType {
             Name = "string"

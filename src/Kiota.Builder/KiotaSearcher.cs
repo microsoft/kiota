@@ -18,10 +18,10 @@ public class KiotaSearcher {
     private readonly ILogger<KiotaSearcher> _logger;
     private readonly SearchConfiguration _config;
     private readonly HttpClient _httpClient;
-    private readonly IAuthenticationProvider _gitHubAuthenticationProvider;
+    private readonly IAuthenticationProvider? _gitHubAuthenticationProvider;
     private readonly Func<CancellationToken, Task<bool>> _isGitHubSignedInCallBack;
 
-    public KiotaSearcher(ILogger<KiotaSearcher> logger, SearchConfiguration config, HttpClient httpClient, IAuthenticationProvider gitHubAuthenticationProvider, Func<CancellationToken, Task<bool>> isGitHubSignedInCallBack) {
+    public KiotaSearcher(ILogger<KiotaSearcher> logger, SearchConfiguration config, HttpClient httpClient, IAuthenticationProvider? gitHubAuthenticationProvider, Func<CancellationToken, Task<bool>> isGitHubSignedInCallBack) {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(config);
         ArgumentNullException.ThrowIfNull(httpClient);
@@ -52,7 +52,9 @@ public class KiotaSearcher {
         var providerPrefix = $"{provider.ProviderKey}{ProviderSeparator}";
         var results = await provider.SearchAsync(searchTerm.Replace(providerPrefix, string.Empty), version, cancellationToken);
 
-        return results.Select(x => ($"{providerPrefix}{x.Key}", x.Value))
+        return results
+                    .Where(static x => x.Value.DescriptionUrl is not null)
+                    .Select(x => ($"{providerPrefix}{x.Key}", x.Value))
                     .ToDictionary(static x => x.Item1, static x => x.Value, StringComparer.OrdinalIgnoreCase);
     }
     public const string ProviderSeparator = "::";

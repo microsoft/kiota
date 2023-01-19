@@ -202,7 +202,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .Where(static x => !x.ExistsInBaseType)
                                             .OrderBy(static x => x.Name)) {
-            writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\" => lambda {{|n| @{otherProp.NamePrefix}{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
+            writer.WriteLine($"\"{otherProp.WireName}\" => lambda {{|n| @{otherProp.NamePrefix}{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
         }
         writer.DecreaseIndent();
         if(parentClass.StartBlock.Inherits != null)
@@ -291,7 +291,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
                                             .OrderBy(static x => x.Name)) {
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", @{otherProp.Name.ToSnakeCase()})");
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.WireName}\", @{otherProp.Name.ToSnakeCase()})");
         }
         if(additionalDataProperty != null)
             writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.NamePrefix}{additionalDataProperty.Name.ToSnakeCase()})");

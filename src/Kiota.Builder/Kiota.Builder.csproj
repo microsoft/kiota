@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <LangVersion>Latest</LangVersion>
+    <Nullable>enable</Nullable>
     <TargetFramework>net7.0</TargetFramework>
     <SignAssembly>true</SignAssembly>
     <PackageProjectUrl>https://github.com/microsoft/kiota</PackageProjectUrl>

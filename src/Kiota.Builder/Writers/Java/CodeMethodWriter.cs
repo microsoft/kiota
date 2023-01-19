@@ -416,7 +416,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                     .Where(static x => !x.ExistsInBaseType && x.Setter != null)
                     .OrderBy(static x => x.Name)
                     .Select(x => 
-                        $"{DeserializerVarName}.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (n) -> {{ this.{x.Setter.Name.ToFirstCharacterLowerCase()}(n.{GetDeserializationMethodName(x.Type, method)}); }});")
+                        $"{DeserializerVarName}.put(\"{x.WireName}\", (n) -> {{ this.{x.Setter.Name.ToFirstCharacterLowerCase()}(n.{GetDeserializationMethodName(x.Type, method)}); }});")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
         }
@@ -606,7 +606,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if(inherits)
             writer.WriteLine("super.serialize(writer);");
         foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly))
-            WriteSerializationMethodCall(otherProp, method, writer, $"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\"");
+            WriteSerializationMethodCall(otherProp, method, writer, $"\"{otherProp.WireName}\"");
     }
     private void WriteSerializationMethodCall(CodeProperty otherProp, CodeMethod method, LanguageWriter writer, string serializationKey, string dataToSerialize = default) {
         if(string.IsNullOrEmpty(dataToSerialize))
