@@ -195,6 +195,9 @@ public class ShellCodeMethodWriterTests : IDisposable
             ReturnType = new CodeType {
                 Name = "TestRequestBuilder",
                 TypeDefinition = type
+            },
+            IndexType = new CodeType {
+                Name = "string",
             }
         };
 

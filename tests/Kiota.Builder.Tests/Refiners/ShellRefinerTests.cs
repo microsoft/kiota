@@ -51,7 +51,10 @@ public class ShellRefinerTests {
             Name = "Users",
             ReturnType = new CodeType {
                 Name = "Address"
-            }
+            },
+            IndexType = new CodeType {
+                Name = "string"
+            },
         });
 
         // Add request executor

@@ -5,7 +5,7 @@ public class CodeUsing : CodeElement, ICloneable
 {
     private CodeType? declaration;
     public CodeType? Declaration { get => declaration; set {
-        EnsureElementsAreChildren(declaration);
+        EnsureElementsAreChildren(value);
         declaration = value;
     } }
     public bool IsExternal {

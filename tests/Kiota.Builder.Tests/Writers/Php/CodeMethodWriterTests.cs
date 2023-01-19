@@ -585,6 +585,9 @@ namespace Kiota.Builder.Tests.Writers.Php
                     IndexType = new CodeType
                     {
                         Name = "MessageRequestBuilder"
+                    },
+                    ReturnType = new CodeType {
+                        Name = "MessageRequestBuilder"
                     }
                 },
                 OriginalMethod = new CodeMethod

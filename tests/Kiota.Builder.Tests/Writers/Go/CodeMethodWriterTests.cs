@@ -1273,7 +1273,10 @@ public class CodeMethodWriterTests : IDisposable {
             IndexType = new CodeType {
                 Name = "string",
                 IsNullable = true,
-            }
+            },
+            ReturnType = new CodeType {
+                Name = "string",
+            },
         };
         method.AddParameter(new CodeParameter {
             Name = "id",

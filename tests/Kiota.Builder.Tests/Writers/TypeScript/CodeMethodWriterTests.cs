@@ -525,6 +525,9 @@ public class CodeMethodWriterTests : IDisposable {
             IndexType = new CodeType {
                 Name = "string",
                 IsNullable = true,
+            },
+            ReturnType = new CodeType {
+                Name = "string",
             }
         };
         writer.Write(method);

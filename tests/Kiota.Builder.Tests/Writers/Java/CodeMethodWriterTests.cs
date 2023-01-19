@@ -1321,7 +1321,10 @@ public class CodeMethodWriterTests : IDisposable {
             IndexType = new CodeType {
                 Name = "int"
             },
-            SerializationName = "collectionId"
+            SerializationName = "collectionId",
+            ReturnType = new CodeType {
+                Name = "string"
+            }
         };
         writer.Write(method);
         var result = tw.ToString();

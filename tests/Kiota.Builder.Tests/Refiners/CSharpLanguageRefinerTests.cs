@@ -195,6 +195,9 @@ public class CSharpLanguageRefinerTests {
         var indexer = new CodeIndexer {
             Name = "idx",
             ReturnType = union.Clone() as CodeTypeBase,
+            IndexType = new CodeType {
+                Name = "string"
+            }
         };
         model.SetIndexer(indexer);
         method.AddParameter(parameter);
