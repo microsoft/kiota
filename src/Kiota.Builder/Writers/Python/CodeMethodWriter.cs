@@ -17,7 +17,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         ArgumentNullException.ThrowIfNull(codeElement);
         if(codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
         ArgumentNullException.ThrowIfNull(writer);
-        if(!(codeElement.Parent is CodeClass parentClass)) throw new InvalidOperationException("the parent of a method should be a class");
+        if(codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, true, writer);
         var isVoid = "None".Equals(returnType, StringComparison.OrdinalIgnoreCase);
@@ -29,10 +29,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var requestConfigParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
         var requestParams = new RequestParams(requestBodyParam, requestConfigParam);
         if(!codeElement.IsOfKind(CodeMethodKind.Setter))
-            foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
+            foreach(var parameter in codeElement.Parameters.Where(static x => !x.Optional).OrderBy(static x => x.Name)) {
                 var parameterName = parameter.Name.ToSnakeCase();
-                writer.WriteLine($"if {parameterName} is None:");
-                writer.IncreaseIndent();
+                writer.StartBlock($"if {parameterName} is None:");
                 writer.WriteLine($"raise Exception(\"{parameterName} cannot be undefined\")");
                 writer.DecreaseIndent();
             }
@@ -163,9 +162,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         WriteSetterAccessPropertiesWithoutDefaults(parentClass, writer);
 
         if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
-            if(currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
-            currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam) {
-                conventions.AddParametersAssignment(writer, 
+            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+                if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam)
+                    conventions.AddParametersAssignment(writer, 
                                                     pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                     currentMethod.Parameters

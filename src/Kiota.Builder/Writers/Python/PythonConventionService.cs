@@ -20,12 +20,13 @@ public class PythonConventionService : CommonLanguageConventionService
     public override string TempDictionaryVarName => "url_tpl_params";
     
     #pragma warning disable CA1822 // Method should be static
-    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
-        var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-        var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-        var urlTemplateParams = urlTemplateVarName ?? $"self.{pathParametersProperty.Name.ToSnakeCase()}";
+    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default) {
+        var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) && parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty ?
+            $"self.{pathParametersProperty.Name.ToSnakeCase()}" :
+            urlTemplateVarName;
         var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}";
-        writer.WriteLine($"return {returnType}(self.{requestAdapterProp.Name.ToSnakeCase()}, {urlTemplateParams}{pathParametersSuffix})");
+        if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
+            writer.WriteLine($"return {returnType}(self.{requestAdapterProp.Name.ToSnakeCase()}, {urlTemplateParams}{pathParametersSuffix})");
     }
     internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase? pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
         if(pathParametersType == null) return;
@@ -44,34 +45,34 @@ public class PythonConventionService : CommonLanguageConventionService
             _ => "",
         };
     }
-    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
+    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
-        var defaultValueSuffiix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
-        return $"{parameter.Name.ToSnakeCase()}: {(parameter.Type.IsNullable ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement, true, writer)}{(parameter.Type.IsNullable ? "] = None": string.Empty)}{defaultValueSuffiix}";
+        var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
+        return $"{parameter.Name.ToSnakeCase()}: {(parameter.Type.IsNullable ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement, true, writer)}{(parameter.Type.IsNullable ? "] = None": string.Empty)}{defaultValueSuffix}";
     }
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement) {
-        var parentBlock = targetElement.GetImmediateParentOfType<IBlock>();
-        if(parentBlock != null) {
+        if(targetElement.GetImmediateParentOfType<IBlock>() is IBlock parentBlock) {
             var aliasedUsing = parentBlock.Usings
                                                 .FirstOrDefault(x => !x.IsExternal &&
-                                                                x.Declaration.TypeDefinition == targetType.TypeDefinition &&
+                                                                x.Declaration?.TypeDefinition == targetType.TypeDefinition &&
                                                                 !string.IsNullOrEmpty(x.Alias));
-            return aliasedUsing?.Alias;
+            return aliasedUsing?.Alias ?? string.Empty;
         }
-        return null;
+        return string.Empty;
     }
-    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null) {
+    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null) {
         if(code is null)
-            return null;
+            return string.Empty;
         var collectionPrefix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "List[";
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "]";
         if(code is CodeComposedTypeBase currentUnion && currentUnion.Types.Any())
             return currentUnion.Types.Select(x => GetTypeString(x, targetElement, true, writer)).Aggregate((x, y) => $"Union[{x}, {y.ToFirstCharacterLowerCase()}]");
         if(code is CodeType currentType) {
-            var typeName = GetTypeAlias(currentType, targetElement) ?? TranslateType(currentType);
-            if (TypeExistInSameClassAsTarget(code, targetElement))
+            var alias = GetTypeAlias(currentType, targetElement);
+            var typeName = string.IsNullOrEmpty(alias) ? TranslateType(currentType) : alias;
+            if (TypeExistInSameClassAsTarget(code, targetElement) && targetElement.Parent != null)
                 typeName = targetElement.Parent.Name.ToFirstCharacterUpperCase();
-            if (code.ActionOf)
+            if (code.ActionOf && writer != null)
                 return WriteInlineDeclaration(currentType, targetElement, writer);
             return $"{collectionPrefix}{typeName}{collectionSuffix}";
         }
@@ -79,7 +80,7 @@ public class PythonConventionService : CommonLanguageConventionService
         throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
     #pragma warning restore CA1822 // Method should be static
-    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/");
     public override string TranslateType(CodeType type)
     {
         if (type.IsExternal)
@@ -101,8 +102,8 @@ public class PythonConventionService : CommonLanguageConventionService
     }
     private static string TranslateInternalType(CodeType type)
     {
-        if (type.Name.Contains("RequestConfiguration"))
-            return type.TypeDefinition?.Name.ToFirstCharacterUpperCase();
+        if (type.Name.Contains("RequestConfiguration") && type.TypeDefinition is not null)
+            return type.TypeDefinition.Name.ToFirstCharacterUpperCase();
         if (type.Name.Contains("QueryParameters"))
             return type.Name;
         if (type.Name.Contains("APIError"))
@@ -156,8 +157,7 @@ public class PythonConventionService : CommonLanguageConventionService
     }
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
-        var isDescriptionPresent = !string.IsNullOrEmpty(description);
-        if(isDescriptionPresent) {
+        if(!string.IsNullOrEmpty(description)) {
             writer.WriteLine(DocCommentStart);
             writer.WriteLine($"{RemoveInvalidDescriptionCharacters(description)}");
             writer.WriteLine(DocCommentEnd);
@@ -166,8 +166,7 @@ public class PythonConventionService : CommonLanguageConventionService
 
     public void WriteInLineDescription(string description, LanguageWriter writer)
     {
-        var isDescriptionPresent = !string.IsNullOrEmpty(description);
-        if(isDescriptionPresent) {
+        if(!string.IsNullOrEmpty(description)) {
             writer.WriteLine($"{InLineCommentPrefix}{RemoveInvalidDescriptionCharacters(description)}");
         }
     }

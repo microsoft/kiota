@@ -100,7 +100,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             parentClass.DiscriminatorInformation.DiscriminatorMappings.Count() > maxDiscriminatorLength) {
                 var discriminatorsCount = parentClass.DiscriminatorInformation.DiscriminatorMappings.Count();
                 for(var currentDiscriminatorPageIndex = 0; currentDiscriminatorPageIndex * maxDiscriminatorLength < discriminatorsCount; currentDiscriminatorPageIndex++) {
-                    var newMethod = currentMethod.Clone() as CodeMethod;
+                    var newMethod = (CodeMethod)currentMethod.Clone();
                     newMethod.Name = $"{currentMethod.Name}_{currentDiscriminatorPageIndex}";
                     newMethod.OriginalMethod = currentMethod;
                     newMethod.Access = AccessModifier.Private;
@@ -213,7 +213,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "HashMap<String, Object>";
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "new HashMap<>()";
-        } 
+        }
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
@@ -245,7 +245,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         } else if(currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
             parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
         CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
-                                                .Select(x => x.Type)
+                                                .Select(static x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
     }
