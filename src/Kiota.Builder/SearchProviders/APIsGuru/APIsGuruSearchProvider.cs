@@ -34,6 +34,8 @@ public class APIsGuruSearchProvider : ISearchProvider
             return new Dictionary<string, SearchResult>();
         await using var rawDocument = await cachingProvider.GetDocumentAsync(SearchUri, "search", "apisguru.json", "application/json", cancellationToken);
         var apiEntries = JsonSerializer.Deserialize<Dictionary<string, ApiEntry>>(rawDocument);
+        if (apiEntries == null)
+            return new Dictionary<string, SearchResult>();
         var candidates = apiEntries
                             .Where(x => !KeysToExclude.Contains(x.Key))
                             .Where(x => x.Key.Contains(term, StringComparison.OrdinalIgnoreCase));
@@ -43,7 +45,7 @@ public class APIsGuruSearchProvider : ISearchProvider
                                 .Where(static x => x.versionInfo is not null)
                                 .DistinctBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
                                 .ToDictionary(static x => x.Key,
-                                            static x => new SearchResult(x.versionInfo.info?.title, x.versionInfo.info?.description, x.versionInfo.info?.contact?.url, x.versionInfo.swaggerUrl, x.Item3),
+                                            static x => new SearchResult(x.versionInfo!.info?.title ?? string.Empty, x.versionInfo.info?.description ?? string.Empty, x.versionInfo.info?.contact?.url, x.versionInfo.swaggerUrl, x.Item3 ?? Enumerable.Empty<string>().ToList()),
                                             StringComparer.OrdinalIgnoreCase);
         return results;
     }
