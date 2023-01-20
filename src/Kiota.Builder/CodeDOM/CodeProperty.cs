@@ -43,7 +43,6 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
 {
     public bool ReadOnly {get;set;} = false;
     public AccessModifier Access {get;set;} = AccessModifier.Public;
-    private CodeTypeBase? type;
     public bool ExistsInBaseType => OriginalPropertyFromBaseType != null;
     public CodeMethod? Getter {get; set;}
     public CodeMethod? Setter {get; set;}
@@ -67,7 +66,10 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
             return default;
         }
     }
-    public CodeTypeBase? Type {get => type ;set {
+    #nullable disable // the backing property is required
+    private CodeTypeBase type;
+    #nullable enable
+    public required CodeTypeBase Type {get => type ;set {
         EnsureElementsAreChildren(value);
         type = value;
     }}

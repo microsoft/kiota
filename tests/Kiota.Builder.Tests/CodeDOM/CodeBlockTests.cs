@@ -148,8 +148,11 @@ namespace Kiota.Builder.Tests.CodeDOM {
                 Name = "class1"
             }).First();
             var property = new CodeProperty {
-                Name = "method",
+                Name = "property",
                 Kind = CodePropertyKind.RequestBuilder,
+                Type = new CodeType {
+                    Name = "string"
+                }
             };
             var indexer = new CodeMethod {
                 Name = "method",

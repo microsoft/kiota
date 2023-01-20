@@ -25,18 +25,26 @@ namespace Kiota.Builder.Tests.Writers.TypeScript {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
-            property = new CodeProperty {
+            property = new CodeProperty
+            {
                 Name = PropertyName,
-            };
-            property.Type = new CodeType {
-                Name = TypeName
+                Type = new CodeType
+                {
+                    Name = TypeName
+                }
             };
             parentClass.AddProperty(property, new() {
                 Name = "pathParameters",
                 Kind = CodePropertyKind.PathParameters,
+                Type = new CodeType {
+                    Name = "PathParameters",
+                },
             }, new() {
                 Name = "requestAdapter",
                 Kind = CodePropertyKind.RequestAdapter,
+                Type = new CodeType {
+                    Name = "RequestAdapter",
+                },
             });
         }
         public void Dispose() {

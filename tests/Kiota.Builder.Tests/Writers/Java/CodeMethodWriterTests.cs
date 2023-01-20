@@ -55,6 +55,9 @@ public class CodeMethodWriterTests : IDisposable {
         parentClass.AddProperty(new CodeProperty {
             Name = "requestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "RequestAdapter",
+            }
         });
         parentClass.AddProperty(new CodeProperty {
             Name = "pathParameters",
@@ -66,6 +69,9 @@ public class CodeMethodWriterTests : IDisposable {
         parentClass.AddProperty(new CodeProperty {
             Name = "urlTemplate",
             Kind = CodePropertyKind.UrlTemplate,
+            Type = new CodeType {
+                Name = "string",
+            }
         });
     }
     private void AddSerializationProperties() {
@@ -1412,6 +1418,9 @@ public class CodeMethodWriterTests : IDisposable {
             Name = propName,
             DefaultValue = defaultValue,
             Kind = CodePropertyKind.UrlTemplate,
+            Type = new CodeType {
+                Name = "string"
+            }
         });
         AddRequestProperties();
         method.AddParameter(new CodeParameter {
@@ -1479,6 +1488,9 @@ public class CodeMethodWriterTests : IDisposable {
             Name = propName,
             DefaultValue = defaultValue,
             Kind = CodePropertyKind.UrlTemplate,
+            Type = new CodeType {
+                Name = "string"
+            }
         });
         AddRequestProperties();
         method.AddParameter(new CodeParameter {
@@ -1535,11 +1547,11 @@ public class CodeMethodWriterTests : IDisposable {
         var coreProp = parentClass.AddProperty(new CodeProperty {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "HttpCore",
+                IsExternal = true,
+            }
         }).First();
-        coreProp.Type = new CodeType {
-            Name = "HttpCore",
-            IsExternal = true,
-        };
         method.AddParameter(new CodeParameter {
             Name = "core",
             Kind = CodeParameterKind.RequestAdapter,

@@ -32,7 +32,12 @@ public class CodeElementComparerTests {
             new(null, null, 0),
             new(null, new CodeClass(), -1),
             new(new CodeClass(), null, 1),
-            new(new CodeUsing(), new CodeProperty(), -1000),
+            new(new CodeUsing(), new CodeProperty() {
+                Name = "prop",
+                Type = new CodeType {
+                    Name = "string"
+                }
+            }, -1100),
             new(new CodeIndexer() {
                 ReturnType = new CodeType {
                     Name = "string"
@@ -40,8 +45,18 @@ public class CodeElementComparerTests {
                 IndexType = new CodeType {
                     Name = "string"
                 }
-            }, new CodeProperty(), 1000),
-            new(method, new CodeProperty(), 1101),
+            }, new CodeProperty() {
+                Name = "prop",
+                Type = new CodeType {
+                    Name = "string"
+                }
+            }, 900),
+            new(method, new CodeProperty() {
+                Name = "prop",
+                Type = new CodeType {
+                    Name = "string"
+                }
+            }, 901),
             new(method, codeClass, -899)
             
         };
@@ -74,7 +89,12 @@ public class CodeElementComparerTests {
             new(null, null, 0),
             new(null, new CodeClass(), -1),
             new(new CodeClass(), null, 1),
-            new(new CodeUsing(), new CodeProperty(), -1000),
+            new(new CodeUsing(), new CodeProperty() {
+                Name = "prop",
+                Type = new CodeType {
+                    Name = "string"
+                }
+            }, -1100),
             new(new CodeIndexer() {
                 ReturnType = new CodeType {
                     Name = "string"
@@ -82,8 +102,18 @@ public class CodeElementComparerTests {
                 IndexType = new CodeType {
                     Name = "string"
                 }
-            }, new CodeProperty(), 1000),
-            new(method, new CodeProperty(), 1101),
+            }, new CodeProperty() {
+                Name = "prop",
+                Type = new CodeType {
+                    Name = "string"
+                }
+            }, 900),
+            new(method, new CodeProperty() {
+                Name = "prop",
+                Type = new CodeType {
+                    Name = "string"
+                }
+            }, 901),
             new(method, codeClass, 1101)
             
         };

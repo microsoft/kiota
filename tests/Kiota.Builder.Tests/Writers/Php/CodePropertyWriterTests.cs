@@ -137,7 +137,8 @@ namespace Kiota.Builder.Tests.Writers.Php
             parentClass.AddProperty(new CodeProperty
             {
                 Name = "pathSegment", 
-                Kind = CodePropertyKind.PathParameters
+                Kind = CodePropertyKind.PathParameters,
+                Type = new CodeType {Name = "string", IsNullable = false},
             });
             propertyWriter.WriteCodeElement(adapter, languageWriter);
             var result = stringWriter.ToString();

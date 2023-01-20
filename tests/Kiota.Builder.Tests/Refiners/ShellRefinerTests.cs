@@ -43,7 +43,11 @@ public class ShellRefinerTests {
         // Add nav props
         requestBuilder.AddProperty(new CodeProperty {
             Name = "User",
-            Kind = CodePropertyKind.RequestBuilder
+            Kind = CodePropertyKind.RequestBuilder,
+            Type = new CodeType {
+                Name = "UserRequestBuilder",
+                IsExternal = true
+            }
         });
 
         // Add indexer

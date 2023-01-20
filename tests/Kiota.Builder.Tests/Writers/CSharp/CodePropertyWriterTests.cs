@@ -40,9 +40,15 @@ public class CodePropertyWriterTests: IDisposable {
         parentClass.AddProperty(property, new() {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType {
+                Name = "PathParameters",
+            },
         }, new() {
             Name = "requestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "RequestAdapter",
+            },
         });
     }
     public void Dispose() {

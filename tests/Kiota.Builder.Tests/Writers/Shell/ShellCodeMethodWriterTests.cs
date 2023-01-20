@@ -57,14 +57,23 @@ public class ShellCodeMethodWriterTests : IDisposable
         parentClass.AddProperty(new CodeProperty {
             Name = "RequestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "RequestAdapter",
+            },
         });
         parentClass.AddProperty(new CodeProperty {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType {
+                Name = "PathParameters",
+            },
         });
         parentClass.AddProperty(new CodeProperty {
             Name = "urlTemplate",
             Kind = CodePropertyKind.UrlTemplate,
+            Type = new CodeType {
+                Name = "string",
+            },
         });
     }
 

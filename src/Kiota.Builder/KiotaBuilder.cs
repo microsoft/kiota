@@ -735,6 +735,7 @@ public class KiotaBuilder
                 Description = propertySchema?.Description.CleanupDescription() ?? $"The {propertyName} property",
             },
             ReadOnly = propertySchema?.ReadOnly ?? false,
+            Type = existingType ?? GetPrimitiveType(propertySchema, childType),
         };
         if(propertyName != childIdentifier)
             prop.SerializationName = childIdentifier;
@@ -743,10 +744,7 @@ public class KiotaBuilder
             !string.IsNullOrEmpty(stringDefaultValue.Value))
             prop.DefaultValue = $"\"{stringDefaultValue.Value}\"";
 
-        if (existingType != null)
-            prop.Type = existingType;
-        else {
-            prop.Type = GetPrimitiveType(propertySchema, childType);
+        if (existingType == null) {
             prop.Type.CollectionKind = propertySchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default;
             logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
         }

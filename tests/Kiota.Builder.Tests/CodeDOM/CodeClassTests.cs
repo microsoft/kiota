@@ -135,7 +135,10 @@ public class CodeClassTests {
         });
         Assert.Equal(2, codeClass.GetChildElements(true).Count());
         codeClass.AddProperty(new CodeProperty {
-            Name = "subprop"
+            Name = "subprop",
+            Type = new CodeType {
+                Name = "string"
+            }
         });
         Assert.Equal(3, codeClass.GetChildElements(true).Count());
     }
