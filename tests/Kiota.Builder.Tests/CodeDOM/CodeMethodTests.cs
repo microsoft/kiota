@@ -20,6 +20,7 @@ public class CodeMethodTests {
         Assert.False(method.IsOfKind(Array.Empty<CodeMethodKind>()));
         Assert.Throws<ArgumentNullException>(() => method.AddErrorMapping(null, new CodeType{Name = "class"}));
         Assert.Throws<ArgumentNullException>(() => method.AddErrorMapping("oin", null));
+        Assert.Throws<ArgumentNullException>(() => method.ReturnType = null);
     }
     [Fact]
     public void IsOfKind() {

@@ -986,17 +986,10 @@ public class CodeMethodWriterTests : IDisposable {
         method.Parent = CodeNamespace.InitRootNamespace();
         Assert.Throws<InvalidOperationException>(() => codeMethodWriter.WriteCodeElement(method, writer));
         method.Parent = originalParent;
-        method.ReturnType = null;
-        Assert.Throws<InvalidOperationException>(() => codeMethodWriter.WriteCodeElement(method, writer));
     }
     [Fact]
     public void ThrowsIfParentIsNotClass() {
         method.Parent = CodeNamespace.InitRootNamespace();
-        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
-    }
-    [Fact]
-    public void ThrowsIfReturnTypeIsMissing() {
-        method.ReturnType = null;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     private const string TaskPrefix = "Task<";

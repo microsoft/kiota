@@ -165,7 +165,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         }
         var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .Where(static x => x.Type is CodeType xType && xType.TypeDefinition is CodeClass && !xType.IsCollection)
-                                            .Select(static x => new Tuple<CodeProperty, CodeType>(x, (CodeType)x.Type!))
+                                            .Select(static x => new Tuple<CodeProperty, CodeType>(x, (CodeType)x.Type))
                                             .ToArray();
         if(complexProperties.Any()) {
             if(includeElse)
@@ -471,7 +471,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                             ?.ToFirstCharacterLowerCase();
         var paramsList = new[] { requestParams.requestBody, requestParams.requestConfiguration };
         var requestInfoParameters = paramsList.Where(x => x != null)
-                                            .Select(x => x.Name)
+                                            .Select(x => x!.Name)
                                             .ToList();
         var skipIndex = requestParams.requestBody == null ? 1 : 0;
         requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "null"));
