@@ -306,7 +306,6 @@ public class ShellCodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesExecutableCommandForGetRequestPrimitive()
     {
-
         method.Kind = CodeMethodKind.CommandBuilder;
         method.Documentation.Description = "Test description";
         method.SimpleName = "User";
@@ -353,8 +352,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("var testHeaderOption = new Option<string[]>(\"--test-header\", description: \"The test header\")", result);
-        Assert.Contains("{\nArity = ArgumentArity.OneOrMore\n}", result);
+        Assert.Matches("var testHeaderOption = new Option<string\\[]>\\(\"--test-header\", description: \"The test header\"\\) {\\s+Arity = ArgumentArity.OneOrMore", result);
         Assert.Contains("testHeaderOption.IsRequired = true;", result);
         Assert.Contains("command.AddOption(testHeaderOption);", result);
         Assert.Contains("command.SetHandler(async (invocationContext) => {", result);
