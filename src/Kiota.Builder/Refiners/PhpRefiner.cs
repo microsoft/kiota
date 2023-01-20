@@ -135,11 +135,13 @@ public class PhpRefiner: CommonLanguageRefiner
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "Microsoft\\Kiota\\Abstractions", "RequestAdapter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            "Microsoft\\Kiota\\Abstractions", "HttpMethod", "RequestInformation", "RequestOption"),
+            "Microsoft\\Kiota\\Abstractions", "HttpMethod", "RequestInformation"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "Microsoft\\Kiota\\Abstractions", "ResponseHandler"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(static y => y.IsOfKind(CodePropertyKind.AdditionalData)),
             "Microsoft\\Kiota\\Abstractions\\Serialization", "AdditionalDataHolder"),
+        new (static x => x is CodeProperty property && property.IsOfKind(CodePropertyKind.Headers),
+        "Microsoft\\Kiota\\Abstractions","RequestHeaders"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             "Microsoft\\Kiota\\Abstractions\\Serialization", "SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
@@ -188,10 +190,13 @@ public class PhpRefiner: CommonLanguageRefiner
         } else if (currentProperty.Type?.Name?.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) ?? false)
         {
             currentProperty.Type.Name = "DateTime";
-        } else if (currentProperty.IsOfKind(CodePropertyKind.Options, CodePropertyKind.Headers))
+        } else if (currentProperty.IsOfKind(CodePropertyKind.Options))
         {
             currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
             currentProperty.Type.Name = "array";
+        } else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
+        {
+            currentProperty.DefaultValue = $"new {currentProperty.Type?.Name}()";
         }
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }

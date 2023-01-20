@@ -388,7 +388,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 result);
             Assert.Contains("if ($requestConfiguration !== null", result);
             Assert.Contains("if ($requestConfiguration->h !== null)", result);
-            Assert.Contains("$requestInfo->headers = array_merge($requestInfo->headers, $requestConfiguration->h);", result);
+            Assert.Contains("$requestInfo->headers->putAll($requestInfo->headers);", result);
             Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
             Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
             Assert.Contains("$requestInfo->setContentFromParsable($this->requestAdapter, \"\", $body);", result);
@@ -415,7 +415,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 result);
             Assert.Contains("if ($requestConfiguration !== null", result);
             Assert.Contains("if ($requestConfiguration->h !== null)", result);
-            Assert.Contains("$requestInfo->headers = array_merge($requestInfo->headers, $requestConfiguration->h);", result);
+            Assert.Contains("$requestInfo->headers->putAll($requestInfo->headers);", result);
             Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
             Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
             Assert.Contains("$requestInfo->setContentFromParsableCollection($this->requestAdapter, \"\", $body);", result);
@@ -441,7 +441,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 result);
             Assert.Contains("if ($requestConfiguration !== null", result);
             Assert.Contains("if ($requestConfiguration->h !== null)", result);
-            Assert.Contains("$requestInfo->headers = array_merge($requestInfo->headers, $requestConfiguration->h);", result);
+            Assert.Contains("$requestInfo->headers->putAll($requestInfo->headers);", result);
             Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
             Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
             Assert.Contains("$requestInfo->setContentFromScalar($this->requestAdapter, \"\", $body);", result);
@@ -472,7 +472,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 result);
             Assert.Contains("if ($requestConfiguration !== null", result);
             Assert.Contains("if ($requestConfiguration->h !== null)", result);
-            Assert.Contains("$requestInfo->headers = array_merge($requestInfo->headers, $requestConfiguration->h);", result);
+            Assert.Contains("$requestInfo->headers->putAll($requestInfo->headers);", result);
             Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
             Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
             Assert.Contains("$requestInfo->setContentFromScalarCollection($this->requestAdapter, \"\", $body);", result);

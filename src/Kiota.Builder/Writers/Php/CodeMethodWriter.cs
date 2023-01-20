@@ -372,7 +372,7 @@ namespace Kiota.Builder.Writers.Php
                     var headersName = $"{requestConfigParamName}->{headers.Name.ToFirstCharacterLowerCase()}";
                     writer.WriteLine($"if ({headersName} !== null) {{");
                     writer.IncreaseIndent();
-                    writer.WriteLine($"{RequestInfoVarName}->headers = array_merge({RequestInfoVarName}->headers, {headersName});");
+                    writer.WriteLine($"{RequestInfoVarName}->headers->putAll({RequestInfoVarName}->headers);");
                     writer.CloseBlock();
                 }
                 if (queryString != null)
@@ -398,7 +398,7 @@ namespace Kiota.Builder.Writers.Php
         private void WriteAcceptHeaderDef(CodeMethod codeMethod, LanguageWriter writer)
         {
             if(codeMethod.AcceptedResponseTypes.Any())
-                writer.WriteLine($"{RequestInfoVarName}->headers = array_merge({RequestInfoVarName}->headers, [\"Accept\" => \"{string.Join(", ", codeMethod.AcceptedResponseTypes)}\"]);");
+                writer.WriteLine($"{RequestInfoVarName}->headers->add('Accept', \"{string.Join(", ", codeMethod.AcceptedResponseTypes)}\");");
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method) {
             var inherits = parentClass.StartBlock?.Inherits != null;
