@@ -55,6 +55,7 @@ public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable
     private CodeTypeBase type;
     #nullable enable
     public required CodeTypeBase Type {get => type; set {
+        ArgumentNullException.ThrowIfNull(value);
         EnsureElementsAreChildren(value);
         type = value;
     }}

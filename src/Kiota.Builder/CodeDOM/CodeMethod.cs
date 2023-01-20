@@ -110,6 +110,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     private CodeTypeBase returnType;
     #nullable enable
     public required CodeTypeBase ReturnType {get => returnType;set {
+        ArgumentNullException.ThrowIfNull(value);
         EnsureElementsAreChildren(value);
         returnType = value;
     }}

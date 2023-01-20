@@ -1,10 +1,13 @@
-﻿namespace Kiota.Builder.CodeDOM;
+﻿using System;
+
+namespace Kiota.Builder.CodeDOM;
 public class CodeIndexer : CodeTerminal, IDocumentedElement
 {
     #nullable disable // exposing property is required
     private CodeTypeBase indexType;
     #nullable enable
     public required CodeTypeBase IndexType {get => indexType; set {
+        ArgumentNullException.ThrowIfNull(value);
         EnsureElementsAreChildren(value);
         indexType = value;
     }}
@@ -12,6 +15,7 @@ public class CodeIndexer : CodeTerminal, IDocumentedElement
     private CodeTypeBase returnType;
     #nullable enable
     public required CodeTypeBase ReturnType {get => returnType; set {
+        ArgumentNullException.ThrowIfNull(value);
         EnsureElementsAreChildren(value);
         returnType = value;
     }}

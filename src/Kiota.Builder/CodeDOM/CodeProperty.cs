@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.Extensions;
+﻿using System;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;
 public enum CodePropertyKind
@@ -70,6 +71,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     private CodeTypeBase type;
     #nullable enable
     public required CodeTypeBase Type {get => type ;set {
+        ArgumentNullException.ThrowIfNull(value);
         EnsureElementsAreChildren(value);
         type = value;
     }}
