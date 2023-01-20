@@ -28,20 +28,20 @@ public class JavaConventionService : CommonLanguageConventionService
         };
     }
 
-    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
+    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         var nullKeyword = parameter.Optional ? "Nullable" : "Nonnull";
-        var nullAnnotation = parameter.Type.IsNullable ? $"@javax.annotation.{nullKeyword} " : string.Empty;
+        var nullAnnotation = (parameter.Type?.IsNullable ?? false) ? $"@javax.annotation.{nullKeyword} " : string.Empty;
         return $"{nullAnnotation}final {GetTypeString(parameter.Type, targetElement)} {parameter.Name.ToFirstCharacterLowerCase()}";
     }
 
-    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
+    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
     {
         if(code is CodeComposedTypeBase) 
             throw new InvalidOperationException($"Java does not support union types, the union type {code.Name} should have been filtered out by the refiner");
         if (code is CodeType currentType) {
             var typeName = TranslateType(currentType);
-            if(!currentType.IsExternal && IsSymbolDuplicated(typeName, targetElement))
+            if(!currentType.IsExternal && IsSymbolDuplicated(typeName, targetElement) && currentType.TypeDefinition is not null)
                 typeName = $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
 
             var collectionPrefix = currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.Complex && includeCollectionInformation ? "java.util.List<" : string.Empty;
@@ -64,7 +64,7 @@ public class JavaConventionService : CommonLanguageConventionService
             targetClass = parentClass;
         return targetClass.StartBlock
                         ?.Usings
-                        ?.Where(x => !x.IsExternal && symbol.Equals(x.Declaration.TypeDefinition.Name, StringComparison.OrdinalIgnoreCase))
+                        ?.Where(x => !x.IsExternal && symbol.Equals(x.Declaration?.TypeDefinition?.Name, StringComparison.OrdinalIgnoreCase))
                         ?.Distinct(usingDeclarationComparer)
                         ?.Count() > 1;
     }
@@ -85,7 +85,7 @@ public class JavaConventionService : CommonLanguageConventionService
         if(!string.IsNullOrEmpty(description))
             writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
-    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer, IEnumerable<string> additionalRemarks = default) {
+    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default) {
         if(documentation is null) return;
         if(additionalRemarks == default)
             additionalRemarks = Enumerable.Empty<string>();
@@ -107,12 +107,12 @@ public class JavaConventionService : CommonLanguageConventionService
             originalDescription :
             nonAsciiReplaceRegex.Replace(originalDescription.Replace("\\", "/").Replace("*/", string.Empty), string.Empty);
     #pragma warning disable CA1822 // Method should be static
-    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
+    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default) {
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-        var urlTemplateParams = urlTemplateVarName ?? pathParametersProperty.Name;
+        var urlTemplateParams = urlTemplateVarName ?? pathParametersProperty?.Name;
         var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
-        writer.WriteLines($"return new {returnType}({urlTemplateParams}, {requestAdapterProp.Name}{pathParametersSuffix});");
+        writer.WriteLines($"return new {returnType}({urlTemplateParams}, {requestAdapterProp?.Name}{pathParametersSuffix});");
     }
     public override string TempDictionaryVarName => "urlTplParams";
     internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {

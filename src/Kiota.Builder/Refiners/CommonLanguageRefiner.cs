@@ -775,7 +775,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     TypeDefinition = x.TypeDefinition,
                                 },
                             }).ToArray());
-                    if (currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode, out var parameter))
+                    if (currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parameter)
                         parameter.Type.Name = parseNodeInterfaceName;
                 } else if (addFactoryMethodImport &&
                     currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
