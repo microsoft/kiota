@@ -5,18 +5,16 @@ using System.Linq;
 namespace Kiota.Builder.Refiners;
 public class CSharpReservedTypesProvider : IReservedNamesProvider
 {
-    private static HashSet<string> GetSystemTypeNames()
+    private static IEnumerable<string> GetSystemTypeNames()
     {
         return typeof(string).Assembly.GetTypes()
                                 .Where(static type => type.Namespace == "System" 
                                                       && type.IsPublic // get public(we can only import public type in external code)
                                                       && !type.IsGenericType)// non generic types(generic type names have special character like `)
-                                .Select(static type => type.Name)
-                                .ToHashSet();
+                                .Select(static type => type.Name);
     }
 
-    private static readonly HashSet<string> CustomDefinedValues = new(6, StringComparer.OrdinalIgnoreCase)
-    {
+    private static readonly IEnumerable<string> CustomDefinedValues = new string[] {
         "file", //system.io static types
         "directory",
         "path",
@@ -28,8 +26,7 @@ public class CSharpReservedTypesProvider : IReservedNamesProvider
     
     private readonly Lazy<HashSet<string>> _reservedNames = new(static () =>
     {
-        CustomDefinedValues.UnionWith(GetSystemTypeNames());
-        return CustomDefinedValues;
+        return CustomDefinedValues.Union(GetSystemTypeNames()).ToHashSet(StringComparer.OrdinalIgnoreCase);
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }
