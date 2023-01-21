@@ -26,7 +26,7 @@ namespace Kiota.Builder.Writers.TypeScript
                 var name = conventions.GetTypeString(inherit, interfaceDeclaration);
                 if (!(inherit.TypeDefinition is CodeInterface))
                 {
-                    name = $"Partial<{name}>";
+                    name = $"{name}";
                 }
                 inheritSymbol = (!String.IsNullOrWhiteSpace(inheritSymbol) ? inheritSymbol + ", " : String.Empty) + name;
             }

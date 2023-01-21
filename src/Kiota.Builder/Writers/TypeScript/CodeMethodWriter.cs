@@ -372,7 +372,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             foreach(var errorMapping in codeElement.ErrorMappings) {
                 writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {GetFactoryMethodName(errorMapping.Value, codeElement, writer)},");
             }
-            writer.CloseBlock("} as Record<string, DeserializeMethod<Parsable>>;");
+            writer.CloseBlock("} as Record<string, ParsableFactory<Parsable>>;");
         }
         writer.WriteLine($"return this.requestAdapter?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler, {errorMappingVarName}) ?? Promise.reject(new Error('request adapter is null'));");
     }
@@ -519,7 +519,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             CodeMethodKind.Setter => "set ",
             _ => string.Empty
         };
-        var shouldHaveTypeSuffix = !code.IsAccessor && !isConstructor;
+        var shouldHaveTypeSuffix = !code.IsAccessor && !isConstructor && returnType != "";
         var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
         writer.WriteLine($"{accessModifier}{functionPrefix}{accessorPrefix}{staticPrefix}{methodName}{asyncPrefix}({parameters}){returnTypeSuffix} {{");
     }
@@ -527,7 +527,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeMethod currentElement, LanguageWriter writer) {
         var returnType = localConventions.GetTypeString(targetClassType, currentElement, false, writer);
         var targetClassName = localConventions.TranslateType(targetClassType);
-        var resultName = $"deserializeInto{targetClassName.ToFirstCharacterUpperCase()}";
+        var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
         if (targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
             return resultName;
         if (targetClassType is CodeType currentType &&

@@ -23,25 +23,83 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is not CodeNamespace) throw new InvalidOperationException("the parent of a function should be a namespace");
         _codeUsingWriter.WriteCodeElement(codeElement.StartBlock.Usings, codeElement.GetImmediateParentOfType<CodeNamespace>(), writer);
+        var codeMethod = codeElement.OriginalLocalMethod;
 
-        var returnType = conventions.GetTypeString(codeElement.OriginalLocalMethod.ReturnType, codeElement);
+       
+        var returnType = conventions.GetTypeString(codeMethod.ReturnType, codeElement);
+        if (codeMethod.Kind == CodeMethodKind.Factory)
+        {
+            //returnType = $"DeserializeIntoModelFunction<{returnType}>";
+            //returnType = $"deserializeInto{returnType}";
+            returnType = "";
+        }
         CodeMethodWriter.WriteMethodPrototypeInternal(codeElement.OriginalLocalMethod, writer, returnType, false, conventions, true);
 
         writer.IncreaseIndent();
-
-        var codeMethod = codeElement.OriginalLocalMethod;
+        
         localConventions = new TypeScriptConventionService(writer);
-        if (codeMethod.Kind == CodeMethodKind.Deserializer)
+        switch (codeMethod.Kind)
         {
-            WriteDeserializerMethod(codeElement, writer);
-        }
-        else if (codeMethod.Kind == CodeMethodKind.Serializer)
-        {
-            WriteSerializerMethod(codeElement, writer);
+            case CodeMethodKind.Deserializer:
+                WriteDeserializerFunction(codeElement, writer);
+                break;
+            case CodeMethodKind.Serializer:
+                WriteSerializerFunction(codeElement, writer); 
+                break;
+            case CodeMethodKind.Factory:
+                WriteDiscriminatorFunction(codeElement, writer);
+                break;
+            default: throw new InvalidOperationException("Invalid code method kind");
         }
     }
 
-    private void WriteSerializerMethod(CodeFunction codeElement, LanguageWriter writer)
+    private void WriteDiscriminatorFunction(CodeFunction codeElement, LanguageWriter writer)
+    {
+        var returnType = conventions.GetTypeString(codeElement.OriginalLocalMethod.ReturnType, codeElement);
+ 
+        CodeMethodWriter.WriteDefensiveStatements(codeElement.OriginalLocalMethod, writer);
+        WriteFactoryMethodBody(codeElement, returnType, writer);
+    }
+
+    private void WriteFactoryMethodBody(CodeFunction codeElement, string returnType, LanguageWriter writer)
+    {
+        var parseNodeParameter = codeElement.OriginalLocalMethod.Parameters.OfKind(CodeParameterKind.ParseNode);
+        if (codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null)
+        {
+            writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorPropertyName}\");",
+                                "if (mappingValueNode) {");
+            writer.IncreaseIndent();
+            writer.WriteLines("const mappingValue = mappingValueNode.getStringValue();",
+                            "if (mappingValue) {");
+            writer.IncreaseIndent();
+
+            writer.WriteLine("switch (mappingValue) {");
+            writer.IncreaseIndent();
+            foreach (var mappedType in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
+            {
+                var typeName = conventions.GetTypeString(mappedType.Value, codeElement, false, writer);
+                writer.WriteLine($"case \"{mappedType.Key}\":");
+                writer.IncreaseIndent();
+                writer.WriteLine($"return {getDeserialization(codeElement, mappedType.Value.Name.ToFirstCharacterUpperCase())}");
+                writer.DecreaseIndent();
+            }
+            writer.CloseBlock();
+            writer.CloseBlock();
+            writer.CloseBlock();
+        }
+        var s = getDeserialization(codeElement, returnType);
+        writer.WriteLine($"return {s.ToFirstCharacterLowerCase()};");
+    }
+
+    private string getDeserialization(CodeElement codeElement, string returnType)
+    {
+        var parent = (codeElement.Parent as CodeNamespace).FindChildByName<CodeFunction>($"deserializeInto{returnType}");
+
+        var s = conventions.GetTypeString(new CodeType { TypeDefinition = parent }, codeElement, false);
+        return s;
+    }
+
+    private void WriteSerializerFunction(CodeFunction codeElement, LanguageWriter writer)
     {
         var param = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => (x.Type as CodeType).TypeDefinition is CodeInterface);
         var codeInterface = (param.Type as CodeType).TypeDefinition as CodeInterface;
@@ -130,7 +188,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         return null;
     }
 
-    private void WriteDeserializerMethod(CodeFunction codeElement, LanguageWriter writer)
+    private void WriteDeserializerFunction(CodeFunction codeElement, LanguageWriter writer)
     {
         var param = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault();
 
@@ -169,16 +227,40 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
                     return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>()";
                 else
                 {
-                    var name = getSerializerAlias(propType as CodeType, codeFunction, $"deserializeInto{(propType as CodeType).TypeDefinition.Name}");
-                    return $"getCollectionOfObjectValues<{propertyType}>({name})";
+                    //var name = getSerializerAlias(propType as CodeType, codeFunction, $"deserializeInto{(propType as CodeType).TypeDefinition.Name}");
+                    //return $"getCollectionOfObjectValues<{propertyType}>({name})";
+                    return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, codeFunction.OriginalLocalMethod)})";
                 }
         }
         return propertyType switch
         {
             "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration" => $"get{propertyType.ToFirstCharacterUpperCase()}Value()",
-            _ => $"getObjectValue<{propertyType}>({getSerializerAlias(propType as CodeType, codeFunction, $"deserializeInto{(propType as CodeType).TypeDefinition.Name}")})",
+            //_ => $"getObjectValue<{propertyType}>({getSerializerAlias(propType as CodeType, codeFunction, $"deserializeInto{(propType as CodeType).TypeDefinition.Name}")})",
+            _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, codeFunction.OriginalLocalMethod)})"
         };
     }
+    private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeMethod currentElement)
+    {
+        var returnType = localConventions.GetTypeString(targetClassType, currentElement, false);
+        var targetClassName = localConventions.TranslateType(targetClassType);
+        var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+        if (targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
+            return $"{resultName}";
+        if (targetClassType is CodeType currentType &&
+            currentType.TypeDefinition is CodeInterface definitionClass &&
+            definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
+            parentNamespace.FindChildByName<CodeFunction>(resultName) is CodeFunction factoryMethod)
+        {
+            var methodName = localConventions.GetTypeString(new CodeType
+            {
+                Name = resultName,
+                TypeDefinition = factoryMethod
+            }, currentElement, false);
+            return methodName.ToFirstCharacterUpperCase();// static function is aliased
+        }
+        throw new InvalidOperationException($"Unable to find factory method for {targetClassName}");
+    }
+
 
     private string getSerializerAlias(CodeType propType, CodeFunction codeFunction, string propertySerializerName)
     {

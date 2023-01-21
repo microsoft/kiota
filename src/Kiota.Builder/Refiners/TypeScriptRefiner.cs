@@ -15,70 +15,123 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         return Task.Run(() =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            ReplaceIndexersByMethodsWithParameter(generatedCode, false, "ById");
-            RemoveCancellationParameter(generatedCode);
-            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
-            CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
-            cancellationToken.ThrowIfCancellationRequested();
-            AddInnerClasses(generatedCode,
-                true,
-                string.Empty,
-                true);
-            // `AddInnerClasses` will have inner classes moved to their own files, so  we add the imports after so that the files don't miss anything.
-            // This is because imports are added at the file level so nested classes would potentially use the higher level imports.
-            AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            DisableActionOf(generatedCode,
-                CodeParameterKind.RequestConfiguration);
-            cancellationToken.ThrowIfCancellationRequested();
-            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
-            AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-            ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null, isNullable: true);
-            cancellationToken.ThrowIfCancellationRequested();
-            ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
-            AddConstructorsForDefaultValues(generatedCode, true);
-            cancellationToken.ThrowIfCancellationRequested();
-            var defaultConfiguration = new GenerationConfiguration();
-            ReplaceDefaultSerializationModules(
+        cancellationToken.ThrowIfCancellationRequested();
+        ReplaceIndexersByMethodsWithParameter(generatedCode, false, "ById");
+        RemoveCancellationParameter(generatedCode);
+        CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
+        CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
+        cancellationToken.ThrowIfCancellationRequested();
+        AddInnerClasses(generatedCode,
+            true,
+            string.Empty,
+            true);
+        // `AddInnerClasses` will have inner classes moved to their own files, so  we add the imports after so that the files don't miss anything.
+        // This is because imports are added at the file level so nested classes would potentially use the higher level imports.
+        AddDefaultImports(generatedCode, defaultUsingEvaluators);
+        DisableActionOf(generatedCode,
+            CodeParameterKind.RequestConfiguration);
+        cancellationToken.ThrowIfCancellationRequested();
+        AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
+        AddParsableImplementsForModelClasses(generatedCode, "Parsable");
+        ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null, isNullable: true);
+        cancellationToken.ThrowIfCancellationRequested();
+        ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
+        AddConstructorsForDefaultValues(generatedCode, true);
+        cancellationToken.ThrowIfCancellationRequested();
+        var defaultConfiguration = new GenerationConfiguration();
+        ReplaceDefaultSerializationModules(
+            generatedCode,
+            defaultConfiguration.Serializers,
+            new(StringComparer.OrdinalIgnoreCase) {
+                "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory",
+                "@microsoft/kiota-serialization-text.TextSerializationWriterFactory",
+                "@microsoft/kiota-serialization-form.FormSerializationWriterFactory",
+            }
+        );
+        ReplaceDefaultDeserializationModules(
+            generatedCode,
+            defaultConfiguration.Deserializers,
+            new(StringComparer.OrdinalIgnoreCase) {
+                "@microsoft/kiota-serialization-json.JsonParseNodeFactory",
+                "@microsoft/kiota-serialization-text.TextParseNodeFactory",
+                "@microsoft/kiota-serialization-form.FormParseNodeFactory",
+            }
+        );
+        AddSerializationModulesImport(generatedCode,
+            new[] { $"{AbstractionsPackageName}.registerDefaultSerializer",
+                $"{AbstractionsPackageName}.enableBackingStoreForSerializationWriterFactory",
+                $"{AbstractionsPackageName}.SerializationWriterFactoryRegistry" },
+            new[] { $"{AbstractionsPackageName}.registerDefaultDeserializer",
+                $"{AbstractionsPackageName}.ParseNodeFactoryRegistry" });
+        cancellationToken.ThrowIfCancellationRequested();
+        AddParentClassToErrorClasses(
                 generatedCode,
-                defaultConfiguration.Serializers,
-                new(StringComparer.OrdinalIgnoreCase) {
-                    "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory",
-                    "@microsoft/kiota-serialization-text.TextSerializationWriterFactory",
-                    "@microsoft/kiota-serialization-form.FormSerializationWriterFactory",
-                }
-            );
-            ReplaceDefaultDeserializationModules(
-                generatedCode,
-                defaultConfiguration.Deserializers,
-                new(StringComparer.OrdinalIgnoreCase) {
-                    "@microsoft/kiota-serialization-json.JsonParseNodeFactory",
-                    "@microsoft/kiota-serialization-text.TextParseNodeFactory",
-                    "@microsoft/kiota-serialization-form.FormParseNodeFactory",
-                }
-            );
-            AddSerializationModulesImport(generatedCode,
-                new[] { $"{AbstractionsPackageName}.registerDefaultSerializer",
-                        $"{AbstractionsPackageName}.enableBackingStoreForSerializationWriterFactory",
-                        $"{AbstractionsPackageName}.SerializationWriterFactoryRegistry"},
-                new[] { $"{AbstractionsPackageName}.registerDefaultDeserializer",
-                        $"{AbstractionsPackageName}.ParseNodeFactoryRegistry" });
+                "ApiError",
+                "@microsoft/kiota-abstractions"
+        );
+        AddQueryParameterMapperMethod(
+            generatedCode
+        );
+        AddDiscriminatorMappingsUsingsToParentClasses(
+            generatedCode,
+            "ParseNode",
+            addUsings: false
+        );
+        static string factoryNameCallbackFromTypeName(string x) => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+        ReplaceLocalMethodsByGlobalFunctions(
+            generatedCode,
+            static x => factoryNameCallbackFromTypeName(x.Parent.Name),
+            static x => x.Parent is CodeClass parentClass && parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation ?
+                    new List<CodeUsing>(parentClass.DiscriminatorInformation
+                                    .DiscriminatorMappings
+                                    .Select(static y => y.Value)
+                                    .OfType<CodeType>()
+                                    .Select(static y => new CodeUsing { Name = y.Name, Declaration = y })) {
+                        new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
+                        new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
+                    }.ToArray() :
+                    new CodeUsing[] {
+                        new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
+                        new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
+                    },
+            CodeMethodKind.Factory
+        );
+        static string factoryNameCallbackFromType(CodeType x) => factoryNameCallbackFromTypeName(x.Name);
+       
+        AddStaticMethodsUsingsForDeserializer(
+            generatedCode,
+            factoryNameCallbackFromType
+        );
+        AddStaticMethodsUsingsForRequestExecutor(
+            generatedCode,
+            factoryNameCallbackFromType
+        );
+        ChangeModelsAndSerializersStructure(generatedCode);
+        AliasUsingsWithSameSymbol(generatedCode);
+        AddStaticMethodsUsingsToCodeFunctions(generatedCode, factoryNameCallbackFromType);
+            //ChangeReturnTypeForSerializers(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
-            AddParentClassToErrorClasses(
-                    generatedCode,
-                    "ApiError",
-                    "@microsoft/kiota-abstractions"
-            );
-            AddQueryParameterMapperMethod(
-                generatedCode
-            );
-
-            ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
-            ChangeModelsAndSerializersStructure(generatedCode);
-            AliasUsingsWithSameSymbol(generatedCode);
         }, cancellationToken);
     }
 
+    private static void ChangeReturnTypeForSerializers(CodeElement codeElement)
+    {
+        if (codeElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod.Kind == CodeMethodKind.Factory ) {
+
+            var codeMethod = codeFunction.OriginalLocalMethod;
+            var deserializer = (codeFunction.Parent as CodeNamespace).FindChildByName<CodeFunction>(ModelDeserializerPrefix+(codeMethod.ReturnType as CodeType).TypeDefinition.Name);
+            codeMethod.ReturnType = new CodeType
+            {
+                Name = deserializer.Parent.Name,
+                //TypeDefinition = new CodeType
+                //{
+                //    Name = deserializer.Name,
+                //    TypeDefinition = deserializer
+                //}
+            };
+        }
+        CrawlTree(codeElement, x => ChangeReturnTypeForSerializers(x));
+    }
     /// <summary>
     /// TypeScript generation outputs models as interfaces 
     /// and serializers and deserializers as javascript functions. 
@@ -86,10 +139,82 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     /// <param name="generatedCode"></param>
     private static void ChangeModelsAndSerializersStructure(CodeElement generatedCode)
     {
+       
         CreateSeparateSerializers(generatedCode);
         CreateInterfaceModels(generatedCode);
+        AddDeserializerUsingToDisriminatorFactory(generatedCode);
         ReplaceRequestConfigurationsQueryParamsWithInterfaces(generatedCode);
     }
+    protected static void AddStaticMethodsUsingsToCodeFunctions(CodeElement currentElement, Func<CodeType, string> functionNameCallback)
+    {
+        if (currentElement is CodeMethod currentMethod &&
+            currentMethod.IsOfKind(CodeMethodKind.Deserializer) &&
+            (currentMethod.Parent is CodeFunction codeFunction))
+        {
+            var modelInterface = currentMethod.Parameters.ElementAtOrDefault(0);//is CodeInterface);
+            foreach (var property in modelInterface.GetChildElements(true).OfType<CodeProperty>())
+            {
+                if (property.Type is not CodeType propertyType || propertyType.TypeDefinition == null)
+                    continue;
+                var staticMethodName = functionNameCallback.Invoke(propertyType);
+                var staticMethodNS = propertyType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
+                var staticMethod = staticMethodNS.FindChildByName<CodeFunction>(staticMethodName, false);
+                if (staticMethod == null)
+                    continue;
+                codeFunction.AddUsing(new CodeUsing
+                {
+                    Name = staticMethodName,
+                    Declaration = new CodeType
+                    {
+                        Name = staticMethodName,
+                        TypeDefinition = staticMethod,
+                    }
+                });
+            }
+        }
+        CrawlTree(currentElement, x => AddStaticMethodsUsingsToCodeFunctions(x, functionNameCallback));
+    }
+
+    private static void AddDeserializerUsingToDisriminatorFactory(CodeElement codeElement)
+    {
+        if (codeElement is CodeFunction factoryFunction && factoryFunction.OriginalLocalMethod.Kind == CodeMethodKind.Factory) {
+
+            var returnType = factoryFunction.OriginalLocalMethod.ReturnType as CodeType;
+
+            var returnClass = returnType.TypeDefinition as CodeClass;
+            var returnDeserializer = (returnClass.Parent as CodeNamespace).FindChildByName<CodeFunction>($"{ModelDeserializerPrefix}{returnClass.Name}");
+            factoryFunction.AddUsing(new CodeUsing
+            {
+                Name = returnDeserializer.Parent.Name,
+                Declaration = new CodeType
+                {
+                    Name = returnDeserializer.Name,
+                    TypeDefinition = returnDeserializer
+                },
+            });
+            foreach (var mappedType in factoryFunction.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
+            {
+
+                var name = mappedType.Value.Name;
+                var codeClass = (mappedType.Value as CodeType).TypeDefinition as CodeClass;
+                var deserializer = (codeClass.Parent as CodeNamespace).FindChildByName<CodeFunction>($"{ModelDeserializerPrefix}{codeClass.Name}");
+
+
+                // var typeName = conventions.GetTypeString(mappedType.Value, codeElement, false, writer);
+                factoryFunction.AddUsing(new CodeUsing
+                {
+                    Name = deserializer.Parent.Name,
+                    Declaration = new CodeType
+                    {
+                        Name = deserializer.Name,
+                        TypeDefinition = deserializer
+                    },
+                });
+            }
+        }
+        CrawlTree(codeElement, AddDeserializerUsingToDisriminatorFactory);
+    }
+
     private static void AliasCollidingSymbols(IEnumerable<CodeUsing> usings, string currentSymbolName)
     {
         var duplicatedSymbolsUsings = usings.Where(static x => !x.IsExternal)
@@ -149,13 +274,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             AbstractionsPackageName, "SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Factory),
-            AbstractionsPackageName, "DeserializeMethod"),
+            AbstractionsPackageName, "DeserializeIntoModelFunction"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             AbstractionsPackageName, "ParseNode"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.IndexerBackwardCompatibility),
             AbstractionsPackageName, "getPathParameters"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            AbstractionsPackageName, "Parsable", "DeserializeMethod"),
+            AbstractionsPackageName, "Parsable", "ParsableFactory"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             AbstractionsPackageName, "Parsable"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
@@ -205,7 +330,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if (currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
         else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
-            currentMethod.ReturnType.Name = "Record<string, (node: ParseNode) => void>";
+         currentMethod.ReturnType.Name = "Record<string, (node: ParseNode) => void>";
         else if (currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
         {
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore))
@@ -738,7 +863,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 SetUsingInModelInterface(modelInterface, interfaceTypeAndUsing);
 
                 SetUsingsOfPropertyInSerializationFunctions($"{ModelSerializerPrefix}{propertyClass.Name.ToFirstCharacterUpperCase()}", serializer, propertyClass, interfaceNamingCallback);
-                SetUsingsOfPropertyInSerializationFunctions($"{ModelDeserializerPrefix}{propertyClass.Name.ToFirstCharacterUpperCase()}", deserializer, propertyClass, interfaceNamingCallback);
+                SetUsingsOfPropertyInSerializationFunctions($"create{propertyClass.Name.ToFirstCharacterUpperCase()}FromDiscriminatorValue", deserializer, propertyClass, interfaceNamingCallback);
             }
 
             var newProperty = mProp.Clone() as CodeProperty;
