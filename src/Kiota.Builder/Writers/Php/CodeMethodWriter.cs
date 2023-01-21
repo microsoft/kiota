@@ -372,7 +372,7 @@ namespace Kiota.Builder.Writers.Php
                     var headersName = $"{requestConfigParamName}->{headers.Name.ToFirstCharacterLowerCase()}";
                     writer.WriteLine($"if ({headersName} !== null) {{");
                     writer.IncreaseIndent();
-                    writer.WriteLine($"{RequestInfoVarName}->headers->putAll({RequestInfoVarName}->headers);");
+                    writer.WriteLine($"{RequestInfoVarName}->headers->putAll({headersName}->getAll());");
                     writer.CloseBlock();
                 }
                 if (queryString != null)
