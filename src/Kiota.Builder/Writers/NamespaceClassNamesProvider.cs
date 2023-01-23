@@ -12,7 +12,7 @@ public static class NamespaceClassNamesProvider {
     /// </summary>
     /// <param name="codeNamespace"> Code Namespace to get the classes for</param>
     /// <returns> List of class names in the code name space ordered based on inheritance</returns>
-    public static void WriteClassesInOrderOfInheritance(CodeNamespace codeNamespace, Action<string> callbackToWriteImport)
+    public static void WriteClassesInOrderOfInheritance(CodeNamespace codeNamespace, Action<CodeClass> callbackToWriteImport)
     {
         var writtenClassNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var inheritanceBranches = codeNamespace.Classes.Where(c => c.IsOfKind(CodeClassKind.Model))
@@ -22,9 +22,9 @@ public static class NamespaceClassNamesProvider {
         for(var depth = 0; depth < maxDepth; depth++)
             foreach(var name in inheritanceBranches
                                                 .Where(x => x.Count > depth)
-                                                .Select(x => x[depth].Name)
-                                                .Order(StringComparer.OrdinalIgnoreCase)//order is important to get a deterministic output
-                                                .Where(writtenClassNames.Add)) // linq distinct does not guarantee order
+                                                .Select(x => x[depth])
+                                                .OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)//order is important to get a deterministic output
+                                                .Where(x => writtenClassNames.Add(x.Name))) // linq distinct does not guarantee order
                     callbackToWriteImport(name);
     }
 }

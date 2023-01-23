@@ -116,35 +116,56 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         return path.Replace('\\', '/');
     }
     private readonly Lazy<bool> tutorialMode = new(() => {
-        var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_TUTORIAL");
+        var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_TUTORIAL_ENABLED");
         if (!string.IsNullOrEmpty(kiotaInContainerRaw) && bool.TryParse(kiotaInContainerRaw, out var kiotaTutorial)) {
             return kiotaTutorial;
         }
         return true;
     });
     protected bool TutorialMode => tutorialMode.Value;
+    private readonly Lazy<bool> consoleSwapColors = new(() => {
+        var kiotaSwapColorsRaw = Environment.GetEnvironmentVariable("KIOTA_CONSOLE_COLORS_SWAP");
+        if (!string.IsNullOrEmpty(kiotaSwapColorsRaw) && bool.TryParse(kiotaSwapColorsRaw, out var kiotaSwapColors)) {
+            return kiotaSwapColors;
+        }
+        return false;
+    });
+    protected bool SwapColors => consoleSwapColors.Value;
+    private readonly Lazy<bool> consoleNoColors = new(() => {
+        var kiotaNoColorsRaw = Environment.GetEnvironmentVariable("KIOTA_CONSOLE_COLORS_ENABLED");
+        if (!string.IsNullOrEmpty(kiotaNoColorsRaw) && bool.TryParse(kiotaNoColorsRaw, out var kiotaNoColors)) {
+            return kiotaNoColors;
+        }
+        return true;
+    });
+    protected bool NoColors => consoleNoColors.Value;
+    
     private void DisplayHint(params string[] messages) {
         if(TutorialMode) {
             Console.WriteLine();
             DisplayMessages(ConsoleColor.Blue, messages);
         }
     }
-    private static void DisplayMessages(ConsoleColor color, params string[] messages) {
-        Console.ForegroundColor = color;
+    private void DisplayMessages(ConsoleColor color, params string[] messages) {
+        if (SwapColors)
+            color = Enum.GetValues<ConsoleColor>()[ConsoleColor.White - color];
+        if (!NoColors)
+            Console.ForegroundColor = color;
         foreach(var message in messages)
             Console.WriteLine(message);
-        Console.ResetColor();
+        if (!NoColors)
+            Console.ResetColor();
     }
-    protected static void DisplayError(params string[] messages) {
+    protected void DisplayError(params string[] messages) {
         DisplayMessages(ConsoleColor.Red, messages);
     }
-    protected static void DisplayWarning(params string[] messages) {
+    protected void DisplayWarning(params string[] messages) {
         DisplayMessages(ConsoleColor.Yellow, messages);
     }
-    protected static void DisplaySuccess(params string[] messages) {
+    protected void DisplaySuccess(params string[] messages) {
         DisplayMessages(ConsoleColor.Green, messages);
     }
-    protected static void DisplayInfo(params string[] messages) {
+    protected void DisplayInfo(params string[] messages) {
         DisplayMessages(ConsoleColor.White, messages);
     }
     protected void DisplayDownloadHint(string searchTerm, string version) {
@@ -225,7 +246,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
                         "Example: kiota login github");
         }
     }
-    protected static void DisplayGitHubDeviceCodeLoginMessage(Uri uri, string code) {
+    protected void DisplayGitHubDeviceCodeLoginMessage(Uri uri, string code) {
         DisplayInfo($"Please go to {uri} and enter the code {code} to authenticate.");
     }
 }

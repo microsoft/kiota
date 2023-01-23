@@ -30,35 +30,21 @@
 
 @if (SearchResults.Any()) {
     <div id="results">
-        <FluentDataGrid id="manualGrid" GenerateHeader=GenerateHeaderOption.None GridTemplateColumns="1fr 4fr 1fr" TItem=string>
-            <FluentDataGridRow RowType="DataGridRowType.Header">
-                <FluentDataGridCell GridColumn=1 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Key"]</FluentDataGridCell>
-                <FluentDataGridCell GridColumn=2 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Description"]</FluentDataGridCell>
-                <FluentDataGridCell GridColumn=3 CellType="DataGridCellType.ColumnHeader">@Loc["MR_Actions"]</FluentDataGridCell>
-            </FluentDataGridRow>
-                @foreach (var result in SearchResults.OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase))
-                {
-                    <FluentDataGridRow>
-                        <FluentDataGridCell GridColumn=1>
-                            @result.Key
-                        </FluentDataGridCell>
-                        <FluentDataGridCell GridColumn=2>@SanitizeDescription(result.Value.Description)</FluentDataGridCell>
-                        <FluentDataGridCell GridColumn=3>
-                            <FluentButton Appearance="Appearance.Accent" @onclick="@(e => GoToGenerate(result.Key))">@Loc["GoToGenerate"]</FluentButton>
-                            <FluentButton Appearance="Appearance.Neutral" @onclick="@(e => GoToShow(result.Key))">@Loc["GoToShow"]</FluentButton>
-                        </FluentDataGridCell>
-                    </FluentDataGridRow>
-                }
+        <FluentDataGrid TGridItem="KeyValuePair<string, SearchResult>" id="manualGrid" GenerateHeader=GenerateHeaderOption.Default GridTemplateColumns="1fr 4fr 1fr" 
+            RowsData="@SearchResults.AsQueryable()" Pagination="@pagination">
+            <PropertyColumn Property="@(c => c.Key)" Sortable="true" Align="Align.Left" Title="@Loc["MR_Key"]" IsDefaultSort="SortDirection.Ascending" />
+            <PropertyColumn Property="@(c => SanitizeDescription(c.Value.Description))" Sortable="false" Align="Align.Left" Title="@Loc["MR_Description"]" />
+            <TemplateColumn Title="@Loc["MR_Actions"]" Align="Align.Left" Sortable="false">
+                <FluentButton Appearance="Appearance.Accent" @onclick="@(e => GoToGenerate(context.Key))">@Loc["GoToGenerate"]</FluentButton>
+                <FluentButton Appearance="Appearance.Neutral" @onclick="@(e => GoToShow(context.Key))">@Loc["GoToShow"]</FluentButton>
+            </TemplateColumn>
         </FluentDataGrid>
+        <FluentPaginator Value="@pagination" />
         @if(ShowVersionSelector) {
-            <FluentDialog @ondismiss=OnDialogDismiss>
+            <FluentDialog @ondialogdismiss=OnDialogDismiss>
                 <div class="dialog-content">
                     <h2>@Loc["SelectVersion"]</h2>
-                    <FluentSelect Id="selectedversion" @bind-Value=@SelectedVersion Required=@true>
-                        @foreach(var version in AvailableVersions) {
-                            <FluentOption Value=@version>@version</FluentOption>
-                        }
-                    </FluentSelect>
+                    <FluentSelect Id="selectedversion" @bind-Value=@SelectedVersion Required=@true Items="@AvailableVersions" />
                     <FluentDivider Role=DividerRole.Presentation></FluentDivider>
                     <FluentButton Appearance="Appearance.Accent" @onclick=@GoToGenerateWithVersion>@Loc["GoToGenerate"]</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" @onclick=@GoToShowWithVersion>@Loc["GoToShow"]</FluentButton>
@@ -79,6 +65,7 @@
 }
 
 @code {
+    PaginationState pagination = new PaginationState { ItemsPerPage = 10 };
     [Inject] private IApplicationInsights? AppInsights { get; set; }
     [Inject] private KiotaSearcher? KiotaSearcher { get; set; }
 
@@ -87,6 +74,7 @@
     private bool Searched { get; set; }
     private string? SearchTerm { get; set; }
     private IDictionary<string, SearchResult> SearchResults = new Dictionary<string, SearchResult>();
+    GridSort<KeyValuePair<string, SearchResult>> rankSort = GridSort<KeyValuePair<string, SearchResult>>.ByAscending(static x => x.Key);
     private Task EnterSubmit(KeyboardEventArgs e) {
         if(e.Key == "Enter") {
             return EnterSubmitInternal(e);

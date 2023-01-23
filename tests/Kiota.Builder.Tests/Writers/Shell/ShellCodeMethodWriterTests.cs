@@ -306,7 +306,6 @@ public class ShellCodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesExecutableCommandForGetRequestPrimitive()
     {
-
         method.Kind = CodeMethodKind.CommandBuilder;
         method.Documentation.Description = "Test description";
         method.SimpleName = "User";
@@ -353,7 +352,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("var testHeaderOption = new Option<string>(\"--test-header\", description: \"The test header\")", result);
+        Assert.Matches("var testHeaderOption = new Option<string\\[]>\\(\"--test-header\", description: \"The test header\"\\) {\\s+Arity = ArgumentArity.OneOrMore", result);
         Assert.Contains("testHeaderOption.IsRequired = true;", result);
         Assert.Contains("command.AddOption(testHeaderOption);", result);
         Assert.Contains("command.SetHandler(async (invocationContext) => {", result);
@@ -361,7 +360,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var testHeader = invocationContext.ParseResult.GetValueForOption(testHeaderOption);", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
         Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
-        Assert.Contains("requestInfo.Headers[\"Test-Header\"] = testHeader;", result);
+        Assert.Contains("requestInfo.Headers.Add(\"Test-Header\", testHeader);", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("var outputFormatterFactory = invocationContext.BindingContext.GetRequiredService<IOutputFormatterFactory>();", result);
         Assert.Contains("var formatter = outputFormatterFactory.GetFormatter(FormatterType.TEXT);", result);

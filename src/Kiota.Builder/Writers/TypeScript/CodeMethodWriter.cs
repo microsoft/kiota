@@ -127,16 +127,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
     {
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-        var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
+        var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+        var backingStoreParameter = method.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.BackingStore));
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterLowerCase();
         WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
-        if (!string.IsNullOrEmpty(method.BaseUrl))
-        {
-            writer.WriteLine($"if ({requestAdapterPropertyName}.baseUrl === undefined || {requestAdapterPropertyName}.baseUrl === \"\") {{");
-            writer.IncreaseIndent();
+        if(!string.IsNullOrEmpty(method.BaseUrl)) {
+            writer.StartBlock($"if ({requestAdapterPropertyName}.baseUrl === undefined || {requestAdapterPropertyName}.baseUrl === \"\") {{");
             writer.WriteLine($"{requestAdapterPropertyName}.baseUrl = \"{method.BaseUrl}\";");
             writer.CloseBlock();
+            if(pathParametersProperty != null)
+                writer.WriteLine($"this.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}[\"baseurl\"] = {requestAdapterPropertyName}.baseUrl;");
         }
         if (backingStoreParameter != null)
             writer.WriteLine($"this.{requestAdapterPropertyName}.enableBackingStore({backingStoreParameter.Name});");
@@ -200,6 +201,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(SetterAccessProperties)
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        // do not apply the default value if the type is composed as the default value may not necessarily which type to use
+                                        .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                                         .OrderByDescending(static x => x.Kind)
                                         .ThenBy(static x => x.Name))
         {

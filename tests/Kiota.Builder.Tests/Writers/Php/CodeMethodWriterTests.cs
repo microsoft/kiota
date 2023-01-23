@@ -205,6 +205,8 @@ namespace Kiota.Builder.Tests.Writers.Php
                 },
                 Documentation = new() {
                     Description = "This will send a POST request",
+                    DocumentationLink = new Uri("https://learn.microsoft.com/"),
+                    DocumentationLabel = "Learning"
                 },
                 Kind = CodeMethodKind.RequestExecutor
             };
@@ -249,6 +251,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("Promise", result);
             Assert.Contains("$requestInfo = $this->createPostRequestInformation();", result);
             Assert.Contains("RejectedPromise", result);
+            Assert.Contains("@link https://learn.microsoft.com/ Learning", result);
             Assert.Contains("catch(Exception $ex)", result);
             Assert.Contains("'403' => [Error403::class, 'createFromDiscriminatorValue']", result);
             Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, StreamInterface::class, $responseHandler, $errorMappings);", result);
@@ -739,7 +742,48 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("public function __construct", result);
             Assert.Contains("$this->setType('#microsoft.graph.entity')", result);
         }
+        [Fact]
+        public void DoesNotWriteConstructorWithDefaultFromComposedType()
+        {
+            method.Kind = CodeMethodKind.Constructor;
+            var defaultValue = "\"Test Value\"";
+            var propName = "size";
+            var unionTypeWrapper = root.AddClass(new CodeClass
+            {
+                Name = "UnionTypeWrapper",
+                Kind = CodeClassKind.Model,
+                OriginalComposedType = new CodeUnionType
+                {
+                    Name = "UnionTypeWrapper",
+                },
+                DiscriminatorInformation = new()
+                {
+                    DiscriminatorPropertyName = "@odata.type",
+                },
+            }).First();
+            parentClass.AddProperty(new CodeProperty
+            {
+                Name = propName,
+                DefaultValue = defaultValue,
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { TypeDefinition = unionTypeWrapper }
+            });
+            var sType = new CodeType
+            {
+                Name = "string",
+            };
+            var arrayType = new CodeType
+            {
+                Name = "array",
+            };
+            unionTypeWrapper.OriginalComposedType.AddType(sType);
+            unionTypeWrapper.OriginalComposedType.AddType(arrayType);
 
+            _codeMethodWriter.WriteCodeElement(method, languageWriter);
+            var result = stringWriter.ToString();
+            Assert.Contains("__construct()", result);
+            Assert.DoesNotContain(defaultValue, result);//ensure the composed type is not referenced
+        }
         [Fact]
         public void WriteGetter()
         {
@@ -1000,6 +1044,15 @@ namespace Kiota.Builder.Tests.Writers.Php
                 Parent = parentClass,
                 Kind = CodeMethodKind.ClientConstructor
             };
+            codeMethod.BaseUrl = "https://graph.microsoft.com/v1.0";
+            parentClass.AddProperty(new CodeProperty {
+                Name = "pathParameters",
+                Kind = CodePropertyKind.PathParameters,
+                Type = new CodeType {
+                    Name = "array",
+                    IsExternal = true,
+                }
+            });
 
             codeMethod.AddParameter(new CodeParameter
             {
@@ -1019,6 +1072,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             var result = stringWriter.ToString();
             Assert.Contains("$this->requestAdapter = $requestAdapter", result);
             Assert.Contains("public function __construct(RequestAdapter $requestAdapter)", result);
+            Assert.Contains($"$this->pathParameters['baseUrl'] = $this->requestAdapter->getBaseUrl();", result);
         }
 
         [Fact]

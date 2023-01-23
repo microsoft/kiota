@@ -8,7 +8,9 @@
 <div class="ps-3 navbar navbar-dark burger-menu">
     <div class="navbar-toggler">
         <FluentButton title="Navigation menu" @onclick=@ToggleNavMenu>
-            <FluentIcon Name="@FluentIcons.List" Slot="end" Size="@IconSize.Size28" Filled=true UseAccentColor=true />
+            <span slot="end">
+                <FluentIcon Name="@FluentIcons.List" Size="@IconSize.Size28" Filled=true UseAccentColor=true />
+            </span>
         </FluentButton>
         <FluentAnchor Href="#" Appearance="Appearance.Stealth">Kiota.dev</FluentAnchor>
     </div>
@@ -19,23 +21,33 @@
         <FluentMenu>
             <FluentMenuItem @onclick=@GoHome>
                 @Loc["Search"]
-                <FluentIcon Name="@FluentIcons.Search" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+                <span slot="start">
+                    <FluentIcon Name="@FluentIcons.Search" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+                </span>
             </FluentMenuItem>
             <FluentMenuItem @onclick="@GoToShow">
                 @Loc["Show"]
-                <FluentIcon Name="@FluentIcons.AppsList" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+                <span slot="start">
+                    <FluentIcon Name="@FluentIcons.AppsList" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+                </span>
             </FluentMenuItem>
             <FluentMenuItem @onclick=@GoToGenerate>
                 @Loc["Generate"]
-                <FluentIcon Name="@FluentIcons.Code" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+                <span slot="start">
+                    <FluentIcon Name="@FluentIcons.Code" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+                </span>
             </FluentMenuItem>
             <FluentMenuItem @onclick=@GoToUpdate>
                 @Loc["Update"]
-                <FluentIcon Name="@FluentIcons.ArrowSync" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+                <span slot="start">
+                    <FluentIcon Name="@FluentIcons.ArrowSync" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+                </span>
             </FluentMenuItem>
             <FluentMenuItem @onclick=@GoToAbout>
                 @Loc["About"]
-                <FluentIcon Name="@FluentIcons.Info" Slot="start" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+                <span slot="start">
+                    <FluentIcon Name="@FluentIcons.Info" Size="@IconSize.Size24" Filled=false UseAccentColor=false />
+                </span>
             </FluentMenuItem>
         </FluentMenu>
     </nav>

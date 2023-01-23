@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 

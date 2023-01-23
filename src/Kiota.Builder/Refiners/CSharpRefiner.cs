@@ -92,6 +92,8 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             "Microsoft.Kiota.Abstractions.Serialization", "ISerializationWriter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "Microsoft.Kiota.Abstractions.Serialization", "IParseNode"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor),
+            "Microsoft.Kiota.Abstractions.Extensions", "Dictionary"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             "Microsoft.Kiota.Abstractions.Serialization", "IParsable"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),

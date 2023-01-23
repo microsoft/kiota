@@ -29,45 +29,44 @@ namespace Kiota.Builder.CodeRenderers
             writer.SetTextWriter(sw);
             RenderCode(writer, codeElement);
             if(!cancellationToken.IsCancellationRequested)
-                await sw.FlushAsync(); // streamwriter doesn't not have a cancellation token overload https://github.com/dotnet/runtime/issues/64340
+                await sw.FlushAsync(); // stream writer doesn't not have a cancellation token overload https://github.com/dotnet/runtime/issues/64340
         }
-        // We created barrells for codenamespaces. Skipping for empty namespaces, ones created for users, and ones with same namspace as class name.
-        public async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root, CancellationToken cancellationToken)
+        // We created barrels for code namespaces. Skipping for empty namespaces, ones created for users, and ones with same namespace as class name.
+        public async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace currentNamespace, CancellationToken cancellationToken)
         {
             if(cancellationToken.IsCancellationRequested) return;
-            foreach (var codeElement in root.GetChildElements(true))
+            foreach (var codeElement in currentNamespace.GetChildElements(true))
             {
                 switch(codeElement) {
                     case CodeClass:
                     case CodeEnum:
                     case CodeFunction:
                     case CodeInterface:
-                        await RenderCodeNamespaceToSingleFileAsync(writer, codeElement, writer.PathSegmenter.GetPath(root, codeElement), cancellationToken);
+                        await RenderCodeNamespaceToSingleFileAsync(writer, codeElement, writer.PathSegmenter.GetPath(currentNamespace, codeElement), cancellationToken);
                         break;
                     case CodeNamespace codeNamespace:
-                        await RenderBarrel(writer, root, codeNamespace, cancellationToken);
+                        await RenderBarrel(writer, currentNamespace, codeNamespace, cancellationToken);
                         await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace, cancellationToken);
                     break;
                 }
             }
         }
-        private async Task RenderBarrel(LanguageWriter writer, CodeNamespace root, CodeNamespace codeNamespace, CancellationToken cancellationToken) {
+        private async Task RenderBarrel(LanguageWriter writer, CodeNamespace parentNamespace, CodeNamespace codeNamespace, CancellationToken cancellationToken) {
             if (!string.IsNullOrEmpty(codeNamespace.Name) &&
-                !string.IsNullOrEmpty(root.Name) &&
                 _configuration.ShouldWriteNamespaceIndices &&
                 (!_configuration.ClientNamespaceName.StartsWith(codeNamespace.Name, StringComparison.OrdinalIgnoreCase) || 
                 _configuration.ClientNamespaceName.Equals(codeNamespace.Name, StringComparison.OrdinalIgnoreCase)) && // we want a barrel for the root namespace
                 ShouldRenderNamespaceFile(codeNamespace))
             {
-                await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace), cancellationToken);
+                await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(parentNamespace, codeNamespace), cancellationToken);
             }
         }
         private readonly CodeElementOrderComparer _rendererElementComparer;
-        private readonly GenerationConfiguration _configuration;
+        protected readonly GenerationConfiguration _configuration;
         private void RenderCode(LanguageWriter writer, CodeElement element)
         {
             writer.Write(element);
-            if (!(element is CodeNamespace))
+            if (element is not CodeNamespace)
                 foreach (var childElement in element.GetChildElements()
                                                    .Order(_rendererElementComparer))
                 {
@@ -83,15 +82,12 @@ namespace Kiota.Builder.CodeRenderers
             return _configuration.ShouldWriteBarrelsIfClassExists || codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null;
         }
 
-        public static CodeRenderer GetCodeRender(GenerationConfiguration config)
-        {
-            return config.Language switch
+        public static CodeRenderer GetCodeRender(GenerationConfiguration config) => 
+            config.Language switch
             {
-                GenerationLanguage.TypeScript =>
-                    new TypeScriptCodeRenderer(config),
+                GenerationLanguage.TypeScript => new TypeScriptCodeRenderer(config),
                 _ => new CodeRenderer(config),
             };
-        }
     
     }
 }

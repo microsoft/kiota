@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -394,15 +393,17 @@ namespace Kiota.Builder.Writers.Go {
         }
         private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterLowerCase();
             var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
             WriteSerializationRegistration(method.SerializerModules, writer, parentClass, "RegisterDefaultSerializer", "SerializationWriterFactory");
             WriteSerializationRegistration(method.DeserializerModules, writer, parentClass, "RegisterDefaultDeserializer", "ParseNodeFactory");
             if (!string.IsNullOrEmpty(method.BaseUrl)) {
-                writer.WriteLine($"if m.{requestAdapterPropertyName}.GetBaseUrl() == \"\" {{");
-                writer.IncreaseIndent();
+                writer.StartBlock($"if m.{requestAdapterPropertyName}.GetBaseUrl() == \"\" {{");
                 writer.WriteLine($"m.{requestAdapterPropertyName}.SetBaseUrl(\"{method.BaseUrl}\")");
                 writer.CloseBlock();
+                if(pathParametersProperty != null)
+                    writer.WriteLine($"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}[\"baseurl\"] = m.{requestAdapterPropertyName}.GetBaseUrl()");
             }
             if(backingStoreParameter != null)
                 writer.WriteLine($"m.{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
@@ -436,6 +437,8 @@ namespace Kiota.Builder.Writers.Go {
             }
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom rely on accessors
                                             .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                            // do not apply the default value if the type is composed as the default value may not necessarily which type to use
+                                            .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                                             .OrderBy(static x => x.Name)) {
                 var defaultValueReference = propWithDefault.DefaultValue;
                 if(defaultValueReference.StartsWith("\"")) {
@@ -597,14 +600,14 @@ namespace Kiota.Builder.Writers.Go {
         
         private static string getSendMethodName(string returnType, CodeMethod codeElement, bool isPrimitive, bool isBinary, bool isEnum) {
             return returnType switch {
-                "void" => "SendNoContentAsync",
-                _ when string.IsNullOrEmpty(returnType) => "SendNoContentAsync",
-                _ when codeElement.ReturnType.IsCollection && isPrimitive => "SendPrimitiveCollectionAsync",
-                _ when isPrimitive || isBinary => "SendPrimitiveAsync",
-                _ when codeElement.ReturnType.IsCollection && !isEnum => "SendCollectionAsync",
-                _ when codeElement.ReturnType.IsCollection && isEnum => "SendEnumCollectionAsync",
-                _ when isEnum => "SendEnumAsync",
-                _ => "SendAsync"
+                "void" => "SendNoContent",
+                _ when string.IsNullOrEmpty(returnType) => "SendNoContent",
+                _ when codeElement.ReturnType.IsCollection && isPrimitive => "SendPrimitiveCollection",
+                _ when isPrimitive || isBinary => "SendPrimitive",
+                _ when codeElement.ReturnType.IsCollection && !isEnum => "SendCollection",
+                _ when codeElement.ReturnType.IsCollection && isEnum => "SendEnumCollection",
+                _ when isEnum => "SendEnum",
+                _ => "Send"
             };
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, string returnType, CodeClass parentClass, LanguageWriter writer) {

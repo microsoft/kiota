@@ -380,7 +380,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains(AsyncKeyword, result);
         Assert.Contains("await", result);
         Assert.Contains("cancellationToken", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void WritesRequestExecutorBodyForCollection() {
@@ -402,7 +402,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("SendCollectionAsync", result);
         Assert.Contains("return collectionResult.ToList()", result);
         Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void DoesntCreateDictionaryOnEmptyErrorMapping() {
@@ -413,7 +413,7 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.DoesNotContain("var errorMapping = new Dictionary<string, Func<IParsable>>", result);
         Assert.Contains("default", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void WritesModelFactoryBodyForUnionModels() {
@@ -647,7 +647,7 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.Contains("SendCollectionAsync", result);
         Assert.Contains("cancellationToken", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void WritesRequestGeneratorBodyForScalar() {
@@ -671,7 +671,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.AddRequestOptions(requestConfig.O)", result);
         Assert.Contains("SetContentFromScalar", result);
         Assert.Contains("return requestInfo;", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void WritesRequestGeneratorBodyForParsable() {
@@ -695,7 +695,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.AddRequestOptions(requestConfig.O)", result);
         Assert.Contains("SetContentFromParsable", result);
         Assert.Contains("return requestInfo;", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void WritesRequestGeneratorBodyForScalarCollection() {
@@ -711,7 +711,7 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("SetContentFromScalarCollection", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
     public void WritesInheritedDeSerializerBody() {
@@ -1043,16 +1043,89 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {defaultValue}", result);
     }
     [Fact]
+    public void WritesConstructorWithEnumValue()
+    {
+        method.Kind = CodeMethodKind.Constructor;
+        var defaultValue = "1024x1024";
+        var propName = "size";
+        var codeEnum = new CodeEnum 
+        { 
+            Name = "pictureSize"
+        };
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = codeEnum }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
+    }
+    [Fact]
+    public void DoesNotWriteConstructorWithDefaultFromComposedType()
+    {
+        method.Kind = CodeMethodKind.Constructor;
+        var defaultValue = "\"Test Value\"";
+        var propName = "size";
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = unionTypeWrapper }
+        });
+        var sType = new CodeType
+        {
+            Name = "string",
+        };
+        var arrayType = new CodeType
+        {
+            Name = "array",
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(sType);
+        unionTypeWrapper.OriginalComposedType.AddType(arrayType);
+
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+        Assert.DoesNotContain($"{propName.ToFirstCharacterUpperCase()}.{unionTypeWrapper.OriginalComposedType.AllTypes.First().Name.ToFirstCharacterUpperCase()} = {defaultValue}", result);//ensure the composed type is not referenced
+    }
+    [Fact]
     public void WritesApiConstructor() {
         method.Kind = CodeMethodKind.ClientConstructor;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0";
+        parentClass.AddProperty(new CodeProperty {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType {
+                Name = "Dictionary<string, string>",
+                IsExternal = true,
+            }
+        });
         var coreProp = parentClass.AddProperty(new CodeProperty {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "RequestAdapter",
+                IsExternal = true,
+            }
         }).First();
-        coreProp.Type = new CodeType {
-            Name = "RequestAdapter",
-            IsExternal = true,
-        };
         method.AddParameter(new CodeParameter {
             Name = "core",
             Kind = CodeParameterKind.RequestAdapter,
@@ -1065,6 +1138,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains("RegisterDefaultSerializer", result);
         Assert.Contains("RegisterDefaultDeserializer", result);
+        Assert.Contains($"TryAdd(\"baseurl\", Core.BaseUrl)", result);
+        Assert.Contains($"BaseUrl = \"{method.BaseUrl}\"", result);
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore() {

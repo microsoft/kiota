@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -520,9 +520,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("\"4XX\": CreateError4XXFromDiscriminatorValue", result);
         Assert.Contains("\"5XX\": CreateError5XXFromDiscriminatorValue", result);
         Assert.Contains("\"403\": CreateError403FromDiscriminatorValue", result);
-        Assert.Contains("m.requestAdapter.SendAsync", result);
         Assert.Contains("ctx context.Context,", result);
-        Assert.Contains("m.requestAdapter.SendAsync(ctx,", result);
+        Assert.Contains("m.requestAdapter.Send(ctx,", result);
         Assert.Contains("return res.(", result);
         Assert.Contains("err != nil", result);
         Assert.Contains("return nil, err", result);
@@ -543,8 +542,8 @@ public class CodeMethodWriterTests : IDisposable {
         };
         writer.Write(method);
         var result = tw.ToString();
-        Assert.DoesNotContain("m.requestAdapter.SendAsync", result);
-        Assert.Contains("m.requestAdapter.SendEnumAsync", result);
+        Assert.DoesNotContain("m.requestAdapter.Send(", result);
+        Assert.Contains("m.requestAdapter.SendEnum", result);
         Assert.Contains("ParseSomeEnum", result);
         Assert.Contains("return nil, err", result);
         Assert.Contains("if res == nil", result);
@@ -566,9 +565,9 @@ public class CodeMethodWriterTests : IDisposable {
         };
         writer.Write(method);
         var result = tw.ToString();
-        Assert.DoesNotContain("m.requestAdapter.SendAsync", result);
-        Assert.DoesNotContain("m.requestAdapter.SendEnumAsync", result);
-        Assert.Contains("m.requestAdapter.SendEnumCollectionAsync", result);
+        Assert.DoesNotContain("m.requestAdapter.Send(", result);
+        Assert.DoesNotContain("m.requestAdapter.SendEnum(", result);
+        Assert.Contains("m.requestAdapter.SendEnumCollection", result);
         Assert.Contains("ParseSomeEnum", result);
         Assert.DoesNotContain("val[i] = *(v.(*SomeEnum))", result);
         Assert.Contains("val[i] = v.(SomeEnum)", result);
@@ -1388,6 +1387,48 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("make(map[string]string)", result);
     }
     [Fact]
+    public void DoesNotWriteConstructorWithDefaultFromComposedType()
+    {
+        method.Kind = CodeMethodKind.Constructor;
+        var defaultValue = "\"Test Value\"";
+        var propName = "size";
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = unionTypeWrapper }
+        });
+        var sType = new CodeType
+        {
+            Name = "string",
+        };
+        var arrayType = new CodeType
+        {
+            Name = "array",
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(sType);
+        unionTypeWrapper.OriginalComposedType.AddType(arrayType);
+
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+        Assert.DoesNotContain(defaultValue, result);//ensure the composed type is not referenced
+    }
+    [Fact]
     public void WritesRawUrlConstructor() {
         method.Kind = CodeMethodKind.RawUrlConstructor;
         var defaultValue = "someVal";
@@ -1432,14 +1473,23 @@ public class CodeMethodWriterTests : IDisposable {
     [Fact]
     public void WritesApiConstructor() {
         method.Kind = CodeMethodKind.ClientConstructor;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0";
+        parentClass.AddProperty(new CodeProperty {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType {
+                Name = "Dictionary<string, string>",
+                IsExternal = true,
+            }
+        });
         var coreProp = parentClass.AddProperty(new CodeProperty {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "HttpCore",
+                IsExternal = true,
+            }
         }).First();
-        coreProp.Type = new CodeType {
-            Name = "HttpCore",
-            IsExternal = true,
-        };
         method.AddParameter(new CodeParameter {
             Name = "core",
             Kind = CodeParameterKind.RequestAdapter,
@@ -1452,6 +1502,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains("RegisterDefaultSerializer", result);
         Assert.Contains("RegisterDefaultDeserializer", result);
+        Assert.Contains($"[\"baseurl\"] = m.core.GetBaseUrl", result);
+        Assert.Contains($"SetBaseUrl(\"{method.BaseUrl}\")", result);
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore() {

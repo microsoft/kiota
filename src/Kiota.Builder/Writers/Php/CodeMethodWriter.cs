@@ -90,6 +90,8 @@ namespace Kiota.Builder.Writers.Php
             }
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
                 .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
+                // do not apply the default value if the type is composed as the default value may not necessarily which type to use
+                .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                 .OrderBy(x => x.Name)) {
                 var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() ?? $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
                 writer.WriteLine($"$this->{setterName}({propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote()});");
@@ -128,36 +130,34 @@ namespace Kiota.Builder.Writers.Php
             var methodDescription = codeMethod.Documentation.Description ?? string.Empty;
 
             var hasMethodDescription = !string.IsNullOrEmpty(methodDescription.Trim(' '));
-            var parametersWithDescription = codeMethod.Parameters;
-            var withDescription = parametersWithDescription as CodeParameter[] ?? parametersWithDescription.ToArray();
+            var parameters = codeMethod.Parameters;
+            var withDescription = parameters as CodeParameter[] ?? parameters.ToArray();
             if (!hasMethodDescription && !withDescription.Any())
             {
                 return;
             }
-
-            writer.WriteLine(conventions.DocCommentStart);
             var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
                 StringComparison.OrdinalIgnoreCase) && !codeMethod.IsOfKind(CodeMethodKind.RequestExecutor);
-            if(hasMethodDescription){
-                writer.WriteLine(
-                    $"{conventions.DocCommentPrefix}{methodDescription}");
-            }
 
             var accessedProperty = codeMethod.AccessedProperty;
             var isSetterForAdditionalData = (codeMethod.IsOfKind(CodeMethodKind.Setter) &&
                                              accessedProperty.IsOfKind(CodePropertyKind.AdditionalData));
-            
-            withDescription.Select(x => GetParameterDocString(codeMethod, x, isSetterForAdditionalData))
-                .ToList()
-                .ForEach(x => writer.WriteLine(x));
+
+            var parametersWithDescription = withDescription
+                .Where(x => x.Documentation.DescriptionAvailable)
+                .Select(x => GetParameterDocString(codeMethod, x, isSetterForAdditionalData))
+                .ToList();
             var returnDocString = GetDocCommentReturnType(codeMethod, accessedProperty);
             if (!isVoidable)
-            {
-                writer.WriteLine((codeMethod.Kind == CodeMethodKind.RequestExecutor)
-                    ? $"{conventions.DocCommentPrefix}@return Promise"
-                    : $"{conventions.DocCommentPrefix}@return {returnDocString}{orNullReturn[1]}");
-            }
-            writer.WriteLine(conventions.DocCommentEnd);
+                returnDocString = (codeMethod.Kind == CodeMethodKind.RequestExecutor)
+                    ? "@return Promise"
+                    : $"@return {returnDocString}{orNullReturn[1]}";
+            else returnDocString = String.Empty;
+            conventions.WriteLongDescription(codeMethod.Documentation,
+                writer,
+                parametersWithDescription.Union(new []{returnDocString})
+                );
+
         }
 
         private string GetDocCommentReturnType(CodeMethod codeMethod, CodeProperty accessedProperty)
@@ -175,8 +175,8 @@ namespace Kiota.Builder.Writers.Php
         {
             return codeMethod.Kind switch
             {
-                CodeMethodKind.Setter => $"{conventions.DocCommentPrefix} @param {(isSetterForAdditionalData ? "array<string,mixed> $value": conventions.GetParameterDocNullable(x, x))} {x?.Documentation.Description}",
-                _ => $"{conventions.DocCommentPrefix}@param {conventions.GetParameterDocNullable(x, x)} {x.Documentation.Description}"
+                CodeMethodKind.Setter => $"@param {(isSetterForAdditionalData ? "array<string,mixed> $value": conventions.GetParameterDocNullable(x, x))} {x?.Documentation.Description}",
+                _ => $"@param {conventions.GetParameterDocNullable(x, x)} {x.Documentation.Description}"
             };
         }
         
@@ -504,6 +504,7 @@ namespace Kiota.Builder.Writers.Php
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod codeMethod, LanguageWriter writer)
         {
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             WriteSerializationRegistration(codeMethod.SerializerModules, writer, "registerDefaultSerializer");
             WriteSerializationRegistration(codeMethod.DeserializerModules, writer, "registerDefaultDeserializer");
             if(!string.IsNullOrEmpty(codeMethod.BaseUrl)) {
@@ -511,6 +512,8 @@ namespace Kiota.Builder.Writers.Php
                 writer.IncreaseIndent();
                 writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl}');");
                 writer.CloseBlock();
+                if (pathParametersProperty != null)
+                    writer.WriteLine($"{GetPropertyCall(pathParametersProperty, default)}['baseUrl'] = {GetPropertyCall(requestAdapterProperty, string.Empty)}->getBaseUrl();");
             }
             var backingStoreParam = codeMethod.Parameters.OfKind(CodeParameterKind.BackingStore);
             if (backingStoreParam != null)

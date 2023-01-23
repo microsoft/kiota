@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -182,15 +182,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
     {
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-        var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
+        var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+        var backingStoreParameter = method.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.BackingStore));
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterUpperCase();
         WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
         if (!string.IsNullOrEmpty(method.BaseUrl)) {
-            writer.WriteLine($"if (string.IsNullOrEmpty({requestAdapterPropertyName}.BaseUrl)) {{");
-            writer.IncreaseIndent();
+            writer.StartBlock($"if (string.IsNullOrEmpty({requestAdapterPropertyName}.BaseUrl)) {{");
             writer.WriteLine($"{requestAdapterPropertyName}.BaseUrl = \"{method.BaseUrl}\";");
             writer.CloseBlock();
+            if(pathParametersProperty != null)
+                writer.WriteLine($"{pathParametersProperty.Name.ToFirstCharacterUpperCase()}.TryAdd(\"baseurl\", {requestAdapterPropertyName}.BaseUrl);");
         }
         if (backingStoreParameter != null)
             writer.WriteLine($"{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
@@ -206,11 +208,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         foreach (var propWithDefault in parentClass
                                         .Properties
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        // do not apply the default value if the type is composed as the default value may not necessarily which type to use
+                                        .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                                         .OrderByDescending(static x => x.Kind)
                                         .ThenBy(static x => x.Name)) {
             var defaultValue = propWithDefault.DefaultValue;
             if(propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition) {
-                defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}.{defaultValue.Trim('"').ToFirstCharacterUpperCase()}";
+                defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
             }
             writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {defaultValue};");
         }
@@ -446,7 +450,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
                                         .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
+            var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
+            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.SerializationName ?? otherProp.Name}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
         }
     }
     private void WriteSerializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
@@ -550,9 +555,33 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             baseSuffix = " : base()";
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)).ToList());
         var methodName = isConstructor ? code.Parent.Name.ToFirstCharacterUpperCase() : code.Name.ToFirstCharacterUpperCase();
+        var includeNullableReferenceType = code.Parameters.Any(static codeParameter => codeParameter.IsOfKind(CodeParameterKind.RequestConfiguration));
+        if (includeNullableReferenceType)
+        {
+            var completeReturnTypeWithNullable = string.IsNullOrEmpty(genericTypeSuffix) ? completeReturnType : $"{completeReturnType[..^2]}?{genericTypeSuffix} ";
+            var nullableParameters = string.Join(", ", code.Parameters.OrderBy(static x => x, parameterOrderComparer)
+                                                          .Select(p => p.IsOfKind(CodeParameterKind.RequestConfiguration) ? 
+                                                                                        GetParameterSignatureWithNullableRefType(p,code): 
+                                                                                        conventions.GetParameterSignature(p, code))
+                                                          .ToList());
+            writer.WriteLine($"#if {CSharpConventionService.NullableEnableDirective}",false);
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnTypeWithNullable}{methodName}({nullableParameters}){baseSuffix} {{");
+            writer.WriteLine("#else",false);
+        }
+        
         writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
+        
+        if (includeNullableReferenceType)
+            writer.WriteLine("#endif",false);
+
     }
-    private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method)
+
+    private string GetParameterSignatureWithNullableRefType(CodeParameter parameter, CodeElement targetElement)
+    {
+        var signatureSegments = conventions.GetParameterSignature(parameter, targetElement).Split(" ", StringSplitOptions.RemoveEmptyEntries);
+        return $"{signatureSegments[0]}? {string.Join(" ",signatureSegments[1..])}";
+    }
+    private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method, bool includeNullableRef = false)
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = conventions.GetTypeString(propType, method, false);
@@ -573,7 +602,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             "byte[]" => "WriteByteArrayValue",
             _ when conventions.IsPrimitiveType(propertyType) => $"Write{propertyType.TrimEnd(CSharpConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value",
-            _ => $"WriteObjectValue<{propertyType.ToFirstCharacterUpperCase()}>",
+            _ => $"WriteObjectValue<{propertyType.ToFirstCharacterUpperCase()}{(includeNullableRef ? "?": string.Empty)}>",
         };
     }
 }

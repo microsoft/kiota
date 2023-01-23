@@ -122,6 +122,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+        var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         var requestAdapterPropertyName = requestAdapterProperty.NamePrefix +  requestAdapterProperty.Name.ToSnakeCase();
         WriteSerializationRegistration(parentClass, method.SerializerModules, writer, "register_default_serializer");
         WriteSerializationRegistration(parentClass, method.DeserializerModules, writer, "register_default_deserializer");
@@ -131,6 +132,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.StartBlock($"if @{requestAdapterPropertyName}.get_base_url.nil? || @{requestAdapterPropertyName}.get_base_url.empty?");
             writer.WriteLine($"@{requestAdapterPropertyName}.set_base_url('{method.BaseUrl}')");
             writer.CloseBlock("end");
+            if(pathParametersProperty != null)
+                writer.WriteLine($"@{pathParametersProperty.Name.ToSnakeCase()}['baseurl'] = @{requestAdapterPropertyName}.get_base_url");
         }
     }
     private static void WriteSerializationRegistration(CodeClass parentClass, HashSet<string> serializationClassNames, LanguageWriter writer, string methodName)
@@ -157,6 +160,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData,
                                                                         CodePropertyKind.Custom) //additional data and custom properties rely on accessors
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        // do not apply the default value if the type is composed as the default value may not necessarily which type to use
+                                        .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                                         .OrderBy(static x => x.Name)) {
             writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
         }
@@ -316,11 +321,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.WriteLine(conventions.DocCommentStart);
             if(isDescriptionPresent)
                 writer.WriteLine($"{conventions.DocCommentPrefix}{RubyConventionService.RemoveInvalidDescriptionCharacters(code.Documentation.Description)}");
-            foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
+            foreach(var paramWithDescription in parametersWithDescription.OrderBy(static x => x.Name))
                 writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name} {RubyConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.Description)}");
             
             if(code.IsAsync)
-                writer.WriteLine($"{conventions.DocCommentPrefix}@return a CompletableFuture of {code.ReturnType.Name.ToSnakeCase()}");
+                writer.WriteLine($"{conventions.DocCommentPrefix}@return a Fiber of {code.ReturnType.Name.ToSnakeCase()}");
             else
                 writer.WriteLine($"{conventions.DocCommentPrefix}@return a {code.ReturnType.Name.ToSnakeCase()}");
             writer.WriteLine(conventions.DocCommentEnd);

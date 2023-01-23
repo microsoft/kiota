@@ -9,7 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for external documentation links on request execution methods (PHP Generation). [2038](https://github.com/microsoft/kiota/issues/2138)
+- Adds support for nullable reference types in dotnet for projects running Netstandard 2.1/Net 6.0 and above []()
+- Added support for multi-value headers to CLI generation. (Shell)
+
 ### Changed
+
+- Removes the ResponseHandler parameter in RequestAdapter to be a RequestOption in Python [#1857](https://github.com/microsoft/kiota/issues/1857)
+- Updated the client constructor to set the baseUrl path parameter from RequestAdapter's baseUrl(PHP) [#2129](https://github.com/microsoft/kiota/issues/2129)
+- The Lock file uses a project version coming from a Source Generator instead of the one looked up with reflection. [#2147](https://github.com/microsoft/kiota/issues/2147)
+- Fixed a bug in ruby where file names or paths could be too long to be packaged.
+- Fixed a bug where models descriptions would be undeterministic. [#2130](https://github.com/microsoft/kiota/issues/2130)
+- Fixed a bug in dotnet where default values for Enum properties with special characters would not match the model. [#2091](https://github.com/microsoft/kiota/issues/2091)
+- Sets the base url to make use of request information easier in CSharp/Java/TypeScript/Go/Ruby. [#2061](https://github.com/microsoft/kiota/issues/2061)
+- Renamed CreateXXXRequestInformation methods to ToXXXRequestInformation for a better auto-completion experience. [#2071](https://github.com/microsoft/kiota/issues/2071)
+- Renamed Go request adapter methods to remove the async suffix. [#2084](https://github.com/microsoft/kiota/issues/2084)
+- Fixed a bug where CLI query/header/path parameters would not be deduplicated. [#2059](https://github.com/microsoft/kiota/issues/2059)
 
 ## [0.10.0] - 2023-01-04
 

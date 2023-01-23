@@ -791,6 +791,92 @@ paths:
         Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "scope" && p.Kind == CodeParameterKind.Path));
     }
     [Fact]
+    public void DeduplicatesConflictingParameterNamesForCLI()
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["/test/{id}/results"] = new OpenApiPathItem
+                {
+                    Parameters = {
+                        new OpenApiParameter
+                        {
+                            Name = "id",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        new OpenApiParameter
+                        {
+                            Name = "id",
+                            In = ParameterLocation.Query,
+                            Required = false,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            },
+                        },
+                        new OpenApiParameter
+                        {
+                            Name = "id",
+                            In = ParameterLocation.Header,
+                            Required = false,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            },
+                        },
+                    },
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema {
+                                                Type = "object",
+                                                Properties = new Dictionary<string, OpenApiSchema>() {
+                                                    { "foo", new() {
+                                                            Type = "string"
+                                                        }
+                                                    }
+                                                },
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            },
+        };
+        var node = OpenApiUrlTreeNode.Create(document, "default");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = GenerationLanguage.Shell }, _httpClient);
+        builder.CreateUriSpace(document);//needed so the component index exists
+        var codeModel = builder.CreateSourceModel(node);
+        var resultsNS = codeModel.FindNamespaceByName("ApiSdk.test.item.results");
+        Assert.NotNull(resultsNS);
+        var resultsRequestBuilder = resultsNS.FindChildByName<CodeClass>("ResultsRequestBuilder");
+        Assert.NotNull(resultsRequestBuilder);
+        var parameters = resultsRequestBuilder
+            .Methods
+            .SingleOrDefault(cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == Builder.CodeDOM.HttpMethod.Get)?
+            .PathQueryAndHeaderParameters;
+        Assert.Equal(3, parameters.Count());
+        Assert.NotNull(parameters.SingleOrDefault(p => "id-query".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.QueryParameter));
+        Assert.Null(parameters.SingleOrDefault(p => "id".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.QueryParameter));
+        Assert.NotNull(parameters.SingleOrDefault(p => "id".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.Path));
+        Assert.Null(parameters.SingleOrDefault(p => "id-query".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.Path));
+        Assert.NotNull(parameters.SingleOrDefault(p => "id-header".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.Headers));
+        Assert.Null(parameters.SingleOrDefault(p => "id".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.Headers));
+    }
+    [Fact]
     public void Inline_Property_Inheritance_Is_Supported() {
         var resourceSchema = new OpenApiSchema {
             Type = "object",

@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.TypeScript;
 
@@ -625,17 +626,68 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("getPathParameters", result);
     }
     [Fact]
+    public void DoesNotWriteConstructorWithDefaultFromComposedType()
+    {
+        method.Kind = CodeMethodKind.Constructor;
+        var defaultValue = "\"Test Value\"";
+        var propName = "size";
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = unionTypeWrapper }
+        });
+        var sType = new CodeType
+        {
+            Name = "string",
+        };
+        var arrayType = new CodeType
+        {
+            Name = "array",
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(sType);
+        unionTypeWrapper.OriginalComposedType.AddType(arrayType);
+
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("constructor", result);
+        Assert.DoesNotContain(defaultValue, result);//ensure the composed type is not referenced
+    }
+    [Fact]
     public void WritesApiConstructor() {
         method.Kind = CodeMethodKind.ClientConstructor;
         method.IsAsync = false;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0";
+        parentClass.AddProperty(new CodeProperty {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType {
+                Name = "Dictionary<string, string>",
+                IsExternal = true,
+            }
+        });
         var coreProp = parentClass.AddProperty(new CodeProperty {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "HttpCore",
+                IsExternal = true,
+            }
         }).First();
-        coreProp.Type = new CodeType {
-            Name = "HttpCore",
-            IsExternal = true,
-        };
         method.AddParameter(new CodeParameter {
             Name = "core",
             Kind = CodeParameterKind.RequestAdapter,
@@ -648,6 +700,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("constructor", result);
         Assert.Contains("registerDefaultSerializer", result);
         Assert.Contains("registerDefaultDeserializer", result);
+        Assert.Contains($"[\"baseurl\"] = core.baseUrl", result);
+        Assert.Contains($"baseUrl = \"{method.BaseUrl}\"", result);
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore() {

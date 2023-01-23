@@ -92,6 +92,13 @@ namespace Kiota.Builder.Writers.Shell
             // parameters: (type, name, CodeParameter)
             var parameters = parametersList.Select(p =>
             {
+                // Assume headers are a list. Allows users to specify multiple header values.
+                // --header <val1> --header <val2>
+                if (p.IsOfKind(CodeParameterKind.Headers))
+                {
+                    p.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+                }
+
                 var type = conventions.GetTypeString(p.Type, p);
                 if (p.IsOfKind(CodeParameterKind.RequestBody))
                 {
@@ -523,7 +530,7 @@ namespace Kiota.Builder.Writers.Shell
                 foreach (var param in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.Headers)))
                 {
                     var paramName = string.IsNullOrEmpty(param.SerializationName) ? param.Name : param.SerializationName;
-                    writer.WriteLine($"requestInfo.Headers[\"{paramName}\"] = {NormalizeToIdentifier(param.Name).ToFirstCharacterLowerCase()};");
+                    writer.WriteLine($"requestInfo.Headers.Add(\"{paramName}\", {NormalizeToIdentifier(param.Name).ToFirstCharacterLowerCase()});");
                 }
             }
             else
