@@ -25,18 +25,11 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         _codeUsingWriter.WriteCodeElement(codeElement.StartBlock.Usings, codeElement.GetImmediateParentOfType<CodeNamespace>(), writer);
         var codeMethod = codeElement.OriginalLocalMethod;
 
-       
-        var returnType = conventions.GetTypeString(codeMethod.ReturnType, codeElement);
-        if (codeMethod.Kind == CodeMethodKind.Factory)
-        {
-            //returnType = $"DeserializeIntoModelFunction<{returnType}>";
-            //returnType = $"deserializeInto{returnType}";
-            returnType = "";
-        }
+        var returnType = codeMethod.Kind == CodeMethodKind.Factory ? conventions.GetTypeString(codeMethod.ReturnType, codeElement) : string.Empty;
         CodeMethodWriter.WriteMethodPrototypeInternal(codeElement.OriginalLocalMethod, writer, returnType, false, conventions, true);
 
         writer.IncreaseIndent();
-        
+
         localConventions = new TypeScriptConventionService(writer);
         switch (codeMethod.Kind)
         {
@@ -44,7 +37,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
                 WriteDeserializerFunction(codeElement, writer);
                 break;
             case CodeMethodKind.Serializer:
-                WriteSerializerFunction(codeElement, writer); 
+                WriteSerializerFunction(codeElement, writer);
                 break;
             case CodeMethodKind.Factory:
                 WriteDiscriminatorFunction(codeElement, writer);
@@ -56,7 +49,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     private void WriteDiscriminatorFunction(CodeFunction codeElement, LanguageWriter writer)
     {
         var returnType = conventions.GetTypeString(codeElement.OriginalLocalMethod.ReturnType, codeElement);
- 
+
         CodeMethodWriter.WriteDefensiveStatements(codeElement.OriginalLocalMethod, writer);
         WriteFactoryMethodBody(codeElement, returnType, writer);
     }
@@ -77,26 +70,24 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             writer.IncreaseIndent();
             foreach (var mappedType in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
             {
-                var typeName = conventions.GetTypeString(mappedType.Value, codeElement, false, writer);
                 writer.WriteLine($"case \"{mappedType.Key}\":");
                 writer.IncreaseIndent();
-                writer.WriteLine($"return {getDeserialization(codeElement, mappedType.Value.Name.ToFirstCharacterUpperCase())}");
+                writer.WriteLine($"return {getDeserializationFunction(codeElement, mappedType.Value.Name.ToFirstCharacterUpperCase())}");
                 writer.DecreaseIndent();
             }
             writer.CloseBlock();
             writer.CloseBlock();
             writer.CloseBlock();
         }
-        var s = getDeserialization(codeElement, returnType);
+        var s = getDeserializationFunction(codeElement, returnType);
         writer.WriteLine($"return {s.ToFirstCharacterLowerCase()};");
     }
 
-    private string getDeserialization(CodeElement codeElement, string returnType)
+    private string getDeserializationFunction(CodeElement codeElement, string returnType)
     {
         var parent = (codeElement.Parent as CodeNamespace).FindChildByName<CodeFunction>($"deserializeInto{returnType}");
 
-        var s = conventions.GetTypeString(new CodeType { TypeDefinition = parent }, codeElement, false);
-        return s;
+        return conventions.GetTypeString(new CodeType { TypeDefinition = parent }, codeElement, false);
     }
 
     private void WriteSerializerFunction(CodeFunction codeElement, LanguageWriter writer)
@@ -118,7 +109,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         }
 
         writer.DecreaseIndent();
-
     }
 
     private static bool IsCodePropertyCollectionOfEnum(CodeProperty property)
@@ -152,7 +142,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             writer.WriteLine($"writer.{serializationName}(\"{codeProperty.SerializationName ?? codePropertyName}\", {spreadOperator}{modelParamName}.{codePropertyName});");
         }
         writer.DecreaseIndent();
-
     }
 
     private string GetSerializationMethodName(CodeTypeBase propType, string modelParamName)
@@ -211,7 +200,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
         writer.DecreaseIndent();
         writer.WriteLine("}");
-
     }
 
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeFunction codeFunction)
@@ -227,15 +215,12 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
                     return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>()";
                 else
                 {
-                    //var name = getSerializerAlias(propType as CodeType, codeFunction, $"deserializeInto{(propType as CodeType).TypeDefinition.Name}");
-                    //return $"getCollectionOfObjectValues<{propertyType}>({name})";
                     return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, codeFunction.OriginalLocalMethod)})";
                 }
         }
         return propertyType switch
         {
             "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration" => $"get{propertyType.ToFirstCharacterUpperCase()}Value()",
-            //_ => $"getObjectValue<{propertyType}>({getSerializerAlias(propType as CodeType, codeFunction, $"deserializeInto{(propType as CodeType).TypeDefinition.Name}")})",
             _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, codeFunction.OriginalLocalMethod)})"
         };
     }
@@ -260,7 +245,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         }
         throw new InvalidOperationException($"Unable to find factory method for {targetClassName}");
     }
-
 
     private string getSerializerAlias(CodeType propType, CodeFunction codeFunction, string propertySerializerName)
     {
