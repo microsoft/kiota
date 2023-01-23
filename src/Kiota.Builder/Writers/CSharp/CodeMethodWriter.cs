@@ -89,8 +89,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     private static readonly CodePropertyTypeComparer CodePropertyTypeForwardComparer = new();
     private static readonly CodePropertyTypeComparer CodePropertyTypeBackwardComparer = new(true);
     private void WriteFactoryMethodBodyForInheritedModel(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
-        writer.WriteLine($"return {DiscriminatorMappingVarName} switch {{");
-        writer.IncreaseIndent();
+        writer.StartBlock($"return {DiscriminatorMappingVarName} switch {{");
         foreach(var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings) {
             writer.WriteLine($"\"{mappedType.Key}\" => new {conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}(),");
         }
