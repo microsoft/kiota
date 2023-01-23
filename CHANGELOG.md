@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for external documentation links on request execution methods (PHP Generation). [2038](https://github.com/microsoft/kiota/issues/2138)
 - Adds support for nullable reference types in dotnet for projects running Netstandard 2.1/Net 6.0 and above []()
 - Added support for multi-value headers to CLI generation. (Shell)
+- Add support for multi-value headers for PHP Generation. [#2052](https://github.com/microsoft/kiota/issues/2052)
 
 ### Changed
 
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed CreateXXXRequestInformation methods to ToXXXRequestInformation for a better auto-completion experience. [#2071](https://github.com/microsoft/kiota/issues/2071)
 - Renamed Go request adapter methods to remove the async suffix. [#2084](https://github.com/microsoft/kiota/issues/2084)
 - Fixed a bug where CLI query/header/path parameters would not be deduplicated. [#2059](https://github.com/microsoft/kiota/issues/2059)
+- Removes unused generated import for PHP Generation.
 
 ## [0.10.0] - 2023-01-04
 
