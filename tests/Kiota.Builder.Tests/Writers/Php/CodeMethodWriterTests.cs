@@ -210,17 +210,6 @@ namespace Kiota.Builder.Tests.Writers.Php
                 },
                 Kind = CodeMethodKind.RequestExecutor
             };
-            codeMethod.AddParameter(new CodeParameter
-            {
-                Name = "ResponseHandler",
-                Kind = CodeParameterKind.ResponseHandler,
-                Optional = true,
-                Type = new CodeType
-                {
-                    Name = "ResponseHandler",
-                    IsNullable = true
-                }
-            });
             var codeMethodRequestGenerator = new CodeMethod
             {
                 Kind = CodeMethodKind.RequestGenerator,
@@ -254,7 +243,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("@link https://learn.microsoft.com/ Learning", result);
             Assert.Contains("catch(Exception $ex)", result);
             Assert.Contains("'403' => [Error403::class, 'createFromDiscriminatorValue']", result);
-            Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, StreamInterface::class, $responseHandler, $errorMappings);", result);
+            Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, StreamInterface::class, $errorMappings);", result);
         }
         
         public static IEnumerable<object[]> SerializerProperties => new List<object[]>

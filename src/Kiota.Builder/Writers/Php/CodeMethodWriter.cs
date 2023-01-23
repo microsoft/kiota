@@ -482,16 +482,8 @@ namespace Kiota.Builder.Writers.Php
             var finalReturn = string.IsNullOrEmpty(returnWithCustomType) && !returnsVoid
                 ? $", '{returnType}'"
                 : returnWithCustomType;
-            if (codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
-            {
-                writer.WriteLine(
-                    $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}{finalReturn}, $responseHandler, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
-            }
-            else
-            {
-                writer.WriteLine(
-                    $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}{finalReturn}, null, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
-            }
+            writer.WriteLine(
+                $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}{finalReturn}, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
 
             writer.DecreaseIndent();
             writer.WriteLine("} catch(Exception $ex) {");
