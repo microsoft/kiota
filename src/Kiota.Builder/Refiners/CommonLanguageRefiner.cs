@@ -436,7 +436,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Name = "serializationHint",
                 Type = new CodeType { 
                     Name = "string" , 
-                    IsExternal = true
+                    IsExternal = true,
                 },
                 Documentation = new() {
                     Description = "Serialization hint for the current wrapper.",

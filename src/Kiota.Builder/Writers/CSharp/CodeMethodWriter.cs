@@ -378,7 +378,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         };
         writer.WriteLine($"{prefix}await RequestAdapter.{GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, {errorMappingVarName}, cancellationToken);");
         if (codeElement.ReturnType.IsCollection)
-            writer.WriteLine("return collectionResult.ToList();");
+            writer.WriteLine("return collectionResult?.ToList();");
     }
     private const string RequestInfoVarName = "requestInfo";
     private const string RequestConfigVarName = "requestConfig";

@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.CodeDOM;
+﻿using System;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp;
@@ -8,8 +9,11 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
         var propertyType = conventions.GetTypeString(codeElement.Type, codeElement);
-        var isNullableReferenceType = !propertyType.EndsWith("?") 
-                                      && codeElement.IsOfKind(CodePropertyKind.Custom,CodePropertyKind.QueryParameter);// Other property types are apropriately constructor initialized
+        var isNullableReferenceType = !propertyType.EndsWith("?", StringComparison.OrdinalIgnoreCase) 
+                                      && codeElement.IsOfKind(
+                                            CodePropertyKind.Custom,
+                                            CodePropertyKind.QueryParameter,
+                                            CodePropertyKind.SerializationHint);// Other property types are appropriately constructor initialized
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         if (isNullableReferenceType)
         {
