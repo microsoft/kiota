@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed minor typo in adding Accept header for PHP.
 - Fixed a bug with null reference types and composed types in CSharp.
+- Fixed a bug where reserved names replacement wouldn't check whether the name was already in use (all languages).
 - Removes the ResponseHandler parameter in RequestAdapter to be a RequestOption in Python [#1857](https://github.com/microsoft/kiota/issues/1857)
 - Updated the client constructor to set the baseUrl path parameter from RequestAdapter's baseUrl(PHP) [#2129](https://github.com/microsoft/kiota/issues/2129)
 - The Lock file uses a project version coming from a Source Generator instead of the one looked up with reflection. [#2147](https://github.com/microsoft/kiota/issues/2147)
