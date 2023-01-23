@@ -17,15 +17,15 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         if (isNullableReferenceType)
         {
-            writer.WriteLine($"#if {CSharpConventionService.NullableEnableDirective}",false);
+            CSharpConventionService.WriteNullableOpening(writer);
             WritePropertyInternal(codeElement, writer, $"{propertyType}?");
-            writer.WriteLine("#else",false);
+            CSharpConventionService.WriteNullableMiddle(writer);
         }
         
         WritePropertyInternal(codeElement, writer, propertyType);// Always write the normal way
         
         if (isNullableReferenceType)
-            writer.WriteLine("#endif",false);
+            CSharpConventionService.WriteNullableClosing(writer);
     }
 
     private void WritePropertyInternal(CodeProperty codeElement, LanguageWriter writer, string propertyType)

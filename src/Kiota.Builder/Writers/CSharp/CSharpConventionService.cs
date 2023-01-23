@@ -14,9 +14,20 @@ namespace Kiota.Builder.Writers.CSharp {
         public override string DocCommentPrefix => "/// ";
         private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset", "TimeSpan", "Date","Time", "sbyte", "byte" };
         public const char NullableMarker = '?';
-        public const string NullableEnableDirective = "NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER";
         public static string NullableMarkerAsString => "?";
         public override string ParseNodeInterfaceName => "IParseNode";
+
+        public static void WriteNullableOpening(LanguageWriter writer) {
+            writer.WriteLine($"#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER",false);
+            writer.WriteLine($"#nullable enable",false);
+        }
+        public static void WriteNullableMiddle(LanguageWriter writer) {
+            writer.WriteLine($"#nullable restore",false);
+            writer.WriteLine("#else", false);
+        }
+        public static void WriteNullableClosing(LanguageWriter writer) {
+            writer.WriteLine("#endif", false);
+        }
         public override void WriteShortDescription(string description, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(description))
                 writer.WriteLine($"{DocCommentPrefix}<summary>{description.CleanupXMLString()}</summary>");

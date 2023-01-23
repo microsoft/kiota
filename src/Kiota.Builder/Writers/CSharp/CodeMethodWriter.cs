@@ -564,15 +564,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                                                                         GetParameterSignatureWithNullableRefType(p,code): 
                                                                                         conventions.GetParameterSignature(p, code))
                                                           .ToList());
-            writer.WriteLine($"#if {CSharpConventionService.NullableEnableDirective}",false);
+            CSharpConventionService.WriteNullableOpening(writer);
             writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnTypeWithNullable}{methodName}({nullableParameters}){baseSuffix} {{");
-            writer.WriteLine("#else",false);
+            CSharpConventionService.WriteNullableMiddle(writer);
         }
         
         writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
         
         if (includeNullableReferenceType)
-            writer.WriteLine("#endif",false);
+            CSharpConventionService.WriteNullableClosing(writer);
 
     }
 
