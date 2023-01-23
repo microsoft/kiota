@@ -398,7 +398,7 @@ namespace Kiota.Builder.Writers.Php
         private void WriteAcceptHeaderDef(CodeMethod codeMethod, LanguageWriter writer)
         {
             if(codeMethod.AcceptedResponseTypes.Any())
-                writer.WriteLine($"{RequestInfoVarName}->headers->addHeader('Accept', \"{string.Join(", ", codeMethod.AcceptedResponseTypes)}\");");
+                writer.WriteLine($"{RequestInfoVarName}->addHeader('Accept', \"{string.Join(", ", codeMethod.AcceptedResponseTypes)}\");");
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method) {
             var inherits = parentClass.StartBlock?.Inherits != null;
