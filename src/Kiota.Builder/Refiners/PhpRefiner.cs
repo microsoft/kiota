@@ -140,8 +140,6 @@ public class PhpRefiner: CommonLanguageRefiner
             "Microsoft\\Kiota\\Abstractions", "ResponseHandler"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(static y => y.IsOfKind(CodePropertyKind.AdditionalData)),
             "Microsoft\\Kiota\\Abstractions\\Serialization", "AdditionalDataHolder"),
-        new (static x => x is CodeProperty property && property.IsOfKind(CodePropertyKind.Headers),
-        "Microsoft\\Kiota\\Abstractions","RequestHeaders"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             "Microsoft\\Kiota\\Abstractions\\Serialization", "SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
@@ -190,13 +188,10 @@ public class PhpRefiner: CommonLanguageRefiner
         } else if (currentProperty.Type?.Name?.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) ?? false)
         {
             currentProperty.Type.Name = "DateTime";
-        } else if (currentProperty.IsOfKind(CodePropertyKind.Options))
+        } else if (currentProperty.IsOfKind(CodePropertyKind.Options, CodePropertyKind.Headers))
         {
             currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
             currentProperty.Type.Name = "array";
-        } else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
-        {
-            currentProperty.DefaultValue = $"new {currentProperty.Type?.Name}()";
         }
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
