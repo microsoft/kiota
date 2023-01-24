@@ -5,13 +5,11 @@ using Microsoft.OpenApi.Validations;
 namespace Kiota.Builder.Validation;
 
 public static class ValidationRuleSetExtensions {
+    public const string AllValidationRule = "all";
     public static void AddKiotaValidationRules(this ValidationRuleSet ruleSet, GenerationConfiguration configuration) {
         ArgumentNullException.ThrowIfNull(ruleSet);
         configuration ??= new();
-        if (configuration.DisabledValidationRules.Contains("all")) {
-            ruleSet.Rules.Clear();
-            return;
-        }
+        if (configuration.DisabledValidationRules.Contains(AllValidationRule)) return;
         
         ruleSet.AddRuleIfEnabled(configuration, new NoServerEntry());
         ruleSet.AddRuleIfEnabled(configuration, new MultipleServerEntries());
