@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
@@ -966,6 +967,49 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("$this->pathParameters = array_merge($this->pathParameters, $urlTplParams);", result);
         }
         
+            [Fact]
+    public void WritesModelFactoryBodyForIntersectionModels() {
+        var wrapper = AddIntersectionTypeWrapper();
+        var factoryMethod = wrapper.AddMethod(new CodeMethod{
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType {
+                Name = "IntersectionTypeWrapper",
+                TypeDefinition = wrapper,
+            },
+            IsAsync = false,
+            IsStatic = true,
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType {
+                Name = "ParseNode"
+            }
+        });
+        _refiner.Refine(root, new CancellationToken(false));
+        languageWriter.Write(factoryMethod);
+        var result = stringWriter.ToString();
+        Assert.DoesNotContain("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\")", result);
+        Assert.DoesNotContain("if ($mappingValueNode != null) {", result);
+        Assert.DoesNotContain("$mappingValue = mappingValueNode->getStringValue()", result);
+        Assert.DoesNotContain("if mappingValue != null {", result);
+        Assert.DoesNotContain("switch (mappingValue) {", result);
+        Assert.DoesNotContain("case \"ns.childmodel\": return new ChildModel();", result);
+        Assert.Contains("$result = new IntersectionTypeWrapper();", result);
+        Assert.Contains("ifs (\"#kiota.complexType1\" === $mappingValue) {", result);
+        Assert.Contains("$result->setComplexType1Value(new ComplexType1())", result);
+        Assert.Contains("$result->setComplexType3Value(new ComplexType3())", result);
+        Assert.Contains("if ($parseNode->getStringValue() !== null) {", result);
+        Assert.Contains("$result->setStringValue($parseNode->getStringValue())", result);
+        Assert.Contains("else if ($parseNode->getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue']) != null) {", result);
+        Assert.Contains("result->setComplexType2Value($parseNode->getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue']))", result);
+        Assert.Contains("return $result", result);
+        Assert.DoesNotContain("return new IntersectionTypeWrapper()", result);
+        AssertExtensions.Before("$parseNode->getStringValue()", "getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue'])", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+        
         [Fact]
         public async void WriteFactoryMethod()
         {
@@ -1011,7 +1055,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             languageWriter.Write(factoryMethod);
             var result = stringWriter.ToString();
             Assert.Contains("case 'childModel': return new ChildModel();", result);
-            Assert.Contains("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\");", result);
+            Assert.Contains("$mappingValueNodes = $parseNode->getChildNode(\"@odata.type\");", result);
         }
         [Fact]
         public async void WriteApiConstructor()
@@ -1216,6 +1260,233 @@ namespace Kiota.Builder.Tests.Writers.Php
 
             Assert.Contains("public function setBinaryContent(?StreamInterface $value): void", result);
             Assert.Contains("public function getBinaryContent(): ?StreamInterface", result);
+        }
+        private CodeClass AddIntersectionTypeWrapper() {
+            var complexType1 = root.AddClass(new CodeClass
+            {
+                Name = "ComplexType1",
+                Kind = CodeClassKind.Model,
+            }).First();
+            var complexType2 = root.AddClass(new CodeClass
+            {
+                Name = "ComplexType2",
+                Kind = CodeClassKind.Model,
+            }).First();
+            var complexType3 = root.AddClass(new CodeClass
+            {
+                Name = "ComplexType3",
+                Kind = CodeClassKind.Model,
+            }).First();
+            var intersectionTypeWrapper = root.AddClass(new CodeClass
+            {
+                Name = "IntersectionTypeWrapper",
+                Kind = CodeClassKind.Model,
+                OriginalComposedType = new CodeIntersectionType {
+                    Name = "IntersectionTypeWrapper",
+                },
+                DiscriminatorInformation = new() {
+                    DiscriminatorPropertyName = "@odata.type",
+                },
+            }).First();
+            var cType1 = new CodeType {
+                Name = "ComplexType1",
+                TypeDefinition = complexType1
+            };
+            var cType2 = new CodeType {
+                Name = "ComplexType2",
+                TypeDefinition = complexType2,
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+            };
+            var cType3 = new CodeType {
+                Name = "ComplexType3",
+                TypeDefinition = complexType3
+            };
+            intersectionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType {
+                Name = "ComplexType1",
+                TypeDefinition = cType1
+            });
+            intersectionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType2", new CodeType {
+                Name = "ComplexType2",
+                TypeDefinition = cType2
+            });
+            intersectionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType3", new CodeType {
+                Name = "ComplexType3",
+                TypeDefinition = cType3
+            });
+            var sType = new CodeType {
+                Name = "string",
+            };
+            intersectionTypeWrapper.OriginalComposedType.AddType(cType1);
+            intersectionTypeWrapper.OriginalComposedType.AddType(cType2);
+            intersectionTypeWrapper.OriginalComposedType.AddType(cType3);
+            intersectionTypeWrapper.OriginalComposedType.AddType(sType);
+            intersectionTypeWrapper.AddProperty(new CodeProperty {
+                Name = "ComplexType1Value",
+                Type = cType1,
+                Kind = CodePropertyKind.Custom,
+                Setter = new CodeMethod {
+                    Name = "SetComplexType1Value",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
+                    Kind = CodeMethodKind.Setter,
+                },
+                Getter = new CodeMethod {
+                    Name = "GetComplexType1Value",
+                    ReturnType = cType1,
+                    Kind = CodeMethodKind.Getter,
+                }
+            });
+            intersectionTypeWrapper.AddProperty(new CodeProperty {
+                Name = "ComplexType2Value",
+                Type = cType2,
+                Kind = CodePropertyKind.Custom,
+                Setter = new CodeMethod {
+                    Name = "SetComplexType2Value",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
+                    Kind = CodeMethodKind.Setter,
+                },
+                Getter = new CodeMethod {
+                    Name = "GetComplexType2Value",
+                    ReturnType = cType2,
+                    Kind = CodeMethodKind.Getter,
+                }
+            });
+            intersectionTypeWrapper.AddProperty(new CodeProperty {
+                Name = "ComplexType3Value",
+                Type = cType3,
+                Kind = CodePropertyKind.Custom,
+                Setter = new CodeMethod {
+                    Name = "SetComplexType3Value",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
+                    Kind = CodeMethodKind.Setter,
+                },
+                Getter = new CodeMethod {
+                    Name = "GetComplexType3Value",
+                    ReturnType = cType3,
+                    Kind = CodeMethodKind.Getter,
+                }
+            });
+            intersectionTypeWrapper.AddProperty(new CodeProperty {
+                Name = "StringValue",
+                Type = sType,
+                Kind = CodePropertyKind.Custom,
+                Setter = new CodeMethod {
+                    Name = "SetStringValue",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
+                    Kind = CodeMethodKind.Setter,
+                },
+                Getter = new CodeMethod {
+                    Name = "GetStringValue",
+                    ReturnType = sType,
+                    Kind = CodeMethodKind.Getter,
+                }
+            });
+            return intersectionTypeWrapper;
+        }
+        private CodeClass AddUnionTypeWrapper() {
+            var complexType1 = root.AddClass(new CodeClass
+            {
+                Name = "ComplexType1",
+                Kind = CodeClassKind.Model,
+            }).First();
+            var complexType2 = root.AddClass(new CodeClass
+            {
+                Name = "ComplexType2",
+                Kind = CodeClassKind.Model,
+            }).First();
+            var unionTypeWrapper = root.AddClass(new CodeClass
+            {
+                Name = "UnionTypeWrapper",
+                Kind = CodeClassKind.Model,
+                OriginalComposedType = new CodeUnionType {
+                    Name = "UnionTypeWrapper",
+                },
+                DiscriminatorInformation = new() {
+                    DiscriminatorPropertyName = "@odata.type",
+                },
+            }).First();
+            var cType1 = new CodeType {
+                Name = "ComplexType1",
+                TypeDefinition = complexType1
+            };
+            var cType2 = new CodeType {
+                Name = "ComplexType2",
+                TypeDefinition = complexType2,
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+            };
+            var sType = new CodeType {
+                Name = "string",
+            };
+            unionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType {
+                Name = "ComplexType1",
+                TypeDefinition = cType1
+            });
+            unionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType2", new CodeType {
+                Name = "ComplexType2",
+                TypeDefinition = cType2
+            });
+            unionTypeWrapper.OriginalComposedType.AddType(cType1);
+            unionTypeWrapper.OriginalComposedType.AddType(cType2);
+            unionTypeWrapper.OriginalComposedType.AddType(sType);
+            unionTypeWrapper.AddProperty(new CodeProperty {
+                Name = "ComplexType1Value",
+                Type = cType1,
+                Kind = CodePropertyKind.Custom,
+                Setter = new CodeMethod {
+                    Name = "SetComplexType1Value",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
+                    Kind = CodeMethodKind.Setter,
+                },
+                Getter = new CodeMethod {
+                    Name = "GetComplexType1Value",
+                    ReturnType = cType1,
+                    Kind = CodeMethodKind.Getter,
+                }
+            });
+            unionTypeWrapper.AddProperty(new CodeProperty {
+                Name = "ComplexType2Value",
+                Type = cType2,
+                Kind = CodePropertyKind.Custom,
+                Setter = new CodeMethod {
+                    Name = "SetComplexType2Value",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
+                    Kind = CodeMethodKind.Setter,
+                },
+                Getter = new CodeMethod {
+                    Name = "GetComplexType2Value",
+                    ReturnType = cType2,
+                    Kind = CodeMethodKind.Getter,
+                }
+            });
+            unionTypeWrapper.AddProperty(new CodeProperty {
+                Name = "StringValue",
+                Type = sType,
+                Kind = CodePropertyKind.Custom,
+                Setter = new CodeMethod {
+                    Name = "SetStringValue",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
+                    Kind = CodeMethodKind.Setter,
+                },
+                Getter = new CodeMethod {
+                    Name = "GetStringValue",
+                    ReturnType = sType,
+                    Kind = CodeMethodKind.Getter,
+                }
+            });
+            return unionTypeWrapper; 
         }
     }
 }
