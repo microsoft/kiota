@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Removed response handler parameter from PHP request executor methods. [1856](https://github.com/microsoft/kiota/issues/1856)
 - Fixed minor typo in adding Accept header for PHP.
 - Fixed a bug with null reference types and composed types in CSharp.
 - Fixed a bug where reserved names replacement wouldn't check whether the name was already in use (all languages).
