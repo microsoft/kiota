@@ -33,6 +33,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new PythonReservedNamesProvider(), x => $"{x}_escaped"
             );
             cancellationToken.ThrowIfCancellationRequested();
+            MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
