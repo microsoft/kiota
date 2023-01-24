@@ -260,7 +260,7 @@ kiota generate --deserializer Contoso.Json.CustomDeserializer
 
 #### `--disable-validation-rules (--dvr)`
 
-The name of the OpenAPI description validation rule to disable. Or `all` to disable all validation rules.
+The name of the OpenAPI description validation rule to disable. Or `all` to disable all validation rules including the rules defined in OpenAPI.net.
 
 Kiota runs a set of validation rules before generating the client to ensure the description contains accurate information to build great client experience.
 
