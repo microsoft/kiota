@@ -187,6 +187,17 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void ReplaceReservedNamespaceTypeNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) => 
         ReplaceReservedNames(current, provider, replacement, shouldReplaceCallback: codeElement => codeElement is CodeNamespace || codeElement is CodeClass);
 
+    private static Func<string, string> CheckReplacementNameIsNotAlreadyInUse(CodeNamespace parentNamespace, CodeElement originalItem, Func<string, string> replacement) {
+        var newReplacement = replacement;
+        var index = 0;
+        while(true) {
+            if (index > 0)
+                newReplacement = name => $"{replacement(name)}{index}";
+            if (parentNamespace.FindChildByName<CodeElement>(newReplacement(originalItem.Name), false) is null)
+                return newReplacement;
+            index++;
+        }
+    }
     protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type> codeElementExceptions = null, Func<CodeElement, bool> shouldReplaceCallback = null) {
         var shouldReplace = shouldReplaceCallback?.Invoke(current) ?? true;
         var isNotInExceptions = !codeElementExceptions?.Contains(current.GetType()) ?? true;
@@ -194,6 +205,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             isNotInExceptions &&
             shouldReplace &&
             currentClass.StartBlock is ClassDeclaration currentDeclaration) {
+            replacement = CheckReplacementNameIsNotAlreadyInUse(currentClass.GetImmediateParentOfType<CodeNamespace>(), current, replacement);
             ReplaceReservedCodeUsingDeclarationNames(currentDeclaration, provider, replacement);
             // if we are don't have a CodeNamespace exception, the namespace segments are also being replaced
             // in the CodeNamespace if-block so we also need to update the using references
@@ -436,7 +448,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Name = "serializationHint",
                 Type = new CodeType { 
                     Name = "string" , 
-                    IsExternal = true
+                    IsExternal = true,
                 },
                 Documentation = new() {
                     Description = "Serialization hint for the current wrapper.",

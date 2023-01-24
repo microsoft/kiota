@@ -400,7 +400,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
         Assert.Contains("{\"4XX\", Error4XX.CreateFromDiscriminatorValue},", result);
         Assert.Contains("SendCollectionAsync", result);
-        Assert.Contains("return collectionResult.ToList()", result);
+        Assert.Contains("return collectionResult?.ToList()", result);
         Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
         AssertExtensions.CurlyBracesAreClosed(result,1);
     }

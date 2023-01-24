@@ -138,7 +138,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         }
         return true;
     });
-    protected bool NoColors => consoleNoColors.Value;
+    protected bool ColorsEnabled => consoleNoColors.Value;
     
     private void DisplayHint(params string[] messages) {
         if(TutorialMode) {
@@ -149,11 +149,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     private void DisplayMessages(ConsoleColor color, params string[] messages) {
         if (SwapColors)
             color = Enum.GetValues<ConsoleColor>()[ConsoleColor.White - color];
-        if (!NoColors)
+        if (ColorsEnabled)
             Console.ForegroundColor = color;
         foreach(var message in messages)
             Console.WriteLine(message);
-        if (!NoColors)
+        if (ColorsEnabled)
             Console.ResetColor();
     }
     protected void DisplayError(params string[] messages) {
