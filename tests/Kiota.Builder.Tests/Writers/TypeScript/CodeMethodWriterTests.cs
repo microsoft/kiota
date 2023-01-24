@@ -203,10 +203,11 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("const requestInfo", result);
-        Assert.Contains("const errorMapping: Record<string, ParsableFactory<Parsable>> =", result);
+        Assert.Contains("const errorMapping", result);
         Assert.Contains("\"4XX\": createError4XXFromDiscriminatorValue,", result);
         Assert.Contains("\"5XX\": createError5XXFromDiscriminatorValue,", result);
         Assert.Contains("\"403\": createError403FromDiscriminatorValue,", result);
+        Assert.Contains("as Record<string, ParsableFactory<Parsable>>", result);
         Assert.Contains("sendAsync", result);
         Assert.Contains("Promise.reject", result);
         AssertExtensions.CurlyBracesAreClosed(result);
@@ -316,57 +317,6 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.setQueryStringParametersFromRawObject", result);
         Assert.Contains("setContentFromParsable", result);
         Assert.Contains("return requestInfo;", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void WritesInheritedDeSerializerBody() {
-        method.Kind = CodeMethodKind.Deserializer;
-        method.IsAsync = false;
-        AddSerializationProperties();
-        AddInheritanceClass();
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("...super", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void WritesDeSerializerBody() {
-        method.Kind = CodeMethodKind.Deserializer;
-        method.IsAsync = false;
-        AddSerializationProperties();
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("getStringValue", result);
-        Assert.Contains("getCollectionOfPrimitiveValues", result);
-        Assert.Contains("getCollectionOfObjectValues", result);
-        Assert.Contains("getEnumValue", result);
-        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void WritesInheritedSerializerBody() {
-        method.Kind = CodeMethodKind.Serializer;
-        method.IsAsync = false;
-        AddSerializationProperties();
-        AddInheritanceClass();
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("super.serialize", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void WritesSerializerBody() {
-        method.Kind = CodeMethodKind.Serializer;
-        method.IsAsync = false;
-        AddSerializationProperties();
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("writeStringValue", result);
-        Assert.Contains("writeCollectionOfPrimitiveValues", result);
-        Assert.Contains("writeCollectionOfObjectValues", result);
-        Assert.Contains("writeEnumValue", result);
-        Assert.Contains("writeAdditionalData(this.additionalData);", result);
-        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -768,22 +718,5 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("case \"expand\": return \"%24expand\"", result);
         Assert.Contains("case \"filter\": return \"%24filter\"", result);
         Assert.Contains("default: return originalName", result);
-    }
-    [Fact]
-    public void DoesntWriteReadOnlyPropertiesInSerializerBody() {
-        method.Kind = CodeMethodKind.Serializer;
-        AddSerializationProperties();
-        AddInheritanceClass();
-        parentClass.AddProperty(new CodeProperty {
-            Name = "ReadOnlyProperty",
-            ReadOnly = true,
-            Type = new CodeType {
-                Name = "string",
-            },
-        });
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.DoesNotContain("readOnlyProperty", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
     }
 }

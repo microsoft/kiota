@@ -71,8 +71,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 WriteQueryParametersMapper(codeElement, parentClass, writer);
                 break;
             case CodeMethodKind.Factory:
-                //throw new InvalidOperationException("Factory methods are implemented as functions in TypeScript");
-                break;
+                throw new InvalidOperationException("Factory methods are implemented as functions in TypeScript");
             case CodeMethodKind.RawUrlConstructor:
                 throw new InvalidOperationException("RawUrlConstructor is not supported as typescript relieeas on union types.");
             case CodeMethodKind.RequestBuilderBackwardCompatibility:

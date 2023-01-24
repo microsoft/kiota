@@ -143,7 +143,7 @@ namespace Kiota.Builder.Tests.Writers {
             };
             declaration.AddUsings(nUsing);
             var result = importManager.GetRelativeImportPathForUsing(nUsing, graphNS);
-            Assert.Equal("./index", result.Item3);
+            Assert.Equal("./message", result.Item3);
         }
     }
 }

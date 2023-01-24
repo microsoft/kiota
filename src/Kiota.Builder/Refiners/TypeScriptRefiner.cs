@@ -450,7 +450,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void CreateSerializationFunctions(CodeClass modelClass)
     {
-
         var namespaceOfModel = modelClass.GetImmediateParentOfType<CodeNamespace>();
 
         var serializerMethod = modelClass.Methods.FirstOrDefault(x => x.Kind == CodeMethodKind.Serializer);
@@ -469,7 +468,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Name = $"{ModelDeserializerPrefix}{modelClass.Name.ToFirstCharacterUpperCase()}",
         };
 
-        foreach (var codeUsing in modelClass.Usings.Where(x => x.Declaration.IsExternal))
+        foreach (var codeUsing in modelClass.Usings?.Where(x => x.Declaration.IsExternal))
         {
             deserializerFunction.AddUsing(codeUsing);
             serializerFunction.AddUsing(codeUsing);

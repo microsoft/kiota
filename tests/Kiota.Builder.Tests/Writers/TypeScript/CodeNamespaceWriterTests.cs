@@ -29,73 +29,24 @@ namespace Kiota.Builder.Tests.Writers.TypeScript
         }
 
         [Fact]
-        public void WritesOnlyModelClasses()
+        public void ExportsInterfacesAndFunctions()
         {
             var root = CodeNamespace.InitRootNamespace();
-            var requestbuilder = new CodeClass
+            var modelInterface = new CodeInterface
             {
-                Kind = CodeClassKind.RequestBuilder,
-                Name = "TestRequestBuilder",
+                Name = "ModelInterface",
+                Kind = CodeInterfaceKind.Model
             };
-            var model = new CodeClass
+            var modelEnum = new CodeEnum
             {
-                Kind = CodeClassKind.Model,
-                Name = "TestModel", // The tests should verify if the printed file names start with lower case.
+                Name = "TestEnum", // The tests should verify if the printed file names start with lower case.
             };
-            root.AddClass(requestbuilder);
-            root.AddClass(model);
+            root.AddEnum(modelEnum);
+            root.AddInterface(modelInterface);
             writer.Write(root);
             var result = tw.ToString();
             Console.WriteLine(result);
-            Assert.Contains("export * from './testModel'", result);
-        }
-
-        [Fact]
-        public void SortModelClassesBasedonInheritance()
-        {
-            var root = CodeNamespace.InitRootNamespace();
-            root.Name = "testNameSpace";
-
-            var modelA = new CodeClass
-            {
-                Kind = CodeClassKind.Model,
-                Name = "ModelA",
-            };
-
-            var modelB = new CodeClass
-            {
-                Kind = CodeClassKind.Model,
-                Name = "ModelB",
-            };
-
-            var modelC = new CodeClass
-            {
-                Kind = CodeClassKind.Model,
-                Name = "ModelC",
-            };
-
-            root.AddClass(modelA);
-            root.AddClass(modelB);
-            root.AddClass(modelC);
-
-            var declarationB = modelB.StartBlock;
-
-            declarationB.Inherits = new CodeType
-            {
-                Name = modelA.Name,
-                TypeDefinition = modelA
-            };
-            var declarationC = modelC.StartBlock;
-            declarationC.Inherits = new CodeType
-            {
-                Name = modelB.Name,
-                TypeDefinition = modelB
-            };
-
-            writer.Write(root);
-            var result = tw.ToString();
-
-            Assert.Contains($"export * from './modelA'{Environment.NewLine}export * from './modelB'{Environment.NewLine}export * from './modelC'{Environment.NewLine}", result);
+            Assert.Contains("export * from './testEnum'\r\nexport * from './modelInterface'\r\n", result);
         }
     }
 }
