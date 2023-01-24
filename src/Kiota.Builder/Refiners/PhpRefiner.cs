@@ -81,6 +81,7 @@ public class PhpRefiner: CommonLanguageRefiner
             CorrectBackingStoreSetterParam(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             AliasUsingWithSameSymbol(generatedCode);
+            RemoveHandlerFromRequestBuilder(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
     }
