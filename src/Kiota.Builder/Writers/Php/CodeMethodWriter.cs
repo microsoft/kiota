@@ -291,7 +291,7 @@ namespace Kiota.Builder.Writers.Php
                         CodeEnum enumType => $"getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
                         _ => $"getCollectionOfObjectValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"
                     };
-                if (currentType.TypeDefinition is CodeEnum)
+                else if (currentType.TypeDefinition is CodeEnum)
                     parseNodeMethod =  $"getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
             }
 
@@ -307,7 +307,7 @@ namespace Kiota.Builder.Writers.Php
                 _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"get{propertyType.ToFirstCharacterUpperCase()}Value()",
                 _ => $"getObjectValue([{propertyType.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'])",
             } : parseNodeMethod;
-            return $"{parseNodeMethod}";
+            return parseNodeMethod;
         }
 
         private void WriteSetterBody(LanguageWriter writer, CodeMethod codeElement)
@@ -409,27 +409,86 @@ namespace Kiota.Builder.Writers.Php
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method) {
             var inherits = parentClass.StartBlock?.Inherits != null;
+            if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+                WriteDeserializerBodyForUnionModel(method, parentClass, writer);
+            else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+                WriteDeserializerBodyForIntersectionModel(parentClass, writer);
+            else
+                WriteDeserializerBodyForInheritedModel(method, parentClass, writer, inherits);
+        }
+
+        private static readonly string DeserializerVarName = "$fieldDeserializers"; 
+        private void WriteDeserializerBodyForInheritedModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool inherits)
+        {
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
-            var implementsParsable = parentClass.StartBlock?.Inherits?.TypeDefinition is CodeClass codeClass &&
-                                     codeClass.IsOfKind(CodeClassKind.Model);
-            var canCallParent = inherits && parentClass.StartBlock != null && implementsParsable;
-            var currentObjectName = "$o";
-            writer.WriteLine($"{currentObjectName} = $this;");
-            writer.WriteLine($"return {(canCallParent ? "array_merge(parent::getFieldDeserializers()," : string.Empty)} [");
-            if(fieldToSerialize.Any()) {
-                writer.IncreaseIndent();
-                fieldToSerialize
+            var codeProperties = fieldToSerialize as CodeProperty[] ?? fieldToSerialize.ToArray();
+            writer.WriteLine("$o = $this;");
+            writer.WriteLines(
+                $"return {(inherits ? $"array_merge(parent::{method.Name.ToFirstCharacterLowerCase()}(), [" : " [" )}");
+            writer.IncreaseIndent();
+            if(codeProperties.Any()) {
+                codeProperties
                     .Where(static x => !x.ExistsInBaseType && x.Setter != null)
                     .OrderBy(static x => x.Name)
                     .Select(x => 
-                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => fn(ParseNode $n) => {currentObjectName}->{x.Setter.Name.ToFirstCharacterLowerCase()}($n->{GetDeserializationMethodName(x.Type, method)}),")
+                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => fn(ParseNode $n) => $o->{x.Setter.Name.ToFirstCharacterLowerCase()}($n->{GetDeserializationMethodName(x.Type, method)}),")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
-                writer.DecreaseIndent();
             }
-            writer.WriteLine($"]{(canCallParent ? ')': string.Empty )};");
+            writer.DecreaseIndent();
+            if (inherits)
+                writer.WriteLine("]);");
+            else
+                writer.WriteLine("];");
         }
-        
+
+        private static void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
+        {
+            var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && !x.Type.IsCollection)
+                .ToArray();
+            if(complexProperties.Any()) {
+                var propertiesNames = complexProperties
+                    .Select(static x => x.Getter.Name.ToFirstCharacterLowerCase())
+                    .OrderBy(static x => x)
+                    .ToArray();
+                var propertiesNamesAsConditions = propertiesNames
+                    .Select(static x => $"$this->{x}() !== null")
+                    .Aggregate(static (x, y) => $"{x} || {y}");
+                writer.StartBlock($"if ({propertiesNamesAsConditions}) {{");
+                var propertiesNamesAsArgument = propertiesNames
+                    .Select(static x => $"$this->{x}()")
+                    .Aggregate(static (x, y) => $"{x}, {y}");
+                writer.WriteLine($"return ParseNodeHelper::mergeDeserializersForIntersectionWrapper({propertiesNamesAsArgument});");
+                writer.CloseBlock();
+            }
+            writer.WriteLine($"return [];");
+        }
+
+        private static void WriteDeserializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
+        {
+            var includeElse = false;
+            var otherPropGetters = parentClass
+                .GetPropertiesOfKind(CodePropertyKind.Custom)
+                .Where(static x => !x.ExistsInBaseType)
+                .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
+                .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                .ThenBy(static x => x.Name)
+                .Select(static x => x.Getter.Name.ToFirstCharacterLowerCase())
+                .ToArray();
+            foreach (var otherPropGetter in otherPropGetters)
+            {
+                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ($this->{otherPropGetter}() != null) {{");
+                writer.WriteLine($"return $this->{otherPropGetter}()->{method.Name.ToFirstCharacterLowerCase()}();");
+                writer.DecreaseIndent();
+                if(!includeElse)
+                    includeElse = true;
+            }
+            if(otherPropGetters.Any())
+                writer.CloseBlock(decreaseIndent: false);
+            writer.WriteLine($"return [];");
+        }
+
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer) {
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"$this->{pathParametersProperty.Name}",
@@ -589,7 +648,7 @@ namespace Kiota.Builder.Writers.Php
             foreach(var property in otherProps) { 
                 if(property.Type is CodeType propertyType) { 
                     var deserializationMethodName = $"{ParseNodeVarName}->{GetDeserializationMethodName(propertyType, codeElement)}"; 
-                    writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ({deserializationMethodName} != null) {{"); 
+                    writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ({deserializationMethodName} !== null) {{"); 
                     writer.WriteLine($"{ResultVarName}->{property.Setter.Name.ToFirstCharacterLowerCase()}({deserializationMethodName});"); 
                     writer.DecreaseIndent();
                 } 
@@ -629,7 +688,7 @@ namespace Kiota.Builder.Writers.Php
             foreach(var property in otherProps) {
                 var propertyType = property.Type as CodeType;
                 var serializationMethodName = $"{parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, currentElement)}";
-                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ({serializationMethodName} != null) {{");
+                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ({serializationMethodName} !== null) {{");
                 writer.WriteLine($"{ResultVarName}->{property.Setter.Name.ToFirstCharacterLowerCase()}({serializationMethodName});");
                 writer.DecreaseIndent();
                 if(!includeElse)
@@ -639,11 +698,13 @@ namespace Kiota.Builder.Writers.Php
                 writer.CloseBlock(decreaseIndent: false);
         }
 
-        private static void WriteFactoryMethodBodyForInheritedModel(IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> discriminatorMappings, LanguageWriter writer)
+        private static void WriteFactoryMethodBodyForInheritedModel(IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> discriminatorMappings, LanguageWriter writer, string varName = default)
         {
-            writer.StartBlock($"switch ({DiscriminatorMappingVarName}) {{");
+            if (string.IsNullOrEmpty(varName))
+                varName = DiscriminatorMappingVarName;
+            writer.StartBlock($"switch ({varName}) {{");
             foreach(var mappedType in discriminatorMappings) {
-                writer.WriteLine($"case \"{mappedType.Key}\": return new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}();");
+                writer.WriteLine($"case '{mappedType.Key}': return new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}();");
             }
             writer.CloseBlock();
         }
@@ -653,9 +714,9 @@ namespace Kiota.Builder.Writers.Php
             foreach(var otherMethodName in parentClass.Methods.Where(static x => x.IsOverload && x.IsOfKind(CodeMethodKind.Factory))
                         .Select(static x => x.Name)
                         .OrderBy(static x => x, StringComparer.OrdinalIgnoreCase)) {
-                var varName = $"${otherMethodName}Result";
+                var varName = $"${otherMethodName}_result";
                 writer.WriteLine($"{varName} = {otherMethodName.ToFirstCharacterLowerCase()}({DiscriminatorMappingVarName});");
-                writer.StartBlock($"if ({varName} != null) {{");
+                writer.StartBlock($"if ({varName} !== null) {{");
                 writer.WriteLine($"return {varName};");
                 writer.CloseBlock();
             }
@@ -665,12 +726,14 @@ namespace Kiota.Builder.Writers.Php
             LanguageWriter writer)
         {
             var canParse = int.TryParse(factoryMethodIndexParser.Match(codeMethod.Name).Groups["idx"].Value,
-                out var value);
-            writer.WriteLine("HELLO FROM HERE.");
+                out var currentDiscriminatorPageIndex);
             if (canParse && codeMethod.Parameters.FirstOrDefault() is { } parameter)
             {
-                writer.WriteLine("HELLO FROM HERE.");
+                var takeValue = Math.Min(MaxDiscriminatorsPerMethod, parentClass.DiscriminatorInformation.DiscriminatorMappings.Count() - currentDiscriminatorPageIndex * MaxDiscriminatorsPerMethod);
+                var currentDiscriminatorPage = parentClass.DiscriminatorInformation.DiscriminatorMappings.Skip(currentDiscriminatorPageIndex * MaxDiscriminatorsPerMethod).Take(takeValue).OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase);
+                WriteFactoryMethodBodyForInheritedModel(currentDiscriminatorPage, writer, $"${parameter.Name.ToFirstCharacterLowerCase()}");
             }
+            writer.WriteLine("return null;");
         }
     }
 }

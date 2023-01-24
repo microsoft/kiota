@@ -652,7 +652,59 @@ namespace Kiota.Builder.Tests.Writers.Php
             else
                 Assert.Contains(expected, stringWriter.ToString());
         }
-
+        
+        [Fact]
+        public void WritesInheritedDeSerializerBody() {
+            method.Kind = CodeMethodKind.Deserializer;
+            method.IsAsync = false;
+            AddSerializationProperties();
+            AddInheritanceClass();
+            languageWriter.Write(method);
+            var result = stringWriter.ToString();
+            Assert.Contains("super.methodName()", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        
+        [Fact]
+        public void WritesUnionDeSerializerBody() {
+            var wrapper = AddUnionTypeWrapper();
+            var deserializationMethod = wrapper.AddMethod(new CodeMethod{
+                Name = "GetFieldDeserializers",
+                Kind = CodeMethodKind.Deserializer,
+                IsAsync = false,
+                ReturnType = new CodeType {
+                    Name = "array",
+                },
+            }).First();
+            languageWriter.Write(deserializationMethod);
+            var result = stringWriter.ToString();
+            Assert.DoesNotContain("final UnionTypeWrapper res =", result);
+            Assert.Contains("this.getComplexType1Value() != null", result);
+            Assert.Contains("return this.getComplexType1Value().getFieldDeserializers()", result);
+            Assert.Contains("new HashMap<String, Consumer<ParseNode>>()", result);
+            AssertExtensions.Before("return $this->getComplexType1Value()->getFieldDeserializers()", "new HashMap<String, Consumer<ParseNode>>", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
+        public void WritesIntersectionDeSerializerBody() {
+            var wrapper = AddIntersectionTypeWrapper();
+            var deserializationMethod = wrapper.AddMethod(new CodeMethod{
+                Name = "GetFieldDeserializers",
+                Kind = CodeMethodKind.Deserializer,
+                IsAsync = false,
+                ReturnType = new CodeType {
+                    Name = "Map<String, Consumer<ParseNode>>",
+                },
+            }).First();
+            languageWriter.Write(deserializationMethod);
+            var result = stringWriter.ToString();
+            Assert.DoesNotContain("final IntersectionTypeWrapper res =", result);
+            Assert.Contains("this.getComplexType1Value() != null || this.getComplexType3Value() != null", result);
+            Assert.Contains("return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", result);
+            Assert.Contains("new HashMap<String, Consumer<ParseNode>>()", result);
+            AssertExtensions.Before("return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", "new HashMap<String, Consumer<ParseNode>>()", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
         [Fact]
         public async Task WriteDeserializerMergeWhenHasParent()
         {
@@ -967,48 +1019,184 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("$this->pathParameters = array_merge($this->pathParameters, $urlTplParams);", result);
         }
         
-            [Fact]
-    public void WritesModelFactoryBodyForIntersectionModels() {
-        var wrapper = AddIntersectionTypeWrapper();
-        var factoryMethod = wrapper.AddMethod(new CodeMethod{
-            Name = "factory",
-            Kind = CodeMethodKind.Factory,
-            ReturnType = new CodeType {
-                Name = "IntersectionTypeWrapper",
-                TypeDefinition = wrapper,
-            },
-            IsAsync = false,
-            IsStatic = true,
-        }).First();
-        factoryMethod.AddParameter(new CodeParameter {
-            Name = "parseNode",
-            Kind = CodeParameterKind.ParseNode,
-            Type = new CodeType {
-                Name = "ParseNode"
-            }
-        });
-        _refiner.Refine(root, new CancellationToken(false));
-        languageWriter.Write(factoryMethod);
-        var result = stringWriter.ToString();
-        Assert.DoesNotContain("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\")", result);
-        Assert.DoesNotContain("if ($mappingValueNode != null) {", result);
-        Assert.DoesNotContain("$mappingValue = mappingValueNode->getStringValue()", result);
-        Assert.DoesNotContain("if mappingValue != null {", result);
-        Assert.DoesNotContain("switch (mappingValue) {", result);
-        Assert.DoesNotContain("case \"ns.childmodel\": return new ChildModel();", result);
-        Assert.Contains("$result = new IntersectionTypeWrapper();", result);
-        Assert.Contains("ifs (\"#kiota.complexType1\" === $mappingValue) {", result);
-        Assert.Contains("$result->setComplexType1Value(new ComplexType1())", result);
-        Assert.Contains("$result->setComplexType3Value(new ComplexType3())", result);
-        Assert.Contains("if ($parseNode->getStringValue() !== null) {", result);
-        Assert.Contains("$result->setStringValue($parseNode->getStringValue())", result);
-        Assert.Contains("else if ($parseNode->getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue']) != null) {", result);
-        Assert.Contains("result->setComplexType2Value($parseNode->getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue']))", result);
-        Assert.Contains("return $result", result);
-        Assert.DoesNotContain("return new IntersectionTypeWrapper()", result);
-        AssertExtensions.Before("$parseNode->getStringValue()", "getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue'])", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
+        [Fact]
+        public void WritesModelSplitFactoryBody() {
+            var parentModel = root.AddClass(new CodeClass {
+                Name = "parentModel",
+                Kind = CodeClassKind.Model,
+            }).First();
+            var childModel = root.AddClass(new CodeClass {
+                Name = "childModel",
+                Kind = CodeClassKind.Model,
+            }).First();
+            childModel.StartBlock.Inherits = new CodeType {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            };
+            var factoryMethod = parentModel.AddMethod(new CodeMethod {
+                Name = "factory",
+                Kind = CodeMethodKind.Factory,
+                ReturnType = new CodeType {
+                    Name = "parentModel",
+                    TypeDefinition = parentModel,
+                },
+                IsStatic = true,
+            }).First();
+            var factoryOverloadMethod = factoryMethod.Clone() as CodeMethod;
+            factoryOverloadMethod.Access = AccessModifier.Private;
+            factoryOverloadMethod.Name += "_1";
+            factoryOverloadMethod.OriginalMethod = factoryMethod;
+            factoryOverloadMethod.RemoveParametersByKind(CodeParameterKind.ParseNode);
+            factoryOverloadMethod.AddParameter(new CodeParameter {
+                Name = "value",
+                Type = new CodeType{
+                    Name = "String",
+                    IsNullable = true,
+                    IsExternal = true,
+                },
+                Optional = false,
+            });
+            parentModel.AddMethod(factoryOverloadMethod);
+            Enumerable.Range(0, 1500).ToList().ForEach(x => parentModel.DiscriminatorInformation.AddDiscriminatorMapping($"#microsoft.graph.{x}", new CodeType {
+                Name = $"microsoft.graph.{x}",
+                TypeDefinition = childModel,
+            }));
+            parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+            factoryMethod.AddParameter(new CodeParameter {
+                Name = "parseNode",
+                Kind = CodeParameterKind.ParseNode,
+                Type = new CodeType {
+                    Name = "ParseNode",
+                    TypeDefinition = new CodeClass {
+                        Name = "ParseNode",
+                    },
+                    IsExternal = true,
+                },
+                Optional = false,
+            });
+            languageWriter.Write(factoryMethod);
+            var result = stringWriter.ToString();
+            Assert.Contains("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\")", result);
+            Assert.Contains("if ($mappingValueNode !== null) {", result);
+            Assert.Contains("$mappingValue = $mappingValueNode->getStringValue()", result);
+            Assert.DoesNotContain("switch ($mappingValue) {", result);
+            Assert.DoesNotContain("case \"ns.childmodel\": return new ChildModel();", result);
+            Assert.Contains("$factory_1_result = factory_1($mappingValue);", result);
+            Assert.Contains("if ($factory_1_result !== null) {", result);
+            Assert.Contains("return new ParentModel()", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
+        public void WritesModelSplitFactoryOverloadBody() {
+            var parentModel = root.AddClass(new CodeClass {
+                Name = "parentModel",
+                Kind = CodeClassKind.Model,
+            }).First();
+            var childModel = root.AddClass(new CodeClass {
+                Name = "childModel",
+                Kind = CodeClassKind.Model,
+            }).First();
+            childModel.StartBlock.Inherits = new CodeType {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            };
+            var factoryMethod = parentModel.AddMethod(new CodeMethod {
+                Name = "factory",
+                Kind = CodeMethodKind.Factory,
+                ReturnType = new CodeType {
+                    Name = "parentModel",
+                    TypeDefinition = parentModel,
+                },
+                IsStatic = true,
+            }).First();
+            var factoryOverloadMethod = factoryMethod.Clone() as CodeMethod;
+            factoryOverloadMethod.Access = AccessModifier.Private;
+            factoryOverloadMethod.Name += "_1";
+            factoryOverloadMethod.OriginalMethod = factoryMethod;
+            factoryOverloadMethod.RemoveParametersByKind(CodeParameterKind.ParseNode);
+            factoryOverloadMethod.AddParameter(new CodeParameter {
+                Name = "value",
+                Type = new CodeType{
+                    Name = "String",
+                    IsNullable = true,
+                    IsExternal = true,
+                },
+                Optional = false,
+            });
+            parentModel.AddMethod(factoryOverloadMethod);
+            Enumerable.Range(0, 1500).ToList().ForEach(x => parentModel.DiscriminatorInformation.AddDiscriminatorMapping($"#microsoft.graph.{x}", new CodeType {
+                Name = $"microsoft\\Graph\\{x}",
+                TypeDefinition = childModel,
+            }));
+            parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+            factoryMethod.AddParameter(new CodeParameter {
+                Name = "parseNode",
+                Kind = CodeParameterKind.ParseNode,
+                Type = new CodeType {
+                    Name = "ParseNode",
+                    TypeDefinition = new CodeClass {
+                        Name = "ParseNode",
+                    },
+                    IsExternal = true,
+                },
+                Optional = false,
+            });
+            _refiner.Refine(root, new CancellationToken());
+            languageWriter.Write(factoryOverloadMethod);
+            var result = stringWriter.ToString();
+            Assert.DoesNotContain("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\")", result);
+            Assert.DoesNotContain("if ($mappingValueNode !== null) {", result);
+            Assert.DoesNotContain("$mappingValue = mappingValueNode.getStringValue()", result);
+            Assert.Contains("switch ($value) {", result);
+            Assert.Contains("case '#microsoft.graph.535': return new Microsoft\\Graph\\535();", result);
+            Assert.DoesNotContain("$factory_1_result = factory_1($mappingValue);", result);
+            Assert.DoesNotContain("if ($factory_1_result !== null) {", result);
+            Assert.DoesNotContain("return new ParentModel()", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
+        public void WritesModelFactoryBodyForIntersectionModels() 
+        {
+            var wrapper = AddIntersectionTypeWrapper();
+            var factoryMethod = wrapper.AddMethod(new CodeMethod{
+                Name = "factory",
+                Kind = CodeMethodKind.Factory,
+                ReturnType = new CodeType {
+                    Name = "IntersectionTypeWrapper",
+                    TypeDefinition = wrapper,
+                },
+                IsAsync = false,
+                IsStatic = true,
+            }).First();
+            factoryMethod.AddParameter(new CodeParameter {
+                Name = "parseNode",
+                Kind = CodeParameterKind.ParseNode,
+                Type = new CodeType {
+                    Name = "ParseNode"
+                }
+            });
+            _refiner.Refine(root, new CancellationToken(false));
+            languageWriter.Write(factoryMethod);
+            var result = stringWriter.ToString();
+            Assert.DoesNotContain("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\")", result);
+            Assert.DoesNotContain("if ($mappingValueNode != null) {", result);
+            Assert.DoesNotContain("$mappingValue = mappingValueNode->getStringValue()", result);
+            Assert.DoesNotContain("if mappingValue != null {", result);
+            Assert.DoesNotContain("switch (mappingValue) {", result);
+            Assert.DoesNotContain("case \"ns.childmodel\": return new ChildModel();", result);
+            Assert.Contains("$result = new IntersectionTypeWrapper();", result);
+            Assert.DoesNotContain("if (\"#kiota.complexType1\" === $mappingValue) {", result);
+            Assert.Contains("$result->setComplexType1Value(new ComplexType1())", result);
+            Assert.Contains("$result->setComplexType3Value(new ComplexType3())", result);
+            Assert.Contains("if ($parseNode->getStringValue() !== null) {", result);
+            Assert.Contains("$result->setStringValue($parseNode->getStringValue())", result);
+            Assert.Contains("else if ($parseNode->getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue']) !== null) {", result);
+            Assert.Contains("result->setComplexType2Value($parseNode->getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue']))", result);
+            Assert.Contains("return $result", result);
+            Assert.DoesNotContain("return new IntersectionTypeWrapper()", result);
+            AssertExtensions.Before("$parseNode->getStringValue()", "getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue'])", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
         
         [Fact]
         public async void WriteFactoryMethod()
@@ -1055,7 +1243,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             languageWriter.Write(factoryMethod);
             var result = stringWriter.ToString();
             Assert.Contains("case 'childModel': return new ChildModel();", result);
-            Assert.Contains("$mappingValueNodes = $parseNode->getChildNode(\"@odata.type\");", result);
+            Assert.Contains("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\");", result);
         }
         [Fact]
         public async void WriteApiConstructor()
@@ -1487,6 +1675,114 @@ namespace Kiota.Builder.Tests.Writers.Php
                 }
             });
             return unionTypeWrapper; 
+        }
+        private void AddSerializationProperties() {
+            parentClass.AddProperty(new CodeProperty {
+                Name = "additionalData",
+                Kind = CodePropertyKind.AdditionalData,
+                Type = new CodeType {
+                    Name = "string"
+                },
+                Getter = new CodeMethod {
+                    Name = "GetAdditionalData",
+                    ReturnType = new CodeType {
+                        Name = "string"
+                    }
+                },
+                Setter = new CodeMethod {
+                    Name = "SetAdditionalData",
+                }
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "dummyProp",
+                Type = new CodeType {
+                    Name = "string"
+                },
+                Getter = new CodeMethod {
+                    Name = "GetDummyProp",
+                    ReturnType = new CodeType {
+                        Name = "string"
+                    },
+                },
+                Setter = new CodeMethod {
+                    Name = "SetDummyProp",
+                },
+            });
+            parentClass.AddProperty(new CodeProperty{
+                Name = "noAccessors",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "dummyColl",
+                Type = new CodeType {
+                    Name = "string",
+                    CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                },
+                Getter = new CodeMethod {
+                    Name = "GetDummyColl",
+                    ReturnType = new CodeType {
+                        Name = "string",
+                        CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                    },
+                },
+                Setter = new CodeMethod {
+                    Name = "SetDummyColl",
+                    ReturnType = new CodeType {
+                        Name = "void",
+                    }
+                },
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "dummyComplexColl",
+                Type = new CodeType {
+                    Name = "Complex",
+                    CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                    TypeDefinition = new CodeClass {
+                        Name = "SomeComplexType"
+                    }
+                },
+                Getter = new CodeMethod {
+                    Name = "GetDummyComplexColl",
+                },
+                Setter = new CodeMethod {
+                    Name = "SetDummyComplexColl",
+                }
+            });
+            parentClass.AddProperty(new CodeProperty{
+                Name = "dummyEnumCollection",
+                Type = new CodeType {
+                    Name = "SomeEnum",
+                    TypeDefinition = new CodeEnum {
+                        Name = "EnumType"
+                    }
+                },
+                Getter = new CodeMethod {
+                    Name = "GetDummyEnumCollection",
+                },
+                Setter = new CodeMethod {
+                    Name = "SetDummyEnumCollection",
+                }
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "definedInParent",
+                Type = new CodeType {
+                    Name = "string"
+                },
+                OriginalPropertyFromBaseType = new CodeProperty {
+                    Name = "definedInParent",
+                    Type = new CodeType {
+                        Name = "string"
+                    }
+                }
+            });
+        }
+        private void AddInheritanceClass() {
+            parentClass.StartBlock.Inherits = new CodeType {
+                Name = "someParentClass"
+            };
         }
     }
 }

@@ -43,6 +43,7 @@ public class PhpRefiner: CommonLanguageRefiner
                 "ParseNode",
                 addUsings: true
             );
+            SplitLongDiscriminatorMethods(generatedCode);
             var defaultConfiguration = new GenerationConfiguration();
             ReplaceDefaultSerializationModules(generatedCode,
                 defaultConfiguration.Serializers,
@@ -163,6 +164,41 @@ public class PhpRefiner: CommonLanguageRefiner
         new(x => x is CodeProperty property && property.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(property.SerializationName), "Microsoft\\Kiota\\Abstractions", "QueryParameter"),
         new(x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration), "Microsoft\\Kiota\\Abstractions", "RequestOption")
     };
+
+    private static readonly int maxDiscriminatorLength = 500;
+    
+    private static void SplitLongDiscriminatorMethods(CodeElement currentElement) {
+        if (currentElement is CodeMethod currentMethod &&
+            !currentMethod.IsOverload &&
+            currentMethod.IsOfKind(CodeMethodKind.Factory) &&
+            currentMethod.Parent is CodeClass parentClass &&
+            parentClass.IsOfKind(CodeClassKind.Model) &&
+            parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation &&
+            parentClass.DiscriminatorInformation.DiscriminatorMappings.Count() > maxDiscriminatorLength) {
+            var discriminatorsCount = parentClass.DiscriminatorInformation.DiscriminatorMappings.Count();
+            for(var currentDiscriminatorPageIndex = 0; currentDiscriminatorPageIndex * maxDiscriminatorLength < discriminatorsCount; currentDiscriminatorPageIndex++) {
+                var newMethod = currentMethod.Clone() as CodeMethod;
+                newMethod.Name = $"{currentMethod.Name}_{currentDiscriminatorPageIndex}";
+                newMethod.OriginalMethod = currentMethod;
+                newMethod.Access = AccessModifier.Private;
+                newMethod.RemoveParametersByKind(CodeParameterKind.ParseNode);
+                newMethod.AddParameter(new CodeParameter {
+                    Type = new CodeType {
+                        Name = "string",
+                        IsNullable = true,
+                        IsExternal = true
+                    },
+                    Optional = false,
+                    Documentation = new() {
+                        Description = "Discriminator value from the payload",
+                    },
+                    Name = "discriminatorValue"
+                });
+                parentClass.AddMethod(newMethod);
+            }
+        }
+        CrawlTree(currentElement, SplitLongDiscriminatorMethods);
+    }
     private static void CorrectPropertyType(CodeProperty currentProperty) {
         if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
             currentProperty.Type.Name = "RequestAdapter";
