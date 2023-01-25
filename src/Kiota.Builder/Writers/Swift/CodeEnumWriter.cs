@@ -11,16 +11,14 @@ namespace Kiota.Builder.Writers.Swift {
             if(!codeElement.Options.Any())
                 return;
 
-            if (codeElement?.Parent is CodeNamespace codeNamespace)
+            if (codeElement.Parent is CodeNamespace codeNamespace)
             {
-                writer.WriteLine($"extension {codeNamespace.Name} {{");
-                writer.IncreaseIndent();
+                writer.StartBlock($"extension {codeNamespace.Name} {{");
             }
-            writer.WriteLine($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} : String {{"); //TODO docs
-            writer.IncreaseIndent();
+            writer.StartBlock($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} : String {{"); //TODO docs
             writer.WriteLines(codeElement.Options
-                            .Select(x => x.Name.ToFirstCharacterUpperCase())
-                            .Select((x, idx) => $"case {x}")
+                            .Select(static x => x.Name.ToFirstCharacterUpperCase())
+                            .Select(static (x, idx) => $"case {x}")
                             .ToArray());
             //TODO static parse function?
             //enum and ns are closed by the code block end writer

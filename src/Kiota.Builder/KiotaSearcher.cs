@@ -31,7 +31,7 @@ public class KiotaSearcher {
         _gitHubAuthenticationProvider = gitHubAuthenticationProvider;
         _isGitHubSignedInCallBack = isGitHubSignedInCallBack;
     }
-    public async Task<IDictionary<string, SearchResult>> SearchAsync(string searchTerm, string version, CancellationToken cancellationToken) {
+    public async Task<IDictionary<string, SearchResult>> SearchAsync(string? searchTerm, string? version, CancellationToken cancellationToken) {
         if (string.IsNullOrEmpty(searchTerm)) {
             _logger.LogError("no search term provided");
             return new Dictionary<string, SearchResult>();
@@ -48,7 +48,7 @@ public class KiotaSearcher {
         return results.SelectMany(static x => x)
                 .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase);
     }
-    private static async Task<IDictionary<string, SearchResult>> SearchProviderAsync(string searchTerm, string version, ISearchProvider provider, CancellationToken cancellationToken) {
+    private static async Task<IDictionary<string, SearchResult>> SearchProviderAsync(string searchTerm, string? version, ISearchProvider provider, CancellationToken cancellationToken) {
         var providerPrefix = $"{provider.ProviderKey}{ProviderSeparator}";
         var results = await provider.SearchAsync(searchTerm.Replace(providerPrefix, string.Empty), version, cancellationToken);
 

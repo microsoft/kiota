@@ -39,10 +39,9 @@ namespace Kiota.Builder.Writers.Shell
         {
         }
 
-        protected override void WriteCommandBuilderBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
+        protected override void WriteCommandBuilderBody(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
         {
-            var parent = codeElement.Parent as CodeClass;
-            var classMethods = parent.Methods;
+            var classMethods = parentClass.Methods;
             var name = codeElement.SimpleName;
             name = uppercaseRegex.Replace(name, "-$1").TrimStart('-').ToLower();
 
@@ -54,31 +53,28 @@ namespace Kiota.Builder.Writers.Shell
                 if (string.IsNullOrWhiteSpace(name))
                 {
                     // BuildCommand function
-                    WriteUnnamedBuildCommand(codeElement, writer, parent, classMethods);
+                    WriteUnnamedBuildCommand(codeElement, writer, parentClass, classMethods);
                 }
                 else
                 {
-                    WriteContainerCommand(codeElement, writer, parent, name);
+                    WriteContainerCommand(codeElement, writer, parentClass, name);
                 }
             }
             else
             {
-                WriteExecutableCommand(codeElement, requestParams, writer, name);
+                WriteExecutableCommand(codeElement, parentClass, requestParams, writer, name);
             }
         }
 
-        private void WriteExecutableCommand(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, string name)
+        private void WriteExecutableCommand(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, LanguageWriter writer, string name)
         {
-            var generatorMethod = (codeElement.Parent as CodeClass)
-                                           .Methods
-                                           .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
-            var pathAndQueryParams = generatorMethod.PathQueryAndHeaderParameters;
-            var originalMethod = codeElement.OriginalMethod;
-            var origParams = originalMethod.Parameters;
-            var parametersList = pathAndQueryParams?.Where(p => !string.IsNullOrWhiteSpace(p.Name))?.ToList() ?? new List<CodeParameter>();
-            if (origParams.Any(p => p.IsOfKind(CodeParameterKind.RequestBody)))
+            if(parentClass
+                .Methods
+                .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod) is not CodeMethod generatorMethod ||
+                codeElement.OriginalMethod is not CodeMethod originalMethod) return;
+            var parametersList = generatorMethod.PathQueryAndHeaderParameters.Where(static p => !string.IsNullOrWhiteSpace(p.Name)).ToList() ?? new List<CodeParameter>();
+            if (originalMethod.Parameters.OfKind(CodeParameterKind.RequestBody) is CodeParameter bodyParam)
             {
-                var bodyParam = origParams.OfKind(CodeParameterKind.RequestBody);
                 parametersList.Add(bodyParam);
             }
             writer.WriteLine($"var command = new Command(\"{name}\");");
@@ -90,7 +86,7 @@ namespace Kiota.Builder.Writers.Shell
             // -h A:B,B:C
             // -h {"A": "B"}
             // parameters: (type, name, CodeParameter)
-            var parameters = parametersList.Select(p =>
+            var parameters = parametersList.Select<CodeParameter, (string, string, CodeParameter?)>(p =>
             {
                 // Assume headers are a list. Allows users to specify multiple header values.
                 // --header <val1> --header <val2>
@@ -154,7 +150,7 @@ namespace Kiota.Builder.Writers.Shell
                 writer.WriteLine($"var {paramName.ToFirstCharacterLowerCase()} = {availableOptions[i]};");
             }
 
-            WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
+            WriteCommandHandlerBody(originalMethod, parentClass, requestParams, isHandlerVoid, returnType, writer);
             // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
             WriteCommandHandlerBodyOutput(writer, originalMethod, isHandlerVoid);
             writer.DecreaseIndent();
@@ -162,7 +158,7 @@ namespace Kiota.Builder.Writers.Shell
             writer.WriteLine("return command;");
         }
 
-        private void AddCustomCommandOptions(LanguageWriter writer, ref List<string> availableOptions, ref List<(string, string, CodeParameter)> parameters, string returnType, bool isHandlerVoid, bool isPageable)
+        private void AddCustomCommandOptions(LanguageWriter writer, ref List<string> availableOptions, ref List<(string, string, CodeParameter?)> parameters, string returnType, bool isHandlerVoid, bool isPageable)
         {
             if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
             {
@@ -226,17 +222,16 @@ namespace Kiota.Builder.Writers.Shell
             }
             else
             {
-                var type = originalMethod.ReturnType as CodeType;
-                var typeString = conventions.GetTypeString(type, originalMethod);
                 var formatterVar = "formatter";
 
                 var formatterOptionsVar = "formatterOptions";
-                if (originalMethod?.PagingInformation != null)
+                if (originalMethod.PagingInformation != null)
                 {
                     writer.WriteLine($"IOutputFormatterOptions? {formatterOptionsVar} = null;");
                     writer.WriteLine($"IOutputFormatter? {formatterVar} = null;");
                 }
-                if (typeString != "Stream")
+                if (originalMethod.ReturnType is CodeType type && 
+                    conventions.GetTypeString(type, originalMethod) is string typeString && !typeString.Equals("Stream", StringComparison.Ordinal))
                 {
                     var formatterTypeVal = "FormatterType.TEXT";
                     if (conventions.IsPrimitiveType(typeString))
@@ -295,10 +290,10 @@ namespace Kiota.Builder.Writers.Shell
             }
         }
 
-        private static List<string> WriteExecutableCommandOptions(LanguageWriter writer, List<(string, string, CodeParameter)> parametersList)
+        private static List<string> WriteExecutableCommandOptions(LanguageWriter writer, List<(string, string, CodeParameter?)> parametersList)
         {
             var availableOptions = new List<string>();
-            foreach (var (optionType, name, option) in parametersList)
+            foreach (var (optionType, name, option) in parametersList.Where(static x => x.Item3 != null))
             {
                 var optionName = $"{name.ToFirstCharacterLowerCase()}Option";
 
@@ -309,7 +304,7 @@ namespace Kiota.Builder.Writers.Shell
                 }
                 optionBuilder.Append("(\"");
                 if (name.Length > 1) optionBuilder.Append('-');
-                optionBuilder.Append($"-{NormalizeToOption(option.Name)}\"");
+                optionBuilder.Append($"-{NormalizeToOption(option!.Name)}\"");
                 if (!string.IsNullOrEmpty(option.DefaultValue))
                 {
                     var defaultValue = optionType == "string" ? $"\"{option.DefaultValue}\"" : option.DefaultValue;
@@ -358,10 +353,11 @@ namespace Kiota.Builder.Writers.Shell
             {
                 var targetClass = conventions.GetTypeString(codeReturnType, codeElement);
 
-                var builderMethods = codeReturnType.TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
-                    .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
-                    .OrderBy(m => m.Name)
-                    .ThenBy(m => m.ReturnType.IsCollection);
+                var builderMethods = codeReturnType.TypeDefinition?.GetChildElements(true).OfType<CodeMethod>()
+                    .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder))
+                    .OrderBy(static m => m.Name)
+                    .ThenBy(static m => m.ReturnType.IsCollection) ??
+                    Enumerable.Empty<CodeMethod>();
                 conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
                 foreach (var method in builderMethods)
@@ -402,9 +398,10 @@ namespace Kiota.Builder.Writers.Shell
             {
                 writer.WriteLine("var command = new Command(\"item\");");
                 var targetClass = conventions.GetTypeString(codeElement.OriginalIndexer.ReturnType, codeElement);
-                var builderMethods = (codeElement.OriginalIndexer.ReturnType as CodeType).TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
-                    .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
-                    .OrderBy(m => m.Name);
+                var builderMethods = codeElement.OriginalIndexer.ReturnType.AllTypes.First().TypeDefinition?.GetChildElements(true).OfType<CodeMethod>()
+                    .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder))
+                    .OrderBy(static m => m.Name) ??
+                    Enumerable.Empty<CodeMethod>();
                 conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
                 foreach (var method in builderMethods)
@@ -426,15 +423,14 @@ namespace Kiota.Builder.Writers.Shell
             }
         }
 
-        protected virtual void WriteCommandHandlerBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
+        protected virtual void WriteCommandHandlerBody(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
         {
-            var generatorMethod = (codeElement.Parent as CodeClass)
-                                                .Methods
-                                                .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
-            var requestBodyParam = requestParams.requestBody;
-            if (requestBodyParam != null)
+            if(parentClass
+                        .Methods
+                        .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod) is not CodeMethod generatorMethod) return;
+            if (requestParams.requestBody is CodeParameter requestBodyParam)
             {
-                var requestBodyParamType = requestBodyParam?.Type as CodeType;
+                var requestBodyParamType = requestBodyParam.Type as CodeType;
                 if (requestBodyParamType?.TypeDefinition is CodeClass)
                 {
                     writer.WriteLine($"using var stream = new MemoryStream(Encoding.UTF8.GetBytes({requestBodyParam.Name}));");
@@ -461,8 +457,8 @@ namespace Kiota.Builder.Writers.Shell
                 }
             }
 
-            var parametersList = new[] { requestParams.requestBody, requestParams.requestConfiguration }
-                                .Select(x => x?.Name).Where(x => x != null).DefaultIfEmpty().Aggregate((x, y) => $"{x}, {y}");
+            var parametersList = string.Join(", ", new[] { requestParams.requestBody, requestParams.requestConfiguration }
+                                .Select(static x => x?.Name).Where(static x => x != null));
             var separator = string.IsNullOrWhiteSpace(parametersList) ? "" : ", ";
             WriteRequestInformation(writer, generatorMethod, parametersList, separator);
 

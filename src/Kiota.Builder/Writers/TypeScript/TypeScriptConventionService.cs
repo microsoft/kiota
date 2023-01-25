@@ -24,8 +24,8 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     internal string DocCommentStart = "/**";
     internal string DocCommentEnd = " */";
     #pragma warning disable CA1822 // Method should be static
-    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
-        var codePathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default) {
+        var codePathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => x.Name.ToFirstCharacterLowerCase()))}";
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
         var urlTemplateParams = urlTemplateVarName ?? $"this.{pathParametersProperty.Name}";

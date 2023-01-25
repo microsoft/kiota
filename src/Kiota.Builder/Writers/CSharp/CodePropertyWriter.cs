@@ -30,7 +30,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
 
     private void WritePropertyInternal(CodeProperty codeElement, LanguageWriter writer, string propertyType)
     {
-        var parentClass = codeElement.Parent as CodeClass;
+        if(codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         var backingStoreProperty = parentClass.GetBackingStoreProperty();
         var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
         var simpleBody = $"get; {setterAccessModifier}set;";

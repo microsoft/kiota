@@ -18,7 +18,7 @@ namespace Kiota.Builder.Writers.Go {
                     suffix = $" `uriparametername:\"{codeElement.SerializationName}\"`";
                     goto default;
                 default:
-                    var returnType = conventions.GetTypeString(codeElement.Type, codeElement.Parent);
+                    var returnType = codeElement.Parent is CodeElement parent ? conventions.GetTypeString(codeElement.Type, parent) : string.Empty; 
                     conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
                     writer.WriteLine($"{propertyName} {returnType}{suffix}");
                 break;
