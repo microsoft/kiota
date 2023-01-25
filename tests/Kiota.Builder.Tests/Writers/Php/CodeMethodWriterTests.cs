@@ -357,7 +357,78 @@ namespace Kiota.Builder.Tests.Writers.Php
             else
                 Assert.Contains(expected, stringWriter.ToString());
         }
-
+        [Fact]
+        public void WritesInheritedSerializerBody() {
+            method.Kind = CodeMethodKind.Serializer;
+            method.IsAsync = false;
+            method.ReturnType.Name = "void";
+            AddSerializationProperties();
+            AddInheritanceClass();
+            languageWriter.Write(method);
+            var result = stringWriter.ToString();
+            Assert.Contains("parent::serialize($writer)", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
+        public void WritesUnionSerializerBody() {
+            var wrapper = AddUnionTypeWrapper();
+            var serializationMethod = wrapper.AddMethod(new CodeMethod{
+                Name = "factory",
+                Kind = CodeMethodKind.Serializer,
+                IsAsync = false,
+                ReturnType = new CodeType {
+                    Name = "void",
+                },
+            }).First();
+            serializationMethod.AddParameter(new CodeParameter {
+                Name = "writer",
+                Kind = CodeParameterKind.Serializer,
+                Type = new CodeType {
+                    Name = "SerializationWriter"
+                }
+            });
+            languageWriter.Write(serializationMethod);
+            var result = stringWriter.ToString();
+            Assert.DoesNotContain("parent::serialize($writer)", result);
+            Assert.Contains("if ($this->getComplexType1Value() !== null) {", result);
+            Assert.Contains("$writer->writeObjectValue(null, $this->getComplexType1Value())", result);
+            Assert.Contains("$this->getStringValue() !== null", result);
+            Assert.Contains("$writer->writeStringValue(null, $this->getStringValue())", result);
+            Assert.Contains("$this->getComplexType2Value() !== null", result);
+            Assert.Contains("$writer->writeCollectionOfObjectValues(null, $this->getComplexType2Value())", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
+        public void WritesIntersectionSerializerBody() {
+            var wrapper = AddIntersectionTypeWrapper();
+            var serializationMethod = wrapper.AddMethod(new CodeMethod{
+                Name = "factory",
+                Kind = CodeMethodKind.Serializer,
+                IsAsync = false,
+                ReturnType = new CodeType {
+                    Name = "void",
+                },
+            }).First();
+            serializationMethod.AddParameter(new CodeParameter {
+                Name = "writer",
+                Kind = CodeParameterKind.Serializer,
+                Type = new CodeType {
+                    Name = "SerializationWriter"
+                }
+            });
+            languageWriter.Write(serializationMethod);
+            var result = stringWriter.ToString();
+            Assert.DoesNotContain("parent::serialize($writer)", result);
+            Assert.DoesNotContain("if ($this->getComplexType1Value() !== null) {", result);
+            Assert.Contains("$writer->writeObjectValue(null, $this->getComplexType1Value(), $this->getComplexType3Value())", result);
+            Assert.Contains("($this->getStringValue() !== null)", result);
+            Assert.Contains("$writer->writeStringValue(null, $this->getStringValue())", result);
+            Assert.Contains("($this->getComplexType2Value() !== null)", result);
+            Assert.Contains("$writer->writeCollectionOfObjectValues(null, $this->getComplexType2Value())", result);
+            AssertExtensions.Before("$writer->writeStringValue(null, $this->getStringValue())", "$writer->writeObjectValue(null, $this->getComplexType1Value(), $this->getComplexType3Value())", result);
+            AssertExtensions.Before("$writer->writeCollectionOfObjectValues(null, $this->getComplexType2Value())", "$writer->writeObjectValue(null, $this->getComplexType1Value(), $this->getComplexType3Value())", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
         [Fact]
         public void WriteRequestGeneratorForParsable()
         {
@@ -624,7 +695,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             parentClass.Kind = CodeClassKind.Model;
             var deserializerMethod = new CodeMethod
             {
-                Name = "getDeserializationFields",
+                Name = "getFieldDeserializers",
                 Kind = CodeMethodKind.Deserializer,
                 Documentation = new() {
                     Description = "Just some random method",
@@ -661,7 +732,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             AddInheritanceClass();
             languageWriter.Write(method);
             var result = stringWriter.ToString();
-            Assert.Contains("super.methodName()", result);
+            Assert.Contains("parent::methodName()", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         
@@ -678,11 +749,10 @@ namespace Kiota.Builder.Tests.Writers.Php
             }).First();
             languageWriter.Write(deserializationMethod);
             var result = stringWriter.ToString();
-            Assert.DoesNotContain("final UnionTypeWrapper res =", result);
-            Assert.Contains("this.getComplexType1Value() != null", result);
-            Assert.Contains("return this.getComplexType1Value().getFieldDeserializers()", result);
-            Assert.Contains("new HashMap<String, Consumer<ParseNode>>()", result);
-            AssertExtensions.Before("return $this->getComplexType1Value()->getFieldDeserializers()", "new HashMap<String, Consumer<ParseNode>>", result);
+            Assert.DoesNotContain("$result =", result);
+            Assert.Contains("$this->getComplexType1Value() !== null", result);
+            Assert.Contains("return $this->getComplexType1Value()->getFieldDeserializers()", result);
+            Assert.Contains("return [];", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -693,16 +763,14 @@ namespace Kiota.Builder.Tests.Writers.Php
                 Kind = CodeMethodKind.Deserializer,
                 IsAsync = false,
                 ReturnType = new CodeType {
-                    Name = "Map<String, Consumer<ParseNode>>",
+                    Name = "array",
                 },
             }).First();
             languageWriter.Write(deserializationMethod);
             var result = stringWriter.ToString();
-            Assert.DoesNotContain("final IntersectionTypeWrapper res =", result);
-            Assert.Contains("this.getComplexType1Value() != null || this.getComplexType3Value() != null", result);
-            Assert.Contains("return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", result);
-            Assert.Contains("new HashMap<String, Consumer<ParseNode>>()", result);
-            AssertExtensions.Before("return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", "new HashMap<String, Consumer<ParseNode>>()", result);
+            Assert.DoesNotContain("$result =", result);
+            Assert.Contains("$this->getComplexType1Value() !== null || $this->getComplexType3Value() !== null", result);
+            Assert.Contains("return ParseNodeHelper::mergeDeserializersForIntersectionWrapper($this->getComplexType1Value(), $this->getComplexType3Value())", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -723,7 +791,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             );
             var deserializerMethod = new CodeMethod
             {
-                Name = "getDeserializationFields",
+                Name = "getFieldDeserializers",
                 Kind = CodeMethodKind.Deserializer,
                 Documentation = new() {
                     Description = "Just some random method",
