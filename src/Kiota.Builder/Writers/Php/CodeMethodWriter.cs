@@ -10,7 +10,7 @@ namespace Kiota.Builder.Writers.Php
     {
 
         protected readonly bool UseBackingStore = false;
-        private static readonly Regex factoryMethodIndexParser = new(@"_(?<idx>\d+)");
+        private static readonly Regex factoryMethodIndexParser = new(@"_(?<idx>\d+)", RegexOptions.Compiled);
         public CodeMethodWriter(PhpConventionService conventionService, bool useBackingStore = false) : base(conventionService)
         {
             UseBackingStore = useBackingStore;
