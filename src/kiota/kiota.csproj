@@ -26,10 +26,6 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\Microsoft.OpenApi.snk</AssemblyOriginatorKeyFile>
     <Nullable>enable</Nullable>
-
-    <!-- DEBUG Source Generators -->
-    <!-- <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles> -->
-    <!-- <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath> -->
   </PropertyGroup>
 
   <ItemGroup>
