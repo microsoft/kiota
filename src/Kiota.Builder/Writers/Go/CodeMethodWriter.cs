@@ -387,9 +387,19 @@ namespace Kiota.Builder.Writers.Go {
                     writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
                         $"m.Set{codeElement.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}(value);");
                     writer.CloseBlock();
-                    writer.WriteLine("return value;");
-                } else
-                    writer.WriteLine($"return m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
+                    writer.WriteLine("return value");
+                }
+                else
+                {
+                    var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent);
+                    
+                    writer.WriteLine($"val , err := m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\")");
+                    
+                    writer.WriteBlock("if val != nil {", "}", $"return val.({returnType})");
+                    writer.WriteBlock("if err != nil {", "}", "panic(err)");
+                    
+                    writer.WriteLine("return nil");
+                }
         }
         private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
@@ -483,7 +493,10 @@ namespace Kiota.Builder.Writers.Go {
             if(backingStore == null)
                 writer.WriteLine($"m.{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value");
             else
-                writer.WriteLine($"m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value)");
+            {
+                writer.WriteLine($"err := m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value)");
+                writer.WriteBlock("if err != nil {", "}", "panic(err)");
+            }
         }
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);

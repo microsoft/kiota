@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
@@ -139,6 +140,7 @@ public class GoRefiner : CommonLanguageRefiner
             RemoveHandlerFromRequestBuilder(generatedCode);
             AddContextParameterToGeneratorMethods(generatedCode);
             CorrectTypes(generatedCode);
+            CorrectCoreTypesForBackingStore(generatedCode, $"{conventions.StoreHash}.GetDefaultBackingStoreInstance().CreateBackingStore()");
         }, cancellationToken);
     }
 
@@ -414,9 +416,11 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota-abstractions-go/serialization", "MergeDeserializersForIntersectionWrapper"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             "github.com/microsoft/kiota-abstractions-go", "RequestHeaders"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore), "github.com/microsoft/kiota-abstractions-go/store","BackingStore"),
     };//TODO add backing store types once we have them defined
-    private static void CorrectImplements(ProprietableBlockDeclaration block) {
+    private void CorrectImplements(ProprietableBlockDeclaration block) {
         block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");
+        block.ReplaceImplementByName(KiotaBuilder.BackedModelInterface, "BackedModel");
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         var parentClass = currentMethod.Parent as CodeClass;

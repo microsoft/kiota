@@ -17,6 +17,7 @@ public class GoConventionService : CommonLanguageConventionService
     #pragma warning disable CA1822 // Method should be static
     public string AbstractionsHash => "i2ae4187f7daee263371cb1c977df639813ab50ffa529013b7437480d1ec0158f";
     public string SerializationHash => "i878a80d2330e89d26896388a3f487eef27b0a0e6c010c493bf80be1452208f91";
+    public string StoreHash => "ie8677ce2c7e1b4c22e9c3827ecd078d41185424dd9eeb92b7d971ed2d49a392e";
     public string StringsHash => "ie967d16dae74a49b5e0e051225c5dac0d76e5e38f13dd1628028cbce108c25b6";
     
     public string ContextVarTypeName => "context.Context";
@@ -94,6 +95,7 @@ public class GoConventionService : CommonLanguageConventionService
             "string" or "float32" or "float64" or "int32" or "int64" => type.Name,
             "String" or "Int64" or "Int32" or "Float32" or "Float64" => type.Name.ToFirstCharacterLowerCase(), //casing hack
             "context.Context" => "context.Context",
+            "BackedModel" => $"{StoreHash}.BackedModel",
             _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",
         };
     }
