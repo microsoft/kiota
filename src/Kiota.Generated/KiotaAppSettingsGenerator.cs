@@ -10,7 +10,8 @@ public class KiotaAppSettingsGenerator : ISourceGenerator
 
     private string findFileAndRead(string directory, string name, int maxDepth) {
         try {
-            return new StreamReader(Path.Join(directory, name), Encoding.UTF8).ReadToEnd();
+            using var reader = new StreamReader(Path.Join(directory, name), Encoding.UTF8);
+            return reader.ReadToEnd();
         } catch (FileNotFoundException e)
         {
             if (maxDepth > 0)
