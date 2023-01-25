@@ -18,7 +18,7 @@ public class TempFolderCachingAccessTokenProvider : IAccessTokenProvider
     public TempFolderCachingAccessTokenProvider()
     {
         TokenStorageService = new Lazy<ITokenStorageService>(() => new TempFolderTokenStorageService {
-            Logger = Logger,
+            Logger = Logger!,
             FileName = $"{AppId}-{ApiBaseUrl?.Host}",
         });
     }

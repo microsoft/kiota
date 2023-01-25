@@ -36,11 +36,11 @@ public class BaseAuthenticationProvider<T> : AnonymousAuthenticationProvider whe
 	public IAccessTokenProvider AccessTokenProvider {get; private set;}
     private const string AuthorizationHeaderKey = "Authorization";
     private const string ClaimsKey = "claims";
-	public override Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object> additionalAuthenticationContext = null, CancellationToken cancellationToken = default) {
+	public override Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object>? additionalAuthenticationContext = null, CancellationToken cancellationToken = default) {
 		ArgumentNullException.ThrowIfNull(request);
         return AuthenticateRequestInternalAsync(request, additionalAuthenticationContext, cancellationToken);
     }
-	private async Task AuthenticateRequestInternalAsync(RequestInformation request, Dictionary<string, object> additionalAuthenticationContext = null, CancellationToken cancellationToken = default) {
+	private async Task AuthenticateRequestInternalAsync(RequestInformation request, Dictionary<string, object>? additionalAuthenticationContext = null, CancellationToken cancellationToken = default) {
         await base.AuthenticateRequestAsync(request, additionalAuthenticationContext, cancellationToken).ConfigureAwait(false);
         if(additionalAuthenticationContext != null &&
             additionalAuthenticationContext.ContainsKey(ClaimsKey) &&
