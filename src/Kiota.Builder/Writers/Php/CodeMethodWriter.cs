@@ -191,7 +191,7 @@ namespace Kiota.Builder.Writers.Php
         private void WriteMethodsAndParameters(CodeMethod codeMethod, LanguageWriter writer, IReadOnlyList<string> orNullReturn, bool isConstructor = false)
         {
             var methodParameters = string.Join(", ", codeMethod.Parameters
-                                                                .OrderBy(x => x, parameterOrderComparer)
+                                                                .Order(parameterOrderComparer)
                                                                 .Select(x => conventions.GetParameterSignature(x, codeMethod))
                                                                 .ToList());
 
@@ -251,7 +251,7 @@ namespace Kiota.Builder.Writers.Php
                                     .GetPropertiesOfKind(CodePropertyKind.Custom)
                                     .Where(static x => !x.ExistsInBaseType)
                                     .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
-                                    .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
+                                    .Order(CodePropertyTypeBackwardComparer)
                                     .ThenBy(static x => x.Name)
                                     .ToArray();
             foreach (var otherProp in otherProps)
@@ -289,7 +289,7 @@ namespace Kiota.Builder.Writers.Php
             var otherProps = parentClass
                 .GetPropertiesOfKind(CodePropertyKind.Custom)
                 .Where(static x => !x.ExistsInBaseType)
-                .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                .Order(CodePropertyTypeForwardComparer)
                 .ThenBy(static x => x.Name)
                 .ToArray();
             foreach (var otherProp in otherProps)
@@ -544,7 +544,7 @@ namespace Kiota.Builder.Writers.Php
                 .GetPropertiesOfKind(CodePropertyKind.Custom)
                 .Where(static x => !x.ExistsInBaseType)
                 .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
-                .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                .Order(CodePropertyTypeForwardComparer)
                 .ThenBy(static x => x.Name)
                 .Select(static x => x.Getter.Name.ToFirstCharacterLowerCase())
                 .ToArray();
@@ -711,7 +711,7 @@ namespace Kiota.Builder.Writers.Php
             var includeElse = false;
             var otherProps = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                     .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
-                                    .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
+                                    .Order(CodePropertyTypeBackwardComparer)
                                     .ThenBy(static x => x.Name)
                                     .ToArray(); 
             foreach(var property in otherProps) { 
@@ -744,7 +744,7 @@ namespace Kiota.Builder.Writers.Php
             var includeElse = false;
             var otherProps = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                 .Where(static x => x.Type is CodeType { IsCollection: false, TypeDefinition: CodeClass or CodeInterface })
-                .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                .Order(CodePropertyTypeForwardComparer)
                 .ThenBy(static x => x.Name)
                 .ToArray();
             foreach(var property in otherProps) {
@@ -774,7 +774,7 @@ namespace Kiota.Builder.Writers.Php
             var includeElse = false;
             var otherProps = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                 .Where(static x => x.Type is CodeType xType && (xType.IsCollection || xType.TypeDefinition is null or CodeEnum))
-                .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                .Order(CodePropertyTypeForwardComparer)
                 .ThenBy(static x => x.Name)
                 .ToArray();
             foreach(var property in otherProps) {
