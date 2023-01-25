@@ -9,7 +9,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
     public CodeEnumWriter(GoConventionService conventionService) : base(conventionService){}
     public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer) {
         if(!codeElement.Options.Any()) return;
-        if(codeElement?.Parent is CodeNamespace ns)
+        if(codeElement.Parent is CodeNamespace ns)
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty)}");
 
         writer.WriteLine("import (");

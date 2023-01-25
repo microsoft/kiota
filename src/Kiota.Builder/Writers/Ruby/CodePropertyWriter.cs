@@ -1,3 +1,4 @@
+using System;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -9,7 +10,7 @@ namespace Kiota.Builder.Writers.Ruby {
         {
             conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
-            var parentClass = codeElement.Parent as CodeClass;
+            if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
             switch(codeElement.Kind) {
                 case CodePropertyKind.RequestBuilder:
                     writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}()");

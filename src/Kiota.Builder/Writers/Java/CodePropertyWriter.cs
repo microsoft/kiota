@@ -14,11 +14,9 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
         switch(codeElement.Kind) {
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine("@javax.annotation.Nonnull");
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {returnType} {codeElement.Name.ToFirstCharacterLowerCase()}() {{");
-                writer.IncreaseIndent();
+                writer.StartBlock($"{conventions.GetAccessModifier(codeElement.Access)} {returnType} {codeElement.Name.ToFirstCharacterLowerCase()}() {{");
                 conventions.AddRequestBuilderBody(parentClass, returnType, writer);
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
+                writer.CloseBlock();
             break;
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                 writer.WriteLine($"@QueryParameter(name = \"{codeElement.SerializationName}\")");

@@ -29,9 +29,14 @@ internal class CodeTypeComparer : IComparer<CodeTypeBase>
             };
         return 23;
     }
-    public int Compare(CodeTypeBase x, CodeTypeBase y)
+    public int Compare(CodeTypeBase? x, CodeTypeBase? y)
     {
-        if(x == null && y == null) return 0;
-        return GetHashCode(x).CompareTo(GetHashCode(y));
+        return (x, y) switch
+        {
+            (null, null) => 0,
+            (null, _) => -1,
+            (_, null) => 1,
+            _ => GetHashCode(x).CompareTo(GetHashCode(y)),
+        };
     }
 }

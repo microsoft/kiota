@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -9,7 +10,7 @@ public class CodeClassDeclarationWriter : CodeProprietableBlockDeclarationWriter
     public CodeClassDeclarationWriter(GoConventionService conventionService) : base(conventionService) {}
     protected override void WriteTypeDeclaration(ClassDeclaration codeElement, LanguageWriter writer) {
         var className = codeElement.Name.ToFirstCharacterUpperCase();
-        var currentClass = codeElement.Parent as CodeClass;
+        if (codeElement.Parent is not CodeClass currentClass) throw new InvalidOperationException("The parent of a class declaration should be a class");
         conventions.WriteShortDescription($"{className} {currentClass.Documentation.Description.ToFirstCharacterLowerCase()}", writer);
         conventions.WriteLinkDescription(currentClass.Documentation, writer);
         writer.StartBlock($"type {className} struct {{");

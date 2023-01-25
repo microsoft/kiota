@@ -10,14 +10,14 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ja
     public CodeClassDeclarationWriter(JavaConventionService conventionService) : base(conventionService){}
     public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
     {
-        if(codeElement?.Parent?.Parent is CodeNamespace ns) {
+        if(codeElement.Parent?.Parent is CodeNamespace ns) {
             writer.WriteLine($"package {ns.Name};");
             writer.WriteLine();
             codeElement.Usings
                 .Union(codeElement.Parent is CodeClass cClass ? cClass.InnerClasses.SelectMany(static x => x.Usings) : Enumerable.Empty<CodeUsing>())
                 .Where(static x => x.Declaration != null)
-                .Where(x => x.Declaration.IsExternal || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
-                .Select(static x => x.Declaration.IsExternal ?
+                .Where(x => x.Declaration!.IsExternal || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
+                .Select(static x => x.Declaration!.IsExternal ?
                                     $"import {x.Declaration.Name}.{x.Name.ToFirstCharacterUpperCase()};" :
                                     $"import {x.Name}.{x.Declaration.Name.ToFirstCharacterUpperCase()};")
                 .Distinct()

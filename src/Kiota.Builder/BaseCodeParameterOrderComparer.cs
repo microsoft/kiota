@@ -5,7 +5,7 @@ using Kiota.Builder.CodeDOM;
 namespace Kiota.Builder;
 public class BaseCodeParameterOrderComparer : IComparer<CodeParameter>
 {
-    public int Compare(CodeParameter x, CodeParameter y)
+    public int Compare(CodeParameter? x, CodeParameter? y)
     {
         return (x, y) switch {
             (null, null) => 0,

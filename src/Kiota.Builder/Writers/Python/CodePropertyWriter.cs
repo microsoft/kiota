@@ -1,3 +1,4 @@
+using System;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -8,7 +9,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement, true, writer);
-        var parentClass = codeElement.Parent as CodeClass;
+        if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         /* Only write specific properties as class attributes
         * The rest will be implemented as instance attributes, to avoid mutable properties
         * from being modified across instances. 

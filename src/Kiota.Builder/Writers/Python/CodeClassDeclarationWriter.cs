@@ -28,7 +28,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
         }
         writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}({derivation}):");
         writer.IncreaseIndent();
-        conventions.WriteShortDescription((codeElement.Parent as CodeClass)?.Documentation.Description, writer);
+        if(codeElement.Parent is CodeClass parentClass)
+            conventions.WriteShortDescription(parentClass.Documentation.Description, writer);
     }
     
     private static void WriteExternalImports(ClassDeclaration codeElement, LanguageWriter writer) {
