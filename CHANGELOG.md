@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds support for nullable reference types in dotnet for projects running Netstandard 2.1/Net 6.0 and above []()
 - Added support for multi-value headers to CLI generation. (Shell)
 - Add support for multi-value headers for PHP Generation. [#2052](https://github.com/microsoft/kiota/issues/2052)
+- Add support for Composed types (De)Serialization for PHP Generation. [#1814](https://github.com/microsoft/kiota/issues/1814)
 
 ### Changed
 
