@@ -128,6 +128,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentClass.Usings
                         .Where(static x => !x.IsExternal)
                         .Select(static x => x.Declaration)
+                        .OfType<CodeType>()
                         .Where(x => x.TypeDefinition is CodeClass typeClass && classesToUpdate.Contains(typeClass))
                         .ToList()
                         .ForEach(x => x.Name = $"{x.Name}{suffix}");
@@ -156,7 +157,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                                     .Union(new[] { currentMethod.ReturnType})
                                     .ToArray());
     }
-    private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
+    private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
         {"DateTimeOffset", ("DateTime", new CodeUsing {
                                         Name = "DateTime",
                                         Declaration = new CodeType {

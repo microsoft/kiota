@@ -249,7 +249,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                                 .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
     }
-    private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
+    private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
     {"DateTimeOffset", ("OffsetDateTime", new CodeUsing {
                                     Name = "OffsetDateTime",
                                     Declaration = new CodeType {
@@ -294,11 +294,11 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 var executorMethodsToAdd = originalExecutorMethods
                                     .Union(originalExecutorMethods
                                             .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration)))
-                                    .Where(x => x != null);
+                                    .OfType<CodeMethod>();
                 var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator));
                 var generatorMethodsToAdd = originalGeneratorMethods
                                     .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration))
-                                    .Where(x => x != null);
+                                    .OfType<CodeMethod>();
                 if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
                     currentClass.AddMethod(executorMethodsToAdd
                                             .Union(generatorMethodsToAdd)

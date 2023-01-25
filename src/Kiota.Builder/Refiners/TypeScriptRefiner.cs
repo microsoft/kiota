@@ -32,7 +32,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-            ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null, isNullable: true);
+            ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", string.Empty, isNullable: true);
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
             AddGetterAndSetterMethods(generatedCode,
@@ -82,23 +82,25 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ParseNode",
                 addUsings: false
             );
-            static string factoryNameCallbackFromTypeName(string x) => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+            static string factoryNameCallbackFromTypeName(string? x) => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
             ReplaceLocalMethodsByGlobalFunctions(
                 generatedCode,
-                static x => factoryNameCallbackFromTypeName(x.Parent.Name),
-                static x => x.Parent is CodeClass parentClass && parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation ?
-                        new List<CodeUsing>(parentClass.DiscriminatorInformation
+                static x => factoryNameCallbackFromTypeName(x.Parent?.Name),
+                static x => { 
+                    var result = new List<CodeUsing>() {
+                        new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } }
+                    };
+                    if (x.Parent?.Parent != null)
+                        result.Add(new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } });
+
+                    if (x.Parent is CodeClass parentClass && parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation)
+                        result.AddRange(parentClass.DiscriminatorInformation
                                         .DiscriminatorMappings
                                         .Select(static y => y.Value)
                                         .OfType<CodeType>()
-                                        .Select(static y => new CodeUsing { Name = y.Name, Declaration = y })) {
-                            new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
-                            new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
-                        }.ToArray() :
-                        new CodeUsing[] {
-                            new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
-                            new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
-                        },
+                                        .Select(static y => new CodeUsing { Name = y.Name, Declaration = y }));
+                    return result.ToArray();
+                },
                 CodeMethodKind.Factory
             );
             static string factoryNameCallbackFromType(CodeType x) => factoryNameCallbackFromTypeName(x.Name);
@@ -120,24 +122,25 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void AliasCollidingSymbols(IEnumerable<CodeUsing> usings, string currentSymbolName)
     {
         var duplicatedSymbolsUsings = usings.Where(static x => !x.IsExternal)
-                                                                .GroupBy(static x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
-                                                                .Where(static x => x.DistinctBy(static y => y.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>())
+                                                                .Where(static x => x.Declaration != null && x.Declaration.TypeDefinition != null)
+                                                                .GroupBy(static x => x.Declaration!.Name, StringComparer.OrdinalIgnoreCase)
+                                                                .Where(static x => x.DistinctBy(static y => y.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>())
                                                                                     .Count() > 1)
                                                                 .SelectMany(static x => x)
                                                                 .Union(usings
-                                                                        .Where(static x => !x.IsExternal)
-                                                                        .Where(x => x.Declaration
+                                                                        .Where(static x => !x.IsExternal && x.Declaration != null)
+                                                                        .Where(x => x.Declaration!
                                                                                         .Name
                                                                                         .Equals(currentSymbolName, StringComparison.OrdinalIgnoreCase)))
                                                                 .ToArray();
         foreach (var usingElement in duplicatedSymbolsUsings)
             usingElement.Alias = (usingElement.Declaration
-                                            .TypeDefinition
-                                            .GetImmediateParentOfType<CodeNamespace>()
+                                            ?.TypeDefinition
+                                            ?.GetImmediateParentOfType<CodeNamespace>()
                                             .Name +
                                 usingElement.Declaration
-                                            .TypeDefinition
-                                            .Name)
+                                            ?.TypeDefinition
+                                            ?.Name)
                                 .GetNamespaceImportSymbol()
                                 .ToFirstCharacterUpperCase();
     }
@@ -254,7 +257,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                                                 .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
     }
-    private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
+    private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
     {"DateTimeOffset", ("Date", null)},
     {"TimeSpan", ("Duration", new CodeUsing {
                                     Name = "Duration",
@@ -263,14 +266,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                                         IsExternal = true,
                                     },
                                 })},
-    {"DateOnly", ( null, new CodeUsing {
+    {"DateOnly", (string.Empty, new CodeUsing {
                             Name = "DateOnly",
                             Declaration = new CodeType {
                                 Name = AbstractionsPackageName,
                                 IsExternal = true,
                             },
                         })},
-    {"TimeOnly", ( null, new CodeUsing {
+    {"TimeOnly", (string.Empty, new CodeUsing {
                             Name = "TimeOnly",
                             Declaration = new CodeType {
                                 Name = AbstractionsPackageName,

@@ -85,7 +85,7 @@ public class PhpRefiner: CommonLanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
     }
-    private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
     {
         {
             "DateOnly",("Date", new CodeUsing
@@ -188,7 +188,7 @@ public class PhpRefiner: CommonLanguageRefiner
         } else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))
         {
             currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
-        } else if (currentProperty.Type?.Name?.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) ?? false)
+        } else if (currentProperty.Type.Name?.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) ?? false)
         {
             currentProperty.Type.Name = "DateTime";
         } else if (currentProperty.IsOfKind(CodePropertyKind.Options, CodePropertyKind.Headers))
@@ -212,19 +212,18 @@ public class PhpRefiner: CommonLanguageRefiner
     }
     private static void CorrectParameterType(CodeElement codeElement)
     {
-        var currentMethod = codeElement as CodeMethod;
-        var parameters = currentMethod?.Parameters;
-        var codeParameters = parameters as CodeParameter[] ?? parameters?.ToArray();
-        codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.ParseNode)).ToList().ForEach(x =>
-        {
-            x.Type.Name = "ParseNode";
-        });
-        codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.BackingStore)
-            && currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)).ToList().ForEach(x =>
-        {
-            x.Type.Name = "BackingStoreFactory";
-            x.DefaultValue = "null";
-        });
+        if (codeElement is CodeMethod currentMethod) {
+            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ParseNode)).ToList().ForEach(static x =>
+            {
+                x.Type.Name = "ParseNode";
+            });
+            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.BackingStore)
+                && currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)).ToList().ForEach(static x =>
+            {
+                x.Type.Name = "BackingStoreFactory";
+                x.DefaultValue = "null";
+            });
+        }
         CrawlTree(codeElement, CorrectParameterType);
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
@@ -235,25 +234,23 @@ public class PhpRefiner: CommonLanguageRefiner
         if(currentElement is CodeClass currentClass && currentClass.StartBlock != null && currentClass.StartBlock.Usings.Any(x => !x.IsExternal)) {
             var duplicatedSymbolsUsings = currentClass.StartBlock.Usings
                 .Distinct(usingComparer)
-                .GroupBy(x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
+                .Where(static x => !string.IsNullOrEmpty(x.Declaration?.Name) && x.Declaration.TypeDefinition != null)
+                .GroupBy(static x => x.Declaration!.Name, StringComparer.OrdinalIgnoreCase)
                 .Where(x => x.Count() > 1)
                 .SelectMany(x => x)
                 .Union(currentClass.StartBlock
                     .Usings
                     .Where(x => !x.IsExternal)
-                    .Where(x => x.Declaration
+                    .Where(x => x.Declaration!
                         .Name
                         .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
-            var symbolsUsing = duplicatedSymbolsUsings as CodeUsing[] ?? duplicatedSymbolsUsings.ToArray();
-            foreach (var usingElement in symbolsUsing)
+            foreach (var usingElement in duplicatedSymbolsUsings)
             {
-                var declaration = usingElement.Declaration.TypeDefinition?.Name;
-                if (string.IsNullOrEmpty(declaration)) continue;
-                var replacement = string.Join("\\", usingElement.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name
+                var replacement = string.Join("\\", usingElement.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name
                     .Split(new[]{'\\', '.'}, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToFirstCharacterUpperCase())
                     .ToArray());
-                usingElement.Alias = $"{(string.IsNullOrEmpty(replacement) ? string.Empty : $"\\{replacement}")}\\{declaration.ToFirstCharacterUpperCase()}";
+                usingElement.Alias = $"{(string.IsNullOrEmpty(replacement) ? string.Empty : $"\\{replacement}")}\\{usingElement.Declaration!.TypeDefinition!.Name.ToFirstCharacterUpperCase()}";
                 usingElement.Declaration.Name = usingElement.Alias;
             }
         }

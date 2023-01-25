@@ -127,7 +127,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
     };
     protected static void CapitalizeNamespacesFirstLetters(CodeElement current) {
         if(current is CodeNamespace currentNamespace)
-            currentNamespace.Name = currentNamespace.Name?.Split('.')?.Select(x => x.ToFirstCharacterUpperCase())?.Aggregate((x, y) => $"{x}.{y}");
+            currentNamespace.Name = currentNamespace.Name.Split('.').Select(static x => x.ToFirstCharacterUpperCase()).Aggregate(static (x, y) => $"{x}.{y}");
         CrawlTree(current, CapitalizeNamespacesFirstLetters);
     }
     protected static void AddAsyncSuffix(CodeElement currentElement) {
@@ -151,7 +151,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                                                 .ToArray());
     }
 
-    private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
     {
         {
             "DateOnly",("Date", new CodeUsing

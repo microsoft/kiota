@@ -72,7 +72,7 @@ public class PagingInformation : ICloneable
 
 public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
 {
-    public static CodeMethod FromIndexer(CodeIndexer originalIndexer, string methodNameSuffix, bool parameterNullable)
+    public static CodeMethod FromIndexer(CodeIndexer originalIndexer, string? methodNameSuffix, bool parameterNullable)
     {
         ArgumentNullException.ThrowIfNull(originalIndexer);
         var method = new CodeMethod {
