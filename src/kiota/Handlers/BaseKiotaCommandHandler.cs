@@ -34,7 +34,9 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     protected KiotaConfiguration Configuration { get => ConfigurationFactory.Value; }
     private readonly Lazy<KiotaConfiguration> ConfigurationFactory = new (() => {
         var builder = new ConfigurationBuilder();
-        var configuration = builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+        using var defaultStream = new MemoryStream(Kiota.Generated.KiotaAppSettings.Default());
+        var configuration = builder.AddJsonStream(defaultStream)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
                 .AddEnvironmentVariables(prefix: "KIOTA_")
                 .Build();
         var configObject = new KiotaConfiguration();
