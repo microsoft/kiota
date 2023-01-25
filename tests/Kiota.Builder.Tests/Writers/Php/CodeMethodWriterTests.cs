@@ -1214,12 +1214,56 @@ namespace Kiota.Builder.Tests.Writers.Php
             var result = stringWriter.ToString();
             Assert.DoesNotContain("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\")", result);
             Assert.DoesNotContain("if ($mappingValueNode !== null) {", result);
-            Assert.DoesNotContain("$mappingValue = mappingValueNode.getStringValue()", result);
+            Assert.DoesNotContain("$mappingValue = $mappingValueNode->getStringValue()", result);
             Assert.Contains("switch ($value) {", result);
             Assert.Contains("case '#microsoft.graph.535': return new Microsoft\\Graph\\535();", result);
             Assert.DoesNotContain("$factory_1_result = factory_1($mappingValue);", result);
             Assert.DoesNotContain("if ($factory_1_result !== null) {", result);
             Assert.DoesNotContain("return new ParentModel()", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        
+        [Fact]
+        public void WritesModelFactoryBodyForUnionModels() {
+            var wrapper = AddUnionTypeWrapper();
+            var factoryMethod = wrapper.AddMethod(new CodeMethod{
+                Name = "factory",
+                Kind = CodeMethodKind.Factory,
+                ReturnType = new CodeType {
+                    Name = "UnionTypeWrapper",
+                    TypeDefinition = wrapper,
+                },
+                IsAsync = false,
+                IsStatic = true,
+            }).First();
+            factoryMethod.AddParameter(new CodeParameter {
+                Name = "parseNode",
+                Kind = CodeParameterKind.ParseNode,
+                Type = new CodeType {
+                    Name = "ParseNode"
+                }
+            });
+            languageWriter.Write(factoryMethod);
+            var result = stringWriter.ToString();
+            Assert.Contains("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\")", result);
+            Assert.Contains("if ($mappingValueNode !== null) {", result);
+            Assert.Contains("$mappingValue = $mappingValueNode->getStringValue()", result);
+            Assert.DoesNotContain("switch ($mappingValue) {", result);
+            Assert.DoesNotContain("case 'ns.childmodel': return new ChildModel();", result);
+            Assert.Contains("$result = new UnionTypeWrapper()", result);
+            Assert.Contains("if ('#kiota.complexType1' === $mappingValue) {", result);
+            Assert.Contains("$result->setComplexType1Value(new ComplexType1())", result);
+            Assert.Contains("if ($parseNode->getStringValue() !== null) {", result);
+            Assert.Contains("$result->setStringValue($parseNode->getStringValue())", result);
+            Assert.Contains("else if ($parseNode->getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue']) !== null) {", result);
+            Assert.Contains("$result->setComplexType2Value($parseNode->getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue']))", result);
+            Assert.Contains("return $result", result);
+            Assert.DoesNotContain("return new UnionTypeWrapper()", result);
+            AssertExtensions.Before("$parseNode->getStringValue()", "getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue'])", result);
+            AssertExtensions.OutsideOfBlock("if (parseNode.getStringValue() != null) ", "if ('#kiota.complexType1' === $mappingValue)", result);
+            AssertExtensions.OutsideOfBlock("else if ($parseNode->getCollectionOfObjectValues([ComplexType2::class, 'createFromDiscriminatorValue']) !== null", "if ('#kiota.complexType1' === $mappingValue)", result);
+            AssertExtensions.OutsideOfBlock("return $result", "$mappingValueNode !== null", result);
+            AssertExtensions.OutsideOfBlock("$result = new UnionTypeWrapper()", "$mappingValueNode !== null", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]

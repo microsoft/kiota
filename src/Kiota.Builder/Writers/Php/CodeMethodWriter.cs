@@ -750,7 +750,7 @@ namespace Kiota.Builder.Writers.Php
                 .ToArray();
             foreach(var property in otherProps) {
                 var propertyType = property.Type as CodeType;
-                if (propertyType.TypeDefinition is CodeInterface typeInterface && typeInterface.OriginalClass != null)
+                if (propertyType.TypeDefinition is CodeInterface { OriginalClass: { } } typeInterface)
                     propertyType = new CodeType {
                         Name = typeInterface.OriginalClass.Name,
                         TypeDefinition = typeInterface.OriginalClass,
@@ -774,13 +774,13 @@ namespace Kiota.Builder.Writers.Php
         {
             var includeElse = false;
             var otherProps = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
-                .Where(static x => x.Type is CodeType xType && (xType.IsCollection || xType.TypeDefinition is null || xType.TypeDefinition is CodeEnum))
+                .Where(static x => x.Type is CodeType xType && (xType.IsCollection || xType.TypeDefinition is null or CodeEnum))
                 .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                 .ThenBy(static x => x.Name)
                 .ToArray();
             foreach(var property in otherProps) {
                 var propertyType = property.Type as CodeType;
-                var serializationMethodName = $"{parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, currentElement)}";
+                var serializationMethodName = $"{ParseNodeVarName}->{GetDeserializationMethodName(propertyType, currentElement)}";
                 writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ({serializationMethodName} !== null) {{");
                 writer.WriteLine($"{ResultVarName}->{property.Setter.Name.ToFirstCharacterLowerCase()}({serializationMethodName});");
                 writer.DecreaseIndent();
