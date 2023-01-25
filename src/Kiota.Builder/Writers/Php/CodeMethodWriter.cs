@@ -230,11 +230,11 @@ namespace Kiota.Builder.Writers.Php
         private void WriteSerializerBody(CodeMethod codeMethod, CodeClass parentClass, LanguageWriter writer, bool inherits)
         {
             if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
-                WriteSerializerBodyForUnionModel(parentClass, codeMethod, writer);
+                WriteSerializerBodyForUnionModel(parentClass, writer);
             else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
-                WriteSerializerBodyForIntersectionModel(parentClass, codeMethod, writer);
+                WriteSerializerBodyForIntersectionModel(parentClass, writer);
             else
-                WriteSerializerBodyForInheritedModel(codeMethod, inherits, parentClass, writer);
+                WriteSerializerBodyForInheritedModel(inherits, parentClass, writer);
         
             var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
         
@@ -242,7 +242,7 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"$writer->writeAdditionalData($this->get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");
         }
 
-        private void WriteSerializerBodyForIntersectionModel(CodeClass parentClass, CodeMethod codeMethod, LanguageWriter writer)
+        private void WriteSerializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
         { 
             var includeElse = false;
             var otherProps = parentClass
@@ -255,7 +255,7 @@ namespace Kiota.Builder.Writers.Php
             foreach (var otherProp in otherProps)
             {
                 writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ($this->{otherProp.Getter.Name.ToFirstCharacterLowerCase()}() !== null) {{");
-                WriteSerializationMethodCall(otherProp, codeMethod, writer, "null");
+                WriteSerializationMethodCall(otherProp, writer, "null");
                 writer.DecreaseIndent();
                 if(!includeElse)
                     includeElse = true;
@@ -272,7 +272,7 @@ namespace Kiota.Builder.Writers.Php
                                     .Select(static x => $"$this->{x.Getter.Name.ToFirstCharacterLowerCase()}()")
                                     .OrderBy(static x => x)
                                     .Aggregate(static (x, y) => $"{x}, {y}");
-                WriteSerializationMethodCall(complexProperties.First(), codeMethod, writer, "null", propertiesNames);
+                WriteSerializationMethodCall(complexProperties.First(), writer, "null", propertiesNames);
                 if(includeElse) {
                     writer.CloseBlock();
                 }
@@ -281,7 +281,7 @@ namespace Kiota.Builder.Writers.Php
             }
         }
 
-        private void WriteSerializerBodyForUnionModel(CodeClass parentClass, CodeMethod codeMethod, LanguageWriter writer)
+        private void WriteSerializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer)
         {
             var includeElse = false;
             var otherProps = parentClass
@@ -293,7 +293,7 @@ namespace Kiota.Builder.Writers.Php
             foreach (var otherProp in otherProps)
             {
                 writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ($this->{otherProp.Getter.Name.ToFirstCharacterLowerCase()}() !== null) {{");
-                WriteSerializationMethodCall(otherProp, codeMethod, writer, "null");
+                WriteSerializationMethodCall(otherProp, writer, "null");
                 writer.DecreaseIndent();
                 if(!includeElse)
                     includeElse = true;
@@ -302,18 +302,18 @@ namespace Kiota.Builder.Writers.Php
                 writer.CloseBlock(decreaseIndent: false);
         }
         
-        private void WriteSerializationMethodCall(CodeProperty otherProp, CodeMethod method, LanguageWriter writer, string serializationKey, string dataToSerialize = default) {
+        private void WriteSerializationMethodCall(CodeProperty otherProp, LanguageWriter writer, string serializationKey, string dataToSerialize = default) {
             if(string.IsNullOrEmpty(dataToSerialize))
                 dataToSerialize = $"$this->{otherProp.Getter?.Name?.ToFirstCharacterLowerCase() ?? "get" + otherProp.Name.ToFirstCharacterUpperCase()}()";
             writer.WriteLine($"$writer->{GetSerializationMethodName(otherProp.Type)}({serializationKey}, {dataToSerialize});");
         }
         
-        private void WriteSerializerBodyForInheritedModel(CodeMethod codeMethod, bool inherits, CodeClass parentClass, LanguageWriter writer)
+        private void WriteSerializerBodyForInheritedModel(bool inherits, CodeClass parentClass, LanguageWriter writer)
         {
             if(inherits)
                 writer.WriteLine("parent::serialize($writer);");
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly))
-                WriteSerializationMethodCall(otherProp, codeMethod, writer, $"'{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}'");
+                WriteSerializationMethodCall(otherProp, writer, $"'{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}'");
         }
 
         private string GetSerializationMethodName(CodeTypeBase propType) {
@@ -420,7 +420,7 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLines($"{RequestInfoVarName} = new {requestInformationClass}();",
                                 $"{RequestInfoVarName}->urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
                                 $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(pathParametersProperty, "''")};",
-                                $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
+                                $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");
             WriteAcceptHeaderDef(codeElement, writer);
             WriteRequestConfiguration(requestParams, writer);
             if (requestParams.requestBody != null) {
@@ -488,8 +488,6 @@ namespace Kiota.Builder.Writers.Php
             else
                 WriteDeserializerBodyForInheritedModel(method, parentClass, writer, inherits);
         }
-
-        private static readonly string DeserializerVarName = "$fieldDeserializers"; 
         private void WriteDeserializerBodyForInheritedModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool inherits)
         {
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
@@ -696,7 +694,7 @@ namespace Kiota.Builder.Writers.Php
             else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType && parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation)
                 WriteFactoryMethodBodyForUnionModelForDiscriminatedTypes(codeElement, parentClass, writer);
             else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
-                WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
+                WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, writer);
            
             if(writeDiscriminatorValueRead) {
                 writer.CloseBlock();
@@ -709,7 +707,7 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"return new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
         }
 
-        private void WriteFactoryMethodBodyForIntersectionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer)
+        private void WriteFactoryMethodBodyForIntersectionModel(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
         { 
             var includeElse = false;
             var otherProps = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
@@ -742,9 +740,32 @@ namespace Kiota.Builder.Writers.Php
                 writer.CloseBlock(decreaseIndent: false);
         }
 
-        private static void WriteFactoryMethodBodyForUnionModelForDiscriminatedTypes(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+        private void WriteFactoryMethodBodyForUnionModelForDiscriminatedTypes(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
         {
-            throw new NotImplementedException();
+            var includeElse = false;
+            var otherProps = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                .Where(static x => x.Type is CodeType { IsCollection: false, TypeDefinition: CodeClass or CodeInterface })
+                .OrderBy(static x => x, CodePropertyTypeForwardComparer)
+                .ThenBy(static x => x.Name)
+                .ToArray();
+            foreach(var property in otherProps) {
+                var propertyType = property.Type as CodeType;
+                if (propertyType.TypeDefinition is CodeInterface typeInterface && typeInterface.OriginalClass != null)
+                    propertyType = new CodeType {
+                        Name = typeInterface.OriginalClass.Name,
+                        TypeDefinition = typeInterface.OriginalClass,
+                        CollectionKind = propertyType.CollectionKind,
+                        IsNullable = propertyType.IsNullable,
+                    };
+                var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
+                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ('{mappedType.Key}' === {DiscriminatorMappingVarName}) {{");
+                writer.WriteLine($"{ResultVarName}->{property.Setter.Name.ToFirstCharacterLowerCase()}(new {conventions.GetTypeString(propertyType, codeElement, false)}());");
+                writer.DecreaseIndent();
+                if(!includeElse)
+                    includeElse = true;
+            }
+            if(otherProps.Any())
+                writer.CloseBlock(decreaseIndent: false);
         }
 
         private static readonly CodePropertyTypeComparer CodePropertyTypeForwardComparer = new();
