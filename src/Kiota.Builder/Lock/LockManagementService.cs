@@ -17,14 +17,14 @@ public class LockManagementService : ILockManagementService {
     public IEnumerable<string> GetDirectoriesContainingLockFile(string searchDirectory) {
         ArgumentException.ThrowIfNullOrEmpty(searchDirectory);
         var files = Directory.GetFiles(searchDirectory, LockFileName, SearchOption.AllDirectories);
-        return files.Select(x => Path.GetDirectoryName(x));
+        return files.Select(Path.GetDirectoryName).Where(x => !string.IsNullOrEmpty(x)).OfType<string>();
     }
     /// <inheritdoc/>
-    public Task<KiotaLock> GetLockFromDirectoryAsync(string directoryPath, CancellationToken cancellationToken = default) {
+    public Task<KiotaLock?> GetLockFromDirectoryAsync(string directoryPath, CancellationToken cancellationToken = default) {
         ArgumentException.ThrowIfNullOrEmpty(directoryPath);
         return GetLockFromDirectoryInternalAsync(directoryPath, cancellationToken);
     }
-    private static async Task<KiotaLock> GetLockFromDirectoryInternalAsync(string directoryPath, CancellationToken cancellationToken) {
+    private static async Task<KiotaLock?> GetLockFromDirectoryInternalAsync(string directoryPath, CancellationToken cancellationToken) {
         var lockFile = Path.Combine(directoryPath, LockFileName);
         if(File.Exists(lockFile)) {
             await using var fileStream = File.OpenRead(lockFile);
@@ -33,11 +33,11 @@ public class LockManagementService : ILockManagementService {
         return null;
     }
     /// <inheritdoc/>
-    public Task<KiotaLock> GetLockFromStreamAsync(Stream stream, CancellationToken cancellationToken = default) {
+    public Task<KiotaLock?> GetLockFromStreamAsync(Stream stream, CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(stream);
         return GetLockFromStreamInternalAsync(stream, cancellationToken);
     }
-    private static async Task<KiotaLock> GetLockFromStreamInternalAsync(Stream stream, CancellationToken cancellationToken) {
+    private static async Task<KiotaLock?> GetLockFromStreamInternalAsync(Stream stream, CancellationToken cancellationToken) {
         return await JsonSerializer.DeserializeAsync<KiotaLock>(stream, options, cancellationToken);
     }
     /// <inheritdoc/>

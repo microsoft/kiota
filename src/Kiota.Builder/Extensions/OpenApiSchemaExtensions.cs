@@ -37,12 +37,12 @@ public static class OpenApiSchemaExtensions {
     }
 
     public static string GetSchemaName(this OpenApiSchema schema) {
-        return schema.GetSchemaNames().LastOrDefault()?.TrimStart('$');// OData $ref
+        return schema.GetSchemaNames().LastOrDefault()?.TrimStart('$') ?? string.Empty;// OData $ref
     }
 
     public static bool IsReferencedSchema(this OpenApiSchema schema) {
         var isReference = schema?.Reference != null;
-        if(isReference && schema.Reference.IsExternal)
+        if(isReference && schema!.Reference.IsExternal)
             throw new NotSupportedException("External references are not supported in this version of Kiota. While Kiota awaits on OpenAPI.Net to support inlining external references, you can use https://www.nuget.org/packages/Microsoft.OpenApi.Hidi to generate an OpenAPI description with inlined external references and then use this new reference with Kiota.");
         return isReference;
     }
@@ -100,7 +100,7 @@ public static class OpenApiSchemaExtensions {
     {
         return schema.Properties.Any() || schema.Items != null || !string.IsNullOrEmpty(schema.Type) || !string.IsNullOrEmpty(schema.Format) || !string.IsNullOrEmpty(schema.Reference?.Id);
     }
-    public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
+    public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema>? visitedSchemas = null) {
         visitedSchemas ??= new();            
         if(schema != null && !visitedSchemas.Contains(schema)) {
             visitedSchemas.Add(schema);
@@ -158,10 +158,10 @@ public static class OpenApiSchemaExtensions {
         if (!string.IsNullOrEmpty(schema.Discriminator?.PropertyName))
             return schema.Discriminator.PropertyName;
 
-        if(schema.OneOf.Any())
-            return schema.OneOf.Select(static x => GetDiscriminatorPropertyName(x)).FirstOrDefault(static x => !string.IsNullOrEmpty(x));
-        if (schema.AnyOf.Any())
-            return schema.AnyOf.Select(static x => GetDiscriminatorPropertyName(x)).FirstOrDefault(static x => !string.IsNullOrEmpty(x));
+        if(schema.OneOf.Select(GetDiscriminatorPropertyName).FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string oneOfDiscriminatorPropertyName)
+            return oneOfDiscriminatorPropertyName;
+        if (schema.AnyOf.Select(GetDiscriminatorPropertyName).FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string anyOfDiscriminatorPropertyName)
+            return anyOfDiscriminatorPropertyName;
         if (schema.AllOf.Any())
             return GetDiscriminatorPropertyName(schema.AllOf.Last());
 
@@ -179,7 +179,7 @@ public static class OpenApiSchemaExtensions {
                 // ensure the matched AllOf entry is the last in the list
                 return GetDiscriminatorMappings(schema.AllOf.Last(allOfEvaluatorForMappings), inheritanceIndex);
             else if (!string.IsNullOrEmpty(schema.Reference?.Id))
-                 return GetAllInheritanceSchemaReferences(schema.Reference?.Id, inheritanceIndex)
+                 return GetAllInheritanceSchemaReferences(schema.Reference.Id, inheritanceIndex)
                             .Where(static x => !string.IsNullOrEmpty(x))
                             .Select(x => KeyValuePair.Create(x, x))
                             .Union(new [] { KeyValuePair.Create(schema.Reference.Id, schema.Reference.Id) });

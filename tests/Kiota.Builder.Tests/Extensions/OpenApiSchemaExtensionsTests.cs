@@ -165,7 +165,7 @@ public class OpenApiSchemaExtensionsTests {
         var schema = new OpenApiSchema();
         var names = schema.GetSchemaNames();
         Assert.Empty(names);
-        Assert.Null(schema.GetSchemaName());
+        Assert.Empty(schema.GetSchemaName());
     }
     [Fact]
     public void GetReferenceIdsAllOf() {

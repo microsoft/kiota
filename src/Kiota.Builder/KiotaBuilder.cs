@@ -819,7 +819,7 @@ public class KiotaBuilder
             }
         }
     }
-    private CodeTypeBase GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeClass parentClass) {
+    private CodeTypeBase GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, OpenApiSchema? schema, OpenApiOperation operation, CodeClass parentClass) {
         if (schema != null)
         {
             return CreateModelDeclarations(currentNode, schema, operation, parentClass, "Response");
@@ -1054,7 +1054,10 @@ public class KiotaBuilder
             var referenceId = GetReferenceIdFromOriginalSchema(currentSchema, schema);
             var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(referenceId);
             var shortestNamespace = string.IsNullOrEmpty(referenceId) ? codeNamespaceFromParent : rootNamespace?.FindOrAddNamespace(shortestNamespaceName);
-            className = (currentSchema.GetSchemaName() ?? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, schema: schema, requestBody: isRequestBody)).CleanupSymbolName();
+            className = (currentSchema.GetSchemaName() is string cName && !string.IsNullOrEmpty(cName) ?
+                            cName :
+                            currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, schema: schema, requestBody: isRequestBody))
+                        .CleanupSymbolName();
             if (shortestNamespace != null)
                 codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace, codeDeclaration as CodeClass);
         }

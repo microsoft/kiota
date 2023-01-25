@@ -44,7 +44,7 @@ internal class OpenApiPagingExtension : IOpenApiExtension
     public string OperationName
     {
         get; set;
-    }
+    } = string.Empty;
 
     /// <inheritdoc />
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)

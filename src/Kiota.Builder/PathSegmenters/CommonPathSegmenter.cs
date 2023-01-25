@@ -38,7 +38,8 @@ namespace Kiota.Builder.PathSegmenters {
             if (shouldNormalizePath)
                 targetPath = NormalizePath(targetPath);
             var directoryPath = Path.GetDirectoryName(targetPath);
-            Directory.CreateDirectory(directoryPath);
+            if (!string.IsNullOrEmpty(directoryPath))
+                Directory.CreateDirectory(directoryPath);
             return targetPath;
         }
     }

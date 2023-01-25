@@ -28,8 +28,10 @@ namespace Kiota.Builder.Extensions {
                                     static (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
                         string.Empty)
                     .ReplaceValueIdentifier();
-        public static string GetNodeNamespaceFromPath(this OpenApiUrlTreeNode currentNode, string prefix) =>
-            currentNode?.Path?.GetNamespaceFromPath(prefix);
+        public static string GetNodeNamespaceFromPath(this OpenApiUrlTreeNode currentNode, string prefix) {
+            ArgumentNullException.ThrowIfNull(currentNode);
+            return currentNode.Path.GetNamespaceFromPath(prefix);
+        }
         //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
         private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
         // microsoft.graph.getRoleScopeTagsByIds(ids=@ids)
@@ -43,8 +45,10 @@ namespace Kiota.Builder.Extensions {
             return WithKeyword + match.Groups["paramName"].Value.ToFirstCharacterUpperCase();
         };
         private static string CleanupParametersFromPath(string pathSegment) {
-            if((pathSegment?.Contains(requestParametersChar) ?? false) ||
-                (pathSegment?.Contains(requestParametersSectionChar) ?? false))
+            if (string.IsNullOrEmpty(pathSegment))
+                return pathSegment;
+            if(pathSegment.Contains(requestParametersChar) ||
+                pathSegment.Contains(requestParametersSectionChar))
                 return PathParametersRegex.Replace(
                                             AtSignPathParameterRegex.Replace(pathSegment, "={$1}"),
                                         requestParametersMatchEvaluator)
@@ -111,13 +115,13 @@ namespace Kiota.Builder.Extensions {
             "txt",
         };
         private static readonly Regex descriptionCleanupRegex = new (@"[\r\n\t]", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
-        public static string CleanupDescription(this string description) => string.IsNullOrEmpty(description) ? string.Empty : descriptionCleanupRegex.Replace(description, string.Empty);
-        public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string defaultValue = default) =>
+        public static string CleanupDescription(this string? description) => string.IsNullOrEmpty(description) ? string.Empty : descriptionCleanupRegex.Replace(description, string.Empty);
+        public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string? defaultValue = default) =>
         !string.IsNullOrEmpty(label) && (currentNode?.PathItems.ContainsKey(label) ?? false) ?
                 (currentNode.PathItems[label].Description ??
                 currentNode.PathItems[label].Summary ??
                 defaultValue).CleanupDescription() :
-            defaultValue;
+            (defaultValue ?? string.Empty);
         public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParameter();
         public static bool IsPathSegmentWithSingleSimpleParameter(this OpenApiUrlTreeNode currentNode) =>
             currentNode?.Segment.IsPathSegmentWithSingleSimpleParameter() ?? false;
