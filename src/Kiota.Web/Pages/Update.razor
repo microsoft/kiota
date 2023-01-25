@@ -38,10 +38,9 @@
         try {
             var lockInfo = await lockService.GetLockFromStreamAsync(stream, ComponentDetached).ConfigureAwait(false);
             IsLockFileValid = true;
-            IsDocumentValid = lockInfo.DescriptionLocation.StartsWith("http", StringComparison.OrdinalIgnoreCase);
-            if (IsDocumentValid) {
-                var includeFilters = !(lockInfo.IncludePatterns?.Any() ?? false) ? string.Empty : string.Join(",", lockInfo.IncludePatterns);
-                var excludeFilters = !(lockInfo.ExcludePatterns?.Any() ?? false) ? string.Empty : string.Join(",", lockInfo.ExcludePatterns);
+            if (lockInfo?.DescriptionLocation.StartsWith("http", StringComparison.OrdinalIgnoreCase) ?? false) {
+                var includeFilters = string.Join(",", lockInfo.IncludePatterns);
+                var excludeFilters = string.Join(",", lockInfo.ExcludePatterns);
                 var serializers = !(lockInfo.Serializers?.Any() ?? false) ? string.Empty : string.Join(",", lockInfo.Serializers);
                 var deserializers = !(lockInfo.Deserializers?.Any() ?? false) ? string.Empty : string.Join(",", lockInfo.Deserializers);
                 var structuredMimeTypes = !(lockInfo.StructuredMimeTypes?.Any() ?? false) ? string.Empty : string.Join(",", lockInfo.StructuredMimeTypes);

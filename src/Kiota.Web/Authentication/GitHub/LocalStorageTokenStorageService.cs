@@ -7,7 +7,7 @@ namespace Kiota.Web.Authentication.GitHub;
 public class LocalStorageTokenStorageService : ITokenStorageService {
     private const string PATKey = "github-pat";
     public required ILocalStorageService LocalStorageService { get; init; }
-    public async Task<string> GetTokenAsync(CancellationToken cancellationToken) {
+    public async Task<string?> GetTokenAsync(CancellationToken cancellationToken) {
         return await LocalStorageService.GetItemAsync<string>(PATKey, cancellationToken).ConfigureAwait(false);
     }
     public async Task SetTokenAsync(string value, CancellationToken cancellationToken) {
