@@ -28,7 +28,7 @@ public class APIsGuruSearchProvider : ISearchProvider
     public HashSet<string> KeysToExclude { get; set; } = new() {
         "microsoft.com:graph"
     };
-    public async Task<IDictionary<string, SearchResult>> SearchAsync(string term, string version, CancellationToken cancellationToken)
+    public async Task<IDictionary<string, SearchResult>> SearchAsync(string term, string? version, CancellationToken cancellationToken)
     {
         if (SearchUri == null)
             return new Dictionary<string, SearchResult>();
@@ -49,5 +49,5 @@ public class APIsGuruSearchProvider : ISearchProvider
                                             StringComparer.OrdinalIgnoreCase);
         return results;
     }
-    private static string GetVersionKey(bool singleCandidate, string version, KeyValuePair<string, ApiEntry> x) => singleCandidate ? version : x.Value.preferred;
+    private static string GetVersionKey(bool singleCandidate, string? version, KeyValuePair<string, ApiEntry> x) => singleCandidate ? version! : x.Value.preferred;
 }

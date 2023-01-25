@@ -31,7 +31,7 @@ public class TempFolderCachingAccessTokenProvider : IAccessTokenProvider
             result = await Concrete.GetAuthorizationTokenAsync(uri, additionalAuthenticationContext, cancellationToken).ConfigureAwait(false);
             await TokenStorageService.Value.SetTokenAsync(result, cancellationToken).ConfigureAwait(false);
         }
-        return result;
+        return result ?? string.Empty;
     }
     
 }

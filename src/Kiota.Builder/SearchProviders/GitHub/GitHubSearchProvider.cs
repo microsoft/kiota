@@ -57,7 +57,7 @@ public class GitHubSearchProvider : ISearchProvider
     {
         get; set;
     }
-    public Task<IDictionary<string, SearchResult>> SearchAsync(string term, string version, CancellationToken cancellationToken) {
+    public Task<IDictionary<string, SearchResult>> SearchAsync(string term, string? version, CancellationToken cancellationToken) {
         ArgumentException.ThrowIfNullOrEmpty(term);
         return SearchAsyncInternal(term, cancellationToken);
     }

@@ -13,10 +13,10 @@ public class UrlFormEncodedComplex : ValidationRule<OpenApiOperation>
         "application/x-www-form-urlencoded",
     };
     public UrlFormEncodedComplex() : base(static (context, operation) => {
-        var requestSchema = operation.GetRequestSchema(validContentTypes);
-        var responseSchema = operation.GetResponseSchema(validContentTypes);
-        ValidateSchema(requestSchema, context, operation.OperationId, "request body");
-        ValidateSchema(responseSchema, context, operation.OperationId, "response body");
+        if (operation.GetRequestSchema(validContentTypes) is OpenApiSchema requestSchema)
+            ValidateSchema(requestSchema, context, operation.OperationId, "request body");
+        if (operation.GetResponseSchema(validContentTypes) is OpenApiSchema responseSchema)
+            ValidateSchema(responseSchema, context, operation.OperationId, "response body");
     })
     {
     }
