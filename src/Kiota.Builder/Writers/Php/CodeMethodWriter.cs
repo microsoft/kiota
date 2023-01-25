@@ -272,7 +272,7 @@ namespace Kiota.Builder.Writers.Php
                 }
                 var propertiesNames = complexProperties
                                     .Select(static x => $"$this->{x.Getter.Name.ToFirstCharacterLowerCase()}()")
-                                    .OrderBy(static x => x)
+                                    .Order(StringComparer.OrdinalIgnoreCase)
                                     .Aggregate(static (x, y) => $"{x}, {y}");
                 WriteSerializationMethodCall(complexProperties.First(), writer, "null", propertiesNames);
                 if(includeElse) {
@@ -522,7 +522,7 @@ namespace Kiota.Builder.Writers.Php
             if(complexProperties.Any()) {
                 var propertiesNames = complexProperties
                     .Select(static x => x.Getter.Name.ToFirstCharacterLowerCase())
-                    .OrderBy(static x => x)
+                    .Order(StringComparer.OrdinalIgnoreCase)
                     .ToArray();
                 var propertiesNamesAsConditions = propertiesNames
                     .Select(static x => $"$this->{x}() !== null")
