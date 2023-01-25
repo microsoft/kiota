@@ -515,7 +515,8 @@ namespace Kiota.Builder.Writers.Shell
                         indentParam = false;
                     }
 
-                    writer.Write($"q.QueryParameters.{param.Name.ToFirstCharacterUpperCase()} = {paramName};", indentParam);
+                    var paramProperty = (param.Name.EndsWith("-query") ? param.Name.Replace("-query", "") : param.Name).ToFirstCharacterUpperCase();
+                    writer.Write($"q.QueryParameters.{paramProperty} = {paramName};", indentParam);
 
                     writer.WriteLine();
                 }

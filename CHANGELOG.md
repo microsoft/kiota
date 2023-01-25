@@ -20,7 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed response handler parameter from PHP request executor methods. [1856](https://github.com/microsoft/kiota/issues/1856)
 - Fixed minor typo in adding Accept header for PHP.
 - Fixed a bug with null reference types and composed types in CSharp.
+- Fixed a bug with null reference types scalar values in CSharp.
 - Fixed a bug where reserved names replacement wouldn't check whether the name was already in use (all languages).
+- Fixed a bug where default OpenAPI.net validation rules could not be disabled.
 - Fixed a race condition in namespace disambiguation for CSharp.
 - Removed the ResponseHandler parameter in RequestAdapter to be a RequestOption in Python [#1857](https://github.com/microsoft/kiota/issues/1857)
 - Updated the client constructor to set the baseUrl path parameter from RequestAdapter's baseUrl(PHP) [#2129](https://github.com/microsoft/kiota/issues/2129)
@@ -33,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed Go request adapter methods to remove the async suffix. [#2084](https://github.com/microsoft/kiota/issues/2084)
 - Fixed a bug where CLI query/header/path parameters would not be deduplicated. [#2059](https://github.com/microsoft/kiota/issues/2059)
 - Removes unused generated import for PHP Generation.
+- Fixed a bug where classes with namespace names are generated outside namespace in Python. [#2188](https://github.com/microsoft/kiota/issues/2188)
+- Changed signature of escaped reserved names from {x}_escaped to {x}_ in line with Python style guides. 
 
 ## [0.10.0] - 2023-01-04
 
