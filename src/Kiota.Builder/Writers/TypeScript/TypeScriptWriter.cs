@@ -7,7 +7,7 @@ namespace Kiota.Builder.Writers.TypeScript
         public TypeScriptWriter(string rootPath, string clientNamespaceName, bool usesBackingStore = false)
         {
             PathSegmenter = new TypeScriptPathSegmenter(rootPath,clientNamespaceName);
-            var conventionService = new TypeScriptConventionService(null);
+            var conventionService = new TypeScriptConventionService(this);
             AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
             AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
             AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
