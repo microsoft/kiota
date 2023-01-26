@@ -34,7 +34,9 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     protected KiotaConfiguration Configuration { get => ConfigurationFactory.Value; }
     private readonly Lazy<KiotaConfiguration> ConfigurationFactory = new (() => {
         var builder = new ConfigurationBuilder();
-        var configuration = builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+        using var defaultStream = new MemoryStream(Kiota.Generated.KiotaAppSettings.Default());
+        var configuration = builder.AddJsonStream(defaultStream)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
                 .AddEnvironmentVariables(prefix: "KIOTA_")
                 .Build();
         var configObject = new KiotaConfiguration();
@@ -138,7 +140,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         }
         return true;
     });
-    protected bool NoColors => consoleNoColors.Value;
+    protected bool ColorsEnabled => consoleNoColors.Value;
     
     private void DisplayHint(params string[] messages) {
         if(TutorialMode) {
@@ -149,11 +151,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     private void DisplayMessages(ConsoleColor color, params string[] messages) {
         if (SwapColors)
             color = Enum.GetValues<ConsoleColor>()[ConsoleColor.White - color];
-        if (!NoColors)
+        if (ColorsEnabled)
             Console.ForegroundColor = color;
         foreach(var message in messages)
             Console.WriteLine(message);
-        if (!NoColors)
+        if (ColorsEnabled)
             Console.ResetColor();
     }
     protected void DisplayError(params string[] messages) {

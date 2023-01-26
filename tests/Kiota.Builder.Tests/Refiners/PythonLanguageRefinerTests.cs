@@ -133,7 +133,7 @@ public class PythonLanguageRefinerTests {
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         Assert.NotEqual("break", model.Name);
-        Assert.Contains("escaped", voidMethod.Name);
+        Assert.EndsWith("_", voidMethod.Name);
     }
     [Fact]
     public async Task CorrectsCoreType() {

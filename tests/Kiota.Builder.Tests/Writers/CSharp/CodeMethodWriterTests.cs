@@ -400,7 +400,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
         Assert.Contains("{\"4XX\", Error4XX.CreateFromDiscriminatorValue},", result);
         Assert.Contains("SendCollectionAsync", result);
-        Assert.Contains("return collectionResult.ToList()", result);
+        Assert.Contains("return collectionResult?.ToList()", result);
         Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
         AssertExtensions.CurlyBracesAreClosed(result,1);
     }
@@ -650,7 +650,7 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
-    public void WritesRequestGeneratorBodyForScalar() {
+    public void WritesRequestGeneratorBodyForNullableScalar() {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
@@ -671,6 +671,33 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.AddRequestOptions(requestConfig.O)", result);
         Assert.Contains("SetContentFromScalar", result);
         Assert.Contains("return requestInfo;", result);
+        AssertExtensions.CurlyBracesAreClosed(result,1);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyForScalar() {
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.AcceptedResponseTypes.Add("application/json");
+        method.ReturnType = new CodeType { Name = "double", IsNullable = true, IsExternal = true};//use a nullable value type
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("var requestInfo = new RequestInformation", result);
+        Assert.Contains("HttpMethod = Method.GET", result);
+        Assert.Contains("UrlTemplate = ", result);
+        Assert.Contains("PathParameters = ", result);
+        Assert.Contains("if (config != null)", result);
+        Assert.Contains("var requestConfig = new RequestConfig()", result);
+        Assert.Contains("config.Invoke(requestConfig)", result);
+        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
+        Assert.Contains("requestInfo.AddHeaders(requestConfig.H)", result);
+        Assert.Contains("requestInfo.AddQueryParameters(requestConfig.Q)", result);
+        Assert.Contains("requestInfo.AddRequestOptions(requestConfig.O)", result);
+        Assert.Contains("SetContentFromScalar", result);
+        Assert.Contains("return requestInfo;", result);
+        Assert.Contains("async Task<double?>",result);//verify we only have one nullable marker
+        Assert.DoesNotContain("async Task<double??>",result);//verify we only have one nullable marker
         AssertExtensions.CurlyBracesAreClosed(result,1);
     }
     [Fact]
