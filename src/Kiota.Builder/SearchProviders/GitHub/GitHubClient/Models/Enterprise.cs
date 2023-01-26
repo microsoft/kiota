@@ -10,23 +10,26 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
     public class Enterprise : IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The avatar_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Avatar_url { get; set; }
+#nullable restore
 #else
         public string Avatar_url { get; set; }
 #endif
-        /// <summary>The created_at property</summary>
         public DateTimeOffset? Created_at { get; set; }
         /// <summary>A short description of the enterprise.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Description { get; set; }
+#nullable restore
 #else
         public string Description { get; set; }
 #endif
-        /// <summary>The html_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Html_url { get; set; }
+#nullable restore
 #else
         public string Html_url { get; set; }
 #endif
@@ -34,27 +37,33 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public int? Id { get; set; }
         /// <summary>The name of the enterprise.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Name { get; set; }
+#nullable restore
 #else
         public string Name { get; set; }
 #endif
-        /// <summary>The node_id property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Node_id { get; set; }
+#nullable restore
 #else
         public string Node_id { get; set; }
 #endif
         /// <summary>The slug url identifier for the enterprise.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Slug { get; set; }
+#nullable restore
 #else
         public string Slug { get; set; }
 #endif
-        /// <summary>The updated_at property</summary>
         public DateTimeOffset? Updated_at { get; set; }
         /// <summary>The enterprise&apos;s website URL.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Website_url { get; set; }
+#nullable restore
 #else
         public string Website_url { get; set; }
 #endif

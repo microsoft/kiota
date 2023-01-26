@@ -12,13 +12,17 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The email of the author (or committer) of the commit</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Email { get; set; }
+#nullable restore
 #else
         public string Email { get; set; }
 #endif
         /// <summary>The name of the author (or committer) of the commit</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Name { get; set; }
+#nullable restore
 #else
         public string Name { get; set; }
 #endif

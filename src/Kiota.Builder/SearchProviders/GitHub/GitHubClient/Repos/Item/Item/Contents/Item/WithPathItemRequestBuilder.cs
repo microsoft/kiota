@@ -49,11 +49,12 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// Deletes a file in a repository.You can provide an additional `committer` parameter, which is an object containing information about the committer. Or, you can provide an `author` parameter, which is an object containing information about the author.The `author` section is optional and is filled in with the `committer` information if omitted. If the `committer` information is omitted, the authenticated user&apos;s information is used.You must provide values for both `name` and `email`, whether you choose to use `author` or `committer`. Otherwise, you&apos;ll receive a `422` status code.**Note:** If you use this endpoint and the &quot;[Create or update file contents](https://docs.github.com/rest/reference/repos/#create-or-update-file-contents)&quot; endpoint in parallel, the concurrent requests will conflict and you will receive errors. You must use these endpoints serially instead.
         /// API method documentation <see href="https://docs.github.com/rest/reference/repos#delete-a-file" />
         /// </summary>
-        /// <param name="body">The request body</param>
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public async Task<FileCommit?> DeleteAsync(WithPathDeleteRequestBody body, Action<WithPathItemRequestBuilderDeleteRequestConfiguration>? requestConfiguration = default, CancellationToken cancellationToken = default) {
+#nullable restore
 #else
         public async Task<FileCommit> DeleteAsync(WithPathDeleteRequestBody body, Action<WithPathItemRequestBuilderDeleteRequestConfiguration> requestConfiguration = default, CancellationToken cancellationToken = default) {
 #endif
@@ -74,7 +75,9 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public async Task<WithPathResponse?> GetAsync(Action<WithPathItemRequestBuilderGetRequestConfiguration>? requestConfiguration = default, CancellationToken cancellationToken = default) {
+#nullable restore
 #else
         public async Task<WithPathResponse> GetAsync(Action<WithPathItemRequestBuilderGetRequestConfiguration> requestConfiguration = default, CancellationToken cancellationToken = default) {
 #endif
@@ -89,11 +92,12 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// Creates a new file or replaces an existing file in a repository. You must authenticate using an access token with the `workflow` scope to use this endpoint.**Note:** If you use this endpoint and the &quot;[Delete a file](https://docs.github.com/rest/reference/repos/#delete-file)&quot; endpoint in parallel, the concurrent requests will conflict and you will receive errors. You must use these endpoints serially instead.
         /// API method documentation <see href="https://docs.github.com/rest/reference/repos#create-or-update-file-contents" />
         /// </summary>
-        /// <param name="body">The request body</param>
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public async Task<FileCommit?> PutAsync(WithPathPutRequestBody body, Action<WithPathItemRequestBuilderPutRequestConfiguration>? requestConfiguration = default, CancellationToken cancellationToken = default) {
+#nullable restore
 #else
         public async Task<FileCommit> PutAsync(WithPathPutRequestBody body, Action<WithPathItemRequestBuilderPutRequestConfiguration> requestConfiguration = default, CancellationToken cancellationToken = default) {
 #endif
@@ -109,10 +113,11 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// <summary>
         /// Deletes a file in a repository.You can provide an additional `committer` parameter, which is an object containing information about the committer. Or, you can provide an `author` parameter, which is an object containing information about the author.The `author` section is optional and is filled in with the `committer` information if omitted. If the `committer` information is omitted, the authenticated user&apos;s information is used.You must provide values for both `name` and `email`, whether you choose to use `author` or `committer`. Otherwise, you&apos;ll receive a `422` status code.**Note:** If you use this endpoint and the &quot;[Create or update file contents](https://docs.github.com/rest/reference/repos/#create-or-update-file-contents)&quot; endpoint in parallel, the concurrent requests will conflict and you will receive errors. You must use these endpoints serially instead.
         /// </summary>
-        /// <param name="body">The request body</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public RequestInformation ToDeleteRequestInformation(WithPathDeleteRequestBody body, Action<WithPathItemRequestBuilderDeleteRequestConfiguration>? requestConfiguration = default) {
+#nullable restore
 #else
         public RequestInformation ToDeleteRequestInformation(WithPathDeleteRequestBody body, Action<WithPathItemRequestBuilderDeleteRequestConfiguration> requestConfiguration = default) {
 #endif
@@ -137,7 +142,9 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// </summary>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public RequestInformation ToGetRequestInformation(Action<WithPathItemRequestBuilderGetRequestConfiguration>? requestConfiguration = default) {
+#nullable restore
 #else
         public RequestInformation ToGetRequestInformation(Action<WithPathItemRequestBuilderGetRequestConfiguration> requestConfiguration = default) {
 #endif
@@ -159,10 +166,11 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// <summary>
         /// Creates a new file or replaces an existing file in a repository. You must authenticate using an access token with the `workflow` scope to use this endpoint.**Note:** If you use this endpoint and the &quot;[Delete a file](https://docs.github.com/rest/reference/repos/#delete-file)&quot; endpoint in parallel, the concurrent requests will conflict and you will receive errors. You must use these endpoints serially instead.
         /// </summary>
-        /// <param name="body">The request body</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public RequestInformation ToPutRequestInformation(WithPathPutRequestBody body, Action<WithPathItemRequestBuilderPutRequestConfiguration>? requestConfiguration = default) {
+#nullable restore
 #else
         public RequestInformation ToPutRequestInformation(WithPathPutRequestBody body, Action<WithPathItemRequestBuilderPutRequestConfiguration> requestConfiguration = default) {
 #endif
@@ -204,7 +212,9 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         public class WithPathItemRequestBuilderGetQueryParameters {
             /// <summary>The name of the commit/branch/tag. Default: the repository’s default branch (usually `master`)</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
             public string? Ref { get; set; }
+#nullable restore
 #else
             public string Ref { get; set; }
 #endif
@@ -251,27 +261,41 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
             public IDictionary<string, object> AdditionalData { get; set; }
             /// <summary>Composed type representation for type contentFile</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentFile? ContentFile { get; set; }
+#nullable restore
 #else
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentFile ContentFile { get; set; }
 #endif
             /// <summary>Composed type representation for type contentSubmodule</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentSubmodule? ContentSubmodule { get; set; }
+#nullable restore
 #else
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentSubmodule ContentSubmodule { get; set; }
 #endif
             /// <summary>Composed type representation for type contentSymlink</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentSymlink? ContentSymlink { get; set; }
+#nullable restore
 #else
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentSymlink ContentSymlink { get; set; }
 #endif
             /// <summary>Serialization hint for the current wrapper.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            public string? SerializationHint { get; set; }
+#nullable restore
+#else
             public string SerializationHint { get; set; }
+#endif
             /// <summary>Composed type representation for type WithPathResponseMember1</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.WithPathResponseMember1? WithPathResponseMember1 { get; set; }
+#nullable restore
 #else
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.WithPathResponseMember1 WithPathResponseMember1 { get; set; }
 #endif

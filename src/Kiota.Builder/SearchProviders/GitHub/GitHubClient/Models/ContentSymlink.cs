@@ -8,63 +8,70 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
     /// An object describing a symlink
     /// </summary>
     public class ContentSymlink : IAdditionalDataHolder, IParsable {
-        /// <summary>The _links property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public ContentSymlink__links? _links { get; set; }
+#nullable restore
 #else
         public ContentSymlink__links _links { get; set; }
 #endif
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The download_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Download_url { get; set; }
+#nullable restore
 #else
         public string Download_url { get; set; }
 #endif
-        /// <summary>The git_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Git_url { get; set; }
+#nullable restore
 #else
         public string Git_url { get; set; }
 #endif
-        /// <summary>The html_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Html_url { get; set; }
+#nullable restore
 #else
         public string Html_url { get; set; }
 #endif
-        /// <summary>The name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Name { get; set; }
+#nullable restore
 #else
         public string Name { get; set; }
 #endif
-        /// <summary>The path property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Path { get; set; }
+#nullable restore
 #else
         public string Path { get; set; }
 #endif
-        /// <summary>The sha property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Sha { get; set; }
+#nullable restore
 #else
         public string Sha { get; set; }
 #endif
-        /// <summary>The size property</summary>
         public int? Size { get; set; }
-        /// <summary>The target property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Target { get; set; }
+#nullable restore
 #else
         public string Target { get; set; }
 #endif
-        /// <summary>The type property</summary>
         public ContentSymlink_type? Type { get; set; }
-        /// <summary>The url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Url { get; set; }
+#nullable restore
 #else
         public string Url { get; set; }
 #endif

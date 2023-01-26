@@ -52,7 +52,9 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Search.Repositories 
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public async Task<RepositoriesResponse?> GetAsync(Action<RepositoriesRequestBuilderGetRequestConfiguration>? requestConfiguration = default, CancellationToken cancellationToken = default) {
+#nullable restore
 #else
         public async Task<RepositoriesResponse> GetAsync(Action<RepositoriesRequestBuilderGetRequestConfiguration> requestConfiguration = default, CancellationToken cancellationToken = default) {
 #endif
@@ -68,7 +70,9 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Search.Repositories 
         /// </summary>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public RequestInformation ToGetRequestInformation(Action<RepositoriesRequestBuilderGetRequestConfiguration>? requestConfiguration = default) {
+#nullable restore
 #else
         public RequestInformation ToGetRequestInformation(Action<RepositoriesRequestBuilderGetRequestConfiguration> requestConfiguration = default) {
 #endif
@@ -93,7 +97,9 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Search.Repositories 
         public class RepositoriesRequestBuilderGetQueryParameters {
             /// <summary>Determines whether the first search result returned is the highest number of matches (`desc`) or lowest number of matches (`asc`). This parameter is ignored unless you provide `sort`.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
             public string? Order { get; set; }
+#nullable restore
 #else
             public string Order { get; set; }
 #endif
@@ -103,13 +109,17 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Search.Repositories 
             public int? Per_page { get; set; }
             /// <summary>The query contains one or more search keywords and qualifiers. Qualifiers allow you to limit your search to specific areas of GitHub. The REST API supports the same qualifiers as the web interface for GitHub. To learn more about the format of the query, see [Constructing a search query](https://docs.github.com/rest/reference/search#constructing-a-search-query). See &quot;[Searching for repositories](https://docs.github.com/articles/searching-for-repositories/)&quot; for a detailed list of qualifiers.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
             public string? Q { get; set; }
+#nullable restore
 #else
             public string Q { get; set; }
 #endif
             /// <summary>Sorts the results of your query by number of `stars`, `forks`, or `help-wanted-issues` or how recently the items were `updated`. Default: [best match](https://docs.github.com/rest/reference/search#ranking-search-results)</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
             public string? Sort { get; set; }
+#nullable restore
 #else
             public string Sort { get; set; }
 #endif

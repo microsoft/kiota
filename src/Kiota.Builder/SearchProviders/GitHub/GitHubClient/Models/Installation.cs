@@ -8,47 +8,50 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
     /// Installation
     /// </summary>
     public class Installation : IAdditionalDataHolder, IParsable {
-        /// <summary>The access_tokens_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Access_tokens_url { get; set; }
+#nullable restore
 #else
         public string Access_tokens_url { get; set; }
 #endif
-        /// <summary>The account property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public Installations? Account { get; set; }
+#nullable restore
 #else
         public Installations Account { get; set; }
 #endif
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The app_id property</summary>
         public int? App_id { get; set; }
-        /// <summary>The app_slug property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? App_slug { get; set; }
+#nullable restore
 #else
         public string App_slug { get; set; }
 #endif
-        /// <summary>The contact_email property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Contact_email { get; set; }
+#nullable restore
 #else
         public string Contact_email { get; set; }
 #endif
-        /// <summary>The created_at property</summary>
         public DateTimeOffset? Created_at { get; set; }
-        /// <summary>The events property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public List<string>? Events { get; set; }
+#nullable restore
 #else
         public List<string> Events { get; set; }
 #endif
-        /// <summary>The has_multiple_single_files property</summary>
         public bool? Has_multiple_single_files { get; set; }
-        /// <summary>The html_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Html_url { get; set; }
+#nullable restore
 #else
         public string Html_url { get; set; }
 #endif
@@ -56,47 +59,53 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public int? Id { get; set; }
         /// <summary>The permissions granted to the user-to-server access token.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public AppPermissions? Permissions { get; set; }
+#nullable restore
 #else
         public AppPermissions Permissions { get; set; }
 #endif
-        /// <summary>The repositories_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Repositories_url { get; set; }
+#nullable restore
 #else
         public string Repositories_url { get; set; }
 #endif
         /// <summary>Describe whether all repositories have been selected or there&apos;s a selection involved</summary>
         public Installation_repository_selection? Repository_selection { get; set; }
-        /// <summary>The single_file_name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Single_file_name { get; set; }
+#nullable restore
 #else
         public string Single_file_name { get; set; }
 #endif
-        /// <summary>The single_file_paths property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public List<string>? Single_file_paths { get; set; }
+#nullable restore
 #else
         public List<string> Single_file_paths { get; set; }
 #endif
-        /// <summary>The suspended_at property</summary>
         public DateTimeOffset? Suspended_at { get; set; }
         /// <summary>A GitHub user.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public NullableSimpleUser? Suspended_by { get; set; }
+#nullable restore
 #else
         public NullableSimpleUser Suspended_by { get; set; }
 #endif
         /// <summary>The ID of the user or organization this token is being scoped to.</summary>
         public int? Target_id { get; set; }
-        /// <summary>The target_type property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Target_type { get; set; }
+#nullable restore
 #else
         public string Target_type { get; set; }
 #endif
-        /// <summary>The updated_at property</summary>
         public DateTimeOffset? Updated_at { get; set; }
         /// <summary>
         /// Instantiates a new installation and sets the default values.
@@ -175,15 +184,25 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
             public IDictionary<string, object> AdditionalData { get; set; }
             /// <summary>Composed type representation for type enterprise</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.Enterprise? Enterprise { get; set; }
+#nullable restore
 #else
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.Enterprise Enterprise { get; set; }
 #endif
             /// <summary>Serialization hint for the current wrapper.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            public string? SerializationHint { get; set; }
+#nullable restore
+#else
             public string SerializationHint { get; set; }
+#endif
             /// <summary>Composed type representation for type simpleUser</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.SimpleUser? SimpleUser { get; set; }
+#nullable restore
 #else
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.SimpleUser SimpleUser { get; set; }
 #endif

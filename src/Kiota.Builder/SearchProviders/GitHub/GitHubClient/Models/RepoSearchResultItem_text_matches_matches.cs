@@ -7,15 +7,17 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
     public class RepoSearchResultItem_text_matches_matches : IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The indices property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public List<int?>? Indices { get; set; }
+#nullable restore
 #else
         public List<int?> Indices { get; set; }
 #endif
-        /// <summary>The text property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Text { get; set; }
+#nullable restore
 #else
         public string Text { get; set; }
 #endif

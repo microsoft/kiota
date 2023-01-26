@@ -8,21 +8,24 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
     public class Repositories503Error : ApiException, IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The code property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Code { get; set; }
+#nullable restore
 #else
         public string Code { get; set; }
 #endif
-        /// <summary>The documentation_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Documentation_url { get; set; }
+#nullable restore
 #else
         public string Documentation_url { get; set; }
 #endif
-        /// <summary>The message property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public new string? Message { get; set; }
+#nullable restore
 #else
         public new string Message { get; set; }
 #endif

@@ -7,25 +7,27 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
     public class FileCommit_commit_verification : IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The payload property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Payload { get; set; }
+#nullable restore
 #else
         public string Payload { get; set; }
 #endif
-        /// <summary>The reason property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Reason { get; set; }
+#nullable restore
 #else
         public string Reason { get; set; }
 #endif
-        /// <summary>The signature property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
         public string? Signature { get; set; }
+#nullable restore
 #else
         public string Signature { get; set; }
 #endif
-        /// <summary>The verified property</summary>
         public bool? Verified { get; set; }
         /// <summary>
         /// Instantiates a new FileCommit_commit_verification and sets the default values.
