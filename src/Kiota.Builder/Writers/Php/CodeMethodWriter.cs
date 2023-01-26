@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Php
@@ -478,7 +477,6 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"{RequestInfoVarName}->addHeader('Accept', \"{string.Join(", ", codeMethod.AcceptedResponseTypes)}\");");
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method, bool extendsModelClass = false) {
-            var inherits = parentClass.StartBlock?.Inherits != null;
             if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
                 WriteDeserializerBodyForUnionModel(method, parentClass, writer);
             else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
@@ -488,7 +486,6 @@ namespace Kiota.Builder.Writers.Php
         }
         private void WriteDeserializerBodyForInheritedModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool extendsModelClass = false)
         {
-            var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
             var codeProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).ToArray();
             writer.WriteLine("$o = $this;");
             writer.WriteLines(
@@ -660,8 +657,7 @@ namespace Kiota.Builder.Writers.Php
             if (isCollection) return "sendCollectionAsync";
             return "sendAsync";
         }
-
-        private const int MaxDiscriminatorsPerMethod = 500;
+        
         private const string DiscriminatorMappingVarName = "$mappingValue";
         private const string ResultVarName = "$result";
 
