@@ -114,7 +114,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         } else
             writer.WriteLine($"return new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
     }
-    private static readonly Regex factoryMethodIndexParser = new(@"_(?<idx>\d+)");
+    private static readonly Regex factoryMethodIndexParser = new(@"_(?<idx>\d+)", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
     private static void WriteFactoryOverloadMethod(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
         if(int.TryParse(factoryMethodIndexParser.Match(codeElement.Name).Groups["idx"].Value, out var currentDiscriminatorPageIndex) &&
             codeElement.Parameters.FirstOrDefault() is CodeParameter parameter) {
