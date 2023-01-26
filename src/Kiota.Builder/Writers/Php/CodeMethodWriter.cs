@@ -39,7 +39,7 @@ namespace Kiota.Builder.Writers.Php
                         WriteConstructorBody(parentClass, codeElement, writer, inherits);
                         break;
                     case CodeMethodKind.Serializer:
-                        WriteSerializerBody(parentClass, writer, inherits, extendsModelClass);
+                        WriteSerializerBody(parentClass, writer, extendsModelClass);
                         break;
                     case CodeMethodKind.Setter:
                         WriteSetterBody(writer, codeElement);
@@ -225,7 +225,7 @@ namespace Kiota.Builder.Writers.Php
             writer.IncreaseIndent();
         }
 
-        private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer, bool inherits, bool extendsModelClass = false)
+        private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer, bool extendsModelClass = false)
         {
             if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
                 WriteSerializerBodyForUnionModel(parentClass, writer);
