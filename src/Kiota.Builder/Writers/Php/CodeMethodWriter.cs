@@ -94,7 +94,7 @@ namespace Kiota.Builder.Writers.Php
                 // do not apply the default value if the type is composed as the default value may not necessarily which type to use
                 .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                 .OrderBy(x => x.Name)) {
-                var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() ?? $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
+                var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
                 writer.WriteLine($"$this->{setterName}({propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote()});");
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor)) {
@@ -131,9 +131,7 @@ namespace Kiota.Builder.Writers.Php
             var methodDescription = codeMethod.Documentation.Description;
 
             var hasMethodDescription = !string.IsNullOrEmpty(methodDescription.Trim());
-            var parameters = codeMethod.Parameters;
-            var withDescription = parameters as CodeParameter[] ?? parameters.ToArray();
-            if (!hasMethodDescription && !withDescription.Any())
+            if (!hasMethodDescription && !codeMethod.Parameters.Any())
             {
                 return;
             }
@@ -144,7 +142,7 @@ namespace Kiota.Builder.Writers.Php
             var isSetterForAdditionalData = codeMethod.IsOfKind(CodeMethodKind.Setter) &&
                                             (accessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false);
 
-            var parametersWithDescription = withDescription
+            var parametersWithDescription = codeMethod.Parameters
                 .Where(static x => x.Documentation.DescriptionAvailable)
                 .Select(x => GetParameterDocString(codeMethod, x, isSetterForAdditionalData))
                 .ToList();
@@ -233,8 +231,8 @@ namespace Kiota.Builder.Writers.Php
             else
                 WriteSerializerBodyForInheritedModel(parentClass, writer, extendsModelClass);
         
-            var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
-            if(additionalDataProperty != null)
+            if(parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault() is CodeProperty additionalDataProperty &&
+                additionalDataProperty.Getter != null)
                 writer.WriteLine($"$writer->writeAdditionalData($this->{additionalDataProperty.Getter.Name}());");
         }
 
@@ -243,29 +241,29 @@ namespace Kiota.Builder.Writers.Php
             var includeElse = false;
             var otherProps = parentClass
                                     .GetPropertiesOfKind(CodePropertyKind.Custom)
-                                    .Where(static x => !x.ExistsInBaseType)
+                                    .Where(static x => !x.ExistsInBaseType && x.Getter != null)
                                     .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
                                     .Order(CodePropertyTypeBackwardComparer)
                                     .ThenBy(static x => x.Name)
                                     .ToArray();
             foreach (var otherProp in otherProps)
             {
-                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ($this->{otherProp.Getter.Name.ToFirstCharacterLowerCase()}() !== null) {{");
+                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ($this->{otherProp.Getter!.Name.ToFirstCharacterLowerCase()}() !== null) {{");
                 WriteSerializationMethodCall(otherProp, writer, "null");
                 writer.DecreaseIndent();
                 if(!includeElse)
                     includeElse = true;
             }
             var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                                .Where(static x => x.Getter != null)
                                                 .Where(static x => x.Type is CodeType { TypeDefinition: CodeClass } && !x.Type.IsCollection)
                                                 .ToArray();
             if(complexProperties.Any()) {
                 if(includeElse) {
-                    writer.WriteLine("} else {");
-                    writer.IncreaseIndent();
+                    writer.StartBlock("} else {");
                 }
                 var propertiesNames = complexProperties
-                                    .Select(static x => $"$this->{x.Getter.Name.ToFirstCharacterLowerCase()}()")
+                                    .Select(static x => $"$this->{x.Getter!.Name.ToFirstCharacterLowerCase()}()")
                                     .Order(StringComparer.OrdinalIgnoreCase)
                                     .Aggregate(static (x, y) => $"{x}, {y}");
                 WriteSerializationMethodCall(complexProperties.First(), writer, "null", propertiesNames);
@@ -282,13 +280,13 @@ namespace Kiota.Builder.Writers.Php
             var includeElse = false;
             var otherProps = parentClass
                 .GetPropertiesOfKind(CodePropertyKind.Custom)
-                .Where(static x => !x.ExistsInBaseType)
+                .Where(static x => !x.ExistsInBaseType && x.Getter != null)
                 .Order(CodePropertyTypeForwardComparer)
                 .ThenBy(static x => x.Name)
                 .ToArray();
             foreach (var otherProp in otherProps)
             {
-                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ($this->{otherProp.Getter.Name.ToFirstCharacterLowerCase()}() !== null) {{");
+                writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ($this->{otherProp.Getter!.Name.ToFirstCharacterLowerCase()}() !== null) {{");
                 WriteSerializationMethodCall(otherProp, writer, "null");
                 writer.DecreaseIndent();
                 if(!includeElse)
@@ -298,9 +296,9 @@ namespace Kiota.Builder.Writers.Php
                 writer.CloseBlock(decreaseIndent: false);
         }
         
-        private void WriteSerializationMethodCall(CodeProperty otherProp, LanguageWriter writer, string serializationKey, string dataToSerialize = default) {
+        private void WriteSerializationMethodCall(CodeProperty otherProp, LanguageWriter writer, string serializationKey, string? dataToSerialize = default) {
             if(string.IsNullOrEmpty(dataToSerialize))
-                dataToSerialize = $"$this->{otherProp.Getter?.Name?.ToFirstCharacterLowerCase() ?? "get" + otherProp.Name.ToFirstCharacterUpperCase()}()";
+                dataToSerialize = $"$this->{(otherProp.Getter?.Name?.ToFirstCharacterLowerCase() is string gName && !string.IsNullOrEmpty(gName) ? gName : "get" + otherProp.Name.ToFirstCharacterUpperCase())}()";
             writer.WriteLine($"$writer->{GetSerializationMethodName(otherProp.Type)}({serializationKey}, {dataToSerialize});");
         }
         
@@ -309,7 +307,7 @@ namespace Kiota.Builder.Writers.Php
             if(extendsModelClass)
                 writer.WriteLine("parent::serialize($writer);");
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly))
-                WriteSerializationMethodCall(otherProp, writer, $"'{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}'");
+                WriteSerializationMethodCall(otherProp, writer, $"'{otherProp.WireName}'");
         }
 
         private string GetSerializationMethodName(CodeTypeBase propType) {
@@ -506,7 +504,8 @@ namespace Kiota.Builder.Writers.Php
                 .ToArray();
             if(complexProperties.Any()) {
                 var propertiesNames = complexProperties
-                    .Select(static x => x.Getter.Name.ToFirstCharacterLowerCase())
+                    .Where(static x => x.Getter != null)
+                    .Select(static x => x.Getter!.Name.ToFirstCharacterLowerCase())
                     .Order(StringComparer.OrdinalIgnoreCase)
                     .ToArray();
                 var propertiesNamesAsConditions = propertiesNames
@@ -527,11 +526,11 @@ namespace Kiota.Builder.Writers.Php
             var includeElse = false;
             var otherPropGetters = parentClass
                 .GetPropertiesOfKind(CodePropertyKind.Custom)
-                .Where(static x => !x.ExistsInBaseType)
+                .Where(static x => !x.ExistsInBaseType && x.Getter != null)
                 .Where(static x => x.Type is CodeType propertyType && !propertyType.IsCollection && propertyType.TypeDefinition is CodeClass)
                 .Order(CodePropertyTypeForwardComparer)
                 .ThenBy(static x => x.Name)
-                .Select(static x => x.Getter.Name.ToFirstCharacterLowerCase())
+                .Select(static x => x.Getter!.Name.ToFirstCharacterLowerCase())
                 .ToArray();
             foreach (var otherPropGetter in otherPropGetters)
             {
@@ -564,10 +563,9 @@ namespace Kiota.Builder.Writers.Php
             var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
                 .Where(static x => x?.Name != null)
                 .Select(static x => x!);
-            var infoParameters = requestInfoParameters as CodeParameter[] ?? requestInfoParameters.ToArray();
-            var callParams = infoParameters.Select(conventions.GetParameterName);
+            var callParams = requestInfoParameters.Select(conventions.GetParameterName);
             var joinedParams = string.Empty; 
-            if(infoParameters.Any())
+            if(requestInfoParameters.Any())
             {
                 joinedParams = string.Join(", ", callParams);
             }
@@ -657,13 +655,12 @@ namespace Kiota.Builder.Writers.Php
 
         private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
         {
-            var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-            
             if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType || parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
-                writer.WriteLine($"{ResultVarName} = new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
+                writer.WriteLine($"{ResultVarName} = new {parentClass.Name.ToFirstCharacterUpperCase()}();");
             var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
 
-            if (writeDiscriminatorValueRead)
+            if (writeDiscriminatorValueRead &&
+                codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParameter)
             {
                 writer.WriteLines($"$mappingValueNode = ${parseNodeParameter.Name.ToFirstCharacterLowerCase()}->getChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\");",
                     "if ($mappingValueNode !== null) {");
@@ -686,13 +683,14 @@ namespace Kiota.Builder.Writers.Php
                     WriteFactoryMethodBodyForUnionModelForUnDiscriminatedTypes(codeElement, parentClass, writer);
                 writer.WriteLine($"return {ResultVarName};");
             } else
-                writer.WriteLine($"return new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
+                writer.WriteLine($"return new {parentClass.Name.ToFirstCharacterUpperCase()}();");
         }
 
         private void WriteFactoryMethodBodyForIntersectionModel(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
         { 
             var includeElse = false;
             var otherProps = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                    .Where(static x => x.Setter != null)
                                     .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
                                     .Order(CodePropertyTypeBackwardComparer)
                                     .ThenBy(static x => x.Name)
@@ -701,21 +699,22 @@ namespace Kiota.Builder.Writers.Php
                 if(property.Type is CodeType propertyType) { 
                     var deserializationMethodName = $"{ParseNodeVarName}->{GetDeserializationMethodName(propertyType, codeElement)}"; 
                     writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ({deserializationMethodName} !== null) {{"); 
-                    writer.WriteLine($"{ResultVarName}->{property.Setter.Name.ToFirstCharacterLowerCase()}({deserializationMethodName});"); 
+                    writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({deserializationMethodName});"); 
                     writer.DecreaseIndent();
                 } 
                 if(!includeElse)
                     includeElse = true;
             } 
             var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
-                                            .Select(static x => new Tuple<CodeProperty, CodeType>(x, x.Type as CodeType))
+                                            .Where(static x => x.Setter != null && x.Type is CodeType)
+                                            .Select(static x => new Tuple<CodeProperty, CodeType>(x, (CodeType)x.Type))
                                             .Where(static x => x.Item2.TypeDefinition is CodeClass && !x.Item2.IsCollection)
                                             .ToArray();
             if(complexProperties.Any()) {
                 if(includeElse)
                     writer.StartBlock("} else {");
                 foreach(var property in complexProperties)
-                    writer.WriteLine($"{ResultVarName}->{property.Item1.Setter.Name.ToFirstCharacterLowerCase()}(new {conventions.GetTypeString(property.Item2, codeElement, false)}());");
+                    writer.WriteLine($"{ResultVarName}->{property.Item1.Setter!.Name.ToFirstCharacterLowerCase()}(new {conventions.GetTypeString(property.Item2, codeElement, false)}());");
                 if(includeElse)
                     writer.CloseBlock();
             } else if (otherProps.Any())
@@ -726,12 +725,13 @@ namespace Kiota.Builder.Writers.Php
         {
             var includeElse = false;
             var otherProps = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                .Where(static x => x.Setter != null && x.Type is CodeType)
                 .Where(static x => x.Type is CodeType { IsCollection: false, TypeDefinition: CodeClass or CodeInterface })
                 .Order(CodePropertyTypeForwardComparer)
                 .ThenBy(static x => x.Name)
                 .ToArray();
             foreach(var property in otherProps) {
-                var propertyType = property.Type as CodeType;
+                var propertyType = (CodeType)property.Type;
                 if (propertyType.TypeDefinition is CodeInterface { OriginalClass: { } } typeInterface)
                     propertyType = new CodeType {
                         Name = typeInterface.OriginalClass.Name,
@@ -741,7 +741,7 @@ namespace Kiota.Builder.Writers.Php
                     };
                 var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
                 writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ('{mappedType.Key}' === {DiscriminatorMappingVarName}) {{");
-                writer.WriteLine($"{ResultVarName}->{property.Setter.Name.ToFirstCharacterLowerCase()}(new {conventions.GetTypeString(propertyType, codeElement, false)}());");
+                writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}(new {conventions.GetTypeString(propertyType, codeElement, false)}());");
                 writer.DecreaseIndent();
                 if(!includeElse)
                     includeElse = true;
@@ -756,15 +756,15 @@ namespace Kiota.Builder.Writers.Php
         {
             var includeElse = false;
             var otherProps = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                .Where(static x => x.Setter != null)
                 .Where(static x => x.Type is CodeType xType && (xType.IsCollection || xType.TypeDefinition is null or CodeEnum))
                 .Order(CodePropertyTypeForwardComparer)
                 .ThenBy(static x => x.Name)
                 .ToArray();
             foreach(var property in otherProps) {
-                var propertyType = property.Type as CodeType;
-                var serializationMethodName = $"{ParseNodeVarName}->{GetDeserializationMethodName(propertyType, currentElement)}";
+                var serializationMethodName = $"{ParseNodeVarName}->{GetDeserializationMethodName(property.Type, currentElement)}";
                 writer.StartBlock($"{(includeElse? "} else " : string.Empty)}if ({serializationMethodName} !== null) {{");
-                writer.WriteLine($"{ResultVarName}->{property.Setter.Name.ToFirstCharacterLowerCase()}({serializationMethodName});");
+                writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({serializationMethodName});");
                 writer.DecreaseIndent();
                 if(!includeElse)
                     includeElse = true;
@@ -773,7 +773,7 @@ namespace Kiota.Builder.Writers.Php
                 writer.CloseBlock(decreaseIndent: false);
         }
 
-        private void WriteFactoryMethodBodyForInheritedModel(IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> discriminatorMappings, LanguageWriter writer, CodeMethod method, string varName = default)
+        private void WriteFactoryMethodBodyForInheritedModel(IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> discriminatorMappings, LanguageWriter writer, CodeMethod method, string? varName = default)
         {
             if (string.IsNullOrEmpty(varName))
                 varName = DiscriminatorMappingVarName;

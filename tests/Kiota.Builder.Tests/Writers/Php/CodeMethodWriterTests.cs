@@ -1680,6 +1680,9 @@ namespace Kiota.Builder.Tests.Writers.Php
                 },
                 Setter = new CodeMethod {
                     Name = "SetAdditionalData",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
                 }
             });
             parentClass.AddProperty(new CodeProperty {
@@ -1695,6 +1698,9 @@ namespace Kiota.Builder.Tests.Writers.Php
                 },
                 Setter = new CodeMethod {
                     Name = "SetDummyProp",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
                 },
             });
             parentClass.AddProperty(new CodeProperty{
@@ -1735,9 +1741,15 @@ namespace Kiota.Builder.Tests.Writers.Php
                 },
                 Getter = new CodeMethod {
                     Name = "GetDummyComplexColl",
+                    ReturnType = new CodeType {
+                        Name = "SomeComplexType",
+                    }
                 },
                 Setter = new CodeMethod {
                     Name = "SetDummyComplexColl",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
                 }
             });
             parentClass.AddProperty(new CodeProperty{
@@ -1750,9 +1762,15 @@ namespace Kiota.Builder.Tests.Writers.Php
                 },
                 Getter = new CodeMethod {
                     Name = "GetDummyEnumCollection",
+                    ReturnType = new CodeType {
+                        Name = "SomeEnum",
+                    }
                 },
                 Setter = new CodeMethod {
                     Name = "SetDummyEnumCollection",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
                 }
             });
             parentClass.AddProperty(new CodeProperty {
