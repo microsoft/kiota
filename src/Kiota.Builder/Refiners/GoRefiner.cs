@@ -417,7 +417,7 @@ public class GoRefiner : CommonLanguageRefiner
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             "github.com/microsoft/kiota-abstractions-go", "RequestHeaders"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore), "github.com/microsoft/kiota-abstractions-go/store","BackingStore"),
-    };//TODO add backing store types once we have them defined
+    };
     private void CorrectImplements(ProprietableBlockDeclaration block) {
         block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");
         block.ReplaceImplementByName(KiotaBuilder.BackedModelInterface, "BackedModel");
