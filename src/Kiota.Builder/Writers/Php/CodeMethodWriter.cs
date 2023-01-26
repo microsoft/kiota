@@ -489,7 +489,7 @@ namespace Kiota.Builder.Writers.Php
         private void WriteDeserializerBodyForInheritedModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool extendsModelClass = false)
         {
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
-            var codeProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).ToArrray();
+            var codeProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).ToArray();
             writer.WriteLine("$o = $this;");
             writer.WriteLines(
                 $"return {((extendsModelClass) ? $"array_merge(parent::{method.Name.ToFirstCharacterLowerCase()}(), [" : " [" )}");
