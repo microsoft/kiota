@@ -1015,7 +1015,7 @@ public class CodeMethodWriterTests : IDisposable {
             Kind = CodeMethodKind.Deserializer,
             IsAsync = false,
             ReturnType = new CodeType {
-                Name = "Map<String, Consumer<ParseNode>>",
+                Name = "Map<String, java.util.function.Consumer<ParseNode>>",
             },
         }).First();
         writer.Write(deserializationMethod);
@@ -1023,8 +1023,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.DoesNotContain("final UnionTypeWrapper res =", result);
         Assert.Contains("this.getComplexType1Value() != null", result);
         Assert.Contains("return this.getComplexType1Value().getFieldDeserializers()", result);
-        Assert.Contains("new HashMap<String, Consumer<ParseNode>>()", result);
-        AssertExtensions.Before("return this.getComplexType1Value().getFieldDeserializers()", "new HashMap<String, Consumer<ParseNode>>", result);
+        Assert.Contains("new HashMap<String, java.util.function.Consumer<ParseNode>>()", result);
+        AssertExtensions.Before("return this.getComplexType1Value().getFieldDeserializers()", "new HashMap<String, java.util.function.Consumer<ParseNode>>", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1035,7 +1035,7 @@ public class CodeMethodWriterTests : IDisposable {
             Kind = CodeMethodKind.Deserializer,
             IsAsync = false,
             ReturnType = new CodeType {
-                Name = "Map<String, Consumer<ParseNode>>",
+                Name = "Map<String, java.util.function.Consumer<ParseNode>>",
             },
         }).First();
         writer.Write(deserializationMethod);
@@ -1043,8 +1043,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.DoesNotContain("final IntersectionTypeWrapper res =", result);
         Assert.Contains("this.getComplexType1Value() != null || this.getComplexType3Value() != null", result);
         Assert.Contains("return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", result);
-        Assert.Contains("new HashMap<String, Consumer<ParseNode>>()", result);
-        AssertExtensions.Before("return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", "new HashMap<String, Consumer<ParseNode>>()", result);
+        Assert.Contains("new HashMap<String, java.util.function.Consumer<ParseNode>>()", result);
+        AssertExtensions.Before("return ParseNodeHelper.mergeDeserializersForIntersectionWrapper(this.getComplexType1Value(), this.getComplexType3Value())", "new HashMap<String, java.util.function.Consumer<ParseNode>>()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
