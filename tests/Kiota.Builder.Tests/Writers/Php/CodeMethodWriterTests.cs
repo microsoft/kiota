@@ -1086,76 +1086,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains($"$this->{propName} = {defaultValue};", result);
             Assert.Contains("$this->pathParameters = array_merge($this->pathParameters, $urlTplParams);", result);
         }
-        
-        [Fact]
-        public void WritesModelSplitFactoryOverloadBody() {
-            var parentModel = root.AddClass(new CodeClass {
-                Name = "parentModel",
-                Kind = CodeClassKind.Model,
-            }).First();
-            var childModel = root.AddClass(new CodeClass {
-                Name = "childModel",
-                Kind = CodeClassKind.Model,
-            }).First();
-            childModel.StartBlock.Inherits = new CodeType {
-                Name = "parentModel",
-                TypeDefinition = parentModel,
-            };
-            var factoryMethod = parentModel.AddMethod(new CodeMethod {
-                Name = "factory",
-                Kind = CodeMethodKind.Factory,
-                ReturnType = new CodeType {
-                    Name = "parentModel",
-                    TypeDefinition = parentModel,
-                },
-                IsStatic = true,
-            }).First();
-            var factoryOverloadMethod = factoryMethod.Clone() as CodeMethod;
-            factoryOverloadMethod.Access = AccessModifier.Private;
-            factoryOverloadMethod.Name += "_1";
-            factoryOverloadMethod.OriginalMethod = factoryMethod;
-            factoryOverloadMethod.RemoveParametersByKind(CodeParameterKind.ParseNode);
-            factoryOverloadMethod.AddParameter(new CodeParameter {
-                Name = "value",
-                Type = new CodeType{
-                    Name = "String",
-                    IsNullable = true,
-                    IsExternal = true,
-                },
-                Optional = false,
-            });
-            parentModel.AddMethod(factoryOverloadMethod);
-            Enumerable.Range(0, 1500).ToList().ForEach(x => parentModel.DiscriminatorInformation.AddDiscriminatorMapping($"#microsoft.graph.{x}", new CodeType {
-                Name = $"microsoft\\Graph\\{x}",
-                TypeDefinition = childModel,
-            }));
-            parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
-            factoryMethod.AddParameter(new CodeParameter {
-                Name = "parseNode",
-                Kind = CodeParameterKind.ParseNode,
-                Type = new CodeType {
-                    Name = "ParseNode",
-                    TypeDefinition = new CodeClass {
-                        Name = "ParseNode",
-                    },
-                    IsExternal = true,
-                },
-                Optional = false,
-            });
-            _refiner.Refine(root, new CancellationToken());
-            languageWriter.Write(factoryOverloadMethod);
-            var result = stringWriter.ToString();
-            Assert.DoesNotContain("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\")", result);
-            Assert.DoesNotContain("if ($mappingValueNode !== null) {", result);
-            Assert.DoesNotContain("$mappingValue = $mappingValueNode->getStringValue()", result);
-            Assert.Contains("switch ($value) {", result);
-            Assert.Contains("case '#microsoft.graph.535': return new Microsoft\\Graph\\535();", result);
-            Assert.DoesNotContain("$factory_1_result = factory_1($mappingValue);", result);
-            Assert.DoesNotContain("if ($factory_1_result !== null) {", result);
-            Assert.DoesNotContain("return new ParentModel()", result);
-            AssertExtensions.CurlyBracesAreClosed(result);
-        }
-        
+
         [Fact]
         public void WritesModelFactoryBodyForUnionModels() {
             var wrapper = AddUnionTypeWrapper();

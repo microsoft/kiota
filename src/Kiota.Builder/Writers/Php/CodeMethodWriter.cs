@@ -10,7 +10,6 @@ namespace Kiota.Builder.Writers.Php
     {
 
         protected readonly bool UseBackingStore = false;
-        private static readonly Regex factoryMethodIndexParser = new(@"_(?<idx>\d+)", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
         public CodeMethodWriter(PhpConventionService conventionService, bool useBackingStore = false) : base(conventionService)
         {
             UseBackingStore = useBackingStore;
@@ -24,7 +23,7 @@ namespace Kiota.Builder.Writers.Php
             var parentClass = codeElement.Parent as CodeClass;
             var returnType = codeElement.Kind == CodeMethodKind.Constructor ? "void" : conventions.GetTypeString(codeElement.ReturnType, codeElement);
             var inherits = parentClass?.StartBlock?.Inherits != null;
-            var extendsModelClass = parentClass?.StartBlock?.Inherits?.TypeDefinition is CodeClass codeClass &&
+            var extendsModelClass = inherits && parentClass?.StartBlock?.Inherits?.TypeDefinition is CodeClass codeClass &&
                                      codeClass.IsOfKind(CodeClassKind.Model);
             var orNullReturn = codeElement.ReturnType.IsNullable ? new[]{"?", "|null"} : new[] {string.Empty, string.Empty};
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
@@ -66,9 +65,6 @@ namespace Kiota.Builder.Writers.Php
                         break;
                     case CodeMethodKind.RequestExecutor:
                         WriteRequestExecutorBody(codeElement, parentClass, requestParams, writer);
-                        break;
-                    case CodeMethodKind.Factory when codeElement.IsOverload:
-                        WriteFactoryMethodOverloadBody(codeElement, parentClass, writer);
                         break;
                     case CodeMethodKind.Factory:
                         WriteFactoryMethodBody(codeElement, parentClass, writer);
@@ -236,7 +232,7 @@ namespace Kiota.Builder.Writers.Php
             else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
                 WriteSerializerBodyForIntersectionModel(parentClass, writer);
             else
-                WriteSerializerBodyForInheritedModel(inherits, parentClass, writer, extendsModelClass);
+                WriteSerializerBodyForInheritedModel(parentClass, writer, extendsModelClass);
         
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
         
@@ -310,9 +306,9 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine($"$writer->{GetSerializationMethodName(otherProp.Type)}({serializationKey}, {dataToSerialize});");
         }
         
-        private void WriteSerializerBodyForInheritedModel(bool inherits, CodeClass parentClass, LanguageWriter writer, bool extendsModelClass = false)
+        private void WriteSerializerBodyForInheritedModel(CodeClass parentClass, LanguageWriter writer, bool extendsModelClass = false)
         {
-            if(inherits && extendsModelClass)
+            if(extendsModelClass)
                 writer.WriteLine("parent::serialize($writer);");
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly))
                 WriteSerializationMethodCall(otherProp, writer, $"'{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}'");
@@ -488,15 +484,15 @@ namespace Kiota.Builder.Writers.Php
             else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
                 WriteDeserializerBodyForIntersectionModel(parentClass, writer);
             else
-                WriteDeserializerBodyForInheritedModel(method, parentClass, writer, inherits, extendsModelClass);
+                WriteDeserializerBodyForInheritedModel(method, parentClass, writer, extendsModelClass);
         }
-        private void WriteDeserializerBodyForInheritedModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool inherits, bool extendsModelClass = false)
+        private void WriteDeserializerBodyForInheritedModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool extendsModelClass = false)
         {
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
             var codeProperties = fieldToSerialize as CodeProperty[] ?? fieldToSerialize.ToArray();
             writer.WriteLine("$o = $this;");
             writer.WriteLines(
-                $"return {((inherits && extendsModelClass) ? $"array_merge(parent::{method.Name.ToFirstCharacterLowerCase()}(), [" : " [" )}");
+                $"return {((extendsModelClass) ? $"array_merge(parent::{method.Name.ToFirstCharacterLowerCase()}(), [" : " [" )}");
             writer.IncreaseIndent();
             if(codeProperties.Any()) {
                 codeProperties
@@ -508,10 +504,7 @@ namespace Kiota.Builder.Writers.Php
                     .ForEach(x => writer.WriteLine(x));
             }
             writer.DecreaseIndent();
-            if (inherits && extendsModelClass)
-                writer.WriteLine("]);");
-            else
-                writer.WriteLine("];");
+            writer.WriteLine(extendsModelClass ? "]);" : "];");
         }
 
         private static void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
@@ -799,19 +792,6 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"case '{mappedType.Key}': return new {conventions.GetTypeString(mappedType.Value.AllTypes.First(), method, false, writer)}();");
             }
             writer.CloseBlock();
-        }
-        private void WriteFactoryMethodOverloadBody(CodeMethod codeMethod, CodeClass parentClass,
-            LanguageWriter writer)
-        {
-            var canParse = int.TryParse(factoryMethodIndexParser.Match(codeMethod.Name).Groups["idx"].Value,
-                out var currentDiscriminatorPageIndex);
-            if (canParse && codeMethod.Parameters.FirstOrDefault() is { } parameter)
-            {
-                var takeValue = Math.Min(MaxDiscriminatorsPerMethod, parentClass.DiscriminatorInformation.DiscriminatorMappings.Count() - currentDiscriminatorPageIndex * MaxDiscriminatorsPerMethod);
-                var currentDiscriminatorPage = parentClass.DiscriminatorInformation.DiscriminatorMappings.Skip(currentDiscriminatorPageIndex * MaxDiscriminatorsPerMethod).Take(takeValue).OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase);
-                WriteFactoryMethodBodyForInheritedModel(currentDiscriminatorPage, writer, codeMethod, $"${parameter.Name.ToFirstCharacterLowerCase()}");
-            }
-            writer.WriteLine("return null;");
         }
     }
 }
