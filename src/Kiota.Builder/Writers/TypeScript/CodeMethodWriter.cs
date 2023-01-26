@@ -191,7 +191,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
                 currentMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam) {
                 localConventions?.AddParametersAssignment(writer, 
-                                                    pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
+                                                    pathParametersParam.Type.AllTypes.OfType<CodeType>().First(),
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                     currentMethod.Parameters
                                                                 .Where(x => x.IsOfKind(CodeParameterKind.Path))
@@ -202,7 +202,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
         }
     }
-    private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string variableName = default) {
+    private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string? variableName = default) {
         var property = parentClass.GetPropertyOfKind(propertyKind);
         if(property != null) {
             var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
@@ -295,13 +295,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer) {
         if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
         
-        var urlTemplateParamsProperty = currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-        var urlTemplateProperty = currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
-        var requestAdapterProperty = currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-        writer.WriteLines($"const {RequestInfoVarName} = new RequestInformation();",
-                            $"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
-                            $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "''")};",
-                            $"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
+        
+        writer.WriteLine($"const {RequestInfoVarName} = new RequestInformation();");
+        if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
+            currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
+            writer.WriteLines($"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
+                                $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "''")};");
+        writer.WriteLine($"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()};");
         if(codeElement.AcceptedResponseTypes.Any())
             writer.WriteLine($"{RequestInfoVarName}.headers[\"Accept\"] = [\"{string.Join(", ", codeElement.AcceptedResponseTypes)}\"];");
         if(requestParams.requestConfiguration != null) {
@@ -321,7 +321,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         if(requestParams.requestBody != null) {
             if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                 writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
-            else {
+            else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty) {
                 var setMethodName = requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass ? "setContentFromParsable" : "setContentFromScalar";
                 writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name});");
             }
@@ -407,6 +407,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         };
     }
     private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeMethod currentElement, LanguageWriter writer) {
+        if (localConventions == null) throw new InvalidOperationException("localConventions is null");
         var returnType = localConventions.GetTypeString(targetClassType, currentElement, false, writer);
         var targetClassName = localConventions.TranslateType(targetClassType);
         var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
@@ -425,6 +426,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         throw new InvalidOperationException($"Unable to find factory method for {targetClassName}");
     }
     private string GetSerializationMethodName(CodeTypeBase propType, CodeElement currentElement, LanguageWriter writer) {
+        if (localConventions == null) throw new InvalidOperationException("localConventions is null");
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = localConventions.GetTypeString(propType, currentElement, false, writer);
         if(propType is CodeType currentType)

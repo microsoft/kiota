@@ -19,13 +19,12 @@ namespace Kiota.Builder.Writers.TypeScript
         {
             if (codeUsing?.IsExternal ?? true)
                 return (string.Empty, string.Empty, string.Empty);//it's an external import, add nothing
-            var typeDef = codeUsing.Declaration.TypeDefinition;
 
-            var importSymbol = codeUsing.Declaration == null ? codeUsing.Name : codeUsing.Declaration.TypeDefinition switch
+            var (importSymbol, typeDef) = codeUsing.Declaration?.TypeDefinition is CodeElement td ? td switch
             {
-                CodeFunction f => f.Name.ToFirstCharacterLowerCase(),
-                _ => codeUsing.Declaration.TypeDefinition.Name.ToFirstCharacterUpperCase(),
-            };
+                CodeFunction f => (f.Name.ToFirstCharacterLowerCase(), td),
+                _ => (td.Name.ToFirstCharacterUpperCase(), td),
+            } : (codeUsing.Name, null);
 
             if (typeDef == null)
                 return (importSymbol, codeUsing.Alias, "./"); // it's relative to the folder, with no declaration (default failsafe)
@@ -39,7 +38,7 @@ namespace Kiota.Builder.Writers.TypeScript
             else if (string.IsNullOrEmpty(importPath))
                 importPath += codeUsing.Name;
             else if (!isCodeUsingAModel) {
-                importPath += (codeUsing.Declaration.TypeDefinition?.Name ?? codeUsing.Declaration.Name).ToFirstCharacterLowerCase();
+                importPath += typeDef.Name.ToFirstCharacterLowerCase();
             }
             return (importSymbol, codeUsing.Alias, importPath);
         }

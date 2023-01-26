@@ -13,7 +13,7 @@ public class CodeUsingWriter {
     public void WriteCodeElement(IEnumerable<CodeUsing> usings, CodeNamespace parentNamespace, LanguageWriter writer ) {
         var externalImportSymbolsAndPaths = usings
                                                 .Where(static x => x.IsExternal)
-                                                .Select(static x => (x.Name, string.Empty, x.Declaration?.Name));
+                                                .Select(static x => (x.Name, string.Empty, x.Declaration?.Name ?? string.Empty));
         var internalImportSymbolsAndPaths = usings
                                                 .Where(static x => !x.IsExternal)
                                                 .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNamespace));
