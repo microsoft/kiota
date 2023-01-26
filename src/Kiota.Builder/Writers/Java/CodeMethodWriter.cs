@@ -360,7 +360,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         else
             WriteDeserializerBodyForInheritedModel(codeElement, parentClass, writer, inherits);
     }
-    private const string DeserializerReturnType = "HashMap<String, Consumer<ParseNode>>";
+    private const string DeserializerReturnType = "HashMap<String, java.util.function.Consumer<ParseNode>>";
     private static void WriteDeserializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
     {
         var includeElse = false;
