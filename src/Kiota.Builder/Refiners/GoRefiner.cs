@@ -140,7 +140,8 @@ public class GoRefiner : CommonLanguageRefiner
             RemoveHandlerFromRequestBuilder(generatedCode);
             AddContextParameterToGeneratorMethods(generatedCode);
             CorrectTypes(generatedCode);
-            CorrectCoreTypesForBackingStore(generatedCode, $"{conventions.StoreHash}.GetDefaultBackingStoreInstance().CreateBackingStore()");
+            CorrectCoreTypesForBackingStore(generatedCode, $"{conventions.StoreHash}.BackingStoreFactoryInstance()", false);
+            CorrectBackingStoreTypes(generatedCode);
         }, cancellationToken);
     }
 
@@ -155,6 +156,59 @@ public class GoRefiner : CommonLanguageRefiner
             return $"{start[..start.IndexOf(endPattern, StringComparison.OrdinalIgnoreCase)]}{end}";
             
         return $"{start}{end}";
+    }
+    
+    private void CorrectBackingStoreTypes(CodeElement currentElement, Dictionary<String, CodeInterface> result = null)
+    {
+        if (!_configuration.UsesBackingStore)
+            return;
+        
+        var currentMethod = currentElement as CodeMethod;
+        var parameters = currentMethod?.Parameters;
+        var codeParameters = parameters as CodeParameter[] ?? parameters?.ToArray();
+        codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.BackingStore)
+                                   && currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)).ToList().ForEach(x =>
+        {
+            var type = (x.Type as CodeType)!;
+            type.Name = "BackingStoreFactory";
+            type.IsNullable = false;
+            type.IsExternal = true;
+        });
+
+        if (currentElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model))
+        {
+            var propertiesToCorrect = codeClass.Properties
+                .Where(x => x.IsOfKind(CodePropertyKind.Custom))
+                .Union(codeClass.Methods
+                    .Where(x => x.IsAccessor && (x.AccessedProperty?.IsOfKind(CodePropertyKind.Custom) ?? false))
+                    .Select(static x => x.AccessedProperty))
+                .Distinct()
+                .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
+
+            var targetNameSpace = codeClass.GetImmediateParentOfType<CodeNamespace>();
+            var modelsNameSpace = findClientNameSpace(targetNameSpace)
+                .FindNamespaceByName($"{_configuration.ClientNamespaceName}.models");
+            
+            foreach (var property in propertiesToCorrect)
+            {
+                if (property.Type is CodeType codeType && codeType.TypeDefinition is CodeClass)
+                {
+                    var interfaceName = $"{codeType.Name}able";
+                    var existing = targetNameSpace.FindChildByName<CodeInterface>(interfaceName, false) ??
+                                   modelsNameSpace.FindChildByName<CodeInterface>(interfaceName) ??
+                                   modelsNameSpace.FindChildByName<CodeInterface>(interfaceName.ToFirstCharacterUpperCase());
+                    
+                    if (existing == null)
+                        continue;
+                    
+                    CodeType type = (codeType.Clone() as CodeType)!;
+                    type.Name = interfaceName;
+                    type.TypeDefinition = existing;
+                    property.Type = type;
+                }
+            }
+        }
+        CrawlTree(currentElement, x => CorrectBackingStoreTypes(x, result));
     }
 
     private static void CorrectTypes(CodeElement currentElement)
@@ -417,6 +471,9 @@ public class GoRefiner : CommonLanguageRefiner
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             "github.com/microsoft/kiota-abstractions-go", "RequestHeaders"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore), "github.com/microsoft/kiota-abstractions-go/store","BackingStore"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                         method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+            "github.com/microsoft/kiota-abstractions-go/store", "BackingStoreFactory"),
     };//TODO add backing store types once we have them defined
     private void CorrectImplements(ProprietableBlockDeclaration block) {
         block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");

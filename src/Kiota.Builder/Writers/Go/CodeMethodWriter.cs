@@ -381,13 +381,14 @@ namespace Kiota.Builder.Writers.Go {
                 if(!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
                    !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
                     !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
-                    writer.WriteLines($"{conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)} value = m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")",
-                        "if value == nil {");
-                    writer.IncreaseIndent();
-                    writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
+                    writer.WriteLines(
+                        $"val , err :=  m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")");
+                    writer.WriteBlock("if err != nil {", "}", "panic(err)");
+                    writer.WriteBlock("if val == nil {" , "}", 
+                        $"var value = {codeElement.AccessedProperty.DefaultValue};",
                         $"m.Set{codeElement.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}(value);");
-                    writer.CloseBlock();
-                    writer.WriteLine("return value");
+
+                    writer.WriteLine($"return val.({conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)})");
                 }
                 else
                 {
