@@ -39,3 +39,59 @@ jobs:
       with:
         name: coverage
         path: reports/coverage
+
+  test-release:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+    - name: Restore workloads
+      run: dotnet workload restore
+    - name: Restore dependencies
+      run: dotnet restore kiota.sln
+    - name: Publish ${{ matrix.os }}
+      run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -o ./${{ matrix.os }}
+
+    # Mac and Linux
+    - name: Isolate the binary
+      if: runner.os != 'Windows'
+      run: |
+        mkdir ./${{ matrix.os }}-standalone
+        cp ./${{ matrix.os }}/kiota ./${{ matrix.os }}-standalone/kiota
+    - name: Check the built in default settings
+      if: runner.os != 'Windows'
+      run: |
+        INFO_RESULT=$(./${{ matrix.os }}-standalone/kiota info -l Java)
+        if [[ $INFO_RESULT == *"maturity level"* ]]; then
+          echo "Built in defaults are working"
+        else
+          echo "Built in defaults NOT working"
+          ./${{ matrix.os }}/kiota info -l Java
+          exit 1
+        fi
+
+    # Win
+    - name: Isolate the binary
+      if: runner.os == 'Windows'
+      run: |
+        mkdir ./${{ matrix.os }}-standalone
+        cp ./${{ matrix.os }}/kiota.exe ./${{ matrix.os }}-standalone/kiota.exe
+    - name: Check the built in default settings
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        INFO_RESULT=$(./${{ matrix.os }}-standalone/kiota.exe info -l Java)
+        if [[ $INFO_RESULT == *"maturity level"* ]]; then
+          echo "Built in defaults are working"
+        else
+          echo "Built in defaults NOT working"
+          ./${{ matrix.os }}/kiota info -l Java
+          exit 1
+        fi
