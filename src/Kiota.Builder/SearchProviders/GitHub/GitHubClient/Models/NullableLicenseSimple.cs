@@ -10,18 +10,48 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
     public class NullableLicenseSimple : IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The html_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Html_url { get; set; }
+#nullable restore
+#else
         public string Html_url { get; set; }
-        /// <summary>The key property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Key { get; set; }
+#nullable restore
+#else
         public string Key { get; set; }
-        /// <summary>The name property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Name { get; set; }
+#nullable restore
+#else
         public string Name { get; set; }
-        /// <summary>The node_id property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Node_id { get; set; }
+#nullable restore
+#else
         public string Node_id { get; set; }
-        /// <summary>The spdx_id property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Spdx_id { get; set; }
+#nullable restore
+#else
         public string Spdx_id { get; set; }
-        /// <summary>The url property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Url { get; set; }
+#nullable restore
+#else
         public string Url { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new nullableLicenseSimple and sets the default values.
         /// </summary>

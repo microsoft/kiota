@@ -24,12 +24,13 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     internal string DocCommentStart = "/**";
     internal string DocCommentEnd = " */";
     #pragma warning disable CA1822 // Method should be static
-    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
-        var codePathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
-        var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-        var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-        var urlTemplateParams = urlTemplateVarName ?? $"this.{pathParametersProperty.Name}";
-        writer.WriteLines($"return new {returnType}({urlTemplateParams}, this.{requestAdapterProp.Name}{codePathParametersSuffix});");
+    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default) {
+        var codePathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => x.Name.ToFirstCharacterLowerCase()))}";
+        if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
+            parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp) {
+            var urlTemplateParams = !string.IsNullOrEmpty(urlTemplateVarName) ? urlTemplateVarName : $"this.{pathParametersProperty.Name}";
+            writer.WriteLines($"return new {returnType}({urlTemplateParams}, this.{requestAdapterProp.Name}{codePathParametersSuffix});");
+        }
     }
     public override string TempDictionaryVarName => "urlTplParams";
     internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
@@ -50,19 +51,17 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
-    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
+    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
         return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {GetTypeString(parameter.Type, targetElement)}{(parameter.Type.IsNullable ? " | undefined": string.Empty)}{defaultValueSuffix}";
     }
-    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null) {
-        if(code is null)
-            return null;
+    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null) {
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None || !includeCollectionInformation ? string.Empty : "[]";
         if(code is CodeComposedTypeBase currentUnion && currentUnion.Types.Any())
             return string.Join(" | ", currentUnion.Types.Select(x => GetTypeString(x, targetElement))) + collectionSuffix;
         if(code is CodeType currentType) {
-            var typeName = GetTypeAlias(currentType, targetElement) ?? TranslateType(currentType);
+            var typeName = GetTypeAlias(currentType, targetElement) is string alias && !string.IsNullOrEmpty(alias) ? alias : TranslateType(currentType);
             if (code.ActionOf)
                 return WriteInlineDeclaration(currentType, targetElement);
             return $"{typeName}{collectionSuffix}";
@@ -71,15 +70,14 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement) {
-        var parentBlock = targetElement.GetImmediateParentOfType<IBlock>();
-        if(parentBlock != null) {
-            var aliasedUsing = parentBlock.Usings
-                                                .FirstOrDefault(x => !x.IsExternal &&
-                                                                x.Declaration.TypeDefinition == targetType.TypeDefinition &&
-                                                                !string.IsNullOrEmpty(x.Alias));
-            return aliasedUsing?.Alias;
-        }
-        return null;
+        if(targetElement.GetImmediateParentOfType<IBlock>() is IBlock parentBlock &&
+            parentBlock.Usings
+                        .FirstOrDefault(x => !x.IsExternal &&
+                                        x.Declaration?.TypeDefinition != null &&
+                                        x.Declaration.TypeDefinition == targetType.TypeDefinition &&
+                                        !string.IsNullOrEmpty(x.Alias)) is CodeUsing aliasedUsing)
+            return aliasedUsing.Alias;
+        return string.Empty;
     }
     private string WriteInlineDeclaration(CodeType currentType, CodeElement targetElement) {
         writer.IncreaseIndent(4);
@@ -119,13 +117,13 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
     #pragma warning restore CA1822 // Method should be static
-    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/") ?? string.Empty;
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
         if(!string.IsNullOrEmpty(description))
             writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
-    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer, IEnumerable<string> additionalRemarks = default) {
+    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default) {
         if(documentation is null) return;
         if(additionalRemarks == default)
             additionalRemarks = Enumerable.Empty<string>();

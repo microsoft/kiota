@@ -27,7 +27,7 @@ public class GoConventionService : CommonLanguageConventionService
     {
         throw new InvalidOperationException("go uses a naming convention for access modifiers");
     }
-    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
+    public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         return $"{parameter.Name.ToFirstCharacterLowerCase()} {GetTypeString(parameter.Type, targetElement)}";
     }
@@ -35,13 +35,13 @@ public class GoConventionService : CommonLanguageConventionService
     public string GetImportedStaticMethodName(CodeTypeBase code, CodeElement targetElement, string methodPrefix = "New", string methodSuffix = "", string trimEnd = "") {
         var typeString = GetTypeString(code, targetElement, false, false)?.Split(dot);
         var importSymbol = typeString == null || typeString.Length < 2 ? string.Empty : typeString.First() + dot;
-        var methodName = typeString.Last().ToFirstCharacterUpperCase();
-        if(!string.IsNullOrEmpty(trimEnd) && methodName.EndsWith(trimEnd, StringComparison.OrdinalIgnoreCase)) {
+        var methodName = typeString?.Last().ToFirstCharacterUpperCase();
+        if(!string.IsNullOrEmpty(trimEnd) && (methodName?.EndsWith(trimEnd, StringComparison.OrdinalIgnoreCase) ?? false)) {
             methodName = methodName[..^trimEnd.Length];
         }
         return $"{importSymbol}{methodPrefix}{methodName}{methodSuffix}";
     }
-    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null) =>
+    public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null) =>
         GetTypeString(code, targetElement, includeCollectionInformation, true);
     public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool addPointerSymbol, bool includeImportSymbol = true)
     {
@@ -96,7 +96,8 @@ public class GoConventionService : CommonLanguageConventionService
             "String" or "Int64" or "Int32" or "Float32" or "Float64" => type.Name.ToFirstCharacterLowerCase(), //casing hack
             "context.Context" => "context.Context",
             "BackedModel" => $"{StoreHash}.BackedModel",
-            _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",
+            "" or null => "Object",
+            _ => type.Name.ToFirstCharacterUpperCase(),
         };
     }
     public bool IsPrimitiveType(string typeName) {
@@ -133,10 +134,10 @@ public class GoConventionService : CommonLanguageConventionService
                targetElement is IProprietableBlock targetTypeDef) {
                 var symbolUsing = ((targetTypeDef.Parent as CodeClass)?.StartBlock as BlockDeclaration ?? 
                                    (targetTypeDef as CodeClass)?.StartBlock as BlockDeclaration ??
-                                   (targetTypeDef as CodeInterface)?.StartBlock)
+                                   (targetTypeDef as CodeInterface)?.StartBlock)?
                     .Usings
                     .FirstOrDefault(x => currentBaseType.Name?.Equals(x.Name, StringComparison.OrdinalIgnoreCase) ?? false);
-                return symbolUsing == null ? string.Empty : symbolUsing.Declaration.Name.GetNamespaceImportSymbol();
+                return symbolUsing?.Declaration?.Name.GetNamespaceImportSymbol() ?? string.Empty;
             }
         }
         return string.Empty;
@@ -156,19 +157,21 @@ public class GoConventionService : CommonLanguageConventionService
         }
     }
     #pragma warning disable CA1822 // Method should be static
-    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default)
+    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default)
     {
-        var urlTemplateParamsProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-        var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-        var urlTemplateParams = urlTemplateVarName ?? $"m.{urlTemplateParamsProp.Name}";
+        if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is not CodeProperty requestAdapterProp) return;
+        var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) && 
+                                parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProp ?
+                                    $"m.{urlTemplateParamsProp.Name}" :
+                                    (urlTemplateVarName ?? string.Empty);
         var splatImport = returnType.Split('.');
         var constructorName = splatImport.Last().TrimCollectionAndPointerSymbols().ToFirstCharacterUpperCase();
         var moduleName = splatImport.Length > 1 ? $"{splatImport.First().TrimStart('*')}." : string.Empty;
-        var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+        var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(static x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
         writer.WriteLines($"return {moduleName}New{constructorName}Internal({urlTemplateParams}, m.{requestAdapterProp.Name}{pathParametersSuffix});");
     }
     public override string TempDictionaryVarName => "urlTplParams";
-    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
+    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase? pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
         if(pathParametersType == null) return;
         var mapTypeName = pathParametersType.Name;
         writer.WriteLine($"{TempDictionaryVarName} := make({mapTypeName})");

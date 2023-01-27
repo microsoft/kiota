@@ -52,9 +52,9 @@ namespace Kiota.Builder.Tests.Writers {
             subNS.AddClass(messageClassDef);
             var nUsing = new CodeUsing
             {
-                Name = messageClassDef.Name.Clone() as string,
+                Name = messageClassDef.Name,
                 Declaration = new() {
-                    Name = messageClassDef.Name.Clone() as string,
+                    Name = messageClassDef.Name,
                     TypeDefinition = messageClassDef,
                 }
             };

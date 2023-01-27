@@ -94,7 +94,7 @@
     private async Task SearchDocumentsInternal() {
         if(AppInsights != null)
             await AppInsights.StartTrackEvent(searchTelemetryKey).ConfigureAwait(false);
-        if(KiotaSearcher != null)
+        if(KiotaSearcher != null && !string.IsNullOrEmpty(SearchTerm))
             SearchResults = await KiotaSearcher.SearchAsync(SearchTerm, string.Empty, ComponentDetached);
         IsLoading = false;
         if(AppInsights != null)

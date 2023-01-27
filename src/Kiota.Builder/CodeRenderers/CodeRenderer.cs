@@ -42,7 +42,8 @@ namespace Kiota.Builder.CodeRenderers
                     case CodeEnum:
                     case CodeFunction:
                     case CodeInterface:
-                        await RenderCodeNamespaceToSingleFileAsync(writer, codeElement, writer.PathSegmenter.GetPath(currentNamespace, codeElement), cancellationToken);
+                        if (writer.PathSegmenter?.GetPath(currentNamespace, codeElement) is string path)
+                            await RenderCodeNamespaceToSingleFileAsync(writer, codeElement, path, cancellationToken);
                         break;
                     case CodeNamespace codeNamespace:
                         await RenderBarrel(writer, currentNamespace, codeNamespace, cancellationToken);
@@ -56,9 +57,10 @@ namespace Kiota.Builder.CodeRenderers
                 _configuration.ShouldWriteNamespaceIndices &&
                 (!_configuration.ClientNamespaceName.StartsWith(codeNamespace.Name, StringComparison.OrdinalIgnoreCase) || 
                 _configuration.ClientNamespaceName.Equals(codeNamespace.Name, StringComparison.OrdinalIgnoreCase)) && // we want a barrel for the root namespace
-                ShouldRenderNamespaceFile(codeNamespace))
+                ShouldRenderNamespaceFile(codeNamespace) && 
+                writer.PathSegmenter?.GetPath(parentNamespace, codeNamespace) is string path)
             {
-                await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(parentNamespace, codeNamespace), cancellationToken);
+                await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, path, cancellationToken);
             }
         }
         private readonly CodeElementOrderComparer _rendererElementComparer;

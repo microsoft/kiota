@@ -40,7 +40,7 @@
         @bind-SelectedOption="@Language"
         Required=@true
         Items="Enum.GetValues<GenerationLanguage>().Select(static x => new Nullable<GenerationLanguage>(x)).OrderBy(static x => x.ToString(), StringComparer.OrdinalIgnoreCase)"
-        OptionText="@(x => (configuration?.Languages?.TryGetValue(x.ToString(), out var languageInfo) ?? false) ? $"{x} - {languageInfo.MaturityLevel}" : x.ToString())" />
+        OptionText="@(x => (configuration?.Languages?.TryGetValue(x!.ToString()!, out var languageInfo) ?? false) ? $"{x} - {languageInfo.MaturityLevel}" : x.ToString())" />
     <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
     <FluentCheckbox @bind-Value=@AdditionalData>@Loc["AdditionalData"]</FluentCheckbox>
     <FluentDivider Role="DividerRole.Separator"></FluentDivider> 
@@ -179,7 +179,7 @@
         if (!string.IsNullOrEmpty(SearchTerm) && !string.IsNullOrEmpty(Version) && string.IsNullOrEmpty(DescriptionUrl) && KiotaSearcher != null) {
             var searchResults = await KiotaSearcher.SearchAsync(SearchTerm, Version, ComponentDetached);
             if(searchResults.Any())
-                DescriptionUrl = searchResults.Values.First().DescriptionUrl.ToString();
+                DescriptionUrl = searchResults.Values.First().DescriptionUrl?.ToString();
         }
         await base.OnParametersSetAsync();
     }
@@ -203,16 +203,19 @@
             await AppInsights.StartTrackEvent(generateClientTelemetryKey).ConfigureAwait(false);
         if(Language == null)
             Language = GenerationLanguage.CSharp;
-        var hashedUrl = BitConverter.ToString(HashAlgorithm.Value!.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl!))).Replace("-", string.Empty);
+        if (DescriptionUrl is null || HashAlgorithm.Value is null)
+            return;
+        var hashedUrl = BitConverter.ToString(HashAlgorithm.Value.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl))).Replace("-", string.Empty);
         OutputPath = Path.Combine(Path.GetTempPath(), "kiota", "generation", hashedUrl);
+        var defaultConfiguration = new GenerationConfiguration();
         var generationConfiguration = new GenerationConfiguration{
             OpenAPIFilePath = DescriptionUrl,
-            IncludePatterns = IncludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
-            ExcludePatterns = ExcludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(),
+            IncludePatterns = IncludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet() ?? new(),
+            ExcludePatterns = ExcludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet() ?? new(),
             Language = Language.Value,
             OutputPath = OutputPath,
-            ClientClassName = ClientClassName,
-            ClientNamespaceName = NamespaceName,
+            ClientClassName = ClientClassName ?? defaultConfiguration.ClientClassName,
+            ClientNamespaceName = NamespaceName ?? defaultConfiguration.ClientNamespaceName,
             IncludeAdditionalData = AdditionalData,
             UsesBackingStore = BackingStore,
             Serializers = Serializers,

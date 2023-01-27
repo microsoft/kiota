@@ -47,10 +47,80 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         }
         /// <summary>
         /// Deletes a file in a repository.You can provide an additional `committer` parameter, which is an object containing information about the committer. Or, you can provide an `author` parameter, which is an object containing information about the author.The `author` section is optional and is filled in with the `committer` information if omitted. If the `committer` information is omitted, the authenticated user&apos;s information is used.You must provide values for both `name` and `email`, whether you choose to use `author` or `committer`. Otherwise, you&apos;ll receive a `422` status code.**Note:** If you use this endpoint and the &quot;[Create or update file contents](https://docs.github.com/rest/reference/repos/#create-or-update-file-contents)&quot; endpoint in parallel, the concurrent requests will conflict and you will receive errors. You must use these endpoints serially instead.
+        /// API method documentation <see href="https://docs.github.com/rest/reference/repos#delete-a-file" />
         /// </summary>
-        /// <param name="body">The request body</param>
+        /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
-        public RequestInformation CreateDeleteRequestInformation(WithPathDeleteRequestBody body, Action<WithPathItemRequestBuilderDeleteRequestConfiguration> requestConfiguration = default) {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public async Task<FileCommit?> DeleteAsync(WithPathDeleteRequestBody body, Action<WithPathItemRequestBuilderDeleteRequestConfiguration>? requestConfiguration = default, CancellationToken cancellationToken = default) {
+#nullable restore
+#else
+        public async Task<FileCommit> DeleteAsync(WithPathDeleteRequestBody body, Action<WithPathItemRequestBuilderDeleteRequestConfiguration> requestConfiguration = default, CancellationToken cancellationToken = default) {
+#endif
+            _ = body ?? throw new ArgumentNullException(nameof(body));
+            var requestInfo = ToDeleteRequestInformation(body, requestConfiguration);
+            var errorMapping = new Dictionary<string, ParsableFactory<IParsable>> {
+                {"404", BasicError.CreateFromDiscriminatorValue},
+                {"409", BasicError.CreateFromDiscriminatorValue},
+                {"422", ValidationError.CreateFromDiscriminatorValue},
+                {"503", FileCommit503Error.CreateFromDiscriminatorValue},
+            };
+            return await RequestAdapter.SendAsync<FileCommit>(requestInfo, FileCommit.CreateFromDiscriminatorValue, errorMapping, cancellationToken);
+        }
+        /// <summary>
+        /// Gets the contents of a file or directory in a repository. Specify the file path or directory in `:path`. If you omit`:path`, you will receive the contents of the repository&apos;s root directory. See the description below regarding what the API response includes for directories. Files and symlinks support [a custom media type](https://docs.github.com/rest/reference/repos#custom-media-types) forretrieving the raw content or rendered HTML (when supported). All content types support [a custom mediatype](https://docs.github.com/rest/reference/repos#custom-media-types) to ensure the content is returned in a consistentobject format.**Notes**:*   To get a repository&apos;s contents recursively, you can [recursively get the tree](https://docs.github.com/rest/reference/git#trees).*   This API has an upper limit of 1,000 files for a directory. If you need to retrieve more files, use the [Git TreesAPI](https://docs.github.com/rest/reference/git#get-a-tree). *  Download URLs expire and are meant to be used just once. To ensure the download URL does not expire, please use the contents API to obtain a fresh download URL for each download.#### Size limitsIf the requested file&apos;s size is:* 1 MB or smaller: All features of this endpoint are supported.* Between 1-100 MB: Only the `raw` or `object` [custom media types](https://docs.github.com/rest/repos/contents#custom-media-types-for-repository-contents) are supported. Both will work as normal, except that when using the `object` media type, the `content` field will be an empty string and the `encoding` field will be `&quot;none&quot;`. To get the contents of these larger files, use the `raw` media type. * Greater than 100 MB: This endpoint is not supported.#### If the content is a directoryThe response will be an array of objects, one object for each item in the directory.When listing the contents of a directory, submodules have their &quot;type&quot; specified as &quot;file&quot;. Logically, the value_should_ be &quot;submodule&quot;. This behavior exists in API v3 [for backwards compatibility purposes](https://git.io/v1YCW).In the next major version of the API, the type will be returned as &quot;submodule&quot;.#### If the content is a symlink If the requested `:path` points to a symlink, and the symlink&apos;s target is a normal file in the repository, then theAPI responds with the content of the file (in the format shown in the example. Otherwise, the API responds with an object describing the symlink itself.#### If the content is a submoduleThe `submodule_git_url` identifies the location of the submodule repository, and the `sha` identifies a specificcommit within the submodule repository. Git uses the given URL when cloning the submodule repository, and checks outthe submodule at that specific commit.If the submodule repository is not hosted on github.com, the Git URLs (`git_url` and `_links[&quot;git&quot;]`) and thegithub.com URLs (`html_url` and `_links[&quot;html&quot;]`) will have null values.
+        /// API method documentation <see href="https://docs.github.com/rest/reference/repos#get-repository-content" />
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
+        /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public async Task<WithPathResponse?> GetAsync(Action<WithPathItemRequestBuilderGetRequestConfiguration>? requestConfiguration = default, CancellationToken cancellationToken = default) {
+#nullable restore
+#else
+        public async Task<WithPathResponse> GetAsync(Action<WithPathItemRequestBuilderGetRequestConfiguration> requestConfiguration = default, CancellationToken cancellationToken = default) {
+#endif
+            var requestInfo = ToGetRequestInformation(requestConfiguration);
+            var errorMapping = new Dictionary<string, ParsableFactory<IParsable>> {
+                {"403", BasicError.CreateFromDiscriminatorValue},
+                {"404", BasicError.CreateFromDiscriminatorValue},
+            };
+            return await RequestAdapter.SendAsync<WithPathResponse>(requestInfo, WithPathResponse.CreateFromDiscriminatorValue, errorMapping, cancellationToken);
+        }
+        /// <summary>
+        /// Creates a new file or replaces an existing file in a repository. You must authenticate using an access token with the `workflow` scope to use this endpoint.**Note:** If you use this endpoint and the &quot;[Delete a file](https://docs.github.com/rest/reference/repos/#delete-file)&quot; endpoint in parallel, the concurrent requests will conflict and you will receive errors. You must use these endpoints serially instead.
+        /// API method documentation <see href="https://docs.github.com/rest/reference/repos#create-or-update-file-contents" />
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
+        /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public async Task<FileCommit?> PutAsync(WithPathPutRequestBody body, Action<WithPathItemRequestBuilderPutRequestConfiguration>? requestConfiguration = default, CancellationToken cancellationToken = default) {
+#nullable restore
+#else
+        public async Task<FileCommit> PutAsync(WithPathPutRequestBody body, Action<WithPathItemRequestBuilderPutRequestConfiguration> requestConfiguration = default, CancellationToken cancellationToken = default) {
+#endif
+            _ = body ?? throw new ArgumentNullException(nameof(body));
+            var requestInfo = ToPutRequestInformation(body, requestConfiguration);
+            var errorMapping = new Dictionary<string, ParsableFactory<IParsable>> {
+                {"404", BasicError.CreateFromDiscriminatorValue},
+                {"409", BasicError.CreateFromDiscriminatorValue},
+                {"422", ValidationError.CreateFromDiscriminatorValue},
+            };
+            return await RequestAdapter.SendAsync<FileCommit>(requestInfo, FileCommit.CreateFromDiscriminatorValue, errorMapping, cancellationToken);
+        }
+        /// <summary>
+        /// Deletes a file in a repository.You can provide an additional `committer` parameter, which is an object containing information about the committer. Or, you can provide an `author` parameter, which is an object containing information about the author.The `author` section is optional and is filled in with the `committer` information if omitted. If the `committer` information is omitted, the authenticated user&apos;s information is used.You must provide values for both `name` and `email`, whether you choose to use `author` or `committer`. Otherwise, you&apos;ll receive a `422` status code.**Note:** If you use this endpoint and the &quot;[Create or update file contents](https://docs.github.com/rest/reference/repos/#create-or-update-file-contents)&quot; endpoint in parallel, the concurrent requests will conflict and you will receive errors. You must use these endpoints serially instead.
+        /// </summary>
+        /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public RequestInformation ToDeleteRequestInformation(WithPathDeleteRequestBody body, Action<WithPathItemRequestBuilderDeleteRequestConfiguration>? requestConfiguration = default) {
+#nullable restore
+#else
+        public RequestInformation ToDeleteRequestInformation(WithPathDeleteRequestBody body, Action<WithPathItemRequestBuilderDeleteRequestConfiguration> requestConfiguration = default) {
+#endif
             _ = body ?? throw new ArgumentNullException(nameof(body));
             var requestInfo = new RequestInformation {
                 HttpMethod = Method.DELETE,
@@ -71,7 +141,13 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// Gets the contents of a file or directory in a repository. Specify the file path or directory in `:path`. If you omit`:path`, you will receive the contents of the repository&apos;s root directory. See the description below regarding what the API response includes for directories. Files and symlinks support [a custom media type](https://docs.github.com/rest/reference/repos#custom-media-types) forretrieving the raw content or rendered HTML (when supported). All content types support [a custom mediatype](https://docs.github.com/rest/reference/repos#custom-media-types) to ensure the content is returned in a consistentobject format.**Notes**:*   To get a repository&apos;s contents recursively, you can [recursively get the tree](https://docs.github.com/rest/reference/git#trees).*   This API has an upper limit of 1,000 files for a directory. If you need to retrieve more files, use the [Git TreesAPI](https://docs.github.com/rest/reference/git#get-a-tree). *  Download URLs expire and are meant to be used just once. To ensure the download URL does not expire, please use the contents API to obtain a fresh download URL for each download.#### Size limitsIf the requested file&apos;s size is:* 1 MB or smaller: All features of this endpoint are supported.* Between 1-100 MB: Only the `raw` or `object` [custom media types](https://docs.github.com/rest/repos/contents#custom-media-types-for-repository-contents) are supported. Both will work as normal, except that when using the `object` media type, the `content` field will be an empty string and the `encoding` field will be `&quot;none&quot;`. To get the contents of these larger files, use the `raw` media type. * Greater than 100 MB: This endpoint is not supported.#### If the content is a directoryThe response will be an array of objects, one object for each item in the directory.When listing the contents of a directory, submodules have their &quot;type&quot; specified as &quot;file&quot;. Logically, the value_should_ be &quot;submodule&quot;. This behavior exists in API v3 [for backwards compatibility purposes](https://git.io/v1YCW).In the next major version of the API, the type will be returned as &quot;submodule&quot;.#### If the content is a symlink If the requested `:path` points to a symlink, and the symlink&apos;s target is a normal file in the repository, then theAPI responds with the content of the file (in the format shown in the example. Otherwise, the API responds with an object describing the symlink itself.#### If the content is a submoduleThe `submodule_git_url` identifies the location of the submodule repository, and the `sha` identifies a specificcommit within the submodule repository. Git uses the given URL when cloning the submodule repository, and checks outthe submodule at that specific commit.If the submodule repository is not hosted on github.com, the Git URLs (`git_url` and `_links[&quot;git&quot;]`) and thegithub.com URLs (`html_url` and `_links[&quot;html&quot;]`) will have null values.
         /// </summary>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
-        public RequestInformation CreateGetRequestInformation(Action<WithPathItemRequestBuilderGetRequestConfiguration> requestConfiguration = default) {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public RequestInformation ToGetRequestInformation(Action<WithPathItemRequestBuilderGetRequestConfiguration>? requestConfiguration = default) {
+#nullable restore
+#else
+        public RequestInformation ToGetRequestInformation(Action<WithPathItemRequestBuilderGetRequestConfiguration> requestConfiguration = default) {
+#endif
             var requestInfo = new RequestInformation {
                 HttpMethod = Method.GET,
                 UrlTemplate = UrlTemplate,
@@ -90,9 +166,14 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// <summary>
         /// Creates a new file or replaces an existing file in a repository. You must authenticate using an access token with the `workflow` scope to use this endpoint.**Note:** If you use this endpoint and the &quot;[Delete a file](https://docs.github.com/rest/reference/repos/#delete-file)&quot; endpoint in parallel, the concurrent requests will conflict and you will receive errors. You must use these endpoints serially instead.
         /// </summary>
-        /// <param name="body">The request body</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
-        public RequestInformation CreatePutRequestInformation(WithPathPutRequestBody body, Action<WithPathItemRequestBuilderPutRequestConfiguration> requestConfiguration = default) {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public RequestInformation ToPutRequestInformation(WithPathPutRequestBody body, Action<WithPathItemRequestBuilderPutRequestConfiguration>? requestConfiguration = default) {
+#nullable restore
+#else
+        public RequestInformation ToPutRequestInformation(WithPathPutRequestBody body, Action<WithPathItemRequestBuilderPutRequestConfiguration> requestConfiguration = default) {
+#endif
             _ = body ?? throw new ArgumentNullException(nameof(body));
             var requestInfo = new RequestInformation {
                 HttpMethod = Method.PUT,
@@ -108,55 +189,6 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
                 requestInfo.AddHeaders(requestConfig.Headers);
             }
             return requestInfo;
-        }
-        /// <summary>
-        /// Deletes a file in a repository.You can provide an additional `committer` parameter, which is an object containing information about the committer. Or, you can provide an `author` parameter, which is an object containing information about the author.The `author` section is optional and is filled in with the `committer` information if omitted. If the `committer` information is omitted, the authenticated user&apos;s information is used.You must provide values for both `name` and `email`, whether you choose to use `author` or `committer`. Otherwise, you&apos;ll receive a `422` status code.**Note:** If you use this endpoint and the &quot;[Create or update file contents](https://docs.github.com/rest/reference/repos/#create-or-update-file-contents)&quot; endpoint in parallel, the concurrent requests will conflict and you will receive errors. You must use these endpoints serially instead.
-        /// API method documentation <see href="https://docs.github.com/rest/reference/repos#delete-a-file" />
-        /// </summary>
-        /// <param name="body">The request body</param>
-        /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
-        /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
-        public async Task<FileCommit> DeleteAsync(WithPathDeleteRequestBody body, Action<WithPathItemRequestBuilderDeleteRequestConfiguration> requestConfiguration = default, CancellationToken cancellationToken = default) {
-            _ = body ?? throw new ArgumentNullException(nameof(body));
-            var requestInfo = CreateDeleteRequestInformation(body, requestConfiguration);
-            var errorMapping = new Dictionary<string, ParsableFactory<IParsable>> {
-                {"404", BasicError.CreateFromDiscriminatorValue},
-                {"409", BasicError.CreateFromDiscriminatorValue},
-                {"422", ValidationError.CreateFromDiscriminatorValue},
-                {"503", FileCommit503Error.CreateFromDiscriminatorValue},
-            };
-            return await RequestAdapter.SendAsync<FileCommit>(requestInfo, FileCommit.CreateFromDiscriminatorValue, errorMapping, cancellationToken);
-        }
-        /// <summary>
-        /// Gets the contents of a file or directory in a repository. Specify the file path or directory in `:path`. If you omit`:path`, you will receive the contents of the repository&apos;s root directory. See the description below regarding what the API response includes for directories. Files and symlinks support [a custom media type](https://docs.github.com/rest/reference/repos#custom-media-types) forretrieving the raw content or rendered HTML (when supported). All content types support [a custom mediatype](https://docs.github.com/rest/reference/repos#custom-media-types) to ensure the content is returned in a consistentobject format.**Notes**:*   To get a repository&apos;s contents recursively, you can [recursively get the tree](https://docs.github.com/rest/reference/git#trees).*   This API has an upper limit of 1,000 files for a directory. If you need to retrieve more files, use the [Git TreesAPI](https://docs.github.com/rest/reference/git#get-a-tree). *  Download URLs expire and are meant to be used just once. To ensure the download URL does not expire, please use the contents API to obtain a fresh download URL for each download.#### Size limitsIf the requested file&apos;s size is:* 1 MB or smaller: All features of this endpoint are supported.* Between 1-100 MB: Only the `raw` or `object` [custom media types](https://docs.github.com/rest/repos/contents#custom-media-types-for-repository-contents) are supported. Both will work as normal, except that when using the `object` media type, the `content` field will be an empty string and the `encoding` field will be `&quot;none&quot;`. To get the contents of these larger files, use the `raw` media type. * Greater than 100 MB: This endpoint is not supported.#### If the content is a directoryThe response will be an array of objects, one object for each item in the directory.When listing the contents of a directory, submodules have their &quot;type&quot; specified as &quot;file&quot;. Logically, the value_should_ be &quot;submodule&quot;. This behavior exists in API v3 [for backwards compatibility purposes](https://git.io/v1YCW).In the next major version of the API, the type will be returned as &quot;submodule&quot;.#### If the content is a symlink If the requested `:path` points to a symlink, and the symlink&apos;s target is a normal file in the repository, then theAPI responds with the content of the file (in the format shown in the example. Otherwise, the API responds with an object describing the symlink itself.#### If the content is a submoduleThe `submodule_git_url` identifies the location of the submodule repository, and the `sha` identifies a specificcommit within the submodule repository. Git uses the given URL when cloning the submodule repository, and checks outthe submodule at that specific commit.If the submodule repository is not hosted on github.com, the Git URLs (`git_url` and `_links[&quot;git&quot;]`) and thegithub.com URLs (`html_url` and `_links[&quot;html&quot;]`) will have null values.
-        /// API method documentation <see href="https://docs.github.com/rest/reference/repos#get-repository-content" />
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
-        /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
-        public async Task<WithPathResponse> GetAsync(Action<WithPathItemRequestBuilderGetRequestConfiguration> requestConfiguration = default, CancellationToken cancellationToken = default) {
-            var requestInfo = CreateGetRequestInformation(requestConfiguration);
-            var errorMapping = new Dictionary<string, ParsableFactory<IParsable>> {
-                {"403", BasicError.CreateFromDiscriminatorValue},
-                {"404", BasicError.CreateFromDiscriminatorValue},
-            };
-            return await RequestAdapter.SendAsync<WithPathResponse>(requestInfo, WithPathResponse.CreateFromDiscriminatorValue, errorMapping, cancellationToken);
-        }
-        /// <summary>
-        /// Creates a new file or replaces an existing file in a repository. You must authenticate using an access token with the `workflow` scope to use this endpoint.**Note:** If you use this endpoint and the &quot;[Delete a file](https://docs.github.com/rest/reference/repos/#delete-file)&quot; endpoint in parallel, the concurrent requests will conflict and you will receive errors. You must use these endpoints serially instead.
-        /// API method documentation <see href="https://docs.github.com/rest/reference/repos#create-or-update-file-contents" />
-        /// </summary>
-        /// <param name="body">The request body</param>
-        /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
-        /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
-        public async Task<FileCommit> PutAsync(WithPathPutRequestBody body, Action<WithPathItemRequestBuilderPutRequestConfiguration> requestConfiguration = default, CancellationToken cancellationToken = default) {
-            _ = body ?? throw new ArgumentNullException(nameof(body));
-            var requestInfo = CreatePutRequestInformation(body, requestConfiguration);
-            var errorMapping = new Dictionary<string, ParsableFactory<IParsable>> {
-                {"404", BasicError.CreateFromDiscriminatorValue},
-                {"409", BasicError.CreateFromDiscriminatorValue},
-                {"422", ValidationError.CreateFromDiscriminatorValue},
-            };
-            return await RequestAdapter.SendAsync<FileCommit>(requestInfo, FileCommit.CreateFromDiscriminatorValue, errorMapping, cancellationToken);
         }
         /// <summary>
         /// Configuration for the request such as headers, query parameters, and middleware options.
@@ -179,7 +211,13 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// </summary>
         public class WithPathItemRequestBuilderGetQueryParameters {
             /// <summary>The name of the commit/branch/tag. Default: the repository’s default branch (usually `master`)</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            public string? Ref { get; set; }
+#nullable restore
+#else
             public string Ref { get; set; }
+#endif
         }
         /// <summary>
         /// Configuration for the request such as headers, query parameters, and middleware options.
@@ -222,15 +260,45 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
             /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
             public IDictionary<string, object> AdditionalData { get; set; }
             /// <summary>Composed type representation for type contentFile</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentFile? ContentFile { get; set; }
+#nullable restore
+#else
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentFile ContentFile { get; set; }
+#endif
             /// <summary>Composed type representation for type contentSubmodule</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentSubmodule? ContentSubmodule { get; set; }
+#nullable restore
+#else
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentSubmodule ContentSubmodule { get; set; }
+#endif
             /// <summary>Composed type representation for type contentSymlink</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentSymlink? ContentSymlink { get; set; }
+#nullable restore
+#else
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.ContentSymlink ContentSymlink { get; set; }
+#endif
             /// <summary>Serialization hint for the current wrapper.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            public string? SerializationHint { get; set; }
+#nullable restore
+#else
             public string SerializationHint { get; set; }
+#endif
             /// <summary>Composed type representation for type WithPathResponseMember1</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.WithPathResponseMember1? WithPathResponseMember1 { get; set; }
+#nullable restore
+#else
             public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.WithPathResponseMember1 WithPathResponseMember1 { get; set; }
+#endif
             /// <summary>
             /// Instantiates a new WithPathResponse and sets the default values.
             /// </summary>

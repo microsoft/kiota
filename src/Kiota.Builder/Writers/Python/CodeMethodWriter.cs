@@ -17,7 +17,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         ArgumentNullException.ThrowIfNull(codeElement);
         if(codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
         ArgumentNullException.ThrowIfNull(writer);
-        if(!(codeElement.Parent is CodeClass parentClass)) throw new InvalidOperationException("the parent of a method should be a class");
+        if(codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, true, writer);
         var isVoid = "None".Equals(returnType, StringComparison.OrdinalIgnoreCase);
@@ -29,10 +29,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var requestConfigParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
         var requestParams = new RequestParams(requestBodyParam, requestConfigParam);
         if(!codeElement.IsOfKind(CodeMethodKind.Setter))
-            foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
+            foreach(var parameter in codeElement.Parameters.Where(static x => !x.Optional).OrderBy(static x => x.Name)) {
                 var parameterName = parameter.Name.ToSnakeCase();
-                writer.WriteLine($"if {parameterName} is None:");
-                writer.IncreaseIndent();
+                writer.StartBlock($"if {parameterName} is None:");
                 writer.WriteLine($"raise Exception(\"{parameterName} cannot be undefined\")");
                 writer.DecreaseIndent();
             }
@@ -57,7 +56,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
             break;
             case CodeMethodKind.RequestExecutor:
-                WriteRequestExecutorBody(codeElement, requestParams, isVoid, returnType, writer);
+                WriteRequestExecutorBody(codeElement, requestParams, parentClass, isVoid, returnType, writer);
                 break;
             case CodeMethodKind.Getter:
                 WriteGetterBody(codeElement, writer, parentClass);
@@ -82,9 +81,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         writer.CloseBlock(string.Empty);
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer) {
-        var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-        conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"self.{pathParametersProperty.Name}",
-            (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, "id"));
+        if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
+            codeElement.OriginalIndexer != null)
+            conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"self.{pathParametersProperty.Name}",
+                (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, "id"));
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
     }
     private void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer)
@@ -94,8 +94,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, pathParameters: codePathParameters);
     }
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
-        var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-        var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
+        if(parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is not CodeProperty requestAdapterProperty) return;
+        var backingStoreParameter = method.Parameters.OfKind(CodeParameterKind.BackingStore);
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToSnakeCase();
         WriteSerializationRegistration(method.SerializerModules, writer, "register_default_serializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "register_default_deserializer");
@@ -127,7 +127,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             foreach(var module in serializationModules)
                 writer.WriteLine($"{methodName}({module})");
     }
-    private CodePropertyKind[] _DirectAccessProperties;
+    private CodePropertyKind[]? _DirectAccessProperties;
     private CodePropertyKind[] DirectAccessProperties { get {
         if(_DirectAccessProperties == null) {
             var directAccessProperties = new List<CodePropertyKind> {
@@ -143,16 +143,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         return _DirectAccessProperties;
     }}
-    private CodePropertyKind[] _SetterAccessProperties;
+    private CodePropertyKind[]? _SetterAccessProperties;
     private CodePropertyKind[] SetterAccessProperties {
         get {
-            if (_SetterAccessProperties == null) {
-                _SetterAccessProperties = new CodePropertyKind[] {
+            _SetterAccessProperties ??= new CodePropertyKind[] {
                     CodePropertyKind.AdditionalData, //additional data and custom properties need to use the accessors in case of backing store use
                     CodePropertyKind.Custom
                 }.Except(DirectAccessProperties)
                 .ToArray();
-            }
             return _SetterAccessProperties;
         }
     }
@@ -164,9 +162,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         WriteSetterAccessPropertiesWithoutDefaults(parentClass, writer);
 
         if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
-            if(currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
-            currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam) {
-                conventions.AddParametersAssignment(writer, 
+            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+                if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam)
+                    conventions.AddParametersAssignment(writer, 
                                                     pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                     currentMethod.Parameters
@@ -209,13 +207,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
         }
     }
-    private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string variableName = default) {
-        var property = parentClass.GetPropertyOfKind(propertyKind);
-        if(property != null) {
-            var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
+    private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string? variableName = default) {
+        if(parentClass.GetPropertyOfKind(propertyKind) is CodeProperty property) {
             if(!string.IsNullOrEmpty(variableName))
                 writer.WriteLine($"self.{property.Name.ToSnakeCase()} = {variableName.ToSnakeCase()}");
-            else if(parameter != null)
+            else if(currentMethod.Parameters.OfKind(parameterKind) is CodeParameter parameter)
                 writer.WriteLine($"self.{property.Name.ToSnakeCase()} = {parameter.Name.ToSnakeCase()}");
         }
     }
@@ -253,7 +249,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         writer.WriteLine("fields = {");
             writer.IncreaseIndent();
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType)) {
-                writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToSnakeCase()}\": lambda n : setattr(self, '{otherProp.Name.ToSnakeCase()}', n.{GetDeserializationMethodName(otherProp.Type, codeElement)}),");
+                writer.WriteLine($"\"{otherProp.WireName}\": lambda n : setattr(self, '{otherProp.Name.ToSnakeCase()}', n.{GetDeserializationMethodName(otherProp.Type, codeElement, parentClass)}),");
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
@@ -263,10 +259,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             }
             writer.WriteLine("return fields");
     }
-    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer) {
+    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, bool isVoid, string returnType, LanguageWriter writer) {
         if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
-        var generatorMethodName = (codeElement.Parent as CodeClass)
+        var generatorMethodName = parentClass
                                             .Methods
                                             .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                             ?.Name
@@ -274,9 +270,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         writer.WriteLine($"request_info = self.{generatorMethodName}(");
         var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
                                         .Select(x => x?.Name.ToSnakeCase()).Where(x => x != null);
-        if(requestInfoParameters.Any()) {
+        if(requestInfoParameters.Any() && requestInfoParameters.Aggregate(static (x,y) => $"{x}, {y}") is string parameters) {
             writer.IncreaseIndent();
-            writer.WriteLine(requestInfoParameters.Aggregate(static (x,y) => $"{x}, {y}"));
+            writer.WriteLine(parameters);
             writer.DecreaseIndent();
         }
         writer.WriteLine(")");
@@ -302,25 +298,27 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     }
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName) {
         if(!codeElement.ReturnType.IsCollection) return fullTypeName;
-        var clone = codeElement.ReturnType.Clone() as CodeTypeBase;
-        clone.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None;
-        return conventions.GetTypeString(clone, codeElement);
+        if (codeElement.ReturnType.Clone() is CodeTypeBase clone) {
+            clone.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None;
+            return conventions.GetTypeString(clone, codeElement);
+        }
+        return string.Empty;
     }
     private const string RequestInfoVarName = "request_info";
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer) {
         if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
         
-        var urlTemplateParamsProperty = currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-        var urlTemplateProperty = currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
-        var requestAdapterProperty = currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-        writer.WriteLines($"{RequestInfoVarName} = RequestInformation()",
-                            $"{RequestInfoVarName}.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
-                            $"{RequestInfoVarName}.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}",
-                            $"{RequestInfoVarName}.http_method = Method.{codeElement.HttpMethod.ToString().ToUpperInvariant()}");
+        writer.WriteLine($"{RequestInfoVarName} = RequestInformation()");
+        if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
+            currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
+                writer.WriteLines($"{RequestInfoVarName}.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
+                                    $"{RequestInfoVarName}.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}");
+        writer.WriteLine($"{RequestInfoVarName}.http_method = Method.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
         if(codeElement.AcceptedResponseTypes.Any())
             writer.WriteLine($"{RequestInfoVarName}.headers[\"Accept\"] = \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\"");
         UpdateRequestInformationFromRequestConfiguration(requestParams, writer);
-        UpdateRequestInformationFromRequestBody(codeElement, requestParams, requestAdapterProperty, writer);
+        if(currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
+            UpdateRequestInformationFromRequestBody(codeElement, requestParams, requestAdapterProperty, writer);
         writer.WriteLine($"return {RequestInfoVarName}");
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"self.{property.Name.ToSnakeCase()}";
@@ -329,7 +327,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if(inherits)
             writer.WriteLine("super().serialize(writer)");
         foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly)) {
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name}\", self.{otherProp.Name.ToSnakeCase()})");
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.WireName}\", self.{otherProp.Name.ToSnakeCase()})");
         }
         if(additionalDataProperty != null)
             writer.WriteLine($"writer.write_additional_data_value(self.{additionalDataProperty.Name.ToSnakeCase()})");
@@ -386,11 +384,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.WriteLine($"{propertyDecorator}");
         writer.WriteLine($"{asyncPrefix}def {accessModifier}{methodName}({instanceReference}{parameters}) -> {returnTypeSuffix}:");
     }
-    private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod codeElement) {
+    private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod codeElement, CodeClass parentClass) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = conventions.TranslateType(propType);
         if (conventions.TypeExistInSameClassAsTarget(propType, codeElement))
-            propertyType = codeElement.Parent.Name.ToFirstCharacterUpperCase();
+            propertyType = parentClass.Name.ToFirstCharacterUpperCase();
         if(propType is CodeType currentType)
         {
             if(currentType.TypeDefinition is CodeEnum currentEnum)

@@ -8,15 +8,45 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>object containing information about the author.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public WithPathDeleteRequestBody_author? Author { get; set; }
+#nullable restore
+#else
         public WithPathDeleteRequestBody_author Author { get; set; }
+#endif
         /// <summary>The branch name. Default: the repository’s default branch (usually `master`)</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Branch { get; set; }
+#nullable restore
+#else
         public string Branch { get; set; }
+#endif
         /// <summary>object containing information about the committer.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public WithPathDeleteRequestBody_committer? Committer { get; set; }
+#nullable restore
+#else
         public WithPathDeleteRequestBody_committer Committer { get; set; }
+#endif
         /// <summary>The commit message.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Message { get; set; }
+#nullable restore
+#else
         public string Message { get; set; }
+#endif
         /// <summary>The blob SHA of the file being deleted.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Sha { get; set; }
+#nullable restore
+#else
         public string Sha { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new WithPathDeleteRequestBody and sets the default values.
         /// </summary>

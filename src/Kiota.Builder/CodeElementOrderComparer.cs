@@ -6,7 +6,7 @@ using Kiota.Builder.CodeDOM;
 namespace Kiota.Builder {
     public class CodeElementOrderComparer : IComparer<CodeElement>
     {
-        public int Compare(CodeElement x, CodeElement y)
+        public int Compare(CodeElement? x, CodeElement? y)
         {
             return (x, y) switch
             {

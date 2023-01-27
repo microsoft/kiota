@@ -195,6 +195,9 @@ public class CSharpLanguageRefinerTests {
         var indexer = new CodeIndexer {
             Name = "idx",
             ReturnType = union.Clone() as CodeTypeBase,
+            IndexType = new CodeType {
+                Name = "string"
+            }
         };
         model.SetIndexer(indexer);
         method.AddParameter(parameter);
@@ -239,16 +242,16 @@ public class CSharpLanguageRefinerTests {
         }).First();
         var cancellationParam = new CodeParameter
         {
-            Name = "cancelletionToken",
+            Name = "cancellationToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
             Documentation = new() {
                 Description = "Cancellation token to use when cancelling requests",
             },
-            Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
+            Type = new CodeType { Name = "CancellationToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the cancelletionToken doesn't get removed
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the cancellationToken doesn't get removed
         Assert.True(method.Parameters.Any());
         Assert.Contains(cancellationParam, method.Parameters);
     }

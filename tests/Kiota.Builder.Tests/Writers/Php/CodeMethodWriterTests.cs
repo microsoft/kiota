@@ -172,7 +172,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         [Fact]
         public void WriteMethodWithNoDescription()
         {
-            method.Documentation.Description = null;
+            method.Documentation.Description = string.Empty;
             _codeMethodWriter.WriteCodeElement(method, languageWriter);
             var result = stringWriter.ToString();
             
@@ -190,9 +190,9 @@ namespace Kiota.Builder.Tests.Writers.Php
         {
             CodeProperty[] properties =
             {
-                new CodeProperty { Kind = CodePropertyKind.RequestAdapter, Name = "requestAdapter" },
-                new CodeProperty { Kind = CodePropertyKind.UrlTemplate, Name = "urlTemplate" },
-                new CodeProperty { Kind = CodePropertyKind.PathParameters, Name = "pathParameters" },
+                new CodeProperty { Kind = CodePropertyKind.RequestAdapter, Name = "requestAdapter", Type = new CodeType { Name = "string" } },
+                new CodeProperty { Kind = CodePropertyKind.UrlTemplate, Name = "urlTemplate", Type = new CodeType { Name = "string" } },
+                new CodeProperty { Kind = CodePropertyKind.PathParameters, Name = "pathParameters", Type = new CodeType { Name = "string" } },
             };
             parentClass.AddProperty(properties);
             var codeMethod = new CodeMethod
@@ -310,7 +310,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             new object[] { new CodeProperty { Name = "dateValue", Type = new CodeType { Name = "DateTime" }, Access = AccessModifier.Private}, "$writer->writeDateTimeValue('dateValue', $this->getDateValue());" },
             new object[] { new CodeProperty { Name = "duration", Type = new CodeType { Name = "duration" }, Access = AccessModifier.Private}, "$writer->writeDateIntervalValue('duration', $this->getDuration());" },
             new object[] { new CodeProperty { Name = "stream", Type = new CodeType { Name = "binary" }, Access = AccessModifier.Private}, "$writer->writeBinaryContent('stream', $this->getStream());" },
-            new object[] { new CodeProperty { Name = "definedInParent", Type = new CodeType { Name = "string"}, OriginalPropertyFromBaseType = new CodeProperty() }, "$write->writeStringValue('definedInParent', $this->getDefinedInParent());"}
+            new object[] { new CodeProperty { Name = "definedInParent", Type = new CodeType { Name = "string"}, OriginalPropertyFromBaseType = new CodeProperty() { Name = "definedInParent", Type = new CodeType { Name = "string"}} }, "$write->writeStringValue('definedInParent', $this->getDefinedInParent());"}
         };
         
         [Theory]
@@ -585,6 +585,9 @@ namespace Kiota.Builder.Tests.Writers.Php
                     IndexType = new CodeType
                     {
                         Name = "MessageRequestBuilder"
+                    },
+                    ReturnType = new CodeType {
+                        Name = "MessageRequestBuilder"
                     }
                 },
                 OriginalMethod = new CodeMethod
@@ -678,7 +681,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             new object[] { new CodeProperty { Name = "years", Type = new CodeType { Name = "int", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
                 "'years' => fn(ParseNode $n) => $o->setYears($n->getCollectionOfPrimitiveValues())"
             },
-            new object[] { new CodeProperty{ Name = "definedInParent", Type = new CodeType { Name = "string"}, OriginalPropertyFromBaseType = new CodeProperty() }, "'definedInParent' => function (ParseNode $n) use ($o) { $o->setDefinedInParent($n->getStringValue())"}
+            new object[] { new CodeProperty{ Name = "definedInParent", Type = new CodeType { Name = "string"}, OriginalPropertyFromBaseType = new CodeProperty() { Name = "definedInParent", Type = new CodeType { Name = "string"}} }, "'definedInParent' => function (ParseNode $n) use ($o) { $o->setDefinedInParent($n->getStringValue())"}
         };
         private static CodeClass GetParentClassInStaticContext()
         {
@@ -842,7 +845,8 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = "type",
                 DefaultValue = "\"#microsoft.graph.entity\"",
-                Kind = CodePropertyKind.Custom
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType {Name = "string"},
             };
             parentClass.AddProperty(propWithDefaultValue);
 
@@ -1034,10 +1038,16 @@ namespace Kiota.Builder.Tests.Writers.Php
                 Name = propName,
                 DefaultValue = defaultValue,
                 Kind = CodePropertyKind.UrlTemplate,
+                Type = new CodeType {
+                    Name = "string",
+                },
             });
             parentClass.AddProperty(new CodeProperty {
                 Name = "requestAdapter",
                 Kind = CodePropertyKind.RequestAdapter,
+                Type = new CodeType {
+                    Name = "RequestAdapter",
+                },
             });
             parentClass.AddProperty(new CodeProperty {
                 Name = "pathParameters",
@@ -1049,6 +1059,9 @@ namespace Kiota.Builder.Tests.Writers.Php
             parentClass.AddProperty(new CodeProperty {
                 Name = "urlTemplate",
                 Kind = CodePropertyKind.UrlTemplate,
+                Type = new CodeType {
+                    Name = "string",
+                },
             });
             method.AddParameter(new CodeParameter
             {
@@ -1667,6 +1680,9 @@ namespace Kiota.Builder.Tests.Writers.Php
                 },
                 Setter = new CodeMethod {
                     Name = "SetAdditionalData",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
                 }
             });
             parentClass.AddProperty(new CodeProperty {
@@ -1682,6 +1698,9 @@ namespace Kiota.Builder.Tests.Writers.Php
                 },
                 Setter = new CodeMethod {
                     Name = "SetDummyProp",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
                 },
             });
             parentClass.AddProperty(new CodeProperty{
@@ -1722,9 +1741,15 @@ namespace Kiota.Builder.Tests.Writers.Php
                 },
                 Getter = new CodeMethod {
                     Name = "GetDummyComplexColl",
+                    ReturnType = new CodeType {
+                        Name = "SomeComplexType",
+                    }
                 },
                 Setter = new CodeMethod {
                     Name = "SetDummyComplexColl",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
                 }
             });
             parentClass.AddProperty(new CodeProperty{
@@ -1737,9 +1762,15 @@ namespace Kiota.Builder.Tests.Writers.Php
                 },
                 Getter = new CodeMethod {
                     Name = "GetDummyEnumCollection",
+                    ReturnType = new CodeType {
+                        Name = "SomeEnum",
+                    }
                 },
                 Setter = new CodeMethod {
                     Name = "SetDummyEnumCollection",
+                    ReturnType = new CodeType {
+                        Name = "void"
+                    },
                 }
             });
             parentClass.AddProperty(new CodeProperty {

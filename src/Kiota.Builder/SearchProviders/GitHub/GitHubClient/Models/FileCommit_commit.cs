@@ -7,26 +7,76 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
     public class FileCommit_commit : IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The author property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public FileCommit_commit_author? Author { get; set; }
+#nullable restore
+#else
         public FileCommit_commit_author Author { get; set; }
-        /// <summary>The committer property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public FileCommit_commit_committer? Committer { get; set; }
+#nullable restore
+#else
         public FileCommit_commit_committer Committer { get; set; }
-        /// <summary>The html_url property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Html_url { get; set; }
+#nullable restore
+#else
         public string Html_url { get; set; }
-        /// <summary>The message property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Message { get; set; }
+#nullable restore
+#else
         public string Message { get; set; }
-        /// <summary>The node_id property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Node_id { get; set; }
+#nullable restore
+#else
         public string Node_id { get; set; }
-        /// <summary>The parents property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public List<FileCommit_commit_parents>? Parents { get; set; }
+#nullable restore
+#else
         public List<FileCommit_commit_parents> Parents { get; set; }
-        /// <summary>The sha property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Sha { get; set; }
+#nullable restore
+#else
         public string Sha { get; set; }
-        /// <summary>The tree property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public FileCommit_commit_tree? Tree { get; set; }
+#nullable restore
+#else
         public FileCommit_commit_tree Tree { get; set; }
-        /// <summary>The url property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Url { get; set; }
+#nullable restore
+#else
         public string Url { get; set; }
-        /// <summary>The verification property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public FileCommit_commit_verification? Verification { get; set; }
+#nullable restore
+#else
         public FileCommit_commit_verification Verification { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new FileCommit_commit and sets the default values.
         /// </summary>

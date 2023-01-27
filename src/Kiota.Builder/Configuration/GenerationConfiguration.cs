@@ -11,7 +11,7 @@ public class GenerationConfiguration : ICloneable {
     public string NamespaceNameSeparator { get; set; } = ".";
     public string ModelsNamespaceName { get => $"{ClientNamespaceName}{NamespaceNameSeparator}models"; }
     public GenerationLanguage Language { get; set; } = GenerationLanguage.CSharp;
-    public string ApiRootUrl { get; set; }
+    public string? ApiRootUrl { get; set; }
     public bool UsesBackingStore { get; set; }
     public bool IncludeAdditionalData { get; set; } = true;
     public HashSet<string> Serializers { get; set; } = new(2, StringComparer.OrdinalIgnoreCase){

@@ -1,3 +1,4 @@
+using System;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -8,7 +9,7 @@ public class CodeInterfaceDeclarationWriter : CodeProprietableBlockDeclarationWr
     public CodeInterfaceDeclarationWriter(GoConventionService conventionService) : base(conventionService){}
     protected override void WriteTypeDeclaration(InterfaceDeclaration codeElement, LanguageWriter writer)
     {
-        var inter = codeElement.Parent as CodeInterface;
+        if (codeElement.Parent is not CodeInterface inter) throw new InvalidOperationException("Expected the parent to be an interface");
         var interName = codeElement.Name.ToFirstCharacterUpperCase();
         conventions.WriteShortDescription($"{interName} {inter.Documentation.Description.ToFirstCharacterLowerCase()}", writer);
         conventions.WriteLinkDescription(inter.Documentation, writer);

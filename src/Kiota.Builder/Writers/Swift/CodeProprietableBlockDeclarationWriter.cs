@@ -12,14 +12,14 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
-        if (codeElement.Parent?.Parent is CodeNamespace ns)
+        if (codeElement.Parent?.Parent is CodeNamespace)
         {
             var importSegments = codeElement
                                     .Usings
-                                    .Where(x => x.Declaration.IsExternal)
-                                    .Select(x => x.Declaration.Name)
+                                    .Where(static x => x.Declaration != null && x.Declaration.IsExternal)
+                                    .Select(static x => x.Declaration!.Name)
                                     .Distinct()
-                                .OrderBy(x => x.Count(y => y == '.'))
+                                .OrderBy(static x => x.Count(static y => y == '.'))
                                 .ThenBy(x => x)
                                 .ToList();
             if (importSegments.Any())
@@ -29,7 +29,7 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
             }
         }
 
-        if(codeElement?.Parent?.Parent is CodeNamespace && !(codeElement.Parent is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.BarrelInitializer))) {
+        if(codeElement.Parent?.Parent is CodeNamespace && !(codeElement.Parent is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.BarrelInitializer))) {
             writer.WriteLine($"extension {codeElement.Parent.Parent.Name} {{");
             writer.IncreaseIndent();
         }

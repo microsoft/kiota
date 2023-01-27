@@ -11,9 +11,14 @@ internal class CodePropertyTypeComparer : IComparer<CodeProperty>
     {
         TypeComparer = new CodeTypeComparer(orderByDesc);
     }
-    public int Compare(CodeProperty x, CodeProperty y)
+    public int Compare(CodeProperty? x, CodeProperty? y)
     {
-        if (x == null && y == null) return 0;
-        return TypeComparer.Compare(x?.Type, y?.Type);
+        return (x, y) switch
+        {
+            (null, null) => 0,
+            (null, _) => -1,
+            (_, null) => 1,
+            _ => TypeComparer.Compare(x?.Type, y?.Type),
+        };
     }
 }

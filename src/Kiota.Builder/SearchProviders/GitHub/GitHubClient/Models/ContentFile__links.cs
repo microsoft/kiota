@@ -7,12 +7,27 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
     public class ContentFile__links : IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The git property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Git { get; set; }
+#nullable restore
+#else
         public string Git { get; set; }
-        /// <summary>The html property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Html { get; set; }
+#nullable restore
+#else
         public string Html { get; set; }
-        /// <summary>The self property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Self { get; set; }
+#nullable restore
+#else
         public string Self { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new ContentFile__links and sets the default values.
         /// </summary>

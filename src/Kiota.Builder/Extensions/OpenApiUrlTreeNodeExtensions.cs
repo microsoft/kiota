@@ -28,12 +28,14 @@ namespace Kiota.Builder.Extensions {
                                     static (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
                         string.Empty)
                     .ReplaceValueIdentifier();
-        public static string GetNodeNamespaceFromPath(this OpenApiUrlTreeNode currentNode, string prefix) =>
-            currentNode?.Path?.GetNamespaceFromPath(prefix);
+        public static string GetNodeNamespaceFromPath(this OpenApiUrlTreeNode currentNode, string prefix) {
+            ArgumentNullException.ThrowIfNull(currentNode);
+            return currentNode.Path.GetNamespaceFromPath(prefix);
+        }
         //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
-        private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled);
+        private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
         // microsoft.graph.getRoleScopeTagsByIds(ids=@ids)
-        private static readonly Regex AtSignPathParameterRegex = new(@"=@(\w+)", RegexOptions.Compiled);
+        private static readonly Regex AtSignPathParameterRegex = new(@"=@(\w+)", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
         private static readonly char requestParametersChar = '{';
         private static readonly char requestParametersEndChar = '}';
         private static readonly char requestParametersSectionChar = '(';
@@ -43,8 +45,10 @@ namespace Kiota.Builder.Extensions {
             return WithKeyword + match.Groups["paramName"].Value.ToFirstCharacterUpperCase();
         };
         private static string CleanupParametersFromPath(string pathSegment) {
-            if((pathSegment?.Contains(requestParametersChar) ?? false) ||
-                (pathSegment?.Contains(requestParametersSectionChar) ?? false))
+            if (string.IsNullOrEmpty(pathSegment))
+                return pathSegment;
+            if(pathSegment.Contains(requestParametersChar) ||
+                pathSegment.Contains(requestParametersSectionChar))
                 return PathParametersRegex.Replace(
                                             AtSignPathParameterRegex.Replace(pathSegment, "={$1}"),
                                         requestParametersMatchEvaluator)
@@ -71,25 +75,27 @@ namespace Kiota.Builder.Extensions {
             return Enumerable.Empty<OpenApiParameter>();
         }
         private static readonly char pathNameSeparator = '\\';
-        private static readonly Regex idClassNameCleanup = new(@"-?id\d?}?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex idClassNameCleanup = new(@"-?id\d?}?$", RegexOptions.Compiled | RegexOptions.IgnoreCase, Constants.DefaultRegexTimeout);
         ///<summary>
         /// Returns the class name for the node with more or less precision depending on the provided arguments
         ///</summary>
-        public static string GetClassName(this OpenApiUrlTreeNode currentNode, HashSet<string> structuredMimeTypes, string suffix = default, string prefix = default, OpenApiOperation operation = default, OpenApiResponse response = default, OpenApiSchema schema = default, bool requestBody = false) {
+        public static string GetClassName(this OpenApiUrlTreeNode currentNode, HashSet<string> structuredMimeTypes, string? suffix = default, string? prefix = default, OpenApiOperation? operation = default, OpenApiResponse? response = default, OpenApiSchema? schema = default, bool requestBody = false) {
             var rawClassName = schema?.Reference?.GetClassName() ??
                                 (requestBody ? null : response?.GetResponseSchema(structuredMimeTypes)?.Reference?.GetClassName()) ??
                                 (requestBody ? operation?.GetRequestSchema(structuredMimeTypes) : operation?.GetResponseSchema(structuredMimeTypes))?.Reference?.GetClassName() ?? 
                                 CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier();
-            if(stripExtensionForIndexersRegex.IsMatch(rawClassName))
-                rawClassName = stripExtensionForIndexersRegex.Replace(rawClassName, string.Empty);
-            if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName)) {
-                rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
-                if(rawClassName == WithKeyword) // in case the single parameter doesn't follow {classname-id} we get the previous segment
-                    rawClassName = currentNode.Path
-                                            .Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
-                                            .SkipLast(1)
-                                            .Last()
-                                            .ToFirstCharacterUpperCase();
+            if (!string.IsNullOrEmpty(rawClassName)) {
+                if(stripExtensionForIndexersRegex.IsMatch(rawClassName))
+                    rawClassName = stripExtensionForIndexersRegex.Replace(rawClassName, string.Empty);
+                if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName)) {
+                    rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
+                    if(rawClassName == WithKeyword) // in case the single parameter doesn't follow {classname-id} we get the previous segment
+                        rawClassName = currentNode.Path
+                                                .Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
+                                                .SkipLast(1)
+                                                .Last()
+                                                .ToFirstCharacterUpperCase();
+                }
             }
 
             var classNameSegments = rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries).AsEnumerable() ?? Enumerable.Empty<string>();
@@ -108,14 +114,14 @@ namespace Kiota.Builder.Extensions {
             "yml",
             "txt",
         };
-        private static readonly Regex descriptionCleanupRegex = new (@"[\r\n\t]", RegexOptions.Compiled);
-        public static string CleanupDescription(this string description) => string.IsNullOrEmpty(description) ? description : descriptionCleanupRegex.Replace(description, string.Empty);
-        public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string defaultValue = default) =>
+        private static readonly Regex descriptionCleanupRegex = new (@"[\r\n\t]", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+        public static string CleanupDescription(this string? description) => string.IsNullOrEmpty(description) ? string.Empty : descriptionCleanupRegex.Replace(description, string.Empty);
+        public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string? defaultValue = default) =>
         !string.IsNullOrEmpty(label) && (currentNode?.PathItems.ContainsKey(label) ?? false) ?
                 (currentNode.PathItems[label].Description ??
                 currentNode.PathItems[label].Summary ??
                 defaultValue).CleanupDescription() :
-            defaultValue;
+            (defaultValue ?? string.Empty);
         public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParameter();
         public static bool IsPathSegmentWithSingleSimpleParameter(this OpenApiUrlTreeNode currentNode) =>
             currentNode?.Segment.IsPathSegmentWithSingleSimpleParameter() ?? false;
@@ -128,7 +134,7 @@ namespace Kiota.Builder.Extensions {
                     segmentWithoutExtension.EndsWith(requestParametersEndChar) &&
                     segmentWithoutExtension.Count(static x => x == requestParametersChar) == 1;
         }
-        private static readonly Regex stripExtensionForIndexersRegex = new(@"\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Compiled); // so {param-name}.json is considered as indexer
+        private static readonly Regex stripExtensionForIndexersRegex = new(@"\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Compiled, Constants.DefaultRegexTimeout); // so {param-name}.json is considered as indexer
         public static bool IsComplexPathWithAnyNumberOfParameters(this OpenApiUrlTreeNode currentNode)
         {
             return (currentNode?.Segment?.Contains(requestParametersSectionChar, StringComparison.OrdinalIgnoreCase) ?? false) && currentNode.Segment.EndsWith(requestParametersSectionEndChar);
@@ -158,7 +164,7 @@ namespace Kiota.Builder.Extensions {
                     SanitizePathParameterNamesForUrlTemplate(currentNode.Path.Replace('\\', '/')) +
                     queryStringParameters;
         }
-        private static readonly Regex pathParamMatcher = new(@"{(?<paramname>[^}]+)}",RegexOptions.Compiled);
+        private static readonly Regex pathParamMatcher = new(@"{(?<paramname>[^}]+)}",RegexOptions.Compiled, Constants.DefaultRegexTimeout);
         private static string SanitizePathParameterNamesForUrlTemplate(string original) {
             if(string.IsNullOrEmpty(original) || !original.Contains('{')) return original;
             var parameters = pathParamMatcher.Matches(original);
@@ -176,7 +182,7 @@ namespace Kiota.Builder.Extensions {
                         .Replace(".", "%2E")
                         .Replace("~", "%7E");// - . ~ are invalid uri template character but don't get encoded by Uri.EscapeDataString
         }
-        private static readonly Regex removePctEncodedCharacters = new(@"%[0-9A-F]{2}", RegexOptions.Compiled);
+        private static readonly Regex removePctEncodedCharacters = new(@"%[0-9A-F]{2}", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
         public static string SanitizeParameterNameForCodeSymbols(this string original, string replaceEncodedCharactersWith = "") {
             if(string.IsNullOrEmpty(original)) return original;
             return removePctEncodedCharacters.Replace(original.ToCamelCase('-', '.', '~').SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);

@@ -10,7 +10,7 @@ public class TempFolderTokenStorageService : ITokenStorageService {
     public required ILogger Logger { get; init;}
     public required string FileName { get; init; }
     private string GetTokenCacheFilePath() => Path.Combine(Path.GetTempPath(), "kiota", "auth", $"{FileName}.txt");
-    public async Task<string> GetTokenAsync(CancellationToken cancellationToken)
+    public async Task<string?> GetTokenAsync(CancellationToken cancellationToken)
     {
         try {
             var target = GetTokenCacheFilePath();
@@ -30,7 +30,7 @@ public class TempFolderTokenStorageService : ITokenStorageService {
         {
             var target = GetTokenCacheFilePath();
             var directory = Path.GetDirectoryName(target);
-            if (!Directory.Exists(directory))
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
             await File.WriteAllTextAsync(target, value, cancellationToken).ConfigureAwait(false);
         }

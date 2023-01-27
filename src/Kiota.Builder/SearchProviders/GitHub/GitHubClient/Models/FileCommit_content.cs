@@ -5,28 +5,72 @@ using System.IO;
 using System.Linq;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
     public class FileCommit_content : IAdditionalDataHolder, IParsable {
-        /// <summary>The _links property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public FileCommit_content__links? _links { get; set; }
+#nullable restore
+#else
         public FileCommit_content__links _links { get; set; }
+#endif
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The download_url property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Download_url { get; set; }
+#nullable restore
+#else
         public string Download_url { get; set; }
-        /// <summary>The git_url property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Git_url { get; set; }
+#nullable restore
+#else
         public string Git_url { get; set; }
-        /// <summary>The html_url property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Html_url { get; set; }
+#nullable restore
+#else
         public string Html_url { get; set; }
-        /// <summary>The name property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Name { get; set; }
+#nullable restore
+#else
         public string Name { get; set; }
-        /// <summary>The path property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Path { get; set; }
+#nullable restore
+#else
         public string Path { get; set; }
-        /// <summary>The sha property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Sha { get; set; }
+#nullable restore
+#else
         public string Sha { get; set; }
-        /// <summary>The size property</summary>
+#endif
         public int? Size { get; set; }
-        /// <summary>The type property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Type { get; set; }
+#nullable restore
+#else
         public string Type { get; set; }
-        /// <summary>The url property</summary>
+#endif
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Url { get; set; }
+#nullable restore
+#else
         public string Url { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new FileCommit_content and sets the default values.
         /// </summary>

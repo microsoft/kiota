@@ -26,11 +26,13 @@ public class CodePropertyWriterTests: IDisposable {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
-        property = new CodeProperty {
+        property = new CodeProperty
+        {
             Name = PropertyName,
-        };
-        property.Type = new CodeType {
-            Name = TypeName
+            Type = new CodeType
+            {
+                Name = TypeName
+            }
         };
         parentClass.AddProperty(property);
     }

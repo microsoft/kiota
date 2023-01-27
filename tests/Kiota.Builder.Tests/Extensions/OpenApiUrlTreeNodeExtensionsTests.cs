@@ -17,10 +17,10 @@ public class OpenApiUrlTreeNodeExtensionsTests
         Assert.False(OpenApiUrlTreeNodeExtensions.IsComplexPathWithAnyNumberOfParameters(null));
         Assert.False(OpenApiUrlTreeNodeExtensions.IsPathSegmentWithSingleSimpleParameter(null));
         Assert.False(OpenApiUrlTreeNodeExtensions.DoesNodeBelongToItemSubnamespace(null));
-        Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, null));
-        Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, Label));
-        Assert.Null(OpenApiUrlTreeNode.Create().GetPathItemDescription(null));
-        Assert.Null(OpenApiUrlTreeNode.Create().GetPathItemDescription(Label));
+        Assert.Empty(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, null));
+        Assert.Empty(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, Label));
+        Assert.Empty(OpenApiUrlTreeNode.Create().GetPathItemDescription(null));
+        Assert.Empty(OpenApiUrlTreeNode.Create().GetPathItemDescription(Label));
     }
     private const string Label = "default";
     [Fact]

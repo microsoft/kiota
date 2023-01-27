@@ -62,6 +62,9 @@ public class CodeMethodWriterTests : IDisposable {
         parentClass.AddProperty(new CodeProperty {
             Name = "requestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "RequestAdapter",
+            },
         });
         parentClass.AddProperty(new CodeProperty {
             Name = "pathParameters",
@@ -73,6 +76,9 @@ public class CodeMethodWriterTests : IDisposable {
         parentClass.AddProperty(new CodeProperty {
             Name = "urlTemplate",
             Kind = CodePropertyKind.UrlTemplate,
+            Type = new CodeType {
+                Name = "string",
+            },
         });
     }
     private void AddSerializationProperties() {
@@ -465,48 +471,48 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesTranslatedTypesDeSerializerBody() {
-        var dummyCollectionProp1 = parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty {
             Name = "guidId",
-        }).First();
-        dummyCollectionProp1.Type = new CodeType {
-            Name = "guid",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-        };
-        var dummyCollectionProp2 = parentClass.AddProperty(new CodeProperty {
+            Type = new CodeType {
+                Name = "guid",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+        });
+        parentClass.AddProperty(new CodeProperty {
             Name = "dateTime",
-        }).First();
-        dummyCollectionProp2.Type = new CodeType {
-            Name = "date",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-        };
-        var dummyCollectionProp3 = parentClass.AddProperty(new CodeProperty {
+            Type = new CodeType {
+                Name = "date",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+        });
+        parentClass.AddProperty(new CodeProperty {
             Name = "isTrue",
-        }).First();
-        dummyCollectionProp3.Type = new CodeType {
-            Name = "boolean",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-        };
-        var dummyCollectionProp4 = parentClass.AddProperty(new CodeProperty {
+            Type = new CodeType {
+                Name = "boolean",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            }
+        });
+        parentClass.AddProperty(new CodeProperty {
             Name = "numberTest",
-        }).First();
-        dummyCollectionProp4.Type = new CodeType {
-            Name = "number",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-        };
-        var dummyCollectionProp5 = parentClass.AddProperty(new CodeProperty {
+            Type = new CodeType {
+                Name = "number",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            }
+        });
+        parentClass.AddProperty(new CodeProperty {
             Name = "DatetimeValueType",
-        }).First();
-        dummyCollectionProp5.Type = new CodeType {
-            Name = "dateTimeOffset",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-        };
-        var dummyCollectionProp6 = parentClass.AddProperty(new CodeProperty {
+            Type = new CodeType {
+                Name = "dateTimeOffset",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+        });
+        parentClass.AddProperty(new CodeProperty {
             Name = "messages",
-        }).First();
-        dummyCollectionProp6.Type = new CodeType {
-            Name = "NewObjectName",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-        };
+            Type = new CodeType {
+                Name = "NewObjectName",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            }
+        });
         method.Kind = CodeMethodKind.Deserializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -582,6 +588,9 @@ public class CodeMethodWriterTests : IDisposable {
             IndexType = new CodeType {
                 Name = "string",
                 IsNullable = true,
+            },
+            ReturnType = new CodeType {
+                Name = "string",
             }
         };
         writer.Write(method);
@@ -626,6 +635,9 @@ public class CodeMethodWriterTests : IDisposable {
             Name = propName,
             DefaultValue = defaultValue,
             Kind = CodePropertyKind.UrlTemplate,
+            Type = new CodeType {
+                Name = "string"
+            }
         });
         writer.Write(method);
         var result = tw.ToString();
@@ -710,11 +722,11 @@ public class CodeMethodWriterTests : IDisposable {
         var coreProp = parentClass.AddProperty(new CodeProperty {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "HttpCore",
+                IsExternal = true,
+            }
         }).First();
-        coreProp.Type = new CodeType {
-            Name = "HttpCore",
-            IsExternal = true,
-        };
         method.AddParameter(new CodeParameter {
             Name = "core",
             Kind = CodeParameterKind.RequestAdapter,
@@ -744,17 +756,26 @@ public class CodeMethodWriterTests : IDisposable {
         parentClass.AddProperty(new CodeProperty {
             Name = "select",
             Kind = CodePropertyKind.QueryParameter,
-            SerializationName = "%24select"
+            SerializationName = "%24select",
+            Type = new CodeType {
+                Name = "string",
+            },
         },
         new CodeProperty {
             Name = "expand",
             Kind = CodePropertyKind.QueryParameter,
-            SerializationName = "%24expand"
+            SerializationName = "%24expand",
+            Type = new CodeType {
+                Name = "string",
+            },
         },
         new CodeProperty {
             Name = "filter",
             Kind = CodePropertyKind.QueryParameter,
-            SerializationName = "%24filter"
+            SerializationName = "%24filter",
+            Type = new CodeType {
+                Name = "string",
+            },
         });
         method.AddParameter(new CodeParameter{
             Kind = CodeParameterKind.QueryParametersMapperParameter,

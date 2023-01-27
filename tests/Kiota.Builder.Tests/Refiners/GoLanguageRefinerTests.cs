@@ -444,6 +444,7 @@ public class GoLanguageRefinerTests {
         var rb = model.AddProperty(new CodeProperty {
             Name = "someProperty",
             Kind = CodePropertyKind.RequestBuilder,
+            Type = new CodeType { Name = "SomeType" },
         }).First();
         rb.Type = new CodeType {
             Name = "someType",

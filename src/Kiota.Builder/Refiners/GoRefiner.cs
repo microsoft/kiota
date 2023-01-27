@@ -28,7 +28,7 @@ public class GoRefiner : CommonLanguageRefiner
             AddInnerClasses(
                 generatedCode,
                 true,
-                null,
+                string.Empty,
             false,
             MergeOverLappedStrings);
             RenameCancellationParameter(generatedCode);
@@ -158,36 +158,35 @@ public class GoRefiner : CommonLanguageRefiner
         return $"{start}{end}";
     }
     
-    private void CorrectBackingStoreTypes(CodeElement currentElement, Dictionary<String, CodeInterface> result = null)
+    private void CorrectBackingStoreTypes(CodeElement currentElement)
     {
         if (!_configuration.UsesBackingStore)
             return;
         
-        var currentMethod = currentElement as CodeMethod;
-        var parameters = currentMethod?.Parameters;
-        var codeParameters = parameters as CodeParameter[] ?? parameters?.ToArray();
-        codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.BackingStore)
-                                   && currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)).ToList().ForEach(x =>
-        {
-            var type = (x.Type as CodeType)!;
-            type.Name = "BackingStoreFactory";
-            type.IsNullable = false;
-            type.IsExternal = true;
-        });
-
-        if (currentElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model))
+        if (currentElement is CodeMethod currentMethod) {
+            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.BackingStore)
+                                    && currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)
+                                    && x.Type is CodeType).ToList().ForEach(x =>
+            {
+                var type = (CodeType)x.Type;
+                type.Name = "BackingStoreFactory";
+                type.IsNullable = false;
+                type.IsExternal = true;
+            });
+        }
+        else if (currentElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model))
         {
             var propertiesToCorrect = codeClass.Properties
-                .Where(x => x.IsOfKind(CodePropertyKind.Custom))
+                .Where(static x => x.IsOfKind(CodePropertyKind.Custom))
                 .Union(codeClass.Methods
                     .Where(x => x.IsAccessor && (x.AccessedProperty?.IsOfKind(CodePropertyKind.Custom) ?? false))
-                    .Select(static x => x.AccessedProperty))
+                    .Select(static x => x.AccessedProperty!))
                 .Distinct()
                 .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
 
             var targetNameSpace = codeClass.GetImmediateParentOfType<CodeNamespace>();
             var modelsNameSpace = findClientNameSpace(targetNameSpace)
-                .FindNamespaceByName($"{_configuration.ClientNamespaceName}.models");
+                ?.FindNamespaceByName($"{_configuration.ClientNamespaceName}.models");
             
             foreach (var property in propertiesToCorrect)
             {
@@ -195,8 +194,8 @@ public class GoRefiner : CommonLanguageRefiner
                 {
                     var interfaceName = $"{codeType.Name}able";
                     var existing = targetNameSpace.FindChildByName<CodeInterface>(interfaceName, false) ??
-                                   modelsNameSpace.FindChildByName<CodeInterface>(interfaceName) ??
-                                   modelsNameSpace.FindChildByName<CodeInterface>(interfaceName.ToFirstCharacterUpperCase());
+                                   modelsNameSpace?.FindChildByName<CodeInterface>(interfaceName) ??
+                                   modelsNameSpace?.FindChildByName<CodeInterface>(interfaceName.ToFirstCharacterUpperCase());
                     
                     if (existing == null)
                         continue;
@@ -208,7 +207,7 @@ public class GoRefiner : CommonLanguageRefiner
                 }
             }
         }
-        CrawlTree(currentElement, x => CorrectBackingStoreTypes(x, result));
+        CrawlTree(currentElement, CorrectBackingStoreTypes);
     }
 
     private static void CorrectTypes(CodeElement currentElement)
@@ -217,13 +216,13 @@ public class GoRefiner : CommonLanguageRefiner
         {
             var currentNamespace = currentMethod.GetImmediateParentOfType<CodeNamespace>();
             if (currentNamespace.Depth > 0 && currentMethod.ReturnType is CodeType ct && !ct.Name.Equals(ct.TypeDefinition?.Name))
-                ct.Name = ct.TypeDefinition?.Name;
+                ct.Name = ct.TypeDefinition!.Name;
         }
         CrawlTree(currentElement, CorrectTypes);
     }
     
-    private CodeNamespace _clientNameSpace;
-    private CodeNamespace findClientNameSpace(CodeElement currentElement)
+    private CodeNamespace? _clientNameSpace;
+    private CodeNamespace? findClientNameSpace(CodeElement? currentElement)
     {
         if (_clientNameSpace != null) return _clientNameSpace;
         if (currentElement == null) return null;
@@ -238,14 +237,14 @@ public class GoRefiner : CommonLanguageRefiner
     }
 
     private void FlattenNestedHierarchy(CodeElement currentElement) {
-        if (currentElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model)) {
+        if (currentElement is CodeClass codeClass &&
+            codeClass.IsOfKind(CodeClassKind.Model) &&
+            codeClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace currentNamespace &&
+            findClientNameSpace(currentNamespace) is CodeNamespace parentNameSpace) {
             // if the parent is not the models namespace rename and move it to package root
-            var currentNamespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
-            var parentNameSpace = findClientNameSpace(currentNamespace);
-
             var modelNameSpace = parentNameSpace.FindNamespaceByName($"{_configuration.ClientNamespaceName}.models");
             var packageRootNameSpace = findNameSpaceAtLevel(parentNameSpace, currentNamespace, 1);
-            if (!packageRootNameSpace.Name.Equals(currentNamespace.Name) && !currentNamespace.IsChildOf(modelNameSpace))
+            if (!packageRootNameSpace.Name.Equals(currentNamespace.Name) && modelNameSpace != null && !currentNamespace.IsChildOf(modelNameSpace))
             {
                 var classNameList = getPathsName(codeClass, codeClass.Name);
                 var newClassName = string.Join(string.Empty,classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
@@ -282,8 +281,8 @@ public class GoRefiner : CommonLanguageRefiner
                  var newTypeName = string.Join(string.Empty,nameList.Count > 1 ?  nameList.Skip(1) : nameList);
                  param.Type.Name = newTypeName;
                     
-                 foreach (var typeDef in param.Type.AllTypes.Select(static x => x.TypeDefinition).Where(x => x != null && !newTypeName.EndsWith(x?.Name, StringComparison.OrdinalIgnoreCase)))
-                      typeDef.Name = newTypeName;
+                 foreach (var typeDef in param.Type.AllTypes.Select(static x => x.TypeDefinition).Where(x => !string.IsNullOrEmpty(x?.Name) && !newTypeName.EndsWith(x.Name, StringComparison.OrdinalIgnoreCase)))
+                      typeDef!.Name = newTypeName;
             }
             
         }
@@ -329,20 +328,19 @@ public class GoRefiner : CommonLanguageRefiner
         // add the namespace to the name of the code element and the file name
         if (currentElement is CodeClass codeClass 
             && codeClass.Parent is CodeNamespace currentNamespace 
-            && !codeClass.IsOfKind(CodeClassKind.Model))
+            && !codeClass.IsOfKind(CodeClassKind.Model)
+            && findClientNameSpace(codeClass.Parent) is CodeNamespace rootNameSpace
+            && !rootNameSpace.Name.Equals(currentNamespace.Name)
+            && !currentNamespace.IsChildOf(rootNameSpace, true))
         {
-            var rootNameSpace = findClientNameSpace(codeClass.Parent);
-            if (!rootNameSpace.Name.Equals(currentNamespace.Name) && !currentNamespace.IsChildOf(rootNameSpace, true))
-            {
-                var classNameList = getPathsName(codeClass, codeClass.Name.ToFirstCharacterUpperCase());
-                var newClassName = string.Join(string.Empty,classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
-                
-                var nextNameSpace = findNameSpaceAtLevel(rootNameSpace, currentNamespace, 1);
-                currentNamespace.RemoveChildElement(codeClass);
-                codeClass.Name = newClassName;
-                codeClass.Parent = nextNameSpace;
-                nextNameSpace.AddClass(codeClass);
-            }
+            var classNameList = getPathsName(codeClass, codeClass.Name.ToFirstCharacterUpperCase());
+            var newClassName = string.Join(string.Empty,classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
+            
+            var nextNameSpace = findNameSpaceAtLevel(rootNameSpace, currentNamespace, 1);
+            currentNamespace.RemoveChildElement(codeClass);
+            codeClass.Name = newClassName;
+            codeClass.Parent = nextNameSpace;
+            nextNameSpace.AddClass(codeClass);
         }
 
         CrawlTree(currentElement, FlattenGoFileNames);
@@ -396,6 +394,7 @@ public class GoRefiner : CommonLanguageRefiner
                 var propertiesToRemoveHashSet = propertiesToRemove.ToHashSet();
                 var methodsToRemove = currentClass.Methods
                                                     .Where(x => x.IsAccessor &&
+                                                            x.AccessedProperty != null &&
                                                             propertiesToRemoveHashSet.Contains(x.AccessedProperty))
                                                     .ToArray();
                 currentClass.RemoveChildElement(methodsToRemove);
@@ -413,7 +412,7 @@ public class GoRefiner : CommonLanguageRefiner
                     Name = currentProperty.Name,
                     ReturnType = currentProperty.Type,
                     Access = AccessModifier.Public,
-                    Documentation = currentProperty.Documentation.Clone() as CodeDocumentation,
+                    Documentation = (CodeDocumentation)currentProperty.Documentation.Clone(),
                     IsAsync = false,
                     Kind = CodeMethodKind.RequestBuilderBackwardCompatibility,
                 });
@@ -513,7 +512,7 @@ public class GoRefiner : CommonLanguageRefiner
                                                 .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
     }
-    private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
+    private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
         {"DateTimeOffset", ("Time", new CodeUsing {
                                         Name = "Time",
                                         Declaration = new CodeType {
@@ -528,14 +527,14 @@ public class GoRefiner : CommonLanguageRefiner
                                             IsExternal = true,
                                         },
                                     })},
-        {"DateOnly", (null, new CodeUsing {
+        {"DateOnly", (string.Empty, new CodeUsing {
                                 Name = "DateOnly",
                                 Declaration = new CodeType {
                                     Name = "github.com/microsoft/kiota-abstractions-go/serialization",
                                     IsExternal = true,
                                 },
                             })},
-        {"TimeOnly", (null, new CodeUsing {
+        {"TimeOnly", (string.Empty, new CodeUsing {
                                 Name = "TimeOnly",
                                 Declaration = new CodeType {
                                     Name = "github.com/microsoft/kiota-abstractions-go/serialization",

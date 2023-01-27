@@ -11,8 +11,8 @@ namespace Kiota.Builder.Writers
     {
         protected readonly string prefix;
         protected readonly char separator;
-        private readonly Func<CodeNamespace, CodeElement, string> NormalizeFileNameCallback;
-        public RelativeImportManager(string namespacePrefix, char namespaceSeparator, Func<CodeNamespace, CodeElement, string> normalizeFileNameCallback = null)
+        private readonly Func<CodeNamespace, CodeElement, string>? NormalizeFileNameCallback;
+        public RelativeImportManager(string namespacePrefix, char namespaceSeparator, Func<CodeNamespace, CodeElement, string>? normalizeFileNameCallback = null)
         {
             ArgumentException.ThrowIfNullOrEmpty(namespacePrefix);
             if (namespaceSeparator == default)
@@ -32,21 +32,20 @@ namespace Kiota.Builder.Writers
         {
             if (codeUsing?.IsExternal ?? true)
                 return (string.Empty, string.Empty, string.Empty);//it's an external import, add nothing
-            var typeDef = codeUsing.Declaration.TypeDefinition;
 
-            var importSymbol = codeUsing.Declaration == null ? codeUsing.Name : codeUsing.Declaration.TypeDefinition switch
+            var (importSymbol, typeDef) = codeUsing.Declaration?.TypeDefinition is CodeElement td ? td switch
             {
-                CodeFunction f => f.Name.ToFirstCharacterLowerCase(),
-                _ => codeUsing.Declaration.TypeDefinition.Name.ToFirstCharacterUpperCase(),
-            };
+                CodeFunction f => (f.Name.ToFirstCharacterLowerCase(), td),
+                _ => (td.Name.ToFirstCharacterUpperCase(), td),
+            } : (codeUsing.Name, null);
 
             if (typeDef == null)
                 return (importSymbol, codeUsing.Alias, "./"); // it's relative to the folder, with no declaration (default failsafe)
             var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
                 typeDef.GetImmediateParentOfType<CodeNamespace>());
             importPath += NormalizeFileNameCallback == null ? 
-                            (string.IsNullOrEmpty(importPath) ? codeUsing.Name :  codeUsing.Declaration.Name.ToFirstCharacterLowerCase()) :
-                            NormalizeFileNameCallback(codeUsing.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>(), codeUsing.Declaration);
+                            (string.IsNullOrEmpty(importPath) ? codeUsing.Name :  codeUsing.Declaration!.Name.ToFirstCharacterLowerCase()) :
+                            NormalizeFileNameCallback(codeUsing.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>(), codeUsing.Declaration);
             return (importSymbol, codeUsing.Alias, importPath);
         }
         protected string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)

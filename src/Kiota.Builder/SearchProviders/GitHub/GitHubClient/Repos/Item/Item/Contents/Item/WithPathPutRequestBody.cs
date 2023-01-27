@@ -8,17 +8,53 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The author of the file. Default: The `committer` or the authenticated user if you omit `committer`.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public WithPathPutRequestBody_author? Author { get; set; }
+#nullable restore
+#else
         public WithPathPutRequestBody_author Author { get; set; }
+#endif
         /// <summary>The branch name. Default: the repository’s default branch (usually `master`)</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Branch { get; set; }
+#nullable restore
+#else
         public string Branch { get; set; }
+#endif
         /// <summary>The person that committed the file. Default: the authenticated user.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public WithPathPutRequestBody_committer? Committer { get; set; }
+#nullable restore
+#else
         public WithPathPutRequestBody_committer Committer { get; set; }
+#endif
         /// <summary>The new file content, using Base64 encoding.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Content { get; set; }
+#nullable restore
+#else
         public string Content { get; set; }
+#endif
         /// <summary>The commit message.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Message { get; set; }
+#nullable restore
+#else
         public string Message { get; set; }
+#endif
         /// <summary>**Required if you are updating a file**. The blob SHA of the file being replaced.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Sha { get; set; }
+#nullable restore
+#else
         public string Sha { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new WithPathPutRequestBody and sets the default values.
         /// </summary>

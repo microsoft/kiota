@@ -55,7 +55,8 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
                 var urlTreeNode = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GetUrlTreeNodeAsync(cancellationToken);
 
                 var builder = new StringBuilder();
-                RenderNode(urlTreeNode, maxDepth, builder);
+                if(urlTreeNode != null)
+                    RenderNode(urlTreeNode, maxDepth, builder);
                 var tree = builder.ToString();
                 Console.Write(tree);
                 if(descriptionProvided)

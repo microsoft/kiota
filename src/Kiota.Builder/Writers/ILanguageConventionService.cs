@@ -9,9 +9,9 @@ namespace Kiota.Builder.Writers {
         string DocCommentPrefix {get; }
         string ParseNodeInterfaceName {get; }
         string TempDictionaryVarName {get;}
-        string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null);
+        string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null);
         string TranslateType(CodeType type);
-        string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null);
+        string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null);
         void WriteShortDescription(string description, LanguageWriter writer);
     }
 }

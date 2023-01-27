@@ -33,16 +33,16 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
-        method = new CodeMethod {
-            Name = MethodName,
-        };
         var model = root.AddClass(new CodeClass {
             Name = ReturnTypeName,
             Kind = CodeClassKind.Model
         }).First();
-        method.ReturnType = new CodeType {
-            Name = ReturnTypeName,
-            TypeDefinition = model,
+        method = new CodeMethod {
+            Name = MethodName,
+            ReturnType = new CodeType {
+                Name = ReturnTypeName,
+                TypeDefinition = model,
+            }
         };
         parentClass.AddMethod(method);
     }
@@ -55,24 +55,33 @@ public class CodeMethodWriterTests : IDisposable {
         parentClass.AddProperty(new CodeProperty {
             Name = "RequestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "IRequestAdapter"
+            },
         });
         parentClass.AddProperty(new CodeProperty {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType {
+                Name = "IDictionary<string, object>"
+            },
         });
         parentClass.AddProperty(new CodeProperty {
             Name = "urlTemplate",
             Kind = CodePropertyKind.UrlTemplate,
+            Type = new CodeType {
+                Name = "string"
+            },
         });
     }
     private void AddSerializationProperties() {
-        var addData = parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty {
             Name = "additionalData",
             Kind = CodePropertyKind.AdditionalData,
-        }).First();
-        addData.Type = new CodeType {
-            Name = "string"
-        };
+            Type = new CodeType {
+                Name = "string"
+            }
+        });
         parentClass.AddProperty(new CodeProperty {
             Name = "dummyProp",
             Type = new CodeType {
@@ -86,42 +95,43 @@ public class CodeMethodWriterTests : IDisposable {
                 Name = "string"
             }
         });
-        var dummyUCaseProp = parentClass.AddProperty(new CodeProperty {
-            Name = "DummyUCaseProp",
-        }).First();
-        dummyUCaseProp.Type = new CodeType {
-            Name = "string"
-        };
-        var dummyCollectionProp = parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty {
+            Name = "dummyUCaseProp",
+            SerializationName = "DummyUCaseProp",
+            Type = new CodeType {
+                Name = "string"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty {
             Name = "dummyColl",
-        }).First();
-        dummyCollectionProp.Type = new CodeType {
-            Name = "string",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-        };
-        var dummyComplexCollection = parentClass.AddProperty(new CodeProperty {
-            Name = "dummyComplexColl"
-        }).First();
+            Type = new CodeType {
+                Name = "string",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            }
+        });
         var complexTypeClass = root.AddClass(new CodeClass
         {
             Name = "SomeComplexType"
         }).First();
-        dummyComplexCollection.Type = new CodeType {
-            Name = "Complex",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-            TypeDefinition = complexTypeClass
-        };
-        var dummyEnumProp = parentClass.AddProperty(new CodeProperty{
-            Name = "dummyEnumCollection",
-        }).First();
+        parentClass.AddProperty(new CodeProperty {
+            Name = "dummyComplexColl",
+            Type = new CodeType {
+                Name = "Complex",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                TypeDefinition = complexTypeClass
+            }
+        });
         var enumDefinition = root.AddEnum(new CodeEnum
         {
             Name = "EnumType"
         }).First();
-        dummyEnumProp.Type = new CodeType {
-            Name = "SomeEnum",
-            TypeDefinition = enumDefinition
-        };
+        parentClass.AddProperty(new CodeProperty{
+            Name = "dummyEnumCollection",
+            Type = new CodeType {
+                Name = "SomeEnum",
+                TypeDefinition = enumDefinition
+            }
+        });
         parentClass.AddProperty(new CodeProperty {
             Name = "definedInParent",
             Type = new CodeType {
@@ -976,17 +986,10 @@ public class CodeMethodWriterTests : IDisposable {
         method.Parent = CodeNamespace.InitRootNamespace();
         Assert.Throws<InvalidOperationException>(() => codeMethodWriter.WriteCodeElement(method, writer));
         method.Parent = originalParent;
-        method.ReturnType = null;
-        Assert.Throws<InvalidOperationException>(() => codeMethodWriter.WriteCodeElement(method, writer));
     }
     [Fact]
     public void ThrowsIfParentIsNotClass() {
         method.Parent = CodeNamespace.InitRootNamespace();
-        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
-    }
-    [Fact]
-    public void ThrowsIfReturnTypeIsMissing() {
-        method.ReturnType = null;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     private const string TaskPrefix = "Task<";
@@ -1063,6 +1066,9 @@ public class CodeMethodWriterTests : IDisposable {
             Name = propName,
             DefaultValue = defaultValue,
             Kind = CodePropertyKind.UrlTemplate,
+            Type = new CodeType {
+                Name = "string"
+            },
         });
         writer.Write(method);
         var result = tw.ToString();
@@ -1174,23 +1180,25 @@ public class CodeMethodWriterTests : IDisposable {
         var coreProp = parentClass.AddProperty(new CodeProperty {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "RequestAdapter",
+                IsExternal = true,
+            }
         }).First();
-        coreProp.Type = new CodeType {
-            Name = "RequestAdapter",
-            IsExternal = true,
-        };
         method.AddParameter(new CodeParameter {
             Name = "core",
             Kind = CodeParameterKind.RequestAdapter,
             Type = coreProp.Type,
         });
-        var backingStoreParam = new CodeParameter {
+        var backingStoreParam = new CodeParameter
+        {
             Name = "backingStore",
             Kind = CodeParameterKind.BackingStore,
-        };
-        backingStoreParam.Type = new CodeType {
-            Name = "IBackingStore",
-            IsExternal = true,
+            Type = new CodeType
+            {
+                Name = "IBackingStore",
+                IsExternal = true,
+            }
         };
         method.AddParameter(backingStoreParam);
         var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);

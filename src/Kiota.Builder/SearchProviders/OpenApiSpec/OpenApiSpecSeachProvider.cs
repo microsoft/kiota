@@ -9,12 +9,12 @@ namespace Kiota.Builder.SearchProviders.MSGraph;
 public class OpenApiSpecSearchProvider : ISearchProvider
 {
     public string ProviderKey => "oas";
-    public HashSet<string> KeysToExclude { get; set; }
-    public Task<IDictionary<string, SearchResult>> SearchAsync(string term, string version, CancellationToken cancellationToken)
+    public HashSet<string> KeysToExclude { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Task<IDictionary<string, SearchResult>> SearchAsync(string term, string? version, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(term);
         
-        if (term.Split(new char[] {' ', '-'}, StringSplitOptions.RemoveEmptyEntries).Any(x => Keywords.Contains(x))) {
+        if (term.Split(new char[] {' ', '-'}, StringSplitOptions.RemoveEmptyEntries).Any(Keywords.Contains)) {
             return Task.FromResult<IDictionary<string, SearchResult>>(new Dictionary<string, SearchResult> {
                 { "petstore", new SearchResult(ApiTitle, ApiDescription, new Uri("https://petstore.swagger.io/v1"), new Uri("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.yaml"), new List<string> { "1.0.0" }) }
             });

@@ -12,14 +12,14 @@ namespace Kiota.Builder.Writers.Php
     {
         public override string TempDictionaryVarName => "urlTplParams";
 
-        private static CodeUsingDeclarationNameComparer _usingDeclarationNameComparer = new();
+        private static readonly CodeUsingDeclarationNameComparer _usingDeclarationNameComparer = new();
 
         public override string GetAccessModifier(AccessModifier access)
         {
-            return (access) switch
+            return access switch
             {
-                (AccessModifier.Public) => "public",
-                (AccessModifier.Protected) => "protected",
+                AccessModifier.Public => "public",
+                AccessModifier.Protected => "protected",
                 _ => "private"
             };
         }
@@ -35,20 +35,20 @@ namespace Kiota.Builder.Writers.Php
 
         public override string ParseNodeInterfaceName => "ParseNode";
 
-        public string DocCommentStart => "/**";
+        public const string DocCommentStart = "/**";
 
-        public string DocCommentEnd => "*/";
+        public const string DocCommentEnd = "*/";
         internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval", "int", "double", "decimal", "bool"};
         
         internal readonly HashSet<string> CustomTypes = new(StringComparer.OrdinalIgnoreCase) {"Date", "DateTime", "StreamInterface", "Byte", "Time"};
-        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
         {
             if(code is CodeComposedTypeBase) 
                 throw new InvalidOperationException($"PHP does not support union types, the union type {code.Name} should have been filtered out by the refiner.");
             if (code is CodeType currentType)
             {
                 var typeName = TranslateType(currentType);
-                if (!currentType.IsExternal && IsSymbolDuplicated(typeName, targetElement))
+                if (!currentType.IsExternal && IsSymbolDuplicated(typeName, targetElement) && currentType.TypeDefinition is not null)
                 {
                     return $"\\{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name.ReplaceDotsWithSlashInNamespaces()}\\{typeName.ToFirstCharacterUpperCase()}";
                 }
@@ -87,14 +87,14 @@ namespace Kiota.Builder.Writers.Php
                 _ => $"${parameter.Name.ToFirstCharacterLowerCase()}"
             };
         }
-        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
         {
-            var typeString = GetTypeString(parameter?.Type, parameter);
-            var parameterSuffix = parameter?.Kind switch
+            var typeString = GetTypeString(parameter.Type, parameter);
+            var parameterSuffix = parameter.Kind switch
             {
                 CodeParameterKind.RequestAdapter => $"RequestAdapter {GetParameterName(parameter)}",
                 CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",
-                CodeParameterKind.RequestConfiguration => $"{parameter!.Type.Name.ToFirstCharacterUpperCase()} {GetParameterName(parameter)}",
+                CodeParameterKind.RequestConfiguration => $"{parameter.Type.Name.ToFirstCharacterUpperCase()} {GetParameterName(parameter)}",
                 CodeParameterKind.Serializer => $"SerializationWriter {GetParameterName(parameter)}",
                 CodeParameterKind.BackingStore => $"{parameter.Type.Name.ToFirstCharacterUpperCase()} {GetParameterName(parameter)}",
                 _ => $"{typeString} {GetParameterName(parameter)}"
@@ -121,7 +121,7 @@ namespace Kiota.Builder.Writers.Php
             };
         }
 
-        private static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
+        private static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/");
         public override void WriteShortDescription(string description, LanguageWriter writer)
         {
             
@@ -134,7 +134,7 @@ namespace Kiota.Builder.Writers.Php
             }
         }
 
-        public void WriteLongDescription(CodeDocumentation codeDocumentation, LanguageWriter writer, IEnumerable<string> additionalRemarks = default)
+        public void WriteLongDescription(CodeDocumentation codeDocumentation, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
         {
             if (codeDocumentation is null) return;
             additionalRemarks ??= Enumerable.Empty<string>();
@@ -156,21 +156,21 @@ namespace Kiota.Builder.Writers.Php
 
         }
 
-        public void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default, CodeElement method = default)
+        public void AddRequestBuilderBody(string returnType, LanguageWriter writer, string? suffix = default, CodeElement? method = default)
         {
             var codeMethod = method as CodeMethod;
-            var pathParameters = codeMethod?.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path));
+            var pathParameters = codeMethod?.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path));
             var joined = string.Empty;
             var codeParameters = pathParameters?.ToList();
-            if (pathParameters != null && codeParameters.Any())
+            if (pathParameters != null && (codeParameters?.Any() ?? false))
             {
-                joined = $", {string.Join(", ", codeParameters.Select(parameter => $"${parameter.Name.ToFirstCharacterLowerCase()}"))}";
+                joined = $", {string.Join(", ", codeParameters.Select(static x => $"${x.Name.ToFirstCharacterLowerCase()}"))}";
             }
 
             writer.WriteLines($"return new {returnType}($this->{RemoveDollarSignFromPropertyName(PathParametersPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(RequestAdapterPropertyName)}{joined});");
         }
 
-        private string RemoveDollarSignFromPropertyName(string propertyName)
+        private static string RemoveDollarSignFromPropertyName(string propertyName)
         {
             if (string.IsNullOrEmpty(propertyName) || propertyName.Length < 2)
             {
@@ -206,7 +206,7 @@ namespace Kiota.Builder.Writers.Php
                         }
                         namespaceValue = string.IsNullOrEmpty(x.Name) ? string.Empty : $"{x.Name.ReplaceDotsWithSlashInNamespaces()}\\";
                             return
-                                $"use {namespaceValue}{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()};";
+                                $"use {namespaceValue}{x.Declaration!.Name.ReplaceDotsWithSlashInNamespaces()};";
                     })
                         .Distinct()
                     .OrderBy(x => x)
@@ -222,13 +222,14 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine(string.Empty);
             }
         }
-        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
+        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default) {
             var codeParameters = pathParameters as CodeParameter[] ?? pathParameters?.ToArray();
             var codePathParametersSuffix = !(codeParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", codeParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
-            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-            var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-            var urlTemplateParams = urlTemplateVarName ?? $"$this->{pathParametersProperty.Name}";
-            writer.WriteLines($"return new {returnType}(${urlTemplateParams}, $this->{requestAdapterProp.Name}{codePathParametersSuffix});");
+            var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) && parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty  ?
+                $"$this->{pathParametersProperty.Name}" :
+                urlTemplateVarName;
+            if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
+                writer.WriteLines($"return new {returnType}(${urlTemplateParams}, $this->{requestAdapterProperty.Name}{codePathParametersSuffix});");
         }
         internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
             if(pathParametersType == null) return;
@@ -245,7 +246,7 @@ namespace Kiota.Builder.Writers.Php
                 targetClass = parentClass;
             return targetClass?.StartBlock
                 ?.Usings
-                ?.Where(x => !x.IsExternal && symbol.Equals(x.Declaration.TypeDefinition.Name, StringComparison.OrdinalIgnoreCase))
+                ?.Where(x => !x.IsExternal && symbol.Equals(x.Declaration?.TypeDefinition?.Name, StringComparison.OrdinalIgnoreCase))
                 ?.Distinct(_usingDeclarationNameComparer)
                 ?.Count() > 1;
         }

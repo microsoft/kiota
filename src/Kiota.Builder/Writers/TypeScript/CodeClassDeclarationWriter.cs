@@ -18,8 +18,8 @@ namespace Kiota.Builder.Writers.TypeScript {
             var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
             _codeUsingWriter.WriteCodeElement(codeElement.Usings, parentNamespace, writer);
             
-            var inheritSymbol = conventions.GetTypeString(codeElement.Inherits, codeElement);
-            var derivation = (inheritSymbol == null ? string.Empty : $" extends {inheritSymbol}") +
+            var inheritSymbol = codeElement.Inherits is null ? string.Empty : conventions.GetTypeString(codeElement.Inherits, codeElement);
+            var derivation = (string.IsNullOrEmpty(inheritSymbol) ? string.Empty : $" extends {inheritSymbol}") +
                             (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");
             if(codeElement.Parent is CodeClass parentClass )
                 conventions.WriteLongDescription(parentClass.Documentation, writer);

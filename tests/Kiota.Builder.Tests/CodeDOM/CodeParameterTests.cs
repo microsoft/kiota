@@ -10,6 +10,9 @@ public class CodeParameterTests {
     public void Defensive() {
         var parameter = new CodeParameter {
             Name = "class",
+            Type = new CodeType {
+                Name = "string"
+            }
         };
         Assert.False(parameter.IsOfKind(null));
         Assert.False(parameter.IsOfKind(Array.Empty<CodeParameterKind>()));
@@ -18,6 +21,9 @@ public class CodeParameterTests {
     public void IsOfKind() {
         var parameter = new CodeParameter {
             Name = "class",
+            Type = new CodeType {
+                Name = "string"
+            }
         };
         Assert.False(parameter.IsOfKind(CodeParameterKind.RequestConfiguration));
         parameter.Kind = CodeParameterKind.RequestAdapter;

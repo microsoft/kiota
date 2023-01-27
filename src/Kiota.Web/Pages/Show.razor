@@ -71,7 +71,7 @@
         if (!string.IsNullOrEmpty(SearchTerm) && !string.IsNullOrEmpty(Version) && string.IsNullOrEmpty(DescriptionUrl) && KiotaSearcher != null) {
             var searchResults = await KiotaSearcher.SearchAsync(SearchTerm, Version, ComponentDetached);
             if(searchResults.Any())
-                DescriptionUrl = searchResults.Values.First().DescriptionUrl.ToString();
+                DescriptionUrl = searchResults.Values.First().DescriptionUrl?.ToString();
         }
         await base.OnParametersSetAsync();
     }
@@ -106,24 +106,25 @@
         Tree = string.Empty;
         if (string.IsNullOrEmpty(DescriptionUrl) && KiotaSearcher != null) {
             SearchResults = await KiotaSearcher.SearchAsync(SearchTerm, Version, ComponentDetached);
-            DescriptionUrl = SearchResults.First().Value.DescriptionUrl.ToString();
+            DescriptionUrl = SearchResults.First().Value.DescriptionUrl?.ToString();
         }
         if(AppInsights != null)
             await AppInsights.StartTrackEvent(showDescriptionTelemetryKey).ConfigureAwait(false);
         
         if (kiotaBuilder == null || (!(generationConfiguration?.OpenAPIFilePath.Equals(DescriptionUrl, StringComparison.OrdinalIgnoreCase) ?? false))) {
-            generationConfiguration = new GenerationConfiguration{
-                OpenAPIFilePath = DescriptionUrl,
-            };
+            generationConfiguration = new GenerationConfiguration();
+            if (!string.IsNullOrEmpty(DescriptionUrl))
+                generationConfiguration.OpenAPIFilePath = DescriptionUrl;
             var builderLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
             kiotaBuilder = new KiotaBuilder(builderLogger, generationConfiguration, Http);
         }
-        generationConfiguration.IncludePatterns = IncludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet();
-        generationConfiguration.ExcludePatterns = ExcludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet();
+        generationConfiguration.IncludePatterns = IncludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        generationConfiguration.ExcludePatterns = ExcludePatterns?.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var urlTreeNode = await kiotaBuilder.GetUrlTreeNodeAsync(ComponentDetached).ConfigureAwait(false);
 
         var builder = new StringBuilder();
-        RenderNode(urlTreeNode, 10, builder);
+        if (urlTreeNode != null)
+            RenderNode(urlTreeNode, 10, builder);
         Tree = builder.ToString();
         IsLoading = false;
         if(AppInsights != null)

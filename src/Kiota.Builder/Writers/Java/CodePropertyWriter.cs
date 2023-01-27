@@ -1,3 +1,4 @@
+using System;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -7,18 +8,16 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
     public CodePropertyWriter(JavaConventionService conventionService) : base(conventionService){}
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
+        if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
-        var parentClass = codeElement.Parent as CodeClass;
         var defaultValue = string.Empty;
         switch(codeElement.Kind) {
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine("@javax.annotation.Nonnull");
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {returnType} {codeElement.Name.ToFirstCharacterLowerCase()}() {{");
-                writer.IncreaseIndent();
+                writer.StartBlock($"{conventions.GetAccessModifier(codeElement.Access)} {returnType} {codeElement.Name.ToFirstCharacterLowerCase()}() {{");
                 conventions.AddRequestBuilderBody(parentClass, returnType, writer);
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
+                writer.CloseBlock();
             break;
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                 writer.WriteLine($"@QueryParameter(name = \"{codeElement.SerializationName}\")");

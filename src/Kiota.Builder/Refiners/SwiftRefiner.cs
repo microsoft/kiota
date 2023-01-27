@@ -107,7 +107,7 @@ public class SwiftRefiner : CommonLanguageRefiner
                                                 .Union(new[] { currentMethod.ReturnType})
                                                 .ToArray());
     }
-    private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
+    private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
         {"DateTimeOffset", ("Date", new CodeUsing {
                                         Name = "Date",//TODO
                                         Declaration = new CodeType {
@@ -165,7 +165,7 @@ public class SwiftRefiner : CommonLanguageRefiner
 
     private static void CapitalizeNamespacesFirstLetters(CodeElement current) {
         if(current is CodeNamespace currentNamespace)
-            currentNamespace.Name = currentNamespace.Name?.Split('.')?.Select(x => x.ToFirstCharacterUpperCase())?.Aggregate((x, y) => $"{x}.{y}");
+            currentNamespace.Name = currentNamespace.Name.Split('.').Select(static x => x.ToFirstCharacterUpperCase()).Aggregate(static (x, y) => $"{x}.{y}");
         CrawlTree(current, CapitalizeNamespacesFirstLetters);
     }
     private void AddRootClassForExtensions(CodeElement current) {

@@ -21,14 +21,14 @@ public class DocumentCachingProvider {
         HttpClient = client;
         Logger = logger;
     }
-    public Task<Stream> GetDocumentAsync(Uri documentUri, string intermediateFolderName, string fileName, string accept = null, CancellationToken cancellationToken = default) {
+    public Task<Stream> GetDocumentAsync(Uri documentUri, string intermediateFolderName, string fileName, string? accept = null, CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(documentUri);
         ArgumentException.ThrowIfNullOrEmpty(intermediateFolderName);
         ArgumentException.ThrowIfNullOrEmpty(fileName);
         return GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, false, accept, cancellationToken);
     }
-    private async Task<Stream> GetDocumentInternalAsync(Uri documentUri, string intermediateFolderName, string fileName, bool couldNotDelete, string accept, CancellationToken token) {
-        var hashedUrl = BitConverter.ToString(HashAlgorithm.Value.ComputeHash(Encoding.UTF8.GetBytes(documentUri.ToString()))).Replace("-", string.Empty);
+    private async Task<Stream> GetDocumentInternalAsync(Uri documentUri, string intermediateFolderName, string fileName, bool couldNotDelete, string? accept, CancellationToken token) {
+        var hashedUrl = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(documentUri.ToString()))).Replace("-", string.Empty);
         var target = Path.Combine(Path.GetTempPath(), "kiota", "cache", intermediateFolderName, hashedUrl, fileName);
         if(!File.Exists(target) || couldNotDelete)
             return await DownloadDocumentFromSourceAsync(documentUri, target, accept, token);
@@ -48,12 +48,12 @@ public class DocumentCachingProvider {
         }
         return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, accept, token);
     }
-    private async Task<Stream> DownloadDocumentFromSourceAsync(Uri documentUri, string target, string accept, CancellationToken token) {
+    private async Task<Stream> DownloadDocumentFromSourceAsync(Uri documentUri, string target, string? accept, CancellationToken token) {
         Logger.LogDebug("cache file {cacheFile} not found, downloading from {url}", target, documentUri);
         var directory = Path.GetDirectoryName(target);
-        if(!Directory.Exists(directory))
+        if(!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             Directory.CreateDirectory(directory);
-        Stream content = null;
+        Stream content = Stream.Null;
         try {
             using var requestMessage = new HttpRequestMessage(HttpMethod.Get, documentUri);
             if (!string.IsNullOrEmpty(accept))
@@ -72,8 +72,7 @@ public class DocumentCachingProvider {
             throw new InvalidOperationException($"Could not download the file at {documentUri}, reason: {ex.Message}", ex);
         } catch (IOException ex) {
             Logger.LogWarning("could not write to cache file {cacheFile}, reason: {reason}", target, ex.Message);
-            if(content != null)
-                content.Position = 0;
+            content.Position = 0;
             return content;
         }
     }

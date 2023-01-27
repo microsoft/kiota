@@ -18,13 +18,13 @@ public interface ILockManagementService {
     /// </summary>
     /// <param name="directoryPath">The target directory to read the lock file from.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    Task<KiotaLock> GetLockFromDirectoryAsync(string directoryPath, CancellationToken cancellationToken = default);
+    Task<KiotaLock?> GetLockFromDirectoryAsync(string directoryPath, CancellationToken cancellationToken = default);
     /// <summary>
     /// Gets the lock file for a Kiota project by reading it from a stream.
     /// </summary>
     /// <param name="stream">The stream to read the lock file from.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    Task<KiotaLock> GetLockFromStreamAsync(Stream stream, CancellationToken cancellationToken = default);
+    Task<KiotaLock?> GetLockFromStreamAsync(Stream stream, CancellationToken cancellationToken = default);
     /// <summary>
     /// Writes the lock file for a Kiota project to the target directory.
     /// </summary>

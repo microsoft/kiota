@@ -9,14 +9,11 @@ namespace Kiota.Builder.CodeDOM
     /// </summary>
     public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     {
-        private CodeNamespace()
-        {}
+        private CodeNamespace(){}
         public static CodeNamespace InitRootNamespace() {
-            return new() {
-                Name = string.Empty,
-            };
+            return new();
         }
-        private string name;
+        private string name = string.Empty;
         public override string Name
         {
             get { return name;
@@ -48,7 +45,7 @@ namespace Kiota.Builder.CodeDOM
         }
         public IEnumerable<CodeNamespace> Namespaces => InnerChildElements.Values.OfType<CodeNamespace>();
         public IEnumerable<CodeClass> Classes => InnerChildElements.Values.OfType<CodeClass>();
-        public CodeNamespace FindNamespaceByName(string nsName) {
+        public CodeNamespace? FindNamespaceByName(string nsName) {
             ArgumentException.ThrowIfNullOrEmpty(nsName);
             if(nsName.Equals(Name)) return this;
             var result = FindChildByName<CodeNamespace>(nsName, false);
@@ -67,10 +64,11 @@ namespace Kiota.Builder.CodeDOM
             var lastPresentSegmentIndex = default(int);
             var lastPresentSegmentNamespace = GetRootNamespace();
             while(lastPresentSegmentIndex < namespaceNameSegments.Length) {
-                var segmentNameSpace = lastPresentSegmentNamespace.FindNamespaceByName(namespaceNameSegments.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
-                if(segmentNameSpace == null)
+                var segmentNameSpace = lastPresentSegmentNamespace.FindNamespaceByName(namespaceNameSegments.Take(lastPresentSegmentIndex + 1).Aggregate(static (x, y) => $"{x}.{y}"));
+                if(segmentNameSpace is not null)
+                    lastPresentSegmentNamespace = segmentNameSpace;
+                else
                     break;
-                lastPresentSegmentNamespace = segmentNameSpace;
                 lastPresentSegmentIndex++;
             }
             foreach(var childSegment in namespaceNameSegments.Skip(lastPresentSegmentIndex))

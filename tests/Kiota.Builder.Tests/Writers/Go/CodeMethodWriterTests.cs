@@ -54,6 +54,9 @@ public class CodeMethodWriterTests : IDisposable {
         parentClass.AddProperty(new CodeProperty {
             Name = "requestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "RequestAdapter"
+            },
         });
         parentClass.AddProperty(new CodeProperty {
             Name = "pathParameters",
@@ -65,6 +68,9 @@ public class CodeMethodWriterTests : IDisposable {
         parentClass.AddProperty(new CodeProperty {
             Name = "UrlTemplate",
             Kind = CodePropertyKind.UrlTemplate,
+            Type = new CodeType {
+                Name = "string"
+            },
         });
     }
     private void AddSerializationProperties() {
@@ -82,6 +88,9 @@ public class CodeMethodWriterTests : IDisposable {
             },
             Setter = new CodeMethod {
                 Name = "SetAdditionalData",
+                ReturnType = new CodeType {
+                    Name = "string"
+                }
             }
         });
         parentClass.AddProperty(new CodeProperty {
@@ -97,6 +106,9 @@ public class CodeMethodWriterTests : IDisposable {
             },
             Setter = new CodeMethod {
                 Name = "SetDummyProp",
+                ReturnType = new CodeType {
+                    Name = "string"
+                }
             },
         });
         parentClass.AddProperty(new CodeProperty{
@@ -137,9 +149,15 @@ public class CodeMethodWriterTests : IDisposable {
             },
             Getter = new CodeMethod {
                 Name = "GetDummyComplexColl",
+                ReturnType = new CodeType {
+                    Name = "string"
+                }
             },
             Setter = new CodeMethod {
                 Name = "SetDummyComplexColl",
+                ReturnType = new CodeType {
+                    Name = "void",
+                }
             }
         });
         parentClass.AddProperty(new CodeProperty{
@@ -152,9 +170,15 @@ public class CodeMethodWriterTests : IDisposable {
             },
             Getter = new CodeMethod {
                 Name = "GetDummyEnumCollection",
+                ReturnType = new CodeType {
+                    Name = "string"
+                }
             },
             Setter = new CodeMethod {
                 Name = "SetDummyEnumCollection",
+                ReturnType = new CodeType {
+                    Name = "void",
+                }
             }
         });
         parentClass.AddProperty(new CodeProperty {
@@ -1193,17 +1217,10 @@ public class CodeMethodWriterTests : IDisposable {
         method.Parent = CodeNamespace.InitRootNamespace();
         Assert.Throws<InvalidOperationException>(() => codeMethodWriter.WriteCodeElement(method, writer));
         method.Parent = originalParent;
-        method.ReturnType = null;
-        Assert.Throws<InvalidOperationException>(() => codeMethodWriter.WriteCodeElement(method, writer));
     }
     [Fact]
     public void ThrowsIfParentIsNotClass() {
         method.Parent = CodeNamespace.InitRootNamespace();
-        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
-    }
-    [Fact]
-    public void ThrowsIfReturnTypeIsMissing() {
-        method.ReturnType = null;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     private const string TaskPrefix = "func() (";
@@ -1255,7 +1272,10 @@ public class CodeMethodWriterTests : IDisposable {
             IndexType = new CodeType {
                 Name = "string",
                 IsNullable = true,
-            }
+            },
+            ReturnType = new CodeType {
+                Name = "string",
+            },
         };
         method.AddParameter(new CodeParameter {
             Name = "id",
@@ -1370,6 +1390,9 @@ public class CodeMethodWriterTests : IDisposable {
             Name = propName,
             DefaultValue = defaultValue,
             Kind = CodePropertyKind.UrlTemplate,
+            Type = new CodeType {
+                Name = "string",
+            }
         });
         AddRequestProperties();
         method.AddParameter(new CodeParameter {
@@ -1438,6 +1461,9 @@ public class CodeMethodWriterTests : IDisposable {
             Name = propName,
             DefaultValue = defaultValue,
             Kind = CodePropertyKind.UrlTemplate,
+            Type = new CodeType {
+                Name = "string"
+            }
         });
         AddRequestProperties();
         method.AddParameter(new CodeParameter {
@@ -1454,7 +1480,11 @@ public class CodeMethodWriterTests : IDisposable {
                 Name = "string"
             }
         });
-        method.OriginalMethod = new ();
+        method.OriginalMethod = new () {
+            ReturnType = new CodeType {
+                Name = "string"
+            }
+        };
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
@@ -1511,23 +1541,25 @@ public class CodeMethodWriterTests : IDisposable {
         var coreProp = parentClass.AddProperty(new CodeProperty {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType {
+                Name = "HttpCore",
+                IsExternal = true,
+            }
         }).First();
-        coreProp.Type = new CodeType {
-            Name = "HttpCore",
-            IsExternal = true,
-        };
         method.AddParameter(new CodeParameter {
             Name = "core",
             Kind = CodeParameterKind.RequestAdapter,
             Type = coreProp.Type,
         });
-        var backingStoreParam = new CodeParameter {
+        var backingStoreParam = new CodeParameter
+        {
             Name = "backingStore",
             Kind = CodeParameterKind.BackingStore,
-        };
-        backingStoreParam.Type = new CodeType {
-            Name = "IBackingStore",
-            IsExternal = true,
+            Type = new CodeType
+            {
+                Name = "IBackingStore",
+                IsExternal = true,
+            }
         };
         method.AddParameter(backingStoreParam);
         var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);

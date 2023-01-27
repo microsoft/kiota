@@ -67,6 +67,9 @@ public class RubyLanguageRefinerTests {
         requestBuilder.AddMethod(new CodeMethod {
             Name = "get",
             Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType {
+                Name = "string"
+            }
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
         Assert.NotEmpty(model.StartBlock.Usings);

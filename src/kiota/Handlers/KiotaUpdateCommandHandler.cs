@@ -36,8 +36,8 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler {
                 var locks = await Task.WhenAll(lockFileDirectoryPaths.Select(x => lockService.GetLockFromDirectoryAsync(x, cancellationToken)
                                                                                 .ContinueWith(t => (lockInfo: t.Result, lockDirectoryPath: x), cancellationToken)));
                 var configurations = locks.Select(x => {
-                                            var config = Configuration.Generation.Clone() is GenerationConfiguration c ? c : throw new InvalidOperationException("failed to clone the configuration");
-                                            x.lockInfo.UpdateGenerationConfigurationFromLock(config);
+                                            var config = (GenerationConfiguration)Configuration.Generation.Clone();
+                                            x.lockInfo?.UpdateGenerationConfigurationFromLock(config);
                                             config.OutputPath = x.lockDirectoryPath;
                                             return config;
                                         }).ToArray();
@@ -45,7 +45,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler {
                                         .Select(x => new KiotaBuilder(logger, x, httpClient)
                                                     .GenerateClientAsync(cancellationToken)));
                 foreach (var (lockInfo, lockDirectoryPath) in locks)
-                    DisplaySuccess($"Update of {lockInfo.ClientClassName} client for {lockInfo.Language} at {lockDirectoryPath} completed");
+                    DisplaySuccess($"Update of {lockInfo?.ClientClassName} client for {lockInfo?.Language} at {lockDirectoryPath} completed");
                 DisplaySuccess($"Update of {locks.Length} clients completed successfully");
                 foreach(var configuration in configurations)
                     DisplayInfoHint(configuration.Language, configuration.OpenAPIFilePath);

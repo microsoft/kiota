@@ -23,7 +23,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
         var currentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
-        if(codeElement?.Parent?.Parent is not CodeClass) {
+        if(codeElement.Parent?.Parent is not CodeClass) {
             foreach (var codeUsing in codeElement.Usings
                                         .Where(static x => x.IsExternal)
                                         .Select(static x => x.Declaration?.Name?.ToSnakeCase())
@@ -45,12 +45,13 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
                 writer.WriteLine($"require_relative '{relativePath.ToSnakeCase()}'");
         }
         writer.WriteLine();
-        if(codeElement?.Parent?.Parent is CodeNamespace ns) {
+        if(codeElement.Parent?.Parent is CodeNamespace ns) {
             writer.StartBlock($"module {ns.Name.NormalizeNameSpaceName("::")}");
         }
 
         var derivation = codeElement.Inherits == null ? string.Empty : $" < {conventions.GetNormalizedNamespacePrefixForType(codeElement.Inherits)}{codeElement.Inherits.Name.ToFirstCharacterUpperCase()}";
-        conventions.WriteShortDescription((codeElement.Parent as CodeClass).Documentation.Description, writer);
+        if (codeElement.Parent is CodeClass parentClass)
+            conventions.WriteShortDescription(parentClass.Documentation.Description, writer);
         writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}");
         var mixins = !codeElement.Implements.Any() ? string.Empty : $"include {codeElement.Implements.Select(static x => x.Name).Aggregate(static (x,y) => x + ", " + y)}";
         writer.WriteLine($"{mixins}");

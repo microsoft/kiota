@@ -15,7 +15,7 @@ namespace Kiota.Builder.Writers.Php
         {
             conventions.WritePhpDocumentStart(writer);
             var enumProperties = codeElement.Options;
-            if (codeElement?.Parent is CodeNamespace enumNamespace)
+            if (codeElement.Parent is CodeNamespace enumNamespace)
             {
                 writer.WriteLine($"namespace {enumNamespace.Name.ReplaceDotsWithSlashInNamespaces()};");
             }
@@ -46,13 +46,13 @@ namespace Kiota.Builder.Writers.Php
             writer.IncreaseIndent();
             foreach (var enumProperty     in enumProperties)
             {
-                writer.WriteLine($"public const {GetEnumValueName(enumProperty.Name)} = '{enumProperty.SerializationName ?? enumProperty.Name}';");
+                writer.WriteLine($"public const {GetEnumValueName(enumProperty.Name)} = '{enumProperty.WireName}';");
             }
         }
-        
+        private static readonly Regex _enumValueNameRegex = new ("([A-Z]{1})", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
         private static string GetEnumValueName(string original)
         {
-            return Regex.Replace(original, "([A-Z]{1})", "_$1").Trim('_').ToUpperInvariant();
+            return _enumValueNameRegex.Replace(original, "_$1").Trim('_').ToUpperInvariant();
         }
         
     }

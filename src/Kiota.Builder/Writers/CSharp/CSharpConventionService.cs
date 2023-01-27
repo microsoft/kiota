@@ -52,12 +52,13 @@ namespace Kiota.Builder.Writers.CSharp {
             };
         }
         #pragma warning disable CA1822 // Method should be static
-        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, string prefix = default, IEnumerable<CodeParameter> pathParameters = default) {
-            var pathParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-            var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
-            var urlTplRef = urlTemplateVarName ?? pathParametersProp.Name.ToFirstCharacterUpperCase();
-            writer.WriteLine($"{prefix}new {returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix});");
+        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default) {
+            if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
+                parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp) {
+                var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+                var urlTplRef = urlTemplateVarName ?? pathParametersProp.Name.ToFirstCharacterUpperCase();
+                writer.WriteLine($"{prefix}new {returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix});");
+            }
         }
         public override string TempDictionaryVarName => "urlTplParams";
         internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
@@ -95,7 +96,7 @@ namespace Kiota.Builder.Writers.CSharp {
                     yield return childNsSegment;
             }
         }
-        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
         {
             return GetTypeString(code, targetElement, includeCollectionInformation, true);
         }
@@ -174,9 +175,11 @@ namespace Kiota.Builder.Writers.CSharp {
             {
                 var targetClass = targetElement.GetImmediateParentOfType<CodeClass>();
                 var importedNamespaces = targetClass.StartBlock.Usings
-                    .Where( codeUsing => !codeUsing.IsExternal                                                                      // 1. Are defined during generation(not external) 
-                                         && !codeUsing.Name.Equals(currentTypeNamespace.Name, StringComparison.OrdinalIgnoreCase))  // 2. Do not match the namespace of the current type
-                    .Select(static codeUsing => codeUsing.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>())
+                    .Where(codeUsing => !codeUsing.IsExternal                                                                      // 1. Are defined during generation(not external) 
+                                        && codeUsing.Declaration != null
+                                        && codeUsing.Declaration.TypeDefinition != null
+                                        && !codeUsing.Name.Equals(currentTypeNamespace.Name, StringComparison.OrdinalIgnoreCase))  // 2. Do not match the namespace of the current type
+                    .Select(static codeUsing => codeUsing.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>())
                     .DistinctBy(static declaredNamespace => declaredNamespace.Name);
 
                 return importedNamespaces.Any(importedNamespace => importedNamespace.FindChildByName<CodeClass>(codeClass.Name,false) != null);
@@ -205,7 +208,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 _ => false,
             };
         }
-        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
         {
             var parameterType = GetTypeString(parameter.Type, targetElement);
             var defaultValue = parameter switch {

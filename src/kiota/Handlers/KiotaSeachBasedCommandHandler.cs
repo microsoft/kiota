@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kiota.Builder;
 using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers;
@@ -15,7 +14,7 @@ internal abstract class KiotaSearchBasedCommandHandler : BaseKiotaCommandHandler
             var searcher = await GetKiotaSearcherAsync(loggerFactory, cancellationToken).ConfigureAwait(false);
             var results = await searcher.SearchAsync(searchTerm, version, cancellationToken).ConfigureAwait(false);
             if (results.Count == 1)
-                return (results.First().Value.DescriptionUrl.ToString(), null);
+                return (results.First().Value.DescriptionUrl?.ToString() ?? string.Empty, null);
             else if(!results.Any()) {
                 DisplayWarning("No results found for the search term, use the search command to locate the description");
                 return (string.Empty, 1);

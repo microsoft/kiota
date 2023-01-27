@@ -24,14 +24,14 @@ namespace Kiota.Builder.Writers.Ruby {
                 _ => "private",
             };
         }
-        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter writer = null)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
         {
             var defaultValue = parameter.Optional && (targetElement is not CodeMethod currentMethod || !currentMethod.IsOfKind(CodeMethodKind.Setter)) ? 
                 $"={parameter.DefaultValue ?? "nil"}" :
                 string.Empty;
             return $"{parameter.Name}{defaultValue}";
         }
-        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
         {
             if (code is CodeType currentType) {
                 return $"{TranslateType(currentType)}";
@@ -66,14 +66,15 @@ namespace Kiota.Builder.Writers.Ruby {
             return string.Empty;
         }
         #pragma warning restore CA1822 // Method should be static
-        internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");
+        internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "#");
         #pragma warning disable CA1822 // Method should be static
-        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, string prefix = default, IEnumerable<CodeParameter> pathParameters = default) {
-            var pathParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
-            var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-            var urlTemplateParams = urlTemplateVarName ?? $"@{pathParametersProp.Name.ToSnakeCase()}";
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(static x => $"{x.Name}"))}";
-            writer.WriteLine($"{prefix}{returnType.ToFirstCharacterUpperCase()}.new({urlTemplateParams}, @{requestAdapterProp.Name.ToSnakeCase()}{pathParametersSuffix})");
+        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default) {
+            if(parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
+                parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp) {
+                var urlTemplateParams = urlTemplateVarName ?? $"@{pathParametersProp.Name.ToSnakeCase()}";
+                var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(static x => $"{x.Name}"))}";
+                writer.WriteLine($"{prefix}{returnType.ToFirstCharacterUpperCase()}.new({urlTemplateParams}, @{requestAdapterProp.Name.ToSnakeCase()}{pathParametersSuffix})");
+            }
         }
         #pragma warning restore CA1822 // Method should be static
     }

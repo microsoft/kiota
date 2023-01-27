@@ -127,10 +127,16 @@ namespace Kiota.Builder.Tests.CodeDOM {
             var method = new CodeMethod {
                 Name = "method",
                 Kind = CodeMethodKind.RequestExecutor,
+                ReturnType = new CodeType {
+                    Name = "string"
+                }
             };
             var overload = method.Clone() as CodeMethod;
             overload.AddParameter(new CodeParameter {
-                Name = "param1"
+                Name = "param1",
+                Type = new CodeType {
+                    Name = "string"
+                }
             });
             codeClass.AddMethod(method, overload);
         }
@@ -142,12 +148,18 @@ namespace Kiota.Builder.Tests.CodeDOM {
                 Name = "class1"
             }).First();
             var property = new CodeProperty {
-                Name = "method",
+                Name = "property",
                 Kind = CodePropertyKind.RequestBuilder,
+                Type = new CodeType {
+                    Name = "string"
+                }
             };
             var indexer = new CodeMethod {
                 Name = "method",
-                Kind = CodeMethodKind.IndexerBackwardCompatibility
+                Kind = CodeMethodKind.IndexerBackwardCompatibility,
+                ReturnType = new CodeType {
+                    Name = "string"
+                }
             };
             codeClass.AddProperty(property);
             codeClass.AddMethod(indexer);

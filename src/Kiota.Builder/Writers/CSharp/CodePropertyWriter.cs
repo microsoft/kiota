@@ -30,7 +30,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
 
     private void WritePropertyInternal(CodeProperty codeElement, LanguageWriter writer, string propertyType)
     {
-        var parentClass = codeElement.Parent as CodeClass;
+        if(codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         var backingStoreProperty = parentClass.GetBackingStoreProperty();
         var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
         var simpleBody = $"get; {setterAccessModifier}set;";
@@ -45,7 +45,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                 break;
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
             case CodePropertyKind.Custom when backingStoreProperty != null:
-                var backingStoreKey = codeElement.SerializationName ?? codeElement.Name.ToFirstCharacterLowerCase();
+                var backingStoreKey = codeElement.WireName;
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"get {{ return {backingStoreProperty.Name.ToFirstCharacterUpperCase()}?.Get<{propertyType}>(\"{backingStoreKey}\"); }}");

@@ -10,7 +10,7 @@ namespace Kiota.Builder;
 public record LanguageInformation: IOpenApiSerializable {
     public LanguageMaturityLevel MaturityLevel {get; set;}
     public List<LanguageDependency> Dependencies {get; set;} = new();
-    public string DependencyInstallCommand {get; set;}
+    public string DependencyInstallCommand {get; set;} = string.Empty;
 
     public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
     public void SerializeAsV3(IOpenApiWriter writer)
@@ -40,8 +40,8 @@ public record LanguageInformation: IOpenApiSerializable {
     }
 }
 public record LanguageDependency: IOpenApiSerializable {
-    public string Name {get; set;}
-    public string Version {get; set;}
+    public string Name {get; set;} = string.Empty;
+    public string Version {get; set;} = string.Empty;
     public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
     public void SerializeAsV3(IOpenApiWriter writer)
     {

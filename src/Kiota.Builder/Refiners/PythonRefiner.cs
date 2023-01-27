@@ -27,7 +27,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);           
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceBinaryByNativeType(generatedCode, "bytes",null);
+            ReplaceBinaryByNativeType(generatedCode, "bytes", string.Empty);
             ReplaceReservedNames(
                 generatedCode,
                 new PythonReservedNamesProvider(), x => $"{x}_"
@@ -129,7 +129,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if(currentProperty.IsOfKind(CodePropertyKind.Headers))
             currentProperty.Type.Name = "Dict[str, str]";
         else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameters))
-            currentProperty.Type.Name = $"{currentProperty.Parent?.Parent.Name.ToFirstCharacterUpperCase()}.{currentProperty.Type.Name.ToFirstCharacterUpperCase()}";
+            currentProperty.Type.Name = $"{currentProperty.Parent?.Parent?.Name.ToFirstCharacterUpperCase()}.{currentProperty.Type.Name.ToFirstCharacterUpperCase()}";
         else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
             currentProperty.Type.Name = "Dict[str, Any]";
             currentProperty.DefaultValue = "{}";
@@ -190,7 +190,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
     
     private const string DateTimePackageName = "datetime";
-    private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
+    private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
     {"DateTimeOffset", ("datetime", new CodeUsing {
                                     Name = "datetime",
                                     Declaration = new CodeType {

@@ -9,7 +9,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
     public CodeEnumWriter(GoConventionService conventionService) : base(conventionService){}
     public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer) {
         if(!codeElement.Options.Any()) return;
-        if(codeElement?.Parent is CodeNamespace ns)
+        if(codeElement.Parent is CodeNamespace ns)
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty)}");
 
         writer.WriteLine("import (");
@@ -39,7 +39,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
                         $"func (i {typeName}) String() string {{");
         writer.IncreaseIndent();
         var literalOptions = enumOptions
-                                        .Select(x => $"\"{x.SerializationName ?? x.Name}\"")
+                                        .Select(x => $"\"{x.WireName}\"")
                                         .Aggregate((x, y) => x + ", " + y);
         writer.WriteLine($"return []string{{{literalOptions}}}[i]");
         writer.DecreaseIndent();
@@ -50,7 +50,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         writer.WriteLine("switch v {");
         writer.IncreaseIndent();
         foreach (var item in enumOptions) {
-            writer.WriteLine($"case \"{item.SerializationName ?? item.Name}\":");
+            writer.WriteLine($"case \"{item.WireName}\":");
             writer.IncreaseIndent();
             writer.WriteLine($"result = {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
             writer.DecreaseIndent();

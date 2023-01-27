@@ -32,7 +32,7 @@ public class OpenApiEnumValuesDescriptionExtension : IOpenApiExtension
     /// <summary>
     /// The of the enum.
     /// </summary>
-    public string EnumName { get; set; }
+    public string EnumName { get; set; } = string.Empty;
 
     /// <summary>
     /// Descriptions for the enum symbols, where the value MUST match the enum symbols in the main description
@@ -91,13 +91,13 @@ public class EnumDescription : IOpenApiElement
     /// <summary>
     /// The description for the enum symbol
     /// </summary>
-    public string Description { get; set; }
+    public string Description { get; set; } = string.Empty;
     /// <summary>
     /// The symbol for the enum symbol to use for code-generation
     /// </summary>
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
     /// <summary>
     /// The symbol as described in the main enum schema.
     /// </summary>
-    public string Value { get; set; }
+    public string Value { get; set; } = string.Empty;
 }

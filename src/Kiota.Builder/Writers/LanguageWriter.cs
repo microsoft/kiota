@@ -21,7 +21,7 @@ namespace Kiota.Builder.Writers
  
     public abstract class LanguageWriter
     {
-        private TextWriter writer;
+        private TextWriter? writer;
         private const int IndentSize = 4;
         private static readonly string indentString = Enumerable.Repeat(" ", 1000).Aggregate((x, y) => x + y);
         private int currentIndent;
@@ -37,7 +37,7 @@ namespace Kiota.Builder.Writers
         {
             this.writer = writer;
         }
-        public IPathSegmenter PathSegmenter { get; protected set; }
+        public IPathSegmenter? PathSegmenter { get; protected set; }
 
         private readonly Stack<int> factorStack = new();
         public void IncreaseIndent(int factor = 1)
@@ -63,7 +63,7 @@ namespace Kiota.Builder.Writers
         internal void WriteLine() => WriteLine(string.Empty, false);
         internal void WriteLine(string line, bool includeIndent = true)
         {
-            writer.WriteLine(includeIndent ? GetIndent() + line : line);
+            writer?.WriteLine(includeIndent ? GetIndent() + line : line);
         }
         internal void WriteLines(params string[] lines) {
             foreach(var line in lines) {
@@ -92,7 +92,7 @@ namespace Kiota.Builder.Writers
 
         internal void Write(string text, bool includeIndent = true)
         {
-            writer.Write(includeIndent ? GetIndent() + text : text);
+            writer?.Write(includeIndent ? GetIndent() + text : text);
         }
         /// <summary>
         /// Dispatch call to Write the code element to the proper derivative write method

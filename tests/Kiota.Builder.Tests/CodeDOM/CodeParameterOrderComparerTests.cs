@@ -15,7 +15,6 @@ namespace Kiota.Builder.Tests.CodeDOM {
         public void DefensiveProgramming() {
             var comparer = new BaseCodeParameterOrderComparer();
             Assert.NotNull(comparer);
-            var root = CodeNamespace.InitRootNamespace();
             var mockParameter = new Mock<CodeParameter>().Object;
             Assert.Equal(0, comparer.Compare(null, null));
             Assert.Equal(-1, comparer.Compare(null, mockParameter));
@@ -28,10 +27,16 @@ namespace Kiota.Builder.Tests.CodeDOM {
             var param1 =  new CodeParameter {
                 Name = "param1",
                 Kind = CodeParameterKind.RequestAdapter,
+                Type = new CodeType {
+                    Name = "string"
+                }
             };
             var param2 =  new CodeParameter {
                 Name = "param2",
                 Kind = CodeParameterKind.RequestConfiguration,
+                Type = new CodeType {
+                    Name = "string"
+                }
             };
             Assert.Equal(110, comparer.Compare(param2, param1));
             Assert.Equal(-110, comparer.Compare(param1, param2));
@@ -44,10 +49,16 @@ namespace Kiota.Builder.Tests.CodeDOM {
             var param1 =  new CodeParameter {
                 Name = "param1",
                 Kind = CodeParameterKind.RequestConfiguration,
+                Type = new CodeType {
+                    Name = "string"
+                }
             };
             var param2 =  new CodeParameter {
                 Name = "param2",
                 Kind = CodeParameterKind.Cancellation,
+                Type = new CodeType {
+                    Name = "string"
+                }
             };
             var parameters = new List<CodeParameter> { param1, param2 };
             Assert.Equal("param1",parameters.OrderBy(x => x, comparer).First().Name);
@@ -62,12 +73,18 @@ namespace Kiota.Builder.Tests.CodeDOM {
             var param1 =  new CodeParameter {
                 Name = "param1",
                 Kind = CodeParameterKind.RequestConfiguration,
-                Optional = true
+                Optional = true,
+                Type = new CodeType {
+                    Name = "string"
+                }
             };
             var param2 =  new CodeParameter {
                 Name = "param2",
                 Kind = CodeParameterKind.Cancellation,
-                Optional = true
+                Optional = true,
+                Type = new CodeType {
+                    Name = "string"
+                }
             };
             var parameters = new List<CodeParameter> { param1, param2 };
             Assert.Equal("param1",parameters.OrderBy(x => x, comparer).First().Name);
@@ -88,10 +105,16 @@ namespace Kiota.Builder.Tests.CodeDOM {
             var param1 =  new CodeParameter {
                 Name = "param1",
                 Kind = testKind,
+                Type = new CodeType {
+                    Name = "string"
+                }
             };
             var param2 =  new CodeParameter {
                 Name = "param2",
                 Kind = CodeParameterKind.Cancellation,
+                Type = new CodeType {
+                    Name = "string"
+                }
             };
             var parameters = new List<CodeParameter> { param1, param2 };
             Assert.Equal("param2",parameters.OrderBy(x => x, comparer).First().Name);

@@ -14,13 +14,13 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
     }
     private readonly List<CodeType> types = new ();
     public IEnumerable<CodeType> Types { get => types; }
-    private DiscriminatorInformation _discriminatorInformation;
+    private DiscriminatorInformation? _discriminatorInformation;
     /// <inheritdoc />
     public DiscriminatorInformation DiscriminatorInformation {
         get {
             if (_discriminatorInformation == null)
                 DiscriminatorInformation = new DiscriminatorInformation();
-            return _discriminatorInformation;
+            return _discriminatorInformation!;
         } 
         set {
             ArgumentNullException.ThrowIfNull(value);
@@ -34,11 +34,11 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
         base.BaseClone<ChildType>(source);
         if(sourceComposed.Types?.Any() ?? false)
             AddType(sourceComposed.Types.ToArray());
-        DiscriminatorInformation = sourceComposed.DiscriminatorInformation?.Clone() as DiscriminatorInformation;
-        return this as ChildType;
+        DiscriminatorInformation = (DiscriminatorInformation)sourceComposed.DiscriminatorInformation.Clone();
+        return this is ChildType casted ? casted : throw new InvalidCastException($"Cannot cast {GetType().Name} to {typeof(ChildType).Name}");
     }
     /// <summary>
     /// The target namespace if the composed type needs to be represented by a class
     /// </summary>
-    public CodeNamespace TargetNamespace { get; set; }
+    public CodeNamespace? TargetNamespace { get; set; }
 }
