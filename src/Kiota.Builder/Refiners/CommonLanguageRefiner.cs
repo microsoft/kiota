@@ -68,18 +68,21 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         return false;
     }
-    protected static void CorrectCoreTypesForBackingStore(CodeElement currentElement, string defaultPropertyValue) {
+    protected static void CorrectCoreTypesForBackingStore(CodeElement currentElement, string defaultPropertyValue, Boolean hasPrefix = true) {
         if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder)
             && currentClass.StartBlock is ClassDeclaration currentDeclaration) {
             var backedModelImplements = currentDeclaration.Implements.FirstOrDefault(x => "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
             if(backedModelImplements != null)
                 backedModelImplements.Name = backedModelImplements.Name[1..]; //removing the "I"
             var backingStoreProperty = currentClass.GetPropertyOfKind(CodePropertyKind.BackingStore);
-            if(backingStoreProperty != null)
+            if (backingStoreProperty != null)
+            {
                 backingStoreProperty.DefaultValue = defaultPropertyValue;
+                backingStoreProperty.NamePrefix = hasPrefix ? backingStoreProperty.NamePrefix : String.Empty;
+            }
             
         }
-        CrawlTree(currentElement, x => CorrectCoreTypesForBackingStore(x, defaultPropertyValue));
+        CrawlTree(currentElement, x => CorrectCoreTypesForBackingStore(x, defaultPropertyValue, hasPrefix));
     }
     private static bool DoesAnyParentHaveAPropertyWithDefaultValue(CodeClass current)
     {

@@ -1351,7 +1351,7 @@ public class KiotaBuilder
     private const string AdditionalDataPropName = "AdditionalData";
     private const string BackingStorePropertyName = "BackingStore";
     private const string BackingStoreInterface = "IBackingStore";
-    private const string BackedModelInterface = "IBackedModel";
+    internal const string BackedModelInterface = "IBackedModel";
     private const string ParseNodeInterface = "IParseNode";
     internal const string AdditionalHolderInterface = "IAdditionalDataHolder";
     internal static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties, bool usesBackingStore) {
