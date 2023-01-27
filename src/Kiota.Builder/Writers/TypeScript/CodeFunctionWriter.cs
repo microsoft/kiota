@@ -95,7 +95,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var param = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => (x.Type as CodeType).TypeDefinition is CodeInterface);
         var codeInterface = (param.Type as CodeType).TypeDefinition as CodeInterface;
         var inherits = codeInterface.StartBlock.Implements.FirstOrDefault(x => x.TypeDefinition is CodeInterface);
-        var additionalDataProperty = codeInterface.Properties?.FirstOrDefault(x => x.Kind == CodePropertyKind.AdditionalData);
         writer.IncreaseIndent();
 
         if (inherits != null)
@@ -125,10 +124,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         writer.WriteLine("}");
         writer.DecreaseIndent();
         writer.WriteLine("}");
-
-        //if (additionalDataProperty != null) {
-        //    writer.WriteLine($"writer.writeAdditionalData({codeInterface.Name.ToFirstCharacterLowerCase()}.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
-        //}
         writer.DecreaseIndent();
     }
 
@@ -170,7 +165,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var propertyType = localConventions.TranslateType(propType);
         if (propType is CodeType currentType)
         {
-            var result = GetSerializationMethodNameForCodeType(currentType, propertyType, modelParamName);
+            var result = GetSerializationMethodNameForCodeType(currentType, propertyType);
             if (!String.IsNullOrWhiteSpace(result))
             {
                 return result;
@@ -183,7 +178,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         };
     }
 
-    private static string GetSerializationMethodNameForCodeType(CodeType propType, string propertyType, string modelParamName)
+    private static string GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         if (propType.TypeDefinition is CodeEnum currentEnum)
