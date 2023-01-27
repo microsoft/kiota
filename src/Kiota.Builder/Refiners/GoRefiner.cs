@@ -158,36 +158,35 @@ public class GoRefiner : CommonLanguageRefiner
         return $"{start}{end}";
     }
     
-    private void CorrectBackingStoreTypes(CodeElement currentElement, Dictionary<String, CodeInterface> result = null)
+    private void CorrectBackingStoreTypes(CodeElement currentElement)
     {
         if (!_configuration.UsesBackingStore)
             return;
         
-        var currentMethod = currentElement as CodeMethod;
-        var parameters = currentMethod?.Parameters;
-        var codeParameters = parameters as CodeParameter[] ?? parameters?.ToArray();
-        codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.BackingStore)
-                                   && currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)).ToList().ForEach(x =>
-        {
-            var type = (x.Type as CodeType)!;
-            type.Name = "BackingStoreFactory";
-            type.IsNullable = false;
-            type.IsExternal = true;
-        });
-
-        if (currentElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model))
+        if (currentElement is CodeMethod currentMethod) {
+            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.BackingStore)
+                                    && currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)
+                                    && x.Type is CodeType).ToList().ForEach(x =>
+            {
+                var type = (CodeType)x.Type;
+                type.Name = "BackingStoreFactory";
+                type.IsNullable = false;
+                type.IsExternal = true;
+            });
+        }
+        else if (currentElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model))
         {
             var propertiesToCorrect = codeClass.Properties
-                .Where(x => x.IsOfKind(CodePropertyKind.Custom))
+                .Where(static x => x.IsOfKind(CodePropertyKind.Custom))
                 .Union(codeClass.Methods
                     .Where(x => x.IsAccessor && (x.AccessedProperty?.IsOfKind(CodePropertyKind.Custom) ?? false))
-                    .Select(static x => x.AccessedProperty))
+                    .Select(static x => x.AccessedProperty!))
                 .Distinct()
                 .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
 
             var targetNameSpace = codeClass.GetImmediateParentOfType<CodeNamespace>();
             var modelsNameSpace = findClientNameSpace(targetNameSpace)
-                .FindNamespaceByName($"{_configuration.ClientNamespaceName}.models");
+                ?.FindNamespaceByName($"{_configuration.ClientNamespaceName}.models");
             
             foreach (var property in propertiesToCorrect)
             {
@@ -195,8 +194,8 @@ public class GoRefiner : CommonLanguageRefiner
                 {
                     var interfaceName = $"{codeType.Name}able";
                     var existing = targetNameSpace.FindChildByName<CodeInterface>(interfaceName, false) ??
-                                   modelsNameSpace.FindChildByName<CodeInterface>(interfaceName) ??
-                                   modelsNameSpace.FindChildByName<CodeInterface>(interfaceName.ToFirstCharacterUpperCase());
+                                   modelsNameSpace?.FindChildByName<CodeInterface>(interfaceName) ??
+                                   modelsNameSpace?.FindChildByName<CodeInterface>(interfaceName.ToFirstCharacterUpperCase());
                     
                     if (existing == null)
                         continue;
@@ -208,7 +207,7 @@ public class GoRefiner : CommonLanguageRefiner
                 }
             }
         }
-        CrawlTree(currentElement, x => CorrectBackingStoreTypes(x, result));
+        CrawlTree(currentElement, CorrectBackingStoreTypes);
     }
 
     private static void CorrectTypes(CodeElement currentElement)

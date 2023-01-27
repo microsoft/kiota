@@ -382,21 +382,22 @@ namespace Kiota.Builder.Writers.Go {
             if(backingStore == null || (codeElement.AccessedProperty?.IsOfKind(CodePropertyKind.BackingStore) ?? false))
                 writer.WriteLine($"return m.{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}");
             else 
-                if(!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
-                   !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
-                    !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
+                if(codeElement.AccessedProperty != null &&
+                    !(codeElement.AccessedProperty.Type?.IsNullable ?? true) &&
+                   !codeElement.AccessedProperty.ReadOnly &&
+                    !string.IsNullOrEmpty(codeElement.AccessedProperty.DefaultValue)) {
                     writer.WriteLines(
                         $"val , err :=  m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")");
                     writer.WriteBlock("if err != nil {", "}", "panic(err)");
                     writer.WriteBlock("if val == nil {" , "}", 
                         $"var value = {codeElement.AccessedProperty.DefaultValue};",
-                        $"m.Set{codeElement.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}(value);");
+                        $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value);");
 
                     writer.WriteLine($"return val.({conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)})");
                 }
                 else
                 {
-                    var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent);
+                    var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
                     
                     writer.WriteLine($"val , err := m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\")");
                     
