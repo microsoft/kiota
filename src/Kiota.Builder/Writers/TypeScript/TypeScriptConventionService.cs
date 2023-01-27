@@ -116,7 +116,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     {
         if (codeType.TypeDefinition is CodeFunction) {
             return codeType.TypeDefinition?.Name;
-        };
+        }
 
         return (codeType.TypeDefinition?.Name ?? codeType.Name).ToFirstCharacterUpperCase();
     }

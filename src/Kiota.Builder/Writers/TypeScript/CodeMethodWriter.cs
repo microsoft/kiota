@@ -12,7 +12,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     {
         _usesBackingStore = usesBackingStore;
     }
-    private const string ModelClassSuffix = "Impl";
+
     private TypeScriptConventionService localConventions;
     private readonly bool _usesBackingStore;
 
@@ -73,7 +73,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             case CodeMethodKind.Factory:
                 throw new InvalidOperationException("Factory methods are implemented as functions in TypeScript");
             case CodeMethodKind.RawUrlConstructor:
-                throw new InvalidOperationException("RawUrlConstructor is not supported as typescript relieeas on union types.");
+                throw new InvalidOperationException("RawUrlConstructor is not supported as typescript relies on union types.");
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
             default:
@@ -131,11 +131,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterLowerCase();
         WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
-        if(!string.IsNullOrEmpty(method.BaseUrl)) {
+        if (!string.IsNullOrEmpty(method.BaseUrl))
+        {
             writer.StartBlock($"if ({requestAdapterPropertyName}.baseUrl === undefined || {requestAdapterPropertyName}.baseUrl === \"\") {{");
             writer.WriteLine($"{requestAdapterPropertyName}.baseUrl = \"{method.BaseUrl}\";");
             writer.CloseBlock();
-            if(pathParametersProperty != null)
+            if (pathParametersProperty != null)
                 writer.WriteLine($"this.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}[\"baseurl\"] = {requestAdapterPropertyName}.baseUrl;");
         }
         if (backingStoreParameter != null)
@@ -224,41 +225,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             }
             AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
         }
-
-        if (parentClass.IsOfKind(CodeClassKind.Model))
-        {
-            ConstructorBodyForModelClass(parentClass, writer, currentMethod);
-        }
-    }
-
-    private static void ConstructorBodyForModelClass(CodeClass codeClass, LanguageWriter writer, CodeMethod currentMethod)
-    {
-        var codeInterfaceName = currentMethod.Parameters?.FirstOrDefault(x => x.Type is CodeType type && type.TypeDefinition is CodeInterface)?.Name;
-        if (codeClass.StartBlock.Inherits != null)
-        {
-            if (codeClass.StartBlock.Inherits.TypeDefinition != null)
-            {
-                writer.WriteLine($"super({codeInterfaceName});");
-            }
-            else
-            {
-                // For Error Model Classes.
-                writer.WriteLine($"super();");
-            }
-        }
-
-        foreach (var prop in codeClass.Properties)
-        {
-            var interfaceProperty = $"{codeInterfaceName}?.{prop.Name.ToFirstCharacterLowerCase()}";
-            if (prop.IsOfKind(CodePropertyKind.AdditionalData))
-            {
-                writer.WriteLine($"this.{prop.NamePrefix}{prop.Name.ToFirstCharacterLowerCase()} = {interfaceProperty} ? {interfaceProperty}! : {prop.DefaultValue};");
-            }
-            else
-            {
-                writer.WriteLine($"this.{prop.NamePrefix}{prop.Name.ToFirstCharacterLowerCase()} = {interfaceProperty};");
-            }
-        }
     }
 
     private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string variableName = default)
@@ -279,42 +245,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         return property.Type is CodeType cType && cType.IsCollection && cType.TypeDefinition is CodeEnum;
     }
 
-    private void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
+    private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
-        writer.WriteLine("if(value) {");
-        writer.IncreaseIndent();
         var backingStore = parentClass.GetBackingStoreProperty();
-        var property = codeElement.AccessedProperty;
-        var properyType = property.Type is CodeType type && type.TypeDefinition is CodeInterface @interface ? @interface.Name : "";
-
-        var propertyValue = "";
-
-        if (IsCodePropertyCollectionOfEnum(property))
-        {
-            propertyValue = "value";
-        }
-        else if (IsCodePropertyCollection(property))
-        {
-            propertyValue = ConvertPropertyValueToInstanceArray(property.Name, property.Type, writer);
-        }
-        else
-        {
-            propertyValue = !String.IsNullOrWhiteSpace(properyType) ? $"value instanceof {properyType}{ModelClassSuffix}? value as {properyType}{ModelClassSuffix}: new {properyType}{ModelClassSuffix}(value)" : "value";
-        }
-
         if (backingStore == null)
-            writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{property?.Name?.ToFirstCharacterLowerCase()} = {propertyValue};");
+            writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value;");
         else
-            writer.WriteLine($"this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.set(\"{property?.Name?.ToFirstCharacterLowerCase()}\", {propertyValue});");
-        writer.DecreaseIndent();
-        writer.WriteLine("}");
+            writer.WriteLine($"this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value);");
     }
-
-    private static bool IsCodePropertyCollection(CodeProperty property)
-    {
-        return property?.Type?.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && property?.Type is CodeType currentType && currentType?.TypeDefinition != null;
-    }
-
     private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
         var backingStore = parentClass.GetBackingStoreProperty();
@@ -337,6 +275,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             writer.WriteLine($"return this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
 
     }
+    private static bool IsCodePropertyCollection(CodeProperty property)
+    {
+        return property?.Type?.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && property?.Type is CodeType currentType && currentType?.TypeDefinition != null;
+    }
+    
     private static void WriteDefaultMethodBody(CodeMethod codeElement, LanguageWriter writer)
     {
         var promisePrefix = codeElement.IsAsync ? "Promise.resolve(" : string.Empty;
@@ -367,11 +310,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol);
         var newFactoryParameter = GetTypeFactory(isVoid, isStream, codeElement, writer);
         var errorMappingVarName = "undefined";
-        if(codeElement.ErrorMappings.Any()) {
+        if (codeElement.ErrorMappings.Any())
+        {
             errorMappingVarName = "errorMapping";
             writer.WriteLine($"const {errorMappingVarName} = {{");
             writer.IncreaseIndent();
-            foreach(var errorMapping in codeElement.ErrorMappings) {
+            foreach (var errorMapping in codeElement.ErrorMappings)
+            {
                 writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {GetFactoryMethodName(errorMapping.Value, codeElement, writer)},");
             }
             writer.CloseBlock("} as Record<string, ParsableFactory<Parsable>>;");
@@ -386,8 +331,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         if (isStream || conventions.IsPrimitiveType(typeName)) return $" \"{typeName}\",";
         return $" {GetFactoryMethodName(codeElement.ReturnType, codeElement, writer)},";
     }
-    private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName) {
-        if(!codeElement.ReturnType.IsCollection) return fullTypeName;
+    private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName)
+    {
+        if (!codeElement.ReturnType.IsCollection) return fullTypeName;
         var clone = codeElement.ReturnType.Clone() as CodeTypeBase;
         clone.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None;
         return conventions.GetTypeString(clone, codeElement);
@@ -404,9 +350,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                             $"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
                             $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "''")};",
                             $"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
-        if(codeElement.AcceptedResponseTypes.Any())
+        if (codeElement.AcceptedResponseTypes.Any())
             writer.WriteLine($"{RequestInfoVarName}.headers[\"Accept\"] = [\"{string.Join(", ", codeElement.AcceptedResponseTypes)}\"];");
-        if(requestParams.requestConfiguration != null) {
+        if (requestParams.requestConfiguration != null)
+        {
             writer.WriteLine($"if ({requestParams.requestConfiguration.Name}) {{");
             writer.IncreaseIndent();
             var headers = requestParams.Headers;
@@ -443,7 +390,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 setMethodName = "setContentFromParsable";
                 body = "body";
                 writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", {body} as any, {serializerName});");
-               
+
             }
             else
             {
@@ -451,7 +398,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 body = $"{spreadOperator}{requestBody.Name}";
                 writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", {body});");
             }
-            
+
         }
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"this.{property.Name}";
@@ -461,32 +408,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         return propType is CodeType currentType && (currentType.TypeDefinition is CodeClass || currentType.TypeDefinition is CodeInterface);
     }
 
-    private string ConvertPropertyValueToInstanceArray(string propertyName, CodeTypeBase propType, LanguageWriter writer)
+    private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, bool isVoid)
     {
-        var propertyType = localConventions.TranslateType(propType);
-        if (IsCodeClassOrInterface(propType))
+        var returnRemark = (isVoid, code.IsAsync) switch
         {
-            propertyType = propertyType + ModelClassSuffix;
-        }
-
-        var arrayName = $"{propertyName}ArrValue".ToFirstCharacterLowerCase();
-
-        writer.WriteLine($"const {arrayName}: {propertyType}[] = [];");
-        writer.WriteLine($"this.{propertyName.ToFirstCharacterLowerCase()}?.forEach(element => {{");
-        writer.IncreaseIndent();
-        writer.WriteLine($"{arrayName}.push((element instanceof {propertyType}? element as {propertyType}:new {propertyType}(element)));");
-        writer.DecreaseIndent();
-        writer.WriteLine("});");
-        return arrayName;
-    }
-    private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, bool isVoid) {
-        var returnRemark = (isVoid, code.IsAsync) switch {
             (true, _) => string.Empty,
             (false, true) => $"@returns a Promise of {code.ReturnType.Name.ToFirstCharacterUpperCase()}",
             (false, false) => $"@returns a {code.ReturnType.Name}",
         };
-        localConventions.WriteLongDescription(code.Documentation, 
-                                            writer, 
+        localConventions.WriteLongDescription(code.Documentation,
+                                            writer,
                                             code.Parameters
                                                 .Where(static x => x.Documentation.DescriptionAvailable)
                                                 .OrderBy(static x => x.Name)
@@ -525,8 +456,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
         writer.WriteLine($"{accessModifier}{functionPrefix}{accessorPrefix}{staticPrefix}{methodName}{asyncPrefix}({parameters}){returnTypeSuffix} {{");
     }
-    
-    private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeMethod currentElement, LanguageWriter writer) {
+
+    private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeMethod currentElement, LanguageWriter writer)
+    {
         var returnType = localConventions.GetTypeString(targetClassType, currentElement, false, writer);
         var targetClassName = localConventions.TranslateType(targetClassType);
         var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
@@ -535,8 +467,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         if (targetClassType is CodeType currentType &&
             currentType.TypeDefinition is CodeClass definitionClass &&
             definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
-            parentNamespace.FindChildByName<CodeFunction>(resultName) is CodeFunction factoryMethod) {
-            var methodName = localConventions.GetTypeString(new CodeType {
+            parentNamespace.FindChildByName<CodeFunction>(resultName) is CodeFunction factoryMethod)
+        {
+            var methodName = localConventions.GetTypeString(new CodeType
+            {
                 Name = resultName,
                 TypeDefinition = factoryMethod
             }, currentElement, false, writer);
@@ -544,7 +478,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         }
         throw new InvalidOperationException($"Unable to find factory method for {targetClassName}");
     }
-   
+
     private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
     {
         if (isVoid) return "sendNoResponseContentAsync";

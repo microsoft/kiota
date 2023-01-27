@@ -21,6 +21,7 @@ public class CodeFunctionWriterTests : IDisposable {
     private const string MethodName = "methodName";
     private const string ReturnTypeName = "Somecustomtype";
 
+
     private void AddInheritanceClass()
     {
         parentClass.StartBlock.Inherits = new CodeType
@@ -357,9 +358,6 @@ public class CodeFunctionWriterTests : IDisposable {
     public async Task DoesntWriteReadOnlyPropertiesInSerializerBody()
     {
         var model = root.AddClass(TestHelper.CreateModelClass()).First();
-        //method.Kind = CodeMethodKind.Serializer;
-        //AddSerializationProperties();
-        //AddInheritanceClass();
         model.AddProperty(new CodeProperty
         {
             Name = "ReadOnlyProperty",

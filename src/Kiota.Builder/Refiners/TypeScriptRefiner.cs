@@ -516,23 +516,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else if (currentElement is CodeUsing codeUsing)
         {
-            if (codeUsing.Declaration.TypeDefinition is CodeInterface codeInterface)
-            {
-                codeUsing.Declaration.Name = ReturnFinalInterfaceName(codeInterface.Name);
-                codeInterface.Name = ReturnFinalInterfaceName(codeInterface.Name);
-            }
-            else if (codeUsing.Declaration.TypeDefinition is CodeClass codeClass && codeClass.Kind == CodeClassKind.Model)
-            {
-                (codeUsing.Parent as CodeClass).RemoveUsingsByDeclarationName(codeClass.Name);
-            }
+            RenameModelInterfacesAndRemoveClassesInUsing(codeUsing);
         }
         else if (currentElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer))
         {
-            var param = codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault(x => (x.Type as CodeType).TypeDefinition is CodeInterface);
-
-            var paramInterface = (param?.Type as CodeType).TypeDefinition as CodeInterface;
-            paramInterface.Name = ReturnFinalInterfaceName(paramInterface.Name);
-            param.Name = ReturnFinalInterfaceName(paramInterface.Name);
+            RenameCodeInterfaceParamsInSerializers(codeFunction);
         }
         else if (currentElement is CodeType codeType && codeType.TypeDefinition is CodeInterface typeInterface)
         {
@@ -542,7 +530,26 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, x => RenameModelInterfacesAndRemoveClasses(x));
     }
 
+    private static void RenameModelInterfacesAndRemoveClassesInUsing(CodeUsing codeUsing)
+    {
+        if (codeUsing.Declaration.TypeDefinition is CodeInterface codeInterface)
+        {
+            codeUsing.Declaration.Name = ReturnFinalInterfaceName(codeInterface.Name);
+            codeInterface.Name = ReturnFinalInterfaceName(codeInterface.Name);
+        }
+        else if (codeUsing.Declaration.TypeDefinition is CodeClass codeClass && codeClass.Kind == CodeClassKind.Model)
+        {
+            (codeUsing.Parent as CodeClass).RemoveUsingsByDeclarationName(codeClass.Name);
+        }
+    }
+    private static void RenameCodeInterfaceParamsInSerializers(CodeFunction codeFunction)
+    {
+        var param = codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault(x => (x.Type as CodeType).TypeDefinition is CodeInterface);
 
+        var paramInterface = (param?.Type as CodeType).TypeDefinition as CodeInterface;
+        paramInterface.Name = ReturnFinalInterfaceName(paramInterface.Name);
+        param.Name = ReturnFinalInterfaceName(paramInterface.Name);
+    }
 
     private static string ReturnFinalInterfaceName(string interfaceName)
     {
@@ -618,7 +625,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
          * Setting request body parameter type of request executor to model interface.
          */
         var requestBodyType = codeMethod?.Parameters?.FirstOrDefault(x => x.Kind == CodeParameterKind.RequestBody);
-        var isRequestBodyCodeClass = requestBodyType != null && (requestBodyType.Type as CodeType).TypeDefinition is CodeClass bodyClass;
+        var isRequestBodyCodeClass = requestBodyType != null && (requestBodyType.Type as CodeType).TypeDefinition is CodeClass;
         var requestBodyClass = isRequestBodyCodeClass ? (requestBodyType.Type as CodeType).TypeDefinition as CodeClass : null;
         var parentClass = codeMethod.GetImmediateParentOfType<CodeClass>();
         if (codeMethod.ReturnType is CodeType returnType &&

@@ -142,7 +142,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var propType = localConventions.GetTypeString(codeProperty.Type, codeProperty.Parent, false);
         writer.IncreaseIndent();
 
-        var serializationName = GetSerializationMethodName(codeProperty.Type, modelParamName);
+        var serializationName = GetSerializationMethodName(codeProperty.Type);
 
         if (serializationName == "writeObjectValue" || serializationName == "writeCollectionOfObjectValues")
         {
@@ -160,7 +160,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         writer.DecreaseIndent();
     }
 
-    private string GetSerializationMethodName(CodeTypeBase propType, string modelParamName)
+    private string GetSerializationMethodName(CodeTypeBase propType)
     {
         var propertyType = localConventions.TranslateType(propType);
         if (propType is CodeType currentType)

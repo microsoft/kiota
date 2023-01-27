@@ -46,7 +46,7 @@ namespace Kiota.Builder.Tests.Writers.TypeScript
             writer.Write(root);
             var result = tw.ToString();
             Console.WriteLine(result);
-            Assert.Contains("export * from './testEnum'{Environment.NewLine}export * from './modelInterface'{Environment.NewLine}", result);
+            Assert.Contains($"export * from './testEnum'{Environment.NewLine}export * from './modelInterface'{Environment.NewLine}", result);
         }
     }
 }
