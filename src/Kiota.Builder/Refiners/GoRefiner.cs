@@ -474,7 +474,8 @@ public class GoRefiner : CommonLanguageRefiner
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                          method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
             "github.com/microsoft/kiota-abstractions-go/store", "BackingStoreFactory"),
-    };//TODO add backing store types once we have them defined
+    };
+    
     private void CorrectImplements(ProprietableBlockDeclaration block) {
         block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");
         block.ReplaceImplementByName(KiotaBuilder.BackedModelInterface, "BackedModel");

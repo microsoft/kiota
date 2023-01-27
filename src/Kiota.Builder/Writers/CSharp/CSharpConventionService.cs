@@ -14,9 +14,20 @@ namespace Kiota.Builder.Writers.CSharp {
         public override string DocCommentPrefix => "/// ";
         private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset", "TimeSpan", "Date","Time", "sbyte", "byte" };
         public const char NullableMarker = '?';
-        public const string NullableEnableDirective = "NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER";
         public static string NullableMarkerAsString => "?";
         public override string ParseNodeInterfaceName => "IParseNode";
+
+        public static void WriteNullableOpening(LanguageWriter writer) {
+            writer.WriteLine($"#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER",false);
+            writer.WriteLine($"#nullable enable",false);
+        }
+        public static void WriteNullableMiddle(LanguageWriter writer) {
+            writer.WriteLine($"#nullable restore",false);
+            writer.WriteLine("#else", false);
+        }
+        public static void WriteNullableClosing(LanguageWriter writer) {
+            writer.WriteLine("#endif", false);
+        }
         public override void WriteShortDescription(string description, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(description))
                 writer.WriteLine($"{DocCommentPrefix}<summary>{description.CleanupXMLString()}</summary>");
@@ -61,23 +72,28 @@ namespace Kiota.Builder.Writers.CSharp {
         private static bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
             return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
         }
-        private static HashSet<string> _namespaceSegmentsNames;
-        private static readonly object _namespaceSegmentsNamesLock = new();
-        private static HashSet<string> GetNamesInUseByNamespaceSegments(CodeElement currentElement) {
-            if(_namespaceSegmentsNames == null) {
+        private HashSet<string> _namespaceSegmentsNames = new (StringComparer.OrdinalIgnoreCase);
+        private readonly object _namespaceSegmentsNamesLock = new();
+        private HashSet<string> GetNamesInUseByNamespaceSegments(CodeElement currentElement) {
+            if(!_namespaceSegmentsNames.Any()) {
                 lock(_namespaceSegmentsNamesLock) {
                     var rootNamespace = currentElement.GetImmediateParentOfType<CodeNamespace>().GetRootNamespace();
-                    _namespaceSegmentsNames = GetNamespaceNameSegments(rootNamespace).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    _namespaceSegmentsNames = GetAllNamespaces(rootNamespace)
+                                                .Where(static x => !string.IsNullOrEmpty(x.Name))
+                                                .SelectMany(static ns => ns.Name.Split('.', StringSplitOptions.RemoveEmptyEntries))
+                                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                                .ToHashSet(StringComparer.OrdinalIgnoreCase);
                     _namespaceSegmentsNames.Add("keyvaluepair"); //workaround as System.Collections.Generic imports keyvalue pair
                 }
             }
             return _namespaceSegmentsNames;
         }
-        private static IEnumerable<string> GetNamespaceNameSegments(CodeNamespace ns) {
-            return (string.IsNullOrEmpty(ns.Name) ? Enumerable.Empty<string>() :
-                                                    ns.Name.Split('.', StringSplitOptions.RemoveEmptyEntries))
-                    .Union(ns.Namespaces.SelectMany(static x => GetNamespaceNameSegments(x)))
-                    .Distinct(StringComparer.OrdinalIgnoreCase);
+        private static IEnumerable<CodeNamespace> GetAllNamespaces(CodeNamespace ns) {
+            foreach(var childNs in ns.Namespaces) {
+                yield return childNs;
+                foreach(var childNsSegment in GetAllNamespaces(childNs))
+                    yield return childNsSegment;
+            }
         }
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter writer = null)
         {
@@ -105,13 +121,13 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
         {
-            var parentElements = new List<string>();
-            if (targetElement.Parent is CodeClass parentClass)
-            {
-                parentElements.AddRange(parentClass.Methods.Select(static x => x.Name).Union(parentClass.Properties.Select(static x => x.Name)));
-            }
+            var parentElementsHash = targetElement.Parent is CodeClass parentClass ? 
+                parentClass.Methods.Select(static x => x.Name)
+                    .Union(parentClass.Properties.Select(static x => x.Name))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase) :
+                new HashSet<string>(0, StringComparer.OrdinalIgnoreCase);
             
-            var parentElementsHash = new HashSet<string>(parentElements, StringComparer.OrdinalIgnoreCase);
             var typeName = TranslateType(currentType);
             var areElementsInSameNamesSpace = DoesTypeExistsInSameNamesSpaceAsTarget(currentType, targetElement);
             if (currentType.TypeDefinition != null &&
@@ -128,7 +144,7 @@ namespace Kiota.Builder.Writers.CSharp {
 
         private static bool DoesTypeExistsInSameNamesSpaceAsTarget(CodeType currentType, CodeElement targetElement)
         {
-            return currentType?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()?.Name.Equals(targetElement?.GetImmediateParentOfType<CodeNamespace>()?.Name) ?? false;
+            return currentType?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()?.Name.Equals(targetElement?.GetImmediateParentOfType<CodeNamespace>()?.Name, StringComparison.OrdinalIgnoreCase) ?? false;
         }
 
         private static bool DoesTypeExistsInTargetAncestorNamespace(CodeType currentType, CodeElement targetElement)
