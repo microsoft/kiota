@@ -49,5 +49,5 @@ public class APIsGuruSearchProvider : ISearchProvider
                                             StringComparer.OrdinalIgnoreCase);
         return results;
     }
-    private static string GetVersionKey(bool singleCandidate, string? version, KeyValuePair<string, ApiEntry> x) => singleCandidate ? version! : x.Value.preferred;
+    private static string GetVersionKey(bool singleCandidate, string? version, KeyValuePair<string, ApiEntry> x) => singleCandidate && !string.IsNullOrEmpty(version) ? version : x.Value.preferred;
 }

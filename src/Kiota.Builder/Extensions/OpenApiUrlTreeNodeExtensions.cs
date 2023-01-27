@@ -33,9 +33,9 @@ namespace Kiota.Builder.Extensions {
             return currentNode.Path.GetNamespaceFromPath(prefix);
         }
         //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
-        private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+        private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
         // microsoft.graph.getRoleScopeTagsByIds(ids=@ids)
-        private static readonly Regex AtSignPathParameterRegex = new(@"=@(\w+)", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+        private static readonly Regex AtSignPathParameterRegex = new(@"=@(\w+)", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
         private static readonly char requestParametersChar = '{';
         private static readonly char requestParametersEndChar = '}';
         private static readonly char requestParametersSectionChar = '(';
@@ -75,7 +75,7 @@ namespace Kiota.Builder.Extensions {
             return Enumerable.Empty<OpenApiParameter>();
         }
         private static readonly char pathNameSeparator = '\\';
-        private static readonly Regex idClassNameCleanup = new(@"-?id\d?}?$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(100));
+        private static readonly Regex idClassNameCleanup = new(@"-?id\d?}?$", RegexOptions.Compiled | RegexOptions.IgnoreCase, Constants.DefaultRegexTimeout);
         ///<summary>
         /// Returns the class name for the node with more or less precision depending on the provided arguments
         ///</summary>
@@ -114,7 +114,7 @@ namespace Kiota.Builder.Extensions {
             "yml",
             "txt",
         };
-        private static readonly Regex descriptionCleanupRegex = new (@"[\r\n\t]", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+        private static readonly Regex descriptionCleanupRegex = new (@"[\r\n\t]", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
         public static string CleanupDescription(this string? description) => string.IsNullOrEmpty(description) ? string.Empty : descriptionCleanupRegex.Replace(description, string.Empty);
         public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string? defaultValue = default) =>
         !string.IsNullOrEmpty(label) && (currentNode?.PathItems.ContainsKey(label) ?? false) ?
@@ -134,7 +134,7 @@ namespace Kiota.Builder.Extensions {
                     segmentWithoutExtension.EndsWith(requestParametersEndChar) &&
                     segmentWithoutExtension.Count(static x => x == requestParametersChar) == 1;
         }
-        private static readonly Regex stripExtensionForIndexersRegex = new(@"\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100)); // so {param-name}.json is considered as indexer
+        private static readonly Regex stripExtensionForIndexersRegex = new(@"\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Compiled, Constants.DefaultRegexTimeout); // so {param-name}.json is considered as indexer
         public static bool IsComplexPathWithAnyNumberOfParameters(this OpenApiUrlTreeNode currentNode)
         {
             return (currentNode?.Segment?.Contains(requestParametersSectionChar, StringComparison.OrdinalIgnoreCase) ?? false) && currentNode.Segment.EndsWith(requestParametersSectionEndChar);
@@ -164,7 +164,7 @@ namespace Kiota.Builder.Extensions {
                     SanitizePathParameterNamesForUrlTemplate(currentNode.Path.Replace('\\', '/')) +
                     queryStringParameters;
         }
-        private static readonly Regex pathParamMatcher = new(@"{(?<paramname>[^}]+)}",RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+        private static readonly Regex pathParamMatcher = new(@"{(?<paramname>[^}]+)}",RegexOptions.Compiled, Constants.DefaultRegexTimeout);
         private static string SanitizePathParameterNamesForUrlTemplate(string original) {
             if(string.IsNullOrEmpty(original) || !original.Contains('{')) return original;
             var parameters = pathParamMatcher.Matches(original);
@@ -182,7 +182,7 @@ namespace Kiota.Builder.Extensions {
                         .Replace(".", "%2E")
                         .Replace("~", "%7E");// - . ~ are invalid uri template character but don't get encoded by Uri.EscapeDataString
         }
-        private static readonly Regex removePctEncodedCharacters = new(@"%[0-9A-F]{2}", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+        private static readonly Regex removePctEncodedCharacters = new(@"%[0-9A-F]{2}", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
         public static string SanitizeParameterNameForCodeSymbols(this string original, string replaceEncodedCharactersWith = "") {
             if(string.IsNullOrEmpty(original)) return original;
             return removePctEncodedCharacters.Replace(original.ToCamelCase('-', '.', '~').SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);

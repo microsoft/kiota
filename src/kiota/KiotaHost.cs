@@ -253,8 +253,8 @@ public static class KiotaHost {
         descriptionOption.ArgumentHelpName = "path";
         return descriptionOption;
     }
-    private static readonly Regex classNameRegex = new (@"^[a-zA-Z_][\w_-]+", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
-    private static readonly Regex namespaceNameRegex = new (@"^[\w][\w\._-]+", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+    private static readonly Regex classNameRegex = new (@"^[a-zA-Z_][\w_-]+", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    private static readonly Regex namespaceNameRegex = new (@"^[\w][\w\._-]+", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     private static Command GetGenerateCommand()
     {
         var defaultConfiguration = new GenerationConfiguration();

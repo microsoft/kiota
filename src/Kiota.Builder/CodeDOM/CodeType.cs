@@ -13,7 +13,7 @@ public class CodeType : CodeTypeBase, ICloneable
     public override object Clone()
     {
         return new CodeType{
-            TypeDefinition = TypeDefinition,
+            TypeDefinition = TypeDefinition, // not cloning the type definition as it's a code element that lives in the tree and we don't want to fork the tree
             IsExternal = IsExternal
         }.BaseClone<CodeType>(this);
     }

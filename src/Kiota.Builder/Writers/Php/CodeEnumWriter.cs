@@ -49,7 +49,7 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"public const {GetEnumValueName(enumProperty.Name)} = '{enumProperty.WireName}';");
             }
         }
-        private static readonly Regex _enumValueNameRegex = new ("([A-Z]{1})", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+        private static readonly Regex _enumValueNameRegex = new ("([A-Z]{1})", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
         private static string GetEnumValueName(string original)
         {
             return _enumValueNameRegex.Replace(original, "_$1").Trim('_').ToUpperInvariant();
