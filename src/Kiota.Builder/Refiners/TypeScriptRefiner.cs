@@ -108,19 +108,19 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             IntroducesInterfacesAndFunctions(generatedCode); // <- Changes model classes and request configs
             AliasUsingsWithSameSymbol(generatedCode);
-            AddStaticMethodsUsingsToCodeFunctions(generatedCode, factoryNameCallbackFromType);
+            AddStaticMethodsUsingsToDeserializerFunctions(generatedCode, factoryNameCallbackFromType);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
     }
 
-    protected static void AddStaticMethodsUsingsToCodeFunctions(CodeElement currentElement, Func<CodeType, string> functionNameCallback)
+    protected static void AddStaticMethodsUsingsToDeserializerFunctions(CodeElement currentElement, Func<CodeType, string> functionNameCallback)
     {
         if (currentElement is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.Deserializer) &&
             (currentMethod.Parent is CodeFunction codeFunction))
         {
             var modelInterface = currentMethod.Parameters.FirstOrDefault(x => (x.Type as CodeType).TypeDefinition is CodeInterface);
-            foreach (var property in modelInterface.GetChildElements(true).OfType<CodeProperty>())
+            foreach (var property in modelInterface?.GetChildElements(true).OfType<CodeProperty>())
             {
                 if (property.Type is not CodeType propertyType || propertyType.TypeDefinition == null)
                     continue;
@@ -140,7 +140,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 });
             }
         }
-        CrawlTree(currentElement, x => AddStaticMethodsUsingsToCodeFunctions(x, functionNameCallback));
+        CrawlTree(currentElement, x => AddStaticMethodsUsingsToDeserializerFunctions(x, functionNameCallback));
     }
 
     private static void AddDeserializerUsingToDisriminatorFactory(CodeElement codeElement)

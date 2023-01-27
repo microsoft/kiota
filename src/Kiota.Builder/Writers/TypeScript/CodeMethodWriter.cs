@@ -240,11 +240,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         }
     }
 
-    private static bool IsCodePropertyCollectionOfEnum(CodeProperty property)
-    {
-        return property.Type is CodeType cType && cType.IsCollection && cType.TypeDefinition is CodeEnum;
-    }
-
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
         var backingStore = parentClass.GetBackingStoreProperty();
@@ -274,10 +269,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         else
             writer.WriteLine($"return this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
 
-    }
-    private static bool IsCodePropertyCollection(CodeProperty property)
-    {
-        return property?.Type?.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && property?.Type is CodeType currentType && currentType?.TypeDefinition != null;
     }
     
     private static void WriteDefaultMethodBody(CodeMethod codeElement, LanguageWriter writer)
