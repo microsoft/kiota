@@ -83,6 +83,13 @@ namespace Kiota.Builder.Writers
             WriteLine(symbol);
         }
 
+        internal void WriteBlock(string startSymbol = "{", string closeSymbol = "}", params string[] lines)
+        {
+            StartBlock(startSymbol);
+            WriteLines(lines);
+            CloseBlock(closeSymbol);
+        }
+
         internal void Write(string text, bool includeIndent = true)
         {
             writer.Write(includeIndent ? GetIndent() + text : text);

@@ -39,6 +39,7 @@ public class PythonReservedNamesProvider : IReservedNamesProvider {
         "with",
         "while",
         "yield",
+        "property",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }

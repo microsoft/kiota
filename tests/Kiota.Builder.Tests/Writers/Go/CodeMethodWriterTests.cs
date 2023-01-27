@@ -1330,7 +1330,7 @@ public class CodeMethodWriterTests : IDisposable {
         method.Kind = CodeMethodKind.Getter;
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("if value == nil", result);
+        Assert.Contains("if val == nil", result);
         Assert.Contains(defaultValue, result);
     }
     [Fact]

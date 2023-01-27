@@ -260,7 +260,9 @@ public class KiotaBuilder
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         logger.LogTrace("Parsing OpenAPI file");
-        var ruleSet = ValidationRuleSet.GetDefaultRuleSet();
+        var ruleSet = config.DisabledValidationRules.Contains(ValidationRuleSetExtensions.AllValidationRule) ?
+                    ValidationRuleSet.GetEmptyRuleSet() :
+                    ValidationRuleSet.GetDefaultRuleSet(); //workaround since validation rule set doesn't support clearing rules
         if (generating)
             ruleSet.AddKiotaValidationRules(config);
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
@@ -1349,7 +1351,7 @@ public class KiotaBuilder
     private const string AdditionalDataPropName = "AdditionalData";
     private const string BackingStorePropertyName = "BackingStore";
     private const string BackingStoreInterface = "IBackingStore";
-    private const string BackedModelInterface = "IBackedModel";
+    internal const string BackedModelInterface = "IBackedModel";
     private const string ParseNodeInterface = "IParseNode";
     internal const string AdditionalHolderInterface = "IAdditionalDataHolder";
     internal static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties, bool usesBackingStore) {

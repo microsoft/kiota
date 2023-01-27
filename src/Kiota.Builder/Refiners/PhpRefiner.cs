@@ -81,6 +81,7 @@ public class PhpRefiner: CommonLanguageRefiner
             CorrectBackingStoreSetterParam(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             AliasUsingWithSameSymbol(generatedCode);
+            RemoveHandlerFromRequestBuilder(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
     }
@@ -135,7 +136,7 @@ public class PhpRefiner: CommonLanguageRefiner
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "Microsoft\\Kiota\\Abstractions", "RequestAdapter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            "Microsoft\\Kiota\\Abstractions", "HttpMethod", "RequestInformation", "RequestOption"),
+            "Microsoft\\Kiota\\Abstractions", "HttpMethod", "RequestInformation"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "Microsoft\\Kiota\\Abstractions", "ResponseHandler"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(static y => y.IsOfKind(CodePropertyKind.AdditionalData)),
@@ -160,7 +161,9 @@ public class PhpRefiner: CommonLanguageRefiner
         new(static x => x is CodeProperty {Type.Name: {}} property && property.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase), "", "\\DateTime"),
         new(x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor), "Microsoft\\Kiota\\Abstractions", "ApiClientBuilder"),
         new(x => x is CodeProperty property && property.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(property.SerializationName), "Microsoft\\Kiota\\Abstractions", "QueryParameter"),
-        new(x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration), "Microsoft\\Kiota\\Abstractions", "RequestOption")
+        new(x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration), "Microsoft\\Kiota\\Abstractions", "RequestOption"),
+        new (static x => x is CodeClass { OriginalComposedType: CodeIntersectionType intersectionType } && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
+            "Microsoft\\Kiota\\Serialization", "ParseNodeHelper"),
     };
     private static void CorrectPropertyType(CodeProperty currentProperty) {
         if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {

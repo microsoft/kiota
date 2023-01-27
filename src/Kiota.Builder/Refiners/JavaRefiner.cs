@@ -170,8 +170,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "com.microsoft.kiota.serialization", "Parsable", "ParsableFactory"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-            "java.util.function", "Consumer"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "java.util", "HashMap", "Map"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
@@ -230,7 +228,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                     x.Type.Name = x.Type.Name[1..];
             });
         else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
-            currentMethod.ReturnType.Name = "Map<String, Consumer<ParseNode>>";
+            currentMethod.ReturnType.Name = "Map<String, java.util.function.Consumer<ParseNode>>";
             currentMethod.Name = "getFieldDeserializers";
         }
         else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor)) {

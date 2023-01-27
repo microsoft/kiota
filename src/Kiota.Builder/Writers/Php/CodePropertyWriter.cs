@@ -51,7 +51,7 @@ namespace Kiota.Builder.Writers.Php
             {
                 CodePropertyKind.AdditionalData => "array<string, mixed>",
                 CodePropertyKind.PathParameters => "array<string, mixed>",
-                CodePropertyKind.Headers => "array<string, string>",
+                CodePropertyKind.Headers => "array<string, array<string>|string>",
                 CodePropertyKind.Options => "array<string, RequestOption>",
                 _ => $"array<{conventions.TranslateType(codeProperty.Type)}>"
             };
