@@ -25,7 +25,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         _codeUsingWriter.WriteCodeElement(codeElement.StartBlock.Usings, codeElement.GetImmediateParentOfType<CodeNamespace>(), writer);
         var codeMethod = codeElement.OriginalLocalMethod;
 
-        var returnType = codeMethod.Kind == CodeMethodKind.Factory ? conventions.GetTypeString(codeMethod.ReturnType, codeElement) : string.Empty;
+        var returnType = codeMethod.Kind != CodeMethodKind.Factory ? conventions.GetTypeString(codeMethod.ReturnType, codeElement) : string.Empty;
         CodeMethodWriter.WriteMethodPrototypeInternal(codeElement.OriginalLocalMethod, writer, returnType, false, conventions, true);
 
         writer.IncreaseIndent();
@@ -95,19 +95,40 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var param = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => (x.Type as CodeType).TypeDefinition is CodeInterface);
         var codeInterface = (param.Type as CodeType).TypeDefinition as CodeInterface;
         var inherits = codeInterface.StartBlock.Implements.FirstOrDefault(x => x.TypeDefinition is CodeInterface);
+        var additionalDataProperty = codeInterface.Properties?.FirstOrDefault(x => x.Kind == CodePropertyKind.AdditionalData);
         writer.IncreaseIndent();
 
         if (inherits != null)
         {
             writer.WriteLine($"serialize{inherits.TypeDefinition.Name.ToFirstCharacterUpperCase()}(writer, {param.Name.ToFirstCharacterLowerCase()})");
         }
+        writer.WriteLine($"for (const [key, value] of Object.entries({codeInterface.Name.ToFirstCharacterLowerCase()})){{");
+        writer.IncreaseIndent();
+        writer.WriteLine("switch(key){");
+        writer.IncreaseIndent();
 
-        foreach (var otherProp in codeInterface.Properties.Where(static x => x.Kind == CodePropertyKind.Custom && !x.ExistsInBaseType && !x.ReadOnly) )
+        foreach (var otherProp in codeInterface.Properties.Where(static x => x.Kind == CodePropertyKind.Custom && !x.ExistsInBaseType && !x.ReadOnly))
         {
 
+            writer.WriteLine($"case \"{otherProp.SerializationName ?? otherProp.Name}\":");
             WritePropertySerializer(codeInterface.Name.ToFirstCharacterLowerCase(), otherProp, writer, codeElement);
+            writer.WriteLine("break");
+
         }
 
+        writer.WriteLine($"default:");
+        writer.WriteLine($"writer.writeAdditionalData(key, value);");
+        writer.WriteLine("break");
+
+        writer.DecreaseIndent();
+
+        writer.WriteLine("}");
+        writer.DecreaseIndent();
+        writer.WriteLine("}");
+
+        //if (additionalDataProperty != null) {
+        //    writer.WriteLine($"writer.writeAdditionalData({codeInterface.Name.ToFirstCharacterLowerCase()}.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
+        //}
         writer.DecreaseIndent();
     }
 
