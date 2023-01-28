@@ -109,7 +109,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         foreach (var otherProp in codeInterface.Properties.Where(static x => x.Kind == CodePropertyKind.Custom && !x.ExistsInBaseType && !x.ReadOnly))
         {
 
-            writer.WriteLine($"case \"{otherProp.SerializationName ?? otherProp.Name}\":");
+            writer.WriteLine($"case \"{otherProp.Name.ToFirstCharacterLowerCase()}\":");
             WritePropertySerializer(codeInterface.Name.ToFirstCharacterLowerCase(), otherProp, writer, codeElement);
             writer.WriteLine("break");
 
