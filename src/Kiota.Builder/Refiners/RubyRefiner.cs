@@ -38,6 +38,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.BackingStore,
                 },
+                static s => s,
                 _configuration.UsesBackingStore,
                 true,
                 string.Empty,

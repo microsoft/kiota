@@ -41,9 +41,15 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum) }
             );
             cancellationToken.ThrowIfCancellationRequested();
-            // Replace the reserved types and namespace segments
             ReplaceReservedModelTypes(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Object");
             ReplaceReservedNamespaceTypeNames(generatedCode, new CSharpReservedTypesProvider(), static x => $"{x}Namespace");
+            ReplacePropertyNames(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.BackingStore,
+                },
+                static s => s.ToPascalCase(new[] {'_'}));
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             cancellationToken.ThrowIfCancellationRequested();
@@ -71,7 +77,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 currentClass.RemoveChildElement(sameNameProperty);
                 if (string.IsNullOrEmpty(sameNameProperty.SerializationName))
                     sameNameProperty.SerializationName = sameNameProperty.Name;
-                sameNameProperty.Name = $"{sameNameProperty.Name}_prop";
+                sameNameProperty.Name = $"{sameNameProperty.Name}Prop";
                 currentClass.AddProperty(sameNameProperty);
             }
         }

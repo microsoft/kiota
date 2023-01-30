@@ -108,7 +108,23 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         return false;
     }
-    protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_")
+    protected static void ReplacePropertyNames(CodeElement current, HashSet<CodePropertyKind> propertyKindsToReplace, Func<string, string> refineAccessorName)
+    {
+        if (!(propertyKindsToReplace?.Any() ?? true)) return;
+        if (current is CodeProperty currentProperty &&
+            !currentProperty.ExistsInBaseType &&
+            propertyKindsToReplace!.Contains(currentProperty.Kind) &&
+            current.Parent is CodeClass parentClass &&
+            !parentClass.IsOfKind(CodeClassKind.QueryParameters) &&
+            currentProperty.Access == AccessModifier.Public)
+        {
+            if (string.IsNullOrEmpty(currentProperty.SerializationName))
+                currentProperty.SerializationName = currentProperty.Name;
+            currentProperty.Name = refineAccessorName(currentProperty.Name);
+        }
+        CrawlTree(current, x => ReplacePropertyNames(x, propertyKindsToReplace!, refineAccessorName));
+    }
+    protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, Func<string, string> refineAccessorName, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_")
     {
         if (!(propertyKindsToAddAccessors?.Any() ?? true)) return;
         if (current is CodeProperty currentProperty &&
@@ -127,7 +143,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
             var propertyOriginalName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
                                         .ToFirstCharacterLowerCase();
-            var accessorName = propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase();
+            var accessorName = refineAccessorName(propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase());
             currentProperty.Getter = parentClass.AddMethod(new CodeMethod
             {
                 Name = $"get-{accessorName}",
@@ -175,7 +191,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Type = (CodeTypeBase)currentProperty.Type.Clone(),
             });
         }
-        CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors!, removeProperty, parameterAsOptional, getterPrefix, setterPrefix, fieldPrefix));
+        CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors!, refineAccessorName, removeProperty, parameterAsOptional, getterPrefix, setterPrefix, fieldPrefix));
     }
     protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited, bool forceAdd = false, CodeClassKind[]? classKindsToExclude = null)
     {

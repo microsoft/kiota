@@ -40,6 +40,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
                 },
+                static s => s,
                 _configuration.UsesBackingStore,
                 false,
                 string.Empty,

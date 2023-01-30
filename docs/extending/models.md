@@ -159,3 +159,20 @@ Dictionary/Map that stores all the additional properties which are not described
 When present, the properties values are store in this backing store instead of using fields for the object. The backing store allows multiple things like dirty tracking of changes, making it possible to get an object from the API, update a property, send that object back with only the changed property and not the full objects. Additionally it will be used for integration with third party data sources.
 
 > **Note:** the backing store is only added if the target language supports it and when the `-b` parameter is passed to the CLI when generating the models.
+
+### Properties and accessors name mangling
+
+To produce a more idiomatic output for specific languages, mangling is applied to the properties names and/or accessors.
+This is the opinionated mangling on each language:
+
+| Language | Property name | Property accessors |
+|---|---|---|
+| CSharp | `PascalCase` | - |
+| Go | - | `PascalCase` |
+| Java | - | `camelCase` |
+| PHP | - | `camelCase` |
+| Python | - | - |
+| Ruby | - | - |
+| Shell | `PascalCase` | - |
+| Swift | - | - |
+| TypeScript | - | `camelCase` |
