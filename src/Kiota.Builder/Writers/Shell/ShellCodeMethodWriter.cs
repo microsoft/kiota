@@ -456,7 +456,7 @@ namespace Kiota.Builder.Writers.Shell
                     }
 
                     // Check for null model
-                    // TODO: Add logging with reason for skipped executions
+                    // Add logging with reason for skipped execution here
                     writer.WriteLine($"if (model is null) return; // Cannot create a POST request from a null model.");
 
                     requestBodyParam.Name = "model";
@@ -466,6 +466,7 @@ namespace Kiota.Builder.Writers.Shell
                     var pName = requestBodyParam.Name;
                     requestBodyParam.Name = "stream";
                     // Check for file existence
+                    // Add logging with reason for skipped execution here
                     writer.WriteLine($"if ({pName} is null || !{pName}.Exists) return;");
                     writer.WriteLine($"using var {requestBodyParam.Name} = {pName}.OpenRead();");
                 }
