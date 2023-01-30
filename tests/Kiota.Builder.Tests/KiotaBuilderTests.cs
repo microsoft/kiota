@@ -629,18 +629,18 @@ paths:
         var codeModel = builder.CreateSourceModel(node);
         var deviceManagementNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement");
         Assert.NotNull(deviceManagementNS);
-        var deviceManagementRequestBuilder = deviceManagementNS.FindChildByName<CodeClass>("DeviceManagementRequestBuilder");
+        var deviceManagementRequestBuilder = deviceManagementNS.FindChildByName<CodeClass>("DeviceManagementRequestBuilder", false);
         Assert.NotNull(deviceManagementRequestBuilder);
-        var getEffectivePermissionsMethod = deviceManagementRequestBuilder.FindChildByName<CodeMethod>("getEffectivePermissionsWithScope");
+        var getEffectivePermissionsMethod = deviceManagementRequestBuilder.FindChildByName<CodeMethod>("getEffectivePermissionsWithScope", false);
         Assert.NotNull(getEffectivePermissionsMethod);
         Assert.Single(getEffectivePermissionsMethod.Parameters);
-        var getEffectivePermissionsNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement.getEffectivePermissionsWithScope");
+        var getEffectivePermissionsNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement.microsoftGraphGetEffectivePermissionsWithScope");
         Assert.NotNull(getEffectivePermissionsNS);
-        var getEffectivePermissionsRequestBuilder = getEffectivePermissionsNS.FindChildByName<CodeClass>("GetEffectivePermissionsWithScopeRequestBuilder");
+        var getEffectivePermissionsRequestBuilder = getEffectivePermissionsNS.FindChildByName<CodeClass>("GetEffectivePermissionsWithScopeRequestBuilder", false);
         Assert.NotNull(getEffectivePermissionsRequestBuilder);
-        var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor");
+        var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor", false);
         Assert.NotNull(constructorMethod);
-        Assert.Single(constructorMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+        Assert.Single(constructorMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
     }
     [Fact]
     public void Supports_Path_Query_And_Header_Parameters()
@@ -780,21 +780,21 @@ paths:
         var codeModel = builder.CreateSourceModel(node);
         var deviceManagementNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement");
         Assert.NotNull(deviceManagementNS);
-        var deviceManagementRequestBuilder = deviceManagementNS.FindChildByName<CodeClass>("DeviceManagementRequestBuilder");
+        var deviceManagementRequestBuilder = deviceManagementNS.FindChildByName<CodeClass>("DeviceManagementRequestBuilder", false);
         Assert.NotNull(deviceManagementRequestBuilder);
-        var getEffectivePermissionsMethod = deviceManagementRequestBuilder.FindChildByName<CodeMethod>("getEffectivePermissionsWithScope");
+        var getEffectivePermissionsMethod = deviceManagementRequestBuilder.FindChildByName<CodeMethod>("getEffectivePermissionsWithScope", false);
         Assert.NotNull(getEffectivePermissionsMethod);
         Assert.Single(getEffectivePermissionsMethod.Parameters);
-        var getEffectivePermissionsNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement.getEffectivePermissionsWithScope");
+        var getEffectivePermissionsNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement.microsoftGraphGetEffectivePermissionsWithScope");
         Assert.NotNull(getEffectivePermissionsNS);
-        var getEffectivePermissionsRequestBuilder = getEffectivePermissionsNS.FindChildByName<CodeClass>("GetEffectivePermissionsWithScopeRequestBuilder");
+        var getEffectivePermissionsRequestBuilder = getEffectivePermissionsNS.FindChildByName<CodeClass>("GetEffectivePermissionsWithScopeRequestBuilder", false);
         Assert.NotNull(getEffectivePermissionsRequestBuilder);
-        var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor");
+        var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor", false);
         Assert.NotNull(constructorMethod);
-        Assert.Single(constructorMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+        Assert.Single(constructorMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
         var parameters = getEffectivePermissionsRequestBuilder
             .Methods
-            .SingleOrDefault(cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == Builder.CodeDOM.HttpMethod.Get)?
+            .SingleOrDefault(static cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == Builder.CodeDOM.HttpMethod.Get)?
             .PathQueryAndHeaderParameters;
         Assert.Equal(4, parameters.Count());
         Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "IfMatch" && p.Kind == CodeParameterKind.Headers));

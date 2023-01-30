@@ -110,7 +110,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
         };
         doc.Paths.Add("\\deviceManagement\\microsoft.graph.getRoleScopeTagsByIds(ids=@ids)", new());
         var node = OpenApiUrlTreeNode.Create(doc, Label);
-        Assert.Equal("graph.deviceManagement.getRoleScopeTagsByIdsWithIds", node.Children.First().Value.GetNodeNamespaceFromPath("graph"));
+        Assert.Equal("graph.deviceManagement.microsoftGraphGetRoleScopeTagsByIdsWithIds", node.Children.First().Value.GetNodeNamespaceFromPath("graph"));
     }
     [InlineData("$select", "select")]
     [InlineData("api-version", "apiVersion")]
@@ -184,7 +184,8 @@ public class OpenApiUrlTreeNodeExtensionsTests
         // the query parameters will be decoded by a middleware at runtime before the request is executed
     }
     [InlineData("\\reviews\\search.json", "reviews.search")]
-    [InlineData("\\members\\$ref", "members.ref")]
+    [InlineData("\\members\\microsoft.graph.$ref", "members.microsoftGraphRef")]
+    [InlineData("\\feeds\\video-comments.{format}", "feeds.videoCommentsWithFormat")]
     [Theory]
     public void GetsNamespaceFromPath(string source, string expected)
     {

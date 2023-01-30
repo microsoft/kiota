@@ -11,7 +11,8 @@ public static class OpenApiUrlTreeNodeExtensions
 {
     private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
     private static readonly Func<string, string> replaceSingleParameterSegmentByItem =
-    x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
+    static x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
+    private static readonly char[] namespaceNameSplitCharacters = new[] { '.', '-', '$' }; //$ref from OData
     public static string GetNamespaceFromPath(this string currentPath, string prefix) =>
         prefix +
                 ((currentPath?.Contains(pathNameSeparator) ?? false) ?
@@ -19,11 +20,11 @@ public static class OpenApiUrlTreeNodeExtensions
                             + currentPath
                             ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
                             ?.Select(replaceSingleParameterSegmentByItem)
-                            ?.Select(static x => CleanupParametersFromPath((x ?? string.Empty)
-                                                    .Split('.', StringSplitOptions.RemoveEmptyEntries)
-                                                    .Select(static x => x.TrimStart('$')) //$ref from OData
+                            ?.Select(static x => string.Join(string.Empty, x
+                                                    .Split(namespaceNameSplitCharacters, StringSplitOptions.RemoveEmptyEntries)
                                                     .Except(SegmentsToSkipForClassNames, StringComparer.OrdinalIgnoreCase)
-                                                    .Last()))
+                                                    .Select(CleanupParametersFromPath)
+                                                    .Select(static (y, idx) => idx == 0 ? y : y.ToFirstCharacterUpperCase())))
                             ?.Select(static x => x.CleanupSymbolName())
                             ?.Aggregate(string.Empty,
                                 static (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
@@ -35,7 +36,7 @@ public static class OpenApiUrlTreeNodeExtensions
         return currentNode.Path.GetNamespaceFromPath(prefix);
     }
     //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
-    private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    private static readonly Regex PathParametersRegex = new(@"(?<prefix>\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     // microsoft.graph.getRoleScopeTagsByIds(ids=@ids)
     private static readonly Regex AtSignPathParameterRegex = new(@"=@(\w+)", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     private static readonly char requestParametersChar = '{';
@@ -44,9 +45,7 @@ public static class OpenApiUrlTreeNodeExtensions
     private static readonly char requestParametersSectionEndChar = ')';
     private const string WithKeyword = "With";
     private static readonly MatchEvaluator requestParametersMatchEvaluator = match =>
-    {
-        return WithKeyword + match.Groups["paramName"].Value.ToFirstCharacterUpperCase();
-    };
+        WithKeyword + match.Groups["paramName"].Value.ToFirstCharacterUpperCase();
     private static string CleanupParametersFromPath(string pathSegment)
     {
         if (string.IsNullOrEmpty(pathSegment))
@@ -55,7 +54,7 @@ public static class OpenApiUrlTreeNodeExtensions
             pathSegment.Contains(requestParametersSectionChar))
             return PathParametersRegex.Replace(
                                         AtSignPathParameterRegex.Replace(pathSegment, "={$1}"),
-                                    requestParametersMatchEvaluator)
+                                        requestParametersMatchEvaluator)
                                     .TrimEnd(requestParametersSectionEndChar)
                                     .Replace(requestParametersSectionChar.ToString(), string.Empty);
         return pathSegment;
@@ -98,7 +97,7 @@ public static class OpenApiUrlTreeNodeExtensions
             if ((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName))
             {
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
-                if (rawClassName == WithKeyword) // in case the single parameter doesn't follow {classname-id} we get the previous segment
+                if (WithKeyword.Equals(rawClassName, StringComparison.Ordinal)) // in case the single parameter doesn't follow {classname-id} we get the previous segment
                     rawClassName = currentNode.Path
                                             .Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
                                             .SkipLast(1)
