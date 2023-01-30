@@ -30,6 +30,7 @@ dotnet new gitignore
 ```bash
 dotnet add package Microsoft.Kiota.Abstractions --prerelease
 dotnet add package Microsoft.Kiota.Http.HttpClientLibrary --prerelease
+dotnet add package Microsoft.Kiota.Serialization.Form --prerelease
 dotnet add package Microsoft.Kiota.Serialization.Json --prerelease
 dotnet add package Microsoft.Kiota.Serialization.Text --prerelease
 dotnet add package Microsoft.Kiota.Authentication.Azure --prerelease
