@@ -399,10 +399,10 @@ namespace Kiota.Builder.Writers.Go {
                 {
                     var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
                     
-                    writer.WriteLine($"val , err := m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\")");
+                    writer.WriteLine($"val, err := m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\")");
                     
-                    writer.WriteBlock("if val != nil {", "}", $"return val.({returnType})");
                     writer.WriteBlock("if err != nil {", "}", "panic(err)");
+                    writer.WriteBlock("if val != nil {", "}", $"return val.({returnType})");
                     
                     writer.WriteLine("return nil");
                 }
@@ -734,7 +734,8 @@ namespace Kiota.Builder.Writers.Go {
                         WriteCollectionCast(parsableSymbol, bodyParamReference, "cast", writer, string.Empty, false);
                         bodyParamReference = "cast...";
                     }
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
+                    writer.WriteLine($"err := {RequestInfoVarName}.SetContentFromParsable{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
+                    writer.WriteBlock("if err != nil {", "}", "return nil, err");
                 } else
                     writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
             }
