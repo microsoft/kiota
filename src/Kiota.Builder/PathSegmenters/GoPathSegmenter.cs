@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -7,7 +7,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.PathSegmenters;
 public class GoPathSegmenter : CommonPathSegmenter
 {
-    public GoPathSegmenter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName) {}
+    public GoPathSegmenter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName) { }
     public override string FileSuffix => ".go";
     public override IEnumerable<string> GetAdditionalSegment(CodeElement currentElement, string fileName)
     {
@@ -17,7 +17,8 @@ public class GoPathSegmenter : CommonPathSegmenter
             _ => Enumerable.Empty<string>(),
         };
     }
-    public override string NormalizeFileName(CodeElement currentElement) {
+    public override string NormalizeFileName(CodeElement currentElement)
+    {
         return currentElement switch
         {
             CodeNamespace => "go",

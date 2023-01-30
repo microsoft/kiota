@@ -1,16 +1,18 @@
-using System;
+﻿using System;
 using Kiota.Builder.Configuration;
 using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder.Validation;
 
-public static class ValidationRuleSetExtensions {
+public static class ValidationRuleSetExtensions
+{
     public const string AllValidationRule = "all";
-    public static void AddKiotaValidationRules(this ValidationRuleSet ruleSet, GenerationConfiguration configuration) {
+    public static void AddKiotaValidationRules(this ValidationRuleSet ruleSet, GenerationConfiguration configuration)
+    {
         ArgumentNullException.ThrowIfNull(ruleSet);
         configuration ??= new();
         if (configuration.DisabledValidationRules.Contains(AllValidationRule)) return;
-        
+
         ruleSet.AddRuleIfEnabled(configuration, new NoServerEntry());
         ruleSet.AddRuleIfEnabled(configuration, new MultipleServerEntries());
         ruleSet.AddRuleIfEnabled(configuration, new GetWithBody());
@@ -20,8 +22,9 @@ public static class ValidationRuleSetExtensions {
         ruleSet.AddRuleIfEnabled(configuration, new DivergentResponseSchema(configuration));
         ruleSet.AddRuleIfEnabled(configuration, new MissingDiscriminator(configuration));
     }
-    private static void AddRuleIfEnabled<T>(this ValidationRuleSet ruleSet, GenerationConfiguration configuration, T instance) where T : ValidationRule {
-        if(!configuration.DisabledValidationRules.Contains(instance.GetType().Name))
+    private static void AddRuleIfEnabled<T>(this ValidationRuleSet ruleSet, GenerationConfiguration configuration, T instance) where T : ValidationRule
+    {
+        if (!configuration.DisabledValidationRules.Contains(instance.GetType().Name))
             ruleSet.Add(instance);
     }
 }

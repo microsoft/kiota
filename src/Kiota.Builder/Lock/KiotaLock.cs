@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Kiota.Builder.Configuration;
 
@@ -7,7 +7,8 @@ namespace Kiota.Builder.Lock;
 /// <summary>
 /// A class that represents a lock file for a Kiota project.
 /// </summary>
-public class KiotaLock {
+public class KiotaLock
+{
     /// <summary>
     /// The OpenAPI description hash that generated this client.
     /// </summary>
@@ -39,11 +40,17 @@ public class KiotaLock {
     /// <summary>
     /// Whether the backing store was used for this client.
     /// </summary>
-    public bool UsesBackingStore { get; set; }
+    public bool UsesBackingStore
+    {
+        get; set;
+    }
     /// <summary>
     /// Whether additional data was used for this client.
     /// </summary>
-    public bool IncludeAdditionalData { get; set; }
+    public bool IncludeAdditionalData
+    {
+        get; set;
+    }
     /// <summary>
     /// The serializers used for this client.
     /// </summary>
@@ -72,10 +79,11 @@ public class KiotaLock {
     /// Updates the passed configuration with the values from the lock file.
     /// </summary>
     /// <param name="config">The configuration to update.</param>
-    public void UpdateGenerationConfigurationFromLock(GenerationConfiguration config) {
+    public void UpdateGenerationConfigurationFromLock(GenerationConfiguration config)
+    {
         config.ClientClassName = ClientClassName;
         config.ClientNamespaceName = ClientNamespaceName;
-        if(Enum.TryParse<GenerationLanguage>(Language, out var parsedLanguage))
+        if (Enum.TryParse<GenerationLanguage>(Language, out var parsedLanguage))
             config.Language = parsedLanguage;
         config.UsesBackingStore = UsesBackingStore;
         config.IncludeAdditionalData = IncludeAdditionalData;
@@ -90,7 +98,9 @@ public class KiotaLock {
     /// <summary>
     /// Initializes a new instance of the <see cref="KiotaLock"/> class.
     /// </summary>
-    public KiotaLock() { }
+    public KiotaLock()
+    {
+    }
     /// <summary>
     /// Initializes a new instance of the <see cref="KiotaLock"/> class from the passed configuration.
     /// </summary>

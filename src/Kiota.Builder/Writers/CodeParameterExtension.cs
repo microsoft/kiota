@@ -1,11 +1,13 @@
-using System.Linq;
+﻿using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers;
 
-public static class CodeParameterExtensions {
-    public static CodeProperty? GetHeadersProperty(this CodeParameter parameter) {
+public static class CodeParameterExtensions
+{
+    public static CodeProperty? GetHeadersProperty(this CodeParameter parameter)
+    {
         return parameter.Type is CodeType type &&
                 type.TypeDefinition is CodeClass cls &&
                 cls.IsOfKind(CodeClassKind.RequestConfiguration) &&
@@ -13,7 +15,8 @@ public static class CodeParameterExtensions {
                     headersProperty :
                     default;
     }
-    public static CodeProperty? GetQueryProperty(this CodeParameter parameter) {
+    public static CodeProperty? GetQueryProperty(this CodeParameter parameter)
+    {
         return parameter.Type is CodeType type &&
                 type.TypeDefinition is CodeClass cls &&
                 cls.IsOfKind(CodeClassKind.RequestConfiguration) &&
@@ -21,7 +24,8 @@ public static class CodeParameterExtensions {
                     queryProperty :
                     default;
     }
-    public static CodeProperty? GetOptionsProperty(this CodeParameter parameter) {
+    public static CodeProperty? GetOptionsProperty(this CodeParameter parameter)
+    {
         return parameter.Type is CodeType type &&
                 type.TypeDefinition is CodeClass cls &&
                 cls.IsOfKind(CodeClassKind.RequestConfiguration) &&

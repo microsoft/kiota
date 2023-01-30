@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 
 using Kiota.Builder.CodeDOM;
@@ -18,23 +18,27 @@ public class CodeInterfaceDeclarationWriterTests : IDisposable
     private readonly CodeInterface parentInterface;
     private readonly CodeNamespace root;
 
-    public CodeInterfaceDeclarationWriterTests() {
+    public CodeInterfaceDeclarationWriterTests()
+    {
         codeElementWriter = new CodeInterfaceDeclarationWriter(new GoConventionService());
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
-        parentInterface = new () {
+        parentInterface = new()
+        {
             Name = "parentClass"
         };
         root.AddInterface(parentInterface);
     }
-    public void Dispose() {
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesSimpleDeclaration() {
+    public void WritesSimpleDeclaration()
+    {
         codeElementWriter.WriteCodeElement(parentInterface.StartBlock, writer);
         var result = tw.ToString();
         Assert.Contains("type", result);
@@ -43,9 +47,11 @@ public class CodeInterfaceDeclarationWriterTests : IDisposable
         Assert.Contains("package", result);
     }
     [Fact]
-    public void WritesInheritance() {
+    public void WritesInheritance()
+    {
         var declaration = parentInterface.StartBlock;
-        declaration.AddImplements(new CodeType{
+        declaration.AddImplements(new CodeType
+        {
             Name = "someParent"
         });
         codeElementWriter.WriteCodeElement(declaration, writer);
@@ -53,18 +59,23 @@ public class CodeInterfaceDeclarationWriterTests : IDisposable
         Assert.Contains("SomeParent", result);
     }
     [Fact]
-    public void WritesImports() {
+    public void WritesImports()
+    {
         var declaration = parentInterface.StartBlock;
-        declaration.AddUsings(new () {
+        declaration.AddUsings(new()
+        {
             Name = "Objects",
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = "Go.util",
                 IsExternal = true,
             }
         },
-        new () {
+        new()
+        {
             Name = "project.graph",
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = "Message",
             }
         });

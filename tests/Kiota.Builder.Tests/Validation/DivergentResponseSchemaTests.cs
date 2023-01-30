@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using Kiota.Builder.Validation;
 using Microsoft.OpenApi.Readers;
@@ -7,9 +7,11 @@ using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;
 
-public class DivergentResponseSchemaTests {
+public class DivergentResponseSchemaTests
+{
     [Fact]
-    public void DoesntAddAWarningWhenBodyIsSingle() {
+    public void DoesntAddAWarningWhenBodyIsSingle()
+    {
         var rule = new DivergentResponseSchema(new());
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -29,13 +31,14 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Empty(diag.Warnings);
     }
     [Fact]
-    public void AddsAWarningWhenBodyIsDivergent() {
+    public void AddsAWarningWhenBodyIsDivergent()
+    {
         var rule = new DivergentResponseSchema(new());
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -61,13 +64,14 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Single(diag.Warnings);
     }
     [Fact]
-    public void DoesntAddAWarningWhenUsing2XX() {
+    public void DoesntAddAWarningWhenUsing2XX()
+    {
         var rule = new DivergentResponseSchema(new());
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -93,7 +97,7 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Empty(diag.Warnings);

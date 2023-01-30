@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using Kiota.Builder.Validation;
 using Microsoft.OpenApi.Readers;
@@ -6,9 +6,11 @@ using Microsoft.OpenApi.Validations;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;
-public class MissingDiscriminatorTests {
+public class MissingDiscriminatorTests
+{
     [Fact]
-    public void DoesntAddAWarningWhenBodyIsSimple() {
+    public void DoesntAddAWarningWhenBodyIsSimple()
+    {
         var rule = new MissingDiscriminator(new());
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -28,13 +30,14 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Empty(diag.Warnings);
     }
     [Fact]
-    public void AddsWarningOnInlineSchemas() {
+    public void AddsWarningOnInlineSchemas()
+    {
         var rule = new MissingDiscriminator(new());
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -62,13 +65,14 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Single(diag.Warnings);
     }
     [Fact]
-    public void AddsWarningOnComponentSchemas() {
+    public void AddsWarningOnComponentSchemas()
+    {
         var rule = new MissingDiscriminator(new());
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -104,13 +108,14 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Single(diag.Warnings);
     }
     [Fact]
-    public void DoesntAddsWarningOnComponentSchemasWithDiscriminatorInformation() {
+    public void DoesntAddsWarningOnComponentSchemasWithDiscriminatorInformation()
+    {
         var rule = new MissingDiscriminator(new());
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -148,13 +153,14 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Empty(diag.Warnings);
     }
     [Fact]
-    public void DoesntAddsWarningOnComponentSchemasScalars() {
+    public void DoesntAddsWarningOnComponentSchemasScalars()
+    {
         var rule = new MissingDiscriminator(new());
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -182,7 +188,7 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Empty(diag.Warnings);

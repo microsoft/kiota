@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 
 namespace Kiota.Web;
 public class StringBuilderLogger<T> : ILogger<T>
@@ -20,7 +20,7 @@ public class StringBuilderLogger<T> : ILogger<T>
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
-        if(logLevel >= _logLevel)
+        if (logLevel >= _logLevel)
             _stringBuilder.AppendLine(formatter(state, exception));
         _logger.Log(logLevel, eventId, state, exception, formatter);
     }

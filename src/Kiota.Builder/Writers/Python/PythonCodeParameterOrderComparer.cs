@@ -1,11 +1,13 @@
-using Kiota.Builder.CodeDOM;
+﻿using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.Python;
 public class PythonCodeParameterOrderComparer : BaseCodeParameterOrderComparer
 {
     // Non-default parameters must come before parameters with defaults in python.
-    protected override int GetKindOrderHint(CodeParameterKind kind) {
-        return kind switch {
+    protected override int GetKindOrderHint(CodeParameterKind kind)
+    {
+        return kind switch
+        {
             CodeParameterKind.RequestAdapter => 1,
             CodeParameterKind.RawUrl => 2,
             CodeParameterKind.PathParameters => 3,

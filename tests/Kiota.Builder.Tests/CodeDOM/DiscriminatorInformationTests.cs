@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -6,10 +6,12 @@ using Kiota.Builder.CodeDOM;
 using Xunit;
 
 namespace Kiota.Builder.Tests.CodeDOM;
-public class DiscriminatorInformationTests {
+public class DiscriminatorInformationTests
+{
 
     [Fact]
-    public void Defensive() {
+    public void Defensive()
+    {
         var information = new DiscriminatorInformation();
         Assert.Throws<ArgumentNullException>(() => information.AddDiscriminatorMapping(null, new CodeType()));
         Assert.Throws<ArgumentNullException>(() => information.AddDiscriminatorMapping("key", null));
@@ -18,7 +20,8 @@ public class DiscriminatorInformationTests {
         Assert.Empty(information.DiscriminatorMappings);
     }
     [Fact]
-    public void AddsMapping() {
+    public void AddsMapping()
+    {
         var information = new DiscriminatorInformation();
         var type = new CodeType();
         information.AddDiscriminatorMapping("key", type);
@@ -26,7 +29,8 @@ public class DiscriminatorInformationTests {
         Assert.Single(information.DiscriminatorMappings);
     }
     [Fact]
-    public void GetsMappingsInOrder() {
+    public void GetsMappingsInOrder()
+    {
         var information = new DiscriminatorInformation();
         var type1 = new CodeType();
         var type2 = new CodeType();
@@ -39,16 +43,20 @@ public class DiscriminatorInformationTests {
         Assert.Equal(type2, information.DiscriminatorMappings.Last().Value);
     }
     [Fact]
-    public void Clones() {
+    public void Clones()
+    {
         var information = new DiscriminatorInformation();
         var clone = information.Clone() as DiscriminatorInformation;
         Assert.NotNull(clone);
         Assert.NotEqual(information, clone);
     }
     [Fact]
-    public void ShouldWriteDiscriminatorSwitch() {
-        var information = new DiscriminatorInformation {
-            Parent = new CodeClass {
+    public void ShouldWriteDiscriminatorSwitch()
+    {
+        var information = new DiscriminatorInformation
+        {
+            Parent = new CodeClass
+            {
                 Name = "someClass",
             }
         };
@@ -63,7 +71,8 @@ public class DiscriminatorInformationTests {
         Assert.False(information.ShouldWriteDiscriminatorForInheritedType);
     }
     [Fact]
-    public void ShouldWriteDiscriminatorForUnionType() {
+    public void ShouldWriteDiscriminatorForUnionType()
+    {
         var information = new DiscriminatorInformation
         {
             Parent = new CodeUnionType()
@@ -71,7 +80,8 @@ public class DiscriminatorInformationTests {
         Assert.True(information.ShouldWriteDiscriminatorForUnionType);
     }
     [Fact]
-    public void ShouldWriteDiscriminatorForIntersectionType() {
+    public void ShouldWriteDiscriminatorForIntersectionType()
+    {
         var information = new DiscriminatorInformation
         {
             Parent = new CodeIntersectionType()

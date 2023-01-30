@@ -26,7 +26,7 @@ public static class StringExtensions
     public static string ToCamelCase(this string? input, params char[] separators)
     {
         if (string.IsNullOrEmpty(input)) return string.Empty;
-        if(separators.Length == 0) separators = new[] { '-' };
+        if (separators.Length == 0) separators = new[] { '-' };
         var chunks = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
         if (chunks.Length == 0) return string.Empty;
         return chunks[0] + string.Join(string.Empty, chunks.Skip(1).Select(ToFirstCharacterUpperCase));
@@ -39,7 +39,7 @@ public static class StringExtensions
         string.IsNullOrEmpty(original) ? string.Empty : original.Replace("$value", "Content");
     public static string TrimQuotes(this string? original) =>
         string.IsNullOrEmpty(original) ? string.Empty : original.Trim('\'', '"');
-    
+
     /// <summary>
     /// Shortens a file name to the maximum allowed length on the file system using a hash to avoid collisions
     /// </summary>
@@ -99,16 +99,18 @@ public static class StringExtensions
         return new string(span);
     }
 
-    public static string NormalizeNameSpaceName(this string? original, string delimiter) => 
-        string.IsNullOrEmpty(original) ? 
+    public static string NormalizeNameSpaceName(this string? original, string delimiter) =>
+        string.IsNullOrEmpty(original) ?
             string.Empty :
-            original.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
+            original.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z, y) => z + delimiter + y);
     private static readonly ThreadLocal<HashAlgorithm> sha = new(SHA256.Create); // getting safe handle null exception from BCrypt on concurrent multi-threaded access
-    public static string GetNamespaceImportSymbol(this string? importName, string prefix = "i") {
-        if(string.IsNullOrEmpty(importName)) return string.Empty;
+    public static string GetNamespaceImportSymbol(this string? importName, string prefix = "i")
+    {
+        if (string.IsNullOrEmpty(importName)) return string.Empty;
         return prefix + HashString(importName).ToLowerInvariant();
     }
-    private static string HashString(string? input) {
+    private static string HashString(string? input)
+    {
         if (string.IsNullOrEmpty(input)) return string.Empty;
         var hash = (sha.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(input));
         return hash.Select(static b => b.ToString("x2")).Aggregate(static (x, y) => x + y);
@@ -126,7 +128,7 @@ public static class StringExtensions
         if (string.IsNullOrEmpty(current)) return string.Empty;
         return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace("'", "\\'").Replace('\"', '\'') : current;
     }
-    
+
     public static string ReplaceDotsWithSlashInNamespaces(this string? namespaced)
     {
         if (string.IsNullOrEmpty(namespaced)) return string.Empty;
@@ -142,16 +144,16 @@ public static class StringExtensions
     {
         if (string.IsNullOrEmpty(original)) return string.Empty;
 
-        var result = propertyCleanupRegex.Replace(original, 
-                                static x => x.Groups.Keys.Contains(CleanupGroupName) ? 
+        var result = propertyCleanupRegex.Replace(original,
+                                static x => x.Groups.Keys.Contains(CleanupGroupName) ?
                                                 x.Groups[CleanupGroupName].Value.ToFirstCharacterUpperCase() :
                                                 string.Empty); //strip out any invalid characters, and replace any following one by its uppercase version
 
-        if(result.Any() && int.TryParse(result.AsSpan(0, 1), out var _)) // in most languages a number or starting with a number is not a valid symbol name
+        if (result.Any() && int.TryParse(result.AsSpan(0, 1), out var _)) // in most languages a number or starting with a number is not a valid symbol name
             result = NumbersSpellingRegex.Replace(result, static x => x.Groups["number"]
                                                                     .Value
                                                                     .Select(static x => SpelledOutNumbers[x])
-                                                                    .Aggregate(static (z,y) => z + y));
+                                                                    .Aggregate(static (z, y) => z + y));
 
         return result;
     }
@@ -174,6 +176,6 @@ public static class StringExtensions
     /// </summary>
     /// <param name="original">The original string</param>
     /// <returns></returns>
-    public static string CleanupXMLString(this string? original) 
+    public static string CleanupXMLString(this string? original)
         => SecurityElement.Escape(original) ?? string.Empty;
 }

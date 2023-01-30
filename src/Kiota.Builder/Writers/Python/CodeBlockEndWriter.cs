@@ -1,4 +1,4 @@
-using Kiota.Builder.CodeDOM;
+﻿using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.Python;
 public class CodeBlockEndWriter : ICodeElementWriter<BlockEnd>

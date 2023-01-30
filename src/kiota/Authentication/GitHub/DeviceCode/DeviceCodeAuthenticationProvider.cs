@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -11,7 +11,8 @@ namespace kiota.Authentication.GitHub.DeviceCode;
 public class DeviceCodeAuthenticationProvider : BaseAuthenticationProvider<AccessTokenProvider>
 {
     public DeviceCodeAuthenticationProvider(string clientId, string scope, IEnumerable<string> validHosts, HttpClient httpClient, Action<Uri, string> messageCallback, ILogger logger) :
-        base(clientId, scope, validHosts, logger, (clientId, scope, validHosts) => new AccessTokenProvider {
+        base(clientId, scope, validHosts, logger, (clientId, scope, validHosts) => new AccessTokenProvider
+        {
             ClientId = clientId,
             HttpClient = httpClient,
             MessageCallback = messageCallback,

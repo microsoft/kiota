@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 
@@ -20,42 +20,50 @@ public class CodeClassDeclarationWriterTests : IDisposable
     private readonly CodeClassDeclarationWriter codeElementWriter;
     private readonly CodeClass parentClass;
 
-    public CodeClassDeclarationWriterTests() {
+    public CodeClassDeclarationWriterTests()
+    {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
         codeElementWriter = new CodeClassDeclarationWriter(new PythonConventionService());
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
         ns = root.AddNamespace("graphtests.models");
-        parentClass = new () {
+        parentClass = new()
+        {
             Name = "parentClass"
         };
         ns.AddClass(parentClass);
     }
-    public void Dispose() {
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void Defensive() {
+    public void Defensive()
+    {
         var codeClassDeclarationWriter = new CodeClassDeclarationWriter(new PythonConventionService());
         Assert.Throws<ArgumentNullException>(() => codeClassDeclarationWriter.WriteCodeElement(null, writer));
         var declaration = parentClass.StartBlock;
         Assert.Throws<ArgumentNullException>(() => codeClassDeclarationWriter.WriteCodeElement(declaration, null));
     }
     [Fact]
-    public void WritesSimpleDeclaration() {
+    public void WritesSimpleDeclaration()
+    {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
         Assert.Contains("class ParentClass()", result);
     }
     [Fact]
-    public void WritesImplementation() {
+    public void WritesImplementation()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.AddImplements(new CodeType {
+        declaration.AddImplements(new CodeType
+        {
             Name = "someInterface"
         });
-        declaration.AddImplements(new CodeType {
+        declaration.AddImplements(new CodeType
+        {
             Name = "secondInterface"
         });
         codeElementWriter.WriteCodeElement(declaration, writer);
@@ -63,9 +71,11 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("(SecondInterface, SomeInterface):", result);
     }
     [Fact]
-    public void WritesInheritance() {
+    public void WritesInheritance()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.Inherits = new () {
+        declaration.Inherits = new()
+        {
             Name = "someInterface"
         };
         codeElementWriter.WriteCodeElement(declaration, writer);
@@ -73,8 +83,10 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("(some_interface.SomeInterface):", result);
     }
     [Fact]
-    public void WritesInnerClasses() {
-        parentClass.AddInnerClass(new CodeClass {
+    public void WritesInnerClasses()
+    {
+        parentClass.AddInnerClass(new CodeClass
+        {
             Name = "InnerClass"
         });
         var declaration = parentClass.InnerClasses.First().StartBlock;
@@ -83,11 +95,14 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("@dataclass", result);
     }
     [Fact]
-    public void WritesExternalImports() {
+    public void WritesExternalImports()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.AddUsings(new CodeUsing {
+        declaration.AddUsings(new CodeUsing
+        {
             Name = "Objects",
-            Declaration = new () {
+            Declaration = new()
+            {
                 Name = "util",
                 IsExternal = true,
             }
@@ -97,11 +112,14 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("from util import Objects", result);
     }
     [Fact]
-    public void WritesExternalImportsWithoutPath() {
+    public void WritesExternalImportsWithoutPath()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.AddUsings(new CodeUsing {
+        declaration.AddUsings(new CodeUsing
+        {
             Name = "Objects",
-            Declaration = new () {
+            Declaration = new()
+            {
                 Name = "-",
                 IsExternal = true,
             }
@@ -111,16 +129,20 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("import Objects", result);
     }
     [Fact]
-    public void WritesInternalImportsSubNamespace() {
+    public void WritesInternalImportsSubNamespace()
+    {
         var declaration = parentClass.StartBlock;
         var subNS = ns.AddNamespace($"{ns.Name}.messages");
-        var messageClassDef = new CodeClass {
+        var messageClassDef = new CodeClass
+        {
             Name = "Message",
         };
         subNS.AddClass(messageClassDef);
-        var nUsing = new CodeUsing {
+        var nUsing = new CodeUsing
+        {
             Name = messageClassDef.Name,
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = messageClassDef.Name,
                 TypeDefinition = messageClassDef,
             }
@@ -132,15 +154,19 @@ public class CodeClassDeclarationWriterTests : IDisposable
     }
 
     [Fact]
-    public void WritesInternalImportsSameNamespace() {
+    public void WritesInternalImportsSameNamespace()
+    {
         var declaration = parentClass.StartBlock;
-        var messageClassDef = new CodeClass {
+        var messageClassDef = new CodeClass
+        {
             Name = "Message",
         };
         ns.AddClass(messageClassDef);
-        var nUsing = new CodeUsing {
+        var nUsing = new CodeUsing
+        {
             Name = "graph",
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = "Message",
                 TypeDefinition = messageClassDef,
             }
@@ -151,11 +177,14 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("message = lazy_import('graphtests.models.message')", result);
     }
     [Fact]
-    public void WritesInternalImportsNoTypeDef() {
+    public void WritesInternalImportsNoTypeDef()
+    {
         var declaration = parentClass.StartBlock;
-        var nUsing = new CodeUsing {
+        var nUsing = new CodeUsing
+        {
             Name = "graph",
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = "Message"
             }
         };

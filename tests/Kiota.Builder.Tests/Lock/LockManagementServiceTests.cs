@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Threading.Tasks;
 using Kiota.Builder.Lock;
@@ -6,9 +6,11 @@ using Xunit;
 
 namespace Kiota.Builder.Tests.Lock;
 
-public class LockManagementServiceTests {
+public class LockManagementServiceTests
+{
     [Fact]
-    public async Task DefensivePrograming() {
+    public async Task DefensivePrograming()
+    {
         var lockManagementService = new LockManagementService();
         Assert.Throws<ArgumentNullException>(() => lockManagementService.GetDirectoriesContainingLockFile(null));
         await Assert.ThrowsAsync<ArgumentNullException>(() => lockManagementService.GetLockFromDirectoryAsync(null));
@@ -17,9 +19,11 @@ public class LockManagementServiceTests {
         await Assert.ThrowsAsync<ArgumentNullException>(() => lockManagementService.WriteLockFileAsync("path", null));
     }
     [Fact]
-    public async Task Identity() {
+    public async Task Identity()
+    {
         var lockManagementService = new LockManagementService();
-        var lockFile = new KiotaLock {
+        var lockFile = new KiotaLock
+        {
             DescriptionLocation = "description",
         };
         var path = Path.GetTempPath();

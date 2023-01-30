@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using Kiota.Builder.Validation;
 using Microsoft.OpenApi.Readers;
@@ -6,9 +6,11 @@ using Microsoft.OpenApi.Validations;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;
-public class UrlFormEncodedComplexTests {
+public class UrlFormEncodedComplexTests
+{
     [Fact]
-    public void AddsAWarningWhenUrlEncodedNotObjectRequestBody() {
+    public void AddsAWarningWhenUrlEncodedNotObjectRequestBody()
+    {
         var rule = new UrlFormEncodedComplex();
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -34,13 +36,14 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Single(diag.Warnings);
     }
     [Fact]
-    public void AddsAWarningWhenUrlEncodedNotObjectResponse() {
+    public void AddsAWarningWhenUrlEncodedNotObjectResponse()
+    {
         var rule = new UrlFormEncodedComplex();
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -60,13 +63,14 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Single(diag.Warnings);
     }
     [Fact]
-    public void AddsAWarningWhenUrlEncodedComplexPropertyOnRequestBody() {
+    public void AddsAWarningWhenUrlEncodedComplexPropertyOnRequestBody()
+    {
         var rule = new UrlFormEncodedComplex();
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -97,13 +101,14 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Single(diag.Warnings);
     }
     [Fact]
-    public void AddsAWarningWhenUrlEncodedComplexPropertyOnResponse() {
+    public void AddsAWarningWhenUrlEncodedComplexPropertyOnResponse()
+    {
         var rule = new UrlFormEncodedComplex();
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -128,13 +133,14 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Single(diag.Warnings);
     }
     [Fact]
-    public void DoesntAddAWarningWhenUrlEncoded() {
+    public void DoesntAddAWarningWhenUrlEncoded()
+    {
         var rule = new UrlFormEncodedComplex();
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -156,13 +162,14 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Empty(diag.Warnings);
     }
     [Fact]
-    public void DoesntAddAWarningWhenNotUrlEncoded() {
+    public void DoesntAddAWarningWhenNotUrlEncoded()
+    {
         var rule = new UrlFormEncodedComplex();
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -182,7 +189,7 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Empty(diag.Warnings);

@@ -1,23 +1,36 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Extensions.Logging;
+using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace Kiota.Builder.SearchProviders.GitHub.Authentication;
 
 public class TempFolderCachingAccessTokenProvider : IAccessTokenProvider
 {
-    public required IAccessTokenProvider? Concrete { get; init; }
-    public required ILogger Logger { get; init; }
-    public required Uri ApiBaseUrl { get; init; }
-    public required string AppId { get; init; }
+    public required IAccessTokenProvider? Concrete
+    {
+        get; init;
+    }
+    public required ILogger Logger
+    {
+        get; init;
+    }
+    public required Uri ApiBaseUrl
+    {
+        get; init;
+    }
+    public required string AppId
+    {
+        get; init;
+    }
     public AllowedHostsValidator AllowedHostsValidator => Concrete?.AllowedHostsValidator ?? new();
     public readonly Lazy<ITokenStorageService> TokenStorageService;
     public TempFolderCachingAccessTokenProvider()
     {
-        TokenStorageService = new Lazy<ITokenStorageService>(() => new TempFolderTokenStorageService {
+        TokenStorageService = new Lazy<ITokenStorageService>(() => new TempFolderTokenStorageService
+        {
             Logger = Logger!,
             FileName = $"{AppId}-{ApiBaseUrl?.Host}",
         });
@@ -33,5 +46,5 @@ public class TempFolderCachingAccessTokenProvider : IAccessTokenProvider
         }
         return result ?? string.Empty;
     }
-    
+
 }

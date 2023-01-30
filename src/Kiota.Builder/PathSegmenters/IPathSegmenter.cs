@@ -1,6 +1,7 @@
-using Kiota.Builder.CodeDOM;
+﻿using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.PathSegmenters;
-public interface IPathSegmenter {
+public interface IPathSegmenter
+{
     string GetPath(CodeNamespace currentNamespace, CodeElement currentElement, bool shouldNormalizePath = true);
 }

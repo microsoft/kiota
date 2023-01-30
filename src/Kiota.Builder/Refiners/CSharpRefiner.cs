@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,10 +10,11 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Refiners;
 public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
-    public CSharpRefiner(GenerationConfiguration configuration) : base(configuration) {}
+    public CSharpRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        return Task.Run(() => {
+        return Task.Run(() =>
+        {
             cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
@@ -37,7 +38,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplaceReservedNames(
                 generatedCode,
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
-                new HashSet<Type>{ typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum) }
+                new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum) }
             );
             cancellationToken.ThrowIfCancellationRequested();
             // Replace the reserved types and namespace segments
@@ -59,11 +60,14 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             RemoveHandlerFromRequestBuilder(generatedCode);
         }, cancellationToken);
     }
-    protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
-        if(currentElement is CodeClass currentClass) {
+    protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass)
+        {
             var sameNameProperty = currentClass.Properties
                                             .FirstOrDefault(x => x.Name.Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase));
-            if(sameNameProperty != null) {
+            if (sameNameProperty != null)
+            {
                 currentClass.RemoveChildElement(sameNameProperty);
                 if (string.IsNullOrEmpty(sameNameProperty.SerializationName))
                     sameNameProperty.SerializationName = sameNameProperty.Name;
@@ -73,16 +77,17 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, DisambiguatePropertiesWithClassNames);
     }
-    protected static void MakeEnumPropertiesNullable(CodeElement currentElement) {
-        if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
+    protected static void MakeEnumPropertiesNullable(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
             currentClass.Properties
                         .Where(x => x.Type is CodeType propType && propType.TypeDefinition is CodeEnum)
                         .ToList()
                         .ForEach(x => x.Type.IsNullable = true);
         CrawlTree(currentElement, MakeEnumPropertiesNullable);
     }
-    
-    protected static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
+
+    protected static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "Microsoft.Kiota.Abstractions", "IRequestAdapter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -125,21 +130,23 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             "Microsoft.Kiota.Abstractions", "RequestHeaders"),
     };
-    protected static void CapitalizeNamespacesFirstLetters(CodeElement current) {
-        if(current is CodeNamespace currentNamespace)
+    protected static void CapitalizeNamespacesFirstLetters(CodeElement current)
+    {
+        if (current is CodeNamespace currentNamespace)
             currentNamespace.Name = currentNamespace.Name.Split('.').Select(static x => x.ToFirstCharacterUpperCase()).Aggregate(static (x, y) => $"{x}.{y}");
         CrawlTree(current, CapitalizeNamespacesFirstLetters);
     }
-    protected static void AddAsyncSuffix(CodeElement currentElement) {
-        if(currentElement is CodeMethod currentMethod && currentMethod.IsAsync)
+    protected static void AddAsyncSuffix(CodeElement currentElement)
+    {
+        if (currentElement is CodeMethod currentMethod && currentMethod.IsAsync)
             currentMethod.Name += "Async";
         CrawlTree(currentElement, AddAsyncSuffix);
     }
     protected static void CorrectPropertyType(CodeProperty currentProperty)
     {
-        if(currentProperty.IsOfKind(CodePropertyKind.Options))
+        if (currentProperty.IsOfKind(CodePropertyKind.Options))
             currentProperty.DefaultValue = "new List<IRequestOption>()";
-        else if(currentProperty.IsOfKind(CodePropertyKind.Headers))
+        else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
             currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }

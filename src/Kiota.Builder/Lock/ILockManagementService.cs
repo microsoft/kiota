@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,7 +7,8 @@ namespace Kiota.Builder.Lock;
 /// <summary>
 /// A service that manages the lock file for a Kiota project.
 /// </summary>
-public interface ILockManagementService {
+public interface ILockManagementService
+{
     /// <summary>
     /// Gets the lock file for a Kiota project by crawling the directory tree.
     /// </summary>

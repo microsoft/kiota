@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,19 +6,29 @@ using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.SearchProviders.GitHub.Authentication;
 
-public class TempFolderTokenStorageService : ITokenStorageService {
-    public required ILogger Logger { get; init;}
-    public required string FileName { get; init; }
+public class TempFolderTokenStorageService : ITokenStorageService
+{
+    public required ILogger Logger
+    {
+        get; init;
+    }
+    public required string FileName
+    {
+        get; init;
+    }
     private string GetTokenCacheFilePath() => Path.Combine(Path.GetTempPath(), "kiota", "auth", $"{FileName}.txt");
     public async Task<string?> GetTokenAsync(CancellationToken cancellationToken)
     {
-        try {
+        try
+        {
             var target = GetTokenCacheFilePath();
-            if(!await IsTokenPresentAsync(cancellationToken))
+            if (!await IsTokenPresentAsync(cancellationToken))
                 return null;
             var result = await File.ReadAllTextAsync(target, cancellationToken).ConfigureAwait(false);
             return result;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             Logger.LogWarning(ex, "Error while reading token from cache.");
             return null;
         }
@@ -42,17 +52,21 @@ public class TempFolderTokenStorageService : ITokenStorageService {
 
     public async Task<bool> IsTokenPresentAsync(CancellationToken cancellationToken)
     {
-        try {
+        try
+        {
             var target = GetTokenCacheFilePath();
             if (!File.Exists(target))
                 return false;
             var fileDate = File.GetLastWriteTime(target);
-            if(fileDate.AddMonths(6) < DateTime.Now) {
+            if (fileDate.AddMonths(6) < DateTime.Now)
+            {
                 await DeleteTokenAsync(cancellationToken);
                 return false;
             }
             return true;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             Logger.LogWarning(ex, "Error while reading token from cache.");
             return false;
         }
@@ -62,7 +76,7 @@ public class TempFolderTokenStorageService : ITokenStorageService {
     {
         //no try-catch as we want the exception to bubble up to the command
         var target = GetTokenCacheFilePath();
-        if(!await IsTokenPresentAsync(cancellationToken))
+        if (!await IsTokenPresentAsync(cancellationToken))
             return false;
         File.Delete(target);
         return true;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -20,7 +20,7 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
     {
         if (obj == null) return 0;
         return
-            string.Join(",", obj.DisabledValidationRules?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 47 + 
+            string.Join(",", obj.DisabledValidationRules?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 47 +
             GetVersionHashCode(obj.KiotaVersion) * 43 +
             GetVersionHashCode(obj.LockFileVersion) * 41 +
             (string.IsNullOrEmpty(obj.DescriptionLocation) ? 0 : obj.DescriptionLocation.GetHashCode()) * 37 +
@@ -36,9 +36,11 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
             string.Join(",", obj.IncludePatterns?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 3 +
             string.Join(",", obj.ExcludePatterns?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 2;
     }
-    private static int GetVersionHashCode(string version) {
-        if(string.IsNullOrEmpty(version)) return 0;
-        if(Version.TryParse(version, out var parsedVersion)) {
+    private static int GetVersionHashCode(string version)
+    {
+        if (string.IsNullOrEmpty(version)) return 0;
+        if (Version.TryParse(version, out var parsedVersion))
+        {
             if (parsedVersion.Major > 0)
                 return parsedVersion.Major.GetHashCode();
             if (parsedVersion.Minor > 0)

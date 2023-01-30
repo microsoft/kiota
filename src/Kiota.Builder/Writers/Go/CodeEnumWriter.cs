@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -6,15 +6,16 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Go;
 public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
 {
-    public CodeEnumWriter(GoConventionService conventionService) : base(conventionService){}
-    public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer) {
-        if(!codeElement.Options.Any()) return;
-        if(codeElement.Parent is CodeNamespace ns)
+    public CodeEnumWriter(GoConventionService conventionService) : base(conventionService) { }
+    public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
+    {
+        if (!codeElement.Options.Any()) return;
+        if (codeElement.Parent is CodeNamespace ns)
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty)}");
 
         writer.WriteLine("import (");
         writer.IncreaseIndent();
-        foreach(var cUsing in codeElement.Usings)
+        foreach (var cUsing in codeElement.Usings)
             writer.WriteLine($"\"{cUsing.Name}\"");
         writer.DecreaseIndent();
         writer.WriteLine(")");
@@ -26,8 +27,9 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         writer.IncreaseIndent();
         var iotaSuffix = $" {typeName} = iota";
         var enumOptions = codeElement.Options;
-        foreach (var item in enumOptions) {
-            if(!string.IsNullOrEmpty(item.Documentation.Description))
+        foreach (var item in enumOptions)
+        {
+            if (!string.IsNullOrEmpty(item.Documentation.Description))
                 writer.WriteLine($"// {item.Documentation.Description}");
             writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{iotaSuffix}");
             if (!string.IsNullOrEmpty(iotaSuffix))
@@ -49,7 +51,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         writer.WriteLine($"result := {enumOptions.First().Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
         writer.WriteLine("switch v {");
         writer.IncreaseIndent();
-        foreach (var item in enumOptions) {
+        foreach (var item in enumOptions)
+        {
             writer.WriteLine($"case \"{item.WireName}\":");
             writer.IncreaseIndent();
             writer.WriteLine($"result = {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");

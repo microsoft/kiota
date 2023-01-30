@@ -1,12 +1,12 @@
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Net.Http;
-using System;
-using System.Text.Json;
-using System.Linq;
-using Microsoft.Extensions.Logging;
 using Kiota.Builder.Caching;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.SearchProviders.APIsGuru;
 
@@ -19,13 +19,17 @@ public class APIsGuruSearchProvider : ISearchProvider
         ArgumentNullException.ThrowIfNull(searchUri);
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(logger);
-        cachingProvider = new DocumentCachingProvider(httpClient, logger) {
+        cachingProvider = new DocumentCachingProvider(httpClient, logger)
+        {
             ClearCache = clearCache,
         };
         SearchUri = searchUri;
     }
     public string ProviderKey => "apisguru";
-    public HashSet<string> KeysToExclude { get; set; } = new() {
+    public HashSet<string> KeysToExclude
+    {
+        get; set;
+    } = new() {
         "microsoft.com:graph"
     };
     public async Task<IDictionary<string, SearchResult>> SearchAsync(string term, string? version, CancellationToken cancellationToken)

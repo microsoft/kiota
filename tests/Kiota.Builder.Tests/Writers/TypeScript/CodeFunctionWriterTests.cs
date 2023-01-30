@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 
@@ -8,7 +8,8 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
-public class CodeFunctionWriterTests : IDisposable {
+public class CodeFunctionWriterTests : IDisposable
+{
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
     private readonly StringWriter tw;
@@ -24,7 +25,8 @@ public class CodeFunctionWriterTests : IDisposable {
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
-        parentClass = new CodeClass {
+        parentClass = new CodeClass
+        {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
@@ -45,39 +47,49 @@ public class CodeFunctionWriterTests : IDisposable {
     }
 
     [Fact]
-    public void WritesModelFactoryBody() {
-        var parentModel = root.AddClass(new CodeClass {
+    public void WritesModelFactoryBody()
+    {
+        var parentModel = root.AddClass(new CodeClass
+        {
             Name = "parentModel",
             Kind = CodeClassKind.Model,
         }).First();
-        var childModel = root.AddClass(new CodeClass {
+        var childModel = root.AddClass(new CodeClass
+        {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        childModel.StartBlock.Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType
+        {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
-        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
             Name = "factory",
             Kind = CodeMethodKind.Factory,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
             },
             IsStatic = true,
         }).First();
-        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
-                        Name = "childModel",
-                        TypeDefinition = childModel,
-                    });
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType
+        {
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
         parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
-        factoryMethod.AddParameter(new CodeParameter {
+        factoryMethod.AddParameter(new CodeParameter
+        {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "ParseNode",
-                TypeDefinition = new CodeClass {
+                TypeDefinition = new CodeClass
+                {
                     Name = "ParseNode",
                 },
                 IsExternal = true,
@@ -98,32 +110,39 @@ public class CodeFunctionWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
-    public void DoesntWriteFactorySwitchOnMissingParameter() {
-        var parentModel = root.AddClass(new CodeClass {
+    public void DoesntWriteFactorySwitchOnMissingParameter()
+    {
+        var parentModel = root.AddClass(new CodeClass
+        {
             Name = "parentModel",
             Kind = CodeClassKind.Model,
         }).First();
-        var childModel = root.AddClass(new CodeClass {
+        var childModel = root.AddClass(new CodeClass
+        {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        childModel.StartBlock.Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType
+        {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
-        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
             Name = "factory",
             Kind = CodeMethodKind.Factory,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
             },
             IsStatic = true,
         }).First();
-        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
-                        Name = "childModel",
-                        TypeDefinition = childModel,
-                    });
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType
+        {
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
         parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         var factoryFunction = root.AddFunction(new CodeFunction(factoryMethod)).First();
         writer.Write(factoryFunction);
@@ -139,39 +158,49 @@ public class CodeFunctionWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
-    public void DoesntWriteFactorySwitchOnEmptyPropertyName() {
-        var parentModel = root.AddClass(new CodeClass {
+    public void DoesntWriteFactorySwitchOnEmptyPropertyName()
+    {
+        var parentModel = root.AddClass(new CodeClass
+        {
             Name = "parentModel",
             Kind = CodeClassKind.Model,
         }).First();
-        var childModel = root.AddClass(new CodeClass {
+        var childModel = root.AddClass(new CodeClass
+        {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        childModel.StartBlock.Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType
+        {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
-        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
             Name = "factory",
             Kind = CodeMethodKind.Factory,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
             },
             IsStatic = true,
         }).First();
-        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
-                        Name = "childModel",
-                        TypeDefinition = childModel,
-                    });
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType
+        {
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
         parentModel.DiscriminatorInformation.DiscriminatorPropertyName = string.Empty;
-        factoryMethod.AddParameter(new CodeParameter {
+        factoryMethod.AddParameter(new CodeParameter
+        {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "ParseNode",
-                TypeDefinition = new CodeClass {
+                TypeDefinition = new CodeClass
+                {
                     Name = "ParseNode",
                 },
                 IsExternal = true,
@@ -192,27 +221,34 @@ public class CodeFunctionWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
-    public void DoesntWriteFactorySwitchOnEmptyMappings() {
-        var parentModel = root.AddClass(new CodeClass {
+    public void DoesntWriteFactorySwitchOnEmptyMappings()
+    {
+        var parentModel = root.AddClass(new CodeClass
+        {
             Name = "parentModel",
             Kind = CodeClassKind.Model,
         }).First();
-        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
             Name = "factory",
             Kind = CodeMethodKind.Factory,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
             },
             IsStatic = true,
         }).First();
         parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
-        factoryMethod.AddParameter(new CodeParameter {
+        factoryMethod.AddParameter(new CodeParameter
+        {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "ParseNode",
-                TypeDefinition = new CodeClass {
+                TypeDefinition = new CodeClass
+                {
                     Name = "ParseNode",
                 },
                 IsExternal = true,

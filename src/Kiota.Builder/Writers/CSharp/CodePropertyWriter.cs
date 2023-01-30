@@ -5,11 +5,11 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.CSharp;
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventionService>
 {
-    public CodePropertyWriter(CSharpConventionService conventionService): base(conventionService) { }
+    public CodePropertyWriter(CSharpConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
         var propertyType = conventions.GetTypeString(codeElement.Type, codeElement);
-        var isNullableReferenceType = !propertyType.EndsWith("?", StringComparison.OrdinalIgnoreCase) 
+        var isNullableReferenceType = !propertyType.EndsWith("?", StringComparison.OrdinalIgnoreCase)
                                       && codeElement.IsOfKind(
                                             CodePropertyKind.Custom,
                                             CodePropertyKind.QueryParameter,
@@ -21,21 +21,22 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
             WritePropertyInternal(codeElement, writer, $"{propertyType}?");
             CSharpConventionService.WriteNullableMiddle(writer);
         }
-        
+
         WritePropertyInternal(codeElement, writer, propertyType);// Always write the normal way
-        
+
         if (isNullableReferenceType)
             CSharpConventionService.WriteNullableClosing(writer);
     }
 
     private void WritePropertyInternal(CodeProperty codeElement, LanguageWriter writer, string propertyType)
     {
-        if(codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
+        if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         var backingStoreProperty = parentClass.GetBackingStoreProperty();
         var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
         var simpleBody = $"get; {setterAccessModifier}set;";
         var defaultValue = string.Empty;
-        switch(codeElement.Kind) {
+        switch (codeElement.Kind)
+        {
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ get =>");
                 writer.IncreaseIndent();

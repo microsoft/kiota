@@ -8,7 +8,9 @@ namespace Kiota.Builder.CodeDOM;
 /// <summary>
 /// Marker interface for type testing
 /// </summary>
-public interface IProprietableBlock : ICodeElement {}
+public interface IProprietableBlock : ICodeElement
+{
+}
 
 /// <summary>
 /// Represents a block of code that can have properties and methods
@@ -31,16 +33,20 @@ public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumen
     public CodeDocumentation Documentation { get; set; } = new();
     public virtual IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
     {
-        if(properties == null || properties.Any(x => x == null))
+        if (properties == null || properties.Any(x => x == null))
             throw new ArgumentNullException(nameof(properties));
-        if(!properties.Any())
+        if (!properties.Any())
             throw new ArgumentOutOfRangeException(nameof(properties));
         return AddRange(properties);
     }
-    #nullable disable
-    public T Kind { get; set; }
-    #nullable enable
-    public bool IsOfKind(params T[] kinds) {
+#nullable disable
+    public T Kind
+    {
+        get; set;
+    }
+#nullable enable
+    public bool IsOfKind(params T[] kinds)
+    {
         return kinds?.Contains(Kind) ?? false;
     }
     public CodeProperty? GetPropertyOfKind(params CodePropertyKind[] kind) =>
@@ -54,43 +60,47 @@ public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumen
     }
     public IEnumerable<CodeMethod> AddMethod(params CodeMethod[] methods)
     {
-        if(methods == null || methods.Any(static x => x == null))
+        if (methods == null || methods.Any(static x => x == null))
             throw new ArgumentNullException(nameof(methods));
-        if(!methods.Any())
+        if (!methods.Any())
             throw new ArgumentOutOfRangeException(nameof(methods));
         return AddRange(methods);
     }
-    
+
 }
 
 public class ProprietableBlockDeclaration : BlockDeclaration
 {
-    private readonly ConcurrentDictionary<string, CodeType> implements = new (StringComparer.OrdinalIgnoreCase);
-    public void AddImplements(params CodeType[] types) {
-        if(types == null || types.Any(x => x == null))
+    private readonly ConcurrentDictionary<string, CodeType> implements = new(StringComparer.OrdinalIgnoreCase);
+    public void AddImplements(params CodeType[] types)
+    {
+        if (types == null || types.Any(x => x == null))
             throw new ArgumentNullException(nameof(types));
         EnsureElementsAreChildren(types);
-        foreach(var type in types)
-            implements.TryAdd(type.Name,type);
+        foreach (var type in types)
+            implements.TryAdd(type.Name, type);
     }
-    public CodeType? FindImplementByName(string name) {
+    public CodeType? FindImplementByName(string name)
+    {
         ArgumentException.ThrowIfNullOrEmpty(name);
         return implements.TryGetValue(name, out var type) ? type : null;
     }
-    public void ReplaceImplementByName(string oldName, string newName) {
+    public void ReplaceImplementByName(string oldName, string newName)
+    {
         ArgumentException.ThrowIfNullOrEmpty(newName);
         var impl = FindImplementByName(oldName);
-        if(impl != null)
+        if (impl != null)
         {
             RemoveImplements(impl);
             impl.Name = newName;
             AddImplements(impl);
         }
     }
-    public void RemoveImplements(params CodeType[] types) {
-        if(types == null || types.Any(x => x == null))
+    public void RemoveImplements(params CodeType[] types)
+    {
+        if (types == null || types.Any(x => x == null))
             throw new ArgumentNullException(nameof(types));
-        foreach(var type in types)
+        foreach (var type in types)
             implements.TryRemove(type.Name, out var _);
     }
     public IEnumerable<CodeType> Implements => implements.Values.OrderBy(x => x.Name);
