@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 
 using Kiota.Builder.CodeDOM;
@@ -17,32 +17,38 @@ public class CodeClassDeclarationWriterTests : IDisposable
     private readonly CodeClassDeclarationWriter codeElementWriter;
     private readonly CodeClass parentClass;
 
-    public CodeClassDeclarationWriterTests() {
+    public CodeClassDeclarationWriterTests()
+    {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
         codeElementWriter = new CodeClassDeclarationWriter(new TypeScriptConventionService(writer), "graphtests");
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
         var ns = root.AddNamespace("graphtests.models");
-        parentClass = new () {
+        parentClass = new()
+        {
             Name = "parentClass"
         };
         ns.AddClass(parentClass);
     }
-    public void Dispose() {
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesSimpleDeclaration() {
+    public void WritesSimpleDeclaration()
+    {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
         Assert.Contains("export class", result);
     }
     [Fact]
-    public void WritesImplementation() {
+    public void WritesImplementation()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.AddImplements(new CodeType {
+        declaration.AddImplements(new CodeType
+        {
             Name = "someInterface"
         });
         codeElementWriter.WriteCodeElement(declaration, writer);
@@ -50,9 +56,11 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("implements", result);
     }
     [Fact]
-    public void WritesInheritance() {
+    public void WritesInheritance()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.Inherits = new () {
+        declaration.Inherits = new()
+        {
             Name = "someInterface"
         };
         codeElementWriter.WriteCodeElement(declaration, writer);
@@ -60,11 +68,14 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("extends", result);
     }
     [Fact]
-    public void WritesImports() {
+    public void WritesImports()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.AddUsings(new CodeUsing {
+        declaration.AddUsings(new CodeUsing
+        {
             Name = "Objects",
-            Declaration = new () {
+            Declaration = new()
+            {
                 Name = "util",
                 IsExternal = true,
             }

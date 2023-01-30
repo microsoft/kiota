@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
@@ -8,22 +8,27 @@ using Kiota.Builder.Refiners;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
-public class PythonLanguageRefinerTests {
+public class PythonLanguageRefinerTests
+{
     private readonly CodeNamespace root;
     private readonly CodeNamespace graphNS;
     private readonly CodeClass parentClass;
-    public PythonLanguageRefinerTests() {
+    public PythonLanguageRefinerTests()
+    {
         root = CodeNamespace.InitRootNamespace();
         graphNS = root.AddNamespace("graph");
-        parentClass = new () {
+        parentClass = new()
+        {
             Name = "parentClass"
         };
         graphNS.AddClass(parentClass);
     }
-#region commonrefiner
+    #region commonrefiner
     [Fact]
-    public async Task AddsDefaultImports() {
-        var model = graphNS.AddClass(new CodeClass {
+    public async Task AddsDefaultImports()
+    {
+        var model = graphNS.AddClass(new CodeClass
+        {
             Name = "someModel",
             Kind = CodeClassKind.Model
         }).First();
@@ -34,16 +39,20 @@ public class PythonLanguageRefinerTests {
         Assert.Contains("annotations", declaration.Usings.Select(x => x.Name));
     }
     [Fact]
-    public async Task AddsQueryParameterMapperMethod() {
-        var model = graphNS.AddClass(new CodeClass {
+    public async Task AddsQueryParameterMapperMethod()
+    {
+        var model = graphNS.AddClass(new CodeClass
+        {
             Name = "somemodel",
             Kind = CodeClassKind.QueryParameters,
         }).First();
 
-        model.AddProperty(new CodeProperty {
+        model.AddProperty(new CodeProperty
+        {
             Name = "Select",
             SerializationName = "%24select",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             },
         });
@@ -54,8 +63,10 @@ public class PythonLanguageRefinerTests {
         Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
     }
     [Fact]
-    public async Task AddsExceptionInheritanceOnErrorClasses() {
-        var model = root.AddClass(new CodeClass {
+    public async Task AddsExceptionInheritanceOnErrorClasses()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "somemodel",
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
@@ -68,49 +79,58 @@ public class PythonLanguageRefinerTests {
         Assert.Equal("APIError", declaration.Inherits.Name);
     }
     [Fact]
-    public async Task FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
-        var model = root.AddClass(new CodeClass {
+    public async Task FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "somemodel",
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
         var declaration = model.StartBlock;
-        declaration.Inherits = new CodeType {
+        declaration.Inherits = new CodeType
+        {
             Name = "SomeOtherModel"
         };
         await Assert.ThrowsAsync<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root));
     }
     [Fact]
-    public async Task AddsUsingsForErrorTypesForRequestExecutor() {
-        var requestBuilder = root.AddClass(new CodeClass {
+    public async Task AddsUsingsForErrorTypesForRequestExecutor()
+    {
+        var requestBuilder = root.AddClass(new CodeClass
+        {
             Name = "somerequestbuilder",
             Kind = CodeClassKind.RequestBuilder,
         }).First();
         var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
-        var errorClass = subNS.AddClass(new CodeClass {
+        var errorClass = subNS.AddClass(new CodeClass
+        {
             Name = "Error4XX",
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var requestExecutor = requestBuilder.AddMethod(new CodeMethod {
+        var requestExecutor = requestBuilder.AddMethod(new CodeMethod
+        {
             Name = "get",
             Kind = CodeMethodKind.RequestExecutor,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             },
         }).First();
-        requestExecutor.AddErrorMapping("4XX", new CodeType {
-                        Name = "Error4XX",
-                        TypeDefinition = errorClass,
-                    });
+        requestExecutor.AddErrorMapping("4XX", new CodeType
+        {
+            Name = "Error4XX",
+            TypeDefinition = errorClass,
+        });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
 
         var declaration = requestBuilder.StartBlock;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
-#endregion
-#region python
+    #endregion
+    #region python
     private const string HttpCoreDefaultName = "IRequestAdapter";
     private const string FactoryDefaultName = "ISerializationWriterFactory";
     private const string DeserializeDefaultName = "Dict[str, Callable[[ParseNode], None]]";
@@ -120,14 +140,18 @@ public class PythonLanguageRefinerTests {
     private const string AdditionalDataDefaultName = "Dictionary<string, object>";
     private const string HandlerDefaultName = "IResponseHandler";
     [Fact]
-    public async Task EscapesReservedKeywords() {
-        var model = root.AddClass(new CodeClass {
+    public async Task EscapesReservedKeywords()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "break",
             Kind = CodeClassKind.Model
         }).First();
-        var voidMethod = model.AddMethod(new CodeMethod {
+        var voidMethod = model.AddMethod(new CodeMethod
+        {
             Name = "continue",// this is a keyword
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "void"
             }
         }).First();
@@ -136,7 +160,8 @@ public class PythonLanguageRefinerTests {
         Assert.EndsWith("_", voidMethod.Name);
     }
     [Fact]
-    public async Task CorrectsCoreType() {
+    public async Task CorrectsCoreType()
+    {
 
         var model = root.AddClass(new CodeClass
         {
@@ -147,73 +172,92 @@ public class PythonLanguageRefinerTests {
         {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = HttpCoreDefaultName
             }
-        }, new () {
+        }, new()
+        {
             Name = "someDate",
             Kind = CodePropertyKind.Custom,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = DateTimeOffsetDefaultName,
             }
-        }, new () {
+        }, new()
+        {
             Name = "additionalData",
             Kind = CodePropertyKind.AdditionalData,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = AdditionalDataDefaultName
             }
-        }, new () {
+        }, new()
+        {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = PathParametersDefaultName
             },
             DefaultValue = PathParametersDefaultValue
         });
-        var executorMethod = model.AddMethod(new CodeMethod {
+        var executorMethod = model.AddMethod(new CodeMethod
+        {
             Name = "executor",
             Kind = CodeMethodKind.RequestExecutor,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         }).First();
-        executorMethod.AddParameter(new CodeParameter {
+        executorMethod.AddParameter(new CodeParameter
+        {
             Name = "handler",
             Kind = CodeParameterKind.ResponseHandler,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = HandlerDefaultName,
             }
         });
         const string serializerDefaultName = "ISerializationWriter";
-        var serializationMethod = model.AddMethod(new CodeMethod {
+        var serializationMethod = model.AddMethod(new CodeMethod
+        {
             Name = "seriailization",
             Kind = CodeMethodKind.Serializer,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         }).First();
-        serializationMethod.AddParameter(new CodeParameter {
+        serializationMethod.AddParameter(new CodeParameter
+        {
             Name = "handler",
             Kind = CodeParameterKind.Serializer,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = serializerDefaultName,
             }
         });
-        var constructorMethod = model.AddMethod(new CodeMethod {
+        var constructorMethod = model.AddMethod(new CodeMethod
+        {
             Name = "constructor",
             Kind = CodeMethodKind.Constructor,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "void"
             }
         }).First();
-        constructorMethod.AddParameter(new CodeParameter {
+        constructorMethod.AddParameter(new CodeParameter
+        {
             Name = "pathParameters",
             Kind = CodeParameterKind.PathParameters,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = PathParametersDefaultName
             },
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration{ Language = GenerationLanguage.Python }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         Assert.Empty(model.Properties.Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => FactoryDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => DateTimeOffsetDefaultName.Equals(x.Type.Name)));
@@ -226,14 +270,18 @@ public class PythonLanguageRefinerTests {
         Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeComposedTypeBase));
     }
     [Fact]
-    public async Task ReplacesDateTimeOffsetByNativeType() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesDateTimeOffsetByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "DateTimeOffset"
             },
         }).First();
@@ -242,14 +290,18 @@ public class PythonLanguageRefinerTests {
         Assert.Equal("datetime", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesDateOnlyByNativeType() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesDateOnlyByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "DateOnly"
             },
         }).First();
@@ -258,14 +310,18 @@ public class PythonLanguageRefinerTests {
         Assert.Equal("date", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesTimeOnlyByNativeType() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesTimeOnlyByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "TimeOnly"
             },
         }).First();
@@ -274,14 +330,18 @@ public class PythonLanguageRefinerTests {
         Assert.Equal("time", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesDurationByNativeType() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesDurationByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "TimeSpan"
             },
         }).First();
@@ -311,7 +371,8 @@ public class PythonLanguageRefinerTests {
             Name = "cancellationToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Documentation = new() {
+            Documentation = new()
+            {
                 Description = "Cancellation token to use when cancelling requests",
             },
             Type = new CodeType { Name = "CancellationToken", IsExternal = true },
@@ -322,28 +383,35 @@ public class PythonLanguageRefinerTests {
         Assert.DoesNotContain(cancellationParam, method.Parameters);
     }
     [Fact]
-    public async Task AddsPropertiesAndMethodTypesImportsPython() {
-        var requestBuilder = root.AddClass(new CodeClass {
+    public async Task AddsPropertiesAndMethodTypesImportsPython()
+    {
+        var requestBuilder = root.AddClass(new CodeClass
+        {
             Name = "somerequestbuilder",
             Kind = CodeClassKind.RequestBuilder,
         }).First();
         var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
-        var model = root.AddClass(new CodeClass {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "somemodel",
             Kind = CodeClassKind.QueryParameters,
         }).First();
 
-        model.AddProperty(new CodeProperty {
+        model.AddProperty(new CodeProperty
+        {
             Name = "Select",
             SerializationName = "%24select",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             },
         });
-        var requestExecutor = requestBuilder.AddMethod(new CodeMethod {
+        var requestExecutor = requestBuilder.AddMethod(new CodeMethod
+        {
             Name = "get",
             Kind = CodeMethodKind.RequestExecutor,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             },
         }).First();
@@ -354,5 +422,5 @@ public class PythonLanguageRefinerTests {
         Assert.Single(requestBuilder.Methods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor)));
         Assert.DoesNotContain("QueryParameters", declaration.Usings.Select(x => x.Name));
     }
-#endregion
+    #endregion
 }

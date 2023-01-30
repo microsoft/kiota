@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -6,9 +6,10 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Swift;
 public class CodeEnumWriter : BaseElementWriter<CodeEnum, SwiftConventionService>
 {
-    public CodeEnumWriter(SwiftConventionService conventionService) : base(conventionService){}
-    public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer) {
-        if(!codeElement.Options.Any())
+    public CodeEnumWriter(SwiftConventionService conventionService) : base(conventionService) { }
+    public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
+    {
+        if (!codeElement.Options.Any())
             return;
 
         if (codeElement.Parent is CodeNamespace codeNamespace)

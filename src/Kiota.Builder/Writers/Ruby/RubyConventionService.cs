@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -18,7 +18,8 @@ public class RubyConventionService : CommonLanguageConventionService
     public override string TempDictionaryVarName => "url_tpl_params";
     public override string GetAccessModifier(AccessModifier access)
     {
-        return access switch {
+        return access switch
+        {
             AccessModifier.Public => "public",
             AccessModifier.Protected => "protected",
             _ => "private",
@@ -26,14 +27,15 @@ public class RubyConventionService : CommonLanguageConventionService
     }
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
-        var defaultValue = parameter.Optional && (targetElement is not CodeMethod currentMethod || !currentMethod.IsOfKind(CodeMethodKind.Setter)) ? 
+        var defaultValue = parameter.Optional && (targetElement is not CodeMethod currentMethod || !currentMethod.IsOfKind(CodeMethodKind.Setter)) ?
             $"={parameter.DefaultValue ?? "nil"}" :
             string.Empty;
         return $"{parameter.Name}{defaultValue}";
     }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
     {
-        if (code is CodeType currentType) {
+        if (code is CodeType currentType)
+        {
             return $"{TranslateType(currentType)}";
         }
 
@@ -41,7 +43,8 @@ public class RubyConventionService : CommonLanguageConventionService
     }
     public override string TranslateType(CodeType type)
     {
-        return type.Name switch {
+        return type.Name switch
+        {
             "integer" => "number",
             "float" or "string" or "object" or "boolean" or "void" => type.Name, // little casing hack
             _ => type.Name.ToFirstCharacterUpperCase() ?? "object",
@@ -49,15 +52,16 @@ public class RubyConventionService : CommonLanguageConventionService
     }
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
-        if(!string.IsNullOrEmpty(description)) {
+        if (!string.IsNullOrEmpty(description))
+        {
             writer.WriteLine($"{DocCommentPrefix}");
             writer.WriteLine($"# {description}");
         }
     }
-    #pragma warning disable CA1822 // Method should be static
+#pragma warning disable CA1822 // Method should be static
     public string GetNormalizedNamespacePrefixForType(CodeTypeBase type)
     {
-        if(type is CodeType xType)
+        if (type is CodeType xType)
             if ((xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeEnum) &&
                 xType.TypeDefinition.Parent is CodeNamespace ns)
                 return $"{ns.Name.NormalizeNameSpaceName("::")}::";
@@ -65,16 +69,18 @@ public class RubyConventionService : CommonLanguageConventionService
                 return $"{definition.Name}::";
         return string.Empty;
     }
-    #pragma warning restore CA1822 // Method should be static
+#pragma warning restore CA1822 // Method should be static
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "#");
-    #pragma warning disable CA1822 // Method should be static
-    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default) {
-        if(parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
-            parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp) {
+#pragma warning disable CA1822 // Method should be static
+    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default)
+    {
+        if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
+            parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
+        {
             var urlTemplateParams = urlTemplateVarName ?? $"@{pathParametersProp.Name.ToSnakeCase()}";
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(static x => $"{x.Name}"))}";
             writer.WriteLine($"{prefix}{returnType.ToFirstCharacterUpperCase()}.new({urlTemplateParams}, @{requestAdapterProp.Name.ToSnakeCase()}{pathParametersSuffix})");
         }
     }
-    #pragma warning restore CA1822 // Method should be static
+#pragma warning restore CA1822 // Method should be static
 }

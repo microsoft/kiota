@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Kiota.Builder.Refiners;
@@ -58,7 +58,7 @@ public class JavaReservedNamesProvider : IReservedNamesProvider
         "try",
         "void",
         "volatile",
-        "while",            
+        "while",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }

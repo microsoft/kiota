@@ -4,33 +4,40 @@ using Kiota.Builder.Writers.TypeScript;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers;
-public class TypeScriptRelativeImportManagerTests {
+public class TypeScriptRelativeImportManagerTests
+{
     private readonly CodeNamespace root;
     private readonly CodeNamespace graphNS;
     private readonly CodeClass parentClass;
     private readonly TypescriptRelativeImportManager importManager = new("graph", '.');
-    public TypeScriptRelativeImportManagerTests() {
+    public TypeScriptRelativeImportManagerTests()
+    {
         root = CodeNamespace.InitRootNamespace();
         graphNS = root.AddNamespace("graph");
-        parentClass = new () {
+        parentClass = new()
+        {
             Name = "parentClass"
         };
         graphNS.AddClass(parentClass);
     }
     [Fact]
-    public void ReplacesImportsSubNamespace() {
+    public void ReplacesImportsSubNamespace()
+    {
         var rootNS = parentClass.Parent as CodeNamespace;
         rootNS.RemoveChildElement(parentClass);
         graphNS.AddClass(parentClass);
         var declaration = parentClass.StartBlock;
         var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
-        var messageClassDef = new CodeClass {
+        var messageClassDef = new CodeClass
+        {
             Name = "Message",
         };
         subNS.AddClass(messageClassDef);
-        var nUsing = new CodeUsing {
+        var nUsing = new CodeUsing
+        {
             Name = messageClassDef.Name,
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = messageClassDef.Name,
                 TypeDefinition = messageClassDef,
             }
@@ -40,20 +47,23 @@ public class TypeScriptRelativeImportManagerTests {
         Assert.Equal("./messages/message", result.Item3);
     }
     [Fact]
-    public void ReplacesImportsParentNamespace() {
+    public void ReplacesImportsParentNamespace()
+    {
         var declaration = parentClass.StartBlock;
         var modelsNS = graphNS.AddNamespace($"{graphNS.Name}.models");
         graphNS.RemoveChildElement(parentClass);
         modelsNS.AddClass(parentClass);
         var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
-        var messageClassDef = new CodeClass {
+        var messageClassDef = new CodeClass
+        {
             Name = "Message",
         };
         subNS.AddClass(messageClassDef);
         var nUsing = new CodeUsing
         {
             Name = messageClassDef.Name,
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = messageClassDef.Name,
                 TypeDefinition = messageClassDef,
             }
@@ -63,36 +73,44 @@ public class TypeScriptRelativeImportManagerTests {
         Assert.Equal("../messages/message", result.Item3);
     }
     [Fact]
-    public void ReplacesImportsInOtherTrunk() {
+    public void ReplacesImportsInOtherTrunk()
+    {
         var usedRangeNS1 = graphNS.AddNamespace($"{graphNS.Name}.workbooks.workbook.tables.worksheet.pivotTables.usedRange");
         var usedRangeNS2 = graphNS.AddNamespace($"{graphNS.Name}.workbooks.workbook.worksheets.usedRange");
         var workbookNS = graphNS.AddNamespace($"{graphNS.Name}.workbooks.workbook");
-        var workbookRangeClassDef = new CodeClass {
+        var workbookRangeClassDef = new CodeClass
+        {
             Name = "workbookRange",
         };
         workbookNS.AddClass(workbookRangeClassDef);
-        var usedRangeClassDef1 = new CodeClass {
+        var usedRangeClassDef1 = new CodeClass
+        {
             Name = "usedRangeRequestBuilder",
         };
         usedRangeNS1.AddClass(usedRangeClassDef1);
-        
+
         var declaration1 = usedRangeClassDef1.StartBlock;
-        var nUsing = new CodeUsing {
+        var nUsing = new CodeUsing
+        {
             Name = workbookNS.Name,
-            Declaration = new () {
+            Declaration = new()
+            {
                 Name = workbookRangeClassDef.Name,
                 TypeDefinition = workbookRangeClassDef,
             }
         };
         declaration1.AddUsings(nUsing);
-        var usedRangeClassDef2 = new CodeClass {
+        var usedRangeClassDef2 = new CodeClass
+        {
             Name = "usedRangeRequestBuilder",
         };
         usedRangeNS2.AddClass(usedRangeClassDef2);
         var declaration2 = usedRangeClassDef2.StartBlock;
-        var nUsing2 = new CodeUsing {
+        var nUsing2 = new CodeUsing
+        {
             Name = workbookNS.Name,
-            Declaration = new () {
+            Declaration = new()
+            {
                 Name = workbookRangeClassDef.Name,
                 TypeDefinition = workbookRangeClassDef,
             }
@@ -104,15 +122,19 @@ public class TypeScriptRelativeImportManagerTests {
         Assert.Equal("../../workbookRange", result2.Item3);
     }
     [Fact]
-    public void ReplacesImportsSameNamespace() {
+    public void ReplacesImportsSameNamespace()
+    {
         var declaration = parentClass.StartBlock;
-        var messageClassDef = new CodeClass {
+        var messageClassDef = new CodeClass
+        {
             Name = "Message",
         };
         graphNS.AddClass(messageClassDef);
-        var nUsing = new CodeUsing {
+        var nUsing = new CodeUsing
+        {
             Name = "graph",
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = "Message",
                 TypeDefinition = messageClassDef,
             }

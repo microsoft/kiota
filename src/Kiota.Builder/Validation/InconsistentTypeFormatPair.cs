@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Validations;
@@ -7,7 +7,8 @@ namespace Kiota.Builder.Validation;
 
 public class InconsistentTypeFormatPair : ValidationRule<OpenApiSchema>
 {
-    private static readonly Dictionary<string, HashSet<string>> validPairs = new(StringComparer.OrdinalIgnoreCase) {
+    private static readonly Dictionary<string, HashSet<string>> validPairs = new(StringComparer.OrdinalIgnoreCase)
+    {
         ["string"] = new(StringComparer.OrdinalIgnoreCase) {
             "commonmark",
             "html",
@@ -47,7 +48,8 @@ public class InconsistentTypeFormatPair : ValidationRule<OpenApiSchema>
         "null",
         "object",
     };
-    public InconsistentTypeFormatPair() : base(static (context, schema) => {
+    public InconsistentTypeFormatPair() : base(static (context, schema) =>
+    {
         if (string.IsNullOrEmpty(schema?.Type) || string.IsNullOrEmpty(schema.Format) || KnownAndNotSupportedFormats.knownAndUnsupportedFormats.Contains(schema.Format) || escapedTypes.Contains(schema.Type))
             return;
         if (!validPairs.TryGetValue(schema.Type, out var validFormats) || !validFormats.Contains(schema.Format))

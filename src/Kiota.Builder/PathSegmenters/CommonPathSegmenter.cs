@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,7 +6,8 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.PathSegmenters;
-public abstract class CommonPathSegmenter : IPathSegmenter {
+public abstract class CommonPathSegmenter : IPathSegmenter
+{
     protected CommonPathSegmenter(string rootPath, string clientNamespaceName)
     {
         ArgumentException.ThrowIfNullOrEmpty(rootPath);
@@ -16,13 +17,17 @@ public abstract class CommonPathSegmenter : IPathSegmenter {
     }
     protected readonly string ClientNamespaceName;
     protected readonly string RootPath;
-    public abstract string FileSuffix { get; }
+    public abstract string FileSuffix
+    {
+        get;
+    }
     public abstract string NormalizeNamespaceSegment(string segmentName);
     public abstract string NormalizeFileName(CodeElement currentElement);
     public virtual string NormalizePath(string fullPath) => fullPath;
     public virtual IEnumerable<string> GetAdditionalSegment(CodeElement currentElement, string fileName) => Enumerable.Empty<string>();
     protected static string GetLastFileNameSegment(CodeElement currentElement) => currentElement.Name.Split('.').Last();
-    public string GetPath(CodeNamespace currentNamespace, CodeElement currentElement, bool shouldNormalizePath = true) {
+    public string GetPath(CodeNamespace currentNamespace, CodeElement currentElement, bool shouldNormalizePath = true)
+    {
         var fileName = NormalizeFileName(currentElement);
         var namespacePathSegments = new List<string>(currentNamespace.Name
                                         .Replace(ClientNamespaceName, string.Empty)
@@ -32,7 +37,7 @@ public abstract class CommonPathSegmenter : IPathSegmenter {
         namespacePathSegments = namespacePathSegments.Where(x => !string.IsNullOrEmpty(x))
                                         .Select(NormalizeNamespaceSegment)
                                         .ToList();
-        var targetPath = Path.Combine(RootPath, namespacePathSegments.Any() ? namespacePathSegments                                           
+        var targetPath = Path.Combine(RootPath, namespacePathSegments.Any() ? namespacePathSegments
                                         .Aggregate(static (x, y) => $"{x}{Path.DirectorySeparatorChar}{y}") : string.Empty,
                                         fileName + FileSuffix);
         if (shouldNormalizePath)

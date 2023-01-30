@@ -1,130 +1,197 @@
-using Microsoft.Kiota.Abstractions.Serialization;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Kiota.Abstractions.Serialization;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models;
 /// <summary>
 /// Installation
 /// </summary>
-public class Installation : IAdditionalDataHolder, IParsable {
+public class Installation : IAdditionalDataHolder, IParsable
+{
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Access_tokens_url { get; set; }
+    public string? Access_tokens_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Access_tokens_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public Installations? Account { get; set; }
+    public Installations? Account
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public Installations Account { get; set; }
 #endif
     /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
-    public IDictionary<string, object> AdditionalData { get; set; }
-    public int? App_id { get; set; }
+    public IDictionary<string, object> AdditionalData
+    {
+        get; set;
+    }
+    public int? App_id
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? App_slug { get; set; }
+    public string? App_slug
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string App_slug { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Contact_email { get; set; }
+    public string? Contact_email
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Contact_email { get; set; }
 #endif
-    public DateTimeOffset? Created_at { get; set; }
+    public DateTimeOffset? Created_at
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public List<string>? Events { get; set; }
+    public List<string>? Events
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public List<string> Events { get; set; }
 #endif
-    public bool? Has_multiple_single_files { get; set; }
+    public bool? Has_multiple_single_files
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Html_url { get; set; }
+    public string? Html_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Html_url { get; set; }
 #endif
     /// <summary>The ID of the installation.</summary>
-    public int? Id { get; set; }
+    public int? Id
+    {
+        get; set;
+    }
     /// <summary>The permissions granted to the user-to-server access token.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public AppPermissions? Permissions { get; set; }
+    public AppPermissions? Permissions
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public AppPermissions Permissions { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Repositories_url { get; set; }
+    public string? Repositories_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Repositories_url { get; set; }
 #endif
     /// <summary>Describe whether all repositories have been selected or there&apos;s a selection involved</summary>
-    public Installation_repository_selection? Repository_selection { get; set; }
+    public Installation_repository_selection? Repository_selection
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Single_file_name { get; set; }
+    public string? Single_file_name
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Single_file_name { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public List<string>? Single_file_paths { get; set; }
+    public List<string>? Single_file_paths
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public List<string> Single_file_paths { get; set; }
 #endif
-    public DateTimeOffset? Suspended_at { get; set; }
+    public DateTimeOffset? Suspended_at
+    {
+        get; set;
+    }
     /// <summary>A GitHub user.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public NullableSimpleUser? Suspended_by { get; set; }
+    public NullableSimpleUser? Suspended_by
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public NullableSimpleUser Suspended_by { get; set; }
 #endif
     /// <summary>The ID of the user or organization this token is being scoped to.</summary>
-    public int? Target_id { get; set; }
+    public int? Target_id
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Target_type { get; set; }
+    public string? Target_type
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Target_type { get; set; }
 #endif
-    public DateTimeOffset? Updated_at { get; set; }
+    public DateTimeOffset? Updated_at
+    {
+        get; set;
+    }
     /// <summary>
     /// Instantiates a new installation and sets the default values.
     /// </summary>
-    public Installation() {
+    public Installation()
+    {
         AdditionalData = new Dictionary<string, object>();
     }
     /// <summary>
     /// Creates a new instance of the appropriate class based on discriminator value
     /// </summary>
     /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
-    public static Installation CreateFromDiscriminatorValue(IParseNode parseNode) {
+    public static Installation CreateFromDiscriminatorValue(IParseNode parseNode)
+    {
         _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
         return new Installation();
     }
     /// <summary>
     /// The deserialization information for the current model
     /// </summary>
-    public IDictionary<string, Action<IParseNode>> GetFieldDeserializers() {
+    public IDictionary<string, Action<IParseNode>> GetFieldDeserializers()
+    {
         return new Dictionary<string, Action<IParseNode>> {
             {"access_tokens_url", n => { Access_tokens_url = n.GetStringValue(); } },
             {"account", n => { Account = n.GetObjectValue<Installations>(Installations.CreateFromDiscriminatorValue); } },
@@ -152,7 +219,8 @@ public class Installation : IAdditionalDataHolder, IParsable {
     /// Serializes information the current object
     /// </summary>
     /// <param name="writer">Serialization writer to use to serialize this model</param>
-    public void Serialize(ISerializationWriter writer) {
+    public void Serialize(ISerializationWriter writer)
+    {
         _ = writer ?? throw new ArgumentNullException(nameof(writer));
         writer.WriteStringValue("access_tokens_url", Access_tokens_url);
         writer.WriteObjectValue<Installations>("account", Account);
@@ -179,13 +247,20 @@ public class Installation : IAdditionalDataHolder, IParsable {
     /// <summary>
     /// Composed type wrapper for classes simpleUser, enterprise
     /// </summary>
-    public class Installations : IAdditionalDataHolder, IParsable {
+    public class Installations : IAdditionalDataHolder, IParsable
+    {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
-        public IDictionary<string, object> AdditionalData { get; set; }
+        public IDictionary<string, object> AdditionalData
+        {
+            get; set;
+        }
         /// <summary>Composed type representation for type enterprise</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.Enterprise? Enterprise { get; set; }
+        public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.Enterprise? Enterprise
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.Enterprise Enterprise { get; set; }
@@ -193,7 +268,10 @@ public class Installation : IAdditionalDataHolder, IParsable {
         /// <summary>Serialization hint for the current wrapper.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? SerializationHint { get; set; }
+        public string? SerializationHint
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string SerializationHint { get; set; }
@@ -201,7 +279,10 @@ public class Installation : IAdditionalDataHolder, IParsable {
         /// <summary>Composed type representation for type simpleUser</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.SimpleUser? SimpleUser { get; set; }
+        public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.SimpleUser? SimpleUser
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.SimpleUser SimpleUser { get; set; }
@@ -209,14 +290,16 @@ public class Installation : IAdditionalDataHolder, IParsable {
         /// <summary>
         /// Instantiates a new installations and sets the default values.
         /// </summary>
-        public Installations() {
+        public Installations()
+        {
             AdditionalData = new Dictionary<string, object>();
         }
         /// <summary>
         /// Creates a new instance of the appropriate class based on discriminator value
         /// </summary>
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
-        public static Installations CreateFromDiscriminatorValue(IParseNode parseNode) {
+        public static Installations CreateFromDiscriminatorValue(IParseNode parseNode)
+        {
             _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
             var result = new Installations();
             result.Enterprise = new Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.Enterprise();
@@ -226,8 +309,10 @@ public class Installation : IAdditionalDataHolder, IParsable {
         /// <summary>
         /// The deserialization information for the current model
         /// </summary>
-        public IDictionary<string, Action<IParseNode>> GetFieldDeserializers() {
-            if(Enterprise != null || SimpleUser != null) {
+        public IDictionary<string, Action<IParseNode>> GetFieldDeserializers()
+        {
+            if (Enterprise != null || SimpleUser != null)
+            {
                 return ParseNodeHelper.MergeDeserializersForIntersectionWrapper(Enterprise, SimpleUser);
             }
             return new Dictionary<string, Action<IParseNode>>();
@@ -236,7 +321,8 @@ public class Installation : IAdditionalDataHolder, IParsable {
         /// Serializes information the current object
         /// </summary>
         /// <param name="writer">Serialization writer to use to serialize this model</param>
-        public void Serialize(ISerializationWriter writer) {
+        public void Serialize(ISerializationWriter writer)
+        {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteObjectValue<Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models.Enterprise>(null, Enterprise, SimpleUser);
             writer.WriteAdditionalData(AdditionalData);

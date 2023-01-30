@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -6,17 +6,20 @@ using Kiota.Builder.CodeDOM;
 using Xunit;
 
 namespace Kiota.Builder.Tests.CodeDOM;
-public class CodeClassTests {
+public class CodeClassTests
+{
     [Fact]
-    public void Defensive() {
+    public void Defensive()
+    {
         var root = CodeNamespace.InitRootNamespace();
-        var codeClass = new CodeClass {
+        var codeClass = new CodeClass
+        {
             Name = "class",
         };
         root.AddClass(codeClass);
         Assert.False(codeClass.IsOfKind(null));
         Assert.False(codeClass.IsOfKind(Array.Empty<CodeClassKind>()));
-        Assert.Throws<ArgumentNullException>(() => codeClass.DiscriminatorInformation.AddDiscriminatorMapping(null, new CodeType{Name = "class"}));
+        Assert.Throws<ArgumentNullException>(() => codeClass.DiscriminatorInformation.AddDiscriminatorMapping(null, new CodeType { Name = "class" }));
         Assert.Throws<ArgumentNullException>(() => codeClass.DiscriminatorInformation.AddDiscriminatorMapping("oin", null));
         Assert.Throws<ArgumentNullException>(() => codeClass.DiscriminatorInformation.GetDiscriminatorMappingValue(null));
         Assert.Null(codeClass.DiscriminatorInformation.GetDiscriminatorMappingValue("oin"));
@@ -24,9 +27,11 @@ public class CodeClassTests {
         Assert.Null(codeClass.GetParentClass());
     }
     [Fact]
-    public void IsOfKind() {
+    public void IsOfKind()
+    {
         var root = CodeNamespace.InitRootNamespace();
-        var codeClass = new CodeClass {
+        var codeClass = new CodeClass
+        {
             Name = "class",
         };
         root.AddClass(codeClass);
@@ -37,39 +42,48 @@ public class CodeClassTests {
         Assert.False(codeClass.IsOfKind(CodeClassKind.QueryParameters));
     }
     [Fact]
-    public void SetsIndexer() {
+    public void SetsIndexer()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        var codeClass = child.AddClass(new CodeClass {
+        var codeClass = child.AddClass(new CodeClass
+        {
             Name = "class1"
         }).First();
-        codeClass.SetIndexer(new CodeIndexer {
+        codeClass.SetIndexer(new CodeIndexer
+        {
             Name = "idx",
             SerializationName = "idx_smth",
-            IndexType = new CodeType {
+            IndexType = new CodeType
+            {
                 Name = "string",
                 IsExternal = true,
                 IsNullable = true,
             },
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string",
                 IsExternal = true,
                 IsNullable = true,
             },
         });
         Assert.Single(codeClass.GetChildElements(true).OfType<CodeIndexer>());
-        Assert.Throws<ArgumentNullException>(() => {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
             codeClass.SetIndexer(null);
         });
-        codeClass.SetIndexer(new CodeIndexer {
+        codeClass.SetIndexer(new CodeIndexer
+        {
             Name = "idx2",
             SerializationName = "idx-2",
-            IndexType = new CodeType {
+            IndexType = new CodeType
+            {
                 Name = "string",
                 IsExternal = true,
                 IsNullable = true,
             },
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string",
                 IsExternal = true,
                 IsNullable = true,
@@ -82,104 +96,134 @@ public class CodeClassTests {
         Assert.Equal("ByIdx2", methods.FirstOrDefault(x => x.OriginalIndexer.Name.Equals("idx2")).Name);
     }
     [Fact]
-    public void ThrowsOnAddingEmptyCollections() {
+    public void ThrowsOnAddingEmptyCollections()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        var codeClass = child.AddClass(new CodeClass {
+        var codeClass = child.AddClass(new CodeClass
+        {
             Name = "class1"
         }).First();
-        Assert.Throws<ArgumentNullException>(() => {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
             codeClass.AddMethod(null);
         });
-        Assert.Throws<ArgumentOutOfRangeException>(() => {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
             codeClass.AddMethod(Array.Empty<CodeMethod>());
         });
-        Assert.Throws<ArgumentNullException>(() => {
-            codeClass.AddMethod(new CodeMethod[] {null});
+        Assert.Throws<ArgumentNullException>(() =>
+        {
+            codeClass.AddMethod(new CodeMethod[] { null });
         });
-        Assert.Throws<ArgumentNullException>(() => {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
             codeClass.AddProperty(null);
         });
-        Assert.Throws<ArgumentOutOfRangeException>(() => {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
             codeClass.AddProperty(Array.Empty<CodeProperty>());
         });
-        Assert.Throws<ArgumentNullException>(() => {
-            codeClass.AddProperty(new CodeProperty[] {null});
+        Assert.Throws<ArgumentNullException>(() =>
+        {
+            codeClass.AddProperty(new CodeProperty[] { null });
         });
-        Assert.Throws<ArgumentNullException>(() => {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
             codeClass.AddInnerClass(null);
         });
-        Assert.Throws<ArgumentOutOfRangeException>(() => {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
             codeClass.AddInnerClass(Array.Empty<CodeClass>());
         });
-        Assert.Throws<ArgumentNullException>(() => {
-            codeClass.AddInnerClass(new CodeClass[] {null});
+        Assert.Throws<ArgumentNullException>(() =>
+        {
+            codeClass.AddInnerClass(new CodeClass[] { null });
         });
     }
     [Fact]
-    public void AddsInnerElements() {
+    public void AddsInnerElements()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        var codeClass = child.AddClass(new CodeClass {
+        var codeClass = child.AddClass(new CodeClass
+        {
             Name = "class1"
         }).First();
-        codeClass.AddInnerClass(new CodeClass {
+        codeClass.AddInnerClass(new CodeClass
+        {
             Name = "subclass"
         });
         Assert.Single(codeClass.GetChildElements(true));
-        codeClass.AddMethod(new CodeMethod {
+        codeClass.AddMethod(new CodeMethod
+        {
             Name = "submethod",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         });
         Assert.Equal(2, codeClass.GetChildElements(true).Count());
-        codeClass.AddProperty(new CodeProperty {
+        codeClass.AddProperty(new CodeProperty
+        {
             Name = "subprop",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         });
         Assert.Equal(3, codeClass.GetChildElements(true).Count());
     }
     [Fact]
-    public void AddsInnerInterface() {
+    public void AddsInnerInterface()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        var codeClass = child.AddClass(new CodeClass {
+        var codeClass = child.AddClass(new CodeClass
+        {
             Name = "class1"
         }).First();
-        codeClass.AddInnerInterface(new CodeInterface {
+        codeClass.AddInnerInterface(new CodeInterface
+        {
             Name = "subinterface"
         });
         Assert.Single(codeClass.GetChildElements(true).OfType<CodeInterface>());
-        Assert.Throws<ArgumentNullException>(() => {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
             codeClass.AddInnerInterface(null);
         });
-        Assert.Throws<ArgumentNullException>(() => {
-            codeClass.AddInnerInterface(new CodeInterface[] {null});
+        Assert.Throws<ArgumentNullException>(() =>
+        {
+            codeClass.AddInnerInterface(new CodeInterface[] { null });
         });
-        Assert.Throws<ArgumentOutOfRangeException>(() => {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
             codeClass.AddInnerInterface();
         });
     }
     [Fact]
-    public void GetsParentAndGrandParent() {
+    public void GetsParentAndGrandParent()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        var grandParent = child.AddClass(new CodeClass {
+        var grandParent = child.AddClass(new CodeClass
+        {
             Name = "class1"
         }).First();
-        var parent = child.AddClass(new CodeClass {
+        var parent = child.AddClass(new CodeClass
+        {
             Name = "parent"
         }).First();
-        var childClass = child.AddClass(new CodeClass {
+        var childClass = child.AddClass(new CodeClass
+        {
             Name = "child"
         }).First();
-        childClass.StartBlock.Inherits = new CodeType {
+        childClass.StartBlock.Inherits = new CodeType
+        {
             TypeDefinition = parent,
         };
-        parent.StartBlock.Inherits = new CodeType {
+        parent.StartBlock.Inherits = new CodeType
+        {
             TypeDefinition = grandParent,
         };
         Assert.Equal(grandParent, parent.GetParentClass());
@@ -187,37 +231,47 @@ public class CodeClassTests {
         Assert.Equal(grandParent, childClass.GetGreatestGrandparent());
     }
     [Fact]
-    public void ContainsMember() {
+    public void ContainsMember()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        var codeClass = child.AddClass(new CodeClass {
+        var codeClass = child.AddClass(new CodeClass
+        {
             Name = "class1"
         }).First();
-        codeClass.AddInnerClass(new CodeClass {
+        codeClass.AddInnerClass(new CodeClass
+        {
             Name = "subclass"
         });
         Assert.True(codeClass.ContainsMember("subclass"));
     }
     [Fact]
-    public void InheritsFrom() {
+    public void InheritsFrom()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        var baseClass = child.AddClass(new CodeClass {
+        var baseClass = child.AddClass(new CodeClass
+        {
             Name = "baseClass"
         }).First();
-        var baseClass2 = child.AddClass(new CodeClass {
+        var baseClass2 = child.AddClass(new CodeClass
+        {
             Name = "baseClass2"
         }).First();
-        baseClass2.StartBlock.Inherits = new CodeType {
+        baseClass2.StartBlock.Inherits = new CodeType
+        {
             TypeDefinition = baseClass,
         };
-        var subClass = child.AddClass(new CodeClass {
+        var subClass = child.AddClass(new CodeClass
+        {
             Name = "subclass"
         }).First();
-        var unrelatedClass = child.AddClass(new CodeClass {
+        var unrelatedClass = child.AddClass(new CodeClass
+        {
             Name = "unrelatedClass"
         }).First();
-        subClass.StartBlock.Inherits = new CodeType {
+        subClass.StartBlock.Inherits = new CodeType
+        {
             TypeDefinition = baseClass2,
         };
         Assert.True(baseClass2.StartBlock.InheritsFrom(baseClass));

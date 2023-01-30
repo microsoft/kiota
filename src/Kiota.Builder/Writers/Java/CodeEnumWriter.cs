@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -6,11 +6,11 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Java;
 public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
 {
-    public CodeEnumWriter(JavaConventionService conventionService) : base(conventionService){}
+    public CodeEnumWriter(JavaConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
     {
         var enumOptions = codeElement.Options.ToArray();
-        if(!enumOptions.Any())
+        if (!enumOptions.Any())
             return;
         var enumName = codeElement.Name.ToFirstCharacterUpperCase();
         writer.WriteLines($"package {(codeElement.Parent as CodeNamespace)?.Name};",
@@ -22,7 +22,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
         writer.WriteLine($"public enum {enumName} implements ValuedEnum {{");
         writer.IncreaseIndent();
         var lastEnumOption = enumOptions.Last();
-        foreach(var enumOption in enumOptions) {
+        foreach (var enumOption in enumOptions)
+        {
             conventions.WriteShortDescription(enumOption.Documentation.Description, writer);
             writer.WriteLine($"{enumOption.Name.ToFirstCharacterUpperCase()}(\"{enumOption.Name}\"){(enumOption == lastEnumOption ? ";" : ",")}");
         }

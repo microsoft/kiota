@@ -53,55 +53,69 @@ public class ShellCodeMethodWriterTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private void AddRequestProperties() {
-        parentClass.AddProperty(new CodeProperty {
+    private void AddRequestProperties()
+    {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "RequestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "RequestAdapter",
             },
         });
-        parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "PathParameters",
             },
         });
-        parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "urlTemplate",
             Kind = CodePropertyKind.UrlTemplate,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string",
             },
         });
     }
 
-    private static void AddRequestBodyParameters(CodeMethod method) {
-        var stringType = new CodeType {
+    private static void AddRequestBodyParameters(CodeMethod method)
+    {
+        var stringType = new CodeType
+        {
             Name = "string",
         };
-        method.AddParameter(new CodeParameter {
+        method.AddParameter(new CodeParameter
+        {
             Name = "h",
             Kind = CodeParameterKind.Headers,
             Type = stringType,
         });
-        method.AddParameter(new CodeParameter{
+        method.AddParameter(new CodeParameter
+        {
             Name = "q",
             Kind = CodeParameterKind.QueryParameter,
             Type = stringType,
         });
-        method.AddParameter(new CodeParameter{
+        method.AddParameter(new CodeParameter
+        {
             Name = "b",
             Kind = CodeParameterKind.RequestBody,
             Type = stringType,
         });
-        method.AddParameter(new CodeParameter{
+        method.AddParameter(new CodeParameter
+        {
             Name = "r",
             Kind = CodeParameterKind.ResponseHandler,
             Type = stringType,
         });
-        method.AddParameter(new CodeParameter {
+        method.AddParameter(new CodeParameter
+        {
             Name = "o",
             Kind = CodeParameterKind.Options,
             Type = stringType,
@@ -114,30 +128,37 @@ public class ShellCodeMethodWriterTests : IDisposable
         });
     }
 
-    private static void AddPathQueryAndHeaderParameters(CodeMethod method) {
-        var stringType = new CodeType {
+    private static void AddPathQueryAndHeaderParameters(CodeMethod method)
+    {
+        var stringType = new CodeType
+        {
             Name = "string",
         };
-        method.AddPathQueryOrHeaderParameter(new CodeParameter{
+        method.AddPathQueryOrHeaderParameter(new CodeParameter
+        {
             Name = "q",
             Kind = CodeParameterKind.QueryParameter,
             Type = stringType,
             DefaultValue = "test",
-            Documentation = new() {
+            Documentation = new()
+            {
                 Description = "The q option",
             },
             Optional = true
         });
-        method.AddPathQueryOrHeaderParameter(new CodeParameter {
+        method.AddPathQueryOrHeaderParameter(new CodeParameter
+        {
             Name = "test-path",
             Kind = CodeParameterKind.Path,
             Type = stringType
         });
-        method.AddPathQueryOrHeaderParameter(new CodeParameter {
+        method.AddPathQueryOrHeaderParameter(new CodeParameter
+        {
             Name = "Test-Header",
             Kind = CodeParameterKind.Headers,
             Type = stringType,
-            Documentation = new() {
+            Documentation = new()
+            {
                 Description = "The test header",
             },
         });
@@ -150,7 +171,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         method.OriginalMethod = new CodeMethod
         {
             Kind = CodeMethodKind.ClientConstructor,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "RootCommand",
             }
         };
@@ -171,14 +193,17 @@ public class ShellCodeMethodWriterTests : IDisposable
         method.OriginalMethod = new CodeMethod
         {
             Kind = CodeMethodKind.ClientConstructor,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "RootCommand",
             }
         };
-        parentClass.AddMethod(new CodeMethod {
+        parentClass.AddMethod(new CodeMethod
+        {
             Name = "BuildUserCommand",
             Kind = CodeMethodKind.CommandBuilder,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "Command",
             }
         });
@@ -193,19 +218,23 @@ public class ShellCodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public void WritesIndexerCommands() {
+    public void WritesIndexerCommands()
+    {
         method.Kind = CodeMethodKind.CommandBuilder;
         var type = new CodeClass { Name = "TestClass", Kind = CodeClassKind.RequestBuilder };
         type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod1", ReturnType = new CodeType() });
-        type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod2", ReturnType = new CodeType {CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array} });
+        type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod2", ReturnType = new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array } });
         type.Parent = CodeNamespace.InitRootNamespace();
         type.Parent.Name = "Test.Name.Sub";
-        method.OriginalIndexer = new CodeIndexer {
-            ReturnType = new CodeType {
+        method.OriginalIndexer = new CodeIndexer
+        {
+            ReturnType = new CodeType
+            {
                 Name = "TestRequestBuilder",
                 TypeDefinition = type
             },
-            IndexType = new CodeType {
+            IndexType = new CodeType
+            {
                 Name = "string",
             }
         };
@@ -724,21 +753,25 @@ public class ShellCodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public void WritesExecutableCommandForDeleteRequest() {
+    public void WritesExecutableCommandForDeleteRequest()
+    {
 
         method.Kind = CodeMethodKind.CommandBuilder;
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Delete;
-        var stringType = new CodeType {
+        var stringType = new CodeType
+        {
             Name = "void",
         };
-        var generatorMethod = new CodeMethod {
+        var generatorMethod = new CodeMethod
+        {
             Kind = CodeMethodKind.RequestGenerator,
             Name = "CreateDeleteRequestInformation",
             HttpMethod = method.HttpMethod,
             ReturnType = stringType,
         };
-        method.OriginalMethod = new CodeMethod {
+        method.OriginalMethod = new CodeMethod
+        {
             Kind = CodeMethodKind.RequestExecutor,
             HttpMethod = method.HttpMethod,
             ReturnType = stringType,
@@ -817,30 +850,36 @@ public class ShellCodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public void WritesExecutableCommandForPostVoidRequest() {
+    public void WritesExecutableCommandForPostVoidRequest()
+    {
 
         method.Kind = CodeMethodKind.CommandBuilder;
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Post;
-        var stringType = new CodeType {
+        var stringType = new CodeType
+        {
             Name = "string",
         };
-        var voidType = new CodeType {
+        var voidType = new CodeType
+        {
             Name = "void",
         };
-        var generatorMethod = new CodeMethod {
+        var generatorMethod = new CodeMethod
+        {
             Kind = CodeMethodKind.RequestGenerator,
             Name = "CreatePostRequestInformation",
             HttpMethod = method.HttpMethod,
             ReturnType = stringType
         };
-        method.OriginalMethod = new CodeMethod {
+        method.OriginalMethod = new CodeMethod
+        {
             Kind = CodeMethodKind.RequestExecutor,
             HttpMethod = method.HttpMethod,
             ReturnType = voidType,
             Parent = method.Parent
         };
-        method.OriginalMethod.AddParameter(new CodeParameter{
+        method.OriginalMethod.AddParameter(new CodeParameter
+        {
             Name = "body",
             Kind = CodeParameterKind.RequestBody,
             Type = stringType,

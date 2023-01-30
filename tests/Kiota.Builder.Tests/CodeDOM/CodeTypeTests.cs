@@ -1,19 +1,23 @@
-using Kiota.Builder.CodeDOM;
+﻿using Kiota.Builder.CodeDOM;
 
 using Xunit;
 
 namespace Kiota.Builder.Tests.CodeDOM;
-public class CodeTypeTests {
+public class CodeTypeTests
+{
     [Fact]
-    public void ClonesTypeProperly() {
-        var type = new CodeType {
+    public void ClonesTypeProperly()
+    {
+        var type = new CodeType
+        {
             Name = "type1",
             ActionOf = true,
             CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
             IsExternal = true,
             IsNullable = true,
         };
-        type.TypeDefinition = new CodeClass {
+        type.TypeDefinition = new CodeClass
+        {
             Name = "class1"
         };
         var clone = type.Clone() as CodeType;
@@ -25,5 +29,5 @@ public class CodeTypeTests {
         Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Array, clone.CollectionKind);
         Assert.Equal(type.TypeDefinition.Name, clone.TypeDefinition.Name);
     }
-    
+
 }

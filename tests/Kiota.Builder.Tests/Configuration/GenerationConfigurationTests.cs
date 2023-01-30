@@ -1,11 +1,14 @@
-using Kiota.Builder.Configuration;
+﻿using Kiota.Builder.Configuration;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Configuration;
-public class GenerationConfigurationTests {
+public class GenerationConfigurationTests
+{
     [Fact]
-    public void Clones() {
-        var generationConfiguration = new GenerationConfiguration {
+    public void Clones()
+    {
+        var generationConfiguration = new GenerationConfiguration
+        {
             ClientClassName = "class1",
             IncludePatterns = null,
         };

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -6,8 +6,9 @@ using System.Text.RegularExpressions;
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions;
-public static class OpenApiOperationExtensions {
-    internal static readonly HashSet<string> SuccessCodes = new(StringComparer.OrdinalIgnoreCase) {"200", "201", "202", "203", "2XX"}; //204 excluded as it won't have a schema
+public static class OpenApiOperationExtensions
+{
+    internal static readonly HashSet<string> SuccessCodes = new(StringComparer.OrdinalIgnoreCase) { "200", "201", "202", "203", "2XX" }; //204 excluded as it won't have a schema
     /// <summary>
     /// cleans application/vnd.github.mercy-preview+json to application/json
     /// </summary>
@@ -32,7 +33,7 @@ public static class OpenApiOperationExtensions {
     }
     public static IEnumerable<OpenApiSchema> GetValidSchemas(this IDictionary<string, OpenApiMediaType> source, HashSet<string> structuredMimeTypes)
     {
-        if(!(structuredMimeTypes?.Any() ?? false))
+        if (!(structuredMimeTypes?.Any() ?? false))
             throw new ArgumentNullException(nameof(structuredMimeTypes));
         return source?
                             .Where(static c => !string.IsNullOrEmpty(c.Key))

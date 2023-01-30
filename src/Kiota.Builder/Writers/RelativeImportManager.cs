@@ -42,8 +42,8 @@ public class RelativeImportManager
             return (importSymbol, codeUsing.Alias, "./"); // it's relative to the folder, with no declaration (default failsafe)
         var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
             typeDef.GetImmediateParentOfType<CodeNamespace>());
-        importPath += NormalizeFileNameCallback == null ? 
-                        (string.IsNullOrEmpty(importPath) ? codeUsing.Name :  codeUsing.Declaration!.Name.ToFirstCharacterLowerCase()) :
+        importPath += NormalizeFileNameCallback == null ?
+                        (string.IsNullOrEmpty(importPath) ? codeUsing.Name : codeUsing.Declaration!.Name.ToFirstCharacterLowerCase()) :
                         NormalizeFileNameCallback(codeUsing.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>(), codeUsing.Declaration);
         return (importSymbol, codeUsing.Alias, importPath);
     }

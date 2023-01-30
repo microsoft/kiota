@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using Kiota.Builder.Validation;
 using Microsoft.OpenApi.Readers;
@@ -7,9 +7,11 @@ using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;
 
-public class GetWithBodyTests {
+public class GetWithBodyTests
+{
     [Fact]
-    public void AddsAWarningWhenGetWithBody() {
+    public void AddsAWarningWhenGetWithBody()
+    {
         var rule = new GetWithBody();
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -30,13 +32,14 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Single(diag.Warnings);
     }
     [Fact]
-    public void DoesntAddAWarningWhenGetWithNoBody() {
+    public void DoesntAddAWarningWhenGetWithNoBody()
+    {
         var rule = new GetWithBody();
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -55,13 +58,14 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Empty(diag.Warnings);
     }
     [Fact]
-    public void DoesntAddAWarningWhenPostWithBody() {
+    public void DoesntAddAWarningWhenPostWithBody()
+    {
         var rule = new GetWithBody();
         var documentTxt = @"openapi: 3.0.1
 info:
@@ -82,7 +86,7 @@ paths:
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
         var reader = new OpenApiStreamReader(new OpenApiReaderSettings
         {
-            RuleSet = new (new ValidationRule[] { rule }),
+            RuleSet = new(new ValidationRule[] { rule }),
         });
         var doc = reader.Read(stream, out var diag);
         Assert.Empty(diag.Warnings);

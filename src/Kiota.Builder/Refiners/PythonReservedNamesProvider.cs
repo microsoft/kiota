@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Kiota.Builder.Refiners;
-public class PythonReservedNamesProvider : IReservedNamesProvider {
+public class PythonReservedNamesProvider : IReservedNamesProvider
+{
     private readonly Lazy<HashSet<string>> _reservedNames = new(() => new(StringComparer.OrdinalIgnoreCase) {
         "and",
         "as",

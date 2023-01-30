@@ -191,7 +191,8 @@ public class OpenApiUrlTreeNodeExtensionsTests
         Assert.Equal(expected, source.GetNamespaceFromPath(string.Empty));
     }
     [Fact]
-    public void GetsClassNameWithIndexerAndExtension() {
+    public void GetsClassNameWithIndexerAndExtension()
+    {
         var doc = new OpenApiDocument
         {
             Paths = new(),
@@ -227,11 +228,12 @@ public class OpenApiUrlTreeNodeExtensionsTests
             }
         });
         var node = OpenApiUrlTreeNode.Create(doc, Label);
-        var result = node.Children["reviews"].Children["{resource-type}.json"].GetClassName(new(){"application/json"});
+        var result = node.Children["reviews"].Children["{resource-type}.json"].GetClassName(new() { "application/json" });
         Assert.Equal("ResourceType", result);
     }
     [Fact]
-    public void GetsClassNameWithSegmentsToSkipForClassNames() {
+    public void GetsClassNameWithSegmentsToSkipForClassNames()
+    {
         var doc = new OpenApiDocument
         {
             Paths = new(),
@@ -239,7 +241,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
         doc.Paths.Add("/reviews/{resource-type}.json", new()
         {
             Operations = new Dictionary<OperationType, OpenApiOperation> {
-                { 
+                {
                     OperationType.Get, new() {
                         Parameters = new List<OpenApiParameter> {
                             new() {
@@ -252,17 +254,17 @@ public class OpenApiUrlTreeNodeExtensionsTests
                                 Style = ParameterStyle.Simple,
                             }
                         },
-                        Responses = new OpenApiResponses() 
+                        Responses = new OpenApiResponses()
                         {
                             {
-                                "200", new() 
+                                "200", new()
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType>() 
+                                    Content = new Dictionary<string, OpenApiMediaType>()
                                     {
                                         {
-                                            "application/json", new() 
-                                            { 
-                                                Schema = new () 
+                                            "application/json", new()
+                                            {
+                                                Schema = new ()
                                                 {
                                                     Type = "object",
                                                     Title = "json",
@@ -273,7 +275,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
                                                 }
                                             }
                                         }
-                                    }   
+                                    }
                                 }
                             }
                         }
@@ -281,17 +283,17 @@ public class OpenApiUrlTreeNodeExtensionsTests
                 }
             }
         });
-        
+
         var node = OpenApiUrlTreeNode.Create(doc, Label);
-        var result = node.Children["reviews"].Children["{resource-type}.json"].GetClassName(new(){"application/json"});
+        var result = node.Children["reviews"].Children["{resource-type}.json"].GetClassName(new() { "application/json" });
         Assert.Equal("ResourceType", result);
-        
+
         // Get the responseSchema with a type "microsoft.graph.json"
         var responseSchema = node.Children["reviews"].Children["{resource-type}.json"].PathItems["default"].Operations[0].Responses["200"].Content["application/json"].Schema;
         var responseClassName = node.Children["reviews"].Children["{resource-type}.json"]
-            .GetClassName(new() { "application/json" },schema: responseSchema);
-        
+            .GetClassName(new() { "application/json" }, schema: responseSchema);
+
         // validate that we get a valid class name
-        Assert.Equal("Json",responseClassName);
+        Assert.Equal("Json", responseClassName);
     }
 }

@@ -67,7 +67,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
 
     private void WriteExecutableCommand(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, LanguageWriter writer, string name)
     {
-        if(parentClass
+        if (parentClass
             .Methods
             .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod) is not CodeMethod generatorMethod ||
             codeElement.OriginalMethod is not CodeMethod originalMethod) return;
@@ -229,7 +229,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 writer.WriteLine($"IOutputFormatterOptions? {formatterOptionsVar} = null;");
                 writer.WriteLine($"IOutputFormatter? {formatterVar} = null;");
             }
-            if (originalMethod.ReturnType is CodeType type && 
+            if (originalMethod.ReturnType is CodeType type &&
                 conventions.GetTypeString(type, originalMethod) is string typeString && !typeString.Equals("Stream", StringComparison.Ordinal))
             {
                 var formatterTypeVal = "FormatterType.TEXT";
@@ -424,7 +424,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
 
     protected virtual void WriteCommandHandlerBody(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
     {
-        if(parentClass
+        if (parentClass
                     .Methods
                     .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod) is not CodeMethod generatorMethod) return;
         if (requestParams.requestBody is CodeParameter requestBodyParam)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 
@@ -9,30 +9,35 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Go;
-public class CodeEnumWriterTests :IDisposable {
+public class CodeEnumWriterTests : IDisposable
+{
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
     private readonly StringWriter tw;
     private readonly LanguageWriter writer;
     private readonly CodeEnum currentEnum;
     private const string EnumName = "someEnum";
-    public CodeEnumWriterTests(){
+    public CodeEnumWriterTests()
+    {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
-        currentEnum = root.AddEnum(new CodeEnum {
+        currentEnum = root.AddEnum(new CodeEnum
+        {
             Name = EnumName,
         }).First();
     }
-    public void Dispose(){
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesEnum() {
+    public void WritesEnum()
+    {
         const string optionName = "option1";
-        currentEnum.AddOption(new CodeEnumOption { Name = optionName});
+        currentEnum.AddOption(new CodeEnumOption { Name = optionName });
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.Contains($"type {EnumName.ToFirstCharacterUpperCase()} int", result);
@@ -53,25 +58,31 @@ public class CodeEnumWriterTests :IDisposable {
         Assert.Contains(optionName.ToUpperInvariant(), result);
     }
     [Fact]
-    public void DoesntWriteAnythingOnNoOption() {
+    public void DoesntWriteAnythingOnNoOption()
+    {
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.Empty(result);
     }
     [Fact]
-    public void WritesUsing() {
-        currentEnum.AddUsing(new CodeUsing {
+    public void WritesUsing()
+    {
+        currentEnum.AddUsing(new CodeUsing
+        {
             Name = "using1",
         });
-        currentEnum.AddOption(new CodeEnumOption{ Name = "o"});
+        currentEnum.AddOption(new CodeEnumOption { Name = "o" });
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.Contains("using1", result);
     }
     [Fact]
-    public void WritesEnumOptionDescription() {
-        var option = new CodeEnumOption {
-            Documentation = new() {
+    public void WritesEnumOptionDescription()
+    {
+        var option = new CodeEnumOption
+        {
+            Documentation = new()
+            {
                 Description = "Some option description",
             },
             Name = "option1",

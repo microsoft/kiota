@@ -22,14 +22,14 @@ public class PhpLanguageRefinerTests
 
         var requestBuilder = model.AddProperty(new CodeProperty
         {
-            Name = "breaks", 
+            Name = "breaks",
             Kind = CodePropertyKind.RequestBuilder,
             Type = new CodeType
             {
                 Name = "string"
             }
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.Equal("breaks", requestBuilder.Name);
         Assert.Equal("userRequestBuilder", model.Name);
     }
@@ -45,18 +45,18 @@ public class PhpLanguageRefinerTests
 
         var property = model.AddProperty(new CodeProperty
         {
-            Name = "continue", 
+            Name = "continue",
             Kind = CodePropertyKind.RequestBuilder,
             Type = new CodeType
             {
                 Name = "string"
             }
         }).First();
-        
-        await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
-        Assert.Equal("EscapedContinue",property.Name);
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        Assert.Equal("EscapedContinue", property.Name);
     }
-    
+
     [Fact]
     public async Task ReplacesBinaryWithNativeType()
     {
@@ -73,12 +73,13 @@ public class PhpLanguageRefinerTests
                 Name = "binary"
             }
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP}, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.Equal("StreamInterface", method.ReturnType.Name);
     }
 
     [Fact]
-    public async Task AddsDefaultImports() {
+    public async Task AddsDefaultImports()
+    {
         var model = root.AddClass(new CodeClass
         {
             Name = "model",
@@ -97,7 +98,8 @@ public class PhpLanguageRefinerTests
     public async Task ChangesBackingStoreParameterTypeInApiClientConstructor()
     {
         var apiClientClass = new CodeClass { Name = "ApiClient", Kind = CodeClassKind.Custom };
-        var constructor = new CodeMethod { 
+        var constructor = new CodeMethod
+        {
             Name = "ApiClientConstructor",
             Kind = CodeMethodKind.ClientConstructor,
             ReturnType = new CodeType { Name = "string" },
@@ -113,12 +115,12 @@ public class PhpLanguageRefinerTests
             }
         };
         constructor.AddParameter(backingStoreParameter);
-        constructor.DeserializerModules = new() {"Microsoft\\Kiota\\Serialization\\Deserializer"};
-        constructor.SerializerModules = new() {"Microsoft\\Kiota\\Serialization\\Serializer"};
+        constructor.DeserializerModules = new() { "Microsoft\\Kiota\\Serialization\\Deserializer" };
+        constructor.SerializerModules = new() { "Microsoft\\Kiota\\Serialization\\Serializer" };
         apiClientClass.AddMethod(constructor);
 
         root.AddClass(apiClientClass);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true}, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
         Assert.Equal("BackingStoreFactory", backingStoreParameter.Type.Name);
         Assert.Equal("null", backingStoreParameter.DefaultValue);
     }
@@ -133,7 +135,8 @@ public class PhpLanguageRefinerTests
             Kind = CodeClassKind.Model,
             DiscriminatorInformation = new DiscriminatorInformation
             {
-                Name = "createFromDiscriminatorValue", DiscriminatorPropertyName = "@odata.type",
+                Name = "createFromDiscriminatorValue",
+                DiscriminatorPropertyName = "@odata.type",
             }
         };
         var parentClass = new CodeClass { Name = "ParentClass", Kind = CodeClassKind.Model, Parent = root };
@@ -169,7 +172,9 @@ public class PhpLanguageRefinerTests
         modelClass.AddMethod(codeMethod);
         securityClass.StartBlock.Inherits = new CodeType
         {
-            Name = "Entity", IsExternal = false, TypeDefinition = modelClass
+            Name = "Entity",
+            IsExternal = false,
+            TypeDefinition = modelClass
         };
         Assert.Empty(modelClass.Usings);
         subNamespace.AddClass(securityClass);

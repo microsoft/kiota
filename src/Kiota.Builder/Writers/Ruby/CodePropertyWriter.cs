@@ -1,17 +1,18 @@
-using System;
+﻿using System;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Ruby;
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConventionService>
 {
-    public CodePropertyWriter(RubyConventionService conventionService) : base(conventionService){}
+    public CodePropertyWriter(RubyConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
-        switch(codeElement.Kind) {
+        switch (codeElement.Kind)
+        {
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}()");
                 writer.IncreaseIndent();
@@ -19,7 +20,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
                 conventions.AddRequestBuilderBody(parentClass, returnType, writer, prefix: $"return {prefix}");
                 writer.DecreaseIndent();
                 writer.WriteLine("end");
-            break;
+                break;
             case CodePropertyKind.QueryParameter:
             case CodePropertyKind.QueryParameters:
             case CodePropertyKind.Headers:
@@ -28,7 +29,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
                 break;
             default:
                 writer.WriteLine($"@{codeElement.NamePrefix}{codeElement.Name.ToSnakeCase()}");
-            break;
+                break;
         }
     }
 }

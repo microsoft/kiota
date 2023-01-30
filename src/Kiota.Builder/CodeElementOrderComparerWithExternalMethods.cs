@@ -1,9 +1,12 @@
-using Kiota.Builder.CodeDOM;
+﻿using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder;
-public class CodeElementOrderComparerWithExternalMethods : CodeElementOrderComparer {
-    protected override int GetTypeFactor(CodeElement element) {
-        return element switch {
+public class CodeElementOrderComparerWithExternalMethods : CodeElementOrderComparer
+{
+    protected override int GetTypeFactor(CodeElement element)
+    {
+        return element switch
+        {
             CodeUsing => 1,
             ClassDeclaration => 2,
             CodeProperty => 3,

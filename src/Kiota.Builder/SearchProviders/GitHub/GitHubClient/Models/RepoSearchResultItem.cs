@@ -1,256 +1,416 @@
-using Microsoft.Kiota.Abstractions.Serialization;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Kiota.Abstractions.Serialization;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models;
 /// <summary>
 /// Repo Search Result Item
 /// </summary>
-public class RepoSearchResultItem : IAdditionalDataHolder, IParsable {
+public class RepoSearchResultItem : IAdditionalDataHolder, IParsable
+{
     /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
-    public IDictionary<string, object> AdditionalData { get; set; }
-    public bool? Allow_auto_merge { get; set; }
-    public bool? Allow_forking { get; set; }
-    public bool? Allow_merge_commit { get; set; }
-    public bool? Allow_rebase_merge { get; set; }
-    public bool? Allow_squash_merge { get; set; }
+    public IDictionary<string, object> AdditionalData
+    {
+        get; set;
+    }
+    public bool? Allow_auto_merge
+    {
+        get; set;
+    }
+    public bool? Allow_forking
+    {
+        get; set;
+    }
+    public bool? Allow_merge_commit
+    {
+        get; set;
+    }
+    public bool? Allow_rebase_merge
+    {
+        get; set;
+    }
+    public bool? Allow_squash_merge
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Archive_url { get; set; }
+    public string? Archive_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Archive_url { get; set; }
 #endif
-    public bool? Archived { get; set; }
+    public bool? Archived
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Assignees_url { get; set; }
+    public string? Assignees_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Assignees_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Blobs_url { get; set; }
+    public string? Blobs_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Blobs_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Branches_url { get; set; }
+    public string? Branches_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Branches_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Clone_url { get; set; }
+    public string? Clone_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Clone_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Collaborators_url { get; set; }
+    public string? Collaborators_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Collaborators_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Comments_url { get; set; }
+    public string? Comments_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Comments_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Commits_url { get; set; }
+    public string? Commits_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Commits_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Compare_url { get; set; }
+    public string? Compare_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Compare_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Contents_url { get; set; }
+    public string? Contents_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Contents_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Contributors_url { get; set; }
+    public string? Contributors_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Contributors_url { get; set; }
 #endif
-    public DateTimeOffset? Created_at { get; set; }
+    public DateTimeOffset? Created_at
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Default_branch { get; set; }
+    public string? Default_branch
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Default_branch { get; set; }
 #endif
-    public bool? Delete_branch_on_merge { get; set; }
+    public bool? Delete_branch_on_merge
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Deployments_url { get; set; }
+    public string? Deployments_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Deployments_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Description { get; set; }
+    public string? Description
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Description { get; set; }
 #endif
     /// <summary>Returns whether or not this repository disabled.</summary>
-    public bool? Disabled { get; set; }
+    public bool? Disabled
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Downloads_url { get; set; }
+    public string? Downloads_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Downloads_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Events_url { get; set; }
+    public string? Events_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Events_url { get; set; }
 #endif
-    public bool? Fork { get; set; }
-    public int? Forks { get; set; }
-    public int? Forks_count { get; set; }
+    public bool? Fork
+    {
+        get; set;
+    }
+    public int? Forks
+    {
+        get; set;
+    }
+    public int? Forks_count
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Forks_url { get; set; }
+    public string? Forks_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Forks_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Full_name { get; set; }
+    public string? Full_name
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Full_name { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Git_commits_url { get; set; }
+    public string? Git_commits_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Git_commits_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Git_refs_url { get; set; }
+    public string? Git_refs_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Git_refs_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Git_tags_url { get; set; }
+    public string? Git_tags_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Git_tags_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Git_url { get; set; }
+    public string? Git_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Git_url { get; set; }
 #endif
-    public bool? Has_discussions { get; set; }
-    public bool? Has_downloads { get; set; }
-    public bool? Has_issues { get; set; }
-    public bool? Has_pages { get; set; }
-    public bool? Has_projects { get; set; }
-    public bool? Has_wiki { get; set; }
+    public bool? Has_discussions
+    {
+        get; set;
+    }
+    public bool? Has_downloads
+    {
+        get; set;
+    }
+    public bool? Has_issues
+    {
+        get; set;
+    }
+    public bool? Has_pages
+    {
+        get; set;
+    }
+    public bool? Has_projects
+    {
+        get; set;
+    }
+    public bool? Has_wiki
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Homepage { get; set; }
+    public string? Homepage
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Homepage { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Hooks_url { get; set; }
+    public string? Hooks_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Hooks_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Html_url { get; set; }
+    public string? Html_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Html_url { get; set; }
 #endif
-    public int? Id { get; set; }
-    public bool? Is_template { get; set; }
+    public int? Id
+    {
+        get; set;
+    }
+    public bool? Is_template
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Issue_comment_url { get; set; }
+    public string? Issue_comment_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Issue_comment_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Issue_events_url { get; set; }
+    public string? Issue_events_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Issue_events_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Issues_url { get; set; }
+    public string? Issues_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Issues_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Keys_url { get; set; }
+    public string? Keys_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Keys_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Labels_url { get; set; }
+    public string? Labels_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Labels_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Language { get; set; }
+    public string? Language
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Language { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Languages_url { get; set; }
+    public string? Languages_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Languages_url { get; set; }
@@ -258,184 +418,283 @@ public class RepoSearchResultItem : IAdditionalDataHolder, IParsable {
     /// <summary>License Simple</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public NullableLicenseSimple? License { get; set; }
+    public NullableLicenseSimple? License
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public NullableLicenseSimple License { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Master_branch { get; set; }
+    public string? Master_branch
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Master_branch { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Merges_url { get; set; }
+    public string? Merges_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Merges_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Milestones_url { get; set; }
+    public string? Milestones_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Milestones_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Mirror_url { get; set; }
+    public string? Mirror_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Mirror_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Name { get; set; }
+    public string? Name
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Name { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Node_id { get; set; }
+    public string? Node_id
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Node_id { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Notifications_url { get; set; }
+    public string? Notifications_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Notifications_url { get; set; }
 #endif
-    public int? Open_issues { get; set; }
-    public int? Open_issues_count { get; set; }
+    public int? Open_issues
+    {
+        get; set;
+    }
+    public int? Open_issues_count
+    {
+        get; set;
+    }
     /// <summary>A GitHub user.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public NullableSimpleUser? Owner { get; set; }
+    public NullableSimpleUser? Owner
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public NullableSimpleUser Owner { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public RepoSearchResultItem_permissions? Permissions { get; set; }
+    public RepoSearchResultItem_permissions? Permissions
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public RepoSearchResultItem_permissions Permissions { get; set; }
 #endif
-    public bool? Private { get; set; }
+    public bool? Private
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Pulls_url { get; set; }
+    public string? Pulls_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Pulls_url { get; set; }
 #endif
-    public DateTimeOffset? Pushed_at { get; set; }
+    public DateTimeOffset? Pushed_at
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Releases_url { get; set; }
+    public string? Releases_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Releases_url { get; set; }
 #endif
-    public double? Score { get; set; }
-    public int? Size { get; set; }
+    public double? Score
+    {
+        get; set;
+    }
+    public int? Size
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Ssh_url { get; set; }
+    public string? Ssh_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Ssh_url { get; set; }
 #endif
-    public int? Stargazers_count { get; set; }
+    public int? Stargazers_count
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Stargazers_url { get; set; }
+    public string? Stargazers_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Stargazers_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Statuses_url { get; set; }
+    public string? Statuses_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Statuses_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Subscribers_url { get; set; }
+    public string? Subscribers_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Subscribers_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Subscription_url { get; set; }
+    public string? Subscription_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Subscription_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Svn_url { get; set; }
+    public string? Svn_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Svn_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Tags_url { get; set; }
+    public string? Tags_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Tags_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Teams_url { get; set; }
+    public string? Teams_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Teams_url { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Temp_clone_token { get; set; }
+    public string? Temp_clone_token
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Temp_clone_token { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public List<RepoSearchResultItem_text_matches>? Text_matches { get; set; }
+    public List<RepoSearchResultItem_text_matches>? Text_matches
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public List<RepoSearchResultItem_text_matches> Text_matches { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public List<string>? Topics { get; set; }
+    public List<string>? Topics
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public List<string> Topics { get; set; }
 #endif
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Trees_url { get; set; }
+    public string? Trees_url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Trees_url { get; set; }
 #endif
-    public DateTimeOffset? Updated_at { get; set; }
+    public DateTimeOffset? Updated_at
+    {
+        get; set;
+    }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Url { get; set; }
+    public string? Url
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Url { get; set; }
@@ -443,32 +702,47 @@ public class RepoSearchResultItem : IAdditionalDataHolder, IParsable {
     /// <summary>The repository visibility: public, private, or internal.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-    public string? Visibility { get; set; }
+    public string? Visibility
+    {
+        get; set;
+    }
 #nullable restore
 #else
     public string Visibility { get; set; }
 #endif
-    public int? Watchers { get; set; }
-    public int? Watchers_count { get; set; }
-    public bool? Web_commit_signoff_required { get; set; }
+    public int? Watchers
+    {
+        get; set;
+    }
+    public int? Watchers_count
+    {
+        get; set;
+    }
+    public bool? Web_commit_signoff_required
+    {
+        get; set;
+    }
     /// <summary>
     /// Instantiates a new repoSearchResultItem and sets the default values.
     /// </summary>
-    public RepoSearchResultItem() {
+    public RepoSearchResultItem()
+    {
         AdditionalData = new Dictionary<string, object>();
     }
     /// <summary>
     /// Creates a new instance of the appropriate class based on discriminator value
     /// </summary>
     /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
-    public static RepoSearchResultItem CreateFromDiscriminatorValue(IParseNode parseNode) {
+    public static RepoSearchResultItem CreateFromDiscriminatorValue(IParseNode parseNode)
+    {
         _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
         return new RepoSearchResultItem();
     }
     /// <summary>
     /// The deserialization information for the current model
     /// </summary>
-    public IDictionary<string, Action<IParseNode>> GetFieldDeserializers() {
+    public IDictionary<string, Action<IParseNode>> GetFieldDeserializers()
+    {
         return new Dictionary<string, Action<IParseNode>> {
             {"allow_auto_merge", n => { Allow_auto_merge = n.GetBoolValue(); } },
             {"allow_forking", n => { Allow_forking = n.GetBoolValue(); } },
@@ -565,7 +839,8 @@ public class RepoSearchResultItem : IAdditionalDataHolder, IParsable {
     /// Serializes information the current object
     /// </summary>
     /// <param name="writer">Serialization writer to use to serialize this model</param>
-    public void Serialize(ISerializationWriter writer) {
+    public void Serialize(ISerializationWriter writer)
+    {
         _ = writer ?? throw new ArgumentNullException(nameof(writer));
         writer.WriteBoolValue("allow_auto_merge", Allow_auto_merge);
         writer.WriteBoolValue("allow_forking", Allow_forking);

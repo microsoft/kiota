@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -7,9 +7,10 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.PathSegmenters;
 public class TypeScriptPathSegmenter : CommonPathSegmenter
 {
-    public TypeScriptPathSegmenter(string rootPath, string clientNamespaceName) : base (rootPath, clientNamespaceName) { }
-    public override string FileSuffix =>  ".ts";
-    public override string NormalizeFileName(CodeElement currentElement) {
+    public TypeScriptPathSegmenter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName) { }
+    public override string FileSuffix => ".ts";
+    public override string NormalizeFileName(CodeElement currentElement)
+    {
         return currentElement switch
         {
             CodeNamespace => "index",

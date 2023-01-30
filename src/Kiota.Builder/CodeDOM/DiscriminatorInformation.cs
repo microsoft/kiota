@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,9 +44,10 @@ public class DiscriminatorInformation : CodeElement, ICloneable
         return null;
     }
 
-    public void RemoveDiscriminatorMapping(params string[] keys) {
+    public void RemoveDiscriminatorMapping(params string[] keys)
+    {
         ArgumentNullException.ThrowIfNull(keys);
-        foreach(var key in keys)
+        foreach (var key in keys)
             discriminatorMappings.TryRemove(key, out var _);
     }
 

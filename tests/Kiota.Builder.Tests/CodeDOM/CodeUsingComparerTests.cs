@@ -1,24 +1,30 @@
-using Kiota.Builder.CodeDOM;
+﻿using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Refiners;
 
 using Xunit;
 
 namespace Kiota.Builder.Tests.CodeDOM;
-public class CodeUsingComparerTests {
+public class CodeUsingComparerTests
+{
     [Fact]
-    public void ComparesWithDeclaration() {
+    public void ComparesWithDeclaration()
+    {
         var root = CodeNamespace.InitRootNamespace();
-        var cUsing = new CodeUsing {
+        var cUsing = new CodeUsing
+        {
             Name = "using1",
         };
-        cUsing.Declaration = new CodeType {
+        cUsing.Declaration = new CodeType
+        {
             Name = "type1"
         };
 
-        var cUsing2 = new CodeUsing {
+        var cUsing2 = new CodeUsing
+        {
             Name = "using2",
         };
-        cUsing2.Declaration = new CodeType {
+        cUsing2.Declaration = new CodeType
+        {
             Name = "type2"
         };
         var comparer = new CodeUsingComparer(true);

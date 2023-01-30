@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Kiota.Builder.Refiners;
 public class RubyReservedNamesProvider : IReservedNamesProvider
 {
     private readonly Lazy<HashSet<string>> _reservedNames = new(() => new(StringComparer.OrdinalIgnoreCase) {
-        "BEGIN",	
+        "BEGIN",
         "END",
         "alias",
         "and",
@@ -40,7 +40,7 @@ public class RubyReservedNamesProvider : IReservedNamesProvider
         "when",
         "while",
         "defined?",
-        "self",      
+        "self",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }

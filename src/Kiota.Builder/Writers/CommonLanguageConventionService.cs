@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers;
-public abstract class CommonLanguageConventionService : ILanguageConventionService {
+public abstract class CommonLanguageConventionService : ILanguageConventionService
+{
     public abstract string StreamTypeName
     {
         get;
@@ -32,9 +33,9 @@ public abstract class CommonLanguageConventionService : ILanguageConventionServi
 
     public string TranslateType(CodeTypeBase type)
     {
-        if(type is CodeType currentType)
+        if (type is CodeType currentType)
             return TranslateType(currentType);
-        if(type is CodeComposedTypeBase currentUnionType)
+        if (type is CodeComposedTypeBase currentUnionType)
             return TranslateType(currentUnionType.AllTypes.First());
         throw new InvalidOperationException("Unknown type");
     }

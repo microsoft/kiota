@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -20,7 +20,8 @@ public class CodeNamespaceWriterTests : IDisposable
     private readonly CodeNamespace parentNamespace;
     private readonly CodeNamespace childNamespace;
 
-    public CodeNamespaceWriterTests() {
+    public CodeNamespaceWriterTests()
+    {
         codeElementWriter = new CodeNamespaceWriter(new RubyConventionService(), new(Path.GetTempFileName(), ClientNamespaceName));
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, DefaultPath, DefaultName);
         tw = new StringWriter();
@@ -29,12 +30,14 @@ public class CodeNamespaceWriterTests : IDisposable
         parentNamespace = root.AddNamespace("parentNamespace");
         childNamespace = parentNamespace.AddNamespace("childNamespace");
     }
-    public void Dispose() {
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesSimpleDeclaration() {
+    public void WritesSimpleDeclaration()
+    {
         codeElementWriter.WriteCodeElement(childNamespace, writer);
         var result = tw.ToString();
         Assert.Contains("module", result);

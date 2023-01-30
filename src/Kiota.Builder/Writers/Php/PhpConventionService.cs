@@ -7,7 +7,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Php;
-public class PhpConventionService: CommonLanguageConventionService
+public class PhpConventionService : CommonLanguageConventionService
 {
     public override string TempDictionaryVarName => "urlTplParams";
 
@@ -37,12 +37,12 @@ public class PhpConventionService: CommonLanguageConventionService
     public const string DocCommentStart = "/**";
 
     public const string DocCommentEnd = "*/";
-    internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval", "int", "double", "decimal", "bool"};
-    
-    internal readonly HashSet<string> CustomTypes = new(StringComparer.OrdinalIgnoreCase) {"Date", "DateTime", "StreamInterface", "Byte", "Time"};
+    internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) { "string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval", "int", "double", "decimal", "bool" };
+
+    internal readonly HashSet<string> CustomTypes = new(StringComparer.OrdinalIgnoreCase) { "Date", "DateTime", "StreamInterface", "Byte", "Time" };
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
     {
-        if(code is CodeComposedTypeBase) 
+        if (code is CodeComposedTypeBase)
             throw new InvalidOperationException($"PHP does not support union types, the union type {code.Name} should have been filtered out by the refiner.");
         if (code is CodeType currentType)
         {
@@ -52,7 +52,7 @@ public class PhpConventionService: CommonLanguageConventionService
                 return $"\\{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name.ReplaceDotsWithSlashInNamespaces()}\\{typeName.ToFirstCharacterUpperCase()}";
             }
         }
-        return code is {IsCollection: true} ? "array" : TranslateType(code);
+        return code is { IsCollection: true } ? "array" : TranslateType(code);
     }
 
     public override string TranslateType(CodeType type)
@@ -101,14 +101,14 @@ public class PhpConventionService: CommonLanguageConventionService
         };
         var qualified = parameter?.Optional != null && parameter.Optional &&
                         targetElement is CodeMethod methodTarget && !methodTarget.IsOfKind(CodeMethodKind.Setter);
-        return parameter?.Optional != null && parameter.Optional ? $"?{parameterSuffix}{(qualified ?  " = null" : string.Empty)}" : parameterSuffix;
+        return parameter?.Optional != null && parameter.Optional ? $"?{parameterSuffix}{(qualified ? " = null" : string.Empty)}" : parameterSuffix;
     }
     public string GetParameterDocNullable(CodeParameter parameter, CodeElement codeElement)
     {
         var parameterSignature = GetParameterSignature(parameter, codeElement).Trim().Split(' ');
         if (parameter.IsOfKind(CodeParameterKind.PathParameters))
         {
-            return $"array<string, mixed>{(parameter.Optional ? "|null": string.Empty)} {parameterSignature[1]}";
+            return $"array<string, mixed>{(parameter.Optional ? "|null" : string.Empty)} {parameterSignature[1]}";
         }
 
         var isCollection = parameter.Type.IsCollection;
@@ -123,7 +123,7 @@ public class PhpConventionService: CommonLanguageConventionService
     private static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/");
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
-        
+
         if (!string.IsNullOrEmpty(description))
         {
             writer.WriteLine(DocCommentStart);
@@ -143,12 +143,12 @@ public class PhpConventionService: CommonLanguageConventionService
             enumerableArray.Any())
         {
             writer.WriteLine(DocCommentStart);
-            if(codeDocumentation.DescriptionAvailable)
+            if (codeDocumentation.DescriptionAvailable)
                 writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(codeDocumentation.Description)}");
-            foreach(var additionalRemark in enumerableArray.Where(static x => !string.IsNullOrEmpty(x)))
+            foreach (var additionalRemark in enumerableArray.Where(static x => !string.IsNullOrEmpty(x)))
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
 
-            if(codeDocumentation.ExternalDocumentationAvailable)
+            if (codeDocumentation.ExternalDocumentationAvailable)
                 writer.WriteLine($"{DocCommentPrefix}@link {codeDocumentation.DocumentationLink} {codeDocumentation.DocumentationLabel}");
             writer.WriteLine(DocCommentEnd);
         }
@@ -175,7 +175,7 @@ public class PhpConventionService: CommonLanguageConventionService
         {
             throw new ArgumentException(nameof(propertyName) + " must not be null and have at least 2 characters.");
         }
-        
+
         return propertyName[1..];
     }
 
@@ -197,15 +197,15 @@ public class PhpConventionService: CommonLanguageConventionService
                 .Select(x =>
                 {
                     string namespaceValue;
-                    if (x.Declaration is {IsExternal: true})
+                    if (x.Declaration is { IsExternal: true })
                     {
                         namespaceValue = string.IsNullOrEmpty(x.Declaration.Name) ? string.Empty : $"{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}\\";
                         return
                             $"use {namespaceValue}{x.Name.ReplaceDotsWithSlashInNamespaces()};";
                     }
                     namespaceValue = string.IsNullOrEmpty(x.Name) ? string.Empty : $"{x.Name.ReplaceDotsWithSlashInNamespaces()}\\";
-                        return
-                            $"use {namespaceValue}{x.Declaration!.Name.ReplaceDotsWithSlashInNamespaces()};";
+                    return
+                        $"use {namespaceValue}{x.Declaration!.Name.ReplaceDotsWithSlashInNamespaces()};";
                 })
                     .Distinct()
                 .OrderBy(x => x)
@@ -221,27 +221,30 @@ public class PhpConventionService: CommonLanguageConventionService
             writer.WriteLine(string.Empty);
         }
     }
-    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default) {
+    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default)
+    {
         var codeParameters = pathParameters as CodeParameter[] ?? pathParameters?.ToArray();
         var codePathParametersSuffix = !(codeParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", codeParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
-        var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) && parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty  ?
+        var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) && parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty ?
             $"$this->{pathParametersProperty.Name}" :
             urlTemplateVarName;
         if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
             writer.WriteLines($"return new {returnType}(${urlTemplateParams}, $this->{requestAdapterProperty.Name}{codePathParametersSuffix});");
     }
-    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
-        if(pathParametersType == null) return;
+    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters)
+    {
+        if (pathParametersType == null) return;
         writer.WriteLine($"${TempDictionaryVarName} = {pathParametersReference};");
-        if(parameters.Any())
-            writer.WriteLines(parameters.Select(p => 
+        if (parameters.Any())
+            writer.WriteLines(parameters.Select(p =>
                 $"${TempDictionaryVarName}['{p.Item2}'] = {p.Item3};"
             ).ToArray());
     }
-    
-    private static bool IsSymbolDuplicated(string symbol, CodeElement targetElement) {
+
+    private static bool IsSymbolDuplicated(string symbol, CodeElement targetElement)
+    {
         var targetClass = targetElement as CodeClass ?? targetElement?.GetImmediateParentOfType<CodeClass>();
-        if (targetClass?.Parent is CodeClass parentClass) 
+        if (targetClass?.Parent is CodeClass parentClass)
             targetClass = parentClass;
         return targetClass?.StartBlock
             ?.Usings

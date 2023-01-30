@@ -18,32 +18,38 @@ public class CodeClassDeclarationWriterTests : IDisposable
     private readonly LanguageWriter writer;
     private readonly CodeClassDeclarationWriter codeElementWriter;
     private readonly CodeClass parentClass;
-    public CodeClassDeclarationWriterTests() {
+    public CodeClassDeclarationWriterTests()
+    {
         codeElementWriter = new CodeClassDeclarationWriter(new PhpConventionService());
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
         root.Name = "Microsoft\\Graph";
-        parentClass = new () {
+        parentClass = new()
+        {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
     }
-    public void Dispose() {
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesSimpleDeclaration() {
+    public void WritesSimpleDeclaration()
+    {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
         Assert.Contains("class ParentClass", result);
     }
     [Fact]
-    public void WritesImplementation() {
+    public void WritesImplementation()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.AddImplements(new CodeType {
+        declaration.AddImplements(new CodeType
+        {
             Name = "\\Stringable"
         });
         codeElementWriter.WriteCodeElement(declaration, writer);
@@ -51,9 +57,11 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("implements \\Stringable", result);
     }
     [Fact]
-    public void WritesInheritance() {
+    public void WritesInheritance()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.Inherits = new (){
+        declaration.Inherits = new()
+        {
             Name = "someInterface"
         };
         codeElementWriter.WriteCodeElement(declaration, writer);
@@ -61,18 +69,23 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("extends", result);
     }
     [Fact]
-    public void WritesImports() {
+    public void WritesImports()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.AddUsings(new () {
+        declaration.AddUsings(new()
+        {
             Name = "Promise",
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = "Http\\Promise\\",
                 IsExternal = true,
             }
         },
-        new () {
+        new()
+        {
             Name = "Microsoft\\Graph\\Models",
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = "Message",
             }
         });
@@ -82,11 +95,14 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("use Http\\Promise\\Promise", result);
     }
     [Fact]
-    public void RemovesImportWithClassName() {
+    public void RemovesImportWithClassName()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.AddUsings(new CodeUsing {
+        declaration.AddUsings(new CodeUsing
+        {
             Name = "Microsoft\\Graph\\Models",
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = "ParentClass",
             }
         });
@@ -113,10 +129,10 @@ public class CodeClassDeclarationWriterTests : IDisposable
         });
         var dec = declaration?.StartBlock;
         var namespaces = declaration?.Parent as CodeNamespace;
-        await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, namespaces);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, namespaces);
         codeElementWriter.WriteCodeElement(dec, writer);
         var result = tw.ToString();
-        
+
         Assert.Contains("use Http\\Promise\\Promise;", result);
         Assert.Contains("use Http\\Promise\\RejectedPromise;", result);
         Assert.Contains("use Exception;", result);
@@ -130,7 +146,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
         {
             currentClass.Inherits = new CodeType
             {
-                TypeDefinition = new CodeClass {Name = "Model", Kind = CodeClassKind.Custom}
+                TypeDefinition = new CodeClass { Name = "Model", Kind = CodeClassKind.Custom }
             };
         }
 

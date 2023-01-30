@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,9 +7,11 @@ using Kiota.Builder.CodeDOM;
 using Xunit;
 
 namespace Kiota.Builder.Tests.CodeDOM;
-public class CodeBlockTests {
+public class CodeBlockTests
+{
     [Fact]
-    public void Defensive() {
+    public void Defensive()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = new NeverBlock
         {
@@ -20,8 +22,9 @@ public class CodeBlockTests {
     }
     class NeverBlock : CodeBlock<BlockDeclaration, BlockEnd>
     {
-        public void AddRange() {
-            base.AddRange((CodeClass[]) null);
+        public void AddRange()
+        {
+            base.AddRange((CodeClass[])null);
         }
 
         public override string Name
@@ -51,7 +54,8 @@ public class CodeBlockTests {
         }
     }
     [Fact]
-    public void FindInChildElements() {
+    public void FindInChildElements()
+    {
         var grandChildName = "child1.grandchild1";
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace("child1");
@@ -60,30 +64,35 @@ public class CodeBlockTests {
         Assert.Null(root.FindChildByName<CodeNamespace>("child2"));
     }
     [Fact]
-    public void RemovesElements() {
+    public void RemovesElements()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        var elements = child.AddClass(new CodeClass { Name = "class1"},
-                        new CodeClass { Name = "class2"});
+        var elements = child.AddClass(new CodeClass { Name = "class1" },
+                        new CodeClass { Name = "class2" });
         child.RemoveChildElement(elements.First());
         Assert.Single(child.GetChildElements(true));
 
         child.RemoveChildElement<CodeClass>(null); // doesn't fail when passing null collection
     }
     [Fact]
-    public void AddsUsing() {
+    public void AddsUsing()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        child.AddUsing(new CodeUsing {
+        child.AddUsing(new CodeUsing
+        {
             Name = "someNS"
         });
         Assert.Single(child.StartBlock.Usings);
     }
     [Fact]
-    public void RemoveUsing() {
+    public void RemoveUsing()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        var usng = new CodeUsing {
+        var usng = new CodeUsing
+        {
             Name = "someNS"
         };
         child.AddUsing(usng);
@@ -91,12 +100,15 @@ public class CodeBlockTests {
         Assert.Empty(child.StartBlock.Usings);
     }
     [Fact]
-    public void RemoveUsingByDeclarationName() {
+    public void RemoveUsingByDeclarationName()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        var usng = new CodeUsing {
+        var usng = new CodeUsing
+        {
             Name = "someNS",
-            Declaration = new CodeType {
+            Declaration = new CodeType
+            {
                 Name = "someClass"
             }
         };
@@ -105,59 +117,75 @@ public class CodeBlockTests {
         Assert.Empty(child.StartBlock.Usings);
     }
     [Fact]
-    public void ThrowsWhenInsertingDuplicatedElements() {
+    public void ThrowsWhenInsertingDuplicatedElements()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        Assert.Throws<InvalidOperationException>(() => {
-            child.AddClass(new CodeClass {
+        Assert.Throws<InvalidOperationException>(() =>
+        {
+            child.AddClass(new CodeClass
+            {
                 Name = "class1"
             });
-            child.AddEnum(new CodeEnum {
+            child.AddEnum(new CodeEnum
+            {
                 Name = "class1"
             });
         });
     }
     [Fact]
-    public void DoesntThrowWhenAddingOverloads() {
+    public void DoesntThrowWhenAddingOverloads()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        var codeClass = child.AddClass(new CodeClass {
+        var codeClass = child.AddClass(new CodeClass
+        {
             Name = "class1"
         }).First();
-        var method = new CodeMethod {
+        var method = new CodeMethod
+        {
             Name = "method",
             Kind = CodeMethodKind.RequestExecutor,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         };
         var overload = method.Clone() as CodeMethod;
-        overload.AddParameter(new CodeParameter {
+        overload.AddParameter(new CodeParameter
+        {
             Name = "param1",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         });
         codeClass.AddMethod(method, overload);
     }
     [Fact]
-    public void DoesntThrowWhenAddingIndexersWithPropName() {
+    public void DoesntThrowWhenAddingIndexersWithPropName()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        var codeClass = child.AddClass(new CodeClass {
+        var codeClass = child.AddClass(new CodeClass
+        {
             Name = "class1"
         }).First();
-        var property = new CodeProperty {
+        var property = new CodeProperty
+        {
             Name = "property",
             Kind = CodePropertyKind.RequestBuilder,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         };
-        var indexer = new CodeMethod {
+        var indexer = new CodeMethod
+        {
             Name = "method",
             Kind = CodeMethodKind.IndexerBackwardCompatibility,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         };
@@ -165,22 +193,27 @@ public class CodeBlockTests {
         codeClass.AddMethod(indexer);
     }
     [Fact]
-    public void FindChildByNameThrowsOnEmptyNames() {
+    public void FindChildByNameThrowsOnEmptyNames()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-        Assert.Throws<ArgumentException>(() => {
+        Assert.Throws<ArgumentException>(() =>
+        {
             child.FindChildByName<CodeClass>(string.Empty);
         });
-        Assert.Throws<ArgumentException>(() => {
+        Assert.Throws<ArgumentException>(() =>
+        {
             child.FindChildrenByName<CodeClass>(string.Empty);
         });
     }
     [Fact]
-    public void FindsChildByNameInSubnamespace() {
+    public void FindsChildByNameInSubnamespace()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
         var className = "class1";
-        var class1 = child.AddClass(new CodeClass {
+        var class1 = child.AddClass(new CodeClass
+        {
             Name = className
         }).First();
         Assert.Equal(class1, child.FindChildByName<CodeClass>(className));
@@ -188,28 +221,34 @@ public class CodeBlockTests {
         Assert.Null(child.FindChildByName<CodeEnum>(className));
     }
     [Fact]
-    public void FindsChildrenByName() {
+    public void FindsChildrenByName()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
         var className = "class1";
-        child.AddClass(new CodeClass {
+        child.AddClass(new CodeClass
+        {
             Name = className
         });
         var subchild = child.AddNamespace($"{child.Name}.four");
-        subchild.AddClass(new CodeClass {
+        subchild.AddClass(new CodeClass
+        {
             Name = className
         });
         Assert.Equal(2, root.FindChildrenByName<CodeClass>(className).Count());
     }
     [Fact]
-    public void ReplacesImplementsByName() {
+    public void ReplacesImplementsByName()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(CodeNamespaceTests.ChildName);
         var className = "class1";
-        var model = child.AddClass(new CodeClass {
+        var model = child.AddClass(new CodeClass
+        {
             Name = className
         }).First();
-        model.StartBlock.AddImplements(new CodeType {
+        model.StartBlock.AddImplements(new CodeType
+        {
             Name = "IParsable",
             IsExternal = true
         });

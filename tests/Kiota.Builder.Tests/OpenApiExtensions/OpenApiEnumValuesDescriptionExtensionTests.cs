@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using Kiota.Builder.OpenApiExtensions;
 
@@ -11,9 +11,11 @@ using Xunit;
 
 namespace Kiota.Builder.Tests.OpenApiExtensions;
 
-public class OpenApiEnumValuesDescriptionExtensionTests {
+public class OpenApiEnumValuesDescriptionExtensionTests
+{
     [Fact]
-    public void NOOPTestForCoverage() {
+    public void NOOPTestForCoverage()
+    {
         // This class is already covered by the convertion library tests
         var value = new OpenApiEnumValuesDescriptionExtension
         {

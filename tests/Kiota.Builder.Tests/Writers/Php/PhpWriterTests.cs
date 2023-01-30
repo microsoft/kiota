@@ -7,7 +7,7 @@ using Kiota.Builder.Writers.Php;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Php;
-public class PhpWriterTests: IDisposable
+public class PhpWriterTests : IDisposable
 {
     private readonly StringWriter tw;
     private const string OutputPath = "./";
@@ -17,7 +17,7 @@ public class PhpWriterTests: IDisposable
     {
         tw = new StringWriter();
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, OutputPath, NameSpace);
-        
+
         writer.SetTextWriter(tw);
     }
 

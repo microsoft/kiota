@@ -1,13 +1,16 @@
-using Kiota.Builder.Configuration;
+﻿using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Lock;
 
-public class KiotaLockTests {
+public class KiotaLockTests
+{
     [Fact]
-    public void UpdatesAConfiguration() {
-        var kiotaLock = new KiotaLock {
+    public void UpdatesAConfiguration()
+    {
+        var kiotaLock = new KiotaLock
+        {
             DescriptionLocation = "description",
         };
         var generationConfiguration = new GenerationConfiguration();

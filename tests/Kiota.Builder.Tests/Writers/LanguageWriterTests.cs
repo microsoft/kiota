@@ -1,4 +1,4 @@
-using Kiota.Builder.Writers;
+﻿using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Writers.Go;
 using Kiota.Builder.Writers.Java;
@@ -10,11 +10,13 @@ using Kiota.Builder.Writers.TypeScript;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers;
-public class LanguageWriterTests {
+public class LanguageWriterTests
+{
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
     [Fact]
-    public void GetCorrectWriterForLanguage() {
+    public void GetCorrectWriterForLanguage()
+    {
         Assert.Equal(typeof(CSharpWriter),
                     LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName).GetType());
         Assert.Equal(typeof(JavaWriter),

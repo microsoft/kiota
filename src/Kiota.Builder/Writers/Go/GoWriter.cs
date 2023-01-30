@@ -1,7 +1,8 @@
-using Kiota.Builder.PathSegmenters;
+﻿using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Writers.Go;
-public class GoWriter : LanguageWriter {
+public class GoWriter : LanguageWriter
+{
     public GoWriter(string rootPath, string clientNamespaceName)
     {
         PathSegmenter = new GoPathSegmenter(rootPath, clientNamespaceName);

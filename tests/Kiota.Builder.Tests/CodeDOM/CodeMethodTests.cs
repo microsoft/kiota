@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -7,26 +7,33 @@ using Kiota.Builder.Extensions;
 using Xunit;
 
 namespace Kiota.Builder.Tests.CodeDOM;
-public class CodeMethodTests {
+public class CodeMethodTests
+{
     [Fact]
-    public void Defensive() {
-        var method = new CodeMethod {
+    public void Defensive()
+    {
+        var method = new CodeMethod
+        {
             Name = "class",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         };
         Assert.False(method.IsOfKind(null));
         Assert.False(method.IsOfKind(Array.Empty<CodeMethodKind>()));
-        Assert.Throws<ArgumentNullException>(() => method.AddErrorMapping(null, new CodeType{Name = "class"}));
+        Assert.Throws<ArgumentNullException>(() => method.AddErrorMapping(null, new CodeType { Name = "class" }));
         Assert.Throws<ArgumentNullException>(() => method.AddErrorMapping("oin", null));
         Assert.Throws<ArgumentNullException>(() => method.ReturnType = null);
     }
     [Fact]
-    public void IsOfKind() {
-        var method = new CodeMethod {
+    public void IsOfKind()
+    {
+        var method = new CodeMethod
+        {
             Name = "class",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         };
@@ -37,34 +44,45 @@ public class CodeMethodTests {
         Assert.False(method.IsOfKind(CodeMethodKind.Getter));
     }
     [Fact]
-    public void AddsParameter() {
-        var method = new CodeMethod {
+    public void AddsParameter()
+    {
+        var method = new CodeMethod
+        {
             Name = "method1",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         };
-        Assert.Throws<ArgumentNullException>(() => {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
             method.AddParameter((CodeParameter)null);
         });
-        Assert.Throws<ArgumentNullException>(() => {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
             method.AddParameter(null);
         });
-        Assert.Throws<ArgumentOutOfRangeException>(() => {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
             method.AddParameter(Array.Empty<CodeParameter>());
         });
     }
     [Fact]
-    public void ClonesParameters() {
-        var method = new CodeMethod {
+    public void ClonesParameters()
+    {
+        var method = new CodeMethod
+        {
             Name = "method1",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         };
-        method.AddParameter(new CodeParameter {
+        method.AddParameter(new CodeParameter
+        {
             Name = "param1",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         });
@@ -74,17 +92,22 @@ public class CodeMethodTests {
         Assert.Equal(method.Parameters.First().Name, clone.Parameters.First().Name);
     }
     [Fact]
-    public void ParametersExtensionsReturnsValue() {
-        var method = new CodeMethod {
+    public void ParametersExtensionsReturnsValue()
+    {
+        var method = new CodeMethod
+        {
             Name = "method1",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         };
-        method.AddParameter(new CodeParameter {
+        method.AddParameter(new CodeParameter
+        {
             Name = "param1",
             Kind = CodeParameterKind.Custom,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         });

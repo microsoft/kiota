@@ -9,7 +9,8 @@ public class CodeNamespaceTests
 {
     public const string ChildName = "one.two.three";
     [Fact]
-    public void DoesntThrowOnRootInitialization() {
+    public void DoesntThrowOnRootInitialization()
+    {
         var root = CodeNamespace.InitRootNamespace();
         Assert.NotNull(root);
         Assert.Null(root.Parent);
@@ -17,7 +18,8 @@ public class CodeNamespaceTests
         Assert.NotNull(root.EndBlock);
     }
     [Fact]
-    public void SegmentsNamespaceNames() {
+    public void SegmentsNamespaceNames()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(ChildName);
         Assert.NotNull(child);
@@ -31,7 +33,8 @@ public class CodeNamespaceTests
         Assert.Equal(root, one.Parent);
     }
     [Fact]
-    public void AddsASingleItemNamespace() {
+    public void AddsASingleItemNamespace()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(ChildName);
         var item = child.EnsureItemNamespace();
@@ -43,72 +46,92 @@ public class CodeNamespaceTests
         Assert.Equal(item, subitem);
     }
     [Fact]
-    public void ThrowsWhenAddingItemToRoot() {
-        Assert.Throws<InvalidOperationException>(() => {
+    public void ThrowsWhenAddingItemToRoot()
+    {
+        Assert.Throws<InvalidOperationException>(() =>
+        {
             var root = CodeNamespace.InitRootNamespace();
             var item = root.EnsureItemNamespace();
         });
     }
     [Fact]
-    public void ThrowsWhenAddingANamespaceWithEmptyName() {
+    public void ThrowsWhenAddingANamespaceWithEmptyName()
+    {
         var root = CodeNamespace.InitRootNamespace();
-        Assert.Throws<ArgumentNullException>(() => {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
             root.AddNamespace(null);
         });
-        Assert.Throws<ArgumentException>(() => {
+        Assert.Throws<ArgumentException>(() =>
+        {
             root.AddNamespace(string.Empty);
         });
     }
     [Fact]
-    public void FindsNamespaceByName() {
+    public void FindsNamespaceByName()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(ChildName);
         var result = root.FindNamespaceByName(ChildName);
         Assert.Equal(child, result);
     }
     [Fact]
-    public void ThrowsOnAddingEmptyCollections() {
+    public void ThrowsOnAddingEmptyCollections()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(ChildName);
-        Assert.Throws<ArgumentNullException>(() => {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
             child.AddClass(null);
         });
-        Assert.Throws<ArgumentOutOfRangeException>(() => {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
             child.AddClass(Array.Empty<CodeClass>());
         });
-        Assert.Throws<ArgumentNullException>(() => {
-            child.AddClass(new CodeClass[] {null});
+        Assert.Throws<ArgumentNullException>(() =>
+        {
+            child.AddClass(new CodeClass[] { null });
         });
-        Assert.Throws<ArgumentNullException>(() => {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
             child.AddEnum(null);
         });
-        Assert.Throws<ArgumentOutOfRangeException>(() => {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
             child.AddEnum(Array.Empty<CodeEnum>());
         });
-        Assert.Throws<ArgumentNullException>(() => {
-            child.AddEnum(new CodeEnum[] {null});
+        Assert.Throws<ArgumentNullException>(() =>
+        {
+            child.AddEnum(new CodeEnum[] { null });
         });
-        Assert.Throws<ArgumentNullException>(() => {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
             child.AddUsing(null);
         });
-        Assert.Throws<ArgumentNullException>(() => {
-            child.AddUsing(new CodeUsing[] {null});
+        Assert.Throws<ArgumentNullException>(() =>
+        {
+            child.AddUsing(new CodeUsing[] { null });
         });
-        Assert.Throws<ArgumentNullException>(() => {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
             child.AddFunction(null);
         });
-        Assert.Throws<ArgumentNullException>(() => {
-            child.AddFunction(new CodeFunction[] {null});
+        Assert.Throws<ArgumentNullException>(() =>
+        {
+            child.AddFunction(new CodeFunction[] { null });
         });
-        Assert.Throws<ArgumentNullException>(() => {
+        Assert.Throws<ArgumentNullException>(() =>
+        {
             child.AddInterface(null);
         });
-        Assert.Throws<ArgumentNullException>(() => {
-            child.AddInterface(new CodeInterface[] {null});
+        Assert.Throws<ArgumentNullException>(() =>
+        {
+            child.AddInterface(new CodeInterface[] { null });
         });
     }
     [Fact]
-    public void IsParentOf() {
+    public void IsParentOf()
+    {
         var root = CodeNamespace.InitRootNamespace();
         var child = root.AddNamespace(ChildName);
         var grandchild = child.AddNamespace(ChildName + ".four");

@@ -2,13 +2,13 @@
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php;
-public class CodePropertyWriter: BaseElementWriter<CodeProperty, PhpConventionService>
+public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionService>
 {
     public CodePropertyWriter(PhpConventionService conventionService) : base(conventionService) { }
 
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
-        
+
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
         var propertyName = codeElement.Name.ToFirstCharacterLowerCase();
         var propertyAccess = conventions.GetAccessModifier(codeElement.Access);

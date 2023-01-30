@@ -10,7 +10,8 @@ using Kiota.Builder.Writers.TypeScript;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
-public class CodeMethodWriterTests : IDisposable {
+public class CodeMethodWriterTests : IDisposable
+{
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
     private readonly StringWriter tw;
@@ -29,7 +30,8 @@ public class CodeMethodWriterTests : IDisposable {
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
-        parentClass = new CodeClass {
+        parentClass = new CodeClass
+        {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
@@ -48,165 +50,209 @@ public class CodeMethodWriterTests : IDisposable {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
-    private void AddRequestProperties() {
-        parentClass.AddProperty(new CodeProperty {
+    private void AddRequestProperties()
+    {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "requestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "RequestAdapter",
             },
         });
-        parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             },
         });
-        parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "urlTemplate",
             Kind = CodePropertyKind.UrlTemplate,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             },
         });
     }
-    private void AddSerializationProperties() {
-        parentClass.AddProperty(new CodeProperty {
+    private void AddSerializationProperties()
+    {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "additionalData",
             Kind = CodePropertyKind.AdditionalData,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         });
-        parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "dummyProp",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         });
-        parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "dummyColl",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
             }
         });
-        parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "dummyComplexColl",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "Complex",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-                TypeDefinition = new CodeClass {
+                TypeDefinition = new CodeClass
+                {
                     Name = "SomeComplexType"
                 }
             }
         });
-        parentClass.AddProperty(new CodeProperty{
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "dummyEnumCollection",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "SomeEnum",
-                TypeDefinition = new CodeEnum {
+                TypeDefinition = new CodeEnum
+                {
                     Name = "EnumType"
                 }
             }
         });
-        parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "definedInParent",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             },
-            OriginalPropertyFromBaseType = new CodeProperty {
+            OriginalPropertyFromBaseType = new CodeProperty
+            {
                 Name = "definedInParent",
-                Type = new CodeType {
+                Type = new CodeType
+                {
                     Name = "string"
                 }
             }
         });
     }
-    private void AddInheritanceClass() {
-        parentClass.StartBlock.Inherits = new CodeType {
+    private void AddInheritanceClass()
+    {
+        parentClass.StartBlock.Inherits = new CodeType
+        {
             Name = "someParentClass"
         };
     }
-    private void AddRequestBodyParameters(bool useComplexTypeForBody = false) {
-        var stringType = new CodeType {
+    private void AddRequestBodyParameters(bool useComplexTypeForBody = false)
+    {
+        var stringType = new CodeType
+        {
             Name = "string",
         };
-        var requestConfigClass = parentClass.AddInnerClass(new CodeClass {
+        var requestConfigClass = parentClass.AddInnerClass(new CodeClass
+        {
             Name = "RequestConfig",
             Kind = CodeClassKind.RequestConfiguration,
         }).First();
-        requestConfigClass.AddProperty(new() {
+        requestConfigClass.AddProperty(new()
+        {
             Name = "h",
             Kind = CodePropertyKind.Headers,
             Type = stringType,
         },
-        new () {
+        new()
+        {
             Name = "q",
             Kind = CodePropertyKind.QueryParameters,
             Type = stringType,
         },
-        new () {
+        new()
+        {
             Name = "o",
             Kind = CodePropertyKind.Options,
             Type = stringType,
         });
-        method.AddParameter(new CodeParameter{
+        method.AddParameter(new CodeParameter
+        {
             Name = "b",
             Kind = CodeParameterKind.RequestBody,
-            Type = useComplexTypeForBody ? new CodeType {
+            Type = useComplexTypeForBody ? new CodeType
+            {
                 Name = "SomeComplexTypeForRequestBody",
-                TypeDefinition = root.AddClass(new CodeClass {
+                TypeDefinition = root.AddClass(new CodeClass
+                {
                     Name = "SomeComplexTypeForRequestBody",
                     Kind = CodeClassKind.Model,
                 }).First(),
             } : stringType,
         });
-        method.AddParameter(new CodeParameter{
+        method.AddParameter(new CodeParameter
+        {
             Name = "c",
             Kind = CodeParameterKind.RequestConfiguration,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "RequestConfig",
                 TypeDefinition = requestConfigClass,
                 ActionOf = true,
             },
             Optional = true,
         });
-        method.AddParameter(new CodeParameter{
+        method.AddParameter(new CodeParameter
+        {
             Name = "r",
             Kind = CodeParameterKind.ResponseHandler,
             Type = stringType,
         });
     }
     [Fact]
-    public void WritesRequestBuilder() {
+    public void WritesRequestBuilder()
+    {
         method.Kind = CodeMethodKind.RequestBuilderBackwardCompatibility;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     [Fact]
-    public void WritesRequestBodiesThrowOnNullHttpMethod() {
+    public void WritesRequestBodiesThrowOnNullHttpMethod()
+    {
         method.Kind = CodeMethodKind.RequestExecutor;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         method.Kind = CodeMethodKind.RequestGenerator;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     [Fact]
-    public void WritesRequestExecutorBody() {
+    public void WritesRequestExecutorBody()
+    {
         method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
-        var error4XX = root.AddClass(new CodeClass{
+        var error4XX = root.AddClass(new CodeClass
+        {
             Name = "Error4XX",
         }).First();
-        var error5XX = root.AddClass(new CodeClass{
+        var error5XX = root.AddClass(new CodeClass
+        {
             Name = "Error5XX",
         }).First();
-        var error403 = root.AddClass(new CodeClass{
+        var error403 = root.AddClass(new CodeClass
+        {
             Name = "Error403",
         }).First();
-        method.AddErrorMapping("4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX});
-        method.AddErrorMapping("5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX});
-        method.AddErrorMapping("403", new CodeType {Name = "Error403", TypeDefinition = error403});
+        method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
+        method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
+        method.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error403 });
         AddRequestBodyParameters();
         writer.Write(method);
         var result = tw.ToString();
@@ -220,38 +266,48 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesModelFactoryBodyThrowsIfMethodAndNotFactory() {
-        var parentModel = root.AddClass(new CodeClass {
+    public void WritesModelFactoryBodyThrowsIfMethodAndNotFactory()
+    {
+        var parentModel = root.AddClass(new CodeClass
+        {
             Name = "parentModel",
             Kind = CodeClassKind.Model,
         }).First();
-        var childModel = root.AddClass(new CodeClass {
+        var childModel = root.AddClass(new CodeClass
+        {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        childModel.StartBlock.Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType
+        {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
-        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
             Name = "factory",
             Kind = CodeMethodKind.Factory,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
             },
         }).First();
-        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType {
-                        Name = "childModel",
-                        TypeDefinition = childModel,
-                    });
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.childmodel", new CodeType
+        {
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
         parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
-        factoryMethod.AddParameter(new CodeParameter {
+        factoryMethod.AddParameter(new CodeParameter
+        {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "ParseNode",
-                TypeDefinition = new CodeClass {
+                TypeDefinition = new CodeClass
+                {
                     Name = "ParseNode",
                 },
                 IsExternal = true,
@@ -261,7 +317,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Throws<InvalidOperationException>(() => writer.Write(factoryMethod));
     }
     [Fact]
-    public void DoesntCreateDictionaryOnEmptyErrorMapping() {
+    public void DoesntCreateDictionaryOnEmptyErrorMapping()
+    {
         method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         AddRequestBodyParameters();
@@ -272,7 +329,8 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesRequestExecutorBodyForCollections() {
+    public void WritesRequestExecutorBodyForCollections()
+    {
         method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
@@ -283,7 +341,8 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesRequestGeneratorBodyForScalar() {
+    public void WritesRequestGeneratorBodyForScalar()
+    {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
@@ -305,7 +364,8 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesRequestGeneratorBodyForParsable() {
+    public void WritesRequestGeneratorBodyForParsable()
+    {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
@@ -327,7 +387,8 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesInheritedDeSerializerBody() {
+    public void WritesInheritedDeSerializerBody()
+    {
         method.Kind = CodeMethodKind.Deserializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -338,7 +399,8 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesDeSerializerBody() {
+    public void WritesDeSerializerBody()
+    {
         method.Kind = CodeMethodKind.Deserializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -352,7 +414,8 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesInheritedSerializerBody() {
+    public void WritesInheritedSerializerBody()
+    {
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -363,7 +426,8 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesSerializerBody() {
+    public void WritesSerializerBody()
+    {
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -378,12 +442,14 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesMethodAsyncDescription() {
-        
+    public void WritesMethodAsyncDescription()
+    {
+
         method.Documentation.Description = MethodDescription;
         var parameter = new CodeParameter
         {
-            Documentation = new() {
+            Documentation = new()
+            {
                 Description = ParamDescription,
             },
             Name = ParamName,
@@ -399,19 +465,21 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains(MethodDescription, result);
         Assert.Contains("@param ", result);
         Assert.Contains(ParamName, result);
-        Assert.Contains(ParamDescription, result); 
+        Assert.Contains(ParamDescription, result);
         Assert.Contains("@returns a Promise of", result);
         Assert.Contains("*/", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesMethodSyncDescription() {
-        
+    public void WritesMethodSyncDescription()
+    {
+
         method.Documentation.Description = MethodDescription;
         method.IsAsync = false;
         var parameter = new CodeParameter
         {
-            Documentation = new() {
+            Documentation = new()
+            {
                 Description = ParamDescription,
             },
             Name = ParamName,
@@ -427,14 +495,16 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesMethodDescriptionLink() {
+    public void WritesMethodDescriptionLink()
+    {
         method.Documentation.Description = MethodDescription;
         method.Documentation.DocumentationLabel = "see more";
         method.Documentation.DocumentationLink = new("https://foo.org/docs");
         method.IsAsync = false;
         var parameter = new CodeParameter
         {
-            Documentation = new() {
+            Documentation = new()
+            {
                 Description = ParamDescription,
             },
             Name = ParamName,
@@ -450,7 +520,8 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void Defensive() {
+    public void Defensive()
+    {
         var codeMethodWriter = new CodeMethodWriter(new TypeScriptConventionService(writer), false);
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
@@ -460,12 +531,14 @@ public class CodeMethodWriterTests : IDisposable {
         method.Parent = originalParent;
     }
     [Fact]
-    public void ThrowsIfParentIsNotClass() {
+    public void ThrowsIfParentIsNotClass()
+    {
         method.Parent = CodeNamespace.InitRootNamespace();
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     [Fact]
-    public void WritesReturnType() {
+    public void WritesReturnType()
+    {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(MethodName, result);
@@ -475,7 +548,8 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void DoesNotAddUndefinedOnNonNullableReturnType(){
+    public void DoesNotAddUndefinedOnNonNullableReturnType()
+    {
         method.ReturnType.IsNullable = false;
         writer.Write(method);
         var result = tw.ToString();
@@ -483,7 +557,8 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void DoesNotAddAsyncInformationOnSyncMethods() {
+    public void DoesNotAddAsyncInformationOnSyncMethods()
+    {
         method.IsAsync = false;
         writer.Write(method);
         var result = tw.ToString();
@@ -492,14 +567,16 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesPublicMethodByDefault() {
+    public void WritesPublicMethodByDefault()
+    {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("public ", result);// public default
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesPrivateMethod() {
+    public void WritesPrivateMethod()
+    {
         method.Access = AccessModifier.Private;
         writer.Write(method);
         var result = tw.ToString();
@@ -507,7 +584,8 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesProtectedMethod() {
+    public void WritesProtectedMethod()
+    {
         method.Access = AccessModifier.Protected;
         writer.Write(method);
         var result = tw.ToString();
@@ -515,17 +593,21 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesIndexer() {
+    public void WritesIndexer()
+    {
         AddRequestProperties();
         method.Kind = CodeMethodKind.IndexerBackwardCompatibility;
-        method.OriginalIndexer = new () {
+        method.OriginalIndexer = new()
+        {
             Name = "indx",
             SerializationName = "id",
-            IndexType = new CodeType {
+            IndexType = new CodeType
+            {
                 Name = "string",
                 IsNullable = true,
             },
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string",
             }
         };
@@ -537,13 +619,16 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("return new", result);
     }
     [Fact]
-    public void WritesPathParameterRequestBuilder() {
+    public void WritesPathParameterRequestBuilder()
+    {
         AddRequestProperties();
         method.Kind = CodeMethodKind.RequestBuilderWithParameters;
-        method.AddParameter(new CodeParameter {
+        method.AddParameter(new CodeParameter
+        {
             Name = "pathParam",
             Kind = CodeParameterKind.Path,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         });
@@ -555,7 +640,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("return new", result);
     }
     [Fact]
-    public void WritesGetterToBackingStore() {
+    public void WritesGetterToBackingStore()
+    {
         parentClass.AddBackingStoreProperty();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Getter;
@@ -564,15 +650,17 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("this.backingStore.get(\"someProperty\")", result);
     }
     [Fact]
-    public void WritesGetterToBackingStoreWithNonnullProperty() {
+    public void WritesGetterToBackingStoreWithNonnullProperty()
+    {
         method.AddAccessedProperty();
         parentClass.AddBackingStoreProperty();
-        method.AccessedProperty.Type = new CodeType {
+        method.AccessedProperty.Type = new CodeType
+        {
             Name = "string",
             IsNullable = false,
         };
         var defaultValue = "someDefaultValue";
-        method.AccessedProperty.DefaultValue = defaultValue; 
+        method.AccessedProperty.DefaultValue = defaultValue;
         method.Kind = CodeMethodKind.Getter;
         writer.Write(method);
         var result = tw.ToString();
@@ -580,7 +668,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains(defaultValue, result);
     }
     [Fact]
-    public void WritesSetterToBackingStore() {
+    public void WritesSetterToBackingStore()
+    {
         parentClass.AddBackingStoreProperty();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Setter;
@@ -589,7 +678,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("this.backingStore.set(\"someProperty\", value)", result);
     }
     [Fact]
-    public void WritesGetterToField() {
+    public void WritesGetterToField()
+    {
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Getter;
         writer.Write(method);
@@ -597,7 +687,8 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("this.someProperty", result);
     }
     [Fact]
-    public void WritesSetterToField() {
+    public void WritesSetterToField()
+    {
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Setter;
         writer.Write(method);
@@ -605,25 +696,30 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("this.someProperty = value", result);
     }
     [Fact]
-    public void WritesConstructor() {
+    public void WritesConstructor()
+    {
         method.Kind = CodeMethodKind.Constructor;
         method.IsAsync = false;
         var defaultValue = "someVal";
         var propName = "propWithDefaultValue";
         parentClass.Kind = CodeClassKind.RequestBuilder;
-        parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = propName,
             DefaultValue = defaultValue,
             Kind = CodePropertyKind.UrlTemplate,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string",
             },
         });
         AddRequestProperties();
-        method.AddParameter(new CodeParameter {
+        method.AddParameter(new CodeParameter
+        {
             Name = "pathParameters",
             Kind = CodeParameterKind.PathParameters,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "Map<string,string>"
             }
         });
@@ -675,33 +771,39 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.DoesNotContain(defaultValue, result);//ensure the composed type is not referenced
     }
     [Fact]
-    public void WritesApiConstructor() {
+    public void WritesApiConstructor()
+    {
         method.Kind = CodeMethodKind.ClientConstructor;
         method.IsAsync = false;
         method.BaseUrl = "https://graph.microsoft.com/v1.0";
-        parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "Dictionary<string, string>",
                 IsExternal = true,
             }
         });
-        var coreProp = parentClass.AddProperty(new CodeProperty {
+        var coreProp = parentClass.AddProperty(new CodeProperty
+        {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "HttpCore",
                 IsExternal = true,
             }
         }).First();
-        method.AddParameter(new CodeParameter {
+        method.AddParameter(new CodeParameter
+        {
             Name = "core",
             Kind = CodeParameterKind.RequestAdapter,
             Type = coreProp.Type,
         });
-        method.DeserializerModules = new() {"com.microsoft.kiota.serialization.Deserializer"};
-        method.SerializerModules = new() {"com.microsoft.kiota.serialization.Serializer"};
+        method.DeserializerModules = new() { "com.microsoft.kiota.serialization.Deserializer" };
+        method.SerializerModules = new() { "com.microsoft.kiota.serialization.Serializer" };
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("constructor", result);
@@ -711,17 +813,21 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains($"baseUrl = \"{method.BaseUrl}\"", result);
     }
     [Fact]
-    public void WritesApiConstructorWithBackingStore() {
+    public void WritesApiConstructorWithBackingStore()
+    {
         method.Kind = CodeMethodKind.ClientConstructor;
-        var coreProp = parentClass.AddProperty(new CodeProperty {
+        var coreProp = parentClass.AddProperty(new CodeProperty
+        {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "HttpCore",
                 IsExternal = true,
             }
         }).First();
-        method.AddParameter(new CodeParameter {
+        method.AddParameter(new CodeParameter
+        {
             Name = "core",
             Kind = CodeParameterKind.RequestAdapter,
             Type = coreProp.Type,
@@ -744,37 +850,46 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("enableBackingStore", result);
     }
     [Fact]
-    public void WritesNameMapperMethod() {
+    public void WritesNameMapperMethod()
+    {
         method.Kind = CodeMethodKind.QueryParametersMapper;
         method.IsAsync = false;
-        parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "select",
             Kind = CodePropertyKind.QueryParameter,
             SerializationName = "%24select",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string",
             }
         },
-        new CodeProperty {
+        new CodeProperty
+        {
             Name = "expand",
             Kind = CodePropertyKind.QueryParameter,
             SerializationName = "%24expand",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string",
             }
         },
-        new CodeProperty {
+        new CodeProperty
+        {
             Name = "filter",
             Kind = CodePropertyKind.QueryParameter,
             SerializationName = "%24filter",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string",
             }
         });
-        method.AddParameter(new CodeParameter{
+        method.AddParameter(new CodeParameter
+        {
             Kind = CodeParameterKind.QueryParametersMapperParameter,
             Name = "originalName",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string",
             }
         });
@@ -788,14 +903,17 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("default: return originalName", result);
     }
     [Fact]
-    public void DoesntWriteReadOnlyPropertiesInSerializerBody() {
+    public void DoesntWriteReadOnlyPropertiesInSerializerBody()
+    {
         method.Kind = CodeMethodKind.Serializer;
         AddSerializationProperties();
         AddInheritanceClass();
-        parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "ReadOnlyProperty",
             ReadOnly = true,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string",
             },
         });

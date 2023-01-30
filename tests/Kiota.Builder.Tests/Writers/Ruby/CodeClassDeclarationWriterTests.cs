@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 
@@ -19,31 +19,37 @@ public class CodeClassDeclarationWriterTests : IDisposable
     private readonly CodeClassDeclarationWriter codeElementWriter;
     private readonly CodeClass parentClass;
 
-    public CodeClassDeclarationWriterTests() {
+    public CodeClassDeclarationWriterTests()
+    {
         codeElementWriter = new CodeClassDeclarationWriter(new RubyConventionService(), ClientNamespaceName, new(Path.GetTempPath(), ClientNamespaceName));
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
-        parentClass = new () {
+        parentClass = new()
+        {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
     }
-    public void Dispose() {
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesSimpleDeclaration() {
+    public void WritesSimpleDeclaration()
+    {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
         Assert.Contains("class", result);
     }
     [Fact]
-    public void WritesImplementation() {
+    public void WritesImplementation()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.AddImplements(new CodeType {
+        declaration.AddImplements(new CodeType
+        {
             Name = "someInterface"
         });
         codeElementWriter.WriteCodeElement(declaration, writer);
@@ -51,9 +57,11 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("include", result);
     }
     [Fact]
-    public void WritesInheritance() {
+    public void WritesInheritance()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.Inherits = new (){
+        declaration.Inherits = new()
+        {
             Name = "someInterface"
         };
         codeElementWriter.WriteCodeElement(declaration, writer);
@@ -61,21 +69,27 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("<", result);
     }
     [Fact]
-    public void WritesImports() {
+    public void WritesImports()
+    {
         var declaration = parentClass.StartBlock;
-        var messageClass = parentClass.GetImmediateParentOfType<CodeNamespace>().AddClass( new CodeClass {
+        var messageClass = parentClass.GetImmediateParentOfType<CodeNamespace>().AddClass(new CodeClass
+        {
             Name = "Message"
         }).First();
-        declaration.AddUsings(new () {
+        declaration.AddUsings(new()
+        {
             Name = "Objects",
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = "util",
                 IsExternal = true,
             }
         },
-        new () {
+        new()
+        {
             Name = "project-graph",
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = "Message",
                 TypeDefinition = messageClass,
             }
@@ -87,9 +101,11 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("require", result);
     }
     [Fact]
-    public void WritesMixins() {
+    public void WritesMixins()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.AddImplements(new CodeType {
+        declaration.AddImplements(new CodeType
+        {
             Name = "test"
         });
         codeElementWriter.WriteCodeElement(declaration, writer);

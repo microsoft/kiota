@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OpenApi.Any;
@@ -13,7 +13,8 @@ public class LanguagesInformation : Dictionary<string, LanguageInformation>, IOp
     public void SerializeAsV3(IOpenApiWriter writer)
     {
         writer.WriteStartObject();
-        foreach(var entry in this.OrderBy(static x => x.Key)) {
+        foreach (var entry in this.OrderBy(static x => x.Key))
+        {
             writer.WriteRequiredObject(entry.Key, entry.Value, (w, x) => x.SerializeAsV3(w));
         }
         writer.WriteEndObject();
@@ -22,7 +23,7 @@ public class LanguagesInformation : Dictionary<string, LanguageInformation>, IOp
     {
         if (source is not OpenApiObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
         var extension = new LanguagesInformation();
-        foreach(var property in rawObject)
+        foreach (var property in rawObject)
             extension.Add(property.Key, LanguageInformation.Parse(property.Value));
         return extension;
     }

@@ -25,7 +25,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionService>
             codeElement.Usings?
                 .Where(x => x.Declaration != null && (x.Declaration.IsExternal ||
                                                         !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)))
-                .Select(x => x.Declaration is {IsExternal: true}
+                .Select(x => x.Declaration is { IsExternal: true }
                     ? $"use {x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Name.ReplaceDotsWithSlashInNamespaces()};"
                     : $"use {x.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()};")
                 .Distinct()
@@ -43,15 +43,15 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionService>
         }
         writer.WriteLine($"class {codeElement?.Name.ToFirstCharacterUpperCase()} extends Enum {{");
         writer.IncreaseIndent();
-        foreach (var enumProperty     in enumProperties)
+        foreach (var enumProperty in enumProperties)
         {
             writer.WriteLine($"public const {GetEnumValueName(enumProperty.Name)} = '{enumProperty.WireName}';");
         }
     }
-    private static readonly Regex _enumValueNameRegex = new ("([A-Z]{1})", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    private static readonly Regex _enumValueNameRegex = new("([A-Z]{1})", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     private static string GetEnumValueName(string original)
     {
         return _enumValueNameRegex.Replace(original, "_$1").Trim('_').ToUpperInvariant();
     }
-    
+
 }

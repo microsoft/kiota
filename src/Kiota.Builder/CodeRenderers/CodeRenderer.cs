@@ -28,16 +28,17 @@ public class CodeRenderer
         var sw = new StreamWriter(stream);
         writer.SetTextWriter(sw);
         RenderCode(writer, codeElement);
-        if(!cancellationToken.IsCancellationRequested)
+        if (!cancellationToken.IsCancellationRequested)
             await sw.FlushAsync(); // stream writer doesn't not have a cancellation token overload https://github.com/dotnet/runtime/issues/64340
     }
     // We created barrels for code namespaces. Skipping for empty namespaces, ones created for users, and ones with same namespace as class name.
     public async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace currentNamespace, CancellationToken cancellationToken)
     {
-        if(cancellationToken.IsCancellationRequested) return;
+        if (cancellationToken.IsCancellationRequested) return;
         foreach (var codeElement in currentNamespace.GetChildElements(true))
         {
-            switch(codeElement) {
+            switch (codeElement)
+            {
                 case CodeClass:
                 case CodeEnum:
                 case CodeFunction:
@@ -48,16 +49,17 @@ public class CodeRenderer
                 case CodeNamespace codeNamespace:
                     await RenderBarrel(writer, currentNamespace, codeNamespace, cancellationToken);
                     await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace, cancellationToken);
-                break;
+                    break;
             }
         }
     }
-    private async Task RenderBarrel(LanguageWriter writer, CodeNamespace parentNamespace, CodeNamespace codeNamespace, CancellationToken cancellationToken) {
+    private async Task RenderBarrel(LanguageWriter writer, CodeNamespace parentNamespace, CodeNamespace codeNamespace, CancellationToken cancellationToken)
+    {
         if (!string.IsNullOrEmpty(codeNamespace.Name) &&
             _configuration.ShouldWriteNamespaceIndices &&
-            (!_configuration.ClientNamespaceName.StartsWith(codeNamespace.Name, StringComparison.OrdinalIgnoreCase) || 
+            (!_configuration.ClientNamespaceName.StartsWith(codeNamespace.Name, StringComparison.OrdinalIgnoreCase) ||
             _configuration.ClientNamespaceName.Equals(codeNamespace.Name, StringComparison.OrdinalIgnoreCase)) && // we want a barrel for the root namespace
-            ShouldRenderNamespaceFile(codeNamespace) && 
+            ShouldRenderNamespaceFile(codeNamespace) &&
             writer.PathSegmenter?.GetPath(parentNamespace, codeNamespace) is string path)
         {
             await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, path, cancellationToken);
@@ -84,7 +86,7 @@ public class CodeRenderer
         return _configuration.ShouldWriteBarrelsIfClassExists || codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null;
     }
 
-    public static CodeRenderer GetCodeRender(GenerationConfiguration config) => 
+    public static CodeRenderer GetCodeRender(GenerationConfiguration config) =>
         config.Language switch
         {
             GenerationLanguage.TypeScript => new TypeScriptCodeRenderer(config),

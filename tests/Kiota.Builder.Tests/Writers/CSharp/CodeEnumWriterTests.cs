@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 
@@ -8,31 +8,37 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.CSharp;
-public class CodeEnumWriterTests :IDisposable {
+public class CodeEnumWriterTests : IDisposable
+{
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
     private readonly StringWriter tw;
     private readonly LanguageWriter writer;
     private readonly CodeEnum currentEnum;
     private const string EnumName = "someEnum";
-    private static readonly CodeEnumOption Option = new () {
+    private static readonly CodeEnumOption Option = new()
+    {
         Name = "Option1",
     };
-    public CodeEnumWriterTests(){
+    public CodeEnumWriterTests()
+    {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
-        currentEnum = root.AddEnum(new CodeEnum {
+        currentEnum = root.AddEnum(new CodeEnum
+        {
             Name = EnumName,
         }).First();
     }
-    public void Dispose(){
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesEnum() {
+    public void WritesEnum()
+    {
         currentEnum.AddOption(Option);
         writer.Write(currentEnum);
         var result = tw.ToString();
@@ -41,10 +47,11 @@ public class CodeEnumWriterTests :IDisposable {
         Assert.Contains(Option.Name, result);
     }
     [Fact]
-    public void WritesFlagsEnum() {
+    public void WritesFlagsEnum()
+    {
         currentEnum.Flags = true;
         currentEnum.AddOption(Option);
-        currentEnum.AddOption(new CodeEnumOption { Name = "option2"});
+        currentEnum.AddOption(new CodeEnumOption { Name = "option2" });
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.Contains("[Flags]", result);
@@ -52,7 +59,8 @@ public class CodeEnumWriterTests :IDisposable {
         Assert.Contains("= 2", result);
     }
     [Fact]
-    public void WritesEnumOptionDescription() {
+    public void WritesEnumOptionDescription()
+    {
         Option.Documentation.Description = "Some option description";
         currentEnum.AddOption(Option);
         writer.Write(currentEnum);
@@ -61,7 +69,8 @@ public class CodeEnumWriterTests :IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
-    public void DoesntWriteAnythingOnNoOption() {
+    public void DoesntWriteAnythingOnNoOption()
+    {
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.Empty(result);

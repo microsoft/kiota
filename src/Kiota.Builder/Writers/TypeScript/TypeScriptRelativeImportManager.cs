@@ -5,7 +5,7 @@ namespace Kiota.Builder.Writers.TypeScript;
 public class TypescriptRelativeImportManager : RelativeImportManager
 
 {
-    public TypescriptRelativeImportManager(string namespacePrefix, char namespaceSeparator) : base(namespacePrefix,namespaceSeparator)
+    public TypescriptRelativeImportManager(string namespacePrefix, char namespaceSeparator) : base(namespacePrefix, namespaceSeparator)
     {
     }
     /// <summary>
@@ -36,7 +36,8 @@ public class TypescriptRelativeImportManager : RelativeImportManager
         }
         else if (string.IsNullOrEmpty(importPath))
             importPath += codeUsing.Name;
-        else if (!isCodeUsingAModel) {
+        else if (!isCodeUsingAModel)
+        {
             importPath += typeDef.Name.ToFirstCharacterLowerCase();
         }
         return (importSymbol, codeUsing.Alias, importPath);

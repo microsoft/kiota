@@ -28,7 +28,8 @@ public class CodePropertyWriterTests
         parentClass = new CodeClass
         {
             Name = "ParentClass",
-            Documentation = new() {
+            Documentation = new()
+            {
                 Description = "This is an amazing class",
             },
             Kind = CodeClassKind.Model
@@ -63,7 +64,8 @@ public class CodePropertyWriterTests
         {
             Name = "message",
             Access = AccessModifier.Public,
-            Documentation = new() {
+            Documentation = new()
+            {
                 Description = "I can get your messages.",
             },
             Type = new CodeType
@@ -85,23 +87,24 @@ public class CodePropertyWriterTests
     {
         var property = new CodeProperty
         {
-            Documentation = new() {
+            Documentation = new()
+            {
                 Description = "Additional data dictionary",
             },
             Name = "additionalData",
             Kind = CodePropertyKind.AdditionalData,
             Access = AccessModifier.Private,
-            Type = new CodeType {Name = "array", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array}
+            Type = new CodeType { Name = "array", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }
         };
         parentClass.Kind = CodeClassKind.Model;
         parentClass.AddProperty(property);
-        await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         propertyWriter.WriteCodeElement(property, languageWriter);
         var result = stringWriter.ToString();
         Assert.Contains("private array $additionalData;", result);
         Assert.Contains("@var array<string, mixed>", result);
     }
-    
+
     [Fact]
     public void WriteCollectionNonAdditionalData()
     {
@@ -112,11 +115,12 @@ public class CodePropertyWriterTests
             Access = AccessModifier.Private,
             Type = new CodeType
             {
-                Name = "recipient", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array
+                Name = "recipient",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array
             }
         };
         parentClass.AddProperty(property);
-        
+
         propertyWriter.WriteCodeElement(property, languageWriter);
         var result = stringWriter.ToString();
         Assert.Contains("@var array<Recipient>|null", result);
@@ -128,23 +132,23 @@ public class CodePropertyWriterTests
         var adapter = new CodeProperty
         {
             Name = "adapter",
-            Type = new CodeType {Name = "requestAdapter", IsNullable = false},
+            Type = new CodeType { Name = "requestAdapter", IsNullable = false },
             Access = AccessModifier.Private,
             Kind = CodePropertyKind.RequestAdapter
         };
         parentClass.AddProperty(adapter);
         parentClass.AddProperty(new CodeProperty
         {
-            Name = "pathSegment", 
+            Name = "pathSegment",
             Kind = CodePropertyKind.PathParameters,
-            Type = new CodeType {Name = "string", IsNullable = false},
+            Type = new CodeType { Name = "string", IsNullable = false },
         });
         propertyWriter.WriteCodeElement(adapter, languageWriter);
         var result = stringWriter.ToString();
 
         Assert.Contains("private RequestAdapter $adapter;", result);
     }
-    
+
     [Fact]
     public void WritePrimitiveFloatProperty()
     {
@@ -168,7 +172,7 @@ public class CodePropertyWriterTests
         new object[] { new CodeProperty { Name = "property", Type = new CodeType { Name = "decimal" } } },
         new object[] { new CodeProperty { Name = "property", Type = new CodeType { Name = "byte" } } }
     };
-    
+
     [Theory]
     [MemberData(nameof(StringProperties))]
     public void WritePrimitiveStringProperty(CodeProperty property)
@@ -178,7 +182,7 @@ public class CodePropertyWriterTests
         Assert.Contains("public ?string $property = null;", stringWriter.ToString());
     }
 
-    public static IEnumerable<object[]> IntProperties => new List<object[]> 
+    public static IEnumerable<object[]> IntProperties => new List<object[]>
     {
         new object[] { new CodeProperty { Name = "property", Type = new CodeType { Name = "integer" }, Access = AccessModifier.Protected} },
         new object[] { new CodeProperty { Name = "property", Type = new CodeType { Name = "int32" }, Access = AccessModifier.Protected} },
@@ -205,7 +209,8 @@ public class CodePropertyWriterTests
             Access = AccessModifier.Private,
             Type = new CodeType
             {
-                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array, Name = "string"
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                Name = "string"
             }
         };
         parentClass.AddProperty(queryParameter);

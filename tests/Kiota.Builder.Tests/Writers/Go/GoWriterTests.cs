@@ -1,14 +1,16 @@
-using System;
+﻿using System;
 
 using Kiota.Builder.Writers.Go;
 
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Go;
-public class GoWriterTests {
+public class GoWriterTests
+{
     [Fact]
-    public void Instanciates() {
-        var writer =  new GoWriter("./", "graph");
+    public void Instanciates()
+    {
+        var writer = new GoWriter("./", "graph");
         Assert.NotNull(writer);
         Assert.NotNull(writer.PathSegmenter);
         Assert.Throws<ArgumentNullException>(() => new GoWriter(null, "graph"));

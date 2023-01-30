@@ -17,7 +17,7 @@ using Kiota.Builder.Writers.Swift;
 using Kiota.Builder.Writers.TypeScript;
 
 namespace Kiota.Builder.Writers;
- 
+
 public abstract class LanguageWriter
 {
     private TextWriter? writer;
@@ -36,7 +36,10 @@ public abstract class LanguageWriter
     {
         this.writer = writer;
     }
-    public IPathSegmenter? PathSegmenter { get; protected set; }
+    public IPathSegmenter? PathSegmenter
+    {
+        get; protected set;
+    }
 
     private readonly Stack<int> factorStack = new();
     public void IncreaseIndent(int factor = 1)
@@ -55,7 +58,10 @@ public abstract class LanguageWriter
     {
         return indentString[..Math.Max(0, currentIndent)];
     }
-    public static string NewLine { get => Environment.NewLine;}
+    public static string NewLine
+    {
+        get => Environment.NewLine;
+    }
     /// <summary>
     /// Adds an empty line
     /// </summary>
@@ -64,8 +70,10 @@ public abstract class LanguageWriter
     {
         writer?.WriteLine(includeIndent ? GetIndent() + line : line);
     }
-    internal void WriteLines(params string[] lines) {
-        foreach(var line in lines) {
+    internal void WriteLines(params string[] lines)
+    {
+        foreach (var line in lines)
+        {
             WriteLine(line);
         }
     }
@@ -99,51 +107,54 @@ public abstract class LanguageWriter
     /// <param name="code"></param>
     public void Write<T>(T code) where T : CodeElement
     {
-        if(Writers.TryGetValue(code.GetType(), out var elementWriter))
-            switch(code) {
+        if (Writers.TryGetValue(code.GetType(), out var elementWriter))
+            switch (code)
+            {
                 case CodeProperty p when !p.ExistsInBaseType: // to avoid duplicating props on inheritance structure
-                    ((ICodeElementWriter<CodeProperty>) elementWriter).WriteCodeElement(p, this);
+                    ((ICodeElementWriter<CodeProperty>)elementWriter).WriteCodeElement(p, this);
                     break;
                 case CodeIndexer i: // we have to do this triage because dotnet is limited in terms of covariance
-                    ((ICodeElementWriter<CodeIndexer>) elementWriter).WriteCodeElement(i, this);
+                    ((ICodeElementWriter<CodeIndexer>)elementWriter).WriteCodeElement(i, this);
                     break;
                 case ClassDeclaration d:
-                    ((ICodeElementWriter<ClassDeclaration>) elementWriter).WriteCodeElement(d, this);
+                    ((ICodeElementWriter<ClassDeclaration>)elementWriter).WriteCodeElement(d, this);
                     break;
                 case BlockEnd i:
-                    ((ICodeElementWriter<BlockEnd>) elementWriter).WriteCodeElement(i, this);
+                    ((ICodeElementWriter<BlockEnd>)elementWriter).WriteCodeElement(i, this);
                     break;
                 case CodeEnum e:
-                    ((ICodeElementWriter<CodeEnum>) elementWriter).WriteCodeElement(e, this);
+                    ((ICodeElementWriter<CodeEnum>)elementWriter).WriteCodeElement(e, this);
                     break;
                 case CodeMethod m:
-                    ((ICodeElementWriter<CodeMethod>) elementWriter).WriteCodeElement(m, this);
+                    ((ICodeElementWriter<CodeMethod>)elementWriter).WriteCodeElement(m, this);
                     break;
                 case CodeType t:
-                    ((ICodeElementWriter<CodeType>) elementWriter).WriteCodeElement(t, this);
+                    ((ICodeElementWriter<CodeType>)elementWriter).WriteCodeElement(t, this);
                     break;
                 case CodeNamespace n:
-                    ((ICodeElementWriter<CodeNamespace>) elementWriter).WriteCodeElement(n, this);
+                    ((ICodeElementWriter<CodeNamespace>)elementWriter).WriteCodeElement(n, this);
                     break;
                 case CodeFunction n:
-                    ((ICodeElementWriter<CodeFunction>) elementWriter).WriteCodeElement(n, this);
+                    ((ICodeElementWriter<CodeFunction>)elementWriter).WriteCodeElement(n, this);
                     break;
                 case InterfaceDeclaration itfd:
-                    ((ICodeElementWriter<InterfaceDeclaration>) elementWriter).WriteCodeElement(itfd, this);
+                    ((ICodeElementWriter<InterfaceDeclaration>)elementWriter).WriteCodeElement(itfd, this);
                     break;
             }
-        else if(code is not CodeClass && 
+        else if (code is not CodeClass &&
                 code is not BlockDeclaration &&
                 code is not BlockEnd &&
                 code is not CodeInterface)
             throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
     }
-    protected void AddOrReplaceCodeElementWriter<T>(ICodeElementWriter<T> writer) where T: CodeElement {
+    protected void AddOrReplaceCodeElementWriter<T>(ICodeElementWriter<T> writer) where T : CodeElement
+    {
         if (!Writers.TryAdd(typeof(T), writer))
             Writers[typeof(T)] = writer;
     }
     private readonly Dictionary<Type, object> Writers = new(); // we have to type as object because dotnet doesn't have type capture i.e eq for `? extends CodeElement`
-    public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName, bool usesBackingStore = false) {
+    public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName, bool usesBackingStore = false)
+    {
         return language switch
         {
             GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName),

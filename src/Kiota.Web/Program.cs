@@ -1,12 +1,12 @@
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Kiota.Web;
-using System.Globalization;
-using Microsoft.JSInterop;
-using Microsoft.Fast.Components.FluentUI;
+﻿using System.Globalization;
 using BlazorApplicationInsights;
 using Kiota.Builder.Configuration;
+using Kiota.Web;
 using Kiota.Web.Authentication.GitHub;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Fast.Components.FluentUI;
+using Microsoft.JSInterop;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");

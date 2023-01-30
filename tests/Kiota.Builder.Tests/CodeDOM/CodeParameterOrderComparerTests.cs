@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -10,9 +10,11 @@ using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.CodeDOM;
-public class CodeParameterOrderComparerTests {
+public class CodeParameterOrderComparerTests
+{
     [Fact]
-    public void DefensiveProgramming() {
+    public void DefensiveProgramming()
+    {
         var comparer = new BaseCodeParameterOrderComparer();
         Assert.NotNull(comparer);
         var mockParameter = new Mock<CodeParameter>().Object;
@@ -21,20 +23,25 @@ public class CodeParameterOrderComparerTests {
         Assert.Equal(1, comparer.Compare(mockParameter, null));
     }
     [Fact]
-    public void PythonDefaultsBeforeNonDefaults() {
+    public void PythonDefaultsBeforeNonDefaults()
+    {
         var comparer = new PythonCodeParameterOrderComparer();
         Assert.NotNull(comparer);
-        var param1 =  new CodeParameter {
+        var param1 = new CodeParameter
+        {
             Name = "param1",
             Kind = CodeParameterKind.RequestAdapter,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         };
-        var param2 =  new CodeParameter {
+        var param2 = new CodeParameter
+        {
             Name = "param2",
             Kind = CodeParameterKind.RequestConfiguration,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         };
@@ -43,51 +50,61 @@ public class CodeParameterOrderComparerTests {
         Assert.Equal(0, comparer.Compare(param2, param2));
     }
     [Fact]
-    public void CancellationParameterIsAfterRequestConfigurationByDefault() {
+    public void CancellationParameterIsAfterRequestConfigurationByDefault()
+    {
         var comparer = new BaseCodeParameterOrderComparer();
         Assert.NotNull(comparer);
-        var param1 =  new CodeParameter {
+        var param1 = new CodeParameter
+        {
             Name = "param1",
             Kind = CodeParameterKind.RequestConfiguration,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         };
-        var param2 =  new CodeParameter {
+        var param2 = new CodeParameter
+        {
             Name = "param2",
             Kind = CodeParameterKind.Cancellation,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         };
         var parameters = new List<CodeParameter> { param1, param2 };
-        Assert.Equal("param1",parameters.OrderBy(x => x, comparer).First().Name);
+        Assert.Equal("param1", parameters.OrderBy(x => x, comparer).First().Name);
         Assert.Equal(110, comparer.Compare(param2, param1));
         Assert.Equal(-110, comparer.Compare(param1, param2));
         Assert.Equal(0, comparer.Compare(param2, param2));
     }
     [Fact]
-    public void CancellationParameterIsAfterRequestConfigurationByDefaultIfBothOptional() {
+    public void CancellationParameterIsAfterRequestConfigurationByDefaultIfBothOptional()
+    {
         var comparer = new BaseCodeParameterOrderComparer();
         Assert.NotNull(comparer);
-        var param1 =  new CodeParameter {
+        var param1 = new CodeParameter
+        {
             Name = "param1",
             Kind = CodeParameterKind.RequestConfiguration,
             Optional = true,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         };
-        var param2 =  new CodeParameter {
+        var param2 = new CodeParameter
+        {
             Name = "param2",
             Kind = CodeParameterKind.Cancellation,
             Optional = true,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         };
         var parameters = new List<CodeParameter> { param1, param2 };
-        Assert.Equal("param1",parameters.OrderBy(x => x, comparer).First().Name);
+        Assert.Equal("param1", parameters.OrderBy(x => x, comparer).First().Name);
         Assert.Equal(110, comparer.Compare(param2, param1));
         Assert.Equal(-110, comparer.Compare(param1, param2));
         Assert.Equal(0, comparer.Compare(param2, param2));
@@ -99,25 +116,30 @@ public class CodeParameterOrderComparerTests {
     [InlineData(CodeParameterKind.SetterValue)]
     [InlineData(CodeParameterKind.ParseNode)]
     [InlineData(CodeParameterKind.Custom)]
-    public void CancellationParameterIsBeforeOthersForGolang(CodeParameterKind testKind) {
+    public void CancellationParameterIsBeforeOthersForGolang(CodeParameterKind testKind)
+    {
         var comparer = new GoCodeParameterOrderComparer();
         Assert.NotNull(comparer);
-        var param1 =  new CodeParameter {
+        var param1 = new CodeParameter
+        {
             Name = "param1",
             Kind = testKind,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         };
-        var param2 =  new CodeParameter {
+        var param2 = new CodeParameter
+        {
             Name = "param2",
             Kind = CodeParameterKind.Cancellation,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         };
         var parameters = new List<CodeParameter> { param1, param2 };
-        Assert.Equal("param2",parameters.OrderBy(x => x, comparer).First().Name);
+        Assert.Equal("param2", parameters.OrderBy(x => x, comparer).First().Name);
         Assert.Equal(0, comparer.Compare(param2, param2));
     }
 }

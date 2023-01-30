@@ -1,7 +1,8 @@
-using Kiota.Builder.PathSegmenters;
+﻿using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Writers.Swift;
-public class SwiftWriter : LanguageWriter {
+public class SwiftWriter : LanguageWriter
+{
     public SwiftWriter(string rootPath, string clientNamespaceName)
     {
         PathSegmenter = new SwiftPathSegmenter(rootPath, clientNamespaceName);

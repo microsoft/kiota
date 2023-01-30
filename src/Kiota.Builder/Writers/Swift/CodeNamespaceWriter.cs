@@ -1,11 +1,11 @@
-using System.Linq;
+﻿using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 
-namespace  Kiota.Builder.Writers.Swift;
+namespace Kiota.Builder.Writers.Swift;
 public class CodeNamespaceWriter : BaseElementWriter<CodeNamespace, SwiftConventionService>
 {
-    public CodeNamespaceWriter(SwiftConventionService conventionService) : base(conventionService){}
+    public CodeNamespaceWriter(SwiftConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeNamespace codeElement, LanguageWriter writer)
     {
         var segments = codeElement.Name.Split(".");
