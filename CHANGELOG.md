@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where most of the Java fields have been prefixed with an underscore.
+- Mangle properties and/or accessors names per language to have more idiomatic APIs.
 - Using fully qualified identifier for java.util.function.Consumer to avoid conflicts in Java.
 - Removed response handler parameter from PHP request executor methods. [1856](https://github.com/microsoft/kiota/issues/1856)
 - Fixed minor typo in adding Accept header for PHP.
