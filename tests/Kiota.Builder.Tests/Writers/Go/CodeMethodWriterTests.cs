@@ -242,6 +242,25 @@ public class CodeMethodWriterTests : IDisposable
             }
         });
     }
+    private void AddSerializationBackingStoreMethods()
+    {
+        parentClass.AddMethod(new CodeMethod { 
+            ReturnType = new CodeType
+            {
+                Name = "map[string]any",
+                IsExternal = true
+            },
+            AccessedProperty = new CodeProperty
+            {
+                Type = new CodeType
+                {
+                    Name = "additionalData",
+                },
+                Kind = CodePropertyKind.AdditionalData,
+                Name = "additionalData"
+            }
+        });
+    }
     private CodeClass AddUnionTypeWrapper()
     {
         var complexType1 = root.AddClass(new CodeClass
@@ -1362,6 +1381,17 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("WriteStringValue", result);
         Assert.Contains("WriteCollectionOfStringValues", result);
         Assert.Contains("WriteCollectionOfObjectValues", result);
+        Assert.Contains("WriteAdditionalData(m.GetAdditionalData())", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesSerializerBackingStoreBody() {
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsAsync = false;
+        AddSerializationBackingStoreMethods();
+        writer.Write(method);
+        var result = tw.ToString();
         Assert.Contains("WriteAdditionalData(m.GetAdditionalData())", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
