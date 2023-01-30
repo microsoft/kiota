@@ -10,7 +10,7 @@ parent: Get started
 
 ## Target project requirements
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota-abstractions-go), [authentication](https://github.com/microsoft/kiota-authentication-azure-go), [http](https://github.com/microsoft/kiota-http-go), [serialization JSON](https://github.com/microsoft/kiota-serialization-json-go), and [serialization Text](https://github.com/microsoft/kiota-serialization-text-go) packages.
+Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota-abstractions-go), [authentication](https://github.com/microsoft/kiota-authentication-azure-go), [http](https://github.com/microsoft/kiota-http-go), [serialization Form](https://github.com/microsoft/kiota-serialization-form-go), [serialization JSON](https://github.com/microsoft/kiota-serialization-json-go), and [serialization Text](https://github.com/microsoft/kiota-serialization-text-go) packages.
 
 ## Creating target projects
 
@@ -29,6 +29,7 @@ Create a file named **getuser.go** and add the following code.
 ```bash
 go get github.com/microsoft/kiota-abstractions-go
 go get github.com/microsoft/kiota-http-go
+go get github.com/microsoft/kiota-serialization-form-go
 go get github.com/microsoft/kiota-serialization-json-go
 go get github.com/microsoft/kiota-serialization-text-go
 go get github.com/microsoft/kiota-authentication-azure-go

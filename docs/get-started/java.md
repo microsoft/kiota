@@ -11,7 +11,7 @@ parent: Get started
 
 ## Target project requirements
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota/tree/main/abstractions/java), [authentication](https://github.com/microsoft/kiota/tree/main/authentication/java/azure), [http](https://github.com/microsoft/kiota/tree/main/http/java/okhttp), and [serialization](https://github.com/microsoft/kiota/tree/main/serialization/java/json) packages from the GitHub feed.
+Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota-java), [authentication](https://github.com/microsoft/kiota-java), [http](https://github.com/microsoft/kiota-java), [serialization Form](https://github.com/microsoft/kiota-java), [serialization JSON](https://github.com/microsoft/kiota-java), and [serialization Text](https://github.com/microsoft/kiota-java) packages.
 
 ## Creating target projects
 
@@ -27,12 +27,6 @@ gradle init --dsl groovy --test-framework junit --type java-application --projec
 
 ### Getting access to the packages
 
-1. Open **./app/build.gradle** and add the following inside the `repositories` value.
-
-    ```groovy
-    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
-    ```
-
 ### Add Kiota and dependencies
 
 Edit **./app/build.gradle** to add the following dependencies.
@@ -40,12 +34,13 @@ Edit **./app/build.gradle** to add the following dependencies.
 > **Note:** Find current version numbers for Kiota packages at [Nexus Repository Manager](https://oss.sonatype.org/).
 
 ```groovy
-implementation 'com.microsoft.kiota:microsoft-kiota-abstractions:0.0.5-SNAPSHOT'
-implementation 'com.microsoft.kiota:microsoft-kiota-authentication-azure:0.0.2-SNAPSHOT'
-implementation 'com.microsoft.kiota:microsoft-kiota-http-okHttp:0.0.5-SNAPSHOT'
-implementation 'com.microsoft.kiota:microsoft-kiota-serialization-json:0.0.2-SNAPSHOT'
-implementation 'com.microsoft.kiota:microsoft-kiota-serialization-text:0.0.2-SNAPSHOT'
-implementation 'com.azure:azure-identity:1.6.1'
+implementation 'com.microsoft.kiota:microsoft-kiota-abstractions:0.2.0'
+implementation 'com.microsoft.kiota:microsoft-kiota-authentication-azure:0.2.0'
+implementation 'com.microsoft.kiota:microsoft-kiota-http-okHttp:0.2.0'
+implementation 'com.microsoft.kiota:microsoft-kiota-serialization-json:0.2.0'
+implementation 'com.microsoft.kiota:microsoft-kiota-serialization-text:0.2.0'
+implementation 'com.microsoft.kiota:microsoft-kiota-serialization-form:0.2.0'
+implementation 'com.azure:azure-identity:1.7.3'
 ```
 
 Only the first package, `kiota-abstractions`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
