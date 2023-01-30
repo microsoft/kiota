@@ -32,13 +32,18 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
+            ReplacePropertyNames(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                },
+                static s => s.ToSnakeCase());
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.BackingStore,
                 },
-                static s => s,
+                static s => s.ToSnakeCase(),
                 _configuration.UsesBackingStore,
                 true,
                 string.Empty,
