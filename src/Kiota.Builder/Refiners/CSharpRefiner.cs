@@ -46,8 +46,6 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplacePropertyNames(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
-                    CodePropertyKind.AdditionalData,
-                    CodePropertyKind.BackingStore,
                 },
                 static s => s.ToPascalCase(new[] {'_'}));
             DisambiguatePropertiesWithClassNames(generatedCode);
