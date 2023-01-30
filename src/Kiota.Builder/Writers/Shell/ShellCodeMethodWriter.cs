@@ -146,8 +146,11 @@ namespace Kiota.Builder.Writers.Shell
             writer.IncreaseIndent();
             for (var i = 0; i < availableOptions.Count; i++)
             {
-                var (_, paramName, _) = parameters[i];
-                writer.WriteLine($"var {paramName.ToFirstCharacterLowerCase()} = {availableOptions[i]};");
+                var (paramType, paramName, _) = parameters[i];
+                var op = availableOptions[i];
+                var isRequiredService = op.Contains($"GetRequiredService<{paramType}>");
+                var typeName = isRequiredService ? paramType : "var";
+                writer.WriteLine($"{typeName} {paramName.ToFirstCharacterLowerCase()} = {availableOptions[i]};");
             }
 
             WriteCommandHandlerBody(originalMethod, parentClass, requestParams, isHandlerVoid, returnType, writer);
@@ -248,7 +251,7 @@ namespace Kiota.Builder.Writers.Shell
                             writer.WriteLine($"{formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
                         }
                         formatterTypeVal = outputFormatParamName;
-                        string canFilterExpr = $"(response is not null && {outputFilterParamName} is not null)";
+                        string canFilterExpr = $"(response is not null)";
                         writer.WriteLine($"response = {canFilterExpr} ? await {outputFilterParamName}.FilterOutputAsync(response, {outputFilterQueryParamName}, {cancellationTokenParamName}) : response;");
                         if (originalMethod?.PagingInformation == null)
                         {
@@ -453,17 +456,18 @@ namespace Kiota.Builder.Writers.Shell
                     }
 
                     // Check for null model
+                    // TODO: Add logging with reason for skipped executions
                     writer.WriteLine($"if (model is null) return; // Cannot create a POST request from a null model.");
 
                     requestBodyParam.Name = "model";
                 }
                 else if (conventions.StreamTypeName.Equals(requestBodyParamType?.Name, StringComparison.OrdinalIgnoreCase))
                 {
-                    var name = requestBodyParam.Name;
+                    var pName = requestBodyParam.Name;
                     requestBodyParam.Name = "stream";
                     // Check for file existence
-                    writer.WriteLine($"if ({name} is null || !{name}.Exists) return;");
-                    writer.WriteLine($"using var {requestBodyParam.Name} = {name}.OpenRead();");
+                    writer.WriteLine($"if ({pName} is null || !{pName}.Exists) return;");
+                    writer.WriteLine($"using var {requestBodyParam.Name} = {pName}.OpenRead();");
                 }
             }
 

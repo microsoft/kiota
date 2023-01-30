@@ -384,7 +384,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("if (testHeader is not null) requestInfo.Headers.Add(\"Test-Header\", testHeader);", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken) ?? Stream.Null;", result);
-        Assert.Contains("var outputFormatterFactory = invocationContext.BindingContext.GetRequiredService<IOutputFormatterFactory>();", result);
+        Assert.Contains("IOutputFormatterFactory outputFormatterFactory = invocationContext.BindingContext.GetRequiredService<IOutputFormatterFactory>();", result);
         Assert.Contains("var formatter = outputFormatterFactory.GetFormatter(FormatterType.TEXT);", result);
         Assert.Contains("await formatter.WriteOutputAsync(response, null, cancellationToken);", result);
         Assert.Contains("});", result);
@@ -459,7 +459,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("IOutputFormatter? formatter = null;", result);
         Assert.Contains("if (pageResponse?.StatusCode >= 200 && pageResponse?.StatusCode < 300) {", result);
         Assert.Contains("formatter = outputFormatterFactory.GetFormatter(output);", result);
-        Assert.Contains("response = (response is not null && outputFilter is not null) ? await outputFilter.FilterOutputAsync(response, query, cancellationToken) : response", result);
+        Assert.Contains("response = (response is not null) ? await outputFilter.FilterOutputAsync(response, query, cancellationToken) : response", result);
         Assert.Contains("formatter = outputFormatterFactory.GetFormatter(FormatterType.TEXT);", result);
         Assert.Contains("await formatter.WriteOutputAsync(response, formatterOptions, cancellationToken);", result);
         Assert.Contains("});", result);
@@ -522,7 +522,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken) ?? Stream.Null;", result);
         Assert.Contains("var formatterOptions = output.GetOutputFormatterOptions(new FormatterOptionsModel(!jsonNoIndent));", result);
-        Assert.Contains("response = (response is not null && outputFilter is not null) ? await outputFilter.FilterOutputAsync(response, query, cancellationToken) : response", result);
+        Assert.Contains("response = (response is not null) ? await outputFilter.FilterOutputAsync(response, query, cancellationToken) : response", result);
         Assert.Contains("await formatter.WriteOutputAsync(response, formatterOptions, cancellationToken);", result);
         Assert.Contains("});", result);
         Assert.Contains("return command;", result);
@@ -867,7 +867,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("await RequestAdapter.SendNoContentAsync(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("Console.WriteLine(\"Success\");", result);
         Assert.Contains("return command;", result);
-        Assert.DoesNotContain("response = (response is not null && outputFilter is not null) ? await outputFilter.FilterOutputAsync(response, query, cancellationToken) : response", result);
+        Assert.DoesNotContain("response = (response is not null) ? await outputFilter.FilterOutputAsync(response, query, cancellationToken) : response", result);
         Assert.DoesNotContain("await formatter.WriteOutputAsync(response, formatterOptions, cancellationToken);", result);
     }
 }
