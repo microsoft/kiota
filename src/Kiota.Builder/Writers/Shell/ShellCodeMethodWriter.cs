@@ -146,8 +146,11 @@ namespace Kiota.Builder.Writers.Shell
             writer.IncreaseIndent();
             for (var i = 0; i < availableOptions.Count; i++)
             {
-                var (_, paramName, _) = parameters[i];
-                writer.WriteLine($"var {paramName.ToFirstCharacterLowerCase()} = {availableOptions[i]};");
+                var (paramType, paramName, _) = parameters[i];
+                var op = availableOptions[i];
+                var isRequiredService = op.Contains($"GetRequiredService<{paramType}>");
+                var typeName = isRequiredService ? paramType : "var";
+                writer.WriteLine($"{typeName} {paramName.ToFirstCharacterLowerCase()} = {availableOptions[i]};");
             }
 
             WriteCommandHandlerBody(originalMethod, parentClass, requestParams, isHandlerVoid, returnType, writer);
@@ -248,7 +251,8 @@ namespace Kiota.Builder.Writers.Shell
                             writer.WriteLine($"{formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
                         }
                         formatterTypeVal = outputFormatParamName;
-                        writer.WriteLine($"response = await {outputFilterParamName}?.FilterOutputAsync(response, {outputFilterQueryParamName}, {cancellationTokenParamName}) ?? response;");
+                        string canFilterExpr = $"(response is not null)";
+                        writer.WriteLine($"response = {canFilterExpr} ? await {outputFilterParamName}.FilterOutputAsync(response, {outputFilterQueryParamName}, {cancellationTokenParamName}) : response;");
                         if (originalMethod?.PagingInformation == null)
                         {
                             writer.Write("var ");
@@ -332,7 +336,11 @@ namespace Kiota.Builder.Writers.Shell
                 writer.WriteLine("};");
                 writer.WriteLine($"{optionName}.IsRequired = {isRequired.ToString().ToFirstCharacterLowerCase()};");
                 writer.WriteLine($"command.AddOption({optionName});");
-                availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({optionName})");
+                var suffix = string.Empty;
+                if (option.IsOfKind(CodeParameterKind.RequestBody) && !fileParamType.Equals(optionType, StringComparison.OrdinalIgnoreCase)) {
+                    suffix = " ?? string.Empty";
+                }
+                availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({optionName}){suffix}");
             }
 
             return availableOptions;
@@ -447,13 +455,20 @@ namespace Kiota.Builder.Writers.Shell
                         writer.WriteLine($"var model = parseNode.GetObjectValue<{typeString}>({typeString}.CreateFromDiscriminatorValue);");
                     }
 
+                    // Check for null model
+                    // Add logging with reason for skipped execution here
+                    writer.WriteLine($"if (model is null) return; // Cannot create a POST request from a null model.");
+
                     requestBodyParam.Name = "model";
                 }
                 else if (conventions.StreamTypeName.Equals(requestBodyParamType?.Name, StringComparison.OrdinalIgnoreCase))
                 {
-                    var name = requestBodyParam.Name;
+                    var pName = requestBodyParam.Name;
                     requestBodyParam.Name = "stream";
-                    writer.WriteLine($"using var {requestBodyParam.Name} = {name}.OpenRead();");
+                    // Check for file existence
+                    // Add logging with reason for skipped execution here
+                    writer.WriteLine($"if ({pName} is null || !{pName}.Exists) return;");
+                    writer.WriteLine($"using var {requestBodyParam.Name} = {pName}.OpenRead();");
                 }
             }
 
@@ -490,7 +505,9 @@ namespace Kiota.Builder.Writers.Shell
             }
             else
             {
-                writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await RequestAdapter.{requestMethod}(requestInfo, errorMapping: {errorMappingVarName}, cancellationToken: {cancellationTokenParamName});");
+                string suffix = string.Empty;
+                if (!isVoid) suffix = " ?? Stream.Null";
+                writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await RequestAdapter.{requestMethod}(requestInfo, errorMapping: {errorMappingVarName}, cancellationToken: {cancellationTokenParamName}){suffix};");
             }
         }
 
@@ -521,13 +538,15 @@ namespace Kiota.Builder.Writers.Shell
                 foreach (var param in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.Path)))
                 {
                     var paramName = (string.IsNullOrEmpty(param.SerializationName) ? param.Name : param.SerializationName).SanitizeParameterNameForUrlTemplate();
-                    writer.WriteLine($"requestInfo.PathParameters.Add(\"{paramName}\", {NormalizeToIdentifier(param.Name).ToFirstCharacterLowerCase()});");
+                    var paramIdent = NormalizeToIdentifier(param.Name).ToFirstCharacterLowerCase();
+                    writer.WriteLine($"if ({paramIdent} is not null) requestInfo.PathParameters.Add(\"{paramName}\", {paramIdent});");
                 }
 
                 foreach (var param in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.Headers)))
                 {
                     var paramName = string.IsNullOrEmpty(param.SerializationName) ? param.Name : param.SerializationName;
-                    writer.WriteLine($"requestInfo.Headers.Add(\"{paramName}\", {NormalizeToIdentifier(param.Name).ToFirstCharacterLowerCase()});");
+                    var paramIdent = NormalizeToIdentifier(param.Name).ToFirstCharacterLowerCase();
+                    writer.WriteLine($"if ({paramIdent} is not null) requestInfo.Headers.Add(\"{paramName}\", {paramIdent});");
                 }
             }
             else
