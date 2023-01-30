@@ -163,7 +163,7 @@ When present, the properties values are store in this backing store instead of u
 ### Properties and accessors name mangling
 
 To produce a more idiomatic output for specific languages, mangling is applied to the properties names and/or accessors.
-This is the opinionated mangling on each language:
+The table below describes the mangling rules being applied for each language:
 
 | Language | Property name | Property accessors |
 |---|---|---|
