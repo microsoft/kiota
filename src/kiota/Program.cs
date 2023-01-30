@@ -1,13 +1,11 @@
 ﻿using System.CommandLine;
 using System.Threading.Tasks;
 
-namespace kiota
+namespace kiota;
+static class Program
 {
-    static class Program
+    static Task<int> Main(string[] args)
     {
-        static Task<int> Main(string[] args)
-        {
-            return KiotaHost.GetRootCommand().InvokeAsync(args);
-        }
+        return KiotaHost.GetRootCommand().InvokeAsync(args);
     }
 }

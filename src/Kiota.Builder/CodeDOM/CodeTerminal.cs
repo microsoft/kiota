@@ -1,6 +1,5 @@
-﻿namespace Kiota.Builder.CodeDOM
+﻿namespace Kiota.Builder.CodeDOM;
+
+public abstract class CodeTerminal : CodeElement
 {
-    public abstract class CodeTerminal : CodeElement
-    {
-    }
 }

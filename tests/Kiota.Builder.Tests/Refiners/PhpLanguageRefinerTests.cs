@@ -6,176 +6,174 @@ using Kiota.Builder.Refiners;
 
 using Xunit;
 
-namespace Kiota.Builder.Tests.Refiners
+namespace Kiota.Builder.Tests.Refiners;
+public class PhpLanguageRefinerTests
 {
-    public class PhpLanguageRefinerTests
+    private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
+
+    [Fact]
+    public async Task ReplacesRequestBuilderPropertiesByMethods()
     {
-        private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
-
-        [Fact]
-        public async Task ReplacesRequestBuilderPropertiesByMethods()
+        var model = root.AddClass(new CodeClass
         {
-            var model = root.AddClass(new CodeClass
-            {
-                Name = "userRequestBuilder",
-                Kind = CodeClassKind.RequestBuilder
-            }).First();
+            Name = "userRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
 
-            var requestBuilder = model.AddProperty(new CodeProperty
-            {
-                Name = "breaks", 
-                Kind = CodePropertyKind.RequestBuilder,
-                Type = new CodeType
-                {
-                    Name = "string"
-                }
-            }).First();
-            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
-            Assert.Equal("breaks", requestBuilder.Name);
-            Assert.Equal("userRequestBuilder", model.Name);
-        }
-
-        [Fact]
-        public async Task PrefixReservedWordPropertyNamesWith()
+        var requestBuilder = model.AddProperty(new CodeProperty
         {
-            var model = root.AddClass(new CodeClass
+            Name = "breaks", 
+            Kind = CodePropertyKind.RequestBuilder,
+            Type = new CodeType
             {
-                Name = "userRequestBuilder",
-                Kind = CodeClassKind.RequestBuilder
-            }).First();
+                Name = "string"
+            }
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
+        Assert.Equal("breaks", requestBuilder.Name);
+        Assert.Equal("userRequestBuilder", model.Name);
+    }
 
-            var property = model.AddProperty(new CodeProperty
+    [Fact]
+    public async Task PrefixReservedWordPropertyNamesWith()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "userRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "continue", 
+            Kind = CodePropertyKind.RequestBuilder,
+            Type = new CodeType
             {
-                Name = "continue", 
-                Kind = CodePropertyKind.RequestBuilder,
-                Type = new CodeType
-                {
-                    Name = "string"
-                }
-            }).First();
-            
-            await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
-            Assert.Equal("EscapedContinue",property.Name);
-        }
+                Name = "string"
+            }
+        }).First();
         
-        [Fact]
-        public async Task ReplacesBinaryWithNativeType()
+        await ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
+        Assert.Equal("EscapedContinue",property.Name);
+    }
+    
+    [Fact]
+    public async Task ReplacesBinaryWithNativeType()
+    {
+        var model = root.AddClass(new CodeClass
         {
-            var model = root.AddClass(new CodeClass
-            {
-                Name = "model",
-                Kind = CodeClassKind.Model
-            }).First();
-            var method = model.AddMethod(new CodeMethod
-            {
-                Name = "method",
-                ReturnType = new CodeType
-                {
-                    Name = "binary"
-                }
-            }).First();
-            await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP}, root);
-            Assert.Equal("StreamInterface", method.ReturnType.Name);
-        }
-
-        [Fact]
-        public async Task AddsDefaultImports() {
-            var model = root.AddClass(new CodeClass
-            {
-                Name = "model",
-                Kind = CodeClassKind.Model
-            }).First();
-            root.AddClass(new CodeClass
-            {
-                Name = "rb",
-                Kind = CodeClassKind.RequestBuilder,
-            });
-            await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
-            Assert.NotEmpty(model.StartBlock.Usings);
-        }
-
-        [Fact]
-        public async Task ChangesBackingStoreParameterTypeInApiClientConstructor()
+            Name = "model",
+            Kind = CodeClassKind.Model
+        }).First();
+        var method = model.AddMethod(new CodeMethod
         {
-            var apiClientClass = new CodeClass { Name = "ApiClient", Kind = CodeClassKind.Custom };
-            var constructor = new CodeMethod { 
-                Name = "ApiClientConstructor",
-                Kind = CodeMethodKind.ClientConstructor,
-                ReturnType = new CodeType { Name = "string" },
-            };
-            var backingStoreParameter = new CodeParameter
+            Name = "method",
+            ReturnType = new CodeType
             {
-                Name = "BackingStore",
-                Kind = CodeParameterKind.BackingStore,
-                Type = new CodeType
-                {
-                    Name = "IBackingStoreFactory",
-                    IsExternal = true
-                }
-            };
-            constructor.AddParameter(backingStoreParameter);
-            constructor.DeserializerModules = new() {"Microsoft\\Kiota\\Serialization\\Deserializer"};
-            constructor.SerializerModules = new() {"Microsoft\\Kiota\\Serialization\\Serializer"};
-            apiClientClass.AddMethod(constructor);
+                Name = "binary"
+            }
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP}, root);
+        Assert.Equal("StreamInterface", method.ReturnType.Name);
+    }
 
-            root.AddClass(apiClientClass);
-            await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true}, root);
-            Assert.Equal("BackingStoreFactory", backingStoreParameter.Type.Name);
-            Assert.Equal("null", backingStoreParameter.DefaultValue);
-        }
-
-        [Fact]
-        public async Task ImportsClassForDiscriminatorReturns()
+    [Fact]
+    public async Task AddsDefaultImports() {
+        var model = root.AddClass(new CodeClass
         {
-            var modelClass = new CodeClass
-            {
-                Name = "Entity",
-                Parent = root,
-                Kind = CodeClassKind.Model,
-                DiscriminatorInformation = new DiscriminatorInformation
-                {
-                    Name = "createFromDiscriminatorValue", DiscriminatorPropertyName = "@odata.type",
-                }
-            };
-            var parentClass = new CodeClass { Name = "ParentClass", Kind = CodeClassKind.Model, Parent = root };
-            var subNamespace = root.AddNamespace("Security");
-            subNamespace.Parent = root;
-            root.AddClass(modelClass);
+            Name = "model",
+            Kind = CodeClassKind.Model
+        }).First();
+        root.AddClass(new CodeClass
+        {
+            Name = "rb",
+            Kind = CodeClassKind.RequestBuilder,
+        });
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        Assert.NotEmpty(model.StartBlock.Usings);
+    }
 
-            var securityClass = new CodeClass { Name = "Security", Parent = subNamespace, Kind = CodeClassKind.Model };
-            var codeMethod = new CodeMethod
+    [Fact]
+    public async Task ChangesBackingStoreParameterTypeInApiClientConstructor()
+    {
+        var apiClientClass = new CodeClass { Name = "ApiClient", Kind = CodeClassKind.Custom };
+        var constructor = new CodeMethod { 
+            Name = "ApiClientConstructor",
+            Kind = CodeMethodKind.ClientConstructor,
+            ReturnType = new CodeType { Name = "string" },
+        };
+        var backingStoreParameter = new CodeParameter
+        {
+            Name = "BackingStore",
+            Kind = CodeParameterKind.BackingStore,
+            Type = new CodeType
             {
-                Name = "createFromDiscriminatorValue",
-                Kind = CodeMethodKind.Factory,
-                ReturnType = new CodeType { TypeDefinition = modelClass, Name = "Entity" }
-            };
-            codeMethod.AddParameter(new CodeParameter
-            {
-                Name = "parseNode",
-                Type = new CodeType { Name = "ParseNode", IsExternal = true, },
-                Kind = CodeParameterKind.ParseNode
-            });
-            modelClass.DiscriminatorInformation.AddDiscriminatorMapping("#models.security",
-                new CodeType { Name = "Security", TypeDefinition = securityClass, });
-            var tagClass = new CodeClass { Name = "Tag", Kind = CodeClassKind.Model, Parent = modelClass.Parent };
-            root.AddClass(tagClass);
+                Name = "IBackingStoreFactory",
+                IsExternal = true
+            }
+        };
+        constructor.AddParameter(backingStoreParameter);
+        constructor.DeserializerModules = new() {"Microsoft\\Kiota\\Serialization\\Deserializer"};
+        constructor.SerializerModules = new() {"Microsoft\\Kiota\\Serialization\\Serializer"};
+        apiClientClass.AddMethod(constructor);
 
-            modelClass.DiscriminatorInformation.AddDiscriminatorMapping("#models.security.Tag",
-                new CodeType { Name = "Tag", TypeDefinition = tagClass, });
-            modelClass.DiscriminatorInformation.AddDiscriminatorMapping("#models.ParentClass",
-                new CodeType { Name = "ParentClass", TypeDefinition = parentClass, });
+        root.AddClass(apiClientClass);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true}, root);
+        Assert.Equal("BackingStoreFactory", backingStoreParameter.Type.Name);
+        Assert.Equal("null", backingStoreParameter.DefaultValue);
+    }
 
-            modelClass.DiscriminatorInformation.AddDiscriminatorMapping("#models.entity",
-                new CodeType { Name = "Entity", TypeDefinition = modelClass, });
-            modelClass.AddMethod(codeMethod);
-            securityClass.StartBlock.Inherits = new CodeType
+    [Fact]
+    public async Task ImportsClassForDiscriminatorReturns()
+    {
+        var modelClass = new CodeClass
+        {
+            Name = "Entity",
+            Parent = root,
+            Kind = CodeClassKind.Model,
+            DiscriminatorInformation = new DiscriminatorInformation
             {
-                Name = "Entity", IsExternal = false, TypeDefinition = modelClass
-            };
-            Assert.Empty(modelClass.Usings);
-            subNamespace.AddClass(securityClass);
-            await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
-            Assert.Equal(2, modelClass.Usings.Count());
-        }
+                Name = "createFromDiscriminatorValue", DiscriminatorPropertyName = "@odata.type",
+            }
+        };
+        var parentClass = new CodeClass { Name = "ParentClass", Kind = CodeClassKind.Model, Parent = root };
+        var subNamespace = root.AddNamespace("Security");
+        subNamespace.Parent = root;
+        root.AddClass(modelClass);
+
+        var securityClass = new CodeClass { Name = "Security", Parent = subNamespace, Kind = CodeClassKind.Model };
+        var codeMethod = new CodeMethod
+        {
+            Name = "createFromDiscriminatorValue",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType { TypeDefinition = modelClass, Name = "Entity" }
+        };
+        codeMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Type = new CodeType { Name = "ParseNode", IsExternal = true, },
+            Kind = CodeParameterKind.ParseNode
+        });
+        modelClass.DiscriminatorInformation.AddDiscriminatorMapping("#models.security",
+            new CodeType { Name = "Security", TypeDefinition = securityClass, });
+        var tagClass = new CodeClass { Name = "Tag", Kind = CodeClassKind.Model, Parent = modelClass.Parent };
+        root.AddClass(tagClass);
+
+        modelClass.DiscriminatorInformation.AddDiscriminatorMapping("#models.security.Tag",
+            new CodeType { Name = "Tag", TypeDefinition = tagClass, });
+        modelClass.DiscriminatorInformation.AddDiscriminatorMapping("#models.ParentClass",
+            new CodeType { Name = "ParentClass", TypeDefinition = parentClass, });
+
+        modelClass.DiscriminatorInformation.AddDiscriminatorMapping("#models.entity",
+            new CodeType { Name = "Entity", TypeDefinition = modelClass, });
+        modelClass.AddMethod(codeMethod);
+        securityClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "Entity", IsExternal = false, TypeDefinition = modelClass
+        };
+        Assert.Empty(modelClass.Usings);
+        subNamespace.AddClass(securityClass);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        Assert.Equal(2, modelClass.Usings.Count());
     }
 }
