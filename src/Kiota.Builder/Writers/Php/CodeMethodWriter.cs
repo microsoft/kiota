@@ -71,7 +71,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         writer.WriteLine();
     }
 
-    private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
+    private const string UrlTemplateTempVarName = "$urlTplParams";
+    private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
         if (inherits)
             writer.WriteLine("parent::__construct();");
@@ -101,24 +102,45 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor))
         {
             AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
-            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer);
-            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.UrlTemplate, writer);
         }
-        var urlTemplateTempVarName = "$urlTplParams";
-        if (currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor) &&
-            parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
-            currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path)))
+        var pathParametersParameter = currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters);
+        var pathParametersProperty =
+            parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.PathParameters));
+        const string rawUrlParameterKey = "request-raw-url";
+        if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
+            currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor) &&
+            pathParametersParameter != null
+           )
         {
-            if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
-                writer.WriteLine($"{urlTemplateTempVarName} = ${pathParametersParameter.Name};");
-            currentMethod.Parameters.Where(parameter => parameter.IsOfKind(CodeParameterKind.Path)).ToList()
-                .ForEach(parameter =>
-                {
-                    writer.WriteLine($"{urlTemplateTempVarName}['{parameter.Name}'] = ${parameter.Name.ToFirstCharacterLowerCase()};");
-                });
-            if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
-                writer.WriteLine($"{GetPropertyCall(pathParametersProperty, "[]")} = array_merge({GetPropertyCall(pathParametersProperty, "[]")}, {urlTemplateTempVarName});");
+            var pathParametersParameterName = conventions.GetParameterName(pathParametersParameter);
+            writer.WriteLine($"if (is_array({pathParametersParameterName})) {{");
+            writer.IncreaseIndent();
+            WritePathParametersOptions(currentMethod, parentClass, pathParametersParameter, writer);
+            writer.DecreaseIndent();
+            writer.WriteLine("} else {");
+            writer.IncreaseIndent();
+            writer.WriteLine($"{GetPropertyCall(pathParametersProperty, "[]")} = ['{rawUrlParameterKey}' => {conventions.GetParameterName(pathParametersParameter)}];");
+            writer.CloseBlock();
         }
+    }
+    private void WritePathParametersOptions(CodeMethod currentMethod, CodeClass parentClass, CodeParameter pathParameter, LanguageWriter writer)
+    {
+        var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+
+        if (!currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path)))
+        {
+            writer.WriteLine($"{GetPropertyCall(pathParametersProperty, "[]")} = {conventions.GetParameterName(pathParameter)};");
+            return;
+        }
+
+        writer.WriteLine($"{UrlTemplateTempVarName} = {conventions.GetParameterName(pathParameter)};");
+        currentMethod.Parameters.Where(parameter => parameter.IsOfKind(CodeParameterKind.Path)).ToList()
+            .ForEach(parameter =>
+            {
+                writer.WriteLine($"{UrlTemplateTempVarName}['{parameter.Name}'] = ${parameter.Name.ToFirstCharacterLowerCase()};");
+            });
+        writer.WriteLine(
+            $"{GetPropertyCall(pathParametersProperty, "[]")} = {UrlTemplateTempVarName};");
     }
     private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer)
     {
@@ -415,7 +437,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         conventions.AddRequestBuilderBody(returnType, writer, default, element);
     }
 
-    private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"$this->{property.Name}";
+    private static string GetPropertyCall(CodeProperty? property, string defaultValue) => property == null ? defaultValue : $"$this->{property.Name}";
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");

@@ -1160,7 +1160,9 @@ public class CodeMethodWriterTests : IDisposable
         var result = stringWriter.ToString();
         Assert.Contains("__construct", result);
         Assert.Contains($"$this->{propName} = {defaultValue};", result);
-        Assert.Contains("$this->pathParameters = array_merge($this->pathParameters, $urlTplParams);", result);
+        Assert.Contains("if (is_array($pathParametersOrRawUrl)) {", result);
+        Assert.Contains("$this->pathParameters = ['request-raw-url' => $pathParametersOrRawUrl];", result);
+        Assert.Contains("$this->pathParameters = $urlTplParams;", result);
     }
 
     [Fact]

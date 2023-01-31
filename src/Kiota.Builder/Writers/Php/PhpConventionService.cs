@@ -76,7 +76,7 @@ public class PhpConventionService : CommonLanguageConventionService
         {
             CodeParameterKind.RequestConfiguration => "$requestConfiguration",
             CodeParameterKind.BackingStore => "$backingStore",
-            CodeParameterKind.PathParameters => "$pathParameters",
+            CodeParameterKind.PathParameters => "$pathParametersOrRawUrl",
             CodeParameterKind.RequestAdapter => RequestAdapterPropertyName,
             CodeParameterKind.RequestBody => "$body",
             CodeParameterKind.RawUrl => "$rawUrl",
@@ -93,6 +93,7 @@ public class PhpConventionService : CommonLanguageConventionService
         {
             CodeParameterKind.RequestAdapter => $"RequestAdapter {GetParameterName(parameter)}",
             CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",
+            CodeParameterKind.PathParameters => GetParameterName(parameter),
             CodeParameterKind.RequestConfiguration => $"{parameter.Type.Name.ToFirstCharacterUpperCase()} {GetParameterName(parameter)}",
             CodeParameterKind.Serializer => $"SerializationWriter {GetParameterName(parameter)}",
             CodeParameterKind.BackingStore => $"{parameter.Type.Name.ToFirstCharacterUpperCase()} {GetParameterName(parameter)}",
@@ -108,7 +109,7 @@ public class PhpConventionService : CommonLanguageConventionService
         var parameterSignature = GetParameterSignature(parameter, codeElement).Trim().Split(' ');
         if (parameter.IsOfKind(CodeParameterKind.PathParameters))
         {
-            return $"array<string, mixed>{(parameter.Optional ? "|null" : string.Empty)} {parameterSignature[1]}";
+            return $"array<string, mixed>|string{(parameter.Optional ? "|null" : string.Empty)} {parameterSignature[0]}";
         }
 
         var isCollection = parameter.Type.IsCollection;
