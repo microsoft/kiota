@@ -155,7 +155,7 @@ public static class OpenApiUrlTreeNodeExtensions
     }
     private static readonly Regex stripExtensionForIndexersRegex = new(@"\.(?:json|yaml|yml|csv|txt)$", RegexOptions.Compiled, Constants.DefaultRegexTimeout); // so {param-name}.json is considered as indexer
     public static bool IsComplexPathMultipleParameters(this OpenApiUrlTreeNode currentNode) =>
-        currentNode?.Segment?.IsPathSegmentWithNumberOfParameters(static x => x.Any()) ?? false && !currentNode.IsPathSegmentWithSingleSimpleParameter();
+        (currentNode?.Segment?.IsPathSegmentWithNumberOfParameters(static x => x.Any()) ?? false) && !currentNode.IsPathSegmentWithSingleSimpleParameter();
     public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode)
     {
         var queryStringParameters = string.Empty;
