@@ -139,7 +139,7 @@ public class CSharpLanguageRefinerTests
         Assert.NotEqual(typeName, model.Name);
         Assert.Equal($"{typeName}Object", model.Name);//our defined model is renamed
         Assert.Equal(typeName, property.Type.Name);//external type is unchanged
-        Assert.Equal(typeName.ToPascalCase(new[] {'_'}), property.Name);//external type property name is in pascal-case
+        Assert.Equal(typeName.ToPascalCase(new[] { '_' }), property.Name);//external type property name is in pascal-case
     }
 
     [Fact]

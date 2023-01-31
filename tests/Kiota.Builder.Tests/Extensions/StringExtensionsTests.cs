@@ -46,13 +46,14 @@ public class StringExtensionsTests
         Assert.Equal("Toto", "toto".ToPascalCase());
         Assert.Equal("TotoPascalCase", "toto-pascal-case".ToPascalCase());
     }
-        [Fact]
-    public void ToPascalCaseCustomSeparator() {
+    [Fact]
+    public void ToPascalCaseCustomSeparator()
+    {
         string nString = null;
         Assert.Empty(nString.ToPascalCase());
-        Assert.Equal(string.Empty, string.Empty.ToPascalCase(new[] {'_'}));
-        Assert.Equal("Toto", "toto".ToPascalCase(new[] {'_'}));
-        Assert.Equal("TotoPascalCase", "toto_pascal_case".ToPascalCase(new[] {'_'}));
+        Assert.Equal(string.Empty, string.Empty.ToPascalCase(new[] { '_' }));
+        Assert.Equal("Toto", "toto".ToPascalCase(new[] { '_' }));
+        Assert.Equal("TotoPascalCase", "toto_pascal_case".ToPascalCase(new[] { '_' }));
     }
     [Fact]
     public void ReplaceValueIdentifier()
