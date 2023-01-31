@@ -244,7 +244,8 @@ public class CodeMethodWriterTests : IDisposable
     }
     private void AddSerializationBackingStoreMethods()
     {
-        parentClass.AddMethod(new CodeMethod { 
+        parentClass.AddMethod(new CodeMethod
+        {
             ReturnType = new CodeType
             {
                 Name = "map[string]any",
@@ -1386,7 +1387,8 @@ public class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesSerializerBackingStoreBody() {
+    public void WritesSerializerBackingStoreBody()
+    {
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationBackingStoreMethods();
