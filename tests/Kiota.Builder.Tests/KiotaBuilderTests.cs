@@ -631,7 +631,7 @@ paths:
         Assert.NotNull(deviceManagementNS);
         var deviceManagementRequestBuilder = deviceManagementNS.FindChildByName<CodeClass>("DeviceManagementRequestBuilder", false);
         Assert.NotNull(deviceManagementRequestBuilder);
-        var getEffectivePermissionsMethod = deviceManagementRequestBuilder.FindChildByName<CodeMethod>("getEffectivePermissionsWithScope", false);
+        var getEffectivePermissionsMethod = deviceManagementRequestBuilder.FindChildByName<CodeMethod>("microsoftGraphGetEffectivePermissionsWithScope", false);
         Assert.NotNull(getEffectivePermissionsMethod);
         Assert.Single(getEffectivePermissionsMethod.Parameters);
         var getEffectivePermissionsNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement.microsoftGraphGetEffectivePermissionsWithScope");
@@ -782,7 +782,7 @@ paths:
         Assert.NotNull(deviceManagementNS);
         var deviceManagementRequestBuilder = deviceManagementNS.FindChildByName<CodeClass>("DeviceManagementRequestBuilder", false);
         Assert.NotNull(deviceManagementRequestBuilder);
-        var getEffectivePermissionsMethod = deviceManagementRequestBuilder.FindChildByName<CodeMethod>("getEffectivePermissionsWithScope", false);
+        var getEffectivePermissionsMethod = deviceManagementRequestBuilder.FindChildByName<CodeMethod>("microsoftGraphGetEffectivePermissionsWithScope", false);
         Assert.NotNull(getEffectivePermissionsMethod);
         Assert.Single(getEffectivePermissionsMethod.Parameters);
         var getEffectivePermissionsNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement.microsoftGraphGetEffectivePermissionsWithScope");
