@@ -226,7 +226,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                     currentMethod.Parameters
                                                                 .Where(x => x.IsOfKind(CodeParameterKind.Path))
-                                                                .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
+                                                                .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase(), x.Optional))
                                                                 .ToArray());
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
             }
@@ -237,7 +237,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                     conventions.AddParametersAssignment(writer,
                                                         pathParametersProp.Type,
                                                         string.Empty,
-                                                        (rawUrlParam.Type, Constants.RawUrlParameterName, rawUrlParam.Name.ToFirstCharacterLowerCase()));
+                                                        (rawUrlParam.Type, Constants.RawUrlParameterName, rawUrlParam.Name.ToFirstCharacterLowerCase(), rawUrlParam.Optional));
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
             }
             AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
@@ -551,12 +551,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             baseSuffix = " : base()";
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)).ToList());
         var methodName = isConstructor ? parentClass.Name.ToFirstCharacterUpperCase() : code.Name.ToFirstCharacterUpperCase();
-        var includeNullableReferenceType = code.Parameters.Any(static codeParameter => codeParameter.IsOfKind(CodeParameterKind.RequestConfiguration));
+        var includeNullableReferenceType = code.Parameters.Any(static codeParameter => codeParameter.IsOfKind(CodeParameterKind.RequestConfiguration) || codeParameter.Optional || codeParameter.Type.IsNullable);
         if (includeNullableReferenceType)
         {
             var completeReturnTypeWithNullable = string.IsNullOrEmpty(genericTypeSuffix) ? completeReturnType : $"{completeReturnType[..^2].TrimEnd('?')}?{genericTypeSuffix} ";
             var nullableParameters = string.Join(", ", code.Parameters.OrderBy(static x => x, parameterOrderComparer)
-                                                          .Select(p => p.IsOfKind(CodeParameterKind.RequestConfiguration) ? 
+                                                          .Select(p => p.IsOfKind(CodeParameterKind.RequestConfiguration) || p.Optional || p.Type.IsNullable ? 
                                                                                         GetParameterSignatureWithNullableRefType(p,code): 
                                                                                         conventions.GetParameterSignature(p, code))
                                                           .ToList());

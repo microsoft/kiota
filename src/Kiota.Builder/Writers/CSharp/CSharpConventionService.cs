@@ -61,13 +61,23 @@ namespace Kiota.Builder.Writers.CSharp {
             }
         }
         public override string TempDictionaryVarName => "urlTplParams";
-        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
+        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string, bool)[] parameters) {
             if(pathParametersType == null) return;
             writer.WriteLine($"var {TempDictionaryVarName} = new {pathParametersType.Name}({pathParametersReference});");
-            if(parameters.Any())
-                writer.WriteLines(parameters.Select(p =>
-                    $"{TempDictionaryVarName}.Add(\"{p.Item2}\", {p.Item3});"
-                ).ToArray());
+            if(parameters.Any()){
+                writer.WriteLines(parameters.Select(p =>{
+                    var (ct, name, identName, isOptional) = p;
+                    string nullCheck = string.Empty;
+                    if (ct.CollectionKind == CodeTypeCollectionKind.None && (ct.IsNullable || isOptional)) {
+                        if (nameof(String).Equals(ct.Name, StringComparison.OrdinalIgnoreCase)) {
+                            nullCheck = $"if (!string.IsNullOrWhiteSpace({identName})) ";
+                        } else {
+                            nullCheck = $"if ({identName} is not null) ";
+                        }
+                    }
+                    return $"{nullCheck}{TempDictionaryVarName}.Add(\"{name}\", {identName});";
+                }).ToArray());
+            }
         }
         #pragma warning restore CA1822 // Method should be static
         private static bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
@@ -210,7 +220,7 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
         {
-            var parameterType = GetTypeString(parameter.Type, targetElement);
+            var parameterType = GetTypeString(parameter.Type, targetElement, true, false);
             var defaultValue = parameter switch {
                 _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {parameter.DefaultValue}",
                 _ when parameter.Optional => " = default",

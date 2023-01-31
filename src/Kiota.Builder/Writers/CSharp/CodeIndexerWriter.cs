@@ -13,7 +13,7 @@ public class CodeIndexerWriter : BaseElementWriter<CodeIndexer, CSharpConvention
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         writer.StartBlock($"public {returnType} this[{conventions.GetTypeString(codeElement.IndexType, codeElement)} position] {{ get {{");
         if(parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp)
-            conventions.AddParametersAssignment(writer, pathParametersProp.Type, pathParametersProp.Name.ToFirstCharacterUpperCase(), (codeElement.IndexType, codeElement.SerializationName, "position"));
+            conventions.AddParametersAssignment(writer, pathParametersProp.Type, pathParametersProp.Name.ToFirstCharacterUpperCase(), (codeElement.IndexType, codeElement.SerializationName, "position", false));
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, "return ");
         writer.CloseBlock("} }");
     }
