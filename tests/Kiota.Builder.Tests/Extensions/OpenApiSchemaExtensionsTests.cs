@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 using Kiota.Builder.Extensions;
@@ -8,26 +8,32 @@ using Microsoft.OpenApi.Models;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Extensions;
-public class OpenApiSchemaExtensionsTests {
+public class OpenApiSchemaExtensionsTests
+{
     [Fact]
-    public void Defensive() {
+    public void Defensive()
+    {
         Assert.Empty(OpenApiSchemaExtensions.GetSchemaReferenceIds(null));
-        var schema = new OpenApiSchema{
+        var schema = new OpenApiSchema
+        {
             AnyOf = null
         };
         Assert.Null(schema.AnyOf);
         Assert.Empty(schema.GetSchemaReferenceIds());
-        schema = new() {
+        schema = new()
+        {
             AllOf = null
         };
         Assert.Null(schema.AllOf);
         Assert.Empty(schema.GetSchemaReferenceIds());
-        schema = new() {
+        schema = new()
+        {
             OneOf = null
         };
         Assert.Null(schema.OneOf);
         Assert.Empty(schema.GetSchemaReferenceIds());
-        schema = new() {
+        schema = new()
+        {
             Properties = null
         };
         Assert.Null(schema.Properties);
@@ -48,27 +54,35 @@ public class OpenApiSchemaExtensionsTests {
 
     }
     [Fact]
-    public void ExternalReferencesAreNotSupported() {
-        var mockSchema = new OpenApiSchema {
-            Reference = new OpenApiReference {
-               Id = "example.json#/path/to/component",
-               ExternalResource = "http://example.com/example.json",
+    public void ExternalReferencesAreNotSupported()
+    {
+        var mockSchema = new OpenApiSchema
+        {
+            Reference = new OpenApiReference
+            {
+                Id = "example.json#/path/to/component",
+                ExternalResource = "http://example.com/example.json",
             },
         };
         Assert.Throws<NotSupportedException>(() => mockSchema.IsReferencedSchema());
     }
     [Fact]
-    public void LocalReferencesAreSupported() {
-        var mockSchema = new OpenApiSchema {
-            Reference = new OpenApiReference {
-               Id = "#/path/to/component",
+    public void LocalReferencesAreSupported()
+    {
+        var mockSchema = new OpenApiSchema
+        {
+            Reference = new OpenApiReference
+            {
+                Id = "#/path/to/component",
             },
         };
         Assert.True(mockSchema.IsReferencedSchema());
     }
     [Fact]
-    public void GetSchemaNameAllOf() {
-        var schema = new OpenApiSchema {
+    public void GetSchemaNameAllOf()
+    {
+        var schema = new OpenApiSchema
+        {
             AllOf = new List<OpenApiSchema> {
                 new() {
                     Title = "microsoft.graph.entity"
@@ -84,8 +98,10 @@ public class OpenApiSchemaExtensionsTests {
         Assert.Equal("microsoft.graph.user", schema.GetSchemaName());
     }
     [Fact]
-    public void GetSchemaNameAllOfNested() {
-        var schema = new OpenApiSchema {
+    public void GetSchemaNameAllOfNested()
+    {
+        var schema = new OpenApiSchema
+        {
             AllOf = new List<OpenApiSchema> {
                 new() {
                     AllOf = new List<OpenApiSchema> {
@@ -105,8 +121,10 @@ public class OpenApiSchemaExtensionsTests {
         Assert.Equal("microsoft.graph.user", schema.GetSchemaName());
     }
     [Fact]
-    public void GetSchemaNameAnyOf() {
-        var schema = new OpenApiSchema {
+    public void GetSchemaNameAnyOf()
+    {
+        var schema = new OpenApiSchema
+        {
             AnyOf = new List<OpenApiSchema> {
                 new() {
                     Title = "microsoft.graph.entity"
@@ -122,8 +140,10 @@ public class OpenApiSchemaExtensionsTests {
         Assert.Equal("microsoft.graph.user", schema.GetSchemaName());
     }
     [Fact]
-    public void GetSchemaNameOneOf() {
-        var schema = new OpenApiSchema {
+    public void GetSchemaNameOneOf()
+    {
+        var schema = new OpenApiSchema
+        {
             OneOf = new List<OpenApiSchema> {
                 new() {
                     Title = "microsoft.graph.entity"
@@ -139,9 +159,12 @@ public class OpenApiSchemaExtensionsTests {
         Assert.Equal("microsoft.graph.user", schema.GetSchemaName());
     }
     [Fact]
-    public void GetSchemaNameItems() {
-        var schema = new OpenApiSchema {
-            Items = new() {
+    public void GetSchemaNameItems()
+    {
+        var schema = new OpenApiSchema
+        {
+            Items = new()
+            {
                 Title = "microsoft.graph.entity"
             },
         };
@@ -151,8 +174,10 @@ public class OpenApiSchemaExtensionsTests {
         Assert.Single(names);
     }
     [Fact]
-    public void GetSchemaNameTitle() {
-        var schema = new OpenApiSchema {
+    public void GetSchemaNameTitle()
+    {
+        var schema = new OpenApiSchema
+        {
             Title = "microsoft.graph.entity"
         };
         var names = schema.GetSchemaNames();
@@ -161,15 +186,18 @@ public class OpenApiSchemaExtensionsTests {
         Assert.Single(names);
     }
     [Fact]
-    public void GetSchemaNameEmpty() {
+    public void GetSchemaNameEmpty()
+    {
         var schema = new OpenApiSchema();
         var names = schema.GetSchemaNames();
         Assert.Empty(names);
-        Assert.Null(schema.GetSchemaName());
+        Assert.Empty(schema.GetSchemaName());
     }
     [Fact]
-    public void GetReferenceIdsAllOf() {
-        var schema = new OpenApiSchema {
+    public void GetReferenceIdsAllOf()
+    {
+        var schema = new OpenApiSchema
+        {
             AllOf = new List<OpenApiSchema> {
                 new() {
                     Reference = new() {
@@ -188,8 +216,10 @@ public class OpenApiSchemaExtensionsTests {
         Assert.Contains("microsoft.graph.user", names);
     }
     [Fact]
-    public void GetReferenceIdsAllOfNested() {
-        var schema = new OpenApiSchema {
+    public void GetReferenceIdsAllOfNested()
+    {
+        var schema = new OpenApiSchema
+        {
             AllOf = new List<OpenApiSchema> {
                 new() {
                     AllOf = new List<OpenApiSchema> {
@@ -212,8 +242,10 @@ public class OpenApiSchemaExtensionsTests {
         Assert.Contains("microsoft.graph.user", names);
     }
     [Fact]
-    public void GetReferenceIdsAnyOf() {
-        var schema = new OpenApiSchema {
+    public void GetReferenceIdsAnyOf()
+    {
+        var schema = new OpenApiSchema
+        {
             AnyOf = new List<OpenApiSchema> {
                 new() {
                     Reference = new() {
@@ -232,8 +264,10 @@ public class OpenApiSchemaExtensionsTests {
         Assert.Contains("microsoft.graph.user", names);
     }
     [Fact]
-    public void GetReferenceIdsOneOf() {
-        var schema = new OpenApiSchema {
+    public void GetReferenceIdsOneOf()
+    {
+        var schema = new OpenApiSchema
+        {
             OneOf = new List<OpenApiSchema> {
                 new() {
                     Reference = new() {
@@ -252,10 +286,14 @@ public class OpenApiSchemaExtensionsTests {
         Assert.Contains("microsoft.graph.user", names);
     }
     [Fact]
-    public void GetReferenceIdsItems() {
-        var schema = new OpenApiSchema {
-            Items = new() {
-                Reference = new() {
+    public void GetReferenceIdsItems()
+    {
+        var schema = new OpenApiSchema
+        {
+            Items = new()
+            {
+                Reference = new()
+                {
                     Id = "microsoft.graph.entity"
                 }
             },
@@ -265,9 +303,12 @@ public class OpenApiSchemaExtensionsTests {
         Assert.Single(names);
     }
     [Fact]
-    public void GetReferenceIdsTitle() {
-        var schema = new OpenApiSchema {
-            Reference = new() {
+    public void GetReferenceIdsTitle()
+    {
+        var schema = new OpenApiSchema
+        {
+            Reference = new()
+            {
                 Id = "microsoft.graph.entity"
             }
         };
@@ -276,7 +317,8 @@ public class OpenApiSchemaExtensionsTests {
         Assert.Single(names);
     }
     [Fact]
-    public void GetReferenceIdsEmpty() {
+    public void GetReferenceIdsEmpty()
+    {
         var schema = new OpenApiSchema();
         var names = schema.GetSchemaReferenceIds();
         Assert.Empty(names);

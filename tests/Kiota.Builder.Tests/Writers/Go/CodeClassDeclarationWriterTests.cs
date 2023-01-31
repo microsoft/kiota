@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 
 using Kiota.Builder.CodeDOM;
@@ -18,23 +18,27 @@ public class CodeClassDeclarationWriterTests : IDisposable
     private readonly CodeClass parentClass;
     private readonly CodeNamespace root;
 
-    public CodeClassDeclarationWriterTests() {
+    public CodeClassDeclarationWriterTests()
+    {
         codeElementWriter = new CodeClassDeclarationWriter(new GoConventionService());
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
-        parentClass = new () {
+        parentClass = new()
+        {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
     }
-    public void Dispose() {
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesSimpleDeclaration() {
+    public void WritesSimpleDeclaration()
+    {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
         Assert.Contains("type", result);
@@ -42,9 +46,11 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("package", result);
     }
     [Fact]
-    public void WritesInheritance() {
+    public void WritesInheritance()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.Inherits = new (){
+        declaration.Inherits = new()
+        {
             Name = "someParent"
         };
         codeElementWriter.WriteCodeElement(declaration, writer);
@@ -52,18 +58,23 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("SomeParent", result);
     }
     [Fact]
-    public void WritesImports() {
+    public void WritesImports()
+    {
         var declaration = parentClass.StartBlock;
-        declaration.AddUsings(new () {
+        declaration.AddUsings(new()
+        {
             Name = "Objects",
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = "Go.util",
                 IsExternal = true,
             }
         },
-        new () {
+        new()
+        {
             Name = "project.graph",
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = "Message",
             }
         });

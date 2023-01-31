@@ -31,17 +31,17 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
     {
         var parentClass = codeElement.Parent as CodeClass;
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
-        switch(codeElement.Kind) {
+        switch (codeElement.Kind)
+        {
             case CodePropertyKind.RequestBuilder:
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");
-                writer.IncreaseIndent();
-                conventions.AddRequestBuilderBody(parentClass, returnType, writer);
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
+                writer.StartBlock($"{conventions.GetAccessModifier(codeElement.Access)} get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");
+                if (codeElement.Parent is CodeClass parentClass)
+                    conventions.AddRequestBuilderBody(parentClass, returnType, writer);
+                writer.CloseBlock();
                 break;
             default:
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{(codeElement.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)};");
-            break;
+                break;
         }
     }
 }

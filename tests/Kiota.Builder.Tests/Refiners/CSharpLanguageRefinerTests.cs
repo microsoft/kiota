@@ -8,69 +8,83 @@ using Kiota.Builder.Refiners;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
-public class CSharpLanguageRefinerTests {
+public class CSharpLanguageRefinerTests
+{
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLanguageRefinerTests
     [Fact]
-    public async Task AddsExceptionInheritanceOnErrorClasses() {
-        var model = root.AddClass(new CodeClass {
+    public async Task AddsExceptionInheritanceOnErrorClasses()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "somemodel",
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
-        
+
         var declaration = model.StartBlock;
 
         Assert.Contains("ApiException", declaration.Usings.Select(x => x.Name));
         Assert.Equal("ApiException", declaration.Inherits.Name);
     }
     [Fact]
-    public async Task FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
-        var model = root.AddClass(new CodeClass {
+    public async Task FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "somemodel",
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
         var declaration = model.StartBlock;
-        declaration.Inherits = new CodeType {
+        declaration.Inherits = new CodeType
+        {
             Name = "SomeOtherModel"
         };
         await Assert.ThrowsAsync<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root));
     }
     [Fact]
-    public async Task AddsUsingsForErrorTypesForRequestExecutor() {
-        var requestBuilder = root.AddClass(new CodeClass {
+    public async Task AddsUsingsForErrorTypesForRequestExecutor()
+    {
+        var requestBuilder = root.AddClass(new CodeClass
+        {
             Name = "somerequestbuilder",
             Kind = CodeClassKind.RequestBuilder,
         }).First();
         var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
-        var errorClass = subNS.AddClass(new CodeClass {
+        var errorClass = subNS.AddClass(new CodeClass
+        {
             Name = "Error4XX",
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var requestExecutor = requestBuilder.AddMethod(new CodeMethod {
+        var requestExecutor = requestBuilder.AddMethod(new CodeMethod
+        {
             Name = "get",
             Kind = CodeMethodKind.RequestExecutor,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             },
         }).First();
-        requestExecutor.AddErrorMapping("4XX", new CodeType {
-                        Name = "Error4XX",
-                        TypeDefinition = errorClass,
-                    });
+        requestExecutor.AddErrorMapping("4XX", new CodeType
+        {
+            Name = "Error4XX",
+            TypeDefinition = errorClass,
+        });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
-        
+
         var declaration = requestBuilder.StartBlock;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
     [Fact]
-    public async Task DoesNotEscapesReservedKeywordsForClassOrPropertyKind() {
+    public async Task DoesNotEscapesReservedKeywordsForClassOrPropertyKind()
+    {
         // Arrange
-        var model = root.AddClass(new CodeClass {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "break", // this a keyword
             Kind = CodeClassKind.Model,
         }).First();
@@ -90,7 +104,7 @@ public class CSharpLanguageRefinerTests {
         Assert.Equal("alias", property.Name);
         Assert.DoesNotContain("@", property.Name); // classname will be capitalized
     }
-    
+
     [Theory]
     [InlineData("integer")]
     [InlineData("boolean")]
@@ -101,9 +115,11 @@ public class CSharpLanguageRefinerTests {
     [InlineData("convert")]
     [InlineData("action")]
     [InlineData("valueType")]
-    public async Task EscapesReservedTypeNames(string typeName) {
+    public async Task EscapesReservedTypeNames(string typeName)
+    {
         // Arrange
-        var model = root.AddClass(new CodeClass {
+        var model = root.AddClass(new CodeClass
+        {
             Name = typeName,
             Kind = CodeClassKind.Model,
         }).First();
@@ -124,77 +140,96 @@ public class CSharpLanguageRefinerTests {
         Assert.Equal(typeName, property.Type.Name);//external type is unchanged
         Assert.Equal(typeName, property.Name);//external type property name is unchanged
     }
-    
+
     [Fact]
-    public async Task EscapesReservedKeywordsForReservedNamespaceNameSegments() {
+    public async Task EscapesReservedKeywordsForReservedNamespaceNameSegments()
+    {
         var subNS = root.AddNamespace($"{root.Name}.task"); // otherwise the import gets trimmed
-        var requestBuilder = subNS.AddClass(new CodeClass {
+        var requestBuilder = subNS.AddClass(new CodeClass
+        {
             Name = "tasksRequestBuilder",
             Kind = CodeClassKind.RequestBuilder,
         }).First();
-        
+
         var indexerCodeType = new CodeType { Name = "taskItemRequestBuilder" };
-        var indexer = new CodeIndexer {
+        var indexer = new CodeIndexer
+        {
             Name = "idx",
             SerializationName = "id",
-            IndexType = new CodeType {
+            IndexType = new CodeType
+            {
                 Name = "string",
             },
             ReturnType = indexerCodeType
         };
         requestBuilder.SetIndexer(indexer);
 
-        
+
         var itemSubNamespace = root.AddNamespace($"{subNS.Name}.item"); // otherwise the import gets trimmed
-        var itemRequestBuilder = itemSubNamespace.AddClass(new CodeClass {
+        var itemRequestBuilder = itemSubNamespace.AddClass(new CodeClass
+        {
             Name = "taskItemRequestBuilder",
             Kind = CodeClassKind.RequestBuilder,
         }).First();
-        
+
         var requestExecutor = itemRequestBuilder.AddMethod(new CodeMethod
         {
             Name = "get",
             Kind = CodeMethodKind.IndexerBackwardCompatibility,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "String"
             },
         }).First();
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
-        
+
         Assert.Contains("TaskNamespace", subNS.Name);
         Assert.Contains("TaskNamespace", itemSubNamespace.Name);
     }
     [Fact]
-    public async Task ConvertsUnionTypesToWrapper() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ConvertsUnionTypesToWrapper()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var union = new CodeUnionType {
+        var union = new CodeUnionType
+        {
             Name = "union",
         };
-        union.AddType(new () {
+        union.AddType(new()
+        {
             Name = "type1",
-        }, new() {
+        }, new()
+        {
             Name = "type2"
         });
-        var property = model.AddProperty(new CodeProperty {
+        var property = model.AddProperty(new CodeProperty
+        {
             Name = "deserialize",
             Kind = CodePropertyKind.Custom,
             Type = union.Clone() as CodeTypeBase,
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
             ReturnType = union.Clone() as CodeTypeBase
         }).First();
-        var parameter = new CodeParameter {
+        var parameter = new CodeParameter
+        {
             Name = "param1",
             Type = union.Clone() as CodeTypeBase
         };
-        var indexer = new CodeIndexer {
+        var indexer = new CodeIndexer
+        {
             Name = "idx",
             ReturnType = union.Clone() as CodeTypeBase,
+            IndexType = new CodeType
+            {
+                Name = "string"
+            }
         };
         model.SetIndexer(indexer);
         method.AddParameter(parameter);
@@ -208,10 +243,12 @@ public class CSharpLanguageRefinerTests {
         Assert.NotNull(resultingWrapper.OriginalComposedType);
     }
     [Fact]
-    public async Task MovesClassesWithNamespaceNamesUnderNamespace() {
+    public async Task MovesClassesWithNamespaceNamesUnderNamespace()
+    {
         var graphNS = root.AddNamespace("graph");
         var modelNS = graphNS.AddNamespace("graph.model");
-        var model = graphNS.AddClass(new CodeClass {
+        var model = graphNS.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
@@ -233,36 +270,42 @@ public class CSharpLanguageRefinerTests {
         {
             Name = "getMethod",
             Kind = CodeMethodKind.RequestExecutor,
-            ReturnType = new CodeType { 
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         }).First();
         var cancellationParam = new CodeParameter
         {
-            Name = "cancelletionToken",
+            Name = "cancellationToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Documentation = new() {
+            Documentation = new()
+            {
                 Description = "Cancellation token to use when cancelling requests",
             },
-            Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
+            Type = new CodeType { Name = "CancellationToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the cancelletionToken doesn't get removed
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the cancellationToken doesn't get removed
         Assert.True(method.Parameters.Any());
         Assert.Contains(cancellationParam, method.Parameters);
     }
     #endregion
     #region CSharp
     [Fact]
-    public async Task DisambiguatePropertiesWithClassNames() {
-        var model = root.AddClass(new CodeClass {
+    public async Task DisambiguatePropertiesWithClassNames()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "Model",
             Kind = CodeClassKind.Model
         }).First();
-        var propToAdd = model.AddProperty(new CodeProperty{
+        var propToAdd = model.AddProperty(new CodeProperty
+        {
             Name = "model",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         }).First();
@@ -271,15 +314,19 @@ public class CSharpLanguageRefinerTests {
         Assert.Equal("model", propToAdd.SerializationName);
     }
     [Fact]
-    public async Task DisambiguatePropertiesWithClassNames_DoesntReplaceSerializationName() {
+    public async Task DisambiguatePropertiesWithClassNames_DoesntReplaceSerializationName()
+    {
         var serializationName = "serializationName";
-        var model = root.AddClass(new CodeClass {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "Model",
             Kind = CodeClassKind.Model
         }).First();
-        var propToAdd = model.AddProperty(new CodeProperty{
+        var propToAdd = model.AddProperty(new CodeProperty
+        {
             Name = "model",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             },
             SerializationName = serializationName,

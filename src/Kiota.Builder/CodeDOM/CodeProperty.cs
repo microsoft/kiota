@@ -40,61 +40,72 @@ public enum CodePropertyKind
     SerializationHint,
 }
 
-public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, ICloneable, IDocumentedElement
+public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement, IAlternativeName
 {
-    public bool ReadOnly {get;set;} = false;
-    public AccessModifier Access {get;set;} = AccessModifier.Public;
-    private CodeTypeBase type;
+    public bool ReadOnly { get; set; } = false;
+    public AccessModifier Access { get; set; } = AccessModifier.Public;
     public bool ExistsInBaseType => OriginalPropertyFromBaseType != null;
-    public CodeMethod Getter {get; set;}
-    public CodeMethod Setter {get; set;}
-    public CodeMethod GetterFromCurrentOrBaseType {
+    public CodeMethod? Getter
+    {
+        get; set;
+    }
+    public CodeMethod? Setter
+    {
+        get; set;
+    }
+    public CodeMethod? GetterFromCurrentOrBaseType
+    {
         get
         {
             if (Getter != null)
                 return Getter;
             if (ExistsInBaseType)
-                return OriginalPropertyFromBaseType.Getter;
+                return OriginalPropertyFromBaseType?.Getter;
             return default;
         }
     }
-    public CodeMethod SetterFromCurrentOrBaseType {
+    public CodeMethod? SetterFromCurrentOrBaseType
+    {
         get
         {
             if (Setter != null)
                 return Setter;
             if (ExistsInBaseType)
-                return OriginalPropertyFromBaseType.Setter;
+                return OriginalPropertyFromBaseType?.Setter;
             return default;
         }
     }
-    public CodeTypeBase Type {get => type ;set {
-        EnsureElementsAreChildren(value);
-        type = value;
-    }}
-    public string DefaultValue {get;set;}
-    public CodeDocumentation Documentation { get; set; } = new();
-    public string SerializationName { get; set; }
-    public string NamePrefix { get; set; }
-    public bool IsNameEscaped { get => !string.IsNullOrEmpty(SerializationName); }
-    public string SymbolName { get => IsNameEscaped ? SerializationName.CleanupSymbolName() : Name; }
-    public CodeProperty OriginalPropertyFromBaseType {get;set;}
-    public object Clone()
+#nullable disable // the backing property is required
+    private CodeTypeBase type;
+#nullable enable
+    public required CodeTypeBase Type
     {
-        return new CodeProperty { 
-            Access = Access,
-            Type = Type?.Clone() as CodeTypeBase,
-            Getter = Getter?.Clone() as CodeMethod,
-            Setter = Setter?.Clone() as CodeMethod,
-            DefaultValue = DefaultValue,
-            Documentation = Documentation,
-            NamePrefix = NamePrefix,
-            Parent = Parent,
-            Name = Name,
-            Kind = Kind,
-            ReadOnly = ReadOnly,
-            SerializationName = SerializationName,
-            OriginalPropertyFromBaseType = OriginalPropertyFromBaseType,
-        };
+        get => type; set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            EnsureElementsAreChildren(value);
+            type = value;
+        }
+    }
+    public string DefaultValue { get; set; } = string.Empty;
+    public CodeDocumentation Documentation { get; set; } = new();
+    /// <inheritdoc/>
+    public string SerializationName { get; set; } = string.Empty;
+    public string NamePrefix { get; set; } = string.Empty;
+    /// <inheritdoc/>
+    public bool IsNameEscaped
+    {
+        get => !string.IsNullOrEmpty(SerializationName);
+    }
+    /// <inheritdoc/>
+    public string SymbolName
+    {
+        get => IsNameEscaped ? SerializationName.CleanupSymbolName() : Name;
+    }
+    /// <inheritdoc/>
+    public string WireName => IsNameEscaped ? SerializationName : Name.ToFirstCharacterLowerCase();
+    public CodeProperty? OriginalPropertyFromBaseType
+    {
+        get; set;
     }
 }

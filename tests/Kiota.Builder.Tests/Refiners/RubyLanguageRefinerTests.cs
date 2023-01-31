@@ -8,15 +8,18 @@ using Kiota.Builder.Refiners;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
-public class RubyLanguageRefinerTests {
+public class RubyLanguageRefinerTests
+{
 
     private readonly CodeNamespace graphNS;
     private readonly CodeClass parentClass;
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
-    public RubyLanguageRefinerTests() {
+    public RubyLanguageRefinerTests()
+    {
         root = CodeNamespace.InitRootNamespace();
         graphNS = root.AddNamespace("graph");
-        parentClass = new () {
+        parentClass = new()
+        {
             Name = "parentClass"
         };
         graphNS.AddClass(parentClass);
@@ -44,7 +47,8 @@ public class RubyLanguageRefinerTests {
             Name = "cancellationToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Documentation = new (){
+            Documentation = new()
+            {
                 Description = "Cancellation token to use when cancelling requests",
             },
             Type = new CodeType { Name = "CancellationToken", IsExternal = true },
@@ -55,35 +59,47 @@ public class RubyLanguageRefinerTests {
         Assert.DoesNotContain(cancellationParam, method.Parameters);
     }
     [Fact]
-    public async Task AddsDefaultImports() {
-        var model = root.AddClass(new CodeClass {
+    public async Task AddsDefaultImports()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var requestBuilder = root.AddClass(new CodeClass {
+        var requestBuilder = root.AddClass(new CodeClass
+        {
             Name = "rb",
             Kind = CodeClassKind.RequestBuilder,
         }).First();
-        requestBuilder.AddMethod(new CodeMethod {
+        requestBuilder.AddMethod(new CodeMethod
+        {
             Name = "get",
             Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.NotEmpty(requestBuilder.StartBlock.Usings);
-    
+
     }
     #endregion
     #region RubyLanguageRefinerTests
     [Fact]
-    public async Task CorrectsCoreTypes() {
-        var model = root.AddClass(new CodeClass {
+    public async Task CorrectsCoreTypes()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "rb",
             Kind = CodeClassKind.RequestBuilder
         }).First();
-        var property = model.AddProperty(new CodeProperty {
+        var property = model.AddProperty(new CodeProperty
+        {
             Name = "name",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string",
                 IsExternal = true
             },
@@ -94,8 +110,10 @@ public class RubyLanguageRefinerTests {
         Assert.Equal("Hash.new", property.DefaultValue);
     }
     [Fact]
-    public async Task EscapesReservedKeywords() {
-        var model = root.AddClass(new CodeClass {
+    public async Task EscapesReservedKeywords()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "break",
             Kind = CodeClassKind.Model
         }).First();
@@ -104,14 +122,18 @@ public class RubyLanguageRefinerTests {
         Assert.Contains("escaped", model.Name);
     }
     [Fact]
-    public async Task ReplacesDateTimeOffsetByNativeType() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesDateTimeOffsetByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "DateTimeOffset"
             },
         }).First();
@@ -120,14 +142,18 @@ public class RubyLanguageRefinerTests {
         Assert.Equal("DateTime", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesDateOnlyByNativeType() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesDateOnlyByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "DateOnly"
             },
         }).First();
@@ -136,14 +162,18 @@ public class RubyLanguageRefinerTests {
         Assert.Equal("Date", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesTimeOnlyByNativeType() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesTimeOnlyByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "TimeOnly"
             },
         }).First();
@@ -152,14 +182,18 @@ public class RubyLanguageRefinerTests {
         Assert.Equal("Time", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesDurationByNativeType() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesDurationByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "TimeSpan"
             },
         }).First();
@@ -168,17 +202,20 @@ public class RubyLanguageRefinerTests {
         Assert.Equal("MicrosoftKiotaAbstractions::ISODuration", method.ReturnType.Name);
     }
     [Fact]
-    public async Task AddNamespaceModuleImports() {
+    public async Task AddNamespaceModuleImports()
+    {
         var declaration = parentClass.StartBlock;
         var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
-        var messageClassDef = new CodeClass {
+        var messageClassDef = new CodeClass
+        {
             Name = "Message",
         };
         subNS.AddClass(messageClassDef);
         declaration.AddUsings(new CodeUsing
         {
             Name = messageClassDef.Name,
-            Declaration = new() {
+            Declaration = new()
+            {
                 Name = messageClassDef.Name,
                 TypeDefinition = messageClassDef,
             }

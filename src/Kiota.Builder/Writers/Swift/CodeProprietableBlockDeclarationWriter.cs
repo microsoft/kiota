@@ -1,25 +1,25 @@
-using System;
+﻿using System;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.Swift;
-public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWriter<T, SwiftConventionService> 
+public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWriter<T, SwiftConventionService>
     where T : ProprietableBlockDeclaration
 {
-    protected CodeProprietableBlockDeclarationWriter(SwiftConventionService conventionService) : base(conventionService) {}
+    protected CodeProprietableBlockDeclarationWriter(SwiftConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(T codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
-        if (codeElement.Parent?.Parent is CodeNamespace ns)
+        if (codeElement.Parent?.Parent is CodeNamespace)
         {
             var importSegments = codeElement
                                     .Usings
-                                    .Where(x => x.Declaration.IsExternal)
-                                    .Select(x => x.Declaration.Name)
+                                    .Where(static x => x.Declaration != null && x.Declaration.IsExternal)
+                                    .Select(static x => x.Declaration!.Name)
                                     .Distinct()
-                                .OrderBy(x => x.Count(y => y == '.'))
+                                .OrderBy(static x => x.Count(static y => y == '.'))
                                 .ThenBy(x => x)
                                 .ToList();
             if (importSegments.Any())
@@ -29,11 +29,12 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
             }
         }
 
-        if(codeElement?.Parent?.Parent is CodeNamespace && !(codeElement.Parent is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.BarrelInitializer))) {
+        if (codeElement.Parent?.Parent is CodeNamespace && !(codeElement.Parent is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.BarrelInitializer)))
+        {
             writer.WriteLine($"extension {codeElement.Parent.Parent.Name} {{");
             writer.IncreaseIndent();
         }
-        
+
         WriteTypeDeclaration(codeElement, writer);
     }
     protected abstract void WriteTypeDeclaration(T codeElement, LanguageWriter writer);

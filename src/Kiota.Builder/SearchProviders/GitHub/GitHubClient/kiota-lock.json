@@ -1,8 +1,8 @@
 {
-  "descriptionHash": "05E6ABBF0FC132222F869C35E911517FBA7AC560F662A51BB3BD84E7D270C463597DE37377FE77F80EE2C88B2AAC8600CBE115258E503CD77603F08FB578B7FB",
+  "descriptionHash": "4FDC4769A850A50D4801ED3587E18375024B7E4D622A959EDCC422F59AA5F3DE38F0233BAD628A110B9A17A7F082F9BE1EE30EDC7011A7D2AAF53B9BFB47CCDE",
   "descriptionLocation": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.2022-11-28.json",
   "lockFileVersion": "1.0.0",
-  "kiotaVersion": "0.8.3.0",
+  "kiotaVersion": "0.10.0-preview",
   "clientClassName": "GitHubClient",
   "clientNamespaceName": "Kiota.Builder.SearchProviders.GitHub.GitHubClient",
   "language": "CSharp",

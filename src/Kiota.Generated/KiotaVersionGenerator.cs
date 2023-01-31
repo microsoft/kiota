@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Xml;
@@ -15,12 +15,14 @@ public class KiotaVersionGenerator : ISourceGenerator
         var directory = Path.GetDirectoryName(mainSyntaxTree.FilePath);
 
         var version = "unknown";
-        try {
+        try
+        {
             XmlDocument csproj = new XmlDocument();
             csproj.Load(Path.Join(directory, "Kiota.Builder.csproj"));
 
             version = csproj.GetElementsByTagName("Version")[0].InnerText;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new SystemException("KiotaVersionGenerator expanded in an invalid project, missing 'Kiota.Builder.csproj' file.", e);
         }

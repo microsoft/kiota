@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 
 using Kiota.Builder.CodeDOM;
@@ -8,7 +8,8 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Ruby;
-public class CodePropertyWriterTests: IDisposable {
+public class CodePropertyWriterTests : IDisposable
+{
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
     private readonly StringWriter tw;
@@ -20,12 +21,14 @@ public class CodePropertyWriterTests: IDisposable {
     private const string PropertyName = "propertyName";
     private const string TypeName = "Somecustomtype";
     private const string RootNamespaceName = "RootNamespace";
-    public CodePropertyWriterTests() {
+    public CodePropertyWriterTests()
+    {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         CodeNamespace.InitRootNamespace();
-        EmptyClass = new CodeClass {
+        EmptyClass = new CodeClass
+        {
             Name = "emptyClass"
         };
         emptyProperty = new CodeProperty
@@ -36,17 +39,28 @@ public class CodePropertyWriterTests: IDisposable {
                 Name = TypeName
             }
         };
-        EmptyClass.AddProperty(emptyProperty, new() {
+        EmptyClass.AddProperty(emptyProperty, new()
+        {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
-        }, new() {
+            Type = new CodeType
+            {
+                Name = "PathParameters",
+            },
+        }, new()
+        {
             Name = "requestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "RequestAdapter",
+            },
         });
-        
+
         var root = CodeNamespace.InitRootNamespace();
         root.Name = RootNamespaceName;
-        parentClass = new CodeClass {
+        parentClass = new CodeClass
+        {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
@@ -59,20 +73,32 @@ public class CodePropertyWriterTests: IDisposable {
                 TypeDefinition = parentClass
             }
         };
-        parentClass.AddProperty(property, new() {
+        parentClass.AddProperty(property, new()
+        {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
-        }, new() {
+            Type = new CodeType
+            {
+                Name = "PathParameters",
+            },
+        }, new()
+        {
             Name = "requestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "RequestAdapter",
+            },
         });
     }
-    public void Dispose() {
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesRequestBuilder() {
+    public void WritesRequestBuilder()
+    {
         property.Kind = CodePropertyKind.RequestBuilder;
         writer.Write(property);
         var result = tw.ToString();
@@ -82,7 +108,8 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.Contains("path_parameters", result);
     }
     [Fact]
-    public void WritesRequestBuilderWithoutNamespace() {
+    public void WritesRequestBuilderWithoutNamespace()
+    {
         emptyProperty.Kind = CodePropertyKind.RequestBuilder;
         writer.Write(emptyProperty);
         var result = tw.ToString();
@@ -93,14 +120,16 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.DoesNotContain($"::{TypeName}.new", result);
     }
     [Fact]
-    public void WritesAccessedProperty() {
+    public void WritesAccessedProperty()
+    {
         emptyProperty.Kind = CodePropertyKind.QueryParameter;
         writer.Write(emptyProperty);
         var result = tw.ToString();
         Assert.Contains($"attr_accessor :{PropertyName.ToSnakeCase()}", result);
     }
     [Fact]
-    public void WritesCustomProperty() {
+    public void WritesCustomProperty()
+    {
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();

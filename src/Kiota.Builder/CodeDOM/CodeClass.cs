@@ -6,7 +6,8 @@ using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;
 
-public enum CodeClassKind {
+public enum CodeClassKind
+{
     Custom,
     RequestBuilder,
     Model,
@@ -30,53 +31,65 @@ public enum CodeClassKind {
 /// </summary>
 public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition, IDiscriminatorInformationHolder
 {
-    public bool IsErrorDefinition { get; set; }
+    public bool IsErrorDefinition
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Original composed type this class was generated for.
     /// </summary>
-    public CodeComposedTypeBase OriginalComposedType { get; set; }
+    public CodeComposedTypeBase? OriginalComposedType
+    {
+        get; set;
+    }
     public void SetIndexer(CodeIndexer indexer)
     {
         ArgumentNullException.ThrowIfNull(indexer);
-        if(InnerChildElements.Values.OfType<CodeIndexer>().Any() || InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility))) {
+        if (InnerChildElements.Values.OfType<CodeIndexer>().Any() || InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)))
+        {
             var existingIndexer = InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
-            if(existingIndexer != null) {
+            if (existingIndexer != null)
+            {
                 RemoveChildElement(existingIndexer);
                 AddRange(CodeMethod.FromIndexer(existingIndexer, $"By{existingIndexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", true));
             }
             AddRange(CodeMethod.FromIndexer(indexer, $"By{indexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", false));
-        } else
+        }
+        else
             AddRange(indexer);
     }
-    public override IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties) {
+    public override IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
+    {
         var result = base.AddProperty(properties);
-        foreach(var addedPropertyTuple in result.Select(x => new Tuple<CodeProperty, CodeProperty>(x, StartBlock.GetOriginalPropertyDefinedFromBaseType(x.Name)))
+        foreach (var addedPropertyTuple in result.Select(x => new Tuple<CodeProperty, CodeProperty?>(x, StartBlock.GetOriginalPropertyDefinedFromBaseType(x.Name)))
                                         .Where(static x => x.Item2 != null))
-            addedPropertyTuple.Item1.OriginalPropertyFromBaseType = addedPropertyTuple.Item2;
+            addedPropertyTuple.Item1.OriginalPropertyFromBaseType = addedPropertyTuple.Item2!;
 
         return result;
     }
     public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
     {
-        if(codeClasses == null || codeClasses.Any(x => x == null))
+        if (codeClasses == null || codeClasses.Any(x => x == null))
             throw new ArgumentNullException(nameof(codeClasses));
-        if(!codeClasses.Any())
+        if (!codeClasses.Any())
             throw new ArgumentOutOfRangeException(nameof(codeClasses));
         return AddRange(codeClasses);
     }
     public IEnumerable<CodeInterface> AddInnerInterface(params CodeInterface[] codeInterfaces)
     {
-        if(codeInterfaces == null || codeInterfaces.Any(x => x == null))
+        if (codeInterfaces == null || codeInterfaces.Any(x => x == null))
             throw new ArgumentNullException(nameof(codeInterfaces));
-        if(!codeInterfaces.Any())
+        if (!codeInterfaces.Any())
             throw new ArgumentOutOfRangeException(nameof(codeInterfaces));
         return AddRange(codeInterfaces);
     }
-    public CodeClass GetParentClass() {
+    public CodeClass? GetParentClass()
+    {
         return StartBlock.Inherits?.TypeDefinition as CodeClass;
     }
-    public bool DerivesFrom(CodeClass codeClass) {
+    public bool DerivesFrom(CodeClass codeClass)
+    {
         ArgumentNullException.ThrowIfNull(codeClass);
         var parent = GetParentClass();
         if (parent == null)
@@ -85,30 +98,35 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             return true;
         return parent.DerivesFrom(codeClass);
     }
-    public List<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false) {
+    public List<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false)
+    {
         var parentClass = GetParentClass();
-        if(parentClass == null || (currentNamespaceOnly && parentClass.GetImmediateParentOfType<CodeNamespace>() != GetImmediateParentOfType<CodeNamespace>()))
+        if (parentClass == null || (currentNamespaceOnly && parentClass.GetImmediateParentOfType<CodeNamespace>() != GetImmediateParentOfType<CodeNamespace>()))
             return new List<CodeClass>() { this };
         var result = parentClass.GetInheritanceTree(currentNamespaceOnly);
         result.Add(this);
         return result;
     }
-    public CodeClass GetGreatestGrandparent(CodeClass startClassToSkip = null) {
+    public CodeClass? GetGreatestGrandparent(CodeClass? startClassToSkip = default)
+    {
         var parentClass = GetParentClass();
-        if(parentClass == null)
+        if (parentClass == null)
             return startClassToSkip != null && startClassToSkip == this ? null : this;
         // we don't want to return the current class if this is the start node in the inheritance tree and doesn't have parent
         return parentClass.GetGreatestGrandparent(startClassToSkip);
     }
-    private DiscriminatorInformation _discriminatorInformation;
+    private DiscriminatorInformation? _discriminatorInformation;
     /// <inheritdoc />
-    public DiscriminatorInformation DiscriminatorInformation { 
-        get {
+    public DiscriminatorInformation DiscriminatorInformation
+    {
+        get
+        {
             if (_discriminatorInformation == null)
                 DiscriminatorInformation = new DiscriminatorInformation();
-            return _discriminatorInformation;
-        } 
-        set {
+            return _discriminatorInformation!;
+        }
+        set
+        {
             ArgumentNullException.ThrowIfNull(value);
             EnsureElementsAreChildren(value);
             _discriminatorInformation = value;
@@ -117,13 +135,18 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
 }
 public class ClassDeclaration : ProprietableBlockDeclaration
 {
-    private CodeType inherits;
-    public CodeType Inherits { get => inherits; set {
-        EnsureElementsAreChildren(value);
-        inherits = value;
-    } }
+    private CodeType? inherits;
+    public CodeType? Inherits
+    {
+        get => inherits; set
+        {
+            EnsureElementsAreChildren(value);
+            inherits = value;
+        }
+    }
 
-    public CodeProperty GetOriginalPropertyDefinedFromBaseType(string propertyName) {
+    public CodeProperty? GetOriginalPropertyDefinedFromBaseType(string propertyName)
+    {
         ArgumentException.ThrowIfNullOrEmpty(propertyName);
 
         if (inherits is CodeType currentInheritsType &&
@@ -135,7 +158,8 @@ public class ClassDeclaration : ProprietableBlockDeclaration
         return default;
     }
 
-    public bool InheritsFrom(CodeClass candidate) {
+    public bool InheritsFrom(CodeClass candidate)
+    {
         ArgumentNullException.ThrowIfNull(candidate);
 
         if (inherits is CodeType currentInheritsType &&

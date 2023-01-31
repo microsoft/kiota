@@ -5,8 +5,10 @@ namespace Kiota.Builder.Writers.Go;
 public class GoCodeParameterOrderComparer : BaseCodeParameterOrderComparer
 {
     // Cancellation/context parameters must come before other parameters with defaults in Golang.
-    protected override int GetKindOrderHint(CodeParameterKind kind) {
-        return kind switch {
+    protected override int GetKindOrderHint(CodeParameterKind kind)
+    {
+        return kind switch
+        {
             CodeParameterKind.Cancellation => 0,
             CodeParameterKind.PathParameters => 1,
             CodeParameterKind.RawUrl => 2,

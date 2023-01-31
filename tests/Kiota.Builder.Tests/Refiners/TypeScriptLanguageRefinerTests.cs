@@ -9,6 +9,8 @@ using Kiota.Builder.Refiners;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
+public class TypeScriptLanguageRefinerTests
+{
 
 public class TypeScriptLanguageRefinerTests
 {
@@ -25,6 +27,7 @@ public class TypeScriptLanguageRefinerTests
         };
         graphNS.AddClass(parentClass);
     }
+    #region commonrefiner
 
     #region commonrefiner
     [Fact]

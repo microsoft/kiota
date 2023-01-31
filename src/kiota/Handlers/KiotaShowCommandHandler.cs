@@ -1,25 +1,46 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Services;
-using System.Collections.Generic;
-using System.Text;
 
 namespace kiota.Handlers;
 internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
 {
-    public required Option<string> DescriptionOption { get;init; }
-    public required Option<string> SearchTermOption { get; init; }
-    public required Option<string> VersionOption { get; init; }
-    public required Option<uint> MaxDepthOption { get; init; }
-    public required Option<List<string>> IncludePatternsOption { get; init; }
-    public required Option<List<string>> ExcludePatternsOption { get; init; }
-    public required Option<bool> ClearCacheOption { get; init; }
+    public required Option<string> DescriptionOption
+    {
+        get; init;
+    }
+    public required Option<string> SearchTermOption
+    {
+        get; init;
+    }
+    public required Option<string> VersionOption
+    {
+        get; init;
+    }
+    public required Option<uint> MaxDepthOption
+    {
+        get; init;
+    }
+    public required Option<List<string>> IncludePatternsOption
+    {
+        get; init;
+    }
+    public required Option<List<string>> ExcludePatternsOption
+    {
+        get; init;
+    }
+    public required Option<bool> ClearCacheOption
+    {
+        get; init;
+    }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
@@ -34,16 +55,20 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
 
         Configuration.Search.ClearCache = clearCache;
-        using (loggerFactory) {
+        using (loggerFactory)
+        {
             var descriptionProvided = !string.IsNullOrEmpty(openapi) && string.IsNullOrEmpty(searchTerm);
             var (searchResultDescription, statusCode) = await GetDescriptionFromSearch(openapi, searchTerm, version, loggerFactory, logger, cancellationToken);
-            if (statusCode.HasValue) {
+            if (statusCode.HasValue)
+            {
                 return statusCode.Value;
             }
-            if (!string.IsNullOrEmpty(searchResultDescription)) {
+            if (!string.IsNullOrEmpty(searchResultDescription))
+            {
                 openapi = searchResultDescription;
             }
-            if (string.IsNullOrEmpty(openapi)) {
+            if (string.IsNullOrEmpty(openapi))
+            {
                 logger.LogError("no description provided");
                 return 1;
             }
@@ -51,19 +76,23 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             Configuration.Generation.IncludePatterns = includePatterns.ToHashSet();
             Configuration.Generation.ExcludePatterns = excludePatterns.ToHashSet();
             Configuration.Generation.ClearCache = clearCache;
-            try {
+            try
+            {
                 var urlTreeNode = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GetUrlTreeNodeAsync(cancellationToken);
 
                 var builder = new StringBuilder();
-                RenderNode(urlTreeNode, maxDepth, builder);
+                if (urlTreeNode != null)
+                    RenderNode(urlTreeNode, maxDepth, builder);
                 var tree = builder.ToString();
                 Console.Write(tree);
-                if(descriptionProvided)
+                if (descriptionProvided)
                     DisplayShowAdvancedHint(string.Empty, string.Empty, includePatterns, excludePatterns, openapi);
                 else
                     DisplayShowAdvancedHint(searchTerm, version, includePatterns, excludePatterns, openapi);
                 DisplayGenerateHint(openapi, includePatterns, excludePatterns);
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
 #if DEBUG
                 logger.LogCritical(ex, "error showing the description: {exceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached

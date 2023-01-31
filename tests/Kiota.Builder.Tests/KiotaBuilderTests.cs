@@ -24,13 +24,15 @@ using Xunit;
 namespace Kiota.Builder.Tests;
 public class KiotaBuilderTests : IDisposable
 {
-    public void Dispose() {
+    public void Dispose()
+    {
         _httpClient.Dispose();
         GC.SuppressFinalize(this);
     }
     private readonly HttpClient _httpClient = new();
     [Fact]
-    public async Task ParsesEnumDescriptions() {
+    public async Task ParsesEnumDescriptions()
+    {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
 info:
@@ -90,11 +92,12 @@ components:
         Assert.Equal("Standard_LRS", firstOption.SerializationName);
         Assert.Equal("StandardLocalRedundancy", firstOption.Name);
         Assert.NotEmpty(firstOption.Documentation.Description);
-       
+
         File.Delete(tempFilePath);
     }
     [Fact]
-    public async Task ParsesKiotaExtension() {
+    public async Task ParsesKiotaExtension()
+    {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
 info:
@@ -124,11 +127,12 @@ servers:
         Assert.Single(csharpInfo.Dependencies);
         Assert.Equal("Microsoft.Graph.Core", csharpInfo.Dependencies.First().Name);
         Assert.Equal("3.0.0", csharpInfo.Dependencies.First().Version);
-        
+
         File.Delete(tempFilePath);
     }
     [Fact]
-    public async Task DoesntFailOnEmptyKiotaExtension() {
+    public async Task DoesntFailOnEmptyKiotaExtension()
+    {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
 info:
@@ -144,11 +148,12 @@ servers:
         var node = builder.CreateUriSpace(document);
         var extensionResult = await builder.GetLanguageInformationAsync(new CancellationToken());
         Assert.Null(extensionResult);
-        
+
         File.Delete(tempFilePath);
     }
     [Fact]
-    public async Task GetsUrlTreeNode() {
+    public async Task GetsUrlTreeNode()
+    {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
 info:
@@ -172,13 +177,14 @@ paths:
         Assert.NotNull(treeNode);
         Assert.Equal("/", treeNode.Segment);
         Assert.Equal("enumeration", treeNode.Children.First().Value.Segment);
-       
+
         File.Delete(tempFilePath);
     }
     [Fact]
-    public async Task DoesntThrowOnMissingServerForV2() {
+    public async Task DoesntThrowOnMissingServerForV2()
+    {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await File.WriteAllLinesAsync(tempFilePath, new[] {"swagger: 2.0", "title: \"Todo API\"", "version: \"1.0.0\"", "host: mytodos.doesntexit", "basePath: v2", "schemes:", " - https"," - http"});
+        await File.WriteAllLinesAsync(tempFilePath, new[] { "swagger: 2.0", "title: \"Todo API\"", "version: \"1.0.0\"", "host: mytodos.doesntexit", "basePath: v2", "schemes:", " - https", " - http" });
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         await builder.GenerateClientAsync(new());
@@ -202,7 +208,7 @@ paths:
         {
             Operations = {
                 [OperationType.Get] = new OpenApiOperation
-                { 
+                {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
@@ -224,7 +230,7 @@ paths:
                         }
                     }
                 }
-            } 
+            }
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
@@ -240,13 +246,14 @@ paths:
         Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, returnType.CollectionKind);
     }
     [Fact]
-    public void OData_doubles_as_one_of(){
+    public void OData_doubles_as_one_of()
+    {
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
                 [OperationType.Get] = new OpenApiOperation
-                { 
+                {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
@@ -282,7 +289,7 @@ paths:
                         }
                     }
                 }
-            } 
+            }
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
@@ -291,13 +298,14 @@ paths:
         Assert.Equal("double", progressProp.Type.Name);
     }
     [Fact]
-    public void OData_doubles_as_one_of_format_inside(){
+    public void OData_doubles_as_one_of_format_inside()
+    {
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
                 [OperationType.Get] = new OpenApiOperation
-                { 
+                {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
@@ -333,7 +341,7 @@ paths:
                         }
                     }
                 }
-            } 
+            }
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
@@ -342,13 +350,14 @@ paths:
         Assert.Equal("double", progressProp.Type.Name);
     }
     [Fact]
-    public void OData_doubles_as_any_of(){
+    public void OData_doubles_as_any_of()
+    {
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
                 [OperationType.Get] = new OpenApiOperation
-                { 
+                {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
@@ -384,7 +393,7 @@ paths:
                         }
                     }
                 }
-            } 
+            }
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
@@ -393,8 +402,10 @@ paths:
         Assert.Equal("double", progressProp.Type.Name);
     }
     [Fact]
-    public void Object_Arrays_are_supported() {
-        var userSchema = new OpenApiSchema {
+    public void Object_Arrays_are_supported()
+    {
+        var userSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -466,7 +477,8 @@ paths:
         Assert.NotNull(userClass);
     }
     [Fact]
-    public void TextPlainEndpointsAreSupported() {
+    public void TextPlainEndpointsAreSupported()
+    {
         var document = new OpenApiDocument
         {
             Paths = new OpenApiPaths
@@ -742,7 +754,7 @@ paths:
                                                 Items = new OpenApiSchema {
                                                     AnyOf = new List<OpenApiSchema> {
                                                         permissionSchema,
-                                                    }   
+                                                    }
                                                 }
                                             }
                                         }
@@ -877,8 +889,10 @@ paths:
         Assert.Null(parameters.SingleOrDefault(p => "id".Equals(p.Name, StringComparison.OrdinalIgnoreCase) && p.Kind == CodeParameterKind.Headers));
     }
     [Fact]
-    public void Inline_Property_Inheritance_Is_Supported() {
-        var resourceSchema = new OpenApiSchema {
+    public void Inline_Property_Inheritance_Is_Supported()
+    {
+        var resourceSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -964,7 +978,7 @@ paths:
         var derivedResourceClass = itemsNS.FindChildByName<CodeClass>("ResourceResponse_derivedResource");
         var derivedResourceInfoClass = itemsNS.FindChildByName<CodeClass>("ResourceResponse_derivedResource_info");
 
-        
+
         Assert.NotNull(resourceClass);
         Assert.NotNull(derivedResourceClass);
         Assert.NotNull(derivedResourceClass.StartBlock);
@@ -973,13 +987,14 @@ paths:
         Assert.NotNull(responseClass);
     }
     [Fact]
-    public void MapsTime(){
+    public void MapsTime()
+    {
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
                 [OperationType.Get] = new OpenApiOperation
-                { 
+                {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
@@ -1005,7 +1020,7 @@ paths:
                         }
                     }
                 }
-            } 
+            }
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
@@ -1014,13 +1029,14 @@ paths:
         Assert.Equal("TimeOnly", progressProp.Type.Name);
     }
     [Fact]
-    public void MapsDate(){
+    public void MapsDate()
+    {
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
                 [OperationType.Get] = new OpenApiOperation
-                { 
+                {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
@@ -1046,7 +1062,7 @@ paths:
                         }
                     }
                 }
-            } 
+            }
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
@@ -1055,13 +1071,14 @@ paths:
         Assert.Equal("DateOnly", progressProp.Type.Name);
     }
     [Fact]
-    public void MapsDuration(){
+    public void MapsDuration()
+    {
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
                 [OperationType.Get] = new OpenApiOperation
-                { 
+                {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
@@ -1087,7 +1104,7 @@ paths:
                         }
                     }
                 }
-            } 
+            }
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
@@ -1096,13 +1113,14 @@ paths:
         Assert.Equal("TimeSpan", progressProp.Type.Name);
     }
     [Fact]
-    public void AddsErrorMapping(){
+    public void AddsErrorMapping()
+    {
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
                 [OperationType.Get] = new OpenApiOperation
-                { 
+                {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
@@ -1187,7 +1205,7 @@ paths:
                         }
                     }
                 }
-            } 
+            }
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
@@ -1213,13 +1231,14 @@ paths:
         Assert.NotNull(errorType5XX.FindChildByName<CodeProperty>("serviceErrorId"));
     }
     [Fact]
-    public void IgnoresErrorCodesWithNoSchema(){
+    public void IgnoresErrorCodesWithNoSchema()
+    {
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
             Operations = {
                 [OperationType.Get] = new OpenApiOperation
-                { 
+                {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
@@ -1265,7 +1284,7 @@ paths:
                         }
                     }
                 }
-            } 
+            }
         }, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
@@ -1275,8 +1294,10 @@ paths:
         Assert.Empty(executorMethod.ErrorMappings);
     }
     [Fact]
-    public void DoesntAddSuffixesToErrorTypesWhenComponents(){
-        var errorSchema = new OpenApiSchema {
+    public void DoesntAddSuffixesToErrorTypesWhenComponents()
+    {
+        var errorSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -1285,7 +1306,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.error",
                 Type = ReferenceType.Schema
             },
@@ -1300,7 +1322,8 @@ paths:
                     Schema = errorSchema
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.error",
                 Type = ReferenceType.Response
             },
@@ -1314,7 +1337,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse
@@ -1342,7 +1365,7 @@ paths:
                                 ["401"] = errorResponse
                             }
                         }
-                    } 
+                    }
                 }
             },
             Components = new OpenApiComponents
@@ -1375,14 +1398,16 @@ paths:
         Assert.NotNull(errorType);
         Assert.True(errorType.IsErrorDefinition);
         Assert.NotNull(errorType.FindChildByName<CodeProperty>("errorId"));
-        
+
         Assert.Null(codeModel.FindChildByName<CodeClass>("tasks401Error"));
         Assert.Null(codeModel.FindChildByName<CodeClass>("tasks4XXError"));
         Assert.Null(codeModel.FindChildByName<CodeClass>("tasks5XXError"));
     }
     [Fact]
-    public void DoesntAddPropertyHolderOnNonAdditionalModels(){
-        var weatherForecastSchema = new OpenApiSchema {
+    public void DoesntAddPropertyHolderOnNonAdditionalModels()
+    {
+        var weatherForecastSchema = new OpenApiSchema
+        {
             Type = "object",
             AdditionalPropertiesAllowed = false,
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -1399,7 +1424,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "weatherForecast",
                 Type = ReferenceType.Schema
             },
@@ -1414,7 +1440,8 @@ paths:
                     Schema = weatherForecastSchema
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "weatherForecast",
                 Type = ReferenceType.Response
             },
@@ -1428,13 +1455,13 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = forecastResponse
                             }
                         }
-                    } 
+                    }
                 }
             },
             Components = new OpenApiComponents
@@ -1462,8 +1489,10 @@ paths:
         Assert.Empty(weatherType.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)));
     }
     [Fact]
-    public void SquishesLonelyNullables(){
-        var uploadSessionSchema = new OpenApiSchema {
+    public void SquishesLonelyNullables()
+    {
+        var uploadSessionSchema = new OpenApiSchema
+        {
             Type = "object",
             AdditionalPropertiesAllowed = false,
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -1480,7 +1509,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.uploadSession",
                 Type = ReferenceType.Schema
             },
@@ -1494,7 +1524,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse
@@ -1514,7 +1544,7 @@ paths:
                                 }
                             }
                         }
-                    } 
+                    }
                 }
             },
             Components = new OpenApiComponents
@@ -1543,8 +1573,10 @@ paths:
         Assert.Null(codeModel.FindChildByName<CodeClass>("createUploadSessionResponseMember1"));
     }
     [Fact]
-    public void SquishesLonelyNullablesBothAnyOf(){
-        var uploadSessionSchema = new OpenApiSchema {
+    public void SquishesLonelyNullablesBothAnyOf()
+    {
+        var uploadSessionSchema = new OpenApiSchema
+        {
             Type = "object",
             AdditionalPropertiesAllowed = false,
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -1561,7 +1593,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.uploadSession",
                 Type = ReferenceType.Schema
             },
@@ -1575,7 +1608,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse
@@ -1597,7 +1630,7 @@ paths:
                                 }
                             }
                         }
-                    } 
+                    }
                 }
             },
             Components = new OpenApiComponents
@@ -1627,8 +1660,10 @@ paths:
     }
 
     [Fact]
-    public void AddsDiscriminatorMappings(){
-        var entitySchema = new OpenApiSchema {
+    public void AddsDiscriminatorMappings()
+    {
+        var entitySchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -1646,7 +1681,8 @@ paths:
             Required = new HashSet<string> {
                 "@odata.type"
             },
-            Discriminator = new() {
+            Discriminator = new()
+            {
                 PropertyName = "@odata.type",
                 Mapping = new Dictionary<string, string> {
                     {
@@ -1654,13 +1690,15 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.entity",
                 Type = ReferenceType.Schema
             },
             UnresolvedReference = false
         };
-        var directoryObjectSchema = new OpenApiSchema {
+        var directoryObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -1674,7 +1712,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.directoryObject",
                 Type = ReferenceType.Schema
             },
@@ -1692,7 +1731,8 @@ paths:
                     Schema = entitySchema
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.directoryObjects",
                 Type = ReferenceType.Response
             },
@@ -1706,13 +1746,13 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = directoryObjects,
                             }
                         }
-                    } 
+                    }
                 }
             },
             Components = new OpenApiComponents
@@ -1746,7 +1786,7 @@ paths:
         var doFactoryMethod = directoryObjectClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(doFactoryMethod);
         Assert.Empty(directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings);
-        if(entityClass.DiscriminatorInformation?.GetDiscriminatorMappingValue("#microsoft.graph.directoryObject") is not CodeType castType)
+        if (entityClass.DiscriminatorInformation?.GetDiscriminatorMappingValue("#microsoft.graph.directoryObject") is not CodeType castType)
             throw new InvalidOperationException("Discriminator mapping value is not a CodeType");
         Assert.NotNull(castType.TypeDefinition);
         Assert.Equal(directoryObjectClass, castType.TypeDefinition);
@@ -1755,8 +1795,10 @@ paths:
         Assert.Equal("\"#microsoft.graph.directoryObject\"", doTypeProperty.DefaultValue);
     }
     [Fact]
-    public void DoesntAddDiscriminatorMappingsOfNonDerivedTypes(){
-        var entitySchema = new OpenApiSchema {
+    public void DoesntAddDiscriminatorMappingsOfNonDerivedTypes()
+    {
+        var entitySchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -1774,7 +1816,8 @@ paths:
             Required = new HashSet<string> {
                 "@odata.type"
             },
-            Discriminator = new() {
+            Discriminator = new()
+            {
                 PropertyName = "@odata.type",
                 Mapping = new Dictionary<string, string> {
                     {
@@ -1785,13 +1828,15 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.entity",
                 Type = ReferenceType.Schema
             },
             UnresolvedReference = false
         };
-        var directoryObjectSchema = new OpenApiSchema {
+        var directoryObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -1805,7 +1850,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.directoryObject",
                 Type = ReferenceType.Schema
             },
@@ -1814,7 +1860,8 @@ paths:
             },
             UnresolvedReference = false
         };
-        var fileSchema = new OpenApiSchema {
+        var fileSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -1828,7 +1875,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.file",
                 Type = ReferenceType.Schema
             },
@@ -1843,26 +1891,31 @@ paths:
                     Schema = entitySchema
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.directoryObjects",
                 Type = ReferenceType.Response
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["objects"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument()
+        {
+            Paths = new OpenApiPaths()
+            {
+                ["objects"] = new OpenApiPathItem()
+                {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation() { 
+                        [OperationType.Get] = new OpenApiOperation() {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = directoryObjects,
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new OpenApiComponents() {
+            Components = new OpenApiComponents()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "microsoft.graph.entity", entitySchema
@@ -1894,8 +1947,10 @@ paths:
         Assert.Single(entityClass.DiscriminatorInformation.DiscriminatorMappings);
     }
     [Fact]
-    public async Task AddsDiscriminatorMappingsOneOfImplicit(){
-        var entitySchema = new OpenApiSchema {
+    public async Task AddsDiscriminatorMappingsOneOfImplicit()
+    {
+        var entitySchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -1913,16 +1968,19 @@ paths:
             Required = new HashSet<string> {
                 "@odata.type"
             },
-            Discriminator = new() {
+            Discriminator = new()
+            {
                 PropertyName = "@odata.type",
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.entity",
                 Type = ReferenceType.Schema
             },
             UnresolvedReference = false
         };
-        var directoryObjectSchema = new OpenApiSchema {
+        var directoryObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -1939,19 +1997,22 @@ paths:
             Required = new HashSet<string> {
                 "@odata.type"
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.directoryObject",
                 Type = ReferenceType.Schema
             },
             UnresolvedReference = false
         };
-        var directoryObjectsResponse = new OpenApiSchema {
+        var directoryObjectsResponse = new OpenApiSchema
+        {
             Type = "object",
             OneOf = new List<OpenApiSchema> {
                 entitySchema,
                 directoryObjectSchema
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.directoryObjects",
                 Type = ReferenceType.Schema
             },
@@ -1966,7 +2027,8 @@ paths:
                     Schema = directoryObjectsResponse
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.directoryObjects",
                 Type = ReferenceType.Response
             },
@@ -1980,13 +2042,13 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = directoryObjects,
                             }
                         }
-                    } 
+                    }
                 }
             },
             Components = new OpenApiComponents
@@ -2028,8 +2090,10 @@ paths:
         Assert.Equal(2, directoryObjectsClass.DiscriminatorInformation.DiscriminatorMappings.Count());
     }
     [Fact]
-    public async Task AddsDiscriminatorMappingsAllOfImplicit(){
-        var entitySchema = new OpenApiSchema {
+    public async Task AddsDiscriminatorMappingsAllOfImplicit()
+    {
+        var entitySchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -2047,16 +2111,19 @@ paths:
             Required = new HashSet<string> {
                 "@odata.type"
             },
-            Discriminator = new() {
+            Discriminator = new()
+            {
                 PropertyName = "@odata.type",
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.entity",
                 Type = ReferenceType.Schema
             },
             UnresolvedReference = false
         };
-        var directoryObjectSchema = new OpenApiSchema {
+        var directoryObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             AllOf = new List<OpenApiSchema> {
                 entitySchema,
@@ -2078,13 +2145,15 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.directoryObject",
                 Type = ReferenceType.Schema
             },
             UnresolvedReference = false
         };
-        var userSchema = new OpenApiSchema {
+        var userSchema = new OpenApiSchema
+        {
             Type = "object",
             AllOf = new List<OpenApiSchema> {
                 directoryObjectSchema,
@@ -2106,7 +2175,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.user",
                 Type = ReferenceType.Schema
             },
@@ -2121,7 +2191,8 @@ paths:
                     Schema = directoryObjectSchema
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.directoryObjects",
                 Type = ReferenceType.Response
             },
@@ -2135,13 +2206,13 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = directoryObjects,
                             }
                         }
-                    } 
+                    }
                 }
             },
             Components = new OpenApiComponents
@@ -2188,10 +2259,12 @@ paths:
         Assert.Contains("microsoft.graph.user", directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Key));
         Assert.Empty(userClass.DiscriminatorInformation.DiscriminatorMappings);
     }
-    
+
     [Fact]
-    public async Task AddsDiscriminatorMappingsAllOfImplicitWithParentHavingMappingsWhileChildDoesNot(){
-        var entitySchema = new OpenApiSchema {
+    public async Task AddsDiscriminatorMappingsAllOfImplicitWithParentHavingMappingsWhileChildDoesNot()
+    {
+        var entitySchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -2209,7 +2282,8 @@ paths:
             Required = new HashSet<string> {
                 "@odata.type"
             },
-            Discriminator = new() {
+            Discriminator = new()
+            {
                 PropertyName = "@odata.type",
                 Mapping = new Dictionary<string, string>
                 {
@@ -2221,13 +2295,15 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.entity",
                 Type = ReferenceType.Schema
             },
             UnresolvedReference = false
         };
-        var directoryObjectSchema = new OpenApiSchema {
+        var directoryObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             AllOf = new List<OpenApiSchema> {
                 entitySchema,
@@ -2249,13 +2325,15 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.directoryObject",
                 Type = ReferenceType.Schema
             },
             UnresolvedReference = false
         };
-        var userSchema = new OpenApiSchema {
+        var userSchema = new OpenApiSchema
+        {
             Type = "object",
             AllOf = new List<OpenApiSchema> {
                 directoryObjectSchema,
@@ -2277,7 +2355,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.user",
                 Type = ReferenceType.Schema
             },
@@ -2292,7 +2371,8 @@ paths:
                     Schema = directoryObjectSchema
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "microsoft.graph.directoryObjects",
                 Type = ReferenceType.Response
             },
@@ -2306,13 +2386,13 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = directoryObjects,
                             }
                         }
-                    } 
+                    }
                 }
             },
             Components = new OpenApiComponents
@@ -2360,8 +2440,10 @@ paths:
         Assert.Empty(userClass.DiscriminatorInformation.DiscriminatorMappings);
     }
     [Fact]
-    public void UnionOfPrimitiveTypesWorks() {
-        var simpleObjet = new OpenApiSchema {
+    public void UnionOfPrimitiveTypesWorks()
+    {
+        var simpleObjet = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -2370,7 +2452,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "subNS.simpleObject",
                 Type = ReferenceType.Schema
             },
@@ -2384,7 +2467,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -2403,7 +2486,7 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
             Components = new OpenApiComponents
@@ -2433,8 +2516,10 @@ paths:
         Assert.Contains("int64", typeNames);
     }
     [Fact]
-    public void UnionOfInlineSchemasWorks() {
-        var simpleObjet = new OpenApiSchema {
+    public void UnionOfInlineSchemasWorks()
+    {
+        var simpleObjet = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -2443,7 +2528,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "subNS.simpleObject",
                 Type = ReferenceType.Schema
             },
@@ -2457,7 +2543,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -2483,7 +2569,7 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
             Components = new OpenApiComponents
@@ -2513,8 +2599,10 @@ paths:
         Assert.Contains("unionTypeResponseMember1", typeNames);
     }
     [Fact]
-    public void IntersectionOfPrimitiveTypesWorks() {
-        var simpleObjet = new OpenApiSchema {
+    public void IntersectionOfPrimitiveTypesWorks()
+    {
+        var simpleObjet = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -2523,7 +2611,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "subNS.simpleObject",
                 Type = ReferenceType.Schema
             },
@@ -2537,7 +2626,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -2556,7 +2645,7 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
             Components = new OpenApiComponents
@@ -2586,8 +2675,10 @@ paths:
         Assert.Contains("int64", typeNames);
     }
     [Fact]
-    public void IntersectionOfInlineSchemasWorks() {
-        var simpleObjet = new OpenApiSchema {
+    public void IntersectionOfInlineSchemasWorks()
+    {
+        var simpleObjet = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -2596,7 +2687,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "subNS.simpleObject",
                 Type = ReferenceType.Schema
             },
@@ -2610,7 +2702,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -2636,7 +2728,7 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
             Components = new OpenApiComponents
@@ -2666,8 +2758,10 @@ paths:
         Assert.Contains("unionTypeResponseMember1", typeNames);
     }
     [Fact]
-    public void InheritedTypeWithInlineSchemaWorks() {
-        var baseObjet = new OpenApiSchema {
+    public void InheritedTypeWithInlineSchemaWorks()
+    {
+        var baseObjet = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -2681,7 +2775,8 @@ paths:
                     }
                 }
             },
-            Discriminator = new OpenApiDiscriminator {
+            Discriminator = new OpenApiDiscriminator
+            {
                 PropertyName = "kind",
                 Mapping = new Dictionary<string, string> {
                     {
@@ -2689,13 +2784,15 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "subNS.baseObject",
                 Type = ReferenceType.Schema
             },
             UnresolvedReference = false
         };
-        var derivedObjet = new OpenApiSchema {
+        var derivedObjet = new OpenApiSchema
+        {
             Type = "object",
             AllOf = new List<OpenApiSchema> {
                 baseObjet,
@@ -2718,13 +2815,15 @@ paths:
                     },
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "subNS.derivedObject",
                 Type = ReferenceType.Schema
             },
             UnresolvedReference = false
         };
-        var secondLevelDerivedObject = new OpenApiSchema {
+        var secondLevelDerivedObject = new OpenApiSchema
+        {
             Type = "object",
             AllOf = new List<OpenApiSchema> {
                 derivedObjet,
@@ -2739,7 +2838,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "subNS.secondLevelDerivedObject",
                 Type = ReferenceType.Schema
             },
@@ -2753,7 +2853,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -2765,7 +2865,7 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
             Components = new OpenApiComponents
@@ -2832,7 +2932,8 @@ paths:
     [InlineData("", "binary", "binary")]
     [InlineData("file", null, "binary")]
     [Theory]
-    public void MapsPrimitiveFormats(string type, string format, string expected){
+    public void MapsPrimitiveFormats(string type, string format, string expected)
+    {
         var document = new OpenApiDocument
         {
             Paths = new OpenApiPaths
@@ -2841,7 +2942,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -2856,7 +2957,7 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
         };
@@ -2899,7 +3000,8 @@ paths:
     [InlineData("", "binary", "binary")]
     [InlineData("file", null, "binary")]
     [Theory]
-    public void MapsQueryParameterTypes(string type, string format, string expected){
+    public void MapsQueryParameterTypes(string type, string format, string expected)
+    {
         var document = new OpenApiDocument
         {
             Paths = new OpenApiPaths
@@ -2908,7 +3010,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Parameters = new List<OpenApiParameter> {
                                 new OpenApiParameter {
                                     Name = "query",
@@ -2924,7 +3026,7 @@ paths:
                                 ["204"] = new OpenApiResponse()
                             }
                         }
-                    } 
+                    }
                 }
             },
         };
@@ -2942,12 +3044,15 @@ paths:
     [InlineData(true)]
     [InlineData(false)]
     [Theory]
-    public void MapsQueryParameterCollectionKinds(bool isArray){
-        var baseSchema = new OpenApiSchema {
+    public void MapsQueryParameterCollectionKinds(bool isArray)
+    {
+        var baseSchema = new OpenApiSchema
+        {
             Type = "number",
             Format = "int64"
         };
-        var arraySchema = new OpenApiSchema {
+        var arraySchema = new OpenApiSchema
+        {
             Type = "array",
             Items = baseSchema
         };
@@ -2959,7 +3064,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Parameters = new List<OpenApiParameter> {
                                 new OpenApiParameter {
                                     Name = "query",
@@ -2972,7 +3077,7 @@ paths:
                                 ["204"] = new OpenApiResponse()
                             }
                         }
-                    } 
+                    }
                 }
             },
         };
@@ -2989,7 +3094,8 @@ paths:
         Assert.True(property.Type.AllTypes.First().IsExternal);
     }
     [Fact]
-    public void DefaultsQueryParametersWithNoSchemaToString(){
+    public void DefaultsQueryParametersWithNoSchemaToString()
+    {
         var document = new OpenApiDocument
         {
             Paths = new OpenApiPaths
@@ -2998,7 +3104,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Parameters = new List<OpenApiParameter> {
                                 new OpenApiParameter {
                                     Name = "query",
@@ -3010,7 +3116,7 @@ paths:
                                 ["204"] = new OpenApiResponse()
                             }
                         }
-                    } 
+                    }
                 }
             },
         };
@@ -3026,8 +3132,10 @@ paths:
         Assert.True(property.Type.AllTypes.First().IsExternal);
     }
     [Fact]
-    public void DoesntGenerateNamespacesWhenNotRequired(){
-        var myObjectSchema = new OpenApiSchema {
+    public void DoesntGenerateNamespacesWhenNotRequired()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -3036,7 +3144,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -3050,7 +3159,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -3062,10 +3171,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -3085,8 +3195,10 @@ paths:
         Assert.Null(modelsSubNS);
     }
     [Fact]
-    public void GeneratesNamesapacesWhenRequired(){
-        var myObjectSchema = new OpenApiSchema {
+    public void GeneratesNamesapacesWhenRequired()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -3095,7 +3207,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "subns.myobject",
                 Type = ReferenceType.Schema
             },
@@ -3109,7 +3222,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -3121,10 +3234,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "subns.myobject", myObjectSchema
@@ -3144,8 +3258,10 @@ paths:
         Assert.NotNull(modelsSubNS.FindChildByName<CodeClass>("Myobject", false));
     }
     [Fact]
-    public void IdsResultInIndexers(){
-        var myObjectSchema = new OpenApiSchema {
+    public void IdsResultInIndexers()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -3154,7 +3270,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -3168,7 +3285,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -3180,10 +3297,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -3206,7 +3324,8 @@ paths:
         Assert.Null(modelsNS.FindChildByName<CodeClass>("With", false));
     }
     [Fact]
-    public void HandlesCollectionOfEnumSchemasInAnyOfWithNullable(){
+    public void HandlesCollectionOfEnumSchemasInAnyOfWithNullable()
+    {
         var enumSchema = new OpenApiSchema
         {
             Title = "riskLevel",
@@ -3221,7 +3340,8 @@ paths:
             },
             Type = "string"
         };
-        var myObjectSchema = new OpenApiSchema {
+        var myObjectSchema = new OpenApiSchema
+        {
             Title = "conditionalAccessConditionSet",
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -3243,7 +3363,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -3258,7 +3379,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -3270,10 +3391,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -3282,7 +3404,7 @@ paths:
                         "riskLevel", enumSchema
                     }
                 },
-                
+
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
@@ -3299,10 +3421,11 @@ paths:
         var codeType = property.Type as CodeType;
         Assert.NotNull(codeType);
         Assert.IsType<CodeEnum>(codeType.TypeDefinition);// Ensure the collection is a codeEnum
-        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex,codeType.CollectionKind);// Ensure the collection is a codeEnum
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, codeType.CollectionKind);// Ensure the collection is a codeEnum
     }
     [Fact]
-    public void HandlesCollectionOfEnumSchemas(){
+    public void HandlesCollectionOfEnumSchemas()
+    {
         var enumSchema = new OpenApiSchema
         {
             Title = "riskLevel",
@@ -3317,7 +3440,8 @@ paths:
             },
             Type = "string"
         };
-        var myObjectSchema = new OpenApiSchema {
+        var myObjectSchema = new OpenApiSchema
+        {
             Title = "conditionalAccessConditionSet",
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -3328,7 +3452,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -3343,7 +3468,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -3355,10 +3480,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -3367,7 +3493,7 @@ paths:
                         "riskLevel", enumSchema
                     }
                 },
-                
+
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
@@ -3384,11 +3510,13 @@ paths:
         var codeType = property.Type as CodeType;
         Assert.NotNull(codeType);
         Assert.IsType<CodeEnum>(codeType.TypeDefinition);// Ensure the collection is a codeEnum
-        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex,codeType.CollectionKind);// Ensure the collection is a codeEnum
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, codeType.CollectionKind);// Ensure the collection is a codeEnum
     }
     [Fact]
-    public void InlinePropertiesGenerateTypes(){
-        var myObjectSchema = new OpenApiSchema {
+    public void InlinePropertiesGenerateTypes()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -3400,7 +3528,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -3414,7 +3543,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -3426,10 +3555,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -3450,8 +3580,10 @@ paths:
         Assert.NotEmpty(property.Type.Name);
     }
     [Fact]
-    public void ModelsDoesntUsePathDescriptionWhenAvailable(){
-        var myObjectSchema = new OpenApiSchema {
+    public void ModelsDoesntUsePathDescriptionWhenAvailable()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -3460,7 +3592,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -3476,7 +3609,7 @@ paths:
                     Summary = "some path item summary",
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Description = "some operation description",
                             Summary = "some operation summary",
                             Responses = new OpenApiResponses
@@ -3490,10 +3623,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -3509,11 +3643,13 @@ paths:
         Assert.NotNull(modelsNS);
         var responseClass = modelsNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model));
         Assert.NotNull(responseClass);
-        Assert.Null(responseClass.Documentation.Description);
+        Assert.Empty(responseClass.Documentation.Description);
     }
     [Fact]
-    public void CleansUpInvalidDescriptionCharacters(){
-        var myObjectSchema = new OpenApiSchema {
+    public void CleansUpInvalidDescriptionCharacters()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -3522,7 +3658,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -3538,7 +3675,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -3550,10 +3687,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -3576,8 +3714,10 @@ paths:
     [InlineData("application/vnd.github.mercy-preview+json")]
     [InlineData("application/vnd.github.mercy-preview+json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8")]
     [Theory]
-    public void AcceptVendorsTypes(string contentType){
-        var myObjectSchema = new OpenApiSchema {
+    public void AcceptVendorsTypes(string contentType)
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -3586,7 +3726,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -3600,7 +3741,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -3612,10 +3753,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -3636,7 +3778,8 @@ paths:
         Assert.Equal("Myobject", executorMethod.ReturnType.Name);
     }
     [Fact]
-    public void ModelsUseDescriptionWhenAvailable(){
+    public void ModelsUseDescriptionWhenAvailable()
+    {
         var document = new OpenApiDocument
         {
             Paths = new OpenApiPaths
@@ -3688,7 +3831,7 @@ paths:
         Assert.NotNull(responseClass);
         Assert.Equal("some path item description", responseClass.Documentation.Description);
 
-        var responseProperty = codeModel.FindNamespaceByName("TestSdk").Classes.SelectMany(c=> c.Properties).FirstOrDefault(p => p.Kind == CodePropertyKind.RequestBuilder);
+        var responseProperty = codeModel.FindNamespaceByName("TestSdk").Classes.SelectMany(c => c.Properties).FirstOrDefault(p => p.Kind == CodePropertyKind.RequestBuilder);
         Assert.NotNull(responseProperty);
         Assert.Equal("some path item description", responseProperty.Documentation.Description);
     }
@@ -3746,8 +3889,10 @@ paths:
     [InlineData("text/yaml", "200", true, "application/json", "binary")]
     [InlineData("text/yaml", "200", false, "application/json", "binary")]
     [Theory]
-    public void GeneratesTheRightReturnTypeBasedOnContentAndStatus(string contentType, string statusCode, bool addModel, string acceptedContentType, string returnType) {
-        var myObjectSchema = new OpenApiSchema {
+    public void GeneratesTheRightReturnTypeBasedOnContentAndStatus(string contentType, string statusCode, bool addModel, string acceptedContentType, string returnType)
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -3756,7 +3901,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -3770,7 +3916,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 [statusCode] = new OpenApiResponse {
@@ -3782,10 +3928,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -3801,10 +3948,10 @@ paths:
                 ClientClassName = "TestClient",
                 ClientNamespaceName = "TestSdk",
                 ApiRootUrl = "https://localhost",
-                StructuredMimeTypes = acceptedContentType.Equals("default", StringComparison.OrdinalIgnoreCase) ? 
-                                            new GenerationConfiguration().StructuredMimeTypes:
-                                            new (StringComparer.OrdinalIgnoreCase) { acceptedContentType }
-        }, _httpClient);
+                StructuredMimeTypes = acceptedContentType.Equals("default", StringComparison.OrdinalIgnoreCase) ?
+                                            new GenerationConfiguration().StructuredMimeTypes :
+                                            new(StringComparer.OrdinalIgnoreCase) { acceptedContentType }
+            }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -3816,8 +3963,10 @@ paths:
         Assert.Equal(returnType, executor.ReturnType.Name);
     }
     [Fact]
-    public void Considers200WithSchemaOver2XXWithSchema() {
-        var myObjectSchema = new OpenApiSchema {
+    public void Considers200WithSchemaOver2XXWithSchema()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -3826,13 +3975,15 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
             UnresolvedReference = false
         };
-        var myOtherObjectSchema = new OpenApiSchema {
+        var myOtherObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -3841,7 +3992,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myotherobject",
                 Type = ReferenceType.Schema
             },
@@ -3855,7 +4007,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["2XX"] = new OpenApiResponse {
@@ -3874,10 +4026,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     { "myobject", myObjectSchema },
                     { "myotherobject", myOtherObjectSchema },
@@ -3893,7 +4046,7 @@ paths:
                 ClientNamespaceName = "TestSdk",
                 ApiRootUrl = "https://localhost",
                 StructuredMimeTypes = new GenerationConfiguration().StructuredMimeTypes
-        }, _httpClient);
+            }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -3905,8 +4058,10 @@ paths:
         Assert.Equal("Myobject", executor.ReturnType.Name);
     }
     [Fact]
-    public void Considers2XXWithSchemaOver204WithNoSchema() {
-        var myObjectSchema = new OpenApiSchema {
+    public void Considers2XXWithSchemaOver204WithNoSchema()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -3915,7 +4070,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -3929,7 +4085,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["2XX"] = new OpenApiResponse {
@@ -3942,10 +4098,11 @@ paths:
                                 ["204"] = new OpenApiResponse(),
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -3962,7 +4119,7 @@ paths:
                 ClientNamespaceName = "TestSdk",
                 ApiRootUrl = "https://localhost",
                 StructuredMimeTypes = new GenerationConfiguration().StructuredMimeTypes
-        }, _httpClient);
+            }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -3974,8 +4131,10 @@ paths:
         Assert.Equal("Myobject", executor.ReturnType.Name);
     }
     [Fact]
-    public void Considers204WithNoSchemaOver206WithNoSchema() {
-        var myObjectSchema = new OpenApiSchema {
+    public void Considers204WithNoSchemaOver206WithNoSchema()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -3984,7 +4143,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -3998,17 +4158,18 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["206"] = new OpenApiResponse(),
                                 ["204"] = new OpenApiResponse(),
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -4025,7 +4186,7 @@ paths:
                 ClientNamespaceName = "TestSdk",
                 ApiRootUrl = "https://localhost",
                 StructuredMimeTypes = new GenerationConfiguration().StructuredMimeTypes
-        }, _httpClient);
+            }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -4057,8 +4218,10 @@ paths:
     [InlineData("text/yaml", true, "application/json", "binary")]
     [InlineData("text/yaml", false, "application/json", "binary")]
     [Theory]
-    public void GeneratesTheRightParameterTypeBasedOnContentAndStatus(string contentType, bool addModel, string acceptedContentType, string parameterType) {
-        var myObjectSchema = new OpenApiSchema {
+    public void GeneratesTheRightParameterTypeBasedOnContentAndStatus(string contentType, bool addModel, string acceptedContentType, string parameterType)
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -4067,7 +4230,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -4094,10 +4258,11 @@ paths:
                                 ["204"] = new OpenApiResponse(),
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -4113,10 +4278,10 @@ paths:
                 ClientClassName = "TestClient",
                 ClientNamespaceName = "TestSdk",
                 ApiRootUrl = "https://localhost",
-                StructuredMimeTypes = acceptedContentType.Equals("default", StringComparison.OrdinalIgnoreCase) ? 
-                                            new GenerationConfiguration().StructuredMimeTypes:
-                                            new (StringComparer.OrdinalIgnoreCase) { acceptedContentType }
-        }, _httpClient);
+                StructuredMimeTypes = acceptedContentType.Equals("default", StringComparison.OrdinalIgnoreCase) ?
+                                            new GenerationConfiguration().StructuredMimeTypes :
+                                            new(StringComparer.OrdinalIgnoreCase) { acceptedContentType }
+            }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -4128,8 +4293,10 @@ paths:
         Assert.Equal(parameterType, executor.Parameters.OfKind(CodeParameterKind.RequestBody).Type.Name);
     }
     [Fact]
-    public void DoesntGenerateVoidExecutorOnMixed204(){
-        var myObjectSchema = new OpenApiSchema {
+    public void DoesntGenerateVoidExecutorOnMixed204()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -4138,7 +4305,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -4152,7 +4320,7 @@ paths:
                 {
                     Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -4165,10 +4333,11 @@ paths:
                                 ["204"] = new OpenApiResponse(),
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -4189,18 +4358,21 @@ paths:
         Assert.NotNull(executor);
         Assert.NotEqual("void", executor.ReturnType.Name);
     }
-    [InlineData(new[] {"microsoft.graph.user", "microsoft.graph.termstore.term"}, "microsoft.graph")]
-    [InlineData(new[] {"microsoft.graph.user", "odata.errors.error"}, "")]
-    [InlineData(new string[] {}, "")]
+    [InlineData(new[] { "microsoft.graph.user", "microsoft.graph.termstore.term" }, "microsoft.graph")]
+    [InlineData(new[] { "microsoft.graph.user", "odata.errors.error" }, "")]
+    [InlineData(new string[] { }, "")]
     [Theory]
-    public void StripsCommonModelsPrefix(string[] componentNames, string stripPrefix) {
+    public void StripsCommonModelsPrefix(string[] componentNames, string stripPrefix)
+    {
         var paths = new OpenApiPaths();
         var components = new OpenApiComponents
         {
             Schemas = new Dictionary<string, OpenApiSchema>()
         };
-        foreach(var componentName in componentNames) {
-            var myObjectSchema = new OpenApiSchema {
+        foreach (var componentName in componentNames)
+        {
+            var myObjectSchema = new OpenApiSchema
+            {
                 Type = "object",
                 Properties = new Dictionary<string, OpenApiSchema> {
                     {
@@ -4209,7 +4381,8 @@ paths:
                         }
                     }
                 },
-                Reference = new OpenApiReference {
+                Reference = new OpenApiReference
+                {
                     Id = componentName,
                     Type = ReferenceType.Schema
                 },
@@ -4217,9 +4390,9 @@ paths:
             };
             paths.Add($"answer{componentName}", new OpenApiPathItem
             {
-                    Operations = {
+                Operations = {
                         [OperationType.Get] = new OpenApiOperation
-                        { 
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
@@ -4231,8 +4404,8 @@ paths:
                                 },
                             }
                         }
-                    } 
-                });
+                    }
+            });
             components.Schemas.Add(componentName, myObjectSchema);
         }
         var document = new OpenApiDocument
@@ -4244,8 +4417,10 @@ paths:
         Assert.Equal(stripPrefix, result);
     }
     [Fact]
-    public void HandlesContentParameters(){
-        var myObjectSchema = new OpenApiSchema {
+    public void HandlesContentParameters()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -4254,7 +4429,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -4299,10 +4475,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -4325,10 +4502,12 @@ paths:
         Assert.Equal("string", idsParam.Type.Name);
         Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.None, idsParam.Type.CollectionKind);
     }
-    
+
     [Fact]
-    public void HandlesPagingExtension(){
-        var myObjectSchema = new OpenApiSchema {
+    public void HandlesPagingExtension()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -4337,7 +4516,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -4366,10 +4546,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -4392,8 +4573,10 @@ paths:
     [InlineData(true)]
     [InlineData(false)]
     [Theory]
-    public void SetsReadonlyProperties(bool isReadonly){
-        var myObjectSchema = new OpenApiSchema {
+    public void SetsReadonlyProperties(bool isReadonly)
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -4403,7 +4586,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -4429,10 +4613,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 }
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -4450,8 +4635,10 @@ paths:
         Assert.Equal(isReadonly, nameProperty.ReadOnly);
     }
     [Fact]
-    public void SupportsIncludeFilter(){
-        var myObjectSchema = new OpenApiSchema {
+    public void SupportsIncludeFilter()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -4460,7 +4647,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -4486,7 +4674,7 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 },
                 ["groups"] = new OpenApiPathItem
                 {
@@ -4504,10 +4692,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 },
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -4516,7 +4705,8 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { 
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
             ClientClassName = "TestClient",
             ClientNamespaceName = "TestSdk",
             ApiRootUrl = "https://localhost",
@@ -4525,14 +4715,16 @@ paths:
             }
         }, _httpClient);
         var filters = builder.BuildGlobPatterns();
-        builder.FilterPathsByPatterns(document, filters.Item1, filters.Item2);
+        KiotaBuilder.FilterPathsByPatterns(document, filters.Item1, filters.Item2);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.Null(codeModel.FindNamespaceByName("TestSdk.groups"));
     }
     [Fact]
-    public void SupportsExcludeFilter(){
-        var myObjectSchema = new OpenApiSchema {
+    public void SupportsExcludeFilter()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -4541,7 +4733,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -4567,7 +4760,7 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 },
                 ["groups"] = new OpenApiPathItem
                 {
@@ -4585,10 +4778,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 },
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -4597,7 +4791,8 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { 
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
             ClientClassName = "TestClient",
             ClientNamespaceName = "TestSdk",
             ApiRootUrl = "https://localhost",
@@ -4606,14 +4801,16 @@ paths:
             }
         }, _httpClient);
         var filters = builder.BuildGlobPatterns();
-        builder.FilterPathsByPatterns(document, filters.Item1, filters.Item2);
+        KiotaBuilder.FilterPathsByPatterns(document, filters.Item1, filters.Item2);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.Null(codeModel.FindNamespaceByName("TestSdk.groups"));
     }
     [Fact]
-    public void SupportsIndexingParametersInSubPaths(){
-        var myObjectSchema = new OpenApiSchema {
+    public void SupportsIndexingParametersInSubPaths()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -4622,7 +4819,8 @@ paths:
                     }
                 }
             },
-            Reference = new OpenApiReference {
+            Reference = new OpenApiReference
+            {
                 Id = "myobject",
                 Type = ReferenceType.Schema
             },
@@ -4658,10 +4856,11 @@ paths:
                                 },
                             }
                         }
-                    } 
+                    }
                 },
             },
-            Components = new() {
+            Components = new()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     {
                         "myobject", myObjectSchema
@@ -4670,7 +4869,8 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { 
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
             ClientClassName = "TestClient",
             ClientNamespaceName = "TestSdk",
             ApiRootUrl = "https://localhost",

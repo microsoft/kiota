@@ -1,7 +1,7 @@
+﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
 using FluentAssertions;
 using Microsoft.Playwright;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
 
 namespace Kiota.Web.Tests;
 /// <summary>
@@ -42,11 +42,17 @@ public class PlaywrightFixture : IAsyncLifetime
     /// <summary>
     /// The process running the blazor app.
     /// </summary>
-    public Process? DotnetRunProcess { get; private set; }
+    public Process? DotnetRunProcess
+    {
+        get; private set;
+    }
     /// <summary>
     /// The URL the app is hosted at
     /// </summary>
-    public string? DotnetUrl { get; private set; }
+    public string? DotnetUrl
+    {
+        get; private set;
+    }
     private static readonly Regex urlRegex = new Regex(@"Now listening on: (?<url>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     /// <summary>
     /// Initialize the Playwright fixture.
@@ -78,7 +84,8 @@ public class PlaywrightFixture : IAsyncLifetime
                 DotnetUrl = match.Groups["url"].Value;
             }
         });
-        DotnetRunProcess.StartInfo = new() {
+        DotnetRunProcess.StartInfo = new()
+        {
             FileName = "dotnet",
             Arguments = "run",
             WorkingDirectory = Path.GetFullPath("../../../../../src/Kiota.Web"),
@@ -92,7 +99,8 @@ public class PlaywrightFixture : IAsyncLifetime
             secondsToWaitForRunToStart--;
             await Task.Delay(1000);
         }
-        if (DotnetUrl == null) {
+        if (DotnetUrl == null)
+        {
             DotnetRunProcess.Kill(true);
             throw new Exception("Failed to start the blazor app.");
         }

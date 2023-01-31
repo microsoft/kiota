@@ -1,12 +1,12 @@
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Net.Http;
-using System;
-using System.Text.Json;
-using System.Linq;
-using Microsoft.Extensions.Logging;
 using Kiota.Builder.Caching;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.SearchProviders.APIsGuru;
 
@@ -19,21 +19,27 @@ public class APIsGuruSearchProvider : ISearchProvider
         ArgumentNullException.ThrowIfNull(searchUri);
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(logger);
-        cachingProvider = new DocumentCachingProvider(httpClient, logger) {
+        cachingProvider = new DocumentCachingProvider(httpClient, logger)
+        {
             ClearCache = clearCache,
         };
         SearchUri = searchUri;
     }
     public string ProviderKey => "apisguru";
-    public HashSet<string> KeysToExclude { get; set; } = new() {
+    public HashSet<string> KeysToExclude
+    {
+        get; set;
+    } = new() {
         "microsoft.com:graph"
     };
-    public async Task<IDictionary<string, SearchResult>> SearchAsync(string term, string version, CancellationToken cancellationToken)
+    public async Task<IDictionary<string, SearchResult>> SearchAsync(string term, string? version, CancellationToken cancellationToken)
     {
         if (SearchUri == null)
             return new Dictionary<string, SearchResult>();
         await using var rawDocument = await cachingProvider.GetDocumentAsync(SearchUri, "search", "apisguru.json", "application/json", cancellationToken);
         var apiEntries = JsonSerializer.Deserialize<Dictionary<string, ApiEntry>>(rawDocument);
+        if (apiEntries == null)
+            return new Dictionary<string, SearchResult>();
         var candidates = apiEntries
                             .Where(x => !KeysToExclude.Contains(x.Key))
                             .Where(x => x.Key.Contains(term, StringComparison.OrdinalIgnoreCase));
@@ -43,9 +49,9 @@ public class APIsGuruSearchProvider : ISearchProvider
                                 .Where(static x => x.versionInfo is not null)
                                 .DistinctBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
                                 .ToDictionary(static x => x.Key,
-                                            static x => new SearchResult(x.versionInfo.info?.title, x.versionInfo.info?.description, x.versionInfo.info?.contact?.url, x.versionInfo.swaggerUrl, x.Item3),
+                                            static x => new SearchResult(x.versionInfo!.info?.title ?? string.Empty, x.versionInfo.info?.description ?? string.Empty, x.versionInfo.info?.contact?.url, x.versionInfo.swaggerUrl, x.Item3 ?? Enumerable.Empty<string>().ToList()),
                                             StringComparer.OrdinalIgnoreCase);
         return results;
     }
-    private static string GetVersionKey(bool singleCandidate, string version, KeyValuePair<string, ApiEntry> x) => singleCandidate ? version : x.Value.preferred;
+    private static string GetVersionKey(bool singleCandidate, string? version, KeyValuePair<string, ApiEntry> x) => singleCandidate && !string.IsNullOrEmpty(version) ? version : x.Value.preferred;
 }

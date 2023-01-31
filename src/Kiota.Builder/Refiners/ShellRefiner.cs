@@ -13,7 +13,8 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
     public ShellRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        return Task.Run(() => {
+        return Task.Run(() =>
+        {
             cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddDefaultImports(generatedCode, additionalUsingEvaluators);
@@ -90,7 +91,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
                 var rootMethod = new CodeMethod
                 {
                     Name = "BuildRootCommand",
-                    Documentation = clientConstructor.Documentation.Clone() as CodeDocumentation,
+                    Documentation = (CodeDocumentation)clientConstructor.Documentation.Clone(),
                     IsAsync = false,
                     Kind = CodeMethodKind.CommandBuilder,
                     ReturnType = new CodeType { Name = "Command", IsExternal = true },
@@ -106,7 +107,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
     {
         foreach (var requestMethod in requestMethods)
         {
-            CodeMethod clone = requestMethod.Clone() as CodeMethod;
+            var clone = (CodeMethod)requestMethod.Clone();
             var cmdName = clone.HttpMethod switch
             {
                 HttpMethod.Get when classHasIndexers => "List",
@@ -116,7 +117,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 
             clone.IsAsync = false;
             clone.Name = $"Build{cmdName}Command";
-            clone.Documentation = requestMethod.Documentation.Clone() as CodeDocumentation;
+            clone.Documentation = (CodeDocumentation)requestMethod.Documentation.Clone();
             clone.ReturnType = CreateCommandType();
             clone.Kind = CodeMethodKind.CommandBuilder;
             clone.OriginalMethod = requestMethod;
@@ -137,7 +138,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
                 IsAsync = false,
                 Kind = CodeMethodKind.CommandBuilder,
                 OriginalIndexer = indexer,
-                Documentation = indexer.Documentation.Clone() as CodeDocumentation,
+                Documentation = (CodeDocumentation)indexer.Documentation.Clone(),
                 // ReturnType setter assigns the parent
                 ReturnType = CreateCommandType()
             };
@@ -162,7 +163,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             IsAsync = false,
             Name = $"Build{navProperty.Name.ToFirstCharacterUpperCase()}Command",
             Kind = CodeMethodKind.CommandBuilder,
-            Documentation = navProperty.Documentation.Clone() as CodeDocumentation,
+            Documentation = (CodeDocumentation)navProperty.Documentation.Clone(),
             ReturnType = CreateCommandType(),
             AccessedProperty = navProperty,
             SimpleName = navProperty.Name,

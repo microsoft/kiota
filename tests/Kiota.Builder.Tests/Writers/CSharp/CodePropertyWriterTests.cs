@@ -7,7 +7,8 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.CSharp;
-public class CodePropertyWriterTests: IDisposable {
+public class CodePropertyWriterTests : IDisposable
+{
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
     private readonly StringWriter tw;
@@ -17,40 +18,57 @@ public class CodePropertyWriterTests: IDisposable {
     private readonly CodeNamespace rootNamespace;
     private const string PropertyName = "PropertyName";
     private const string TypeName = "Somecustomtype";
-    public CodePropertyWriterTests() {
+    public CodePropertyWriterTests()
+    {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         rootNamespace = CodeNamespace.InitRootNamespace().AddNamespace("defaultNamespace");
-        parentClass = new CodeClass {
+        parentClass = new CodeClass
+        {
             Name = "parentClass"
         };
-        var derivedClass = rootNamespace.AddClass(new CodeClass {
+        var derivedClass = rootNamespace.AddClass(new CodeClass
+        {
             Name = "SomeCustomClass"
         }).First();
-            
+
         rootNamespace.AddClass(parentClass);
-        property = new CodeProperty {
+        property = new CodeProperty
+        {
             Name = PropertyName,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = TypeName,
                 TypeDefinition = derivedClass
             },
         };
-        parentClass.AddProperty(property, new() {
+        parentClass.AddProperty(property, new()
+        {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
-        }, new() {
+            Type = new CodeType
+            {
+                Name = "PathParameters",
+            },
+        }, new()
+        {
             Name = "requestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "RequestAdapter",
+            },
         });
     }
-    public void Dispose() {
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesRequestBuilder() {
+    public void WritesRequestBuilder()
+    {
         property.Kind = CodePropertyKind.RequestBuilder;
         writer.Write(property);
         var result = tw.ToString();
@@ -60,7 +78,8 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.Contains("PathParameters", result);
     }
     [Fact]
-    public void WritesCustomProperty() {
+    public void WritesCustomProperty()
+    {
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();
@@ -68,7 +87,8 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.Contains("get; set;", result);
     }
     [Fact]
-    public void WritesPrivateSetter() {
+    public void WritesPrivateSetter()
+    {
         property.Kind = CodePropertyKind.Custom;
         property.ReadOnly = true;
         writer.Write(property);
@@ -76,7 +96,8 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.Contains("get; private set;", result);
     }
     [Fact]
-    public void MapsCustomPropertiesToBackingStore() {
+    public void MapsCustomPropertiesToBackingStore()
+    {
         parentClass.AddBackingStoreProperty();
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
@@ -85,7 +106,8 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.Contains("set { BackingStore?.Set(\"propertyName\", value);", result);
     }
     [Fact]
-    public void MapsAdditionalDataPropertiesToBackingStore() {
+    public void MapsAdditionalDataPropertiesToBackingStore()
+    {
         parentClass.AddBackingStoreProperty();
         property.Kind = CodePropertyKind.AdditionalData;
         writer.Write(property);
@@ -94,7 +116,8 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.Contains("set { BackingStore?.Set(\"propertyName\", value);", result);
     }
     [Fact]
-    public void WritesSerializationAttribute() {
+    public void WritesSerializationAttribute()
+    {
         property.Kind = CodePropertyKind.QueryParameter;
         property.SerializationName = "someserializationname";
         writer.Write(property);
@@ -102,11 +125,14 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.Contains("[QueryParameter(\"someserializationname\")", result);
     }
     [Fact]
-    public void DoesntWritePropertiesExistingInParentType() {
+    public void DoesntWritePropertiesExistingInParentType()
+    {
         property.Kind = CodePropertyKind.Custom;
-        property.OriginalPropertyFromBaseType = new CodeProperty {
+        property.OriginalPropertyFromBaseType = new CodeProperty
+        {
             Name = "definedInParent",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         };
@@ -114,7 +140,7 @@ public class CodePropertyWriterTests: IDisposable {
         var result = tw.ToString();
         Assert.Empty(result);
     }
-    
+
     [Fact]
     public void DisambiguateAmbiguousImportedTypes()
     {
@@ -131,16 +157,19 @@ public class CodePropertyWriterTests: IDisposable {
             Name = defaultNamespace.Name,
             Declaration = property.Type as CodeType
         });
-        
+
         var levelOneNameSpace = rootNamespace.AddNamespace("namespaceLevelOne");
         var anotherderivedClass = levelOneNameSpace.AddClass(
-            new CodeClass {
+            new CodeClass
+            {
                 Name = "SomeCustomClass"
             }).First();
         levelOneNameSpace.AddClass(anotherderivedClass);
-        var conflictingProperty = new CodeProperty {
+        var conflictingProperty = new CodeProperty
+        {
             Name = $"{PropertyName}2",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = TypeName,
                 TypeDefinition = anotherderivedClass
             },
@@ -151,14 +180,14 @@ public class CodePropertyWriterTests: IDisposable {
             Name = levelOneNameSpace.Name,
             Declaration = conflictingProperty.Type as CodeType
         });
-        
+
         // Act : Write the properties
         writer.Write(property);
         writer.Write(conflictingProperty);
         var result = tw.ToString();
-        
+
         // Assert: properties types are disambiguated.
-        Assert.Contains("namespaceLevelOne.Somecustomtype",result);
+        Assert.Contains("namespaceLevelOne.Somecustomtype", result);
         Assert.Contains("defaultNamespace.Somecustomtype", result);
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,7 +21,7 @@ public class RubyPathSegmenter : CommonPathSegmenter
     public override string NormalizeFileName(CodeElement currentElement) => GetLastFileNameSegment(currentElement).ToSnakeCase();
     public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToSnakeCase();
     public override string NormalizePath(string fullPath) =>
-        ExceedsMaxPathLength(fullPath) && Path.GetDirectoryName(fullPath) is string directoryName ? 
+        ExceedsMaxPathLength(fullPath) && Path.GetDirectoryName(fullPath) is string directoryName ?
             Path.Combine(directoryName,
                         ShortenFileName(directoryName, Path.GetFileName(fullPath)) + FileSuffix) :
             fullPath;

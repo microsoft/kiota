@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.Any;
@@ -7,10 +7,14 @@ using Microsoft.OpenApi.Writers;
 
 namespace Kiota.Builder;
 
-public record LanguageInformation: IOpenApiSerializable {
-    public LanguageMaturityLevel MaturityLevel {get; set;}
-    public List<LanguageDependency> Dependencies {get; set;} = new();
-    public string DependencyInstallCommand {get; set;}
+public record LanguageInformation : IOpenApiSerializable
+{
+    public LanguageMaturityLevel MaturityLevel
+    {
+        get; set;
+    }
+    public List<LanguageDependency> Dependencies { get; set; } = new();
+    public string DependencyInstallCommand { get; set; } = string.Empty;
 
     public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
     public void SerializeAsV3(IOpenApiWriter writer)
@@ -25,23 +29,27 @@ public record LanguageInformation: IOpenApiSerializable {
     {
         if (source is not OpenApiObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
         var extension = new LanguageInformation();
-        if (rawObject.TryGetValue(nameof(Dependencies).ToFirstCharacterLowerCase(), out var dependencies) && dependencies is OpenApiArray arrayValue) {
-            foreach(var entry in arrayValue)
+        if (rawObject.TryGetValue(nameof(Dependencies).ToFirstCharacterLowerCase(), out var dependencies) && dependencies is OpenApiArray arrayValue)
+        {
+            foreach (var entry in arrayValue)
                 extension.Dependencies.Add(LanguageDependency.Parse(entry));
         }
-        if (rawObject.TryGetValue(nameof(DependencyInstallCommand).ToFirstCharacterLowerCase(), out var installCommand) && installCommand is OpenApiString stringValue) {
+        if (rawObject.TryGetValue(nameof(DependencyInstallCommand).ToFirstCharacterLowerCase(), out var installCommand) && installCommand is OpenApiString stringValue)
+        {
             extension.DependencyInstallCommand = stringValue.Value;
         }
         if (rawObject.TryGetValue(nameof(MaturityLevel).ToFirstCharacterLowerCase(), out var matLevel) && matLevel is OpenApiString matLevelStr &&
-            Enum.TryParse<LanguageMaturityLevel>(matLevelStr.Value, out var matLevelValue)) {
+            Enum.TryParse<LanguageMaturityLevel>(matLevelStr.Value, out var matLevelValue))
+        {
             extension.MaturityLevel = matLevelValue;
         }
         return extension;
     }
 }
-public record LanguageDependency: IOpenApiSerializable {
-    public string Name {get; set;}
-    public string Version {get; set;}
+public record LanguageDependency : IOpenApiSerializable
+{
+    public string Name { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
     public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
     public void SerializeAsV3(IOpenApiWriter writer)
     {
@@ -54,17 +62,20 @@ public record LanguageDependency: IOpenApiSerializable {
     {
         if (source is not OpenApiObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
         var extension = new LanguageDependency();
-        if (rawObject.TryGetValue(nameof(Name).ToFirstCharacterLowerCase(), out var name) && name is OpenApiString stringValue) {
+        if (rawObject.TryGetValue(nameof(Name).ToFirstCharacterLowerCase(), out var name) && name is OpenApiString stringValue)
+        {
             extension.Name = stringValue.Value;
         }
-        if (rawObject.TryGetValue(nameof(Version).ToFirstCharacterLowerCase(), out var version) && version is OpenApiString versionValue) {
+        if (rawObject.TryGetValue(nameof(Version).ToFirstCharacterLowerCase(), out var version) && version is OpenApiString versionValue)
+        {
             extension.Version = versionValue.Value;
         }
         return extension;
     }
 }
 
-public enum LanguageMaturityLevel {
+public enum LanguageMaturityLevel
+{
     Experimental,
     Preview,
     Stable

@@ -1,19 +1,21 @@
+﻿using System;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Python;
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventionService>
 {
-    public CodePropertyWriter(PythonConventionService conventionService) : base(conventionService){}
+    public CodePropertyWriter(PythonConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement, true, writer);
-        var parentClass = codeElement.Parent as CodeClass;
+        if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         /* Only write specific properties as class attributes
         * The rest will be implemented as instance attributes, to avoid mutable properties
         * from being modified across instances. 
         */
-        switch(codeElement.Kind) {
+        switch (codeElement.Kind)
+        {
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine("@property");
                 writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}(self) -> {returnType}:");
@@ -21,7 +23,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                 conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
                 conventions.AddRequestBuilderBody(parentClass, returnType, writer);
                 writer.CloseBlock(string.Empty);
-            break;
+                break;
             case CodePropertyKind.QueryParameters:
             case CodePropertyKind.Headers:
             case CodePropertyKind.Options:
@@ -29,7 +31,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                 conventions.WriteInLineDescription(codeElement.Documentation.Description, writer);
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name.ToSnakeCase()}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} = None");
                 writer.WriteLine();
-            break;
+                break;
         }
     }
 }

@@ -5,10 +5,10 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go;
-public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWriter<T, GoConventionService> 
+public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWriter<T, GoConventionService>
     where T : ProprietableBlockDeclaration
 {
-    protected CodeProprietableBlockDeclarationWriter(GoConventionService conventionService) : base(conventionService) {}
+    protected CodeProprietableBlockDeclarationWriter(GoConventionService conventionService) : base(conventionService) { }
 
     public override void WriteCodeElement(T codeElement, LanguageWriter writer)
     {
@@ -19,16 +19,16 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty)}");
             var importSegments = codeElement
                                 .Usings
-                                .Where(x => !x.Declaration.IsExternal && !x.Name.Equals(ns.Name, StringComparison.OrdinalIgnoreCase))
-                                .Where(x => x.Declaration.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>() != ns)
+                                .Where(x => x.Declaration != null && !x.Declaration.IsExternal && !x.Name.Equals(ns.Name, StringComparison.OrdinalIgnoreCase) &&
+                                        x.Declaration.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>() != ns)
                                 .Select(static x => x.GetInternalNamespaceImport())
                                 .Select(static x => new Tuple<string, string>(x.GetNamespaceImportSymbol(), x))
                                 .Distinct()
                                 .Union(codeElement
                                     .Usings
                                     .Union(codeElement.Parent is CodeClass currentClass ? currentClass.InnerClasses.SelectMany(static x => x.Usings) : Enumerable.Empty<CodeUsing>())
-                                    .Where(static x => x.Declaration.IsExternal)
-                                    .Select(static x => new Tuple<string, string>(x.Name.StartsWith("*") ? x.Name[1..] : x.Declaration.Name.GetNamespaceImportSymbol(), x.Declaration.Name))
+                                    .Where(static x => x.Declaration != null && x.Declaration.IsExternal)
+                                    .Select(static x => new Tuple<string, string>(x.Name.StartsWith("*") ? x.Name[1..] : x.Declaration!.Name.GetNamespaceImportSymbol(), x.Declaration!.Name))
                                     .Distinct())
                                 .OrderBy(static x => x.Item2.Count(static y => y == '/'))
                                 .ThenBy(static x => x)

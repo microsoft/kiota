@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 using Kiota.Builder.CodeDOM;
 
@@ -6,11 +6,18 @@ using Xunit;
 
 namespace Kiota.Builder.Tests.CodeDOM;
 
-public class CodeFunctionTests {
+public class CodeFunctionTests
+{
     [Fact]
-    public void Defensive() {
-        var method = new CodeMethod {
+    public void Defensive()
+    {
+        var method = new CodeMethod
+        {
             Name = "class",
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
         };
         Assert.Throws<ArgumentNullException>(() => new CodeFunction(null));
         Assert.Throws<InvalidOperationException>(() => new CodeFunction(method));

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -11,23 +11,23 @@ namespace Kiota.Builder.Lock;
 public class KiotaLockComparer : IEqualityComparer<KiotaLock>
 {
     /// <inheritdoc/>
-    public bool Equals(KiotaLock x, KiotaLock y)
+    public bool Equals(KiotaLock? x, KiotaLock? y)
     {
-        return GetHashCode(x) == GetHashCode(y);
+        return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] KiotaLock obj)
     {
         if (obj == null) return 0;
         return
-            string.Join(",", obj.DisabledValidationRules?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 47 + 
+            string.Join(",", obj.DisabledValidationRules?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 47 +
             GetVersionHashCode(obj.KiotaVersion) * 43 +
             GetVersionHashCode(obj.LockFileVersion) * 41 +
-            (obj.DescriptionLocation?.GetHashCode() ?? 0) * 37 +
-            (obj.DescriptionHash?.GetHashCode() ?? 0) * 31 +
-            (obj.ClientClassName?.GetHashCode() ?? 0) * 29 +
-            (obj.ClientNamespaceName?.GetHashCode() ?? 0) * 23 +
-            (obj.Language?.GetHashCode() ?? 0) * 19 +
+            (string.IsNullOrEmpty(obj.DescriptionLocation) ? 0 : obj.DescriptionLocation.GetHashCode()) * 37 +
+            (string.IsNullOrEmpty(obj.DescriptionHash) ? 0 : obj.DescriptionHash.GetHashCode()) * 31 +
+            (string.IsNullOrEmpty(obj.ClientClassName) ? 0 : obj.ClientClassName.GetHashCode()) * 29 +
+            (string.IsNullOrEmpty(obj.ClientNamespaceName) ? 0 : obj.ClientNamespaceName.GetHashCode()) * 23 +
+            (string.IsNullOrEmpty(obj.Language) ? 0 : obj.Language.GetHashCode()) * 19 +
             obj.UsesBackingStore.GetHashCode() * 17 +
             obj.IncludeAdditionalData.GetHashCode() * 13 +
             string.Join(",", obj.Serializers?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 11 +
@@ -36,9 +36,11 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
             string.Join(",", obj.IncludePatterns?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 3 +
             string.Join(",", obj.ExcludePatterns?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 2;
     }
-    private static int GetVersionHashCode(string version) {
-        if(string.IsNullOrEmpty(version)) return 0;
-        if(Version.TryParse(version, out var parsedVersion)) {
+    private static int GetVersionHashCode(string version)
+    {
+        if (string.IsNullOrEmpty(version)) return 0;
+        if (Version.TryParse(version, out var parsedVersion))
+        {
             if (parsedVersion.Major > 0)
                 return parsedVersion.Major.GetHashCode();
             if (parsedVersion.Minor > 0)

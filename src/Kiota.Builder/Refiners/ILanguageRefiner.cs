@@ -7,7 +7,8 @@ namespace Kiota.Builder.Refiners;
 public interface ILanguageRefiner
 {
     Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken);
-    public static async Task Refine(GenerationConfiguration config, CodeNamespace generatedCode, CancellationToken cancellationToken = default) {
+    public static async Task Refine(GenerationConfiguration config, CodeNamespace generatedCode, CancellationToken cancellationToken = default)
+    {
         switch (config.Language)
         {
             case GenerationLanguage.CSharp:

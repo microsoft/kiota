@@ -51,26 +51,37 @@ public enum CodeParameterKind
 
 public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable, IDocumentedElement
 {
+#nullable disable // exposing property is required
     private CodeTypeBase type;
-    public CodeTypeBase Type {get => type; set {
-        EnsureElementsAreChildren(type);
-        type = value;
-    }}
-    public bool Optional {get;set;}
+#nullable enable
+    public required CodeTypeBase Type
+    {
+        get => type; set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            EnsureElementsAreChildren(value);
+            type = value;
+        }
+    }
+    public bool Optional
+    {
+        get; set;
+    }
     public CodeDocumentation Documentation { get; set; } = new();
-    public string DefaultValue {get; set;}
-    public string SerializationName { get; set; }
+    public string DefaultValue { get; set; } = string.Empty;
+    public string SerializationName { get; set; } = string.Empty;
     public object Clone()
     {
-        return new CodeParameter {
+        return new CodeParameter
+        {
             Optional = Optional,
             Kind = Kind,
-            Name = Name.Clone() as string,
-            Type = Type?.Clone() as CodeTypeBase,
-            DefaultValue = DefaultValue?.Clone() as string,
+            Name = Name,
+            DefaultValue = DefaultValue,
             Parent = Parent,
-            SerializationName = SerializationName?.Clone() as string,
-            Documentation = Documentation?.Clone() as CodeDocumentation,
+            SerializationName = SerializationName,
+            Documentation = (CodeDocumentation)Documentation.Clone(),
+            Type = (CodeTypeBase)Type.Clone(),
         };
     }
 }

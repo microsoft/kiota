@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +27,7 @@ public class DiscriminatorInformation : CodeElement, ICloneable
     public string DiscriminatorPropertyName
     {
         get; set;
-    }
+    } = string.Empty;
 
     public void AddDiscriminatorMapping(string key, CodeTypeBase type)
     {
@@ -36,7 +36,7 @@ public class DiscriminatorInformation : CodeElement, ICloneable
         discriminatorMappings.TryAdd(key, type);
     }
 
-    public CodeTypeBase GetDiscriminatorMappingValue(string key)
+    public CodeTypeBase? GetDiscriminatorMappingValue(string key)
     {
         ArgumentException.ThrowIfNullOrEmpty(key);
         if (discriminatorMappings.TryGetValue(key, out var value))
@@ -44,9 +44,10 @@ public class DiscriminatorInformation : CodeElement, ICloneable
         return null;
     }
 
-    public void RemoveDiscriminatorMapping(params string[] keys) {
+    public void RemoveDiscriminatorMapping(params string[] keys)
+    {
         ArgumentNullException.ThrowIfNull(keys);
-        foreach(var key in keys)
+        foreach (var key in keys)
             discriminatorMappings.TryRemove(key, out var _);
     }
 
@@ -55,9 +56,9 @@ public class DiscriminatorInformation : CodeElement, ICloneable
         return new DiscriminatorInformation
         {
             DiscriminatorPropertyName = DiscriminatorPropertyName,
-            discriminatorMappings = discriminatorMappings == null ? null : new(discriminatorMappings),
+            discriminatorMappings = new(discriminatorMappings, StringComparer.OrdinalIgnoreCase),
             Parent = Parent,
-            Name = Name?.Clone() as string,
+            Name = Name,
         };
     }
     public bool HasBasicDiscriminatorInformation => !string.IsNullOrEmpty(DiscriminatorPropertyName) && discriminatorMappings.Any();

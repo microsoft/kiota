@@ -16,18 +16,54 @@ namespace kiota.Handlers;
 
 internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
 {
-    public required Option<string> DescriptionOption { get;init; }
-    public required Option<string> OutputOption { get;init; }
-    public required Option<GenerationLanguage> LanguageOption { get;init; }
-    public required Option<string> ClassOption { get;init; }
-    public required Option<string> NamespaceOption { get;init; }
-    public required Option<bool> BackingStoreOption { get;init; }
-    public required Option<bool> AdditionalDataOption { get;init; }
-    public required Option<List<string>> SerializerOption { get;init; }
-    public required Option<List<string>> DeserializerOption { get;init; }
-    public required Option<List<string>> DisabledValidationRulesOption { get;init; }
-    public required Option<bool> CleanOutputOption { get;init; }
-    public required Option<List<string>> StructuredMimeTypesOption { get;init; }
+    public required Option<string> DescriptionOption
+    {
+        get; init;
+    }
+    public required Option<string> OutputOption
+    {
+        get; init;
+    }
+    public required Option<GenerationLanguage> LanguageOption
+    {
+        get; init;
+    }
+    public required Option<string> ClassOption
+    {
+        get; init;
+    }
+    public required Option<string> NamespaceOption
+    {
+        get; init;
+    }
+    public required Option<bool> BackingStoreOption
+    {
+        get; init;
+    }
+    public required Option<bool> AdditionalDataOption
+    {
+        get; init;
+    }
+    public required Option<List<string>> SerializerOption
+    {
+        get; init;
+    }
+    public required Option<List<string>> DeserializerOption
+    {
+        get; init;
+    }
+    public required Option<List<string>> DisabledValidationRulesOption
+    {
+        get; init;
+    }
+    public required Option<bool> CleanOutputOption
+    {
+        get; init;
+    }
+    public required Option<List<string>> StructuredMimeTypesOption
+    {
+        get; init;
+    }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
@@ -53,21 +89,21 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         Configuration.Generation.UsesBackingStore = backingStore;
         Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
         Configuration.Generation.Language = language;
-        if(serializer.Any())
+        if (serializer.Any())
             Configuration.Generation.Serializers = serializer.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if(deserializer.Any())
+        if (deserializer.Any())
             Configuration.Generation.Deserializers = deserializer.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if(includePatterns.Any())
+        if (includePatterns.Any())
             Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if(excludePatterns.Any())
+        if (excludePatterns.Any())
             Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if(disabledValidationRules.Any())
+        if (disabledValidationRules.Any())
             Configuration.Generation.DisabledValidationRules = disabledValidationRules
                                                                     .Select(static x => x.TrimQuotes())
-                                                                    .SelectMany(static x => x.Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries))
+                                                                    .SelectMany(static x => x.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                                                                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if(structuredMimeTypes.Any())
-            Configuration.Generation.StructuredMimeTypes = structuredMimeTypes.SelectMany(static x => x.Split(new[] {' '}))
+        if (structuredMimeTypes.Any())
+            Configuration.Generation.StructuredMimeTypes = structuredMimeTypes.SelectMany(static x => x.Split(new[] { ' ' }))
                                                             .Select(static x => x.TrimQuotes())
                                                             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -77,32 +113,46 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         Configuration.Generation.ClearCache = clearCache;
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
-        using (loggerFactory) {
+        using (loggerFactory)
+        {
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
-            try {
+            try
+            {
                 var result = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GenerateClientAsync(cancellationToken);
                 if (result)
                     DisplaySuccess("Generation completed successfully");
-                else {
+                else
+                {
                     DisplaySuccess("Generation skipped as no changes were detected");
                     DisplayCleanHint("generate");
                 }
                 DisplayInfoHint(language, Configuration.Generation.OpenAPIFilePath);
                 DisplayGenerateAdvancedHint(includePatterns, excludePatterns, Configuration.Generation.OpenAPIFilePath);
                 return 0;
-            } catch (Exception ex) {
-    #if DEBUG
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
                 logger.LogCritical(ex, "error generating the client: {exceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached
-    #else
+#else
                 logger.LogCritical("error generating the client: {exceptionMessage}", ex.Message);
                 return 1;
-    #endif
+#endif
             }
         }
     }
-    public required Option<List<string>> IncludePatternsOption { get; init; }
-    public required Option<List<string>> ExcludePatternsOption { get; init; }
-    public required Option<bool> ClearCacheOption { get; init; }
+    public required Option<List<string>> IncludePatternsOption
+    {
+        get; init;
+    }
+    public required Option<List<string>> ExcludePatternsOption
+    {
+        get; init;
+    }
+    public required Option<bool> ClearCacheOption
+    {
+        get; init;
+    }
 }

@@ -23,7 +23,7 @@ public class OpenApiPagingExtensionsTests
         // Assert
         Assert.Equal(expectedName, name);
     }
-    
+
     [Fact]
     public void ThrowsOnMissingWriter()
     {
@@ -50,7 +50,7 @@ public class OpenApiPagingExtensionsTests
         // Assert
         Assert.Equal("value", extension.ItemName);
         Assert.Equal("nextLink", extension.NextLinkName);
-        Assert.Null(extension.OperationName);
+        Assert.Empty(extension.OperationName);
     }
 
     [Fact]

@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Collections.Generic;
 using Microsoft.OpenApi.Models;
@@ -24,7 +24,8 @@ public class KnownAndNotSupportedFormats : ValidationRule<OpenApiSchema>
         "relative-json-pointer",
         "regex",
     };
-    public KnownAndNotSupportedFormats() : base(static (context, schema) => {
+    public KnownAndNotSupportedFormats() : base(static (context, schema) =>
+    {
         if (!string.IsNullOrEmpty(schema.Format) && knownAndUnsupportedFormats.Contains(schema.Format))
             context.CreateWarning(nameof(KnownAndNotSupportedFormats), $"The format {schema.Format} is not supported by Kiota and the string type will be used.");
     })

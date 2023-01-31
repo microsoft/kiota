@@ -12,10 +12,10 @@ public static class StringExtensions
 {
     private const int MaxStackLimit = 1024;
 
-    public static string ToFirstCharacterLowerCase(this string input)
-        => string.IsNullOrEmpty(input) ? input : char.ToLowerInvariant(input[0]) + input[1..];
-    public static string ToFirstCharacterUpperCase(this string input)
-        => string.IsNullOrEmpty(input) ? input : char.ToUpperInvariant(input[0]) + input[1..];
+    public static string ToFirstCharacterLowerCase(this string? input)
+        => string.IsNullOrEmpty(input) ? string.Empty : char.ToLowerInvariant(input[0]) + input[1..];
+    public static string ToFirstCharacterUpperCase(this string? input)
+        => string.IsNullOrEmpty(input) ? string.Empty : char.ToUpperInvariant(input[0]) + input[1..];
 
     /// <summary>
     /// Converts a string delimited by a symbol to camel case
@@ -23,23 +23,23 @@ public static class StringExtensions
     /// <param name="input">The input string</param>
     /// <param name="separators">The delimiters to use when converting to camel case. If none is given, defaults to '-'</param>
     /// <returns>A camel case string</returns>
-    public static string ToCamelCase(this string input, params char[] separators)
+    public static string ToCamelCase(this string? input, params char[] separators)
     {
-        if (string.IsNullOrEmpty(input)) return input;
-        if(separators.Length == 0) separators = new[] { '-' };
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        if (separators.Length == 0) separators = new[] { '-' };
         var chunks = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
         if (chunks.Length == 0) return string.Empty;
-        return chunks[0] + string.Join(string.Empty, chunks.Skip(1).Select(c => c.ToFirstCharacterUpperCase()));
+        return chunks[0] + string.Join(string.Empty, chunks.Skip(1).Select(ToFirstCharacterUpperCase));
     }
 
-    public static string ToPascalCase(this string name)
-        => string.IsNullOrEmpty(name) ? name : string.Join(null, name.Split('-', StringSplitOptions.RemoveEmptyEntries)
-                                                                        .Select(s => ToFirstCharacterUpperCase(s)));
-    public static string ReplaceValueIdentifier(this string original) =>
-        original?.Replace("$value", "Content");
-    public static string TrimQuotes(this string original) =>
-        original?.Trim('\'', '"');
-    
+    public static string ToPascalCase(this string? name)
+        => string.IsNullOrEmpty(name) ? string.Empty : string.Join(null, name.Split('-', StringSplitOptions.RemoveEmptyEntries)
+                                                                        .Select(ToFirstCharacterUpperCase));
+    public static string ReplaceValueIdentifier(this string? original) =>
+        string.IsNullOrEmpty(original) ? string.Empty : original.Replace("$value", "Content");
+    public static string TrimQuotes(this string? original) =>
+        string.IsNullOrEmpty(original) ? string.Empty : original.Trim('\'', '"');
+
     /// <summary>
     /// Shortens a file name to the maximum allowed length on the file system using a hash to avoid collisions
     /// </summary>
@@ -48,9 +48,9 @@ public static class StringExtensions
     public static string ShortenFileName(this string name, int length = 251) =>
         (name.Length > length) ? HashString(name).ToLowerInvariant() : name;
 
-    public static string ToSnakeCase(this string name, char separator = '_')
+    public static string ToSnakeCase(this string? name, char separator = '_')
     {
-        if (string.IsNullOrEmpty(name)) return name;
+        if (string.IsNullOrEmpty(name)) return string.Empty;
 
         var nameSpan = name.AsSpan();
         var indexOfLess = nameSpan.IndexOf('<');
@@ -99,17 +99,20 @@ public static class StringExtensions
         return new string(span);
     }
 
-    public static string NormalizeNameSpaceName(this string original, string delimiter) => 
-        string.IsNullOrEmpty(original) ? 
-            original :
-            original?.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
-    private static readonly ThreadLocal<HashAlgorithm> sha = new(() => SHA256.Create()); // getting safe handle null exception from BCrypt on concurrent multi-threaded access
-    public static string GetNamespaceImportSymbol(this string importName, string prefix = "i") {
-        if(string.IsNullOrEmpty(importName)) return string.Empty;
+    public static string NormalizeNameSpaceName(this string? original, string delimiter) =>
+        string.IsNullOrEmpty(original) ?
+            string.Empty :
+            original.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z, y) => z + delimiter + y);
+    private static readonly ThreadLocal<HashAlgorithm> sha = new(SHA256.Create); // getting safe handle null exception from BCrypt on concurrent multi-threaded access
+    public static string GetNamespaceImportSymbol(this string? importName, string prefix = "i")
+    {
+        if (string.IsNullOrEmpty(importName)) return string.Empty;
         return prefix + HashString(importName).ToLowerInvariant();
     }
-    private static string HashString(string input) {
-        var hash = sha.Value.ComputeHash(Encoding.UTF8.GetBytes(input));
+    private static string HashString(string? input)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        var hash = (sha.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(input));
         return hash.Select(static b => b.ToString("x2")).Aggregate(static (x, y) => x + y);
     }
     /// <summary>
@@ -120,48 +123,41 @@ public static class StringExtensions
     /// around quotes as expected.
     /// </summary>
     /// <param name="current"></param>
-    public static string ReplaceDoubleQuoteWithSingleQuote(this string current)
+    public static string ReplaceDoubleQuoteWithSingleQuote(this string? current)
     {
-        if (string.IsNullOrEmpty(current))
-        {
-            return current;
-        }
+        if (string.IsNullOrEmpty(current)) return string.Empty;
         return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace("'", "\\'").Replace('\"', '\'') : current;
     }
-    
-    public static string ReplaceDotsWithSlashInNamespaces(this string namespaced)
+
+    public static string ReplaceDotsWithSlashInNamespaces(this string? namespaced)
     {
-        if (string.IsNullOrEmpty(namespaced))
-        {
-            return namespaced;
-        }
+        if (string.IsNullOrEmpty(namespaced)) return string.Empty;
         var parts = namespaced.Split('.');
-        return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase())).Trim('\\');
+        return string.Join('\\', parts.Select(ToFirstCharacterUpperCase)).Trim('\\');
     }
     ///<summary>
     /// Cleanup regex that removes all special characters from ASCII 0-127
     ///</summary>
-    private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*+,./:;<=>?@\[\]\\^`{}|~-](?<followingLetter>\w)?", RegexOptions.Compiled);
+    private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*+,./:;<=>?@\[\]\\^`{}|~-](?<followingLetter>\w)?", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     private const string CleanupGroupName = "followingLetter";
-    public static string CleanupSymbolName(this string original)
+    public static string CleanupSymbolName(this string? original)
     {
-        if (string.IsNullOrEmpty(original))
-            return original;
+        if (string.IsNullOrEmpty(original)) return string.Empty;
 
-        var result = propertyCleanupRegex.Replace(original, 
-                                static x => x.Groups.Keys.Contains(CleanupGroupName) ? 
+        var result = propertyCleanupRegex.Replace(original,
+                                static x => x.Groups.Keys.Contains(CleanupGroupName) ?
                                                 x.Groups[CleanupGroupName].Value.ToFirstCharacterUpperCase() :
                                                 string.Empty); //strip out any invalid characters, and replace any following one by its uppercase version
 
-        if(result.Any() && int.TryParse(result.AsSpan(0, 1), out var _)) // in most languages a number or starting with a number is not a valid symbol name
+        if (result.Any() && int.TryParse(result.AsSpan(0, 1), out var _)) // in most languages a number or starting with a number is not a valid symbol name
             result = NumbersSpellingRegex.Replace(result, static x => x.Groups["number"]
                                                                     .Value
                                                                     .Select(static x => SpelledOutNumbers[x])
-                                                                    .Aggregate(static (z,y) => z + y));
+                                                                    .Aggregate(static (z, y) => z + y));
 
         return result;
     }
-    private static readonly Regex NumbersSpellingRegex = new(@"^(?<number>\d+)", RegexOptions.Compiled);
+    private static readonly Regex NumbersSpellingRegex = new(@"^(?<number>\d+)", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     private static readonly Dictionary<char, string> SpelledOutNumbers = new() {
         {'0', "Zero"},
         {'1', "One"},
@@ -180,6 +176,6 @@ public static class StringExtensions
     /// </summary>
     /// <param name="original">The original string</param>
     /// <returns></returns>
-    public static string CleanupXMLString(this string original) 
-        => SecurityElement.Escape(original);
+    public static string CleanupXMLString(this string? original)
+        => SecurityElement.Escape(original) ?? string.Empty;
 }

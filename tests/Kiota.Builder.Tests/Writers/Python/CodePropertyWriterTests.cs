@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 
 using Kiota.Builder.CodeDOM;
@@ -7,7 +7,8 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Python;
-public class CodePropertyWriterTests: IDisposable {
+public class CodePropertyWriterTests : IDisposable
+{
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
     private readonly StringWriter tw;
@@ -16,35 +17,51 @@ public class CodePropertyWriterTests: IDisposable {
     private readonly CodeClass parentClass;
     private const string PropertyName = "propertyName";
     private const string TypeName = "Somecustomtype";
-    public CodePropertyWriterTests() {
+    public CodePropertyWriterTests()
+    {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
-        parentClass = new CodeClass {
+        parentClass = new CodeClass
+        {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
-        property = new CodeProperty {
+        property = new CodeProperty
+        {
             Name = PropertyName,
+            Type = new CodeType
+            {
+                Name = TypeName
+            }
         };
-        property.Type = new CodeType {
-            Name = TypeName
-        };
-        parentClass.AddProperty(property, new() {
+        parentClass.AddProperty(property, new()
+        {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
-        }, new() {
+            Type = new CodeType
+            {
+                Name = "PathParameters",
+            },
+        }, new()
+        {
             Name = "requestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "RequestAdapter",
+            },
         });
     }
-    public void Dispose() {
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesRequestBuilder() {
+    public void WritesRequestBuilder()
+    {
         property.Kind = CodePropertyKind.RequestBuilder;
         property.Documentation.Description = "This is a request builder";
         writer.Write(property);
@@ -57,7 +74,8 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.Contains("self.path_parameters", result);
     }
     [Fact]
-    public void WritesQueryParameters() {
+    public void WritesQueryParameters()
+    {
         property.Kind = CodePropertyKind.QueryParameters;
         writer.Write(property);
         var result = tw.ToString();
@@ -65,7 +83,8 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.Contains($"property_name: Optional[{TypeName.ToLower()}.{TypeName}]", result);
     }
     [Fact]
-    public void WritesDefaultValuesForProperties() {
+    public void WritesDefaultValuesForProperties()
+    {
         property.Kind = CodePropertyKind.Headers;
         writer.Write(property);
         var result = tw.ToString();

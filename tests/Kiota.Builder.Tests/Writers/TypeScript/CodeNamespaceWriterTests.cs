@@ -6,27 +6,26 @@ using Kiota.Builder.Writers;
 
 using Xunit;
 
-namespace Kiota.Builder.Tests.Writers.TypeScript
+namespace Kiota.Builder.Tests.Writers.TypeScript;
+public class CodeNameSpaceWriterTests : IDisposable
 {
-    public class CodeNameSpaceWriterTests : IDisposable
+    private const string DefaultPath = "./";
+    private const string DefaultName = "name";
+    private readonly StringWriter tw;
+    private readonly LanguageWriter writer;
+
+    public CodeNameSpaceWriterTests()
     {
-        private const string DefaultPath = "./";
-        private const string DefaultName = "name";
-        private readonly StringWriter tw;
-        private readonly LanguageWriter writer;
+        writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
+        tw = new StringWriter();
+        writer.SetTextWriter(tw);
+    }
 
-        public CodeNameSpaceWriterTests()
-        {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
-            tw = new StringWriter();
-            writer.SetTextWriter(tw);
-        }
-
-        public void Dispose()
-        {
-            tw?.Dispose();
-            GC.SuppressFinalize(this);
-        }
+    public void Dispose()
+    {
+        tw?.Dispose();
+        GC.SuppressFinalize(this);
+    }
 
         [Fact]
         public void ExportsInterfacesAndFunctions()
@@ -48,5 +47,5 @@ namespace Kiota.Builder.Tests.Writers.TypeScript
             Console.WriteLine(result);
             Assert.Contains($"export * from './testEnum'{Environment.NewLine}export * from './modelInterface'{Environment.NewLine}", result);
         }
-    }
+    
 }

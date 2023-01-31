@@ -1,4 +1,4 @@
-// ------------------------------------------------------------
+﻿// ------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 //  Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // ------------------------------------------------------------
@@ -32,7 +32,7 @@ public class OpenApiEnumValuesDescriptionExtension : IOpenApiExtension
     /// <summary>
     /// The of the enum.
     /// </summary>
-    public string EnumName { get; set; }
+    public string EnumName { get; set; } = string.Empty;
 
     /// <summary>
     /// Descriptions for the enum symbols, where the value MUST match the enum symbols in the main description
@@ -43,14 +43,15 @@ public class OpenApiEnumValuesDescriptionExtension : IOpenApiExtension
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if((specVersion == OpenApiSpecVersion.OpenApi2_0 || specVersion == OpenApiSpecVersion.OpenApi3_0) &&
+        if ((specVersion == OpenApiSpecVersion.OpenApi2_0 || specVersion == OpenApiSpecVersion.OpenApi3_0) &&
             !string.IsNullOrEmpty(EnumName) &&
             ValuesDescriptions.Any())
         { // when we upgrade to 3.1, we don't need to write this extension as JSON schema will support writing enum values
             writer.WriteStartObject();
             writer.WriteProperty(nameof(Name).ToFirstCharacterLowerCase(), EnumName);
             writer.WriteProperty("modelAsString", false);
-            writer.WriteRequiredCollection("values", ValuesDescriptions, (w, x) => {
+            writer.WriteRequiredCollection("values", ValuesDescriptions, (w, x) =>
+            {
                 w.WriteStartObject();
                 w.WriteProperty(nameof(x.Value).ToFirstCharacterLowerCase(), x.Value);
                 w.WriteProperty(nameof(x.Description).ToFirstCharacterLowerCase(), x.Description);
@@ -64,7 +65,8 @@ public class OpenApiEnumValuesDescriptionExtension : IOpenApiExtension
     {
         if (source is not OpenApiObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
         var extension = new OpenApiEnumValuesDescriptionExtension();
-        if (rawObject.TryGetValue("values", out var values) && values is OpenApiArray valuesArray) {
+        if (rawObject.TryGetValue("values", out var values) && values is OpenApiArray valuesArray)
+        {
             extension.ValuesDescriptions.AddRange(valuesArray
                                             .OfType<OpenApiObject>()
                                             .Select(x => new EnumDescription(x)));
@@ -77,27 +79,27 @@ public class EnumDescription : IOpenApiElement
 {
     public EnumDescription()
     {
-        
+
     }
     public EnumDescription(OpenApiObject source)
     {
-        if(source.TryGetValue("value", out var rawValue) && rawValue is OpenApiString value)
+        if (source.TryGetValue("value", out var rawValue) && rawValue is OpenApiString value)
             Value = value.Value;
-        if(source.TryGetValue("description", out var rawDescription) && rawDescription is OpenApiString description)
+        if (source.TryGetValue("description", out var rawDescription) && rawDescription is OpenApiString description)
             Description = description.Value;
-        if(source.TryGetValue("name", out var rawName) && rawName is OpenApiString name)
-            Name = name.Value; 
+        if (source.TryGetValue("name", out var rawName) && rawName is OpenApiString name)
+            Name = name.Value;
     }
     /// <summary>
     /// The description for the enum symbol
     /// </summary>
-    public string Description { get; set; }
+    public string Description { get; set; } = string.Empty;
     /// <summary>
     /// The symbol for the enum symbol to use for code-generation
     /// </summary>
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
     /// <summary>
     /// The symbol as described in the main enum schema.
     /// </summary>
-    public string Value { get; set; }
+    public string Value { get; set; } = string.Empty;
 }

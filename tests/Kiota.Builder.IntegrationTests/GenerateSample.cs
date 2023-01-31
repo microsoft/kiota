@@ -7,9 +7,10 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Kiota.Builder.IntegrationTests;
-public class GenerateSample :IDisposable
+public class GenerateSample : IDisposable
 {
-    public void Dispose() {
+    public void Dispose()
+    {
         _httpClient.Dispose();
         GC.SuppressFinalize(this);
     }
@@ -24,8 +25,10 @@ public class GenerateSample :IDisposable
     [InlineData(GenerationLanguage.PHP, false)]
     [InlineData(GenerationLanguage.TypeScript, true)]
     [Theory]
-    public async Task GeneratesTodo(GenerationLanguage language, bool backingStore) {
-        var logger = LoggerFactory.Create(builder => {
+    public async Task GeneratesTodo(GenerationLanguage language, bool backingStore)
+    {
+        var logger = LoggerFactory.Create(builder =>
+        {
         }).CreateLogger<KiotaBuilder>();
 
         var backingStoreSuffix = backingStore ? string.Empty : "BackingStore";
@@ -50,7 +53,8 @@ public class GenerateSample :IDisposable
     [Theory]
     public async Task GeneratesModelWithDictionary(GenerationLanguage language, bool backingStore)
     {
-        var logger = LoggerFactory.Create(builder => {
+        var logger = LoggerFactory.Create(builder =>
+        {
         }).CreateLogger<KiotaBuilder>();
 
         var backingStoreSuffix = backingStore ? "BackingStore" : string.Empty;
@@ -75,7 +79,8 @@ public class GenerateSample :IDisposable
     [Theory]
     public async Task GeneratesResponseWithMultipleReturnFormats(GenerationLanguage language, bool backingStore)
     {
-        var logger = LoggerFactory.Create(builder => {
+        var logger = LoggerFactory.Create(builder =>
+        {
         }).CreateLogger<KiotaBuilder>();
 
         var backingStoreSuffix = backingStore ? "BackingStore" : string.Empty;

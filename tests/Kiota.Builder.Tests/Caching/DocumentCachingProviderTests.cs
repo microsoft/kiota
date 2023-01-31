@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -7,9 +7,11 @@ using Xunit;
 
 namespace Kiota.Builder.Caching.Tests;
 
-public class DocumentCachingProviderTests {
+public class DocumentCachingProviderTests
+{
     [Fact]
-    public async Task DefensivePrograming() {
+    public async Task DefensivePrograming()
+    {
         using var client = new HttpClient();
         var mockLogger = new Mock<ILogger>().Object;
 
@@ -23,7 +25,8 @@ public class DocumentCachingProviderTests {
         await Assert.ThrowsAsync<ArgumentNullException>(async () => await provider.GetDocumentAsync(new Uri("https://localhost"), "foo", null));
     }
     [Fact]
-    public async Task GetsCached() {
+    public async Task GetsCached()
+    {
         using var client = new HttpClient();
         var mockLogger = new Mock<ILogger>().Object;
         var provider = new DocumentCachingProvider(client, mockLogger);
@@ -32,7 +35,8 @@ public class DocumentCachingProviderTests {
         Assert.NotEqual(0, result.Length);
     }
     [Fact]
-    public async Task GetsWhenCacheIsOutdated() {
+    public async Task GetsWhenCacheIsOutdated()
+    {
         using var client = new HttpClient();
         var mockLogger = new Mock<ILogger>().Object;
         var provider = new DocumentCachingProvider(client, mockLogger);
@@ -43,7 +47,8 @@ public class DocumentCachingProviderTests {
         Assert.NotEqual(0, result2.Length);
     }
     [Fact]
-    public async Task GetsWhenCacheIsCleared() {
+    public async Task GetsWhenCacheIsCleared()
+    {
         using var client = new HttpClient();
         var mockLogger = new Mock<ILogger>().Object;
         var provider = new DocumentCachingProvider(client, mockLogger);

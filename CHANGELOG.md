@@ -38,7 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where CLI query/header/path parameters would not be deduplicated. [#2059](https://github.com/microsoft/kiota/issues/2059)
 - Removes unused generated import for PHP Generation.
 - Fixed a bug where classes with namespace names are generated outside namespace in Python. [#2188](https://github.com/microsoft/kiota/issues/2188)
-- Changed signature of escaped reserved names from {x}_escaped to {x}_ in line with Python style guides. 
+- Changed signature of escaped reserved names from {x}_escaped to {x}_ in line with Python style guides.
+- Add null checks in generated Shell language code.
 
 ## [0.10.0] - 2023-01-04
 
