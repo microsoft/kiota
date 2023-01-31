@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Any;
@@ -8,9 +8,11 @@ using Xunit;
 
 namespace Kiota.Builder.Tests.OpenApiExtensions;
 
-public class OpenApiKiotaExtensionTests {
+public class OpenApiKiotaExtensionTests
+{
     [Fact]
-    public void Serializes() {
+    public void Serializes()
+    {
         var value = new OpenApiKiotaExtension
         {
             LanguagesInformation = new() {
@@ -31,14 +33,15 @@ public class OpenApiKiotaExtensionTests {
         };
         using TextWriter sWriter = new StringWriter();
         OpenApiJsonWriter writer = new(sWriter);
-        
+
 
         value.Write(writer, OpenApiSpecVersion.OpenApi3_0);
         var result = sWriter.ToString();
         Assert.Equal("{\n  \"languagesInformation\": {\n    \"CSharp\": {\n      \"maturityLevel\": \"Preview\",\n      \"dependencyInstallCommand\": \"dotnet add package\",\n      \"dependencies\": [\n        {\n          \"name\": \"Microsoft.Graph.Core\",\n          \"version\": \"1.0.0\"\n        }\n      ]\n    }\n  }\n}", result);
     }
     [Fact]
-    public void Parses() {
+    public void Parses()
+    {
         var oaiValue = new OpenApiObject
         {
             { "languagesInformation", new OpenApiObject {

@@ -1,14 +1,17 @@
-using Kiota.Builder.CodeDOM;
+﻿using Kiota.Builder.CodeDOM;
 using Xunit;
 
 namespace Kiota.Builder.Tests.CodeDOM;
-public class CodeIndexerTests {
+public class CodeIndexerTests
+{
     [Fact]
-    public void IndexerInits() {
+    public void IndexerInits()
+    {
         _ = new CodeIndexer
         {
             Name = "idx",
-            Documentation = new() {
+            Documentation = new()
+            {
                 Description = "some description",
             },
             IndexType = new CodeType(),

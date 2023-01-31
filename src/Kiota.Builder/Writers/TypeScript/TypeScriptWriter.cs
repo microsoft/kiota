@@ -1,21 +1,20 @@
 ﻿using Kiota.Builder.PathSegmenters;
 
-namespace Kiota.Builder.Writers.TypeScript
+namespace Kiota.Builder.Writers.TypeScript;
+
+public class TypeScriptWriter : LanguageWriter
 {
-    public class TypeScriptWriter : LanguageWriter
+    public TypeScriptWriter(string rootPath, string clientNamespaceName, bool usesBackingStore = false)
     {
-        public TypeScriptWriter(string rootPath, string clientNamespaceName, bool usesBackingStore = false)
-        {
-            PathSegmenter = new TypeScriptPathSegmenter(rootPath,clientNamespaceName);
-            var conventionService = new TypeScriptConventionService(this);
-            AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
-            AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
-            AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
-            AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService, usesBackingStore));
-            AddOrReplaceCodeElementWriter(new CodeFunctionWriter(conventionService, clientNamespaceName));
-            AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
-            AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
-            AddOrReplaceCodeElementWriter(new CodeNameSpaceWriter(conventionService));
-        }
+        PathSegmenter = new TypeScriptPathSegmenter(rootPath, clientNamespaceName);
+        var conventionService = new TypeScriptConventionService(this);
+        AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
+        AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
+        AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
+        AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService, usesBackingStore));
+        AddOrReplaceCodeElementWriter(new CodeFunctionWriter(conventionService, clientNamespaceName));
+        AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
+        AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
+        AddOrReplaceCodeElementWriter(new CodeNameSpaceWriter(conventionService));
     }
 }

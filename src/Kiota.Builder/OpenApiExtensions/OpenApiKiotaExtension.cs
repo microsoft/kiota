@@ -1,4 +1,4 @@
-
+﻿
 
 using System;
 using System.Linq;
@@ -11,7 +11,8 @@ using Microsoft.OpenApi.Writers;
 
 namespace Kiota.Builder.OpenApiExtensions;
 
-public class OpenApiKiotaExtension : IOpenApiExtension {
+public class OpenApiKiotaExtension : IOpenApiExtension
+{
     /// <summary>
     /// Name of the extension as used in the description.
     /// </summary>
@@ -21,7 +22,7 @@ public class OpenApiKiotaExtension : IOpenApiExtension {
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if(LanguagesInformation != null &&
+        if (LanguagesInformation != null &&
             LanguagesInformation.Any())
         {
             writer.WriteStartObject();
@@ -33,7 +34,8 @@ public class OpenApiKiotaExtension : IOpenApiExtension {
     {
         if (source is not OpenApiObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
         var extension = new OpenApiKiotaExtension();
-        if (rawObject.TryGetValue(nameof(LanguagesInformation).ToFirstCharacterLowerCase(), out var languagesInfo) && languagesInfo is OpenApiObject objectValue) {
+        if (rawObject.TryGetValue(nameof(LanguagesInformation).ToFirstCharacterLowerCase(), out var languagesInfo) && languagesInfo is OpenApiObject objectValue)
+        {
             extension.LanguagesInformation = LanguagesInformation.Parse(objectValue);
         }
         return extension;

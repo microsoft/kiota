@@ -3,27 +3,32 @@
 using Xunit;
 
 namespace Kiota.Builder.Tests.Extensions;
-public class StringExtensionsTests {
+public class StringExtensionsTests
+{
     [Fact]
-    public void Defensive() {
+    public void Defensive()
+    {
         Assert.Equal(StringExtensions.GetNamespaceImportSymbol(null), string.Empty);
     }
     [Fact]
-    public void ToLowerCase() {
+    public void ToLowerCase()
+    {
         string nString = null;
         Assert.Empty(nString.ToFirstCharacterLowerCase());
         Assert.Equal(string.Empty, string.Empty.ToFirstCharacterLowerCase());
         Assert.Equal("toto", "Toto".ToFirstCharacterLowerCase());
     }
     [Fact]
-    public void ToUpperCase() {
+    public void ToUpperCase()
+    {
         string nString = null;
         Assert.Empty(nString.ToFirstCharacterUpperCase());
         Assert.Equal(string.Empty, string.Empty.ToFirstCharacterUpperCase());
         Assert.Equal("Toto", "toto".ToFirstCharacterUpperCase());
     }
     [Fact]
-    public void ToCamelCase() {
+    public void ToCamelCase()
+    {
         string nString = null;
         Assert.Empty(nString.ToCamelCase());
         Assert.Equal(string.Empty, string.Empty.ToCamelCase());
@@ -33,7 +38,8 @@ public class StringExtensionsTests {
         Assert.Equal("totoCamelCase", "toto.camel~case".ToCamelCase('.', '~'));
     }
     [Fact]
-    public void ToPascalCase() {
+    public void ToPascalCase()
+    {
         string nString = null;
         Assert.Empty(nString.ToPascalCase());
         Assert.Equal(string.Empty, string.Empty.ToPascalCase());
@@ -41,14 +47,16 @@ public class StringExtensionsTests {
         Assert.Equal("TotoPascalCase", "toto-pascal-case".ToPascalCase());
     }
     [Fact]
-    public void ReplaceValueIdentifier() {
+    public void ReplaceValueIdentifier()
+    {
         string nString = null;
         Assert.Empty(nString.ReplaceValueIdentifier());
         Assert.Equal(string.Empty, string.Empty.ReplaceValueIdentifier());
         Assert.Equal("microsoft.graph.message.Content", "microsoft.graph.message.$value".ReplaceValueIdentifier());
     }
     [Fact]
-    public void ToSnakeCase() {
+    public void ToSnakeCase()
+    {
         string nString = null;
         Assert.Empty(nString.ToSnakeCase());
         Assert.Equal(string.Empty, string.Empty.ToSnakeCase());
@@ -60,7 +68,8 @@ public class StringExtensionsTests {
         Assert.Equal("test", "test<Value".ToSnakeCase());
     }
     [Fact]
-    public void NormalizeNameSpaceName() {
+    public void NormalizeNameSpaceName()
+    {
         string nString = null;
         Assert.Empty(nString.NormalizeNameSpaceName("."));
         Assert.Equal(string.Empty, string.Empty.NormalizeNameSpaceName("."));
@@ -74,7 +83,8 @@ public class StringExtensionsTests {
     [InlineData("kebab-cased", "kebabCased")]
     [InlineData("123Spelled", "OneTwoThreeSpelled")]
     [Theory]
-    public void CleansUpSymbolNames(string input, string expected) {
+    public void CleansUpSymbolNames(string input, string expected)
+    {
         Assert.Equal(expected, input.CleanupSymbolName());
     }
 }

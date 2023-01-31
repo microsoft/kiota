@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -8,10 +8,14 @@ public record ApiEntry(DateTimeOffset? added, string preferred, Dictionary<strin
 
 public record ApiVersion(DateTimeOffset? added, ApiInformation info, DateTimeOffset? updated, Uri swaggerUrl, Uri swaggerYamlUrl, string openApiVer);
 
-public record ApiInformation {
-    public ApiContact? contact { get; set;}
-    public string description { get; set;} = string.Empty;
-    public string title { get; set;} = string.Empty;
+public record ApiInformation
+{
+    public ApiContact? contact
+    {
+        get; set;
+    }
+    public string description { get; set; } = string.Empty;
+    public string title { get; set; } = string.Empty;
 }
 
 public record ApiContact(string email, string name, Uri url);

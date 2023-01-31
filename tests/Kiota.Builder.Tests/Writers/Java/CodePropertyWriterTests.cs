@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 
 using Kiota.Builder.CodeDOM;
@@ -7,7 +7,8 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Java;
-public class CodePropertyWriterTests: IDisposable {
+public class CodePropertyWriterTests : IDisposable
+{
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
     private readonly StringWriter tw;
@@ -16,12 +17,14 @@ public class CodePropertyWriterTests: IDisposable {
     private readonly CodeClass parentClass;
     private const string PropertyName = "propertyName";
     private const string TypeName = "Somecustomtype";
-    public CodePropertyWriterTests() {
+    public CodePropertyWriterTests()
+    {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
-        parentClass = new CodeClass {
+        parentClass = new CodeClass
+        {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
@@ -33,26 +36,32 @@ public class CodePropertyWriterTests: IDisposable {
                 Name = TypeName
             }
         };
-        parentClass.AddProperty(property, new() {
+        parentClass.AddProperty(property, new()
+        {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "PathParameters",
             },
-        }, new() {
+        }, new()
+        {
             Name = "requestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "RequestAdapter",
             },
         });
     }
-    public void Dispose() {
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesRequestBuilder() {
+    public void WritesRequestBuilder()
+    {
         property.Kind = CodePropertyKind.RequestBuilder;
         writer.Write(property);
         var result = tw.ToString();
@@ -61,7 +70,8 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.Contains("pathParameters", result);
     }
     [Fact]
-    public void WritesCustomProperty() {
+    public void WritesCustomProperty()
+    {
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();
@@ -69,12 +79,15 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.Contains("@javax.annotation.Nullable", result);
     }
     [Fact]
-    public void WritesFlagEnums() {
+    public void WritesFlagEnums()
+    {
         property.Kind = CodePropertyKind.Custom;
-        property.Type = new CodeType {
+        property.Type = new CodeType
+        {
             Name = "customEnum",
         };
-        (property.Type as CodeType).TypeDefinition = new CodeEnum {
+        (property.Type as CodeType).TypeDefinition = new CodeEnum
+        {
             Name = "customEnumType",
             Flags = true,
         };
@@ -83,7 +96,8 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.Contains("EnumSet", result);
     }
     [Fact]
-    public void WritesNonNull() {
+    public void WritesNonNull()
+    {
         property.Kind = CodePropertyKind.Custom;
         (property.Type as CodeType).IsNullable = false;
         writer.Write(property);
@@ -91,7 +105,8 @@ public class CodePropertyWriterTests: IDisposable {
         Assert.Contains("@javax.annotation.Nonnull", result);
     }
     [Fact]
-    public void WritesSerializationAnnotation() {
+    public void WritesSerializationAnnotation()
+    {
         property.Kind = CodePropertyKind.QueryParameter;
         property.SerializationName = "someserializationname";
         writer.Write(property);

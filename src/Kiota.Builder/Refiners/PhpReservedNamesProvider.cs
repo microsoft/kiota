@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Kiota.Builder.Refiners
 {
-    public class PhpReservedNamesProvider: IReservedNamesProvider
+    public class PhpReservedNamesProvider : IReservedNamesProvider
     {
         private readonly Lazy<HashSet<string>> _reservedNames = new(() => new(StringComparer.OrdinalIgnoreCase) {
             "abstract",

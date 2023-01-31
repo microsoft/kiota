@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 
 namespace Kiota.Web;
 
@@ -8,7 +8,8 @@ public abstract class ComponentWithCancellationToken : ComponentBase, IDisposabl
 
     protected CancellationToken ComponentDetached => _cancellationTokenSource.Token;
 
-    public void Dispose() {
+    public void Dispose()
+    {
         Dispose(true);
         GC.SuppressFinalize(this);
     }

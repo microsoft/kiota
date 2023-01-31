@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -11,20 +11,23 @@ using Xunit;
 
 namespace Kiota.Builder.Tests.SearchProviders.GitHub.Authentication;
 
-public class TempFolderCachingAccessTokenProviderTests {
+public class TempFolderCachingAccessTokenProviderTests
+{
     [Fact]
-    public async Task CachesToken() {
+    public async Task CachesToken()
+    {
         var concreteProvider = new Mock<IAccessTokenProvider>();
         concreteProvider.Setup(x => x.GetAuthorizationTokenAsync(It.IsAny<Uri>(), It.IsAny<Dictionary<string, object>>(), It.IsAny<CancellationToken>()))
                         .ReturnsAsync("foo");
-        var cachingProvider = new TempFolderCachingAccessTokenProvider {
+        var cachingProvider = new TempFolderCachingAccessTokenProvider
+        {
             Logger = new Mock<ILogger>().Object,
-            ApiBaseUrl = new ("https://api.github.com"),
+            ApiBaseUrl = new("https://api.github.com"),
             AppId = Path.GetRandomFileName(),
             Concrete = concreteProvider.Object,
         };
-        Assert.Equal("foo", await cachingProvider.GetAuthorizationTokenAsync(new ("https://api.github.com"), new (), new ()));
-        await cachingProvider.GetAuthorizationTokenAsync(new ("https://api.github.com"), new (), new ());
+        Assert.Equal("foo", await cachingProvider.GetAuthorizationTokenAsync(new("https://api.github.com"), new(), new()));
+        await cachingProvider.GetAuthorizationTokenAsync(new("https://api.github.com"), new(), new());
         concreteProvider.Verify(x => x.GetAuthorizationTokenAsync(It.IsAny<Uri>(), It.IsAny<Dictionary<string, object>>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 using Kiota.Builder.CodeDOM;
@@ -13,7 +13,7 @@ public class CodeUsingDeclarationNameComparer : IEqualityComparer<CodeUsing>
         x != null &&
         y != null &&
         GetHashCode(x) == GetHashCode(y);
-    public int GetHashCode([DisallowNull] CodeUsing obj) => 
+    public int GetHashCode([DisallowNull] CodeUsing obj) =>
         (string.IsNullOrEmpty(obj?.Name) ? 0 : obj.Name.GetHashCode(OrdinalIgnoreCase)) * 7 +
         (string.IsNullOrEmpty(obj?.Declaration?.Name) ? 0 : obj.Declaration.Name.GetHashCode(OrdinalIgnoreCase));
 }

@@ -4,13 +4,15 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.TypeScript;
-public class CodeUsingWriter {
+public class CodeUsingWriter
+{
     private readonly TypescriptRelativeImportManager _relativeImportManager;
     public CodeUsingWriter(string clientNamespaceName)
     {
         _relativeImportManager = new TypescriptRelativeImportManager(clientNamespaceName, '.');
     }
-    public void WriteCodeElement(IEnumerable<CodeUsing> usings, CodeNamespace parentNamespace, LanguageWriter writer ) {
+    public void WriteCodeElement(IEnumerable<CodeUsing> usings, CodeNamespace parentNamespace, LanguageWriter writer)
+    {
         var externalImportSymbolsAndPaths = usings
                                                 .Where(static x => x.IsExternal)
                                                 .Select(static x => (x.Name, string.Empty, x.Declaration?.Name ?? string.Empty));
@@ -25,7 +27,8 @@ public class CodeUsingWriter {
 
         writer.WriteLine();
     }
-    private static string GetAliasedSymbol(string symbol, string alias) {
+    private static string GetAliasedSymbol(string symbol, string alias)
+    {
         return string.IsNullOrEmpty(alias) ? symbol : $"{symbol} as {alias}";
     }
 }

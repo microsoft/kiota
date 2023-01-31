@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -8,11 +8,14 @@ using Microsoft.CodeAnalysis;
 public class KiotaAppSettingsGenerator : ISourceGenerator
 {
 
-    private string findFileAndRead(string directory, string name, int maxDepth) {
-        try {
+    private string findFileAndRead(string directory, string name, int maxDepth)
+    {
+        try
+        {
             using var reader = new StreamReader(Path.Join(directory, name), Encoding.UTF8);
             return reader.ReadToEnd();
-        } catch (FileNotFoundException e)
+        }
+        catch (FileNotFoundException e)
         {
             if (maxDepth > 0)
                 return findFileAndRead(Path.Join(directory, ".."), name, maxDepth - 1);

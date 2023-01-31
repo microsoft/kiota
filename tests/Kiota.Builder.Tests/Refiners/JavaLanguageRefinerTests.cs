@@ -8,7 +8,8 @@ using Kiota.Builder.Refiners;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
-public class JavaLanguageRefinerTests {
+public class JavaLanguageRefinerTests
+{
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLanguageRefinerTests
     [Fact]
@@ -18,7 +19,8 @@ public class JavaLanguageRefinerTests {
         {
             Name = "model",
         }).First();
-        var option = new CodeEnumOption {
+        var option = new CodeEnumOption
+        {
             Name = "break", // this a keyword
         };
         model.AddOption(option);
@@ -27,8 +29,10 @@ public class JavaLanguageRefinerTests {
         Assert.Equal("break", option.SerializationName);
     }
     [Fact]
-    public async Task AddsExceptionInheritanceOnErrorClasses() {
-        var model = root.AddClass(new CodeClass {
+    public async Task AddsExceptionInheritanceOnErrorClasses()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "somemodel",
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
@@ -41,41 +45,50 @@ public class JavaLanguageRefinerTests {
         Assert.Equal("ApiException", declaration.Inherits.Name);
     }
     [Fact]
-    public async Task FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
-        var model = root.AddClass(new CodeClass {
+    public async Task FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "somemodel",
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
         var declaration = model.StartBlock;
-        declaration.Inherits = new CodeType {
+        declaration.Inherits = new CodeType
+        {
             Name = "SomeOtherModel"
         };
         await Assert.ThrowsAsync<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root));
     }
     [Fact]
-    public async Task AddsUsingsForErrorTypesForRequestExecutor() {
-        var requestBuilder = root.AddClass(new CodeClass {
+    public async Task AddsUsingsForErrorTypesForRequestExecutor()
+    {
+        var requestBuilder = root.AddClass(new CodeClass
+        {
             Name = "somerequestbuilder",
             Kind = CodeClassKind.RequestBuilder,
         }).First();
         var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
-        var errorClass = subNS.AddClass(new CodeClass {
+        var errorClass = subNS.AddClass(new CodeClass
+        {
             Name = "Error4XX",
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var requestExecutor = requestBuilder.AddMethod(new CodeMethod {
+        var requestExecutor = requestBuilder.AddMethod(new CodeMethod
+        {
             Name = "get",
             Kind = CodeMethodKind.RequestExecutor,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             },
         }).First();
-        requestExecutor.AddErrorMapping("4XX", new CodeType {
-                        Name = "Error4XX",
-                        TypeDefinition = errorClass,
-                    });
+        requestExecutor.AddErrorMapping("4XX", new CodeType
+        {
+            Name = "Error4XX",
+            TypeDefinition = errorClass,
+        });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
 
         var declaration = requestBuilder.StartBlock;
@@ -83,15 +96,19 @@ public class JavaLanguageRefinerTests {
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
     [Fact]
-    public async Task EscapesReservedKeywordsInInternalDeclaration() {
-        var model = root.AddClass(new CodeClass {
+    public async Task EscapesReservedKeywordsInInternalDeclaration()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "break",
             Kind = CodeClassKind.Model
         }).First();
-        var nUsing = new CodeUsing {
+        var nUsing = new CodeUsing
+        {
             Name = "some.ns",
         };
-        nUsing.Declaration = new CodeType {
+        nUsing.Declaration = new CodeType
+        {
             Name = "break",
             IsExternal = false,
         };
@@ -101,8 +118,10 @@ public class JavaLanguageRefinerTests {
         Assert.Contains("escaped", nUsing.Declaration.Name);
     }
     [Fact]
-    public async Task EscapesReservedKeywords() {
-        var model = root.AddClass(new CodeClass {
+    public async Task EscapesReservedKeywords()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "break",
             Kind = CodeClassKind.Model
         }).First();
@@ -111,19 +130,24 @@ public class JavaLanguageRefinerTests {
         Assert.Contains("escaped", model.Name);
     }
     [Fact]
-    public async Task AddsDefaultImports() {
-        var model = root.AddClass(new CodeClass {
+    public async Task AddsDefaultImports()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var requestBuilder = root.AddClass(new CodeClass {
+        var requestBuilder = root.AddClass(new CodeClass
+        {
             Name = "rb",
             Kind = CodeClassKind.RequestBuilder,
         }).First();
-        requestBuilder.AddMethod(new CodeMethod {
+        requestBuilder.AddMethod(new CodeMethod
+        {
             Name = "get",
             Kind = CodeMethodKind.RequestExecutor,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string",
             },
         });
@@ -132,14 +156,18 @@ public class JavaLanguageRefinerTests {
         Assert.NotEmpty(requestBuilder.StartBlock.Usings);
     }
     [Fact]
-    public async Task ReplacesDateTimeOffsetByNativeType() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesDateTimeOffsetByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "DateTimeOffset"
             },
         }).First();
@@ -148,14 +176,18 @@ public class JavaLanguageRefinerTests {
         Assert.Equal("OffsetDateTime", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesDateOnlyByNativeType() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesDateOnlyByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "DateOnly"
             },
         }).First();
@@ -164,14 +196,18 @@ public class JavaLanguageRefinerTests {
         Assert.Equal("LocalDate", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesTimeOnlyByNativeType() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesTimeOnlyByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "TimeOnly"
             },
         }).First();
@@ -180,14 +216,18 @@ public class JavaLanguageRefinerTests {
         Assert.Equal("LocalTime", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesDurationByNativeType() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesDurationByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "TimeSpan"
             },
         }).First();
@@ -196,14 +236,18 @@ public class JavaLanguageRefinerTests {
         Assert.Equal("Period", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesBinaryByNativeType() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesBinaryByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        var method = model.AddMethod(new CodeMethod {
+        var method = model.AddMethod(new CodeMethod
+        {
             Name = "method",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "binary"
             },
         }).First();
@@ -212,43 +256,54 @@ public class JavaLanguageRefinerTests {
         Assert.NotEqual("binary", method.ReturnType.Name);
     }
     [Fact]
-    public async Task ReplacesIndexersByMethodsWithParameter() {
-        var model = root.AddClass(new CodeClass {
+    public async Task ReplacesIndexersByMethodsWithParameter()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
         var collectionNS = root.AddNamespace("collection");
         var itemsNs = collectionNS.AddNamespace($"{collectionNS.Name}.items");
-        var requestBuilder = itemsNs.AddClass(new CodeClass {
+        var requestBuilder = itemsNs.AddClass(new CodeClass
+        {
             Name = "requestBuilder",
             Kind = CodeClassKind.RequestBuilder
         }).First();
-        requestBuilder.AddProperty(new CodeProperty {
+        requestBuilder.AddProperty(new CodeProperty
+        {
             Name = "urlTemplate",
             DefaultValue = "path",
             Kind = CodePropertyKind.UrlTemplate,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string",
             }
         });
-        requestBuilder.SetIndexer(new CodeIndexer {
+        requestBuilder.SetIndexer(new CodeIndexer
+        {
             Name = "idx",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = requestBuilder.Name,
                 TypeDefinition = requestBuilder,
             },
-            IndexType = new CodeType {
+            IndexType = new CodeType
+            {
                 Name = "string",
             },
         });
-        var collectionRequestBuilder = collectionNS.AddClass(new CodeClass {
+        var collectionRequestBuilder = collectionNS.AddClass(new CodeClass
+        {
             Name = "CollectionRequestBuilder",
             Kind = CodeClassKind.RequestBuilder,
         }).First();
-        collectionRequestBuilder.AddProperty(new CodeProperty {
+        collectionRequestBuilder.AddProperty(new CodeProperty
+        {
             Name = "collection",
             Kind = CodePropertyKind.RequestBuilder,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = requestBuilder.Name,
                 TypeDefinition = requestBuilder,
             },
@@ -281,7 +336,8 @@ public class JavaLanguageRefinerTests {
             Name = "cancelletionToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
-            Documentation = new() {
+            Documentation = new()
+            {
                 Description = "Cancellation token to use when cancelling requests",
             },
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
@@ -294,16 +350,21 @@ public class JavaLanguageRefinerTests {
     #endregion
     #region JavaLanguageRefinerTests
     [Fact]
-    public async Task AddsEnumSetImport() {
-        var model = root.AddClass(new CodeClass {
+    public async Task AddsEnumSetImport()
+    {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        model.AddProperty(new CodeProperty{
+        model.AddProperty(new CodeProperty
+        {
             Name = "prop1",
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "SomeEnum",
-                TypeDefinition = new CodeEnum {
+                TypeDefinition = new CodeEnum
+                {
                     Name = "SomeEnum",
                     Flags = true,
                     Parent = root,
@@ -314,65 +375,82 @@ public class JavaLanguageRefinerTests {
         Assert.NotEmpty(model.StartBlock.Usings.Where(x => "EnumSet".Equals(x.Name)));
     }
     [Fact]
-    public async Task CorrectsCoreType() {
+    public async Task CorrectsCoreType()
+    {
         const string requestAdapterDefaultName = "IRequestAdapter";
         const string factoryDefaultName = "ISerializationWriterFactory";
         const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
         const string dateTimeOffsetDefaultName = "DateTimeOffset";
         const string additionalDataDefaultName = "new Dictionary<string, object>()";
-        var model = root.AddClass(new CodeClass {
+        var model = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        model.AddProperty(new () {
+        model.AddProperty(new()
+        {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = requestAdapterDefaultName
             }
-        }, new () {
+        }, new()
+        {
             Name = "someDate",
             Kind = CodePropertyKind.Custom,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = dateTimeOffsetDefaultName,
             }
-        }, new () {
+        }, new()
+        {
             Name = "additionalData",
             Kind = CodePropertyKind.AdditionalData,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = additionalDataDefaultName
             }
         });
         const string additionalDataHolderDefaultName = "IAdditionalDataHolder";
-        model.StartBlock.AddImplements(new CodeType {
+        model.StartBlock.AddImplements(new CodeType
+        {
             Name = additionalDataHolderDefaultName,
             IsExternal = true,
         });
-        var executorMethod = model.AddMethod(new CodeMethod {
+        var executorMethod = model.AddMethod(new CodeMethod
+        {
             Name = "executor",
             Kind = CodeMethodKind.RequestExecutor,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
-        }, new () {
+        }, new()
+        {
             Name = "deserializeFields",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = deserializeDefaultName,
             },
             Kind = CodeMethodKind.Deserializer
         }).First();
         const string serializerDefaultName = "ISerializationWriter";
-        var serializationMethod = model.AddMethod(new CodeMethod {
+        var serializationMethod = model.AddMethod(new CodeMethod
+        {
             Name = "seriailization",
             Kind = CodeMethodKind.Serializer,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         }).First();
-        serializationMethod.AddParameter(new CodeParameter {
+        serializationMethod.AddParameter(new CodeParameter
+        {
             Name = "handler",
             Kind = CodeParameterKind.Serializer,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = serializerDefaultName,
             }
         });
@@ -384,39 +462,49 @@ public class JavaLanguageRefinerTests {
         Assert.Empty(model.Methods.Where(static x => deserializeDefaultName.Equals(x.ReturnType.Name)));
         Assert.Empty(model.Methods.SelectMany(static x => x.Parameters).Where(static x => serializerDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.StartBlock.Implements.Where(static x => additionalDataHolderDefaultName.Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
-        Assert.Contains( additionalDataHolderDefaultName[1..], model.StartBlock.Implements.Select(static x => x.Name).ToList());
+        Assert.Contains(additionalDataHolderDefaultName[1..], model.StartBlock.Implements.Select(static x => x.Name).ToList());
     }
     [Fact]
-    public async Task AddsMethodsOverloads() {
-        var builder = root.AddClass(new CodeClass {
+    public async Task AddsMethodsOverloads()
+    {
+        var builder = root.AddClass(new CodeClass
+        {
             Name = "model",
             Kind = CodeClassKind.RequestBuilder
         }).First();
-        var executor = builder.AddMethod(new CodeMethod {
+        var executor = builder.AddMethod(new CodeMethod
+        {
             Name = "executor",
             Kind = CodeMethodKind.RequestExecutor,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         }).First();
-        executor.AddParameter(new() {
+        executor.AddParameter(new()
+        {
             Name = "config",
             Kind = CodeParameterKind.RequestConfiguration,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         },
-        new() {
+        new()
+        {
             Name = "body",
             Kind = CodeParameterKind.RequestBody,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         });
-        var generator = builder.AddMethod(new CodeMethod {
+        var generator = builder.AddMethod(new CodeMethod
+        {
             Name = "generator",
             Kind = CodeMethodKind.RequestGenerator,
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "string"
             }
         }).First();
@@ -431,27 +519,33 @@ public class JavaLanguageRefinerTests {
         Assert.Equal(2, childMethods.Count(x => x.IsOverload));
     }
     [Fact]
-    public async Task SplitsLongRefiners() {
-        var model = new CodeClass {
+    public async Task SplitsLongRefiners()
+    {
+        var model = new CodeClass
+        {
             Kind = CodeClassKind.Model,
             Name = "model",
         };
         model.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
 
-        var otherModel = new CodeClass {
+        var otherModel = new CodeClass
+        {
             Kind = CodeClassKind.Model,
             Name = "otherModel"
         };
         root.AddClass(otherModel);
 
-        Enumerable.Range(0, 1500).ToList().ForEach(x => model.DiscriminatorInformation.AddDiscriminatorMapping($"#microsoft.graph.{x}", new CodeType {
+        Enumerable.Range(0, 1500).ToList().ForEach(x => model.DiscriminatorInformation.AddDiscriminatorMapping($"#microsoft.graph.{x}", new CodeType
+        {
             Name = $"microsoft.graph.{x}",
             TypeDefinition = otherModel,
         }));
-        model.AddMethod(new CodeMethod {
+        model.AddMethod(new CodeMethod
+        {
             Kind = CodeMethodKind.Factory,
             Name = "factory",
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "model",
                 TypeDefinition = model,
             },

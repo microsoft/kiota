@@ -1,19 +1,23 @@
-using System;
+﻿using System;
 using Kiota.Builder.Extensions;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers;
-public class UriExtensionsTests {
+public class UriExtensionsTests
+{
     [Fact]
-    public void Defensive() {
+    public void Defensive()
+    {
         Assert.Empty(UriExtensions.GetFileName(null));
     }
     [Fact]
-    public void GetsFileName() {
+    public void GetsFileName()
+    {
         Assert.Equal("todo.yml", new Uri("https://contoso.com/todo.yml").GetFileName());
     }
     [Fact]
-    public void StripsQueryParameters() {
+    public void StripsQueryParameters()
+    {
         Assert.Equal("todo.yml", new Uri("https://contoso.com/todo.yml?foo=bar").GetFileName());
     }
 }

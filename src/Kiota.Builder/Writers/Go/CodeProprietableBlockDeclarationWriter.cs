@@ -5,10 +5,10 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go;
-public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWriter<T, GoConventionService> 
+public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWriter<T, GoConventionService>
     where T : ProprietableBlockDeclaration
 {
-    protected CodeProprietableBlockDeclarationWriter(GoConventionService conventionService) : base(conventionService) {}
+    protected CodeProprietableBlockDeclarationWriter(GoConventionService conventionService) : base(conventionService) { }
 
     public override void WriteCodeElement(T codeElement, LanguageWriter writer)
     {

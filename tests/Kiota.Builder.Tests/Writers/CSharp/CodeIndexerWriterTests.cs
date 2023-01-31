@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 
 using Kiota.Builder.CodeDOM;
@@ -15,12 +15,14 @@ public class CodeIndexerWriterTests : IDisposable
     private readonly LanguageWriter writer;
     private readonly CodeClass parentClass;
     private readonly CodeIndexer indexer;
-    public CodeIndexerWriterTests() {
+    public CodeIndexerWriterTests()
+    {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
-        parentClass = new CodeClass {
+        parentClass = new CodeClass
+        {
             Name = "parentClass"
         };
         root.AddClass(parentClass);
@@ -38,26 +40,32 @@ public class CodeIndexerWriterTests : IDisposable
             }
         };
         parentClass.SetIndexer(indexer);
-        parentClass.AddProperty(new() {
+        parentClass.AddProperty(new()
+        {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
-        }, new() {
+        }, new()
+        {
             Name = "requestAdapter",
             Kind = CodePropertyKind.RequestAdapter,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "string"
             }
         });
     }
-    public void Dispose() {
+    public void Dispose()
+    {
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesIndexer() {
+    public void WritesIndexer()
+    {
         writer.Write(indexer);
         var result = tw.ToString();
         Assert.Contains("RequestAdapter", result);

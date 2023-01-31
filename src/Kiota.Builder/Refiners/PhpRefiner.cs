@@ -9,15 +9,16 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
-public class PhpRefiner: CommonLanguageRefiner
+public class PhpRefiner : CommonLanguageRefiner
 {
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
     public PhpRefiner(GenerationConfiguration configuration) : base(configuration) { }
-    
-    
+
+
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        return Task.Run(() => {
+        return Task.Run(() =>
+        {
             cancellationToken.ThrowIfCancellationRequested();
             // Imports should be done before adding getters and setters since AddGetterAndSetterMethods can remove properties from classes when backing store is enabled
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
@@ -29,7 +30,7 @@ public class PhpRefiner: CommonLanguageRefiner
             AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
             RemoveCancellationParameter(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode, 
+            ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
                 false);
             cancellationToken.ThrowIfCancellationRequested();
@@ -46,18 +47,18 @@ public class PhpRefiner: CommonLanguageRefiner
             var defaultConfiguration = new GenerationConfiguration();
             ReplaceDefaultSerializationModules(generatedCode,
                 defaultConfiguration.Serializers,
-                new (StringComparer.OrdinalIgnoreCase) {
+                new(StringComparer.OrdinalIgnoreCase) {
                     "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory",
                     "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory"}
             );
-            ReplaceDefaultDeserializationModules(generatedCode, 
+            ReplaceDefaultDeserializationModules(generatedCode,
                 defaultConfiguration.Deserializers,
-                new (StringComparer.OrdinalIgnoreCase) {
+                new(StringComparer.OrdinalIgnoreCase) {
                     "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory",
                     "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"}
             );
             cancellationToken.ThrowIfCancellationRequested();
-            AddSerializationModulesImport(generatedCode, new []{"Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"}, null, '\\');
+            AddSerializationModulesImport(generatedCode, new[] { "Microsoft\\Kiota\\Abstractions\\ApiClientBuilder" }, null, '\\');
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             AddInnerClasses(generatedCode,
@@ -132,7 +133,7 @@ public class PhpRefiner: CommonLanguageRefiner
             })
         }
     };
-    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
+    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "Microsoft\\Kiota\\Abstractions", "RequestAdapter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -165,33 +166,43 @@ public class PhpRefiner: CommonLanguageRefiner
         new (static x => x is CodeClass { OriginalComposedType: CodeIntersectionType intersectionType } && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             "Microsoft\\Kiota\\Serialization", "ParseNodeHelper"),
     };
-    private static void CorrectPropertyType(CodeProperty currentProperty) {
-        if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
+    private static void CorrectPropertyType(CodeProperty currentProperty)
+    {
+        if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
+        {
             currentProperty.Type.Name = "RequestAdapter";
             currentProperty.Type.IsNullable = false;
         }
-        else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+        else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
             currentProperty.Type.Name = currentProperty.Type.Name[1..];
-        else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
+        else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
+        {
             currentProperty.Type.Name = "array";
             currentProperty.Type.IsNullable = false;
             currentProperty.DefaultValue = "[]";
             currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
-        } else if(currentProperty.IsOfKind(CodePropertyKind.UrlTemplate)) {
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.UrlTemplate))
+        {
             currentProperty.Type.IsNullable = false;
-        } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
+        {
             currentProperty.Type.IsNullable = false;
             currentProperty.Type.Name = "array";
             currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
-            if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
+            if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "[]";
-        } else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))
         {
             currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
-        } else if (currentProperty.Type.Name?.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) ?? false)
+        }
+        else if (currentProperty.Type.Name?.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) ?? false)
         {
             currentProperty.Type.Name = "DateTime";
-        } else if (currentProperty.IsOfKind(CodePropertyKind.Options, CodePropertyKind.Headers))
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.Options, CodePropertyKind.Headers))
         {
             currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
             currentProperty.Type.Name = "array";
@@ -207,12 +218,13 @@ public class PhpRefiner: CommonLanguageRefiner
         }
         CorrectCoreTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
             .Select(static x => x.Type)
-            .Union(new[] { method.ReturnType})
+            .Union(new[] { method.ReturnType })
             .ToArray());
     }
     private static void CorrectParameterType(CodeElement codeElement)
     {
-        if (codeElement is CodeMethod currentMethod) {
+        if (codeElement is CodeMethod currentMethod)
+        {
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ParseNode)).ToList().ForEach(static x =>
             {
                 x.Type.Name = "ParseNode";
@@ -226,12 +238,15 @@ public class PhpRefiner: CommonLanguageRefiner
         }
         CrawlTree(codeElement, CorrectParameterType);
     }
-    private static void CorrectImplements(ProprietableBlockDeclaration block) {
+    private static void CorrectImplements(ProprietableBlockDeclaration block)
+    {
         block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
     }
 
-    private static void AliasUsingWithSameSymbol(CodeElement currentElement) {
-        if(currentElement is CodeClass currentClass && currentClass.StartBlock != null && currentClass.StartBlock.Usings.Any(x => !x.IsExternal)) {
+    private static void AliasUsingWithSameSymbol(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.StartBlock != null && currentClass.StartBlock.Usings.Any(x => !x.IsExternal))
+        {
             var duplicatedSymbolsUsings = currentClass.StartBlock.Usings
                 .Distinct(usingComparer)
                 .Where(static x => !string.IsNullOrEmpty(x.Declaration?.Name) && x.Declaration.TypeDefinition != null)
@@ -247,7 +262,7 @@ public class PhpRefiner: CommonLanguageRefiner
             foreach (var usingElement in duplicatedSymbolsUsings)
             {
                 var replacement = string.Join("\\", usingElement.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name
-                    .Split(new[]{'\\', '.'}, StringSplitOptions.RemoveEmptyEntries)
+                    .Split(new[] { '\\', '.' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToFirstCharacterUpperCase())
                     .ToArray());
                 usingElement.Alias = $"{(string.IsNullOrEmpty(replacement) ? string.Empty : $"\\{replacement}")}\\{usingElement.Declaration!.TypeDefinition!.Name.ToFirstCharacterUpperCase()}";

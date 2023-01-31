@@ -23,7 +23,7 @@ public class OpenApiPagingExtensionsTests
         // Assert
         Assert.Equal(expectedName, name);
     }
-    
+
     [Fact]
     public void ThrowsOnMissingWriter()
     {

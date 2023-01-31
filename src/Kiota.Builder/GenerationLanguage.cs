@@ -1,5 +1,6 @@
 ﻿namespace Kiota.Builder;
-public enum GenerationLanguage {
+public enum GenerationLanguage
+{
     CSharp,
     Java,
     TypeScript,

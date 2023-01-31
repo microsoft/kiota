@@ -43,5 +43,6 @@
         "serializers"
     ],
     "java.configuration.updateBuildConfiguration": "automatic",
-    "dotnet-test-explorer.testProjectPath": "tests/**/*.Tests.csproj"
+    "dotnet-test-explorer.testProjectPath": "tests/**/*.Tests.csproj",
+    "editor.formatOnSave": true
 }

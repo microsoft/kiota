@@ -13,7 +13,8 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
     public ShellRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        return Task.Run(() => {
+        return Task.Run(() =>
+        {
             cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddDefaultImports(generatedCode, additionalUsingEvaluators);

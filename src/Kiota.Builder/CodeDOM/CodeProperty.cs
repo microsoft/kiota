@@ -42,12 +42,19 @@ public enum CodePropertyKind
 
 public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement, IAlternativeName
 {
-    public bool ReadOnly {get;set;} = false;
-    public AccessModifier Access {get;set;} = AccessModifier.Public;
+    public bool ReadOnly { get; set; } = false;
+    public AccessModifier Access { get; set; } = AccessModifier.Public;
     public bool ExistsInBaseType => OriginalPropertyFromBaseType != null;
-    public CodeMethod? Getter {get; set;}
-    public CodeMethod? Setter {get; set;}
-    public CodeMethod? GetterFromCurrentOrBaseType {
+    public CodeMethod? Getter
+    {
+        get; set;
+    }
+    public CodeMethod? Setter
+    {
+        get; set;
+    }
+    public CodeMethod? GetterFromCurrentOrBaseType
+    {
         get
         {
             if (Getter != null)
@@ -57,7 +64,8 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
             return default;
         }
     }
-    public CodeMethod? SetterFromCurrentOrBaseType {
+    public CodeMethod? SetterFromCurrentOrBaseType
+    {
         get
         {
             if (Setter != null)
@@ -67,24 +75,37 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
             return default;
         }
     }
-    #nullable disable // the backing property is required
+#nullable disable // the backing property is required
     private CodeTypeBase type;
-    #nullable enable
-    public required CodeTypeBase Type {get => type ;set {
-        ArgumentNullException.ThrowIfNull(value);
-        EnsureElementsAreChildren(value);
-        type = value;
-    }}
-    public string DefaultValue {get;set;} = string.Empty;
+#nullable enable
+    public required CodeTypeBase Type
+    {
+        get => type; set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            EnsureElementsAreChildren(value);
+            type = value;
+        }
+    }
+    public string DefaultValue { get; set; } = string.Empty;
     public CodeDocumentation Documentation { get; set; } = new();
     /// <inheritdoc/>
     public string SerializationName { get; set; } = string.Empty;
     public string NamePrefix { get; set; } = string.Empty;
     /// <inheritdoc/>
-    public bool IsNameEscaped { get => !string.IsNullOrEmpty(SerializationName); }
+    public bool IsNameEscaped
+    {
+        get => !string.IsNullOrEmpty(SerializationName);
+    }
     /// <inheritdoc/>
-    public string SymbolName { get => IsNameEscaped ? SerializationName.CleanupSymbolName() : Name; }
+    public string SymbolName
+    {
+        get => IsNameEscaped ? SerializationName.CleanupSymbolName() : Name;
+    }
     /// <inheritdoc/>
     public string WireName => IsNameEscaped ? SerializationName : Name.ToFirstCharacterLowerCase();
-    public CodeProperty? OriginalPropertyFromBaseType {get;set;}
+    public CodeProperty? OriginalPropertyFromBaseType
+    {
+        get; set;
+    }
 }

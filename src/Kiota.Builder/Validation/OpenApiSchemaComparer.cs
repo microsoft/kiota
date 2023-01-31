@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -10,22 +10,24 @@ namespace Kiota.Builder.Validation;
 internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
 {
     private static readonly OpenApiDiscriminatorComparer discriminatorComparer = new();
-    private static readonly OpenApiAnyComparer openApiAnyComparer = new ();
+    private static readonly OpenApiAnyComparer openApiAnyComparer = new();
     /// <inheritdoc/>
     public bool Equals(OpenApiSchema? x, OpenApiSchema? y)
     {
         return x == null && y == null || x != null && y != null && GetHashCode(x) == GetHashCode(y);
     }
     /// <inheritdoc/>
-    public int GetHashCode([DisallowNull] OpenApiSchema obj) {
-        return GetHashCodeInternal(obj, new ());
+    public int GetHashCode([DisallowNull] OpenApiSchema obj)
+    {
+        return GetHashCodeInternal(obj, new());
     }
     private static int GetHashCodeInternal([DisallowNull] OpenApiSchema obj, HashSet<OpenApiSchema> visitedSchemas)
     {
         if (obj == null) return 0;
-        if(visitedSchemas.Contains(obj)) return 0;
+        if (visitedSchemas.Contains(obj)) return 0;
         visitedSchemas.Add(obj);
-        unchecked {
+        unchecked
+        {
             return
                 Convert.ToInt32(obj.Deprecated) * 47 +
                 Convert.ToInt32(obj.Nullable) * 43 +
@@ -67,8 +69,10 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
          - Xml
         */
     }
-    private static int SumUnchecked(IEnumerable<int> values) {
-        unchecked {
+    private static int SumUnchecked(IEnumerable<int> values)
+    {
+        unchecked
+        {
             return values.Aggregate(0, static (acc, x) => acc + x);
         }
     }
