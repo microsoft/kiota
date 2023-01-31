@@ -11,6 +11,10 @@
     <PublishTrimmed>true</PublishTrimmed> <!-- https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming/trim-self-contained -->
     <!-- <WasmEnableThreads>true</WasmEnableThreads>  https://devblogs.microsoft.com/dotnet/asp-net-core-updates-in-dotnet-7-rc-2/ -->
     <!-- <RuntimeIdentifier>browser-wasm</RuntimeIdentifier> -->
+    <FluentEmojiGroups>none</FluentEmojiGroups>
+    <FluentEmojiStyles>none</FluentEmojiStyles>
+    <FluentIconSizes>16;20;24;48</FluentIconSizes>
+    <FluentIconVariants>regular</FluentIconVariants>
   </PropertyGroup>
 
   <ItemGroup>
