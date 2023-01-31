@@ -465,6 +465,27 @@ public class JavaLanguageRefinerTests
         Assert.Contains(additionalDataHolderDefaultName[1..], model.StartBlock.Implements.Select(static x => x.Name).ToList());
     }
     [Fact]
+    public async Task ProduceCorrectNames()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.Model
+        }).First();
+        var custom = new CodeProperty
+        {
+            Name = "custom",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string",
+            }
+        };
+        model.AddProperty(custom);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        Assert.True(string.IsNullOrEmpty(model.Properties.First(static x => "custom".Equals(x.Name))!.NamePrefix));
+    }
+    [Fact]
     public async Task AddsMethodsOverloads()
     {
         var builder = root.AddClass(new CodeClass

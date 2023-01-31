@@ -39,7 +39,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 _configuration.UsesBackingStore,
                 true,
                 "get",
-                "set"
+                "set",
+                string.Empty
             );
             ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
