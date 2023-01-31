@@ -35,12 +35,17 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
+            ReplacePropertyNames(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                },
+                static s => s.ToSnakeCase());
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
                 },
-                static s => s,
+                static s => s.ToSnakeCase(),
                 _configuration.UsesBackingStore,
                 false,
                 string.Empty,
