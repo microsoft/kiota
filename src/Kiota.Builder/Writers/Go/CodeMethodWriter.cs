@@ -286,7 +286,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         else
             WriteSerializerBodyForInheritedModel(inherits, parentClass, writer);
 
-        if (parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
+        if ((parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData) ?? parentClass.GetMethodByAccessedPropertyOfKind(CodePropertyKind.AdditionalData)) is CodeProperty additionalDataProperty)
         {
             var shouldDeclareErrorVar = !inherits;
             writer.StartBlock();
@@ -545,7 +545,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
         var backingStore = parentClass.GetBackingStoreProperty();
-        if (backingStore == null)
+        if (backingStore == null || (codeElement.AccessedProperty?.IsOfKind(CodePropertyKind.BackingStore) ?? false))
             writer.WriteLine($"m.{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value");
         else
         {
