@@ -28,7 +28,7 @@ public class RubyConventionService : CommonLanguageConventionService
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         var defaultValue = parameter.Optional && (targetElement is not CodeMethod currentMethod || !currentMethod.IsOfKind(CodeMethodKind.Setter)) ?
-            $"={parameter.DefaultValue ?? "nil"}" :
+            $"={(string.IsNullOrEmpty(parameter.DefaultValue) ? "nil" : parameter.DefaultValue)}" :
             string.Empty;
         return $"{parameter.Name}{defaultValue}";
     }
@@ -47,7 +47,7 @@ public class RubyConventionService : CommonLanguageConventionService
         {
             "integer" => "number",
             "float" or "string" or "object" or "boolean" or "void" => type.Name, // little casing hack
-            _ => type.Name.ToFirstCharacterUpperCase() ?? "object",
+            _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
     }
     public override void WriteShortDescription(string description, LanguageWriter writer)
@@ -77,7 +77,7 @@ public class RubyConventionService : CommonLanguageConventionService
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
             parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
         {
-            var urlTemplateParams = urlTemplateVarName ?? $"@{pathParametersProp.Name.ToSnakeCase()}";
+            var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) ? $"@{pathParametersProp.Name.ToSnakeCase()}" : urlTemplateVarName;
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(static x => $"{x.Name}"))}";
             writer.WriteLine($"{prefix}{returnType.ToFirstCharacterUpperCase()}.new({urlTemplateParams}, @{requestAdapterProp.Name.ToSnakeCase()}{pathParametersSuffix})");
         }
