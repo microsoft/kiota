@@ -32,9 +32,15 @@ public static class StringExtensions
         return chunks[0] + string.Join(string.Empty, chunks.Skip(1).Select(ToFirstCharacterUpperCase));
     }
 
-    public static string ToPascalCase(this string? name)
-        => string.IsNullOrEmpty(name) ? string.Empty : string.Join(null, name.Split('-', StringSplitOptions.RemoveEmptyEntries)
-                                                                        .Select(ToFirstCharacterUpperCase));
+    public static string ToPascalCase(this string? input, params char[] separators)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        if (separators.Length == 0) separators = new[] { '-' };
+        var chunks = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+        if (chunks.Length == 0) return string.Empty;
+        return string.Join(string.Empty, chunks.Select(ToFirstCharacterUpperCase));
+    }
+
     public static string ReplaceValueIdentifier(this string? original) =>
         string.IsNullOrEmpty(original) ? string.Empty : original.Replace("$value", "Content");
     public static string TrimQuotes(this string? original) =>
