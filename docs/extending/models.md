@@ -169,7 +169,7 @@ The table below describes the mangling rules being applied for each language:
 | Java       | `camelCase`   | `camelCase`        |
 | PHP        | -             | `camelCase`        |
 | Python     | `snake_case`  | `snake_case`       |
-| Ruby       | snake_case    | snake_case         |
+| Ruby       | `snake_case`  | `snake_case`       |
 | Shell      | `PascalCase`  | -                  |
 | Swift      | -             | -                  |
 | TypeScript | -             | `camelCase`        |
