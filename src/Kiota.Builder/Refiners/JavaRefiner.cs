@@ -30,16 +30,23 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true, true);
+            ReplacePropertyNames(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                },
+                static s => s.ToCamelCase(new[] { '_' }));
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.BackingStore,
                 },
+                static s => s.ToCamelCase(new[] { '_' }),
                 _configuration.UsesBackingStore,
                 true,
                 "get",
-                "set"
+                "set",
+                string.Empty
             );
             ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);

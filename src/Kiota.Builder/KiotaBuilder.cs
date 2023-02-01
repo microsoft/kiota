@@ -485,14 +485,15 @@ public class KiotaBuilder
         // Add properties for children
         foreach (var child in currentNode.Children)
         {
-            var propIdentifier = child.Value.GetClassName(config.StructuredMimeTypes);
-            var propType = child.Value.DoesNodeBelongToItemSubnamespace() ? propIdentifier + itemRequestBuilderSuffix : propIdentifier + requestBuilderSuffix;
+            var propIdentifier = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes);
+            var className = child.Value.GetClassName(config.StructuredMimeTypes);
+            var propType = child.Value.DoesNodeBelongToItemSubnamespace() ? className + itemRequestBuilderSuffix : className + requestBuilderSuffix;
             if (child.Value.IsPathSegmentWithSingleSimpleParameter())
             {
                 var prop = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode);
                 codeClass.SetIndexer(prop);
             }
-            else if (child.Value.IsComplexPathWithAnyNumberOfParameters())
+            else if (child.Value.IsComplexPathMultipleParameters())
             {
                 CreateMethod(propIdentifier, propType, codeClass, child.Value);
             }
@@ -799,7 +800,8 @@ public class KiotaBuilder
             ReadOnly = propertySchema?.ReadOnly ?? false,
             Type = existingType ?? GetPrimitiveType(propertySchema, childType),
         };
-        if (propertyName != childIdentifier)
+        if (prop.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
+            !propertyName.Equals(childIdentifier, StringComparison.Ordinal))
             prop.SerializationName = childIdentifier;
         if (kind == CodePropertyKind.Custom &&
             propertySchema?.Default is OpenApiString stringDefaultValue &&

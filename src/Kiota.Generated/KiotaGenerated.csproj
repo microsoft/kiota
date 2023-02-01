@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- <TargetFramework>netstandard2.0</TargetFramework> -->
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework> <!-- important or VS debugging fails https://stackoverflow.com/a/65480017/3808675-->
     <LangVersion>latest</LangVersion>
     <SonarQubeExclude>true</SonarQubeExclude>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>

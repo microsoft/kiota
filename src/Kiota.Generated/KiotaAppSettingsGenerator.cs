@@ -12,13 +12,13 @@ public class KiotaAppSettingsGenerator : ISourceGenerator
     {
         try
         {
-            using var reader = new StreamReader(Path.Join(directory, name), Encoding.UTF8);
+            using var reader = new StreamReader(PathHelper.Join(directory, name), Encoding.UTF8);
             return reader.ReadToEnd();
         }
         catch (FileNotFoundException e)
         {
             if (maxDepth > 0)
-                return findFileAndRead(Path.Join(directory, ".."), name, maxDepth - 1);
+                return findFileAndRead(PathHelper.Join(directory, ".."), name, maxDepth - 1);
             else
                 throw e;
         }
