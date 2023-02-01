@@ -38,6 +38,8 @@ public class JavaReservedNamesProvider : IReservedNamesProvider
         "long",
         "native",
         "new",
+        "notify",
+        "notifyall",
         "null",
         "package",
         "private",
@@ -58,6 +60,7 @@ public class JavaReservedNamesProvider : IReservedNamesProvider
         "try",
         "void",
         "volatile",
+        "wait",
         "while",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
