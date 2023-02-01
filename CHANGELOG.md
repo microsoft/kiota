@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where most of the Java fields have been prefixed with an underscore.
+- Mangle properties and/or accessors names per language to have more idiomatic APIs.
 - Using fully qualified identifier for java.util.function.Consumer to avoid conflicts in Java.
 - Removed response handler parameter from PHP request executor methods. [1856](https://github.com/microsoft/kiota/issues/1856)
 - Fixed minor typo in adding Accept header for PHP.
@@ -220,7 +222,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added support for range (2XX) responses. [#1699](https://github.com/microsoft/kiota/issues/1699)
 - Added none output formatter to CLI commons. (Shell)
-- Added 'Accept' field of http request header in Ruby.  [#1660](https://github.com/microsoft/kiota/issues/1660)
+- Added 'Accept' field of http request header in Ruby. [#1660](https://github.com/microsoft/kiota/issues/1660)
 - Added support for text serialization in Python. [#1406](https://github.com/microsoft/kiota/issues/1406)
 - Added support for composed types (union, intersection) in CSharp, Java and Go. [#1411](https://github.com/microsoft/kiota/issues/1411)
 - Added support for implicit discriminator mapping.
@@ -229,9 +231,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where Go clients would panic in case of nil response value.
-- Fixed a bug to properly add request headers to Nethttp requests in Ruby. 
+- Fixed a bug to properly add request headers to Nethttp requests in Ruby.
 - Fixed a bug to properly reject invalid URLs in Ruby.
-- Fixed an issue with require statements being generated instead of require relative in Ruby. 
+- Fixed an issue with require statements being generated instead of require relative in Ruby.
 - Updated AdditionDataHolder with the correct namespace. (Ruby)
 - Removed/fixed passing in the current instance to fields deserializers in Ruby. [#1663](https://github.com/microsoft/kiota/issues/1663)
 - Fix issue with duplicate variable declaration in command handlers (Shell)
@@ -282,7 +284,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed format of datetimes in Go to be converted to ISO 8601 by default when place in path parameters(Go)
 - Defined the Access Token Provider Interface for Ruby authentication. [#1638](https://github.com/microsoft/kiota/issues/1638)
 - Reduce code verbosity on Go Getters and Setters. [G0#26][https://github.com/microsoftgraph/msgraph-sdk-go-core/issues/26]
-
 
 ## [0.3.0] - 2022-07-08
 
@@ -539,12 +540,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a bug in Go generator where temporary url template parameters would not be used preventing the use of raw urls.
 - Fixed a bug where the Go http client configuration would impact non-kiota requests.
-- Fixed bug where installing python abstractions failed due to missing dependencies  #1289
-- Modified python test matrix to include python 3.10  #1289
-- Added return statement to AnonymousAuthenticationProvider in python abstractions  #1289
-- Fixed bug in enabling backing store for parse node factory by passing ParseNodeFactoryRegistry to method call  #1289
+- Fixed bug where installing python abstractions failed due to missing dependencies #1289
+- Modified python test matrix to include python 3.10 #1289
+- Added return statement to AnonymousAuthenticationProvider in python abstractions #1289
+- Fixed bug in enabling backing store for parse node factory by passing ParseNodeFactoryRegistry to method call #1289
 - Fixed errors in python serialization due to to responses as json instead of json strings #1290
-- Added python version 3.10 to testing matrix #1290 
+- Added python version 3.10 to testing matrix #1290
 - Fixed bug with inconsistent Java namespace and directory name casing #1267
 - Fixed typeOf string check in JsonParseNode Typescript.
 - Fixed shell stream output getting processed by output formatters when no file path is provided #1291
@@ -564,7 +565,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds JSON Serialization library for Python. #1186
 - Adds PHP League Authentication Provider for PHP #1201
 - Added Shell language support #738
-
 
 ### Changed
 
