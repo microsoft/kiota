@@ -40,7 +40,7 @@ public enum CodePropertyKind
     SerializationHint,
 }
 
-public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement, IAlternativeName
+public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>,IDocumentedElement, IAlternativeName, ICloneable
 {
     public bool ReadOnly { get; set; } = false;
     public AccessModifier Access { get; set; } = AccessModifier.Public;
@@ -108,4 +108,24 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     {
         get; set;
     }
+    public object Clone()
+    {
+        return new CodeProperty
+        {
+            Access = Access,
+            Type = (CodeTypeBase)Type.Clone(),
+            Getter = Getter?.Clone() as CodeMethod,
+            Setter = Setter?.Clone() as CodeMethod,
+            DefaultValue = DefaultValue,
+            Documentation = Documentation,
+            NamePrefix = NamePrefix,
+            Parent = Parent,
+            Name = Name,
+            Kind = Kind,
+            ReadOnly = ReadOnly,
+            SerializationName = SerializationName,
+            OriginalPropertyFromBaseType = OriginalPropertyFromBaseType,
+        };
+    }
 }
+
