@@ -36,7 +36,7 @@ public static class OpenApiUrlTreeNodeExtensions
         return currentNode.Path.GetNamespaceFromPath(prefix);
     }
     //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
-    private static readonly Regex PathParametersRegex = new(@"(?<prefix>\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     // microsoft.graph.getRoleScopeTagsByIds(ids=@ids)
     private static readonly Regex AtSignPathParameterRegex = new(@"=@(\w+)", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     private static readonly char requestParametersChar = '{';
