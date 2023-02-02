@@ -126,7 +126,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     {
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
 
-        if (!currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path)))
+        if (!currentMethod.Parameters.Any(static x => x.IsOfKind(CodeParameterKind.Path)))
         {
             writer.WriteLine($"{GetPropertyCall(pathParametersProperty, "[]")} = {conventions.GetParameterName(pathParameter)};");
             return;
