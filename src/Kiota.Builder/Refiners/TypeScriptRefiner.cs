@@ -572,6 +572,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var requestBodyParam = codeMethod?.Parameters?.FirstOrDefault(x => x.Kind == CodeParameterKind.RequestBody);
         var requestBodyClass = (requestBodyParam?.Type is CodeType requestBodyType) ? requestBodyType.TypeDefinition as CodeClass : null;
 
+           // SetTypeAsModelInterface(CreateModelInterface(requestBodyClass, interfaceNamingCallback), (CodeType)requestBodyParam.Type);
         var parentClass = codeMethod?.GetImmediateParentOfType<CodeClass>();
         if (codeMethod?.ReturnType is CodeType returnType &&
             returnType.TypeDefinition is CodeClass returnClass &&

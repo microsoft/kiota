@@ -8,6 +8,7 @@ using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Tests;
 using Xunit;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
 public class CodeFunctionWriterTests : IDisposable
@@ -22,94 +23,13 @@ public class CodeFunctionWriterTests : IDisposable
     private const string MethodName = "methodName";
     private const string ReturnTypeName = "Somecustomtype";
 
-
-    private void AddInheritanceClass()
-    {
-        parentClass.StartBlock.Inherits = new CodeType
-        {
-            Name = "someParentClass",
-        };
-    }
-    private void AddSerializationProperties()
-    {
-        var addData = parentClass.AddProperty(new CodeProperty
-        {
-            Name = "additionalData",
-            Kind = CodePropertyKind.AdditionalData,
-        }).First();
-        addData.Type = new CodeType
-        {
-            Name = "string"
-        };
-        var dummyProp = parentClass.AddProperty(new CodeProperty
-        {
-            Name = "dummyProp",
-        }).First();
-        dummyProp.Type = new CodeType
-        {
-            Name = "string"
-        };
-        var dummyCollectionProp = parentClass.AddProperty(new CodeProperty
-        {
-            Name = "dummyColl",
-        }).First();
-        dummyCollectionProp.Type = new CodeType
-        {
-            Name = "string",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-        };
-        var dummyComplexCollection = parentClass.AddProperty(new CodeProperty
-        {
-            Name = "dummyComplexColl"
-        }).First();
-        dummyComplexCollection.Type = new CodeType
-        {
-            Name = "Complex",
-            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-            TypeDefinition = new CodeClass
-            {
-                Name = "SomeComplexType"
-            }
-        };
-        var dummyEnumProp = parentClass.AddProperty(new CodeProperty
-        {
-            Name = "dummyEnumCollection",
-        }).First();
-        dummyEnumProp.Type = new CodeType
-        {
-            Name = "SomeEnum",
-            TypeDefinition = new CodeEnum
-            {
-                Name = "EnumType"
-            }
-        };
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = "definedInParent",
-            Type = new CodeType
-            {
-                Name = "string"
-            },
-            OriginalPropertyFromBaseType = new CodeProperty
-            {
-                Name = "definedInParent",
-                Type = new CodeType
-                {
-                    Name = "string"
-                }
-            }
-        });
-    }
     public CodeFunctionWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
-        parentClass = new CodeClass
-        {
-            Name = "parentClass"
-        };
+        parentClass = TestHelper.CreateModelClass("parentClass");
         root.AddClass(parentClass);
         method = new CodeMethod
         {
@@ -128,10 +48,12 @@ public class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task WritesModelFactoryBody() {
+    public async Task WritesModelFactoryBody()
+    {
         var parentModel = root.AddClass(TestHelper.CreateModelClass("parentModel")).First();
         var childModel = root.AddClass(TestHelper.CreateModelClass("childModel")).First();
-        childModel.StartBlock.Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType
+        {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -182,11 +104,13 @@ public class CodeFunctionWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
-    public async Task DoesntWriteFactorySwitchOnMissingParameter() {
+    public async Task DoesntWriteFactorySwitchOnMissingParameter()
+    {
 
         var parentModel = root.AddClass(TestHelper.CreateModelClass("parentModel")).First();
         var childModel = root.AddClass(TestHelper.CreateModelClass("childModel")).First();
-        childModel.StartBlock.Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType
+        {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -223,10 +147,12 @@ public class CodeFunctionWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
-    public async Task DoesntWriteFactorySwitchOnEmptyPropertyName() {
+    public async Task DoesntWriteFactorySwitchOnEmptyPropertyName()
+    {
         var parentModel = root.AddClass(TestHelper.CreateModelClass("parentModel")).First();
         var childModel = root.AddClass(TestHelper.CreateModelClass("childModel")).First();
-        childModel.StartBlock.Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType
+        {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -277,9 +203,11 @@ public class CodeFunctionWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
-    public async Task DoesntWriteFactorySwitchOnEmptyMappings() {
+    public async Task DoesntWriteFactorySwitchOnEmptyMappings()
+    {
         var parentModel = root.AddClass(TestHelper.CreateModelClass("parentModel")).First();
-        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
             Name = "factory",
             Kind = CodeMethodKind.Factory,
             ReturnType = new CodeType
@@ -321,66 +249,64 @@ public class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
-    public void WritesInheritedDeSerializerBody()
+    public async Task WritesInheritedDeSerializerBody()
     {
-        method.Kind = CodeMethodKind.Deserializer;
-        method.IsAsync = false;
-        AddSerializationProperties();
-        AddInheritanceClass();
-        writer.Write(method);
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        var inheritedClass = TestHelper.AddInheritanceClassToModelClass(parentClass);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        writer.Write(serializeFunction);
         var result = tw.ToString();
-        Assert.Contains("...super", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        Assert.Contains($"...deserializeInto{inheritedClass.Name.ToFirstCharacterUpperCase()}", result);
     }
     [Fact]
-    public void WritesDeSerializerBody()
+    public async Task WritesDeSerializerBody()
     {
-        method.Kind = CodeMethodKind.Deserializer;
-        method.IsAsync = false;
-        AddSerializationProperties();
-        writer.Write(method);
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        writer.Write(deserializerFunction);
         var result = tw.ToString();
         Assert.Contains("getStringValue", result);
         Assert.Contains("getCollectionOfPrimitiveValues", result);
         Assert.Contains("getCollectionOfObjectValues", result);
         Assert.Contains("getEnumValue", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
-        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesInheritedSerializerBody()
+    public async Task WritesInheritedSerializerBody()
     {
-        method.Kind = CodeMethodKind.Serializer;
-        method.IsAsync = false;
-        AddSerializationProperties();
-        AddInheritanceClass();
-        writer.Write(method);
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        var inheritedClass = TestHelper.AddInheritanceClassToModelClass(parentClass);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
+        writer.Write(serializeFunction);
         var result = tw.ToString();
-        Assert.Contains("super.serialize", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        Assert.Contains($"serialize{inheritedClass.Name.ToFirstCharacterUpperCase()}(writer, parentClass)", result);
     }
     [Fact]
     public async Task WritesSerializerBody()
     {
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
-        AddSerializationProperties();
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-        writer.Write(method);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
+        writer.Write(serializeFunction);
         var result = tw.ToString();
+        Assert.Contains("switch(key)", result);
         Assert.Contains("writeStringValue", result);
         Assert.Contains("writeCollectionOfPrimitiveValues", result);
         Assert.Contains("writeCollectionOfObjectValues", result);
         Assert.Contains("writeEnumValue", result);
-        Assert.Contains("writeAdditionalData(this.additionalData);", result);
+        Assert.Contains($"writer.writeAdditionalData(key, value);", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
-        AssertExtensions.CurlyBracesAreClosed(result);
     }
 
     [Fact]
     public async Task DoesntWriteReadOnlyPropertiesInSerializerBody()
     {
-        var model = root.AddClass(TestHelper.CreateModelClass()).First();
+        var model = root.AddClass(TestHelper.CreateModelClass("TestModel")).First();
         model.AddProperty(new CodeProperty
         {
             Name = "ReadOnlyProperty",
@@ -400,7 +326,7 @@ public class CodeFunctionWriterTests : IDisposable
             },
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-        var serializeFunction = root.FindChildByName<CodeFunction>("SerializeModel");
+        var serializeFunction = root.FindChildByName<CodeFunction>("SerializeTestModel");
         writer.Write(serializeFunction);
         var result = tw.ToString();
         Assert.DoesNotContain("readOnlyProperty", result);

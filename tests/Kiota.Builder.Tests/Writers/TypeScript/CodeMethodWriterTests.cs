@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.TypeScript;
 
@@ -80,83 +79,7 @@ public class CodeMethodWriterTests : IDisposable
             },
         });
     }
-    private void AddSerializationProperties()
-    {
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = "additionalData",
-            Kind = CodePropertyKind.AdditionalData,
-            Type = new CodeType
-            {
-                Name = "string"
-            }
-        });
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = "dummyProp",
-            Type = new CodeType
-            {
-                Name = "string"
-            }
-        });
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = "dummyColl",
-            Type = new CodeType
-            {
-                Name = "string",
-                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-            }
-        });
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = "dummyComplexColl",
-            Type = new CodeType
-            {
-                Name = "Complex",
-                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-                TypeDefinition = new CodeClass
-                {
-                    Name = "SomeComplexType"
-                }
-            }
-        });
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = "dummyEnumCollection",
-            Type = new CodeType
-            {
-                Name = "SomeEnum",
-                TypeDefinition = new CodeEnum
-                {
-                    Name = "EnumType"
-                }
-            }
-        });
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = "definedInParent",
-            Type = new CodeType
-            {
-                Name = "string"
-            },
-            OriginalPropertyFromBaseType = new CodeProperty
-            {
-                Name = "definedInParent",
-                Type = new CodeType
-                {
-                    Name = "string"
-                }
-            }
-        });
-    }
-    private void AddInheritanceClass()
-    {
-        parentClass.StartBlock.Inherits = new CodeType
-        {
-            Name = "someParentClass"
-        };
-    }
+
     private void AddRequestBodyParameters(bool useComplexTypeForBody = false)
     {
         var stringType = new CodeType
@@ -387,57 +310,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("return requestInfo;", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
-    [Fact]
-    public void WritesInheritedDeSerializerBody() {
-        method.Kind = CodeMethodKind.Deserializer;
-        method.IsAsync = false;
-        AddSerializationProperties();
-        AddInheritanceClass();
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("...super", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void WritesDeSerializerBody() {
-        method.Kind = CodeMethodKind.Deserializer;
-        method.IsAsync = false;
-        AddSerializationProperties();
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("getStringValue", result);
-        Assert.Contains("getCollectionOfPrimitiveValues", result);
-        Assert.Contains("getCollectionOfObjectValues", result);
-        Assert.Contains("getEnumValue", result);
-        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void WritesInheritedSerializerBody() {
-        method.Kind = CodeMethodKind.Serializer;
-        method.IsAsync = false;
-        AddSerializationProperties();
-        AddInheritanceClass();
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("super.serialize", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
-    [Fact]
-    public void WritesSerializerBody() {
-        method.Kind = CodeMethodKind.Serializer;
-        method.IsAsync = false;
-        AddSerializationProperties();
-        writer.Write(method);
-        var result = tw.ToString();
-        Assert.Contains("writeStringValue", result);
-        Assert.Contains("writeCollectionOfPrimitiveValues", result);
-        Assert.Contains("writeCollectionOfObjectValues", result);
-        Assert.Contains("writeEnumValue", result);
-        Assert.Contains("writeAdditionalData(this.additionalData);", result);
-        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
-        AssertExtensions.CurlyBracesAreClosed(result);
-    }
+
     [Fact]
     public void WritesMethodAsyncDescription() {
         
@@ -466,6 +339,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("*/", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+
     [Fact]
     public void WritesMethodSyncDescription()
     {
@@ -532,6 +406,7 @@ public class CodeMethodWriterTests : IDisposable
         method.Parent = CodeNamespace.InitRootNamespace();
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
+
     [Fact]
     public void WritesReturnType()
     {
@@ -543,6 +418,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("| undefined", result);// nullable default
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+
     [Fact]
     public void DoesNotAddUndefinedOnNonNullableReturnType()
     {
@@ -552,6 +428,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("| undefined", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+
     [Fact]
     public void DoesNotAddAsyncInformationOnSyncMethods()
     {
@@ -562,6 +439,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("async", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+
     [Fact]
     public void WritesPublicMethodByDefault()
     {
@@ -570,6 +448,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("public ", result);// public default
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+
     [Fact]
     public void WritesPrivateMethod()
     {
@@ -579,6 +458,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("private ", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+
     [Fact]
     public void WritesProtectedMethod()
     {
