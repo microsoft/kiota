@@ -28,7 +28,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionS
     private void WritePropertyDocComment(CodeProperty codeProperty, LanguageWriter writer)
     {
         var propertyDescription = codeProperty.Documentation.Description;
-        var hasDescription = !string.IsNullOrEmpty(propertyDescription);
+        var hasDescription = codeProperty.Documentation.DescriptionAvailable;
 
         var collectionKind = codeProperty.Type.IsArray || codeProperty.Type.IsCollection;
         var typeString = (collectionKind

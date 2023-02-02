@@ -226,12 +226,15 @@ public class PhpRefiner : CommonLanguageRefiner
     {
         if (codeElement is CodeMethod currentMethod)
         {
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ParseNode)).ToList().ForEach(static x =>
+            currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.ParseNode, CodeParameterKind.PathParameters)).ToList().ForEach(static x =>
             {
-                x.Type.Name = "ParseNode";
+                if (x.IsOfKind(CodeParameterKind.ParseNode))
+                    x.Type.Name = "ParseNode";
+                else
+                    x.Documentation.Description += " or a String representing the raw URL.";
             });
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.BackingStore)
-                && currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)).ToList().ForEach(static x =>
+                                                && currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)).ToList().ForEach(static x =>
             {
                 x.Type.Name = "BackingStoreFactory";
                 x.DefaultValue = "null";
