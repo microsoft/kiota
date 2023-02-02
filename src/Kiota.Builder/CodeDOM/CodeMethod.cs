@@ -73,6 +73,7 @@ public class PagingInformation : ICloneable
 
 public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
 {
+    public static readonly CodeParameterKind ParameterKindForConvertedIndexers = CodeParameterKind.Custom;
     public static CodeMethod FromIndexer(CodeIndexer originalIndexer, string? methodNameSuffix, bool parameterNullable)
     {
         ArgumentNullException.ThrowIfNull(originalIndexer);
@@ -96,7 +97,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         {
             Name = "id",
             Optional = false,
-            Kind = CodeParameterKind.Custom,
+            Kind = ParameterKindForConvertedIndexers,
             Documentation = new()
             {
                 Description = "Unique identifier of the item",

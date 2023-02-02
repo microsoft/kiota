@@ -1541,9 +1541,9 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("m.requestAdapter", result);
         Assert.Contains("m.pathParameters", result);
-        Assert.Contains("= *id", result);
+        Assert.DoesNotContain("= *id", result); //the assignment is already done by the constructor
         Assert.Contains("return", result);
-        Assert.Contains("New", result);
+        Assert.Contains("NewSomecustomtypeInternal(urlTplParams, m.requestAdapter, id)", result); // checking the parameter is passed to the constructor
     }
     [Fact]
     public void WritesPathParameterRequestBuilder()

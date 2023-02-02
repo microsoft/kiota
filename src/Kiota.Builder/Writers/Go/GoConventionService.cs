@@ -179,7 +179,7 @@ public class GoConventionService : CommonLanguageConventionService
         var splatImport = returnType.Split('.');
         var constructorName = splatImport.Last().TrimCollectionAndPointerSymbols().ToFirstCharacterUpperCase();
         var moduleName = splatImport.Length > 1 ? $"{splatImport.First().TrimStart('*')}." : string.Empty;
-        var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(static x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+        var pathParametersSuffix = (pathParameters?.Any() ?? false) ? $", {string.Join(", ", pathParameters.Select(static x => $"{x.Name.ToFirstCharacterLowerCase()}"))}" : string.Empty;
         writer.WriteLines($"return {moduleName}New{constructorName}Internal({urlTemplateParams}, m.{requestAdapterProp.Name}{pathParametersSuffix});");
     }
     public override string TempDictionaryVarName => "urlTplParams";
@@ -188,21 +188,18 @@ public class GoConventionService : CommonLanguageConventionService
         if (pathParametersType == null) return;
         var mapTypeName = pathParametersType.Name;
         writer.WriteLine($"{TempDictionaryVarName} := make({mapTypeName})");
-        writer.WriteLine($"for idx, item := range {pathParametersReference} {{");
-        writer.IncreaseIndent();
+        writer.StartBlock($"for idx, item := range {pathParametersReference} {{");
         writer.WriteLine($"{TempDictionaryVarName}[idx] = item");
         writer.CloseBlock();
-        if (parameters.Any())
-            foreach (var p in parameters)
-            {
-                var isStringStruct = !p.Item1.IsNullable && p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase);
-                var defaultValue = isStringStruct ? "\"\"" : "nil";
-                var pointerDereference = isStringStruct ? string.Empty : "*";
-                writer.WriteLines($"if {p.Item3} != {defaultValue} {{");
-                writer.IncreaseIndent();
-                writer.WriteLine($"{TempDictionaryVarName}[\"{p.Item2}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference + p.Item3)}");
-                writer.CloseBlock();
-            }
+        foreach (var p in parameters)
+        {
+            var isStringStruct = !p.Item1.IsNullable && p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase);
+            var defaultValue = isStringStruct ? "\"\"" : "nil";
+            var pointerDereference = isStringStruct ? string.Empty : "*";
+            writer.StartBlock($"if {p.Item3} != {defaultValue} {{");
+            writer.WriteLine($"{TempDictionaryVarName}[\"{p.Item2}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference + p.Item3)}");
+            writer.CloseBlock();
+        }
     }
 #pragma warning restore CA1822 // Method should be static
     private const string StrConvHash = "i53ac87e8cb3cc9276228f74d38694a208cacb99bb8ceb705eeae99fb88d4d274";
