@@ -113,8 +113,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
            )
         {
             var pathParametersParameterName = conventions.GetParameterName(pathParametersParameter);
-            writer.WriteLine($"if (is_array({pathParametersParameterName})) {{");
-            writer.IncreaseIndent();
+            writer.StartBlock($"if (is_array({pathParametersParameterName})) {{");
             WritePathParametersOptions(currentMethod, parentClass, pathParametersParameter, writer);
             writer.DecreaseIndent();
             writer.WriteLine("} else {");
