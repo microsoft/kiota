@@ -10,7 +10,7 @@ The abstractions library for each language defined an API Exception type (or err
 
 Kiota will also generate types for schemas mapped to [400-600) status codes, as well as 4XX and 5XX ranges, and make them derive from the API exception defined in the abstractions library.
 
-> Note: there currently is a limitation at generation type, if the error schema is an allOf, kiota will error as most languages do not support multiple parents inheritance.
+> Note: if the error schema is an allOf, kiota will flatten all the allOf entries recursively into the generated type as most languages do not support multiple parents inheritance.
 
 This mapping of codes to types will be passed to the request adapter as a dictionary/map so it can be used at runtime and is specific to each endpoint.
 
