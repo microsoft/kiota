@@ -225,7 +225,7 @@ public class PhpConventionService : CommonLanguageConventionService
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default)
     {
         var codeParameters = pathParameters as CodeParameter[] ?? pathParameters?.ToArray();
-        var codePathParametersSuffix = !(codeParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", codeParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+        var codePathParametersSuffix = !(codeParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", codeParameters.Select(x => $"${x.Name.ToFirstCharacterLowerCase()}"))}";
         var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) && parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty ?
             $"$this->{pathParametersProperty.Name}" :
             urlTemplateVarName;

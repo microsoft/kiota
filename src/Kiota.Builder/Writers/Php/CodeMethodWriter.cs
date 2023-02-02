@@ -133,7 +133,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         currentMethod.Parameters.Where(static parameter => parameter.IsOfKind(CodeParameterKind.Path)).ToList()
             .ForEach(parameter =>
             {
-                writer.WriteLine($"{UrlTemplateTempVarName}['{parameter.Name}'] = ${parameter.Name.ToFirstCharacterLowerCase()};");
+                var key = String.IsNullOrEmpty(parameter.SerializationName)
+                    ? parameter.Name
+                    : parameter.SerializationName;
+                writer.WriteLine($"{UrlTemplateTempVarName}['{key}'] = ${parameter.Name.ToFirstCharacterLowerCase()};");
             });
         if (pathParametersProperty != null)
             writer.WriteLine(
@@ -165,8 +168,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         var isSetterForAdditionalData = codeMethod.IsOfKind(CodeMethodKind.Setter) &&
                                         (accessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false);
 
-        var parametersWithDescription = codeMethod.Parameters
-            .Where(static x => x.Documentation.DescriptionAvailable)
+        var parametersWithOrWithoutDescription = codeMethod.Parameters
             .Select(x => GetParameterDocString(codeMethod, x, isSetterForAdditionalData))
             .ToList();
         var returnDocString = GetDocCommentReturnType(codeMethod, accessedProperty);
@@ -177,7 +179,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         else returnDocString = String.Empty;
         conventions.WriteLongDescription(codeMethod.Documentation,
             writer,
-            parametersWithDescription.Union(new[] { returnDocString })
+            parametersWithOrWithoutDescription.Union(new[] { returnDocString })
             );
 
     }
@@ -586,11 +588,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
 
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer)
     {
+        var pathParameters = codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path, CodeParameterKind.Custom));
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
             codeElement.OriginalIndexer != null)
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"$this->{pathParametersProperty.Name}",
                 (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, "$id"));
-        conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
+        conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, pathParameters);
     }
 
     private void WriteRequestExecutorBody(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, LanguageWriter writer)
