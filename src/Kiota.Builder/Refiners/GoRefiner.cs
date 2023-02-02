@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
@@ -517,10 +516,10 @@ public class GoRefiner : CommonLanguageRefiner
         }
         else if (currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor))
         {
-            var rawUrlParam = currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl);
-            if (rawUrlParam != null)
+            if (currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is CodeParameter rawUrlParam)
                 rawUrlParam.Type.IsNullable = false;
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter))
+
+            currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.RequestAdapter))
                 .Where(static x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                 .ToList()
                 .ForEach(static x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
