@@ -1,8 +1,8 @@
 {
-    "recommendations": [
-        "formulahendry.dotnet-test-explorer",
-        "ms-dotnettools.csharp",
-        "editorconfig.editorconfig",
-        "ms-dotnettools.blazorwasm-companion"
-    ]
+  "recommendations": [
+    "formulahendry.dotnet-test-explorer",
+    "ms-dotnettools.csharp",
+    "editorconfig.editorconfig",
+    "ms-dotnettools.blazorwasm-companion"
+  ]
 }

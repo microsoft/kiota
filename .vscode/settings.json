@@ -1,48 +1,48 @@
 {
-    "omnisharp.enableRoslynAnalyzers": true,
-    "markdownlint.config": {
-        "MD028": false,
-        "MD025": {
-            "front_matter_title": ""
-        }
-    },
-    "cSpell.ignoreWords": [
-        "Todos",
-        "azidentity",
-        "getme",
-        "gson",
-        "kiotaabstractions",
-        "msgraph",
-        "okhttp",
-        "okhttp3",
-        "okhttplibrary",
-        "println",
-        "squareup",
-        "todoclient"
-    ],
-    "cSpell.words": [
-        "allof",
-        "apisguru",
-        "autoload",
-        "Contoso",
-        "cref",
-        "deserialization",
-        "deserializers",
-        "dumpautoload",
-        "getenv",
-        "ghes",
-        "inheritdoc",
-        "Kiota",
-        "NETCOREAPP",
-        "Nethttplibrary",
-        "NETSTANDARD",
-        "npmrc",
-        "openapi",
-        "phpleague",
-        "samespaceprefix",
-        "serializers"
-    ],
-    "java.configuration.updateBuildConfiguration": "automatic",
-    "dotnet-test-explorer.testProjectPath": "tests/**/*.Tests.csproj",
-    "editor.formatOnSave": true
+  "omnisharp.enableRoslynAnalyzers": true,
+  "markdownlint.config": {
+    "MD028": false,
+    "MD025": {
+      "front_matter_title": ""
+    }
+  },
+  "cSpell.ignoreWords": [
+    "Todos",
+    "azidentity",
+    "getme",
+    "gson",
+    "kiotaabstractions",
+    "msgraph",
+    "okhttp",
+    "okhttp3",
+    "okhttplibrary",
+    "println",
+    "squareup",
+    "todoclient"
+  ],
+  "cSpell.words": [
+    "allof",
+    "apisguru",
+    "autoload",
+    "Contoso",
+    "cref",
+    "deserialization",
+    "deserializers",
+    "dumpautoload",
+    "getenv",
+    "ghes",
+    "inheritdoc",
+    "Kiota",
+    "NETCOREAPP",
+    "Nethttplibrary",
+    "NETSTANDARD",
+    "npmrc",
+    "openapi",
+    "phpleague",
+    "samespaceprefix",
+    "serializers"
+  ],
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "dotnet-test-explorer.testProjectPath": "tests/**/*.Tests.csproj",
+  "editor.formatOnSave": true
 }

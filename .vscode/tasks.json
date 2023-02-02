@@ -1,191 +1,191 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "clean:target",
-            "type": "shell",
-            "command": "rm -r C:/sources/github/msgraph-sdk-typescript/src/*",
-        },
-        {
-            "label": "cleantargetandbuild",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "clean:target",
-                "build"
-            ]
-        },
-        {
-            "label": "build",
-            "command": "dotnet",
-            "type": "process",
-            "group": "build",
-            "args": [
-                "build",
-                "${workspaceFolder}/src/kiota/kiota.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "test",
-            "command": "dotnet",
-            "type": "process",
-            "group": "test",
-            "args": [
-                "test",
-                "${workspaceFolder}/kiota.sln",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary",
-                "--collect:\"XPlat Code Coverage\""
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "coverage:clean",
-            "type": "shell",
-            "group": "test",
-            "linux": {
-                "command": "rm",
-                "args": [
-                    "-r",
-                    "${workspaceFolder}/tests/Kiota.Builder.Tests/TestResults",
-                    "${workspaceFolder}/tests/Kiota.Builder.IntegrationTests/TestResults"
-                ]
-            },
-            "windows": {
-                "command": "powershell",
-                "args": [
-                    "-command",
-                    "Remove-Item -Recurse -Include TestResults -Path ${workspaceFolder}/tests"
-                ]
-            }
-        },
-        {
-            "label": "coverage:global",
-            "type": "process",
-            "group": "test",
-            "linux":{
-                "command": "reportgenerator",
-                "args": [
-                    "-reports:${workspaceFolder}/tests/**/coverage.cobertura.xml",
-                    "-targetdir:${workspaceFolder}/reports/coverage"
-                ],
-            },
-            "windows": {
-                "command": "reportgenerator",
-                "args": [
-                    "-reports:${workspaceFolder}\\tests\\**\\coverage.cobertura.xml",
-                    "-targetdir:${workspaceFolder}\\reports\\coverage"
-                ]
-            },
-            "dependsOn": [
-                "coverage:clean",
-                "test"
-            ],
-            "dependsOrder": "sequence"
-        },
-        {
-            "label": "coverage:unit",
-            "type": "process",
-            "group": "test",
-            "linux":{
-                "command": "reportgenerator",
-                "args": [
-                    "-reports:${workspaceFolder}/tests/Kiota.Builder.Tests/**/coverage.cobertura.xml",
-                    "-targetdir:${workspaceFolder}/reports/coverage"
-                ],
-            },
-            "windows": {
-                "command": "reportgenerator",
-                "args": [
-                    "-reports:${workspaceFolder}\\tests\\Kiota.Builder.Tests\\**\\coverage.cobertura.xml",
-                    "-targetdir:${workspaceFolder}\\reports\\coverage"
-                ]
-            },
-            "dependsOn": [
-                "coverage:clean",
-                "test"
-            ],
-            "dependsOrder": "sequence"
-        },
-        {
-            "label": "coverage:launch",
-            "type": "shell",
-            "linux": {
-                "command": "xdg-open",
-                "args": [
-                    "${workspaceFolder}/reports/coverage/index.html"
-                ]
-            },
-            "osx": {
-                "command": "open",
-                "args": [
-                    "${workspaceFolder}/reports/coverage/index.html"
-                ]
-            },
-            "windows": {
-                "command": "start",
-                "args": [
-                    "${workspaceFolder}/reports/coverage/index.html"
-                ]
-            },
-            "group": "test",
-        },
-        {
-            "label": "coverage:launch:global",
-            "group": "test",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "coverage:global",
-                "coverage:launch"
-            ]
-        },
-        {
-            "label": "coverage:launch:unit",
-            "group": "test",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "coverage:unit",
-                "coverage:launch"
-            ]
-        },
-        {
-            "label": "clean",
-            "command": "dotnet",
-            "type": "process",
-            "group": "build",
-            "args": [
-                "clean"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "publish",
-            "command": "dotnet",
-            "type": "process",
-            "group": "build",
-            "args": [
-                "publish",
-                "${workspaceFolder}/src/kiota/kiota.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "watch",
-            "command": "dotnet",
-            "type": "process",
-            "group": "build",
-            "args": [
-                "watch",
-                "run",
-                "${workspaceFolder}/src/kiota/kiota.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "clean:target",
+      "type": "shell",
+      "command": "rm -r C:/sources/github/msgraph-sdk-typescript/src/*",
+    },
+    {
+      "label": "cleantargetandbuild",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "clean:target",
+        "build"
+      ]
+    },
+    {
+      "label": "build",
+      "command": "dotnet",
+      "type": "process",
+      "group": "build",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/kiota/kiota.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test",
+      "command": "dotnet",
+      "type": "process",
+      "group": "test",
+      "args": [
+        "test",
+        "${workspaceFolder}/kiota.sln",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary",
+        "--collect:\"XPlat Code Coverage\""
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "coverage:clean",
+      "type": "shell",
+      "group": "test",
+      "linux": {
+        "command": "rm",
+        "args": [
+          "-r",
+          "${workspaceFolder}/tests/Kiota.Builder.Tests/TestResults",
+          "${workspaceFolder}/tests/Kiota.Builder.IntegrationTests/TestResults"
+        ]
+      },
+      "windows": {
+        "command": "powershell",
+        "args": [
+          "-command",
+          "Remove-Item -Recurse -Include TestResults -Path ${workspaceFolder}/tests"
+        ]
+      }
+    },
+    {
+      "label": "coverage:global",
+      "type": "process",
+      "group": "test",
+      "linux": {
+        "command": "reportgenerator",
+        "args": [
+          "-reports:${workspaceFolder}/tests/**/coverage.cobertura.xml",
+          "-targetdir:${workspaceFolder}/reports/coverage"
+        ],
+      },
+      "windows": {
+        "command": "reportgenerator",
+        "args": [
+          "-reports:${workspaceFolder}\\tests\\**\\coverage.cobertura.xml",
+          "-targetdir:${workspaceFolder}\\reports\\coverage"
+        ]
+      },
+      "dependsOn": [
+        "coverage:clean",
+        "test"
+      ],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "coverage:unit",
+      "type": "process",
+      "group": "test",
+      "linux": {
+        "command": "reportgenerator",
+        "args": [
+          "-reports:${workspaceFolder}/tests/Kiota.Builder.Tests/**/coverage.cobertura.xml",
+          "-targetdir:${workspaceFolder}/reports/coverage"
+        ],
+      },
+      "windows": {
+        "command": "reportgenerator",
+        "args": [
+          "-reports:${workspaceFolder}\\tests\\Kiota.Builder.Tests\\**\\coverage.cobertura.xml",
+          "-targetdir:${workspaceFolder}\\reports\\coverage"
+        ]
+      },
+      "dependsOn": [
+        "coverage:clean",
+        "test"
+      ],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "coverage:launch",
+      "type": "shell",
+      "linux": {
+        "command": "xdg-open",
+        "args": [
+          "${workspaceFolder}/reports/coverage/index.html"
+        ]
+      },
+      "osx": {
+        "command": "open",
+        "args": [
+          "${workspaceFolder}/reports/coverage/index.html"
+        ]
+      },
+      "windows": {
+        "command": "start",
+        "args": [
+          "${workspaceFolder}/reports/coverage/index.html"
+        ]
+      },
+      "group": "test",
+    },
+    {
+      "label": "coverage:launch:global",
+      "group": "test",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "coverage:global",
+        "coverage:launch"
+      ]
+    },
+    {
+      "label": "coverage:launch:unit",
+      "group": "test",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "coverage:unit",
+        "coverage:launch"
+      ]
+    },
+    {
+      "label": "clean",
+      "command": "dotnet",
+      "type": "process",
+      "group": "build",
+      "args": [
+        "clean"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish",
+      "command": "dotnet",
+      "type": "process",
+      "group": "build",
+      "args": [
+        "publish",
+        "${workspaceFolder}/src/kiota/kiota.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "watch",
+      "command": "dotnet",
+      "type": "process",
+      "group": "build",
+      "args": [
+        "watch",
+        "run",
+        "${workspaceFolder}/src/kiota/kiota.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "problemMatcher": "$msCompile"
+    }
+  ]
 }
