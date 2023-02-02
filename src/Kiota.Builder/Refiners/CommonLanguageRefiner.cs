@@ -845,8 +845,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         if (currentElement is CodeClass currentClass &&
             parent is CodeType parentType &&
-            parentType.TypeDefinition is CodeClass parentClass &&
-            parentClass != null)
+            parentType.TypeDefinition is CodeClass parentClass)
         {
             foreach (var currentParent in parentClass.GetInheritanceTree())
             {
@@ -881,10 +880,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentClass.IsErrorDefinition &&
             currentClass.StartBlock is ClassDeclaration declaration)
         {
-            if (declaration.Inherits != null)
+            if (declaration.Inherits is CodeElement parentElement)
             {
-                // expand the parents inline
-                var parentElement = declaration.Inherits;
                 // Need to remove inheritance before fixing up the child elements
                 declaration.Inherits = null;
                 InlineParentClasses(currentClass, parentElement);
