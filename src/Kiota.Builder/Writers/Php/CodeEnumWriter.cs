@@ -27,9 +27,9 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionService>
                                                         !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)))
                 .Select(x => x.Declaration is { IsExternal: true }
                     ? $"use {x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Name.ReplaceDotsWithSlashInNamespaces()};"
-                    : $"use {x.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()};")
+                    : $"use {x.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Declaration!.Name.ReplaceDotsWithSlashInNamespaces()};")
                 .Distinct()
-                .OrderBy(x => x)
+                .Order()
                 .ToList()
                 .ForEach(x =>
                 {
