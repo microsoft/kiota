@@ -29,7 +29,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionService>
                     ? $"use {x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Name.ReplaceDotsWithSlashInNamespaces()};"
                     : $"use {x.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Declaration!.Name.ReplaceDotsWithSlashInNamespaces()};")
                 .Distinct()
-                .OrderBy(x => x)
+                .Order()
                 .ToList()
                 .ForEach(x =>
                 {
