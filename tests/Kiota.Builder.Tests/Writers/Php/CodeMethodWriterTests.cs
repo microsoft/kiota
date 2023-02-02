@@ -661,7 +661,7 @@ public class CodeMethodWriterTests : IDisposable
 
         Assert.Contains("$urlTplParams['message_id'] = $id;", result);
         Assert.Contains("public function messageById(string $id): MessageRequestBuilder {", result);
-        Assert.Contains("return new MessageRequestBuilder($urlTplParams, $this->requestAdapter);", result);
+        Assert.Contains("return new MessageRequestBuilder($urlTplParams, $this->requestAdapter, $id);", result);
 
     }
 
