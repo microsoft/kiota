@@ -1415,7 +1415,7 @@ public class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
 
-    
+
     [Fact]
     public void WritesNullableMethodPrototype()
     {
