@@ -109,7 +109,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         const string rawUrlParameterKey = "request-raw-url";
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
             currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor) &&
-            pathParametersParameter != null
+            currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter &&
+            parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty
            )
         {
             var pathParametersParameterName = conventions.GetParameterName(pathParametersParameter);
