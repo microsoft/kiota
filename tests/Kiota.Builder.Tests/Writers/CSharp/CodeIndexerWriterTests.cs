@@ -39,7 +39,7 @@ public class CodeIndexerWriterTests : IDisposable
                 Name = "SomeRequestBuilder"
             }
         };
-        parentClass.SetIndexer(indexer);
+        parentClass.Indexer = indexer;
         parentClass.AddProperty(new()
         {
             Name = "pathParameters",

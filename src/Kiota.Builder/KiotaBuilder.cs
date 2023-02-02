@@ -489,14 +489,9 @@ public class KiotaBuilder
             var className = child.Value.GetClassName(config.StructuredMimeTypes);
             var propType = child.Value.DoesNodeBelongToItemSubnamespace() ? className + itemRequestBuilderSuffix : className + requestBuilderSuffix;
             if (child.Value.IsPathSegmentWithSingleSimpleParameter())
-            {
-                var prop = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode);
-                codeClass.SetIndexer(prop);
-            }
+                codeClass.Indexer = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode);
             else if (child.Value.IsComplexPathMultipleParameters())
-            {
                 CreateMethod(propIdentifier, propType, codeClass, child.Value);
-            }
             else
             {
                 var description = child.Value.GetPathItemDescription(Constants.DefaultOpenApiLabel).CleanupDescription();

@@ -50,7 +50,7 @@ public class CodeClassTests
         {
             Name = "class1"
         }).First();
-        codeClass.SetIndexer(new CodeIndexer
+        codeClass.Indexer = new CodeIndexer
         {
             Name = "idx",
             SerializationName = "idx_smth",
@@ -66,13 +66,13 @@ public class CodeClassTests
                 IsExternal = true,
                 IsNullable = true,
             },
-        });
+        };
         Assert.Single(codeClass.GetChildElements(true).OfType<CodeIndexer>());
         Assert.Throws<ArgumentNullException>(() =>
         {
-            codeClass.SetIndexer(null);
+            codeClass.Indexer = null;
         });
-        codeClass.SetIndexer(new CodeIndexer
+        codeClass.Indexer = new CodeIndexer
         {
             Name = "idx2",
             SerializationName = "idx-2",
@@ -88,7 +88,7 @@ public class CodeClassTests
                 IsExternal = true,
                 IsNullable = true,
             },
-        });
+        };
         Assert.Empty(codeClass.GetChildElements(true).OfType<CodeIndexer>());
         var methods = codeClass.GetChildElements(true).OfType<CodeMethod>().Where(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)).ToArray();
         Assert.Equal(2, methods.Length);

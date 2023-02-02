@@ -501,7 +501,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                         .OrderBy(static x => x.Name))
         {
             var defaultValueReference = propWithDefault.DefaultValue;
-            if (defaultValueReference.StartsWith("\""))
+            if (defaultValueReference.StartsWith("\"", StringComparison.OrdinalIgnoreCase))
             {
                 defaultValueReference = $"{propWithDefault.SymbolName.ToFirstCharacterLowerCase()}Value";
                 var defaultValue = propWithDefault.DefaultValue;
@@ -509,11 +509,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 {
                     defaultValue = $"{defaultValue.Trim('"').ToUpperInvariant()}_{enumDefinition.Name.ToUpperInvariant()}";
                 }
-                writer.WriteLine($"{defaultValueReference} := {defaultValue};");
+                writer.WriteLine($"{defaultValueReference} := {defaultValue}");
                 defaultValueReference = $"&{defaultValueReference}";
             }
             var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterUpperCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"Set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
-            writer.WriteLine($"m.{setterName}({defaultValueReference});");
+            writer.WriteLine($"m.{setterName}({defaultValueReference})");
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
@@ -537,9 +537,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         if (parentClass.GetPropertyOfKind(propertyKind) is CodeProperty property)
         {
             if (!string.IsNullOrEmpty(variableName))
-                writer.WriteLine($"m.{property.Name.ToFirstCharacterLowerCase()} = {variableName};");
+                writer.WriteLine($"m.{property.Name.ToFirstCharacterLowerCase()} = {variableName}");
             else if (currentMethod.Parameters.OfKind(parameterKind) is CodeParameter parameter)
-                writer.WriteLine($"m.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
+                writer.WriteLine($"m.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name}");
         }
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
@@ -557,7 +557,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     {
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}", Array.Empty<(CodeTypeBase, string, string)>());
-        conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, codeElement.Parameters.Where(static x => x.IsOfKind(CodeMethod.ParameterKindForConvertedIndexers)).ToArray());
+        conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, codeElement.Parameters.Where(static x => x.IsOfKind(CodeMethod.ParameterKindForConvertedIndexers)).ToArray(), true);
     }
     private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits)
     {
