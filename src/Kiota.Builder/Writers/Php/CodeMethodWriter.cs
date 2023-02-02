@@ -133,7 +133,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         }
 
         writer.WriteLine($"{UrlTemplateTempVarName} = {conventions.GetParameterName(pathParameter)};");
-        currentMethod.Parameters.Where(parameter => parameter.IsOfKind(CodeParameterKind.Path)).ToList()
+        currentMethod.Parameters.Where(static parameter => parameter.IsOfKind(CodeParameterKind.Path)).ToList()
             .ForEach(parameter =>
             {
                 writer.WriteLine($"{UrlTemplateTempVarName}['{parameter.Name}'] = ${parameter.Name.ToFirstCharacterLowerCase()};");
