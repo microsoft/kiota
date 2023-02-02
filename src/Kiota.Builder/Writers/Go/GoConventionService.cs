@@ -169,7 +169,7 @@ public class GoConventionService : CommonLanguageConventionService
         }
     }
 #pragma warning disable CA1822 // Method should be static
-    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default, bool createReferencesForParameters = false)
+    internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default)
     {
         if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is not CodeProperty requestAdapterProp) return;
         var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) &&
@@ -180,10 +180,7 @@ public class GoConventionService : CommonLanguageConventionService
         var constructorName = splatImport.Last().TrimCollectionAndPointerSymbols().ToFirstCharacterUpperCase();
         var moduleName = splatImport.Length > 1 ? $"{splatImport.First().TrimStart('*')}." : string.Empty;
         pathParameters ??= Enumerable.Empty<CodeParameter>();
-        if (createReferencesForParameters)
-            foreach (var pathParameter in pathParameters.Where(static x => !x.Optional))
-                writer.WriteLine($"{pathParameter.Name.ToFirstCharacterLowerCase()}Ptr := &{pathParameter.Name.ToFirstCharacterLowerCase()}");
-        var pathParametersSuffix = pathParameters.Any() ? $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}{(createReferencesForParameters && !x.Optional ? "Ptr" : string.Empty)}"))}" : string.Empty;
+        var pathParametersSuffix = pathParameters.Any() ? $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}" : string.Empty;
         writer.WriteLines($"return {moduleName}New{constructorName}Internal({urlTemplateParams}, m.{requestAdapterProp.Name}{pathParametersSuffix})");
     }
     public override string TempDictionaryVarName => "urlTplParams";

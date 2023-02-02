@@ -555,9 +555,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType)
     {
+        var pathParameters = codeElement.Parameters.Where(static x => x.IsOfKind(CodeMethod.ParameterKindForConvertedIndexers));
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
-            conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}", Array.Empty<(CodeTypeBase, string, string)>());
-        conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, codeElement.Parameters.Where(static x => x.IsOfKind(CodeMethod.ParameterKindForConvertedIndexers)).ToArray(), true);
+            conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}", pathParameters.Select(static x => (x.Type, x.SerializationName, x.Name.ToFirstCharacterLowerCase())).ToArray());
+        conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, codeElement.Parameters.Except(pathParameters).ToArray());
     }
     private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits)
     {
