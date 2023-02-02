@@ -71,7 +71,7 @@ public class CSharpConventionService : CommonLanguageConventionService
         }
     }
     public override string TempDictionaryVarName => "urlTplParams";
-    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string, bool)[] parameters)
+    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters)
     {
         if (pathParametersType == null) return;
         writer.WriteLine($"var {TempDictionaryVarName} = new {pathParametersType.Name}({pathParametersReference});");
@@ -79,9 +79,9 @@ public class CSharpConventionService : CommonLanguageConventionService
         {
             writer.WriteLines(parameters.Select(p =>
             {
-                var (ct, name, identName, isOptional) = p;
+                var (ct, name, identName) = p;
                 string nullCheck = string.Empty;
-                if (ct.CollectionKind == CodeTypeCollectionKind.None && (ct.IsNullable || isOptional))
+                if (ct.CollectionKind == CodeTypeCollectionKind.None && ct.IsNullable)
                 {
                     if (nameof(String).Equals(ct.Name, StringComparison.OrdinalIgnoreCase))
                         nullCheck = $"if (!string.IsNullOrWhiteSpace({identName})) ";

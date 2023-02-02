@@ -1414,4 +1414,50 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("ReadOnlyProperty", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+
+    
+    [Fact]
+    public void WritesNullableMethodPrototype()
+    {
+        method.ReturnType = new CodeType
+        {
+            Name = "void",
+            IsExternal = true
+        };
+        method.Kind = CodeMethodKind.Constructor;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "ra",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "RequestAdapter",
+                IsExternal = true,
+                IsNullable = false
+            },
+            Optional = false
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "sampleParam",
+            Kind = CodeParameterKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsExternal = true,
+                IsNullable = true
+            },
+            Optional = true
+        });
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain(expectedSubstring: "RequestAdapter? ra", result);
+        Assert.Contains(expectedSubstring: "RequestAdapter ra", result);
+        Assert.Contains("string sampleParam", result);
+        Assert.Contains("string? sampleParam", result);
+        Assert.Contains("#nullable enable", result);
+        Assert.Contains("#nullable restore", result);
+        Assert.Contains("_ = ra ?? throw new ArgumentNullException(nameof(ra));", result);
+    }
 }
