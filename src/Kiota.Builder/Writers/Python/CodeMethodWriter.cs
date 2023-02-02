@@ -102,6 +102,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is not CodeProperty requestAdapterProperty) return;
         var backingStoreParameter = method.Parameters.OfKind(CodeParameterKind.BackingStore);
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToSnakeCase();
+        var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         WriteSerializationRegistration(method.SerializerModules, writer, "register_default_serializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "register_default_deserializer");
         if (!string.IsNullOrEmpty(method.BaseUrl))
@@ -110,6 +111,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.IncreaseIndent();
             writer.WriteLine($"{requestAdapterPropertyName}.base_url = \"{method.BaseUrl}\"");
             writer.DecreaseIndent();
+            if(pathParametersProperty != null)
+                writer.WriteLine($"{pathParametersProperty.Name.ToSnakeCase()}[\"base_url\"] = {requestAdapterPropertyName}.base_url");
         }
         if (backingStoreParameter != null)
             writer.WriteLine($"self.{requestAdapterPropertyName}.enable_backing_store({backingStoreParameter.Name})");
