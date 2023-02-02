@@ -856,7 +856,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("__init__(", result);
         Assert.Contains("register_default_serializer", result);
         Assert.Contains("register_default_deserializer", result);
-        Assert.Contains($"core.base_url = \"{method.BaseUrl}\"", result);
+        Assert.Contains("core.base_url = \"https://graph.microsoft.com/v1.0\"", result);
         Assert.Contains("path_parameters[\"base_url\"] = core.base_url", result);
     }
     [Fact]
