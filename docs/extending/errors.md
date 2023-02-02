@@ -8,7 +8,7 @@ parent: Kiota deep dive
 
 The abstractions library for each language defined an API Exception type (or error) which inherits or implements the default error/exception type for the language.
 
-Kiota will also generate types for schemas mapped to [400-599[ status codes, as well as 4XX and 5XX ranges, and make them derive from the API exception defined in the abstractions library.
+Kiota will also generate types for schemas mapped to [400-600) status codes, as well as 4XX and 5XX ranges, and make them derive from the API exception defined in the abstractions library.
 
 > Note: there currently is a limitation at generation type, if the error schema is an allOf, kiota will error as most languages do not support multiple parents inheritance.
 
