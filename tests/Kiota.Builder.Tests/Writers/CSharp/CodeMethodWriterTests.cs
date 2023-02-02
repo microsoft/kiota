@@ -540,7 +540,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("ComplexType2Value = complexType2ValueValue", result);
         Assert.Contains("return result", result);
         AssertExtensions.Before("GetStringValue() is string stringValueValue", "GetCollectionOfObjectValues<ComplexType2>", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
     public void WritesModelFactoryBodyForIntersectionModels()
@@ -579,7 +579,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("ComplexType1Value = new ComplexType1()", result);
         Assert.Contains("return result", result);
         AssertExtensions.Before("GetStringValue() is string stringValueValue", "GetCollectionOfObjectValues<ComplexType2>", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
     public void WritesModelFactoryBodyForInheritedModels()
@@ -633,7 +633,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("return mappingValue switch {", result);
         Assert.Contains("\"ns.childmodel\" => new ChildModel()", result);
         Assert.Contains("_ => new ParentModel()", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
     public void DoesntWriteFactorySwitchOnMissingParameter()
@@ -725,7 +725,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("return mappingValue switch {", result);
         Assert.DoesNotContain("\"ns.childmodel\" => new ChildModel()", result);
         Assert.Contains("return new ParentModel()", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
     public void DoesntWriteFactorySwitchOnEmptyMappings()
@@ -765,7 +765,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("return mappingValue switch {", result);
         Assert.DoesNotContain("\"ns.childmodel\" => new ChildModel()", result);
         Assert.Contains("return new ParentModel()", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
     public void WritesRequestExecutorBodyForCollections()
@@ -993,7 +993,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("writer.WriteStringValue(null, StringValue)", result);
         Assert.Contains("ComplexType2Value != null", result);
         Assert.Contains("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
     public void WritesIntersectionSerializerBody()
@@ -1029,7 +1029,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)", result);
         AssertExtensions.Before("writer.WriteStringValue(null, StringValue)", "writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value, ComplexType3Value)", result);
         AssertExtensions.Before("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)", "writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value, ComplexType3Value)", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
     public void WritesSerializerBody()
@@ -1076,7 +1076,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains(ParamName, result);
         Assert.Contains(ParamDescription, result);
         Assert.Contains("</summary>", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
     public void WritesMethodSyncDescription()
@@ -1100,7 +1100,7 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("@returns a Promise of", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
     public void WritesMethodDescriptionLink()
@@ -1126,7 +1126,7 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("<see href=", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
     public void Defensive()
