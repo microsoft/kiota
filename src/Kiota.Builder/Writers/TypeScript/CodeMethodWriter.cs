@@ -442,29 +442,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             CodeMethodKind.Setter => "set ",
             _ => string.Empty
         };
-        var shouldHaveTypeSuffix = !code.IsAccessor && !isConstructor;
+        var shouldHaveTypeSuffix = !code.IsAccessor && !isConstructor && returnType != ""; ;
         var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
         writer.WriteLine($"{accessModifier}{functionPrefix}{accessorPrefix}{staticPrefix}{methodName}{asyncPrefix}({parameters}){returnTypeSuffix} {{");
-    }
-    private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod currentElement, LanguageWriter writer)
-    {
-        var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-        var propertyType = localConventions?.GetTypeString(propType, currentElement, false, writer) ?? string.Empty;
-        if (propType is CodeType currentType)
-        {
-            if (currentType.TypeDefinition is CodeEnum currentEnum)
-                return $"getEnumValue{(currentEnum.Flags || isCollection ? "s" : string.Empty)}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
-            if (isCollection)
-                if (currentType.TypeDefinition == null)
-                    return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>()";
-                else
-                    return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, currentElement, writer)})";
-        }
-        return propertyType switch
-        {
-            "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration" => $"get{propertyType.ToFirstCharacterUpperCase()}Value()",
-            _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, currentElement, writer)})",
-        };
     }
     private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeMethod currentElement, LanguageWriter writer)
     {

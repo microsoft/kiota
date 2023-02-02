@@ -2,7 +2,6 @@
 
 using System;
 using System.Linq;
-using System.Reflection.Metadata;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -227,7 +226,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             {
                 foreach (var otherProp in properties)
                 {
-                    writer.WriteLine($"\"{otherProp.SerializationName.ToFirstCharacterLowerCase() ?? otherProp.Name.ToFirstCharacterLowerCase()}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeFunction)}; }},");
+                    var keyName = !string.IsNullOrWhiteSpace(otherProp.SerializationName) ? otherProp.SerializationName.ToFirstCharacterLowerCase() : otherProp.Name.ToFirstCharacterLowerCase();
+                    writer.WriteLine($"\"{keyName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeFunction)}; }},");
                 }
             }
             writer.DecreaseIndent();

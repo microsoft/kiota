@@ -106,7 +106,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 },
                 CodeMethodKind.Factory
             );
-            static string factoryNameCallbackFromType(CodeType x) => factoryNameCallbackFromTypeName(x.Name);
+            static string factoryNameCallbackFromType(CodeType x) => factoryNameCallbackFromTypeName(x?.TypeDefinition?.Name);
             cancellationToken.ThrowIfCancellationRequested();
             AddStaticMethodsUsingsForDeserializer(
                 generatedCode,
@@ -119,9 +119,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddQueryParameterMapperMethod(
                 generatedCode
             );
-            IntroducesInterfacesAndFunctions(generatedCode); // <- Changes model classes and request configs
+            IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType); // <- Changes model classes and request configs
             AliasUsingsWithSameSymbol(generatedCode);
-            AddStaticMethodsUsingsToDeserializerFunctions(generatedCode, factoryNameCallbackFromType);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
     }
@@ -336,12 +335,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     /// and serializers and deserializers as javascript functions. 
     /// </summary>
     /// <param name="generatedCode"></param>
-    private static void IntroducesInterfacesAndFunctions(CodeElement generatedCode)
+    private static void IntroducesInterfacesAndFunctions(CodeElement generatedCode, Func<CodeType, string> functionNameCallback)
     {
         CreateSeparateSerializers(generatedCode);
         CreateInterfaceModels(generatedCode);
         AddDeserializerUsingToDisriminatorFactory(generatedCode);
         ReplaceRequestConfigurationsQueryParamsWithInterfaces(generatedCode);
+        AddStaticMethodsUsingsToDeserializerFunctions(generatedCode, functionNameCallback);
     }
 
     private static void CreateSeparateSerializers(CodeElement codeElement)
@@ -722,7 +722,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var serializer = serializationFunctions.Item1;
         var deserializer = serializationFunctions.Item2;
 
-        var parentSerializationFunctions = GetSerializationFunctionsForNamespace(childClass);
+        var parentSerializationFunctions = GetSerializationFunctionsForNamespace(parentClass);
         var parentSerializer = parentSerializationFunctions.Item1;
         var parentDeserializer = parentSerializationFunctions.Item2;
 
@@ -854,36 +854,38 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     protected static void AddStaticMethodsUsingsToDeserializerFunctions(CodeElement currentElement, Func<CodeType, string> functionNameCallback)
     {
-        if (currentElement is CodeMethod currentMethod &&
-            currentMethod.IsOfKind(CodeMethodKind.Deserializer) &&
-            (currentMethod.Parent is CodeFunction codeFunction))
+        if (currentElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod is CodeMethod currentMethod && currentMethod.Kind == CodeMethodKind.Deserializer)
         {
-            var modelInterface = currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface);
-            if (modelInterface == null)
+            var interfaceParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface);
+
+
+            if (interfaceParameter?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface modelInterface)
             {
-                throw new InvalidOperationException($"Model interface param not found on serialization function{currentMethod.Parent.Name}");
-            }
-            var props = modelInterface?.GetChildElements(true).OfType<CodeProperty>();
-            if (props != null)
-            {
-                foreach (var property in props)
+                //throw new InvalidOperationException($"Model interface param not found on serialization function{currentElement.Name}");
+
+                var props = modelInterface.GetChildElements(true).OfType<CodeProperty>();
+                if (props != null)
                 {
-                    if (property.Type is not CodeType propertyType || propertyType.TypeDefinition == null)
-                        continue;
-                    var staticMethodName = functionNameCallback.Invoke(propertyType);
-                    var staticMethodNS = propertyType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
-                    var staticMethod = staticMethodNS.FindChildByName<CodeFunction>(staticMethodName, false);
-                    if (staticMethod == null)
-                        continue;
-                    codeFunction.AddUsing(new CodeUsing
+                    foreach (var property in props)
                     {
-                        Name = staticMethodName,
-                        Declaration = new CodeType
+                        if (property.Type is CodeType propertyType && propertyType.TypeDefinition != null)
                         {
-                            Name = staticMethodName,
-                            TypeDefinition = staticMethod,
+                            var staticMethodName = functionNameCallback.Invoke(propertyType);
+                            var staticMethodNS = propertyType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
+                            var staticMethod = staticMethodNS.Functions.FirstOrDefault( x=> string.Equals(staticMethodName, x.Name, StringComparison.OrdinalIgnoreCase));
+                            if (staticMethod == null)
+                                continue;
+                            codeFunction.AddUsing(new CodeUsing
+                            {
+                                Name = staticMethodName,
+                                Declaration = new CodeType
+                                {
+                                    Name = staticMethodName,
+                                    TypeDefinition = staticMethod,
+                                }
+                            });
                         }
-                    });
+                    }
                 }
             }
         }
