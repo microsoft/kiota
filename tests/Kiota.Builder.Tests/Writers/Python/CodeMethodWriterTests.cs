@@ -823,10 +823,12 @@ public class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.ClientConstructor;
         method.IsAsync = false;
         method.BaseUrl = "https://graph.microsoft.com/v1.0";
-        parentClass.AddProperty(new CodeProperty {
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "pathParameters",
             Kind = CodePropertyKind.PathParameters,
-            Type = new CodeType {
+            Type = new CodeType
+            {
                 Name = "Dict[str, str]",
                 IsExternal = true,
             }

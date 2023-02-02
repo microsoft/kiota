@@ -111,7 +111,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.IncreaseIndent();
             writer.WriteLine($"{requestAdapterPropertyName}.base_url = \"{method.BaseUrl}\"");
             writer.DecreaseIndent();
-            if(pathParametersProperty != null)
+            if (pathParametersProperty != null)
                 writer.WriteLine($"{pathParametersProperty.Name.ToSnakeCase()}[\"base_url\"] = {requestAdapterPropertyName}.base_url");
         }
         if (backingStoreParameter != null)
