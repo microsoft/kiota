@@ -80,6 +80,7 @@ public class GoRefiner : CommonLanguageRefiner
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.Custom,
                     CodePropertyKind.BackingStore },
+                static s => s.ToPascalCase(new[] { '_' }),
                 _configuration.UsesBackingStore,
                 false,
                 "Get",

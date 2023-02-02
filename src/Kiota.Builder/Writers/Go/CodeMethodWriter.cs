@@ -275,7 +275,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
     {
         var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
-        conventions.AddRequestBuilderBody(parentClass, importSymbol, writer, pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+        conventions.AddRequestBuilderBody(parentClass, importSymbol, writer, pathParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
     }
     private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer, bool inherits)
     {
@@ -555,12 +555,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType)
     {
-        var idParameter = codeElement.Parameters.First();
-        if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
-            codeElement.OriginalIndexer != null)
-            conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}",
-                (idParameter.Type, codeElement.OriginalIndexer.SerializationName, "id"));
-        conventions.AddRequestBuilderBody(parentClass, returnType, writer, urlTemplateVarName: conventions.TempDictionaryVarName);
+        if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
+            conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}", Array.Empty<(CodeTypeBase, string, string)>());
+        conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, codeElement.Parameters.Where(static x => x.IsOfKind(CodeMethod.ParameterKindForConvertedIndexers)).ToArray());
     }
     private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits)
     {

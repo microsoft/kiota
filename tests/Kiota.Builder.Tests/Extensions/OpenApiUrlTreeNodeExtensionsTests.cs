@@ -14,7 +14,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
     [Fact]
     public void Defensive()
     {
-        Assert.False(OpenApiUrlTreeNodeExtensions.IsComplexPathWithAnyNumberOfParameters(null));
+        Assert.False(OpenApiUrlTreeNodeExtensions.IsComplexPathMultipleParameters(null));
         Assert.False(OpenApiUrlTreeNodeExtensions.IsPathSegmentWithSingleSimpleParameter(null));
         Assert.False(OpenApiUrlTreeNodeExtensions.DoesNodeBelongToItemSubnamespace(null));
         Assert.Empty(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, null));
@@ -45,9 +45,13 @@ public class OpenApiUrlTreeNodeExtensionsTests
             Paths = new(),
         };
         doc.Paths.Add("function()", new());
+        doc.Paths.Add("function({param})", new());
+        doc.Paths.Add("function({param}, {param2})", new());
         var node = OpenApiUrlTreeNode.Create(doc, Label);
-        Assert.False(node.IsComplexPathWithAnyNumberOfParameters());
-        Assert.True(node.Children.First().Value.IsComplexPathWithAnyNumberOfParameters());
+        Assert.False(node.IsComplexPathMultipleParameters());
+        Assert.False(node.Children.First().Value.IsComplexPathMultipleParameters());
+        Assert.True(node.Children.Skip(1).First().Value.IsComplexPathMultipleParameters());
+        Assert.True(node.Children.Skip(2).First().Value.IsComplexPathMultipleParameters());
     }
     [Fact]
     public void IsPathWithSingleSimpleParameter()
@@ -110,7 +114,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
         };
         doc.Paths.Add("\\deviceManagement\\microsoft.graph.getRoleScopeTagsByIds(ids=@ids)", new());
         var node = OpenApiUrlTreeNode.Create(doc, Label);
-        Assert.Equal("graph.deviceManagement.getRoleScopeTagsByIdsWithIds", node.Children.First().Value.GetNodeNamespaceFromPath("graph"));
+        Assert.Equal("graph.deviceManagement.microsoftGraphGetRoleScopeTagsByIdsWithIds", node.Children.First().Value.GetNodeNamespaceFromPath("graph"));
     }
     [InlineData("$select", "select")]
     [InlineData("api-version", "apiVersion")]
@@ -184,7 +188,8 @@ public class OpenApiUrlTreeNodeExtensionsTests
         // the query parameters will be decoded by a middleware at runtime before the request is executed
     }
     [InlineData("\\reviews\\search.json", "reviews.search")]
-    [InlineData("\\members\\$ref", "members.ref")]
+    [InlineData("\\members\\microsoft.graph.$ref", "members.microsoftGraphRef")]
+    [InlineData("\\feeds\\video-comments.{format}", "feeds.videoCommentsWithFormat")]
     [Theory]
     public void GetsNamespaceFromPath(string source, string expected)
     {

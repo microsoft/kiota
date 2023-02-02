@@ -22,9 +22,9 @@ oneOf specifies a type union (exclusive) where the response can be of one of the
 
 The deserialized result will either be of the one of the types of the union or be of the wrapper type with only one of the properties being non null.
 
-When a oneOf keyword has at least one child schema that is of type object then the OpenApi discriminator keyword MUST be provided to identify the applicable schema.  
+When a oneOf keyword has at least one child schema that is of type object then the OpenApi discriminator keyword MUST be provided to identify the applicable schema.
 
-Child schemas that are arrays or primitives will use the equivalent type language parser to attempt to interpret the input value. The first primitive schema that does not fail to parse will be used to deserialize the input.  
+Child schemas that are arrays or primitives will use the equivalent type language parser to attempt to interpret the input value. The first primitive schema that does not fail to parse will be used to deserialize the input.
 
 Nested oneOf keywords are only supported when the child schema uses a `$ref` to enable naming the nested type.
 
@@ -54,49 +54,47 @@ In case of inline schemas, the type will be named by conventions:
 
 ```json
 {
-    "microsoft.graph.directoryObject": {
-      "allOf": [
-        { "$ref": "#/components/schemas/microsoft.graph.entity"},
-        {
-            "title": "directoryObject",
-            "required": [
-                "@odata.type"
-            ],
-            "type": "object",
-            "properties": {
-                "@odata.type": {
-                    "type": "string",
-                    "default": "#microsoft.graph.directoryObject"
-                }
-            }
+  "microsoft.graph.directoryObject": {
+    "allOf": [
+      { "$ref": "#/components/schemas/microsoft.graph.entity" },
+      {
+        "title": "directoryObject",
+        "required": ["@odata.type"],
+        "type": "object",
+        "properties": {
+          "@odata.type": {
+            "type": "string",
+            "default": "#microsoft.graph.directoryObject"
+          }
         }
-      ],
-      "discriminator": {
-            "propertyName": "@odata.type",
-            "mapping": {
-              "#microsoft.graph.user": "#/components/schemas/microsoft.graph.user",
-              "#microsoft.graph.group": "#/components/schemas/microsoft.graph.group"
-            }
-        }
-    },
-    "microsoft.graph.user": {
-      "allOf": [
-        { "$ref": "#/components/schemas/microsoft.graph.directoryObject"},
-        {
-            "title": "user",
-            "type": "object"
-        }
-      ]
-    },
-    "microsoft.graph.group": {
-      "allOf": [
-        { "$ref": "#/components/schemas/microsoft.graph.directoryObject"},
-        {
-            "title": "group",
-            "type": "object"
-        }
-      ]
+      }
+    ],
+    "discriminator": {
+      "propertyName": "@odata.type",
+      "mapping": {
+        "#microsoft.graph.user": "#/components/schemas/microsoft.graph.user",
+        "#microsoft.graph.group": "#/components/schemas/microsoft.graph.group"
+      }
     }
+  },
+  "microsoft.graph.user": {
+    "allOf": [
+      { "$ref": "#/components/schemas/microsoft.graph.directoryObject" },
+      {
+        "title": "user",
+        "type": "object"
+      }
+    ]
+  },
+  "microsoft.graph.group": {
+    "allOf": [
+      { "$ref": "#/components/schemas/microsoft.graph.directoryObject" },
+      {
+        "title": "group",
+        "type": "object"
+      }
+    ]
+  }
 }
 ```
 
@@ -104,19 +102,18 @@ In case of inline schemas, the type will be named by conventions:
 
 ```json
 {
-    "type": "object",
-    "title": "directoryObject",
-    "oneOf": [
-        {
-            "type": "object",
-            "title": "user"
-        },
-        {
-            "type": "object",
-            "title": "group"
-        }
-
-    ]
+  "type": "object",
+  "title": "directoryObject",
+  "oneOf": [
+    {
+      "type": "object",
+      "title": "user"
+    },
+    {
+      "type": "object",
+      "title": "group"
+    }
+  ]
 }
 ```
 
@@ -142,7 +139,7 @@ public static new Person CreateFromDiscriminatorValue(IParseNode parseNode) {
 
 ### Field deserializers
 
-The field deserializers method or property contains a list of callbacks to be used by the `ParseNode` implementation when deserializing the objects. Kiota relies on auto-serialization, where each type *knows* how to serialize/deserialize itself thanks to the OpenAPI description. A big advantage of this approach it to avoid tying the generated models to any specific serialization format (JSON, YAML, XML,...) or any specific library (because of attributes/annotations these libraries often require).
+The field deserializers method or property contains a list of callbacks to be used by the `ParseNode` implementation when deserializing the objects. Kiota relies on auto-serialization, where each type _knows_ how to serialize/deserialize itself thanks to the OpenAPI description. A big advantage of this approach it to avoid tying the generated models to any specific serialization format (JSON, YAML, XML,...) or any specific library (because of attributes/annotations these libraries often require).
 
 ### Serialize method
 
@@ -159,3 +156,20 @@ Dictionary/Map that stores all the additional properties which are not described
 When present, the properties values are store in this backing store instead of using fields for the object. The backing store allows multiple things like dirty tracking of changes, making it possible to get an object from the API, update a property, send that object back with only the changed property and not the full objects. Additionally it will be used for integration with third party data sources.
 
 > **Note:** the backing store is only added if the target language supports it and when the `-b` parameter is passed to the CLI when generating the models.
+
+### Properties and accessors name mangling
+
+To produce a more idiomatic output for specific languages, mangling is applied to the properties names and/or accessors.
+The table below describes the mangling rules being applied for each language:
+
+| Language   | Property name | Property accessors |
+| ---------- | ------------- | ------------------ |
+| CSharp     | `PascalCase`  | -                  |
+| Go         | -             | `PascalCase`       |
+| Java       | `camelCase`   | `camelCase`        |
+| PHP        | -             | `camelCase`        |
+| Python     | `snake_case`  | `snake_case`       |
+| Ruby       | `snake_case`  | `snake_case`       |
+| Shell      | `PascalCase`  | -                  |
+| Swift      | -             | -                  |
+| TypeScript | -             | `camelCase`        |

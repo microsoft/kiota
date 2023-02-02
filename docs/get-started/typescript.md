@@ -6,12 +6,12 @@ parent: Get started
 
 ## Required tools
 
-- [NodeJS 16](https://nodejs.org/en/)
+- [NodeJS 18](https://nodejs.org/en/)
 - [TypeScript](https://www.typescriptlang.org/)
 
 ## Target project requirements
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to install dependencies of the [abstractions](https://www.npmjs.com/package/@microsoft/kiota-abstractions), [authentication](https://www.npmjs.com/package/@microsoft/kiota-authentication-azure), [http fetch](https://www.npmjs.com/package/@microsoft/kiota-http-fetchlibrary), [serialization json](https://www.npmjs.com/package/@microsoft/kiota-serialization-json) and [serialization text](https://www.npmjs.com/package/@microsoft/kiota-serialization-text) packages from the npm registry.
+Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to install dependencies of the [abstractions](https://www.npmjs.com/package/@microsoft/kiota-abstractions), [authentication](https://www.npmjs.com/package/@microsoft/kiota-authentication-azure), [http fetch](https://www.npmjs.com/package/@microsoft/kiota-http-fetchlibrary), [serialization form](https://www.npmjs.com/package/@microsoft/kiota-serialization-form), [serialization json](https://www.npmjs.com/package/@microsoft/kiota-serialization-json) and [serialization text](https://www.npmjs.com/package/@microsoft/kiota-serialization-text) packages from the npm registry.
 
 ## Creating target projects
 
@@ -33,6 +33,7 @@ The following packages can be added to the project.
 npm install @microsoft/kiota-abstractions
 npm install @microsoft/kiota-authentication-azure
 npm install @microsoft/kiota-http-fetchlibrary
+npm install @microsoft/kiota-serialization-form
 npm install @microsoft/kiota-serialization-json
 npm install @microsoft/kiota-serialization-text
 npm install @azure/identity node-fetch

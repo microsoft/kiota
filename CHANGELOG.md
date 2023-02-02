@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where most of the Java fields have been prefixed with an underscore.
+- Mangle properties and/or accessors names per language to have more idiomatic APIs.
 - Using fully qualified identifier for java.util.function.Consumer to avoid conflicts in Java.
 - Removed response handler parameter from PHP request executor methods. [1856](https://github.com/microsoft/kiota/issues/1856)
 - Fixed minor typo in adding Accept header for PHP.
@@ -41,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where classes with namespace names are generated outside namespace in Python. [#2188](https://github.com/microsoft/kiota/issues/2188)
 - Changed signature of escaped reserved names from {x}_escaped to {x}_ in line with Python style guides.
 - Add null checks in generated Shell language code.
+- Fixed a bug where path segments with parameters could be missing words. [#2209](https://github.com/microsoft/kiota/issues/2209)
 
 ## [0.10.0] - 2023-01-04
 

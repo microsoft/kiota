@@ -18,7 +18,7 @@ public class KiotaVersionGenerator : ISourceGenerator
         try
         {
             XmlDocument csproj = new XmlDocument();
-            csproj.Load(Path.Join(directory, "Kiota.Builder.csproj"));
+            csproj.Load(PathHelper.Join(directory, "Kiota.Builder.csproj"));
 
             version = csproj.GetElementsByTagName("Version")[0].InnerText;
         }
