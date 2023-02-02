@@ -588,7 +588,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
 
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer)
     {
-        var pathParameters = codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path, CodeParameterKind.Custom));
+        var pathParameters = codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path, CodeParameterKind.Custom));
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
             codeElement.OriginalIndexer != null)
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"$this->{pathParametersProperty.Name}",
