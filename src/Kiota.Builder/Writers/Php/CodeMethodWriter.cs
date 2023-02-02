@@ -115,8 +115,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             var pathParametersParameterName = conventions.GetParameterName(pathParametersParameter);
             writer.StartBlock($"if (is_array({pathParametersParameterName})) {{");
             WritePathParametersOptions(currentMethod, parentClass, pathParametersParameter, writer);
-            writer.DecreaseIndent();
-            writer.WriteLine("} else {");
+            writer.CloseBlock("} else {");
             writer.IncreaseIndent();
             writer.WriteLine($"{GetPropertyCall(pathParametersProperty, "[]")} = ['{rawUrlParameterKey}' => {conventions.GetParameterName(pathParametersParameter)}];");
             writer.CloseBlock();
