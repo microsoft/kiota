@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Updated the client constructor to set the base_url in path parameters from RequestAdapter's base_url(Python) [#2128](https://github.com/microsoft/kiota/issues/2128)
 - Added support for external documentation links on request execution methods (PHP Generation). [2038](https://github.com/microsoft/kiota/issues/2138)
 - Added support for nullable reference types in dotnet for projects running Netstandard 2.1/Net 6.0 and above [2073](https://github.com/microsoft/kiota/issues/2073)
 - Added support for multi-value headers to CLI generation. (Shell)
