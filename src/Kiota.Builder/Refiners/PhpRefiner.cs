@@ -226,7 +226,7 @@ public class PhpRefiner : CommonLanguageRefiner
     {
         if (codeElement is CodeMethod currentMethod)
         {
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ParseNode, CodeParameterKind.PathParameters)).ToList().ForEach(static x =>
+            currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.ParseNode, CodeParameterKind.PathParameters)).ToList().ForEach(static x =>
             {
                 if (x.IsOfKind(CodeParameterKind.ParseNode))
                     x.Type.Name = "ParseNode";
