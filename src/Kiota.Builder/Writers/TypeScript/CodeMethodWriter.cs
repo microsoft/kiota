@@ -321,6 +321,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     {
         if (!codeElement.ReturnType.IsCollection) return fullTypeName;
         var clone = codeElement.ReturnType.Clone() as CodeTypeBase;
+        if (clone == null)
+        {
+            throw new InvalidOperationException($"Something went wrong when cloning {codeElement.ReturnType.Name}");
+        }
         clone.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None;
         return conventions.GetTypeString(clone, codeElement);
     }
@@ -328,7 +332,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
-
 
         writer.WriteLine($"const {RequestInfoVarName} = new RequestInformation();");
         if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
@@ -355,7 +358,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         }
         if (requestParams.requestBody != null)
         {
-            ComposeContentInRequestGeneratorBody(requestParams.requestBody, requestAdapterProperty, codeElement.RequestBodyContentType, writer);
+            if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+                writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
+            else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
+            {
+                ComposeContentInRequestGeneratorBody(requestParams.requestBody, requestAdapterProperty, codeElement.RequestBodyContentType, writer);
+            }
         }
 
         writer.WriteLine($"return {RequestInfoVarName};");
@@ -363,16 +371,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
     private void ComposeContentInRequestGeneratorBody(CodeParameter requestBody, CodeProperty requestAdapterProperty, string contentType, LanguageWriter writer)
     {
-        if (requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+        if (requestBody.Type.Name.Equals(localConventions?.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestBody.Name});");
         else
         {
             var spreadOperator = requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
             var setMethodName = "";
             var body = "";
-            if (IsCodeClassOrInterface(requestBody.Type))
+            if (requestBody.Type is CodeType currentType && currentType.TypeDefinition is CodeInterface codeInterface)
             {
-                var serializerName = $"serialize{(requestBody.Type as CodeType).TypeDefinition.Name.ToFirstCharacterUpperCase()}";
+                var serializerName = $"serialize{codeInterface.Name.ToFirstCharacterUpperCase()}";
                 setMethodName = "setContentFromParsable";
                 body = "body";
                 writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", {body} as any, {serializerName});");
@@ -388,11 +396,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         }
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"this.{property.Name}";
-
-    private static bool IsCodeClassOrInterface(CodeTypeBase propType)
-    {
-        return propType is CodeType currentType && (currentType.TypeDefinition is CodeClass || currentType.TypeDefinition is CodeInterface);
-    }
 
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, bool isVoid)
     {

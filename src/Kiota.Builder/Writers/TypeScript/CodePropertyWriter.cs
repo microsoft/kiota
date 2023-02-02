@@ -29,7 +29,6 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
 
     private void WriteCodePropertyForClass(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)
     {
-        var parentClass = codeElement.Parent as CodeClass;
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         switch (codeElement.Kind)
         {

@@ -38,7 +38,7 @@ public class TypescriptRelativeImportManager : RelativeImportManager
             importPath += codeUsing.Name;
         else if (!isCodeUsingAModel)
         {
-            importPath += (codeUsing.Declaration.TypeDefinition?.Name ?? codeUsing.Declaration.Name).ToFirstCharacterLowerCase();
+            importPath += (codeUsing.Declaration?.TypeDefinition?.Name ?? codeUsing.Declaration?.Name).ToFirstCharacterLowerCase();
         }
         return (importSymbol, codeUsing.Alias, importPath);
     }

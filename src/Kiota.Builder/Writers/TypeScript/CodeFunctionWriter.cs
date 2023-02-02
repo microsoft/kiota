@@ -2,6 +2,7 @@
 
 using System;
 using System.Linq;
+using System.Reflection.Metadata;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -9,12 +10,13 @@ namespace Kiota.Builder.Writers.TypeScript;
 
 public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConventionService>
 {
-    private TypeScriptConventionService localConventions;
-    private readonly CodeUsingWriter _codeUsingWriter;
+   
     public CodeFunctionWriter(TypeScriptConventionService conventionService, string clientNamespaceName) : base(conventionService)
     {
         _codeUsingWriter = new(clientNamespaceName);
     }
+    private TypeScriptConventionService? localConventions;
+    private readonly CodeUsingWriter _codeUsingWriter;
 
     public override void WriteCodeElement(CodeFunction codeElement, LanguageWriter writer)
     {
@@ -85,21 +87,29 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private string getDeserializationFunction(CodeElement codeElement, string returnType)
     {
-        var parent = (codeElement.Parent as CodeNamespace).FindChildByName<CodeFunction>($"deserializeInto{returnType}");
+        if (codeElement.Parent is not CodeNamespace codeNamespace) 
+        {
+            throw new InvalidOperationException($"{codeElement.Name} does not have a parent namespace");
+        }
+        var parent = codeNamespace.FindChildByName<CodeFunction>($"deserializeInto{returnType}");
 
         return conventions.GetTypeString(new CodeType { TypeDefinition = parent }, codeElement, false);
     }
 
     private void WriteSerializerFunction(CodeFunction codeElement, LanguageWriter writer)
     {
-        var param = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => (x.Type as CodeType).TypeDefinition is CodeInterface);
-        var codeInterface = (param.Type as CodeType).TypeDefinition as CodeInterface;
+        var param = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => ((CodeType)x.Type).TypeDefinition is CodeInterface);
+        if (param == null || param.Type is not CodeType codeType || codeType.TypeDefinition == null)
+        
+            throw new InvalidOperationException("Interface parameter not found for code interface");
+        
+        var codeInterface = (CodeInterface)codeType.TypeDefinition;
         var inherits = codeInterface.StartBlock.Implements.FirstOrDefault(x => x.TypeDefinition is CodeInterface);
         writer.IncreaseIndent();
 
         if (inherits != null)
         {
-            writer.WriteLine($"serialize{inherits.TypeDefinition.Name.ToFirstCharacterUpperCase()}(writer, {param.Name.ToFirstCharacterLowerCase()})");
+            writer.WriteLine($"serialize{inherits?.TypeDefinition?.Name.ToFirstCharacterUpperCase()}(writer, {param.Name.ToFirstCharacterLowerCase()})");
         }
         writer.WriteLine($"for (const [key, value] of Object.entries({codeInterface.Name.ToFirstCharacterLowerCase()})){{");
         writer.IncreaseIndent();
@@ -139,14 +149,17 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
 
         var propertyTypeName = (codeProperty.Type as CodeType)?.TypeDefinition?.Name;
-        var propType = localConventions.GetTypeString(codeProperty.Type, codeProperty.Parent, false);
+        if (codeProperty.Parent == null) {
+            throw new InvalidOperationException($"Code property must have parent {codePropertyName}");
+        }
+        var propType = localConventions?.GetTypeString(codeProperty.Type, codeProperty.Parent, false);
         writer.IncreaseIndent();
 
         var serializationName = GetSerializationMethodName(codeProperty.Type);
 
         if (serializationName == "writeObjectValue" || serializationName == "writeCollectionOfObjectValues")
         {
-            var serializeName = getSerializerAlias(codeProperty.Type as CodeType, codeFunction, $"serialize{propertyTypeName}");
+            var serializeName = getSerializerAlias((CodeType)codeProperty.Type, codeFunction, $"serialize{propertyTypeName}");
             writer.WriteLine($"writer.{serializationName}<{propType}>(\"{codePropertyName}\", {modelParamName}.{codePropertyName}, {serializeName});");
         }
         else
@@ -162,8 +175,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private string GetSerializationMethodName(CodeTypeBase propType)
     {
-        var propertyType = localConventions.TranslateType(propType);
-        if (propType is CodeType currentType)
+        var propertyType = localConventions?.TranslateType(propType);
+        if (propertyType != null && propType is CodeType currentType)
         {
             var result = GetSerializationMethodNameForCodeType(currentType, propertyType);
             if (!String.IsNullOrWhiteSpace(result))
@@ -178,7 +191,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         };
     }
 
-    private static string GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
+    private static string? GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         if (propType.TypeDefinition is CodeEnum currentEnum)
@@ -193,36 +206,42 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         return null;
     }
 
-    private void WriteDeserializerFunction(CodeFunction codeElement, LanguageWriter writer)
+    private void WriteDeserializerFunction(CodeFunction codeFunction, LanguageWriter writer)
     {
-        var param = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault();
+        var param = codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault();
 
-        var codeInterface = (param.Type as CodeType).TypeDefinition as CodeInterface;
-        var inherits = codeInterface.StartBlock.Implements.FirstOrDefault(x => x.TypeDefinition is CodeInterface);
+        if (param?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface) { 
 
-        var properties = codeInterface.Properties.Where(static x => x.Kind == CodePropertyKind.Custom && !x.ExistsInBaseType);
+            var inherits = codeInterface?.StartBlock?.Implements.FirstOrDefault(x => x.TypeDefinition is CodeInterface);
 
-        writer.WriteLine("return {");
-        writer.IncreaseIndent();
-        if (inherits != null)
-        {
-            writer.WriteLine($"...deserializeInto{inherits.TypeDefinition.Name.ToFirstCharacterUpperCase()}({param.Name.ToFirstCharacterLowerCase()}),");
+            var properties = codeInterface?.Properties.Where(static x => x.Kind == CodePropertyKind.Custom && !x.ExistsInBaseType);
+
+            writer.WriteLine("return {");
+            writer.IncreaseIndent();
+            if (inherits != null)
+            {
+                writer.WriteLine($"...deserializeInto{inherits?.TypeDefinition?.Name.ToFirstCharacterUpperCase()}({param.Name.ToFirstCharacterLowerCase()}),");
+            }
+
+            if (properties != null)
+            {
+                foreach (var otherProp in properties)
+                {
+                    writer.WriteLine($"\"{otherProp.SerializationName.ToFirstCharacterLowerCase() ?? otherProp.Name.ToFirstCharacterLowerCase()}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeFunction)}; }},");
+                }
+            }
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
         }
-
-        foreach (var otherProp in properties)
-        {
-            writer.WriteLine($"\"{otherProp.SerializationName.ToFirstCharacterLowerCase() ?? otherProp.Name.ToFirstCharacterLowerCase()}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }},");
-        }
-
-        writer.DecreaseIndent();
-        writer.WriteLine("}");
+        else
+            throw new InvalidOperationException($"Model interface for deserializer function {codeFunction.Name} is not available");
     }
 
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeFunction codeFunction)
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-        var propertyType = localConventions.GetTypeString(propType, codeFunction, false);
-        if (propType is CodeType currentType)
+        var propertyType = localConventions?.GetTypeString(propType, codeFunction, false);
+        if (propertyType != null && propType is CodeType currentType)
         {
             if (currentType.TypeDefinition is CodeEnum currentEnum)
                 return $"getEnumValue{(currentEnum.Flags || isCollection ? "s" : string.Empty)}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
@@ -242,17 +261,17 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     }
     private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeMethod currentElement)
     {
-        var returnType = localConventions.GetTypeString(targetClassType, currentElement, false);
-        var targetClassName = localConventions.TranslateType(targetClassType);
+        var returnType = localConventions?.GetTypeString(targetClassType, currentElement, false);
+        var targetClassName = localConventions?.TranslateType(targetClassType);
         var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
-        if (targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
+        if (targetClassName!= null && targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
             return $"{resultName}";
         if (targetClassType is CodeType currentType &&
             currentType.TypeDefinition is CodeInterface definitionClass &&
             definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
             parentNamespace.FindChildByName<CodeFunction>(resultName) is CodeFunction factoryMethod)
         {
-            var methodName = localConventions.GetTypeString(new CodeType
+            var methodName = localConventions?.GetTypeString(new CodeType
             {
                 Name = resultName,
                 TypeDefinition = factoryMethod
@@ -262,10 +281,14 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         throw new InvalidOperationException($"Unable to find factory method for {targetClassName}");
     }
 
-    private string getSerializerAlias(CodeType propType, CodeFunction codeFunction, string propertySerializerName)
+    private string? getSerializerAlias(CodeType propType, CodeFunction codeFunction, string propertySerializerName)
     {
-        var serializationFunction = (propType.TypeDefinition.Parent as CodeNamespace).FindChildByName<CodeFunction>(propertySerializerName);
-        return localConventions.GetTypeString(new CodeType
+        if ( propType?.TypeDefinition?.Parent == null ) {
+            throw new InvalidOperationException($"CodeNameSpace for property is not available {propertySerializerName}");
+        }
+        var parentNameSpace = propType?.TypeDefinition?.Parent as CodeNamespace;
+        var serializationFunction = parentNameSpace?.FindChildByName<CodeFunction>(propertySerializerName);
+        return localConventions?.GetTypeString(new CodeType
         {
             TypeDefinition = serializationFunction
         }, codeFunction, false);
