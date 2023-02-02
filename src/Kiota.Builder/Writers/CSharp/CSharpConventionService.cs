@@ -66,7 +66,7 @@ public class CSharpConventionService : CommonLanguageConventionService
             parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
         {
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
-            var urlTplRef = urlTemplateVarName ?? pathParametersProp.Name.ToFirstCharacterUpperCase();
+            var urlTplRef = string.IsNullOrEmpty(urlTemplateVarName) ? pathParametersProp.Name.ToFirstCharacterUpperCase() : urlTemplateVarName;
             writer.WriteLine($"{prefix}new {returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix});");
         }
     }
@@ -215,7 +215,7 @@ public class CSharpConventionService : CommonLanguageConventionService
             "int64" => "long",
             "string" or "float" or "double" or "object" or "void" or "decimal" or "sbyte" or "byte" => type.Name.ToLowerInvariant(),// little casing hack
             "binary" => "byte[]",
-            _ => type.Name?.ToFirstCharacterUpperCase() ?? "object",
+            _ => type.Name?.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
     }
     public bool IsPrimitiveType(string typeName)

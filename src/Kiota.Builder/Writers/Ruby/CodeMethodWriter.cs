@@ -410,7 +410,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             "Guid" => "UUIDTools::UUID",
             "Date" => "Time",
             "DateTimeOffset" => "Time",
-            _ => typeName.ToFirstCharacterUpperCase() ?? "Object",
+            _ => typeName.ToFirstCharacterUpperCase() is string tName && !string.IsNullOrEmpty(tName) ? tName : "Object",
         };
     }
     private string GetSerializationMethodName(CodeTypeBase propType)

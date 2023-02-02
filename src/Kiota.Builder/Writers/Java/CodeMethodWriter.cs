@@ -309,7 +309,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                         .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                                         .OrderBy(static x => x.Name))
         {
-            var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() ?? $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
+            var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
             var defaultValue = propWithDefault.DefaultValue;
             if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
             {
@@ -672,7 +672,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private void WriteSerializationMethodCall(CodeProperty otherProp, CodeMethod method, LanguageWriter writer, string serializationKey, string? dataToSerialize = default)
     {
         if (string.IsNullOrEmpty(dataToSerialize))
-            dataToSerialize = $"this.{otherProp.Getter?.Name?.ToFirstCharacterLowerCase() ?? "get" + otherProp.Name.ToFirstCharacterUpperCase()}()";
+            dataToSerialize = $"this.{(otherProp.Getter?.Name?.ToFirstCharacterLowerCase() is string gName && !string.IsNullOrEmpty(gName) ? gName : "get" + otherProp.Name.ToFirstCharacterUpperCase())}()";
         writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}({serializationKey}, {dataToSerialize});");
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();

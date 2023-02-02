@@ -512,7 +512,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 writer.WriteLine($"{defaultValueReference} := {defaultValue};");
                 defaultValueReference = $"&{defaultValueReference}";
             }
-            var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterUpperCase() ?? $"Set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
+            var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterUpperCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"Set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
             writer.WriteLine($"m.{setterName}({defaultValueReference});");
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
