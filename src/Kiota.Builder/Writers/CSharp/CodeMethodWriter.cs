@@ -579,7 +579,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         if (includeNullableReferenceType)
         {
             var completeReturnTypeWithNullable = isConstructor || string.IsNullOrEmpty(genericTypeSuffix) ? completeReturnType : $"{completeReturnType[..^2].TrimEnd('?')}?{genericTypeSuffix} ";
-            var nullableParameters = string.Join(", ", code.Parameters.OrderBy(static x => x, parameterOrderComparer)
+            var nullableParameters = string.Join(", ", code.Parameters.Order(parameterOrderComparer)
                                                           .Select(p => p.IsOfKind(CodeParameterKind.RequestConfiguration) ?
                                                                                         GetParameterSignatureWithNullableRefType(p, code) :
                                                                                         conventions.GetParameterSignature(p, code))
