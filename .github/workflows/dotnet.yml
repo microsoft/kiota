@@ -130,7 +130,7 @@ jobs:
           ./src/kiota/bin/Debug/net7.0/kiota generate --language Java \
             --openapi tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml \
             --output it/java/src
-      - uses: actions/cache@v1
+      - uses: actions/cache@v3
         with:
           path: /root/.jbang
           key: $-jbang-$
