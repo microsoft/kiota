@@ -540,7 +540,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("ComplexType2Value = complexType2ValueValue", result);
         Assert.Contains("return result", result);
         AssertExtensions.Before("GetStringValue() is string stringValueValue", "GetCollectionOfObjectValues<ComplexType2>", result);
-        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesModelFactoryBodyForIntersectionModels()
@@ -579,7 +579,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("ComplexType1Value = new ComplexType1()", result);
         Assert.Contains("return result", result);
         AssertExtensions.Before("GetStringValue() is string stringValueValue", "GetCollectionOfObjectValues<ComplexType2>", result);
-        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesModelFactoryBodyForInheritedModels()
@@ -633,7 +633,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("return mappingValue switch {", result);
         Assert.Contains("\"ns.childmodel\" => new ChildModel()", result);
         Assert.Contains("_ => new ParentModel()", result);
-        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void DoesntWriteFactorySwitchOnMissingParameter()
@@ -725,7 +725,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("return mappingValue switch {", result);
         Assert.DoesNotContain("\"ns.childmodel\" => new ChildModel()", result);
         Assert.Contains("return new ParentModel()", result);
-        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void DoesntWriteFactorySwitchOnEmptyMappings()
@@ -765,7 +765,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("return mappingValue switch {", result);
         Assert.DoesNotContain("\"ns.childmodel\" => new ChildModel()", result);
         Assert.Contains("return new ParentModel()", result);
-        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesRequestExecutorBodyForCollections()
@@ -993,7 +993,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("writer.WriteStringValue(null, StringValue)", result);
         Assert.Contains("ComplexType2Value != null", result);
         Assert.Contains("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)", result);
-        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesIntersectionSerializerBody()
@@ -1029,7 +1029,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)", result);
         AssertExtensions.Before("writer.WriteStringValue(null, StringValue)", "writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value, ComplexType3Value)", result);
         AssertExtensions.Before("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)", "writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value, ComplexType3Value)", result);
-        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesSerializerBody()
@@ -1076,7 +1076,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains(ParamName, result);
         Assert.Contains(ParamDescription, result);
         Assert.Contains("</summary>", result);
-        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesMethodSyncDescription()
@@ -1100,7 +1100,7 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("@returns a Promise of", result);
-        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesMethodDescriptionLink()
@@ -1126,7 +1126,7 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("<see href=", result);
-        AssertExtensions.CurlyBracesAreClosed(result, 1);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void Defensive()
@@ -1415,9 +1415,53 @@ public class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
 
+    [Fact]
+    public void WritesNullableMethodPrototypeForValueType()
+    {
+        method.ReturnType = new CodeType
+        {
+            Name = "void",
+            IsExternal = true
+        };
+        method.Kind = CodeMethodKind.Constructor;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "ra",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "RequestAdapter",
+                IsExternal = true,
+                IsNullable = false
+            },
+            Optional = false
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "sampleParam",
+            Kind = CodeParameterKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "integer",
+                IsExternal = true,
+                IsNullable = true
+            },
+            Optional = true
+        });
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain(expectedSubstring: "RequestAdapter? ra", result);
+        Assert.Contains(expectedSubstring: "RequestAdapter ra", result);
+        Assert.DoesNotContain("int sampleParam", result);
+        Assert.Contains("int? sampleParam", result);
+        Assert.DoesNotContain("#nullable enable", result);
+        Assert.DoesNotContain("#nullable restore", result);
+        Assert.Contains("_ = ra ?? throw new ArgumentNullException(nameof(ra));", result);
+    }
 
     [Fact]
-    public void WritesNullableMethodPrototype()
+    public void WritesMethodWithEmptyStringAsDefaultValueIfNotNullableAndOptional()
     {
         method.ReturnType = new CodeType
         {
@@ -1445,19 +1489,19 @@ public class CodeMethodWriterTests : IDisposable
             {
                 Name = "string",
                 IsExternal = true,
-                IsNullable = true
+                IsNullable = false
             },
             Optional = true
         });
         parentClass.Kind = CodeClassKind.RequestBuilder;
         writer.Write(method);
         var result = tw.ToString();
-        Assert.DoesNotContain(expectedSubstring: "RequestAdapter? ra", result);
-        Assert.Contains(expectedSubstring: "RequestAdapter ra", result);
-        Assert.Contains("string sampleParam", result);
-        Assert.Contains("string? sampleParam", result);
-        Assert.Contains("#nullable enable", result);
-        Assert.Contains("#nullable restore", result);
+        Assert.DoesNotContain("RequestAdapter? ra", result);
+        Assert.Contains("RequestAdapter ra", result);
+        Assert.Contains("string sampleParam = \"\"", result);
+        Assert.DoesNotContain("string? sampleParam = \"\"", result);
+        Assert.DoesNotContain("#nullable enable", result);
+        Assert.DoesNotContain("#nullable restore", result);
         Assert.Contains("_ = ra ?? throw new ArgumentNullException(nameof(ra));", result);
     }
 }

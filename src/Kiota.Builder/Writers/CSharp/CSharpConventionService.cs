@@ -243,10 +243,11 @@ public class CSharpConventionService : CommonLanguageConventionService
     }
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
-        var parameterType = GetTypeString(parameter.Type, targetElement, true, false);
+        var parameterType = GetTypeString(parameter.Type, targetElement);
         var defaultValue = parameter switch
         {
             _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {parameter.DefaultValue}",
+            _ when nameof(String).Equals(parameterType, StringComparison.OrdinalIgnoreCase) && parameter.Optional => " = \"\"",
             _ when parameter.Optional => " = default",
             _ => string.Empty,
         };
