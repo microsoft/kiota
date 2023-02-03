@@ -332,4 +332,49 @@ public class CodeFunctionWriterTests : IDisposable
         Assert.DoesNotContain("readOnlyProperty", result);
         Assert.Contains("someProperty", result);
     }
+
+    [Fact]
+    public async Task AddsUsingsForErrorTypesForRequestExecutor()
+    {
+        var requestBuilder = root.AddClass(new CodeClass
+        {
+            Name = "somerequestbuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
+        var errorClass = TestHelper.CreateModelClass("Error4XX");
+        errorClass.IsErrorDefinition = true;
+        var factoryMethod = errorClass.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "Error4XX",
+                TypeDefinition = errorClass,
+            },
+            IsStatic = true,
+        }).First();
+        subNS.AddClass(errorClass);
+        var requestExecutor = requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "get",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            },
+        }).First();
+        requestExecutor.AddErrorMapping("4XX", new CodeType
+        {
+            Name = "Error4XX",
+            TypeDefinition = errorClass,
+        });
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+
+        var declaration = requestBuilder.StartBlock;
+        var serializeFunction = subNS.FindChildByName<CodeFunction>("createError4XXFromDiscriminatorValue");
+        Assert.NotNull(serializeFunction);
+        Assert.Contains("createError4XXFromDiscriminatorValue", declaration.Usings.Select(x => x.Declaration?.Name));
+    }
 }

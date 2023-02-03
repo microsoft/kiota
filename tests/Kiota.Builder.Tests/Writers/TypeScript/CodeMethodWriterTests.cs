@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
+using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.TypeScript;
 
@@ -31,7 +33,8 @@ public class CodeMethodWriterTests : IDisposable
         root = CodeNamespace.InitRootNamespace();
         parentClass = new CodeClass
         {
-            Name = "parentClass"
+            Name = "parentClass",
+            Kind = CodeClassKind.RequestBuilder
         };
         root.AddClass(parentClass);
         method = new CodeMethod
@@ -116,11 +119,7 @@ public class CodeMethodWriterTests : IDisposable
             Type = useComplexTypeForBody ? new CodeType
             {
                 Name = "SomeComplexTypeForRequestBody",
-                TypeDefinition = root.AddClass(new CodeClass
-                {
-                    Name = "SomeComplexTypeForRequestBody",
-                    Kind = CodeClassKind.Model,
-                }).First(),
+                TypeDefinition = root.AddClass(TestHelper.CreateModelClass("SomeComplexTypeForRequestBody")).First(),
             } : stringType,
         });
         method.AddParameter(new CodeParameter
@@ -192,16 +191,8 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesModelFactoryBodyThrowsIfMethodAndNotFactory()
     {
-        var parentModel = root.AddClass(new CodeClass
-        {
-            Name = "parentModel",
-            Kind = CodeClassKind.Model,
-        }).First();
-        var childModel = root.AddClass(new CodeClass
-        {
-            Name = "childModel",
-            Kind = CodeClassKind.Model,
-        }).First();
+        var parentModel = root.AddClass(TestHelper.CreateModelClass("parentModel")).First();
+        var childModel = root.AddClass(TestHelper.CreateModelClass("childModel")).First();
         childModel.StartBlock.Inherits = new CodeType
         {
             Name = "parentModel",
@@ -288,13 +279,14 @@ public class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesRequestGeneratorBodyForParsable()
+    public async Task WritesRequestGeneratorBodyForParsable()
     {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
         AddRequestBodyParameters(true);
         method.AcceptedResponseTypes.Add("application/json");
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("const requestInfo = new RequestInformation()", result);

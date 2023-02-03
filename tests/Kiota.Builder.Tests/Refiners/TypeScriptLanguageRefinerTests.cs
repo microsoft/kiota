@@ -143,38 +143,7 @@ public class TypeScriptLanguageRefinerTests
             };
             await Assert.ThrowsAsync<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root));
         }
-        [Fact]
-        public async Task AddsUsingsForErrorTypesForRequestExecutor()
-        {
-            var requestBuilder = root.AddClass(new CodeClass
-            {
-                Name = "somerequestbuilder",
-                Kind = CodeClassKind.RequestBuilder,
-            }).First();
-            var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
-            var errorClass = TestHelper.CreateModelClass("Error4XX");
-            errorClass.IsErrorDefinition = true;
-            subNS.AddClass(errorClass);
-            var requestExecutor = requestBuilder.AddMethod(new CodeMethod
-            {
-                Name = "get",
-                Kind = CodeMethodKind.RequestExecutor,
-                ReturnType = new CodeType
-                {
-                    Name = "string"
-                },
-            }).First();
-            requestExecutor.AddErrorMapping("4XX", new CodeType
-            {
-                Name = "Error4XX",
-                TypeDefinition = errorClass,
-            });
-            await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-
-            var declaration = requestBuilder.StartBlock;
-
-            Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
-        }
+        
         [Fact]
         public async Task AddsUsingsForDiscriminatorTypes()
         {
