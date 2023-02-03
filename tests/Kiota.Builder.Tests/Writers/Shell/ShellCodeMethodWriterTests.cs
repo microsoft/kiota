@@ -394,7 +394,8 @@ public class ShellCodeMethodWriterTests : IDisposable
                 Name = "string",
                 IsNullable = true,
             },
-            Documentation = new() {
+            Documentation = new()
+            {
                 DocumentationLink = new Uri("https://test.com/help/description")
             }
         });
@@ -407,7 +408,8 @@ public class ShellCodeMethodWriterTests : IDisposable
                 Name = "string",
                 IsNullable = true,
             },
-            Documentation = new() {
+            Documentation = new()
+            {
                 Description = "Documentation label",
                 DocumentationLink = new Uri("https://test.com/help/description")
             }
