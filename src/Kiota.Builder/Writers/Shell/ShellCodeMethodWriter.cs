@@ -314,9 +314,11 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 optionBuilder.Append($", getDefaultValue: ()=> {defaultValue}");
             }
 
-            if (!string.IsNullOrEmpty(option.Documentation.Description))
+            var help = BuildDescriptionForElement(option);
+
+            if (!string.IsNullOrEmpty(help))
             {
-                optionBuilder.Append($", description: \"{option.Documentation.Description}\"");
+                optionBuilder.Append($", description: \"{help}\"");
             }
 
             optionBuilder.Append(") {");
@@ -348,8 +350,44 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
 
     private static void WriteCommandDescription(CodeMethod codeElement, LanguageWriter writer)
     {
-        if (!string.IsNullOrWhiteSpace(codeElement.Documentation.Description))
-            writer.WriteLine($"command.Description = \"{codeElement.Documentation.Description}\";");
+        var help = BuildDescriptionForElement(codeElement);
+        if (!string.IsNullOrWhiteSpace(help))
+            writer.WriteLine($"command.Description = \"{help}\";");
+    }
+
+    private static string? BuildDescriptionForElement(CodeElement element)
+    {
+        var documentation = element switch
+        {
+            CodeMethod doc when element is CodeMethod => doc.Documentation,
+            CodeProperty prop when element is CodeProperty => prop.Documentation,
+            CodeIndexer prop when element is CodeIndexer => prop.Documentation,
+            CodeParameter prop when element is CodeParameter => prop.Documentation,
+            _ => null,
+        };
+        if (documentation is null) return null;
+        var helpDescBuilder = new StringBuilder();
+        if (documentation.DescriptionAvailable)
+        {
+            helpDescBuilder.Append(documentation.Description);
+        }
+
+        if (documentation.DocumentationLink is not null)
+        {
+            if (element is CodeParameter)
+            {
+                if (documentation.DescriptionAvailable) helpDescBuilder.Append("\\n");
+                helpDescBuilder.Append("See: ");
+            }
+            else
+            {
+                if (documentation.DescriptionAvailable) helpDescBuilder.Append("\\n\\n");
+                helpDescBuilder.Append("Related Links:\\n  ");
+            }
+            helpDescBuilder.Append(documentation.DocumentationLink);
+        }
+
+        return helpDescBuilder.ToString();
     }
 
     private void WriteContainerCommand(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, string name)
