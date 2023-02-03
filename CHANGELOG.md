@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for Composed types (De)Serialization for PHP Generation. [#1814](https://github.com/microsoft/kiota/issues/1814)
 - Added support for backing store in Go. [466](https://github.com/microsoft/kiota/issues/466)
 - Added support for inherited error types by inlining the parents. [2194](https://github.com/microsoft/kiota/issues/2194)
+- Added support for documentation links in CLI's help commands.
 
 ### Changed
 
