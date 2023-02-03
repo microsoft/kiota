@@ -410,7 +410,23 @@ public class ShellCodeMethodWriterTests : IDisposable
             },
             Documentation = new()
             {
-                Description = "Documentation label",
+                Description = "Documentation label2",
+                DocumentationLink = new Uri("https://test.com/help/description")
+            }
+        });
+        generatorMethod.AddPathQueryOrHeaderParameter(new CodeParameter
+        {
+            Name = "testDoc3",
+            Kind = CodeParameterKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsNullable = true,
+            },
+            Documentation = new()
+            {
+                Description = "Documentation label3",
+                DocumentationLabel = "Test label",
                 DocumentationLink = new Uri("https://test.com/help/description")
             }
         });
@@ -428,7 +444,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(testHeaderOption);", result);
         // Should generated code have Option<string?> instead? Currently for the CLI, it doesn't matter since GetValueForOption always returns nullable types
         Assert.Contains("var testDocOption = new Option<string>(\"--test-doc\", description: \"See: https://test.com/help/description\")", result);
-        Assert.Contains("var testDoc2Option = new Option<string>(\"--test-doc2\", description: \"Documentation label\\nSee: https://test.com/help/description\")", result);
+        Assert.Contains("var testDoc2Option = new Option<string>(\"--test-doc2\", description: \"Documentation label2\\nSee: https://test.com/help/description\")", result);
+        Assert.Contains("var testDoc3Option = new Option<string>(\"--test-doc3\", description: \"Documentation label3\\nTest label: https://test.com/help/description\")", result);
         Assert.Contains("command.SetHandler(async (invocationContext) => {", result);
         Assert.Contains("var q = invocationContext.ParseResult.GetValueForOption(qOption);", result);
         Assert.Contains("var testHeader = invocationContext.ParseResult.GetValueForOption(testHeaderOption);", result);
