@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for external documentation links on request execution methods (PHP Generation). [2138](https://github.com/microsoft/kiota/issues/2138)
 - Added support for nullable reference types in dotnet for projects running Netstandard 2.1/Net 6.0 and above [2073](https://github.com/microsoft/kiota/issues/2073)
 - Added support for multi-value headers to CLI generation. (Shell)
+- Added support for overriding some of the generation settings in the OpenAPI description. [#2197](https://github.com/microsoft/kiota/issues/2197)
 - Added support for multi-value headers for PHP Generation. [#2052](https://github.com/microsoft/kiota/issues/2052)
 - Added support for Composed types (De)Serialization for PHP Generation. [#1814](https://github.com/microsoft/kiota/issues/1814)
 - Added support for backing store in Go. [466](https://github.com/microsoft/kiota/issues/466)
