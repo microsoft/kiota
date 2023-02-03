@@ -103,6 +103,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
                 Description = "Unique identifier of the item",
             },
             Type = originalIndexer.IndexType?.Clone() is CodeTypeBase indexType ? indexType : throw new InvalidOperationException("index type is null"),
+            SerializationName = originalIndexer.SerializationName,
         };
         parameter.Type.IsNullable = parameterNullable;
         method.AddParameter(parameter);

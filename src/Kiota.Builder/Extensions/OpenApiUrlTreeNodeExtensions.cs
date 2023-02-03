@@ -66,7 +66,7 @@ public static class OpenApiUrlTreeNodeExtensions
     public static IEnumerable<OpenApiParameter> GetPathParametersForCurrentSegment(this OpenApiUrlTreeNode node)
     {
         if (node != null &&
-            node.Segment.Any(static x => x == requestParametersChar))
+            node.IsComplexPathMultipleParameters())
             if (node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
                 return GetParametersForPathItem(pathItem, node.Segment);
             else if (node.Children.Any())
