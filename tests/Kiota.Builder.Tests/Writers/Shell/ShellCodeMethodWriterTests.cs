@@ -354,6 +354,113 @@ public class ShellCodeMethodWriterTests : IDisposable
     }
 
     [Fact]
+    public void WritesExecutableCommandWithRelatedLinksInDescription()
+    {
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.Documentation.Description = "Test description";
+        method.Documentation.DocumentationLink = new Uri("https://test.com/help/description");
+        method.SimpleName = "User";
+        method.HttpMethod = HttpMethod.Get;
+        var stringType = new CodeType
+        {
+            Name = "string",
+        };
+        var generatorMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.RequestGenerator,
+            Name = "CreateGetRequestInformation",
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
+        };
+        method.OriginalMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.RequestExecutor,
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
+            Parent = method.Parent
+        };
+        var codeClass = method.Parent as CodeClass;
+        codeClass.AddMethod(generatorMethod);
+
+        AddRequestProperties();
+        AddRequestBodyParameters(method.OriginalMethod);
+        AddPathQueryAndHeaderParameters(generatorMethod);
+        generatorMethod.AddPathQueryOrHeaderParameter(new CodeParameter
+        {
+            Name = "testDoc",
+            Kind = CodeParameterKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsNullable = true,
+            },
+            Documentation = new()
+            {
+                DocumentationLink = new Uri("https://test.com/help/description")
+            }
+        });
+        generatorMethod.AddPathQueryOrHeaderParameter(new CodeParameter
+        {
+            Name = "testDoc2",
+            Kind = CodeParameterKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsNullable = true,
+            },
+            Documentation = new()
+            {
+                Description = "Documentation label2",
+                DocumentationLink = new Uri("https://test.com/help/description")
+            }
+        });
+        generatorMethod.AddPathQueryOrHeaderParameter(new CodeParameter
+        {
+            Name = "testDoc3",
+            Kind = CodeParameterKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsNullable = true,
+            },
+            Documentation = new()
+            {
+                Description = "Documentation label3",
+                DocumentationLabel = "Test label",
+                DocumentationLink = new Uri("https://test.com/help/description")
+            }
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("command.Description = \"Test description\\n\\nRelated Links:\\n  https://test.com/help/description\";", result);
+        Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
+        Assert.Contains("qOption.IsRequired = false;", result);
+        Assert.Contains("command.AddOption(qOption);", result);
+        Assert.Matches("var testHeaderOption = new Option<string\\[]>\\(\"--test-header\", description: \"The test header\"\\) {\\s+Arity = ArgumentArity.OneOrMore", result);
+        Assert.Contains("testHeaderOption.IsRequired = true;", result);
+        Assert.Contains("command.AddOption(testHeaderOption);", result);
+        // Should generated code have Option<string?> instead? Currently for the CLI, it doesn't matter since GetValueForOption always returns nullable types
+        Assert.Contains("var testDocOption = new Option<string>(\"--test-doc\", description: \"See: https://test.com/help/description\")", result);
+        Assert.Contains("var testDoc2Option = new Option<string>(\"--test-doc2\", description: \"Documentation label2\\nSee: https://test.com/help/description\")", result);
+        Assert.Contains("var testDoc3Option = new Option<string>(\"--test-doc3\", description: \"Documentation label3\\nTest label: https://test.com/help/description\")", result);
+        Assert.Contains("command.SetHandler(async (invocationContext) => {", result);
+        Assert.Contains("var q = invocationContext.ParseResult.GetValueForOption(qOption);", result);
+        Assert.Contains("var testHeader = invocationContext.ParseResult.GetValueForOption(testHeaderOption);", result);
+        Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
+        Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
+        Assert.Contains("if (testHeader is not null) requestInfo.Headers.Add(\"Test-Header\", testHeader);", result);
+        Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken) ?? Stream.Null;", result);
+        Assert.Contains("IOutputFormatterFactory outputFormatterFactory = invocationContext.BindingContext.GetRequiredService<IOutputFormatterFactory>();", result);
+        Assert.Contains("var formatter = outputFormatterFactory.GetFormatter(FormatterType.TEXT);", result);
+        Assert.Contains("await formatter.WriteOutputAsync(response, null, cancellationToken);", result);
+        Assert.Contains("});", result);
+        Assert.Contains("return command;", result);
+    }
+
+    [Fact]
     public void WritesExecutableCommandForGetRequestPrimitive()
     {
         method.Kind = CodeMethodKind.CommandBuilder;
@@ -405,6 +512,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(qOption);", result);
         Assert.Matches("var testHeaderOption = new Option<string\\[]>\\(\"--test-header\", description: \"The test header\"\\) {\\s+Arity = ArgumentArity.OneOrMore", result);
         Assert.Contains("testHeaderOption.IsRequired = true;", result);
+        Assert.Contains("var countOption = new Option<bool?>(\"--count\")", result);
         Assert.Contains("command.AddOption(testHeaderOption);", result);
         Assert.Contains("command.SetHandler(async (invocationContext) => {", result);
         Assert.Contains("var q = invocationContext.ParseResult.GetValueForOption(qOption);", result);
