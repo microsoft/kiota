@@ -76,9 +76,21 @@ public class CSharpConventionService : CommonLanguageConventionService
         if (pathParametersType == null) return;
         writer.WriteLine($"var {TempDictionaryVarName} = new {pathParametersType.Name}({pathParametersReference});");
         if (parameters.Any())
+        {
             writer.WriteLines(parameters.Select(p =>
-                $"{TempDictionaryVarName}.Add(\"{p.Item2}\", {p.Item3});"
-            ).ToArray());
+            {
+                var (ct, name, identName) = p;
+                string nullCheck = string.Empty;
+                if (ct.CollectionKind == CodeTypeCollectionKind.None && ct.IsNullable)
+                {
+                    if (nameof(String).Equals(ct.Name, StringComparison.OrdinalIgnoreCase))
+                        nullCheck = $"if (!string.IsNullOrWhiteSpace({identName})) ";
+                    else
+                        nullCheck = $"if ({identName} is not null) ";
+                }
+                return $"{nullCheck}{TempDictionaryVarName}.Add(\"{name}\", {identName});";
+            }).ToArray());
+        }
     }
 #pragma warning restore CA1822 // Method should be static
     private static bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName)
@@ -235,6 +247,7 @@ public class CSharpConventionService : CommonLanguageConventionService
         var defaultValue = parameter switch
         {
             _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {parameter.DefaultValue}",
+            _ when nameof(String).Equals(parameterType, StringComparison.OrdinalIgnoreCase) && parameter.Optional => " = \"\"",
             _ when parameter.Optional => " = default",
             _ => string.Empty,
         };

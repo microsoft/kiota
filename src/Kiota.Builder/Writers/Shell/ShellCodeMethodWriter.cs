@@ -250,7 +250,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                         writer.WriteLine($"{formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
                     }
                     formatterTypeVal = outputFormatParamName;
-                    string canFilterExpr = $"(response is not null)";
+                    string canFilterExpr = $"(response != Stream.Null)";
                     writer.WriteLine($"response = {canFilterExpr} ? await {outputFilterParamName}.FilterOutputAsync(response, {outputFilterQueryParamName}, {cancellationTokenParamName}) : response;");
                     if (originalMethod?.PagingInformation == null)
                     {
