@@ -93,4 +93,26 @@ public class GenerateSample : IDisposable
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Java)]
+    [InlineData(GenerationLanguage.Go)]
+    [InlineData(GenerationLanguage.Ruby)]
+    [InlineData(GenerationLanguage.Python)]
+    [InlineData(GenerationLanguage.TypeScript)]
+    [InlineData(GenerationLanguage.PHP)]
+    [Theory]
+    public async Task GeneratesErrorsInliningParents(GenerationLanguage language)
+    {
+        var logger = LoggerFactory.Create(builder =>
+        {
+        }).CreateLogger<KiotaBuilder>();
+
+        var configuration = new GenerationConfiguration
+        {
+            Language = language,
+            OpenAPIFilePath = "InheritingErrors.yaml",
+            OutputPath = $".\\Generated\\ErrorInlineParents\\{language}",
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+    }
 }

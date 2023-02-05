@@ -119,6 +119,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddQueryParameterMapperMethod(
                 generatedCode
             );
+            IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
             AliasUsingsWithSameSymbol(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
@@ -361,7 +362,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var deserializerMethod = modelClass.Methods.FirstOrDefault(x => x.Kind == CodeMethodKind.Deserializer);
         if (serializerMethod == null || deserializerMethod == null)
         {
-            throw new InvalidOperationException($"The refiner was unable to local serializer/derserializer method for {modelClass.Name}");
+            throw new InvalidOperationException($"The refiner was unable to create local serializer/derserializer method for {modelClass.Name}");
         }
         serializerMethod.IsStatic = true;
         deserializerMethod.IsStatic = true;

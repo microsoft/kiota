@@ -83,7 +83,7 @@ public class JavaConventionService : CommonLanguageConventionService
             "binary" => "byte[]",
             "Guid" => "UUID",
             _ when type.Name.Contains('.') => type.Name, // casing
-            _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",
+            _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
         };
     }
     public override void WriteShortDescription(string description, LanguageWriter writer)
@@ -119,7 +119,7 @@ public class JavaConventionService : CommonLanguageConventionService
     {
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-        var urlTemplateParams = urlTemplateVarName ?? pathParametersProperty?.Name;
+        var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) ? pathParametersProperty?.Name : urlTemplateVarName;
         var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
         writer.WriteLines($"return new {returnType}({urlTemplateParams}, {requestAdapterProp?.Name}{pathParametersSuffix});");
     }

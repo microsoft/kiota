@@ -304,8 +304,9 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public void WritesMethodAsyncDescription() {
-        
+    public void WritesMethodAsyncDescription()
+    {
+
         method.Documentation.Description = MethodDescription;
         var parameter = new CodeParameter
         {

@@ -15,7 +15,23 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
 builder.Services.AddLocalization();
-builder.Services.AddFluentUIComponents();
+builder.Services.AddFluentUIComponents(configuration =>
+{
+    ArgumentNullException.ThrowIfNull(configuration);
+    configuration.IconConfiguration.Sizes = new[]
+    {
+        IconSize.Size16,
+        IconSize.Size20,
+        IconSize.Size24,
+        IconSize.Size28,
+    };
+    configuration.IconConfiguration.Variants = new[]
+    {
+        IconVariant.Regular
+    };
+    configuration.EmojiConfiguration.Styles = Array.Empty<EmojiStyle>();
+    configuration.EmojiConfiguration.Groups = Array.Empty<EmojiGroup>();
+});
 builder.Services.AddBlazorApplicationInsights();
 var configObject = new KiotaConfiguration();
 builder.Configuration.Bind(configObject);

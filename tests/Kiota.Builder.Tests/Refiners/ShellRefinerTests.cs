@@ -60,7 +60,7 @@ public class ShellRefinerTests
         });
 
         // Add indexer
-        requestBuilder.SetIndexer(new CodeIndexer
+        requestBuilder.Indexer = new CodeIndexer
         {
             Name = "Users",
             ReturnType = new CodeType
@@ -71,7 +71,7 @@ public class ShellRefinerTests
             {
                 Name = "string"
             },
-        });
+        };
 
         // Add request executor
         requestBuilder.AddMethod(new CodeMethod

@@ -30,7 +30,7 @@ public class CSharpLanguageRefinerTests
         Assert.Equal("ApiException", declaration.Inherits.Name);
     }
     [Fact]
-    public async Task FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit()
+    public async Task InlineParentOnErrorClassesWhichAlreadyInherit()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -38,12 +38,47 @@ public class CSharpLanguageRefinerTests
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
+
+        var otherModel = root.AddClass(new CodeClass
+        {
+            Name = "otherModel",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = false,
+        }).First();
+        otherModel.AddProperty(
+        new CodeProperty
+        {
+            Name = "otherProp",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        otherModel.AddMethod(
+        new CodeMethod
+        {
+            Name = "otherMethod",
+            Kind = CodeMethodKind.RequestGenerator,
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        otherModel.AddUsing(
+        new CodeUsing
+        {
+            Name = "otherNs",
+        });
         var declaration = model.StartBlock;
         declaration.Inherits = new CodeType
         {
-            Name = "SomeOtherModel"
+            TypeDefinition = otherModel
         };
-        await Assert.ThrowsAsync<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root));
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+
+        Assert.Contains(model.Properties, x => x.Name.Equals("otherProp"));
+        Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));
+        Assert.Contains(model.Usings, x => x.Name.Equals("otherNs"));
     }
     [Fact]
     public async Task AddsUsingsForErrorTypesForRequestExecutor()
@@ -163,7 +198,7 @@ public class CSharpLanguageRefinerTests
             },
             ReturnType = indexerCodeType
         };
-        requestBuilder.SetIndexer(indexer);
+        requestBuilder.Indexer = indexer;
 
 
         var itemSubNamespace = root.AddNamespace($"{subNS.Name}.item"); // otherwise the import gets trimmed
@@ -232,7 +267,7 @@ public class CSharpLanguageRefinerTests
                 Name = "string"
             }
         };
-        model.SetIndexer(indexer);
+        model.Indexer = indexer;
         method.AddParameter(parameter);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the indexer doesn't get removed
         Assert.True(property.Type is CodeType);

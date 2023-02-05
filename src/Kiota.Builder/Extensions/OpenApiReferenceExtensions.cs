@@ -5,8 +5,9 @@ public static class OpenApiReferenceExtensions
 {
     public static string GetClassName(this OpenApiReference? reference)
     {
-        var referenceId = reference?.Id ?? string.Empty;
-        return referenceId[(referenceId.LastIndexOf('.') + 1)..]
+        if (reference?.Id is string referenceId && !string.IsNullOrEmpty(referenceId))
+            return referenceId[(referenceId.LastIndexOf('.') + 1)..]
                                     .ToFirstCharacterUpperCase();
+        return string.Empty;
     }
 }

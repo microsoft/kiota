@@ -4,11 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
-using Kiota.Builder.Refiners;
-using Kiota.Builder.Writers;
-using Kiota.Builder.Tests;
-using Xunit;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
+using Kiota.Builder.Tests;
+using Kiota.Builder.Writers;
+using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
 public class CodeFunctionWriterTests : IDisposable

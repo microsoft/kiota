@@ -66,7 +66,7 @@ public static class OpenApiUrlTreeNodeExtensions
     public static IEnumerable<OpenApiParameter> GetPathParametersForCurrentSegment(this OpenApiUrlTreeNode node)
     {
         if (node != null &&
-            node.Segment.Any(static x => x == requestParametersChar))
+            node.IsComplexPathMultipleParameters())
             if (node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
                 return GetParametersForPathItem(pathItem, node.Segment);
             else if (node.Children.Any())
@@ -91,10 +91,13 @@ public static class OpenApiUrlTreeNodeExtensions
     }
     private static string GetSegmentName(this OpenApiUrlTreeNode currentNode, HashSet<string> structuredMimeTypes, string? suffix, string? prefix, OpenApiOperation? operation, OpenApiResponse? response, OpenApiSchema? schema, bool requestBody, Func<IEnumerable<string>, string> segmentsReducer)
     {
-        var rawClassName = schema?.Reference?.GetClassName() ??
-                            (requestBody ? null : response?.GetResponseSchema(structuredMimeTypes)?.Reference?.GetClassName()) ??
-                            (requestBody ? operation?.GetRequestSchema(structuredMimeTypes) : operation?.GetResponseSchema(structuredMimeTypes))?.Reference?.GetClassName() ??
-                            CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier();
+        var rawClassName = schema?.Reference?.GetClassName() is string className && !string.IsNullOrEmpty(className) ?
+                            className :
+                            ((requestBody ? null : response?.GetResponseSchema(structuredMimeTypes)?.Reference?.GetClassName()) is string responseClassName && !string.IsNullOrEmpty(responseClassName) ?
+                                responseClassName :
+                                ((requestBody ? operation?.GetRequestSchema(structuredMimeTypes) : operation?.GetResponseSchema(structuredMimeTypes))?.Reference?.GetClassName() is string requestClassName && !string.IsNullOrEmpty(requestClassName) ?
+                                    requestClassName :
+                                    CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier()));
         if (!string.IsNullOrEmpty(rawClassName))
         {
             if (stripExtensionForIndexersRegex.IsMatch(rawClassName))
@@ -131,9 +134,11 @@ public static class OpenApiUrlTreeNodeExtensions
     public static string CleanupDescription(this string? description) => string.IsNullOrEmpty(description) ? string.Empty : descriptionCleanupRegex.Replace(description, string.Empty);
     public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string? defaultValue = default) =>
     !string.IsNullOrEmpty(label) && (currentNode?.PathItems.ContainsKey(label) ?? false) ?
-            (currentNode.PathItems[label].Description ??
-            currentNode.PathItems[label].Summary ??
-            defaultValue).CleanupDescription() :
+            (currentNode.PathItems[label].Description is string description && !string.IsNullOrEmpty(description) ?
+                description :
+                (currentNode.PathItems[label].Summary is string summary && !string.IsNullOrEmpty(summary) ?
+                    summary :
+            defaultValue)).CleanupDescription() :
         (defaultValue ?? string.Empty);
     public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParameter();
     public static bool IsPathSegmentWithSingleSimpleParameter(this OpenApiUrlTreeNode currentNode) =>

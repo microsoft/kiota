@@ -34,7 +34,7 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
 
     public void UpdateChildElement(string currentDeclarationName, string newDeclarationName)
     {
-        var codeElement = InnerChildElements.First(x=> x.Key == currentDeclarationName);
+        var codeElement = InnerChildElements.First(x => x.Key == currentDeclarationName);
         InnerChildElements.TryRemove(currentDeclarationName, out _);
         InnerChildElements.GetOrAdd(newDeclarationName, codeElement.Value);
 

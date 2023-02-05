@@ -27,25 +27,25 @@ public class CodeNameSpaceWriterTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-        [Fact]
-        public void ExportsInterfacesAndFunctions()
+    [Fact]
+    public void ExportsInterfacesAndFunctions()
+    {
+        var root = CodeNamespace.InitRootNamespace();
+        var modelInterface = new CodeInterface
         {
-            var root = CodeNamespace.InitRootNamespace();
-            var modelInterface = new CodeInterface
-            {
-                Name = "ModelInterface",
-                Kind = CodeInterfaceKind.Model
-            };
-            var modelEnum = new CodeEnum
-            {
-                Name = "TestEnum", // The tests should verify if the printed file names start with lower case.
-            };
-            root.AddEnum(modelEnum);
-            root.AddInterface(modelInterface);
-            writer.Write(root);
-            var result = tw.ToString();
-            Console.WriteLine(result);
-            Assert.Contains($"export * from './testEnum'{Environment.NewLine}export * from './modelInterface'{Environment.NewLine}", result);
-        }
-    
+            Name = "ModelInterface",
+            Kind = CodeInterfaceKind.Model
+        };
+        var modelEnum = new CodeEnum
+        {
+            Name = "TestEnum", // The tests should verify if the printed file names start with lower case.
+        };
+        root.AddEnum(modelEnum);
+        root.AddInterface(modelInterface);
+        writer.Write(root);
+        var result = tw.ToString();
+        Console.WriteLine(result);
+        Assert.Contains($"export * from './testEnum'{Environment.NewLine}export * from './modelInterface'{Environment.NewLine}", result);
+    }
+
 }

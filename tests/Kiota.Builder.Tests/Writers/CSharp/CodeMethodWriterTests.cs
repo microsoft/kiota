@@ -1414,4 +1414,94 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("ReadOnlyProperty", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+
+    [Fact]
+    public void WritesNullableMethodPrototypeForValueType()
+    {
+        method.ReturnType = new CodeType
+        {
+            Name = "void",
+            IsExternal = true
+        };
+        method.Kind = CodeMethodKind.Constructor;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "ra",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "RequestAdapter",
+                IsExternal = true,
+                IsNullable = false
+            },
+            Optional = false
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "sampleParam",
+            Kind = CodeParameterKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "integer",
+                IsExternal = true,
+                IsNullable = true
+            },
+            Optional = true
+        });
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain(expectedSubstring: "RequestAdapter? ra", result);
+        Assert.Contains(expectedSubstring: "RequestAdapter ra", result);
+        Assert.DoesNotContain("int sampleParam", result);
+        Assert.Contains("int? sampleParam", result);
+        Assert.DoesNotContain("#nullable enable", result);
+        Assert.DoesNotContain("#nullable restore", result);
+        Assert.Contains("_ = ra ?? throw new ArgumentNullException(nameof(ra));", result);
+    }
+
+    [Fact]
+    public void WritesMethodWithEmptyStringAsDefaultValueIfNotNullableAndOptional()
+    {
+        method.ReturnType = new CodeType
+        {
+            Name = "void",
+            IsExternal = true
+        };
+        method.Kind = CodeMethodKind.Constructor;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "ra",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "RequestAdapter",
+                IsExternal = true,
+                IsNullable = false
+            },
+            Optional = false
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "sampleParam",
+            Kind = CodeParameterKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsExternal = true,
+                IsNullable = false
+            },
+            Optional = true
+        });
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("RequestAdapter? ra", result);
+        Assert.Contains("RequestAdapter ra", result);
+        Assert.Contains("string sampleParam = \"\"", result);
+        Assert.DoesNotContain("string? sampleParam = \"\"", result);
+        Assert.DoesNotContain("#nullable enable", result);
+        Assert.DoesNotContain("#nullable restore", result);
+        Assert.Contains("_ = ra ?? throw new ArgumentNullException(nameof(ra));", result);
+    }
 }
