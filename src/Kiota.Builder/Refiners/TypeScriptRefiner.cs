@@ -119,7 +119,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddQueryParameterMapperMethod(
                 generatedCode
             );
-            IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType); // <- Changes model classes and request configs
             AliasUsingsWithSameSymbol(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
@@ -342,6 +341,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         AddDeserializerUsingToDisriminatorFactory(generatedCode);
         ReplaceRequestConfigurationsQueryParamsWithInterfaces(generatedCode);
         AddStaticMethodsUsingsToDeserializerFunctions(generatedCode, functionNameCallback);
+        //PrintNames(generatedCode);
     }
 
     private static void CreateSeparateSerializers(CodeElement codeElement)
@@ -432,13 +432,16 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentElement is CodeClass currentClass)
         {
-            if (currentClass.IsOfKind(CodeClassKind.Model))
+            if (currentClass.Kind == CodeClassKind.Model)
             {
                 var targetNS = currentClass.GetImmediateParentOfType<CodeNamespace>();
-                var existing = targetNS.FindChildByName<CodeInterface>(currentClass.Name, false);
-                targetNS.RemoveChildElement(currentElement);
-                if (existing != null)
+
+                var existing = targetNS.Classes.FirstOrDefault(x => x == currentClass);
+                if (existing == null)
+                {
                     return;
+                }
+
                 targetNS.RemoveChildElement(currentElement);
             }
             else
@@ -506,13 +509,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 ProcessorRequestBuilders(currentClass, interfaceNamingCallback);
             }
-        }
-        /***
-         * Change model types associated with Request Builder http methods and http request creator methods.
-         **/
-        else if (currentElement is CodeMethod codeMethod && codeMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))
-        {
-
         }
 
         CrawlTree(currentElement, x => GenerateModelInterfaces(x, interfaceNamingCallback));
@@ -693,7 +689,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else
             throw new InvalidOperationException("");
-
         return modelInterface;
     }
 
@@ -945,7 +940,3 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(codeElement, AddDeserializerUsingToDisriminatorFactory);
     }
 }
-
-
-
-

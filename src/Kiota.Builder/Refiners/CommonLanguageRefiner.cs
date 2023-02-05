@@ -310,10 +310,30 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             {
                 currentProperty.SerializationName = currentProperty.Name;
             }
-            current.Name = replacement.Invoke(current.Name);
+            var newDeclarationName = replacement.Invoke(current.Name);
+
+            /* Update element name in the InnerChildElements property of CodeBlock.
+             */
+            if (current.Parent is CodeNamespace  || current.Parent is CodeClass) 
+            {
+                UpdateReservedNameReplacementInParent(current, newDeclarationName);
+            }
+            current.Name = newDeclarationName;
         }
 
         CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
+    }
+
+    private static void UpdateReservedNameReplacementInParent(CodeElement codeElement , string newDeclarationName)
+    {
+        if (codeElement.Parent is CodeNamespace codeNamespace)
+        {
+            codeNamespace.UpdateChildElement(codeElement.Name, newDeclarationName);
+        }
+        else if (codeElement.Parent is CodeClass codeClass)
+        {
+            codeClass.UpdateChildElement(codeElement.Name, newDeclarationName);
+        }
     }
     private static void ReplaceReservedEnumNames(CodeEnum currentEnum, IReservedNamesProvider provider, Func<string, string> replacement)
     {

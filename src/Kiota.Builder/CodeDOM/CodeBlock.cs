@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -30,6 +31,14 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
             return InnerChildElements.Values;
         return new CodeElement[] { StartBlock, EndBlock }.Union(InnerChildElements.Values);
     }
+
+    public void UpdateChildElement(string currentDeclarationName, string newDeclarationName)
+    {
+        var codeElement = InnerChildElements.First(x=> x.Key == currentDeclarationName);
+        InnerChildElements.TryRemove(currentDeclarationName, out _);
+        InnerChildElements.GetOrAdd(newDeclarationName, codeElement.Value);
+
+    }
     public void RemoveChildElement<T>(params T[] elements) where T : CodeElement
     {
         if (elements == null) return;
@@ -42,6 +51,10 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
         foreach (var name in names)
         {
             InnerChildElements.TryRemove(name, out _);
+            //var sname = name.Contains("_escaped") ? name?.Split("_escaped")[0] : name;
+            //if (sname != null)
+            //    InnerChildElements.TryRemove(sname, out _);
+
         }
     }
     public void RemoveUsingsByDeclarationName(params string[] names) => StartBlock.RemoveUsingsByDeclarationName(names);

@@ -121,15 +121,18 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     private static string GetCodeTypeName(CodeType codeType)
     {
-        if (codeType.TypeDefinition is CodeFunction) {
+        if (codeType.TypeDefinition is CodeFunction)
+        {
             return codeType.TypeDefinition?.Name ?? string.Empty;
         }
 
         return (codeType.TypeDefinition?.Name ?? codeType.Name).ToFirstCharacterUpperCase();
     }
-    #pragma warning disable CA1822 // Method should be static
-    public bool IsPrimitiveType(string typeName) {
-        return typeName switch {
+#pragma warning disable CA1822 // Method should be static
+    public bool IsPrimitiveType(string typeName)
+    {
+        return typeName switch
+        {
             "number" or "string" or "byte[]" or "boolean" or "void" => true,
             _ => false,
         };

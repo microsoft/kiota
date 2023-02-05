@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers.TypeScript;
 
 public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConventionService>
 {
-   
+
     public CodeFunctionWriter(TypeScriptConventionService conventionService, string clientNamespaceName) : base(conventionService)
     {
         _codeUsingWriter = new(clientNamespaceName);
@@ -86,7 +86,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private string getDeserializationFunction(CodeElement codeElement, string returnType)
     {
-        if (codeElement.Parent is not CodeNamespace codeNamespace) 
+        if (codeElement.Parent is not CodeNamespace codeNamespace)
         {
             throw new InvalidOperationException($"{codeElement.Name} does not have a parent namespace");
         }
@@ -99,9 +99,9 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     {
         var param = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => ((CodeType)x.Type).TypeDefinition is CodeInterface);
         if (param == null || param.Type is not CodeType codeType || codeType.TypeDefinition == null)
-        
+
             throw new InvalidOperationException("Interface parameter not found for code interface");
-        
+
         var codeInterface = (CodeInterface)codeType.TypeDefinition;
         var inherits = codeInterface.StartBlock.Implements.FirstOrDefault(x => x.TypeDefinition is CodeInterface);
         writer.IncreaseIndent();
@@ -148,7 +148,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
 
         var propertyTypeName = (codeProperty.Type as CodeType)?.TypeDefinition?.Name;
-        if (codeProperty.Parent == null) {
+        if (codeProperty.Parent == null)
+        {
             throw new InvalidOperationException($"Code property must have parent {codePropertyName}");
         }
         var propType = localConventions?.GetTypeString(codeProperty.Type, codeProperty.Parent, false);
@@ -209,7 +210,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     {
         var param = codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault();
 
-        if (param?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface) { 
+        if (param?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface)
+        {
 
             var inherits = codeInterface?.StartBlock?.Implements.FirstOrDefault(x => x.TypeDefinition is CodeInterface);
 
@@ -264,7 +266,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var returnType = localConventions?.GetTypeString(targetClassType, currentElement, false);
         var targetClassName = localConventions?.TranslateType(targetClassType);
         var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
-        if (targetClassName!= null && targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
+        if (targetClassName != null && targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
             return $"{resultName}";
         if (targetClassType is CodeType currentType &&
             currentType.TypeDefinition is CodeInterface definitionClass &&
@@ -283,7 +285,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private string? getSerializerAlias(CodeType propType, CodeFunction codeFunction, string propertySerializerName)
     {
-        if ( propType?.TypeDefinition?.Parent == null ) {
+        if (propType?.TypeDefinition?.Parent == null)
+        {
             throw new InvalidOperationException($"CodeNameSpace for property is not available {propertySerializerName}");
         }
         var parentNameSpace = propType?.TypeDefinition?.Parent as CodeNamespace;

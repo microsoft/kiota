@@ -40,7 +40,7 @@ public enum CodePropertyKind
     SerializationHint,
 }
 
-public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>,IDocumentedElement, IAlternativeName, ICloneable
+public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement, IAlternativeName, ICloneable
 {
     public bool ReadOnly { get; set; } = false;
     public AccessModifier Access { get; set; } = AccessModifier.Public;
