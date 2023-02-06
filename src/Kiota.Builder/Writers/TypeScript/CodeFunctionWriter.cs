@@ -139,7 +139,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             throw new InvalidOperationException($"Code property must have parent {codePropertyName}");
         }
         var propType = localConventions?.GetTypeString(codeProperty.Type, codeProperty.Parent, false);
-  
+
 
         var serializationName = GetSerializationMethodName(codeProperty.Type);
 

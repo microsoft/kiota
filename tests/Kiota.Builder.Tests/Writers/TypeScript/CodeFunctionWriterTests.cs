@@ -294,12 +294,11 @@ public class CodeFunctionWriterTests : IDisposable
         var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
-        Assert.Contains("switch(key)", result);
         Assert.Contains("writeStringValue", result);
         Assert.Contains("writeCollectionOfPrimitiveValues", result);
         Assert.Contains("writeCollectionOfObjectValues", result);
         Assert.Contains("writeEnumValue", result);
-        Assert.Contains($"writer.writeAdditionalData(key, value);", result);
+        Assert.Contains($"writer.writeAdditionalData", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
 

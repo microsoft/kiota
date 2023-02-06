@@ -869,7 +869,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             var interfaceParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface);
 
-
             if (interfaceParameter?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface modelInterface)
             {
                 var props = modelInterface.GetChildElements(true).OfType<CodeProperty>();
@@ -877,10 +876,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 {
                     foreach (var property in props)
                     {
-                        if (property.Type is CodeType propertyType && propertyType.TypeDefinition != null)
-                        {
-                            AddPropertyFactoryUsingToDeserializer(codeFunction, propertyType, functionNameCallback);
-                        }
+                        AddPropertyFactoryUsingToDeserializer(codeFunction, property, functionNameCallback);
                     }
                 }
             }
@@ -888,9 +884,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, x => AddStaticMethodsUsingsToDeserializerFunctions(x, functionNameCallback));
     }
 
-    private static void AddPropertyFactoryUsingToDeserializer(CodeFunction codeFunction, CodeType propertyType, Func<CodeType, string> functionNameCallback)
+    private static void AddPropertyFactoryUsingToDeserializer(CodeFunction codeFunction, CodeProperty property, Func<CodeType, string> functionNameCallback)
     {
-        if (propertyType != null && propertyType.TypeDefinition != null)
+        if (property.Type is CodeType propertyType && propertyType.TypeDefinition != null)
         {
             var staticMethodName = functionNameCallback.Invoke(propertyType);
             var staticMethodNS = propertyType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
