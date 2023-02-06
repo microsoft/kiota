@@ -350,6 +350,43 @@ public class CSharpLanguageRefinerTests
         Assert.Equal("model", propToAdd.SerializationName);
     }
     [Fact]
+    public async Task AvoidsPropertyNameReplacementIfDuplicatedGenerated()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "Model",
+            Kind = CodeClassKind.Model
+        }).First();
+        var firstProperty = model.AddProperty(new CodeProperty
+        {
+            Name = "summary",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        var secondProperty = model.AddProperty(new CodeProperty
+        {
+            Name = "_summary",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        var thirdProperty = model.AddProperty(new CodeProperty
+        {
+            Name = "_replaced",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        Assert.Equal("summary", firstProperty.Name);// remains as is. No refinement needed
+        Assert.Equal("_summary", secondProperty.Name);// No refinement as it will create a duplicate with firstProperty
+        Assert.Equal("Replaced", thirdProperty.Name);// Base case. Proper refinements
+    }
+    [Fact]
     public async Task DisambiguatePropertiesWithClassNames_DoesntReplaceSerializationName()
     {
         var serializationName = "serializationName";
