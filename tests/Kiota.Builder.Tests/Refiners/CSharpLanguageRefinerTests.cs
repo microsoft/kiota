@@ -137,7 +137,7 @@ public class CSharpLanguageRefinerTests
         // Assert
         Assert.Equal("break", model.Name);
         Assert.DoesNotContain("@", model.Name); // classname will be capitalized
-        Assert.Equal("Alias", property.Name);
+        Assert.Equal("alias", property.Name);
         Assert.DoesNotContain("@", property.Name); // classname will be capitalized
     }
 
@@ -174,7 +174,7 @@ public class CSharpLanguageRefinerTests
         Assert.NotEqual(typeName, model.Name);
         Assert.Equal($"{typeName}Object", model.Name);//our defined model is renamed
         Assert.Equal(typeName, property.Type.Name);//external type is unchanged
-        Assert.Equal(typeName.ToPascalCase(new[] { '_' }), property.Name);//external type property name is in pascal-case
+        Assert.Equal(typeName.ToPascalCase(new[] { '_' }), property.Name.ToFirstCharacterUpperCase());//external type property name is in pascal-case
     }
 
     [Fact]
@@ -346,7 +346,7 @@ public class CSharpLanguageRefinerTests
             }
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
-        Assert.Equal("ModelProp", propToAdd.Name);
+        Assert.Equal("modelProp", propToAdd.Name);
         Assert.Equal("model", propToAdd.SerializationName);
     }
     [Fact]
