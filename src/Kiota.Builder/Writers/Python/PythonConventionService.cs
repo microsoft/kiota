@@ -106,7 +106,7 @@ public class PythonConventionService : CommonLanguageConventionService
             "DateTimeOffset" => "datetime",
             "boolean" => "bool",
             "Object" or "object" or "float" or "bytes" or "datetime" or "timespan" => type.Name,
-            _ => type.Name.ToFirstCharacterUpperCase() ?? "object",
+            _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
     }
     private static string TranslateInternalType(CodeType type)

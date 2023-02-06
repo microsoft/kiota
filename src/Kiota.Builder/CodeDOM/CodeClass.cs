@@ -43,21 +43,24 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         get; set;
     }
-    public void SetIndexer(CodeIndexer indexer)
+    public CodeIndexer? Indexer
     {
-        ArgumentNullException.ThrowIfNull(indexer);
-        if (InnerChildElements.Values.OfType<CodeIndexer>().Any() || InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)))
+        set
         {
-            var existingIndexer = InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
-            if (existingIndexer != null)
+            ArgumentNullException.ThrowIfNull(value);
+            if (InnerChildElements.Values.OfType<CodeIndexer>().Any() || InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)))
             {
-                RemoveChildElement(existingIndexer);
-                AddRange(CodeMethod.FromIndexer(existingIndexer, $"By{existingIndexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", true));
+                if (Indexer is CodeIndexer existingIndexer)
+                {
+                    RemoveChildElement(existingIndexer);
+                    AddRange(CodeMethod.FromIndexer(existingIndexer, $"By{existingIndexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", true));
+                }
+                AddRange(CodeMethod.FromIndexer(value, $"By{value.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", false));
             }
-            AddRange(CodeMethod.FromIndexer(indexer, $"By{indexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", false));
+            else
+                AddRange(value);
         }
-        else
-            AddRange(indexer);
+        get => InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
     }
     public override IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
     {

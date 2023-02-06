@@ -14,9 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for Raw Url in Request Builders for PHP Generation. [2205](https://github.com/microsoft/kiota/issues/2205)
 - Added support for nullable reference types in dotnet for projects running Netstandard 2.1/Net 6.0 and above [2073](https://github.com/microsoft/kiota/issues/2073)
 - Added support for multi-value headers to CLI generation. (Shell)
+- Added support for overriding some of the generation settings in the OpenAPI description. [#2197](https://github.com/microsoft/kiota/issues/2197)
 - Added support for multi-value headers for PHP Generation. [#2052](https://github.com/microsoft/kiota/issues/2052)
 - Added support for Composed types (De)Serialization for PHP Generation. [#1814](https://github.com/microsoft/kiota/issues/1814)
 - Added support for backing store in Go. [466](https://github.com/microsoft/kiota/issues/466)
+- Added support for inherited error types by inlining the parents. [2194](https://github.com/microsoft/kiota/issues/2194)
+- Added support for documentation links in CLI's help commands.
 
 ### Changed
 
@@ -44,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where classes with namespace names are generated outside namespace in Python. [#2188](https://github.com/microsoft/kiota/issues/2188)
 - Changed signature of escaped reserved names from {x}_escaped to {x}_ in line with Python style guides.
 - Add null checks in generated Shell language code.
+- Fixed a bug where Go indexers would fail to pass the index parameter.
 - Fixed a bug where path segments with parameters could be missing words. [#2209](https://github.com/microsoft/kiota/issues/2209)
 
 ## [0.10.0] - 2023-01-04

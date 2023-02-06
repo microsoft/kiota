@@ -1511,8 +1511,7 @@ public class CodeMethodWriterTests : IDisposable
     public void WritesIndexer()
     {
         AddRequestProperties();
-        method.Kind = CodeMethodKind.IndexerBackwardCompatibility;
-        method.OriginalIndexer = new()
+        parentClass.Indexer = new()
         {
             Name = "indx",
             SerializationName = "id",
@@ -1523,27 +1522,19 @@ public class CodeMethodWriterTests : IDisposable
             },
             ReturnType = new CodeType
             {
-                Name = "string",
+                Name = "Somecustomtype",
             },
         };
-        method.AddParameter(new CodeParameter
-        {
-            Name = "id",
-            Kind = CodeParameterKind.Custom,
-            Type = new CodeType
-            {
-                Name = "string",
-                IsNullable = true,
-            },
-            Optional = true
-        });
-        writer.Write(method);
+        if (parentClass.Indexer is null)
+            throw new InvalidOperationException("Indexer is null");
+        var methodForTest = parentClass.AddMethod(CodeMethod.FromIndexer(parentClass.Indexer, string.Empty, false)).First();
+        writer.Write(methodForTest);
         var result = tw.ToString();
         Assert.Contains("m.requestAdapter", result);
         Assert.Contains("m.pathParameters", result);
-        Assert.DoesNotContain("= *id", result); //the assignment is already done by the constructor
+        Assert.Contains("[\"id\"] = id", result);
         Assert.Contains("return", result);
-        Assert.Contains("NewSomecustomtypeInternal(urlTplParams, m.requestAdapter, id)", result); // checking the parameter is passed to the constructor
+        Assert.Contains("NewSomecustomtypeInternal(urlTplParams, m.requestAdapter)", result); // checking the parameter is passed to the constructor
     }
     [Fact]
     public void WritesPathParameterRequestBuilder()

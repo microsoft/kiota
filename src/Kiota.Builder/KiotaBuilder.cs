@@ -96,6 +96,10 @@ public class KiotaBuilder
             openApiDocument = new OpenApiDocument(originalDocument);
         StopLogAndReset(sw, $"step {++stepId} - parsing the document - took");
 
+        sw.Start();
+        UpdateConfigurationFromOpenApiDocument();
+        StopLogAndReset(sw, $"step {++stepId} - updating generation configuration from kiota extension - took");
+
         // Should Generate
         sw.Start();
         var shouldGenerate = await ShouldGenerate(cancellationToken);
@@ -122,6 +126,13 @@ public class KiotaBuilder
 
         return (stepId, openApiTree, shouldGenerate);
     }
+    private void UpdateConfigurationFromOpenApiDocument()
+    {
+        if (openApiDocument == null ||
+            GetLanguagesInformationInternal() is not LanguagesInformation languagesInfo) return;
+
+        config.UpdateConfigurationFromLanguagesInformation(languagesInfo);
+    }
     private async Task<bool> ShouldGenerate(CancellationToken cancellationToken)
     {
         if (config.CleanOutput) return true;
@@ -134,9 +145,14 @@ public class KiotaBuilder
         return !comparer.Equals(existingLock, configurationLock);
     }
 
-    public async Task<LanguagesInformation?> GetLanguageInformationAsync(CancellationToken cancellationToken)
+    public async Task<LanguagesInformation?> GetLanguagesInformationAsync(CancellationToken cancellationToken)
     {
         await GetTreeNodeInternal(config.OpenAPIFilePath, false, new Stopwatch(), cancellationToken);
+
+        return GetLanguagesInformationInternal();
+    }
+    private LanguagesInformation? GetLanguagesInformationInternal()
+    {
         if (openApiDocument == null)
             return null;
         if (openApiDocument.Extensions.TryGetValue(OpenApiKiotaExtension.Name, out var ext) && ext is OpenApiKiotaExtension kiotaExt)
@@ -489,14 +505,9 @@ public class KiotaBuilder
             var className = child.Value.GetClassName(config.StructuredMimeTypes);
             var propType = child.Value.DoesNodeBelongToItemSubnamespace() ? className + itemRequestBuilderSuffix : className + requestBuilderSuffix;
             if (child.Value.IsPathSegmentWithSingleSimpleParameter())
-            {
-                var prop = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode);
-                codeClass.SetIndexer(prop);
-            }
+                codeClass.Indexer = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode);
             else if (child.Value.IsComplexPathMultipleParameters())
-            {
                 CreateMethod(propIdentifier, propType, codeClass, child.Value);
-            }
             else
             {
                 var description = child.Value.GetPathItemDescription(Constants.DefaultOpenApiLabel).CleanupDescription();
@@ -795,7 +806,9 @@ public class KiotaBuilder
             Kind = kind,
             Documentation = new()
             {
-                Description = propertySchema?.Description.CleanupDescription() ?? $"The {propertyName} property",
+                Description = propertySchema?.Description.CleanupDescription() is string description && !string.IsNullOrEmpty(description) ?
+                    description :
+                    $"The {propertyName} property",
             },
             ReadOnly = propertySchema?.ReadOnly ?? false,
             Type = existingType ?? GetPrimitiveType(propertySchema, childType),
@@ -935,7 +948,10 @@ public class KiotaBuilder
             {
                 DocumentationLink = operation.ExternalDocs?.Url,
                 DocumentationLabel = operation.ExternalDocs?.Description ?? string.Empty,
-                Description = (operation.Description ?? operation.Summary).CleanupDescription(),
+                Description = (operation.Description is string description && !string.IsNullOrEmpty(description) ?
+                                description :
+                                operation.Summary)
+                                .CleanupDescription(),
             },
             ReturnType = GetExecutorMethodReturnType(currentNode, schema, operation, parentClass),
         };
@@ -1094,7 +1110,9 @@ public class KiotaBuilder
                 Kind = CodeParameterKind.RequestBody,
                 Documentation = new()
                 {
-                    Description = requestBodySchema.Description.CleanupDescription() ?? "The request body"
+                    Description = requestBodySchema.Description.CleanupDescription() is string description && !string.IsNullOrEmpty(description) ?
+                                    description :
+                                    "The request body"
                 },
             });
             method.RequestBodyContentType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Key;
@@ -1368,7 +1386,9 @@ public class KiotaBuilder
             var optionDescription = extensionInformation?.ValuesDescriptions.FirstOrDefault(x => x.Value.Equals(enumValue, StringComparison.OrdinalIgnoreCase));
             var newOption = new CodeEnumOption
             {
-                Name = (optionDescription?.Name ?? enumValue).CleanupSymbolName(),
+                Name = (optionDescription?.Name is string name && !string.IsNullOrEmpty(name) ?
+                        name :
+                        enumValue).CleanupSymbolName(),
                 SerializationName = !string.IsNullOrEmpty(optionDescription?.Name) ? enumValue : string.Empty,
                 Documentation = new()
                 {
@@ -1646,7 +1666,9 @@ public class KiotaBuilder
                 Kind = CodeClassKind.QueryParameters,
                 Documentation = new()
                 {
-                    Description = (operation.Description ?? operation.Summary).CleanupDescription(),
+                    Description = (operation.Description is string description && !string.IsNullOrEmpty(description) ?
+                                    description :
+                                    operation.Summary).CleanupDescription(),
                 },
             }).First();
             foreach (var parameter in parameters)

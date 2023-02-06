@@ -30,7 +30,7 @@ public class BaseAuthenticationProvider<T> : AnonymousAuthenticationProvider whe
             {
                 Concrete = AccessTokenProvider,
                 Logger = logger,
-                ApiBaseUrl = new Uri($"https://{validHosts.FirstOrDefault() ?? "api.github.com"}"),
+                ApiBaseUrl = new Uri($"https://{validHosts.FirstOrDefault(static x => !string.IsNullOrEmpty(x)) ?? "api.github.com"}"),
                 AppId = clientId,
             };
     }

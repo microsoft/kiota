@@ -841,14 +841,52 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 parentClass.AddUsing((CodeUsing)replacement.Item2.Clone());
         }
     }
+    protected static void InlineParentClasses(CodeElement currentElement, CodeElement parent)
+    {
+        if (currentElement is CodeClass currentClass &&
+            parent is CodeType parentType &&
+            parentType.TypeDefinition is CodeClass parentClass)
+        {
+            foreach (var currentParent in parentClass.GetInheritanceTree())
+            {
+
+                var propertiesToAdd = currentParent
+                    .Properties
+                    .Where(pp =>
+                        !currentClass.ContainsMember(pp.Name) &&
+                        !currentClass.Properties.Any(cp => cp.Name.Equals(pp.Name, StringComparison.OrdinalIgnoreCase)));
+                if (propertiesToAdd.Any())
+                    currentClass.AddProperty(propertiesToAdd.ToArray());
+
+                var methodsToAdd = currentParent
+                    .Methods
+                    .Where(pm =>
+                        !currentClass.ContainsMember(pm.Name) &&
+                        !currentClass.Methods.Any(cm => cm.Name.Equals(pm.Name, StringComparison.OrdinalIgnoreCase)));
+                if (methodsToAdd.Any())
+                    currentClass.AddMethod(methodsToAdd.ToArray());
+
+                var usingsToAdd = currentParent
+                    .Usings
+                    .Where(pu => !currentClass.Usings.Any(cu => cu.Name.Equals(pu.Name, StringComparison.OrdinalIgnoreCase)));
+                if (usingsToAdd.Any())
+                    currentClass.AddUsing(usingsToAdd.ToArray());
+            }
+        }
+    }
     protected static void AddParentClassToErrorClasses(CodeElement currentElement, string parentClassName, string parentClassNamespace, bool addNamespaceToInheritDeclaration = false)
     {
         if (currentElement is CodeClass currentClass &&
             currentClass.IsErrorDefinition &&
             currentClass.StartBlock is ClassDeclaration declaration)
         {
-            if (declaration.Inherits != null)
-                throw new InvalidOperationException("This error class already inherits from another class. Update the description to remove that inheritance.");
+            if (declaration.Inherits is CodeElement parentElement)
+            {
+                // Need to remove inheritance before fixing up the child elements
+                declaration.Inherits = null;
+                InlineParentClasses(currentClass, parentElement);
+            }
+
             declaration.Inherits = new CodeType
             {
                 Name = parentClassName,

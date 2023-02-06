@@ -179,8 +179,9 @@ public class GoConventionService : CommonLanguageConventionService
         var splatImport = returnType.Split('.');
         var constructorName = splatImport.Last().TrimCollectionAndPointerSymbols().ToFirstCharacterUpperCase();
         var moduleName = splatImport.Length > 1 ? $"{splatImport.First().TrimStart('*')}." : string.Empty;
-        var pathParametersSuffix = (pathParameters?.Any() ?? false) ? $", {string.Join(", ", pathParameters.Select(static x => $"{x.Name.ToFirstCharacterLowerCase()}"))}" : string.Empty;
-        writer.WriteLines($"return {moduleName}New{constructorName}Internal({urlTemplateParams}, m.{requestAdapterProp.Name}{pathParametersSuffix});");
+        pathParameters ??= Enumerable.Empty<CodeParameter>();
+        var pathParametersSuffix = pathParameters.Any() ? $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}" : string.Empty;
+        writer.WriteLines($"return {moduleName}New{constructorName}Internal({urlTemplateParams}, m.{requestAdapterProp.Name}{pathParametersSuffix})");
     }
     public override string TempDictionaryVarName => "urlTplParams";
     internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase? pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters)

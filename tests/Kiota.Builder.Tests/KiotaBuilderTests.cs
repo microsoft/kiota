@@ -119,7 +119,7 @@ servers:
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = builder.CreateOpenApiDocument(fs);
         var node = builder.CreateUriSpace(document);
-        var extensionResult = await builder.GetLanguageInformationAsync(new CancellationToken());
+        var extensionResult = await builder.GetLanguagesInformationAsync(new CancellationToken());
         Assert.NotNull(extensionResult);
         Assert.True(extensionResult.TryGetValue("CSharp", out var csharpInfo));
         Assert.Equal("Experimental", csharpInfo.MaturityLevel.ToString());
@@ -128,6 +128,41 @@ servers:
         Assert.Equal("Microsoft.Graph.Core", csharpInfo.Dependencies.First().Name);
         Assert.Equal("3.0.0", csharpInfo.Dependencies.First().Version);
 
+        File.Delete(tempFilePath);
+    }
+    [Fact]
+    public async Task UpdatesGenerationConfigurationFromInformation()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+x-ms-kiota-info:
+  languagesInformation:
+    CSharp:
+      maturityLevel: Experimental
+      dependencyInstallCommand: dotnet add {0} {1}
+      clientClassName: GraphClient
+      clientNamespaceName: Microsoft.Graph
+      structuredMimeTypes:
+        - application/json
+        - application/xml
+      dependencies:
+        - name: Microsoft.Graph.Core
+          version: 3.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var configuration = new GenerationConfiguration { OpenAPIFilePath = tempFilePath, Language = GenerationLanguage.CSharp };
+        var builder = new KiotaBuilder(mockLogger.Object, configuration, _httpClient);
+        var treeNode = await builder.GetUrlTreeNodeAsync(new CancellationToken());
+        Assert.NotNull(treeNode);
+        Assert.Equal("GraphClient", configuration.ClientClassName);
+        Assert.Equal("Microsoft.Graph", configuration.ClientNamespaceName);
+        Assert.Contains("application/json", configuration.StructuredMimeTypes);
+        Assert.Contains("application/xml", configuration.StructuredMimeTypes);
         File.Delete(tempFilePath);
     }
     [Fact]
@@ -146,7 +181,7 @@ servers:
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = builder.CreateOpenApiDocument(fs);
         var node = builder.CreateUriSpace(document);
-        var extensionResult = await builder.GetLanguageInformationAsync(new CancellationToken());
+        var extensionResult = await builder.GetLanguagesInformationAsync(new CancellationToken());
         Assert.Null(extensionResult);
 
         File.Delete(tempFilePath);
