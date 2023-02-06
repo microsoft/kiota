@@ -40,6 +40,11 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
                 new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum) }
             );
+            ReplaceReservedExceptionPropertyNames(
+                generatedCode,
+                new CSharpExceptionsReservedNamesProvider(),
+                static x => $"{x.ToFirstCharacterUpperCase()}Escaped"
+            );
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceReservedModelTypes(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Object");
             ReplaceReservedNamespaceTypeNames(generatedCode, new CSharpReservedTypesProvider(), static x => $"{x}Namespace");
