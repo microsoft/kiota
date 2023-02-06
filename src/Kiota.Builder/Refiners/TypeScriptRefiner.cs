@@ -122,6 +122,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
             AliasUsingsWithSameSymbol(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
+            ApplySelectiveImport(generatedCode);
         }, cancellationToken);
     }
     private static void AliasCollidingSymbols(IEnumerable<CodeUsing> usings, string currentSymbolName)
@@ -942,5 +943,34 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         }
         CrawlTree(codeElement, AddDeserializerUsingToDisriminatorFactory);
+    }
+
+    private static void ApplySelectiveImport(CodeElement codeElement)
+    {
+        if (codeElement is CodeClass codeClass && codeClass.Kind == CodeClassKind.RequestBuilder)
+        {
+            //RemoveReferenceToChildRequestBuilders(codeClass);
+            MakePathParamPublis(codeClass);
+        }
+        CrawlTree(codeElement, ApplySelectiveImport);
+    }
+
+    private static void MakePathParamPublis(CodeClass requestBuilder)
+    {
+        var pathParam = requestBuilder.Properties.Where(x => x.Kind == CodePropertyKind.PathParameters).FirstOrDefault();
+
+        if (pathParam != null)
+        {
+
+            pathParam.Access = AccessModifier.Public;
+        }
+
+        var requestAdapter = requestBuilder.Properties.Where(x => x.Kind == CodePropertyKind.RequestAdapter).FirstOrDefault();
+
+        if (requestAdapter != null)
+        {
+
+            requestAdapter.Access = AccessModifier.Public;
+        }
     }
 }

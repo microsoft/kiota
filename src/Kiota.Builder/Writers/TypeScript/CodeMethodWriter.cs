@@ -20,7 +20,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         ArgumentNullException.ThrowIfNull(codeElement);
         if (codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
         ArgumentNullException.ThrowIfNull(writer);
-        if (codeElement.Parent is CodeFunction) return;
+        if (codeElement.Parent is CodeFunction || codeElement.Kind == CodeMethodKind.IndexerBackwardCompatibility) return;
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
 
         localConventions = new TypeScriptConventionService(writer); //because we allow inline type definitions for methods parameters
@@ -37,7 +37,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         switch (codeElement.Kind)
         {
             case CodeMethodKind.IndexerBackwardCompatibility:
-                WriteIndexerBody(codeElement, parentClass, returnType, writer);
+                //WriteIndexerBody(codeElement, parentClass, returnType, writer);
                 break;
             case CodeMethodKind.Deserializer:
                 throw new InvalidOperationException("Deserializers are implemented as functions in TypeScript");
@@ -244,7 +244,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             writer.WriteLine($"this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value);");
     }
     private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
-    {
+    {       
         var backingStore = parentClass.GetBackingStoreProperty();
         if (backingStore == null)
             writer.WriteLine($"return this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()};");
