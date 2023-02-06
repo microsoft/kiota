@@ -107,12 +107,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         WriteSerializationRegistration(method.DeserializerModules, writer, "register_default_deserializer");
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
-            writer.WriteLine($"if not {requestAdapterPropertyName}.base_url:");
+            writer.WriteLine($"if not self.{requestAdapterPropertyName}.base_url:");
             writer.IncreaseIndent();
-            writer.WriteLine($"{requestAdapterPropertyName}.base_url = \"{method.BaseUrl}\"");
+            writer.WriteLine($"self.{requestAdapterPropertyName}.base_url = \"{method.BaseUrl}\"");
             writer.DecreaseIndent();
             if (pathParametersProperty != null)
-                writer.WriteLine($"{pathParametersProperty.Name.ToSnakeCase()}[\"base_url\"] = {requestAdapterPropertyName}.base_url");
+                writer.WriteLine($"self.{pathParametersProperty.Name.ToSnakeCase()}[\"base_url\"] = self.{requestAdapterPropertyName}.base_url");
         }
         if (backingStoreParameter != null)
             writer.WriteLine($"self.{requestAdapterPropertyName}.enable_backing_store({backingStoreParameter.Name})");
