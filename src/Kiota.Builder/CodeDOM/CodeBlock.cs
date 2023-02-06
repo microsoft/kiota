@@ -51,10 +51,6 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
         foreach (var name in names)
         {
             InnerChildElements.TryRemove(name, out _);
-            //var sname = name.Contains("_escaped") ? name?.Split("_escaped")[0] : name;
-            //if (sname != null)
-            //    InnerChildElements.TryRemove(sname, out _);
-
         }
     }
     public void RemoveUsingsByDeclarationName(params string[] names) => StartBlock.RemoveUsingsByDeclarationName(names);

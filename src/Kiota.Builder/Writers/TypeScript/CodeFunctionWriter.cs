@@ -110,29 +110,15 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         {
             writer.WriteLine($"serialize{inherits?.TypeDefinition?.Name.ToFirstCharacterUpperCase()}(writer, {param.Name.ToFirstCharacterLowerCase()})");
         }
-        writer.WriteLine($"for (const [key, value] of Object.entries({codeInterface.Name.ToFirstCharacterLowerCase()})){{");
-        writer.IncreaseIndent();
-        writer.WriteLine("switch(key){");
-        writer.IncreaseIndent();
 
         foreach (var otherProp in codeInterface.Properties.Where(static x => x.Kind == CodePropertyKind.Custom && !x.ExistsInBaseType && !x.ReadOnly))
         {
-
-            writer.WriteLine($"case \"{otherProp.Name.ToFirstCharacterLowerCase()}\":");
             WritePropertySerializer(codeInterface.Name.ToFirstCharacterLowerCase(), otherProp, writer, codeElement);
-            writer.WriteLine("break");
-
         }
 
-        writer.WriteLine($"default:");
-        writer.WriteLine($"writer.writeAdditionalData(key, value);");
-        writer.WriteLine("break");
-
-        writer.DecreaseIndent();
-
-        writer.WriteLine("}");
-        writer.DecreaseIndent();
-        writer.WriteLine("}");
+        var additionalDataProperty = codeInterface.GetPropertyOfKind(CodePropertyKind.AdditionalData);
+        if (additionalDataProperty != null)
+            writer.WriteLine($"writer.writeAdditionalData({codeInterface.Name.ToFirstCharacterLowerCase()}.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
         writer.DecreaseIndent();
     }
 
@@ -153,14 +139,14 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             throw new InvalidOperationException($"Code property must have parent {codePropertyName}");
         }
         var propType = localConventions?.GetTypeString(codeProperty.Type, codeProperty.Parent, false);
-        writer.IncreaseIndent();
+  
 
         var serializationName = GetSerializationMethodName(codeProperty.Type);
 
         if (serializationName == "writeObjectValue" || serializationName == "writeCollectionOfObjectValues")
         {
             var serializeName = getSerializerAlias((CodeType)codeProperty.Type, codeFunction, $"serialize{propertyTypeName}");
-            writer.WriteLine($"writer.{serializationName}<{propType}>(\"{codePropertyName}\", {modelParamName}.{codePropertyName}, {serializeName});");
+            writer.WriteLine($"writer.{serializationName}<{propType}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}, {serializeName});");
         }
         else
         {
@@ -168,9 +154,9 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             {
                 writer.WriteLine($"if({modelParamName}.{codePropertyName})");
             }
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.SerializationName ?? codePropertyName}\", {spreadOperator}{modelParamName}.{codePropertyName});");
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName});");
         }
-        writer.DecreaseIndent();
+
     }
 
     private string GetSerializationMethodName(CodeTypeBase propType)

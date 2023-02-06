@@ -342,7 +342,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         AddDeserializerUsingToDisriminatorFactory(generatedCode);
         ReplaceRequestConfigurationsQueryParamsWithInterfaces(generatedCode);
         AddStaticMethodsUsingsToDeserializerFunctions(generatedCode, functionNameCallback);
-        //PrintNames(generatedCode);
     }
 
     private static void CreateSeparateSerializers(CodeElement codeElement)
@@ -559,8 +558,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 TypeDefinition = deserializer
             }
         });
-        {
-        }
     }
 
     private static void ProcessModelsAssociatedWithMethods(CodeMethod codeMethod, CodeClass requestBuilderClass, Func<CodeClass, string> interfaceNamingCallback)
@@ -882,26 +879,36 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     {
                         if (property.Type is CodeType propertyType && propertyType.TypeDefinition != null)
                         {
-                            var staticMethodName = functionNameCallback.Invoke(propertyType);
-                            var staticMethodNS = propertyType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
-                            var staticMethod = staticMethodNS.Functions.FirstOrDefault(x => string.Equals(staticMethodName, x.Name, StringComparison.OrdinalIgnoreCase));
-                            if (staticMethod == null)
-                                continue;
-                            codeFunction.AddUsing(new CodeUsing
-                            {
-                                Name = staticMethodName,
-                                Declaration = new CodeType
-                                {
-                                    Name = staticMethodName,
-                                    TypeDefinition = staticMethod,
-                                }
-                            });
+                            AddPropertyFactoryUsingToDeserializer(codeFunction, propertyType, functionNameCallback);
                         }
                     }
                 }
             }
         }
         CrawlTree(currentElement, x => AddStaticMethodsUsingsToDeserializerFunctions(x, functionNameCallback));
+    }
+
+    private static void AddPropertyFactoryUsingToDeserializer(CodeFunction codeFunction, CodeType propertyType, Func<CodeType, string> functionNameCallback)
+    {
+        if (propertyType != null && propertyType.TypeDefinition != null)
+        {
+            var staticMethodName = functionNameCallback.Invoke(propertyType);
+            var staticMethodNS = propertyType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
+            var staticMethod = staticMethodNS.Functions.FirstOrDefault(x => string.Equals(staticMethodName, x.Name, StringComparison.OrdinalIgnoreCase));
+            if (staticMethod != null)
+            {
+
+                codeFunction.AddUsing(new CodeUsing
+                {
+                    Name = staticMethodName,
+                    Declaration = new CodeType
+                    {
+                        Name = staticMethodName,
+                        TypeDefinition = staticMethod,
+                    }
+                });
+            }
+        }
     }
 
     private static void AddDeserializerUsingToDisriminatorFactory(CodeElement codeElement)
