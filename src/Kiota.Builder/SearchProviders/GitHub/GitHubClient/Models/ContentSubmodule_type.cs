@@ -1,6 +1,7 @@
-﻿namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models;
-public enum ContentSubmodule_type
+﻿namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
 {
-    Submodule,
+    public enum ContentSubmodule_type
+    {
+        Submodule,
+    }
 }
-
