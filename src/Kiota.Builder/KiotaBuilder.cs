@@ -96,6 +96,10 @@ public class KiotaBuilder
             openApiDocument = new OpenApiDocument(originalDocument);
         StopLogAndReset(sw, $"step {++stepId} - parsing the document - took");
 
+        sw.Start();
+        UpdateConfigurationFromOpenApiDocument();
+        StopLogAndReset(sw, $"step {++stepId} - updating generation configuration from kiota extension - took");
+
         // Should Generate
         sw.Start();
         var shouldGenerate = await ShouldGenerate(cancellationToken);
@@ -122,6 +126,13 @@ public class KiotaBuilder
 
         return (stepId, openApiTree, shouldGenerate);
     }
+    private void UpdateConfigurationFromOpenApiDocument()
+    {
+        if (openApiDocument == null ||
+            GetLanguagesInformationInternal() is not LanguagesInformation languagesInfo) return;
+
+        config.UpdateConfigurationFromLanguagesInformation(languagesInfo);
+    }
     private async Task<bool> ShouldGenerate(CancellationToken cancellationToken)
     {
         if (config.CleanOutput) return true;
@@ -134,9 +145,14 @@ public class KiotaBuilder
         return !comparer.Equals(existingLock, configurationLock);
     }
 
-    public async Task<LanguagesInformation?> GetLanguageInformationAsync(CancellationToken cancellationToken)
+    public async Task<LanguagesInformation?> GetLanguagesInformationAsync(CancellationToken cancellationToken)
     {
         await GetTreeNodeInternal(config.OpenAPIFilePath, false, new Stopwatch(), cancellationToken);
+
+        return GetLanguagesInformationInternal();
+    }
+    private LanguagesInformation? GetLanguagesInformationInternal()
+    {
         if (openApiDocument == null)
             return null;
         if (openApiDocument.Extensions.TryGetValue(OpenApiKiotaExtension.Name, out var ext) && ext is OpenApiKiotaExtension kiotaExt)

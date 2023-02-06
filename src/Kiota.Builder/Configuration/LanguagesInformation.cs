@@ -13,7 +13,7 @@ public class LanguagesInformation : Dictionary<string, LanguageInformation>, IOp
     public void SerializeAsV3(IOpenApiWriter writer)
     {
         writer.WriteStartObject();
-        foreach (var entry in this.OrderBy(static x => x.Key))
+        foreach (var entry in this.OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase))
         {
             writer.WriteRequiredObject(entry.Key, entry.Value, (w, x) => x.SerializeAsV3(w));
         }

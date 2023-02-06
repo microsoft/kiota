@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
@@ -15,7 +16,9 @@ public record LanguageInformation : IOpenApiSerializable
     }
     public List<LanguageDependency> Dependencies { get; set; } = new();
     public string DependencyInstallCommand { get; set; } = string.Empty;
-
+    public string ClientClassName { get; set; } = string.Empty;
+    public string ClientNamespaceName { get; set; } = string.Empty;
+    public HashSet<string> StructuredMimeTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
     public void SerializeAsV3(IOpenApiWriter writer)
     {
@@ -23,6 +26,9 @@ public record LanguageInformation : IOpenApiSerializable
         writer.WriteProperty(nameof(MaturityLevel).ToFirstCharacterLowerCase(), MaturityLevel.ToString());
         writer.WriteProperty(nameof(DependencyInstallCommand).ToFirstCharacterLowerCase(), DependencyInstallCommand);
         writer.WriteOptionalCollection(nameof(Dependencies).ToFirstCharacterLowerCase(), Dependencies, (w, x) => x.SerializeAsV3(w));
+        writer.WriteProperty(nameof(ClientClassName).ToFirstCharacterLowerCase(), ClientClassName);
+        writer.WriteProperty(nameof(ClientNamespaceName).ToFirstCharacterLowerCase(), ClientNamespaceName);
+        writer.WriteOptionalCollection(nameof(StructuredMimeTypes).ToFirstCharacterLowerCase(), StructuredMimeTypes, (w, x) => w.WriteValue(x));
         writer.WriteEndObject();
     }
     public static LanguageInformation Parse(IOpenApiAny source)
@@ -38,10 +44,19 @@ public record LanguageInformation : IOpenApiSerializable
         {
             extension.DependencyInstallCommand = stringValue.Value;
         }
-        if (rawObject.TryGetValue(nameof(MaturityLevel).ToFirstCharacterLowerCase(), out var matLevel) && matLevel is OpenApiString matLevelStr &&
-            Enum.TryParse<LanguageMaturityLevel>(matLevelStr.Value, out var matLevelValue))
+        // not parsing the maturity level on purpose, we don't want APIs to be able to change that
+        if (rawObject.TryGetValue(nameof(ClientClassName).ToFirstCharacterLowerCase(), out var clientClassName) && clientClassName is OpenApiString clientClassNameValue)
         {
-            extension.MaturityLevel = matLevelValue;
+            extension.ClientClassName = clientClassNameValue.Value;
+        }
+        if (rawObject.TryGetValue(nameof(ClientNamespaceName).ToFirstCharacterLowerCase(), out var clientNamespaceName) && clientNamespaceName is OpenApiString clientNamespaceNameValue)
+        {
+            extension.ClientNamespaceName = clientNamespaceNameValue.Value;
+        }
+        if (rawObject.TryGetValue(nameof(StructuredMimeTypes).ToFirstCharacterLowerCase(), out var structuredMimeTypes) && structuredMimeTypes is OpenApiArray structuredMimeTypesValue)
+        {
+            foreach (var entry in structuredMimeTypesValue.OfType<OpenApiString>())
+                extension.StructuredMimeTypes.Add(entry.Value);
         }
         return extension;
     }
