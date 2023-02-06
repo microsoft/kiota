@@ -126,10 +126,7 @@ jobs:
       - name: Build
         run: dotnet build kiota.sln --no-restore
       - name: Generate Java Code
-        run: |
-          ./src/kiota/bin/Debug/net7.0/kiota generate --language Java \
-            --openapi tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml \
-            --output it/java/src
+        run: ./it/java/generate.sh
       - uses: actions/cache@v3
         with:
           path: /root/.jbang

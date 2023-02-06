@@ -18,6 +18,14 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             LowerCaseNamespaceNames(generatedCode);
+            var reservedNamesProvider = new JavaReservedNamesProvider();
+            CorrectClassNames(generatedCode, s =>
+            {
+                if (!reservedNamesProvider.ReservedNames.Contains(s) && s.Contains('_'))
+                    return s.ToPascalCase(new[] { '_' });
+                else
+                    return s;
+            });
             RemoveClassNamePrefixFromNestedClasses(generatedCode);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, true);
@@ -48,7 +56,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "set",
                 string.Empty
             );
-            ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
+            ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_escaped");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
