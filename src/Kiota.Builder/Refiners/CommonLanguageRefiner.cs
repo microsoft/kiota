@@ -120,9 +120,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             if (string.IsNullOrEmpty(currentProperty.SerializationName))
                 currentProperty.SerializationName = currentProperty.Name;
-            
+
             var refinedName = refineAccessorName(currentProperty.Name);
-            if(!parentClass.Properties.Any( property => refinedName.Equals(property.Name,StringComparison.OrdinalIgnoreCase)))// ensure the refinement won't generate a duplicate
+            if (!parentClass.Properties.Any(property => refinedName.Equals(property.Name, StringComparison.OrdinalIgnoreCase)))// ensure the refinement won't generate a duplicate
                 currentProperty.Name = refinedName;
         }
         CrawlTree(current, x => ReplacePropertyNames(x, propertyKindsToReplace!, refineAccessorName));
