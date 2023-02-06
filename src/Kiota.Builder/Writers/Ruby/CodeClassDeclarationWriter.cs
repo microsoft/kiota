@@ -37,7 +37,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
 
             foreach (var relativePath in codeElement.Usings
                                         .Where(static x => !x.IsExternal)
-                                        .DistinctBy(static x => $"{x.Name}{x.Declaration.Name}", StringComparer.OrdinalIgnoreCase)
+                                        .DistinctBy(static x => $"{x.Name}{x.Declaration?.Name}", StringComparer.OrdinalIgnoreCase)
                                         .Select(x => x.Declaration?.Name?.StartsWith('.') ?? false ?
                                             (string.Empty, string.Empty, x.Declaration.Name) :
                                             relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
