@@ -107,8 +107,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         WriteSerializationRegistration(method.DeserializerModules, writer, "register_default_deserializer");
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
-            writer.WriteLine($"if not self.{requestAdapterPropertyName}.base_url:");
-            writer.IncreaseIndent();
+            writer.StartBlock($"if not self.{requestAdapterPropertyName}.base_url:");
             writer.WriteLine($"self.{requestAdapterPropertyName}.base_url = \"{method.BaseUrl}\"");
             writer.DecreaseIndent();
             if (pathParametersProperty != null)
