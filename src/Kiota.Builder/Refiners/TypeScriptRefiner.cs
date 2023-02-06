@@ -35,7 +35,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", string.Empty, isNullable: true);
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
+            ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}Escaped");
+            ReplaceReservedExceptionPropertyNames(generatedCode, new GoExceptionsReservedNamesProvider(), x => $"{x}Escaped");
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,

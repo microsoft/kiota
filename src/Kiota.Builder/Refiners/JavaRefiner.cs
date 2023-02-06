@@ -48,7 +48,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "set",
                 string.Empty
             );
-            ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
+            ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}Escaped");
+            ReplaceReservedExceptionPropertyNames(generatedCode, new JavaExceptionsReservedNamesProvider(), x => $"{x}Escaped");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);

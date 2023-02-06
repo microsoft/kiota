@@ -51,11 +51,12 @@ public class GoRefiner : CommonLanguageRefiner
             ReplaceReservedNames(
                 generatedCode,
                 new GoReservedNamesProvider(),
-                x => $"{x}_escaped",
+                x => $"{x}Escaped",
                 shouldReplaceCallback: x => x is not CodeProperty currentProp ||
                                             !(currentProp.Parent is CodeClass parentClass &&
                                             parentClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.ParameterSet) &&
                                             currentProp.Access == AccessModifier.Public)); // Go reserved keywords are all lowercase and public properties are uppercased when we don't provide accessors (models)
+            ReplaceReservedExceptionPropertyNames(generatedCode, new GoExceptionsReservedNamesProvider(), x => $"{x}Escaped");
             cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(
                 generatedCode,
