@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Refiners;
 public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -54,6 +55,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 true,
                 false,
                 new[] { CodeClassKind.RequestConfiguration });
+            ShortenLongNamespaceNames(generatedCode);
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
             if (generatedCode.FindNamespaceByName(_configuration.ClientNamespaceName)?.Parent is CodeNamespace parentOfClientNS)
                 AddNamespaceModuleImports(parentOfClientNS, generatedCode);
@@ -91,6 +93,22 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             RemoveHandlerFromRequestBuilder(generatedCode);
         }, cancellationToken);
+    }
+    private static void ShortenLongNamespaceNames(CodeElement currentElement)
+    {
+        if (currentElement is CodeNamespace currentNamespace &&
+            !string.IsNullOrEmpty(currentNamespace.Name) &&
+            currentNamespace.Name.Split('.', StringSplitOptions.RemoveEmptyEntries) is string[] nameParts &&
+            nameParts.Select(static x => x.ToSnakeCase()).Any(static x => x.Length > RubyPathSegmenter.MaxFileNameLength))
+        {
+            var newName = string.Join(".", nameParts
+                                                .Select(static x => (originalName: x, snakeName: x.ToSnakeCase()))
+                                                .Select(static x => x.snakeName.Length > RubyPathSegmenter.MaxFileNameLength ? x.originalName.GetNamespaceImportSymbol() : x.originalName));
+            if (currentNamespace.Parent is CodeNamespace parentNamespace)
+                parentNamespace.RenameChildElement(currentNamespace.Name, newName);
+
+        }
+        CrawlTree(currentElement, ShortenLongNamespaceNames);
     }
     private static void DisambiguateClassesWithNamespaceNames(CodeElement currentElement, HashSet<CodeClass> classesToUpdate, string suffix)
     {
