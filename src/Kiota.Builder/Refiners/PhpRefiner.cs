@@ -27,7 +27,7 @@ public class PhpRefiner : CommonLanguageRefiner
                 "ApiException",
                 "Microsoft\\Kiota\\Abstractions"
             );
-            ReplaceReservedExceptionPropertyNames(generatedCode, new PhpExceptionsReservedNamesProvider(),  x => $"escaped{x.ToFirstCharacterUpperCase()}");
+            ReplaceReservedExceptionPropertyNames(generatedCode, new PhpExceptionsReservedNamesProvider(), x => $"escaped{x.ToFirstCharacterUpperCase()}");
             AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
             RemoveCancellationParameter(generatedCode);
