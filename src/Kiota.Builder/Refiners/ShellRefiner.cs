@@ -200,7 +200,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
             "System.Text",  "Encoding"),
         new (x => {
-            return x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) == true;
+            return x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
         } , "Microsoft.Kiota.Cli.Commons.Extensions", "GetRequestAdapter")
     };
 }
