@@ -327,6 +327,48 @@ public class CSharpLanguageRefinerTests
         Assert.True(method.Parameters.Any());
         Assert.Contains(cancellationParam, method.Parameters);
     }
+    [Fact]
+    public async Task ReplacesExceptionPropertiesNames()
+    {
+        var exception = root.AddClass(new CodeClass
+        {
+            Name = "error403",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        var propToAdd = exception.AddProperty(new CodeProperty
+        {
+            Name = "message",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        Assert.Equal("messageEscaped", propToAdd.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("message", propToAdd.SerializationName, StringComparer.OrdinalIgnoreCase);
+    }
+    [Fact]
+    public async Task DoesNotReplaceNonExceptionPropertiesNames()
+    {
+        var exception = root.AddClass(new CodeClass
+        {
+            Name = "error403",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = false,
+        }).First();
+        var propToAdd = exception.AddProperty(new CodeProperty
+        {
+            Name = "message",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        Assert.Equal("message", propToAdd.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("message", propToAdd.SerializationName, StringComparer.OrdinalIgnoreCase);
+    }
     #endregion
     #region CSharp
     [Fact]

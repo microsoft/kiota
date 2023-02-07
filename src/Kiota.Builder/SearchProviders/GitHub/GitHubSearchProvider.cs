@@ -237,7 +237,7 @@ public class GitHubSearchProvider : ISearchProvider
                 break;
             if (reposPage.Items != null)
                 results.AddRange(reposPage.Items);
-            shouldContinue = results.Count < reposPage.Total_count;
+            shouldContinue = results.Count < reposPage.TotalCount;
             pageNumber++;
         } while (shouldContinue);
         return results;

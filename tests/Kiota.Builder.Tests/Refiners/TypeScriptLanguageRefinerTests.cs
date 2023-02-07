@@ -262,7 +262,7 @@ public class TypeScriptLanguageRefinerTests
     private const string PathParametersDefaultName = "Dictionary<string, object>";
     private const string PathParametersDefaultValue = "new Dictionary<string, object>";
     private const string DateTimeOffsetDefaultName = "DateTimeOffset";
-    private const string AddiationalDataDefaultName = "new Dictionary<string, object>()";
+    private const string AdditionalDataDefaultName = "new Dictionary<string, object>()";
     private const string HandlerDefaultName = "IResponseHandler";
     [Fact]
     public async Task EscapesReservedKeywords()
@@ -273,8 +273,8 @@ public class TypeScriptLanguageRefinerTests
             Kind = CodeClassKind.Model
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-        Assert.NotEqual("break", model.Name);
-        Assert.Contains("escaped", model.Name);
+        Assert.NotEqual("break", model.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("Escaped", model.Name);
     }
     [Fact]
     public async Task CorrectsCoreType()
@@ -307,7 +307,7 @@ public class TypeScriptLanguageRefinerTests
             Kind = CodePropertyKind.AdditionalData,
             Type = new CodeType
             {
-                Name = AddiationalDataDefaultName
+                Name = AdditionalDataDefaultName
             }
         }, new()
         {
@@ -378,7 +378,7 @@ public class TypeScriptLanguageRefinerTests
         Assert.Empty(model.Properties.Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => FactoryDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => DateTimeOffsetDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => AddiationalDataDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(x => AdditionalDataDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => PathParametersDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => PathParametersDefaultValue.Equals(x.DefaultValue)));
         Assert.Empty(model.Methods.Where(x => DeserializeDefaultName.Equals(x.ReturnType.Name)));

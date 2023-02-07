@@ -1,5 +1,7 @@
-﻿namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models;
-public enum ContentSymlink_type
+﻿namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
 {
-    Symlink,
+    public enum ContentSymlink_type
+    {
+        Symlink,
+    }
 }

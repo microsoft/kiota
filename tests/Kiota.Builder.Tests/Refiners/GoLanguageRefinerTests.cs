@@ -552,7 +552,7 @@ public class GoLanguageRefinerTests
         }).First();
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Equal("select_escaped", property.Name);
+        Assert.Equal("selectEscaped", property.Name);
         Assert.True(property.IsNameEscaped);
     }
     [Fact]
