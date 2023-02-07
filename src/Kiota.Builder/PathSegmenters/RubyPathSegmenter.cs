@@ -29,7 +29,7 @@ public class RubyPathSegmenter : CommonPathSegmenter
         currentFileName.Replace(FileSuffix, string.Empty)
                         .ShortenFileName(Math.Min(MaxFilePathLength - directoryName.Length, MaxFileNameLength));
     private static readonly int MaxFilePathLength = 230;
-    private static readonly int MaxFileNameLength = 98; // brute force tested
+    internal static readonly int MaxFileNameLength = 98; // brute force tested
     public bool ExceedsMaxPathLength(string fullPath) =>
         (fullPath.Length - RootPath.Length) > MaxFilePathLength || Path.GetFileName(fullPath).Length > MaxFileNameLength;
     public string GetRelativeFileName(CodeNamespace currentNamespace, CodeElement currentElement) =>

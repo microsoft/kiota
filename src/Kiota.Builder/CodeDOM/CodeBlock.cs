@@ -30,6 +30,14 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
             return InnerChildElements.Values;
         return new CodeElement[] { StartBlock, EndBlock }.Union(InnerChildElements.Values);
     }
+    public void RenameChildElement(string oldName, string newName)
+    {
+        if (InnerChildElements.TryRemove(oldName, out var element))
+        {
+            element.Name = newName;
+            InnerChildElements.TryAdd(newName, element);
+        }
+    }
     public void RemoveChildElement<T>(params T[] elements) where T : CodeElement
     {
         if (elements == null) return;
