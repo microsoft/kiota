@@ -155,7 +155,7 @@ public class ShellRefinerTests
                 IsExternal = true
             }
         });
-        
+
         // Add client constructor
         var clientCtor = new CodeMethod
         {
@@ -168,7 +168,8 @@ public class ShellRefinerTests
             DeserializerModules = new() { "com.microsoft.kiota.serialization.Deserializer" },
             SerializerModules = new() { "com.microsoft.kiota.serialization.Serializer" }
         };
-        clientCtor.AddParameter(new CodeParameter {
+        clientCtor.AddParameter(new CodeParameter
+        {
             Name = "adapter",
             Kind = CodeParameterKind.RequestAdapter,
             Type = new CodeType
