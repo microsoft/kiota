@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2023-02-07
+
 ### Added
 
 - Updated the client constructor to set the base_url in path parameters from RequestAdapter's base_url(Python) [#2128](https://github.com/microsoft/kiota/issues/2128)
