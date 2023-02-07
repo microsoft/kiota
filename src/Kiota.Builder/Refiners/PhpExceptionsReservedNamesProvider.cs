@@ -11,6 +11,8 @@ public class PhpExceptionsReservedNamesProvider : IReservedNamesProvider
         "code",
         "file",
         "line",
+        "response",
+        "responseStatusCode",
         "getMessage",
         "getPrevious",
         "getCode",
