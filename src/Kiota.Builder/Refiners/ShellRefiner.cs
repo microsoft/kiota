@@ -66,6 +66,8 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
     {
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
+            // Remove request executor
+            RemoveUnusedParameters(currentClass);
             // Replace Nav Properties with BuildXXXCommand methods
             var navProperties = currentClass.GetChildElements().OfType<CodeProperty>().Where(e => e.IsOfKind(CodePropertyKind.RequestBuilder));
             foreach (var navProp in navProperties)
@@ -101,6 +103,20 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             }
         }
         CrawlTree(currentElement, CreateCommandBuilders);
+    }
+
+    private static void RemoveUnusedParameters(CodeClass currentClass)
+    {
+        var unusedPropKinds = new[] { CodePropertyKind.RequestAdapter };
+        var unusedParamKinds = new[] { CodeParameterKind.RequestAdapter };
+        var requestAdapters = currentClass.Properties.Where(p => p.IsOfKind(unusedPropKinds));
+        currentClass.RemoveChildElement(requestAdapters.ToArray());
+        var constructorKinds = new[] { CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor };
+        var constructorsWithAdapter = currentClass.Methods.Where(m => m.IsOfKind(constructorKinds) && m.Parameters.Any(p => p.IsOfKind(unusedParamKinds)));
+        foreach (var method in constructorsWithAdapter)
+        {
+            method.RemoveParametersByKind(unusedParamKinds);
+        }
     }
 
     private static void CreateCommandBuildersFromRequestExecutors(CodeClass currentClass, bool classHasIndexers, IEnumerable<CodeMethod> requestMethods)
@@ -183,5 +199,8 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             "Microsoft.Extensions.DependencyInjection", "IHost"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
             "System.Text",  "Encoding"),
+        new (x => {
+            return x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) == true;
+        } , "Microsoft.Kiota.Cli.Commons.Extensions", "GetRequestAdapter")
     };
 }
