@@ -13,11 +13,11 @@ Kiota follows [Semantic Versioning 2.0.0](https://semver.org/). Information abou
 
 ### Major releases
 
-Major releases include new features, new public API surface area, and bug fixes. Due to the nature of the changes, these releases are expected to have breaking changes. Major releases can install side by side with previous major releases. We will only maintain the latest major release, except for security and privacy related issues where we may release patches to prior major versions.
+Major releases include new features, new public API surface area, and bug fixes. Due to the nature of the changes, these releases are expected to have breaking changes. Major releases can install side by side with previous major releases. We will only maintain the latest major release, except for security and privacy related issues where we may release patches to prior major versions. Major releases are published as needed.
 
 ### Minor releases
 
-Minor releases also include new features, public API surface area, and bug fixes. The difference between these and major releases is that minor releases will not contain breaking changes to the tooling experience or the generated API surface area of GA maturity languages. Minor releases can install side by side with previous minor releases.
+Minor releases also include new features, public API surface area, and bug fixes. The difference between these and major releases is that minor releases will not contain breaking changes to the tooling experience or the generated API surface area of GA maturity languages. Minor releases can install side by side with previous minor releases. Minor releases are targeted to publish on the first Tuesday of every month.
 
 ### Patches
 
