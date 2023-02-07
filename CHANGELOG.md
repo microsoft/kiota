@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2023-02-07
+
 ### Added
 
 - Added support for multi-valued headers in Python. [#2051](https://github.com/microsoft/kiota/issues/2051)
@@ -24,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Fix bug in indexer methods for PHP Generation.
+- Fixed bug in indexer methods for PHP Generation.
 - Fixed a bug where errors/exceptions could override native exception type symbols for PHP Generation. [#2258](https://github.com/microsoft/kiota/issues/2258)
 - Fixed a bug where most of the Java fields have been prefixed with an underscore.
 - Mangle properties and/or accessors names per language to have more idiomatic APIs.
@@ -47,13 +49,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed CreateXXXRequestInformation methods to ToXXXRequestInformation for a better auto-completion experience. [#2071](https://github.com/microsoft/kiota/issues/2071)
 - Renamed Go request adapter methods to remove the async suffix. [#2084](https://github.com/microsoft/kiota/issues/2084)
 - Fixed a bug where CLI query/header/path parameters would not be deduplicated. [#2059](https://github.com/microsoft/kiota/issues/2059)
-- Removes unused generated import for PHP Generation.
+- Removed unused generated import for PHP Generation.
+- Fixed a bug where long namespaces would make Ruby packaging fail.
 - Fixed a bug where classes with namespace names are generated outside namespace in Python. [#2188](https://github.com/microsoft/kiota/issues/2188)
 - Changed signature of escaped reserved names from {x}_escaped to {x}_ in line with Python style guides.
 - Add null checks in generated Shell language code.
 - Fixed a bug where Go indexers would fail to pass the index parameter.
 - Fixed a bug where path segments with parameters could be missing words. [#2209](https://github.com/microsoft/kiota/issues/2209)
 - Fixed a bug where refiners could generate duplicate properties.
+- Fixed a bug where Go collections would try to use variadic parameters where not supported.
+- Removed the need to provide a RequestAdapter in Shell command builders.
 
 ## [0.10.0] - 2023-01-04
 

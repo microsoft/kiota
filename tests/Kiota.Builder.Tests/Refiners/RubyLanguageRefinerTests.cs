@@ -224,5 +224,19 @@ public class RubyLanguageRefinerTests
         Assert.Single(declaration.Usings.Where(static x => "Message".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase)));
         Assert.Single(declaration.Usings.Where(static x => "graph".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase)));
     }
+    [Fact]
+    public async Task ShortensLongNamespaceNames()
+    {
+        var subNS = graphNS.AddNamespace($"{graphNS.Name}.microsoftGraphDoesUserHaveAccessUserIdUserIdTenantIdTenantIdUserPrincipalNameUserPrincipalName");
+        var messageClassDef = new CodeClass
+        {
+            Name = "Message",
+        };
+        subNS.AddClass(messageClassDef);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
+        Assert.Null(root.FindNamespaceByName($"{graphNS.Name}.microsoftGraphDoesUserHaveAccessUserIdUserIdTenantIdTenantIdUserPrincipalNameUserPrincipalName"));
+        Assert.NotNull(root.FindNamespaceByName($"{graphNS.Name}.i7f5f9550ce583c5b890fd039add74646312e8d1fcdadf26872765e05988073b0"));
+        Assert.Equal($"{graphNS.Name}.i7f5f9550ce583c5b890fd039add74646312e8d1fcdadf26872765e05988073b0", subNS.Name);
+    }
     #endregion
 }
