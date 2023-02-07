@@ -156,10 +156,8 @@ public class PhpConventionService : CommonLanguageConventionService
 
     }
 
-    public void AddRequestBuilderBody(string returnType, LanguageWriter writer, string? suffix = default, CodeElement? method = default)
+    public void AddRequestBuilderBody(string returnType, LanguageWriter writer, string? suffix = default, IEnumerable<CodeParameter>? pathParameters = default)
     {
-        var codeMethod = method as CodeMethod;
-        var pathParameters = codeMethod?.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path));
         var joined = string.Empty;
         var codeParameters = pathParameters?.ToList();
         if (pathParameters != null && (codeParameters?.Any() ?? false))

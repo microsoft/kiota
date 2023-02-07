@@ -431,9 +431,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.WriteLine($"return $this->{propertyName};");
     }
 
-    private void WriteRequestBuilderWithParametersBody(string returnType, LanguageWriter writer, CodeElement? element = default)
+    private void WriteRequestBuilderWithParametersBody(string returnType, LanguageWriter writer, CodeMethod codeMethod)
     {
-        conventions.AddRequestBuilderBody(returnType, writer, default, element);
+        conventions.AddRequestBuilderBody(returnType, writer, pathParameters: codeMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
     }
 
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"$this->{property.Name}";
@@ -588,7 +588,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
 
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer)
     {
-        var pathParameters = codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path, CodeParameterKind.Custom));
+        var pathParameters = codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path));
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
             codeElement.OriginalIndexer != null)
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"$this->{pathParametersProperty.Name}",
