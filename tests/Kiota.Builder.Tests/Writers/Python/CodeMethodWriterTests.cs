@@ -357,7 +357,7 @@ public class CodeMethodWriterTests : IDisposable
         AddRequestProperties();
         AddRequestBodyParameters(true);
         method.AcceptedResponseTypes.Add("application/json");
-         method.AcceptedResponseTypes.Add("text/plain");
+        method.AcceptedResponseTypes.Add("text/plain");
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("request_info = RequestInformation()", result);
