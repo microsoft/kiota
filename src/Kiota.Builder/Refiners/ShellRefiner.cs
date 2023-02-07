@@ -12,6 +12,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 {
     private static readonly CodePropertyKind[] UnusedPropKinds = new[] { CodePropertyKind.RequestAdapter };
     private static readonly CodeParameterKind[] UnusedParamKinds = new[] { CodeParameterKind.RequestAdapter };
+    private static readonly CodeMethodKind[] UnusedMethodKinds = new[] { CodeMethodKind.RequestBuilderWithParameters };
     private static readonly CodeMethodKind[] ConstructorKinds = new[] { CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor };
     public ShellRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
@@ -117,6 +118,9 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         {
             method.RemoveParametersByKind(UnusedParamKinds);
         }
+
+        var unwantedMethods = currentClass.Methods.Where(static m => m.IsOfKind(UnusedMethodKinds));
+        currentClass.RemoveChildElement(unwantedMethods.ToArray());
     }
 
     private static void CreateCommandBuildersFromRequestExecutors(CodeClass currentClass, bool classHasIndexers, IEnumerable<CodeMethod> requestMethods)
