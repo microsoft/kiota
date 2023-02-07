@@ -10,6 +10,9 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Refiners;
 public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 {
+    private static readonly CodePropertyKind[] UnusedPropKinds = new[] { CodePropertyKind.RequestAdapter };
+    private static readonly CodeParameterKind[] UnusedParamKinds = new[] { CodeParameterKind.RequestAdapter };
+    private static readonly CodeMethodKind[] ConstructorKinds = new[] { CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor };
     public ShellRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
@@ -107,15 +110,12 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 
     private static void RemoveUnusedParameters(CodeClass currentClass)
     {
-        var unusedPropKinds = new[] { CodePropertyKind.RequestAdapter };
-        var unusedParamKinds = new[] { CodeParameterKind.RequestAdapter };
-        var requestAdapters = currentClass.Properties.Where(p => p.IsOfKind(unusedPropKinds));
+        var requestAdapters = currentClass.Properties.Where(static p => p.IsOfKind(UnusedPropKinds));
         currentClass.RemoveChildElement(requestAdapters.ToArray());
-        var constructorKinds = new[] { CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor };
-        var constructorsWithAdapter = currentClass.Methods.Where(m => m.IsOfKind(constructorKinds) && m.Parameters.Any(p => p.IsOfKind(unusedParamKinds)));
+        var constructorsWithAdapter = currentClass.Methods.Where(static m => m.IsOfKind(ConstructorKinds) && m.Parameters.Any(static p => p.IsOfKind(UnusedParamKinds)));
         foreach (var method in constructorsWithAdapter)
         {
-            method.RemoveParametersByKind(unusedParamKinds);
+            method.RemoveParametersByKind(UnusedParamKinds);
         }
     }
 
