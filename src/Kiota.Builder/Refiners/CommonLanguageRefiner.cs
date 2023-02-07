@@ -10,6 +10,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Refiners;
 public abstract class CommonLanguageRefiner : ILanguageRefiner
 {
+    protected static readonly char[] UnderscoreArray = new[] { '_' };
     protected CommonLanguageRefiner(GenerationConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);

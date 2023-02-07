@@ -22,8 +22,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             CorrectClassNames(generatedCode, s =>
             {
                 if (s.Contains('_') &&
-                     s.ToPascalCase(new[] { '_' }) is string refinedName &&
-                    !reservedNamesProvider.ReservedNames.Contains(s) && 
+                     s.ToPascalCase(UnderscoreArray) is string refinedName &&
+                    !reservedNamesProvider.ReservedNames.Contains(s) &&
                     !reservedNamesProvider.ReservedNames.Contains(refinedName))
                     return refinedName;
                 else
@@ -45,14 +45,14 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new() {
                     CodePropertyKind.Custom,
                 },
-                static s => s.ToCamelCase(new[] { '_' }));
+                static s => s.ToCamelCase(UnderscoreArray));
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.BackingStore,
                 },
-                static s => s.ToCamelCase(new[] { '_' }),
+                static s => s.ToCamelCase(UnderscoreArray),
                 _configuration.UsesBackingStore,
                 true,
                 "get",
