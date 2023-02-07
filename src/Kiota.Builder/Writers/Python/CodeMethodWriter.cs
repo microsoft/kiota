@@ -359,7 +359,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                 $"{RequestInfoVarName}.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}");
         writer.WriteLine($"{RequestInfoVarName}.http_method = Method.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
         if (codeElement.AcceptedResponseTypes.Any())
-            writer.WriteLine($"{RequestInfoVarName}.headers[\"Accept\"] = \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\"");
+            writer.WriteLine($"{RequestInfoVarName}.headers[\"Accept\"] = [\"{string.Join(", ", codeElement.AcceptedResponseTypes)}\"]");
         UpdateRequestInformationFromRequestConfiguration(requestParams, writer);
         if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
             UpdateRequestInformationFromRequestBody(codeElement, requestParams, requestAdapterProperty, writer);
