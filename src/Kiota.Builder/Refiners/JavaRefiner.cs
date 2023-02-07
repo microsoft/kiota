@@ -21,8 +21,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             var reservedNamesProvider = new JavaReservedNamesProvider();
             CorrectClassNames(generatedCode, s =>
             {
-                if (s.ToPascalCase(new[] { '_' }) is string refinedName &&
-                    s.Contains('_') &&
+                if (s.Contains('_') &&
+                     s.ToPascalCase(new[] { '_' }) is string refinedName &&
                     !reservedNamesProvider.ReservedNames.Contains(s) && 
                     !reservedNamesProvider.ReservedNames.Contains(refinedName))
                     return refinedName;
