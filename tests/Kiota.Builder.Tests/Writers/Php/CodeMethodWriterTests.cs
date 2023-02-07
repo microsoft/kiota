@@ -1066,7 +1066,7 @@ public class CodeMethodWriterTests : IDisposable
         };
         codeMethod.AddParameter(new CodeParameter
         {
-            Kind = CodeParameterKind.Path,
+            Kind = CodeParameterKind.Custom,
             Name = "id",
             Type = new CodeType
             {
@@ -1077,7 +1077,7 @@ public class CodeMethodWriterTests : IDisposable
         _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
         var result = stringWriter.ToString();
         Assert.Contains("function messageById(string $id): MessageRequestBuilder {", result);
-        Assert.Contains("return new MessageRequestBuilder($this->pathParameters, $this->requestAdapter, $id);", result);
+        Assert.Contains("return new MessageRequestBuilder($this->pathParameters, $this->requestAdapter);", result);
     }
 
     [Fact]
