@@ -10,6 +10,9 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Refiners;
 public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 {
+    private static readonly CodePropertyKind[] UnusedPropKinds = new[] { CodePropertyKind.RequestAdapter };
+    private static readonly CodeParameterKind[] UnusedParamKinds = new[] { CodeParameterKind.RequestAdapter };
+    private static readonly CodeMethodKind[] ConstructorKinds = new[] { CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor };
     public ShellRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
@@ -66,6 +69,8 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
     {
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
+            // Remove request executor
+            RemoveUnusedParameters(currentClass);
             // Replace Nav Properties with BuildXXXCommand methods
             var navProperties = currentClass.GetChildElements().OfType<CodeProperty>().Where(e => e.IsOfKind(CodePropertyKind.RequestBuilder));
             foreach (var navProp in navProperties)
@@ -101,6 +106,17 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             }
         }
         CrawlTree(currentElement, CreateCommandBuilders);
+    }
+
+    private static void RemoveUnusedParameters(CodeClass currentClass)
+    {
+        var requestAdapters = currentClass.Properties.Where(static p => p.IsOfKind(UnusedPropKinds));
+        currentClass.RemoveChildElement(requestAdapters.ToArray());
+        var constructorsWithAdapter = currentClass.Methods.Where(static m => m.IsOfKind(ConstructorKinds) && m.Parameters.Any(static p => p.IsOfKind(UnusedParamKinds)));
+        foreach (var method in constructorsWithAdapter)
+        {
+            method.RemoveParametersByKind(UnusedParamKinds);
+        }
     }
 
     private static void CreateCommandBuildersFromRequestExecutors(CodeClass currentClass, bool classHasIndexers, IEnumerable<CodeMethod> requestMethods)
@@ -183,5 +199,8 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             "Microsoft.Extensions.DependencyInjection", "IHost"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
             "System.Text",  "Encoding"),
+        new (x => {
+            return x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
+        } , "Microsoft.Kiota.Cli.Commons.Extensions", "GetRequestAdapter")
     };
 }

@@ -14,25 +14,28 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     private static readonly Regex delimitedRegex = ShellDelimitedRegex();
     private static readonly Regex camelCaseRegex = ShellCamelCaseRegex();
     private static readonly Regex uppercaseRegex = ShellUppercaseRegex();
-    private const string allParamType = "bool";
-    private const string allParamName = "all";
-    private const string cancellationTokenParamType = "CancellationToken";
-    private const string cancellationTokenParamName = "cancellationToken";
-    private const string fileParamType = "FileInfo";
-    private const string fileParamName = "file";
-    private const string outputFilterParamType = "IOutputFilter";
-    private const string outputFilterParamName = "outputFilter";
-    private const string outputFilterQueryParamType = "string";
-    private const string outputFilterQueryParamName = "query";
-    private const string outputFormatParamType = "FormatterType";
-    private const string outputFormatParamName = "output";
-    private const string outputFormatterFactoryParamType = "IOutputFormatterFactory";
-    private const string outputFormatterFactoryParamName = "outputFormatterFactory";
-    private const string pagingServiceParamType = "IPagingService";
-    private const string pagingServiceParamName = "pagingService";
-    private const string jsonNoIndentParamType = "bool";
-    private const string jsonNoIndentParamName = "jsonNoIndent";
-    private const string invocationContextParamName = "invocationContext";
+    private const string AllParamType = "bool";
+    private const string AllParamName = "all";
+    private const string CancellationTokenParamType = "CancellationToken";
+    private const string CancellationTokenParamName = "cancellationToken";
+    private const string FileParamType = "FileInfo";
+    private const string FileParamName = "file";
+    private const string OutputFilterParamType = "IOutputFilter";
+    private const string OutputFilterParamName = "outputFilter";
+    private const string OutputFilterQueryParamType = "string";
+    private const string OutputFilterQueryParamName = "query";
+    private const string OutputFormatParamType = "FormatterType";
+    private const string OutputFormatParamName = "output";
+    private const string OutputFormatterFactoryParamType = "IOutputFormatterFactory";
+    private const string OutputFormatterFactoryParamName = "outputFormatterFactory";
+    private const string PagingServiceParamType = "IPagingService";
+    private const string PagingServiceParamName = "pagingService";
+    private const string RequestAdapterParamType = "IRequestAdapter";
+    private const string RequestAdapterParamName = "reqAdapter";
+    private const string BuilderInstanceName = "builder";
+    private const string JsonNoIndentParamType = "bool";
+    private const string JsonNoIndentParamName = "jsonNoIndent";
+    private const string InvocationContextParamName = "invocationContext";
 
     public ShellCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
     {
@@ -85,7 +88,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         // -h A:B,B:C
         // -h {"A": "B"}
         // parameters: (type, name, CodeParameter)
-        var parameters = parametersList.Select<CodeParameter, (string, string, CodeParameter?)>(p =>
+        var parameters = parametersList.Select<CodeParameter, (string typeName, string name, CodeParameter? param)>(p =>
         {
             // Assume headers are a list. Allows users to specify multiple header values.
             // --header <val1> --header <val2>
@@ -103,12 +106,12 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 // Use FileInfo for stream body
                 if (conventions.StreamTypeName.Equals(p.Type?.Name, StringComparison.OrdinalIgnoreCase))
                 {
-                    type = fileParamType;
-                    p.Name = fileParamName;
+                    type = FileParamType;
+                    p.Name = FileParamName;
                 }
             }
             return (type, NormalizeToIdentifier(p.Name), p);
-        }).DistinctBy(static p => p.Item2).ToList();
+        }).DistinctBy(static p => p.name).ToList();
         var availableOptions = WriteExecutableCommandOptions(writer, parameters);
 
         var isHandlerVoid = conventions.VoidTypeName.Equals(originalMethod.ReturnType.Name, StringComparison.OrdinalIgnoreCase);
@@ -121,27 +124,31 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             if (!conventions.IsPrimitiveType(returnType))
             {
                 // Add output filter param
-                parameters.Add((outputFilterParamType, outputFilterParamName, null));
-                availableOptions.Add($"{invocationContextParamName}.BindingContext.GetRequiredService<{outputFilterParamType}>()");
+                parameters.Add((OutputFilterParamType, OutputFilterParamName, null));
+                availableOptions.Add($"{InvocationContextParamName}.BindingContext.GetRequiredService<{OutputFilterParamType}>()");
             }
 
             // Add output formatter factory param
-            parameters.Add((outputFormatterFactoryParamType, outputFormatterFactoryParamName, null));
-            availableOptions.Add($"{invocationContextParamName}.BindingContext.GetRequiredService<{outputFormatterFactoryParamType}>()");
+            parameters.Add((OutputFormatterFactoryParamType, OutputFormatterFactoryParamName, null));
+            availableOptions.Add($"{InvocationContextParamName}.BindingContext.GetRequiredService<{OutputFormatterFactoryParamType}>()");
         }
 
         if (originalMethod.PagingInformation != null)
         {
             // Add paging service param
-            parameters.Add((pagingServiceParamType, pagingServiceParamName, null));
-            availableOptions.Add($"{invocationContextParamName}.BindingContext.GetRequiredService<{pagingServiceParamType}>()");
+            parameters.Add((PagingServiceParamType, PagingServiceParamName, null));
+            availableOptions.Add($"{InvocationContextParamName}.BindingContext.GetRequiredService<{PagingServiceParamType}>()");
         }
 
         // Add CancellationToken param
-        parameters.Add((cancellationTokenParamType, cancellationTokenParamName, null));
-        availableOptions.Add($"{invocationContextParamName}.GetCancellationToken()");
+        parameters.Add((CancellationTokenParamType, CancellationTokenParamName, null));
+        availableOptions.Add($"{InvocationContextParamName}.GetCancellationToken()");
 
-        writer.WriteLine($"command.SetHandler(async ({invocationContextParamName}) => {{");
+        // Add RequestAdapter param
+        parameters.Add((RequestAdapterParamType, RequestAdapterParamName, null));
+        availableOptions.Add($"{InvocationContextParamName}.GetRequestAdapter()");
+
+        writer.WriteLine($"command.SetHandler(async ({InvocationContextParamName}) => {{");
         writer.IncreaseIndent();
         for (var i = 0; i < availableOptions.Count; i++)
         {
@@ -165,33 +172,33 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
         {
             var fileOptionName = "fileOption";
-            writer.WriteLine($"var {fileOptionName} = new Option<{fileParamType}>(\"--{fileParamName}\");");
+            writer.WriteLine($"var {fileOptionName} = new Option<{FileParamType}>(\"--{FileParamName}\");");
             writer.WriteLine($"command.AddOption({fileOptionName});");
-            parameters.Add((fileParamType, fileParamName, null));
-            availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({fileOptionName})");
+            parameters.Add((FileParamType, FileParamName, null));
+            availableOptions.Add($"{InvocationContextParamName}.ParseResult.GetValueForOption({fileOptionName})");
         }
         else if (!isHandlerVoid && !conventions.IsPrimitiveType(returnType))
         {
             // Add output type param
             var outputOptionName = "outputOption";
-            writer.WriteLine($"var {outputOptionName} = new Option<{outputFormatParamType}>(\"--{outputFormatParamName}\", () => FormatterType.JSON){{");
+            writer.WriteLine($"var {outputOptionName} = new Option<{OutputFormatParamType}>(\"--{OutputFormatParamName}\", () => FormatterType.JSON){{");
             writer.IncreaseIndent();
             writer.WriteLine("IsRequired = true");
             writer.CloseBlock("};");
             writer.WriteLine($"command.AddOption({outputOptionName});");
-            parameters.Add((outputFormatParamType, outputFormatParamName, null));
-            availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({outputOptionName})");
+            parameters.Add((OutputFormatParamType, OutputFormatParamName, null));
+            availableOptions.Add($"{InvocationContextParamName}.ParseResult.GetValueForOption({outputOptionName})");
 
             // Add output filter query param
-            var outputFilterQueryOptionName = $"{outputFilterQueryParamName}Option";
-            writer.WriteLine($"var {outputFilterQueryOptionName} = new Option<{outputFilterQueryParamType}>(\"--{outputFilterQueryParamName}\");");
+            var outputFilterQueryOptionName = $"{OutputFilterQueryParamName}Option";
+            writer.WriteLine($"var {outputFilterQueryOptionName} = new Option<{OutputFilterQueryParamType}>(\"--{OutputFilterQueryParamName}\");");
             writer.WriteLine($"command.AddOption({outputFilterQueryOptionName});");
-            parameters.Add((outputFilterQueryParamType, outputFilterQueryParamName, null));
-            availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({outputFilterQueryOptionName})");
+            parameters.Add((OutputFilterQueryParamType, OutputFilterQueryParamName, null));
+            availableOptions.Add($"{InvocationContextParamName}.ParseResult.GetValueForOption({outputFilterQueryOptionName})");
 
             // Add JSON no-indent option
-            var jsonNoIndentOptionName = $"{jsonNoIndentParamName}Option";
-            writer.WriteLine($"var {jsonNoIndentOptionName} = new Option<bool>(\"--{NormalizeToOption(jsonNoIndentParamName)}\", r => {{");
+            var jsonNoIndentOptionName = $"{JsonNoIndentParamName}Option";
+            writer.WriteLine($"var {jsonNoIndentOptionName} = new Option<bool>(\"--{NormalizeToOption(JsonNoIndentParamName)}\", r => {{");
             writer.IncreaseIndent();
             writer.WriteLine("if (bool.TryParse(r.Tokens.Select(t => t.Value).LastOrDefault(), out var value)) {");
             writer.IncreaseIndent();
@@ -201,17 +208,17 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             writer.DecreaseIndent();
             writer.WriteLine("}, description: \"Disable indentation for the JSON output formatter.\");");
             writer.WriteLine($"command.AddOption({jsonNoIndentOptionName});");
-            parameters.Add((jsonNoIndentParamType, jsonNoIndentParamName, null));
-            availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({jsonNoIndentOptionName})");
+            parameters.Add((JsonNoIndentParamType, JsonNoIndentParamName, null));
+            availableOptions.Add($"{InvocationContextParamName}.ParseResult.GetValueForOption({jsonNoIndentOptionName})");
 
             // Add --all option
             if (isPageable)
             {
-                var allOptionName = $"{allParamName}Option";
-                writer.WriteLine($"var {allOptionName} = new Option<{allParamType}>(\"--{allParamName}\");");
+                var allOptionName = $"{AllParamName}Option";
+                writer.WriteLine($"var {allOptionName} = new Option<{AllParamType}>(\"--{AllParamName}\");");
                 writer.WriteLine($"command.AddOption({allOptionName});");
-                parameters.Add((allParamType, allParamName, null));
-                availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({allOptionName})");
+                parameters.Add((AllParamType, AllParamName, null));
+                availableOptions.Add($"{InvocationContextParamName}.ParseResult.GetValueForOption({allOptionName})");
             }
         }
     }
@@ -247,37 +254,37 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                         // Special handling for pageable requests
                         writer.WriteLine("if (pageResponse?.StatusCode >= 200 && pageResponse?.StatusCode < 300) {");
                         writer.IncreaseIndent();
-                        writer.WriteLine($"{formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
+                        writer.WriteLine($"{formatterVar} = {OutputFormatterFactoryParamName}.GetFormatter({OutputFormatParamName});");
                     }
-                    formatterTypeVal = outputFormatParamName;
+                    formatterTypeVal = OutputFormatParamName;
                     string canFilterExpr = $"(response != Stream.Null)";
-                    writer.WriteLine($"response = {canFilterExpr} ? await {outputFilterParamName}.FilterOutputAsync(response, {outputFilterQueryParamName}, {cancellationTokenParamName}) : response;");
+                    writer.WriteLine($"response = {canFilterExpr} ? await {OutputFilterParamName}.FilterOutputAsync(response, {OutputFilterQueryParamName}, {CancellationTokenParamName}) : response;");
                     if (originalMethod?.PagingInformation == null)
                     {
                         writer.Write("var ");
                     }
-                    writer.Write($"{formatterOptionsVar} = {outputFormatParamName}.GetOutputFormatterOptions(new FormatterOptionsModel(!{jsonNoIndentParamName}));", originalMethod?.PagingInformation != null);
+                    writer.Write($"{formatterOptionsVar} = {OutputFormatParamName}.GetOutputFormatterOptions(new FormatterOptionsModel(!{JsonNoIndentParamName}));", originalMethod?.PagingInformation != null);
                     writer.WriteLine();
 
                     if (originalMethod?.PagingInformation != null)
                     {
                         writer.CloseBlock("} else {");
                         writer.IncreaseIndent();
-                        writer.WriteLine($"{formatterVar} = {outputFormatterFactoryParamName}.GetFormatter(FormatterType.TEXT);");
+                        writer.WriteLine($"{formatterVar} = {OutputFormatterFactoryParamName}.GetFormatter(FormatterType.TEXT);");
                         writer.CloseBlock();
                     }
                 }
 
                 if (originalMethod?.PagingInformation == null)
                 {
-                    writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({formatterTypeVal});");
+                    writer.WriteLine($"var {formatterVar} = {OutputFormatterFactoryParamName}.GetFormatter({formatterTypeVal});");
                 }
 
-                writer.WriteLine($"await {formatterVar}.WriteOutputAsync(response, {formatterOptionsVar}, {cancellationTokenParamName});");
+                writer.WriteLine($"await {formatterVar}.WriteOutputAsync(response, {formatterOptionsVar}, {CancellationTokenParamName});");
             }
             else
             {
-                writer.WriteLine($"if ({fileParamName} == null) {{");
+                writer.WriteLine($"if ({FileParamName} == null) {{");
                 writer.IncreaseIndent();
                 writer.WriteLine("using var reader = new StreamReader(response);");
                 writer.WriteLine("var strContent = reader.ReadToEnd();");
@@ -285,9 +292,9 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 writer.CloseBlock();
                 writer.WriteLine("else {");
                 writer.IncreaseIndent();
-                writer.WriteLine($"using var writeStream = {fileParamName}.OpenWrite();");
+                writer.WriteLine($"using var writeStream = {FileParamName}.OpenWrite();");
                 writer.WriteLine("await response.CopyToAsync(writeStream);");
-                writer.WriteLine($"Console.WriteLine($\"Content written to {{{fileParamName}.FullName}}.\");");
+                writer.WriteLine($"Console.WriteLine($\"Content written to {{{FileParamName}.FullName}}.\");");
                 writer.CloseBlock();
             }
         }
@@ -338,11 +345,11 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             writer.WriteLine($"{optionName}.IsRequired = {isRequired.ToString().ToFirstCharacterLowerCase()};");
             writer.WriteLine($"command.AddOption({optionName});");
             var suffix = string.Empty;
-            if (option.IsOfKind(CodeParameterKind.RequestBody) && !fileParamType.Equals(optionType, StringComparison.OrdinalIgnoreCase))
+            if (option.IsOfKind(CodeParameterKind.RequestBody) && !FileParamType.Equals(optionType, StringComparison.OrdinalIgnoreCase))
             {
                 suffix = " ?? string.Empty";
             }
-            availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({optionName}){suffix}");
+            availableOptions.Add($"{InvocationContextParamName}.ParseResult.GetValueForOption({optionName}){suffix}");
         }
 
         return availableOptions;
@@ -422,20 +429,20 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 .OrderBy(static m => m.Name)
                 .ThenBy(static m => m.ReturnType.IsCollection) ??
                 Enumerable.Empty<CodeMethod>();
-            conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+            AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
             foreach (var method in builderMethods)
             {
                 if (method.ReturnType.IsCollection)
                 {
-                    writer.WriteLine($"foreach (var cmd in builder.{method.Name}()) {{");
+                    writer.WriteLine($"foreach (var cmd in {BuilderInstanceName}.{method.Name}()) {{");
                     writer.IncreaseIndent();
                     writer.WriteLine("command.AddCommand(cmd);");
                     writer.CloseBlock();
                 }
                 else
                 {
-                    writer.WriteLine($"command.AddCommand(builder.{method.Name}());");
+                    writer.WriteLine($"command.AddCommand({BuilderInstanceName}.{method.Name}());");
                 }
             }
             // SubCommands
@@ -466,25 +473,35 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                 .OrderBy(static m => m.Name) ??
                 Enumerable.Empty<CodeMethod>();
-            conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+
+            AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
             foreach (var method in builderMethods)
             {
                 if (method.ReturnType.IsCollection)
                 {
-                    writer.WriteLine($"foreach (var cmd in builder.{method.Name}()) {{");
+                    writer.WriteLine($"foreach (var cmd in {BuilderInstanceName}.{method.Name}()) {{");
                     writer.IncreaseIndent();
                     writer.WriteLine("command.AddCommand(cmd);");
                     writer.CloseBlock();
                 }
                 else
                 {
-                    writer.WriteLine($"command.AddCommand(builder.{method.Name}());");
+                    writer.WriteLine($"command.AddCommand({BuilderInstanceName}.{method.Name}());");
                 }
             }
 
             writer.WriteLine("return command;");
         }
+    }
+
+    private static void AddCommandBuilderContainerInitialization(CodeClass parentClass, string returnType, LanguageWriter writer, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default)
+    {
+        var pathParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+        var urlTplRef = pathParametersProp?.Name.ToFirstCharacterUpperCase();
+        var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+
+        writer.WriteLine($"{prefix}new {returnType}({urlTplRef}{pathParametersSuffix});");
     }
 
     protected virtual void WriteCommandHandlerBody(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
@@ -556,14 +573,14 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         if (pageInfo != null)
         {
             writer.WriteLine($"var pagingData = new PageLinkData(requestInfo, null, itemName: \"{pageInfo.ItemName}\", nextLinkName: \"{pageInfo.NextLinkName}\");");
-            writer.WriteLine($"{(isVoid ? string.Empty : "var pageResponse = ")}await {pagingServiceParamName}.GetPagedDataAsync((info, token) => RequestAdapter.{requestMethod}(info, cancellationToken: token), pagingData, {allParamName}, {cancellationTokenParamName});");
+            writer.WriteLine($"{(isVoid ? string.Empty : "var pageResponse = ")}await {PagingServiceParamName}.GetPagedDataAsync((info, token) => {RequestAdapterParamName}.{requestMethod}(info, cancellationToken: token), pagingData, {AllParamName}, {CancellationTokenParamName});");
             writer.WriteLine("var response = pageResponse?.Response;");
         }
         else
         {
             string suffix = string.Empty;
             if (!isVoid) suffix = " ?? Stream.Null";
-            writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await RequestAdapter.{requestMethod}(requestInfo, errorMapping: {errorMappingVarName}, cancellationToken: {cancellationTokenParamName}){suffix};");
+            writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await {RequestAdapterParamName}.{requestMethod}(requestInfo, errorMapping: {errorMappingVarName}, cancellationToken: {CancellationTokenParamName}){suffix};");
         }
     }
 

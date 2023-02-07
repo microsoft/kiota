@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where Go indexers would fail to pass the index parameter.
 - Fixed a bug where path segments with parameters could be missing words. [#2209](https://github.com/microsoft/kiota/issues/2209)
 - Fixed a bug where refiners could generate duplicate properties.
+- Removed the need to provide a RequestAdapter in Shell command builders.
 
 ## [0.10.0] - 2023-01-04
 
