@@ -142,7 +142,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             if (string.IsNullOrEmpty(currentProperty.SerializationName))
                 currentProperty.SerializationName = currentProperty.Name;
-            currentProperty.Name = refineAccessorName(currentProperty.Name);
+
+            var refinedName = refineAccessorName(currentProperty.Name);
+            if (!parentClass.Properties.Any(property => refinedName.Equals(property.Name, StringComparison.OrdinalIgnoreCase)))// ensure the refinement won't generate a duplicate
+                currentProperty.Name = refinedName;
         }
         CrawlTree(current, x => ReplacePropertyNames(x, propertyKindsToReplace!, refineAccessorName));
     }
@@ -266,6 +269,16 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 return newReplacement;
             index++;
         }
+    }
+    protected static void ReplaceReservedExceptionPropertyNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement)
+    {
+        ReplaceReservedNames(
+            current,
+            provider,
+            replacement,
+            null,
+            static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && x.Parent is CodeClass parent && parent.IsOfKind(CodeClassKind.Model) && parent.IsErrorDefinition
+        );
     }
     protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type>? codeElementExceptions = null, Func<CodeElement, bool>? shouldReplaceCallback = null)
     {

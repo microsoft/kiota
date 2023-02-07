@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where errors/exceptions could override native exception type symbols for PHP Generation. [#2258](https://github.com/microsoft/kiota/issues/2258)
 - Fixed a bug where most of the Java fields have been prefixed with an underscore.
 - Mangle properties and/or accessors names per language to have more idiomatic APIs.
 - Using fully qualified identifier for java.util.function.Consumer to avoid conflicts in Java.
@@ -33,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where reserved names replacement wouldn't check whether the name was already in use (all languages).
 - Fixed a bug where default OpenAPI.net validation rules could not be disabled.
 - Fixed a race condition in namespace disambiguation for CSharp.
+- Fixed a bug where errors/exceptions could override native exception type symbols. [#2190](https://github.com/microsoft/kiota/issues/2190)
 - Removed the ResponseHandler parameter in RequestAdapter to be a RequestOption in Python [#1857](https://github.com/microsoft/kiota/issues/1857)
 - Updated the client constructor to set the baseUrl path parameter from RequestAdapter's baseUrl(PHP) [#2129](https://github.com/microsoft/kiota/issues/2129)
 - The Lock file uses a project version coming from a Source Generator instead of the one looked up with reflection. [#2147](https://github.com/microsoft/kiota/issues/2147)
@@ -49,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add null checks in generated Shell language code.
 - Fixed a bug where Go indexers would fail to pass the index parameter.
 - Fixed a bug where path segments with parameters could be missing words. [#2209](https://github.com/microsoft/kiota/issues/2209)
+- Fixed a bug where refiners could generate duplicate properties.
 
 ## [0.10.0] - 2023-01-04
 

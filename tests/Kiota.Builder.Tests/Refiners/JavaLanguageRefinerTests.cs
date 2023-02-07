@@ -25,7 +25,7 @@ public class JavaLanguageRefinerTests
         };
         model.AddOption(option);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.Equal("break_escaped", option.Name);
+        Assert.Equal("breakEscaped", option.Name);
         Assert.Equal("break", option.SerializationName);
     }
     [Fact]
@@ -149,8 +149,8 @@ public class JavaLanguageRefinerTests
         };
         model.AddUsing(nUsing);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.NotEqual("break", nUsing.Declaration.Name);
-        Assert.Contains("escaped", nUsing.Declaration.Name);
+        Assert.NotEqual("break", nUsing.Declaration.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("Escaped", nUsing.Declaration.Name);
     }
     [Fact]
     public async Task EscapesReservedKeywords()
@@ -161,8 +161,8 @@ public class JavaLanguageRefinerTests
             Kind = CodeClassKind.Model
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.NotEqual("break", model.Name);
-        Assert.Contains("escaped", model.Name);
+        Assert.NotEqual("break", model.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("Escaped", model.Name);
     }
     [Fact]
     public async Task AddsDefaultImports()

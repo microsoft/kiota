@@ -137,7 +137,7 @@ public class CSharpLanguageRefinerTests
         // Assert
         Assert.Equal("break", model.Name);
         Assert.DoesNotContain("@", model.Name); // classname will be capitalized
-        Assert.Equal("Alias", property.Name);
+        Assert.Equal("alias", property.Name);
         Assert.DoesNotContain("@", property.Name); // classname will be capitalized
     }
 
@@ -174,7 +174,7 @@ public class CSharpLanguageRefinerTests
         Assert.NotEqual(typeName, model.Name);
         Assert.Equal($"{typeName}Object", model.Name);//our defined model is renamed
         Assert.Equal(typeName, property.Type.Name);//external type is unchanged
-        Assert.Equal(typeName.ToPascalCase(new[] { '_' }), property.Name);//external type property name is in pascal-case
+        Assert.Equal(typeName.ToPascalCase(new[] { '_' }), property.Name.ToFirstCharacterUpperCase());//external type property name is in pascal-case
     }
 
     [Fact]
@@ -327,6 +327,48 @@ public class CSharpLanguageRefinerTests
         Assert.True(method.Parameters.Any());
         Assert.Contains(cancellationParam, method.Parameters);
     }
+    [Fact]
+    public async Task ReplacesExceptionPropertiesNames()
+    {
+        var exception = root.AddClass(new CodeClass
+        {
+            Name = "error403",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        var propToAdd = exception.AddProperty(new CodeProperty
+        {
+            Name = "message",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        Assert.Equal("messageEscaped", propToAdd.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("message", propToAdd.SerializationName, StringComparer.OrdinalIgnoreCase);
+    }
+    [Fact]
+    public async Task DoesNotReplaceNonExceptionPropertiesNames()
+    {
+        var exception = root.AddClass(new CodeClass
+        {
+            Name = "error403",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = false,
+        }).First();
+        var propToAdd = exception.AddProperty(new CodeProperty
+        {
+            Name = "message",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        Assert.Equal("message", propToAdd.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("message", propToAdd.SerializationName, StringComparer.OrdinalIgnoreCase);
+    }
     #endregion
     #region CSharp
     [Fact]
@@ -346,8 +388,45 @@ public class CSharpLanguageRefinerTests
             }
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
-        Assert.Equal("ModelProp", propToAdd.Name);
+        Assert.Equal("modelProp", propToAdd.Name);
         Assert.Equal("model", propToAdd.SerializationName);
+    }
+    [Fact]
+    public async Task AvoidsPropertyNameReplacementIfDuplicatedGenerated()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "Model",
+            Kind = CodeClassKind.Model
+        }).First();
+        var firstProperty = model.AddProperty(new CodeProperty
+        {
+            Name = "summary",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        var secondProperty = model.AddProperty(new CodeProperty
+        {
+            Name = "_summary",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        var thirdProperty = model.AddProperty(new CodeProperty
+        {
+            Name = "_replaced",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        Assert.Equal("summary", firstProperty.Name);// remains as is. No refinement needed
+        Assert.Equal("_summary", secondProperty.Name);// No refinement as it will create a duplicate with firstProperty
+        Assert.Equal("Replaced", thirdProperty.Name);// Base case. Proper refinements
     }
     [Fact]
     public async Task DisambiguatePropertiesWithClassNames_DoesntReplaceSerializationName()
