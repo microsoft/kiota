@@ -22,12 +22,12 @@ public class PhpRefiner : CommonLanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             // Imports should be done before adding getters and setters since AddGetterAndSetterMethods can remove properties from classes when backing store is enabled
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
-            ReplaceReservedExceptionPropertyNames(generatedCode, new PhpExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
             AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiException",
                 "Microsoft\\Kiota\\Abstractions"
             );
+            ReplaceReservedExceptionPropertyNames(generatedCode, new PhpExceptionsReservedNamesProvider(),  x => $"escaped{x.ToFirstCharacterUpperCase()}");
             AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
             RemoveCancellationParameter(generatedCode);

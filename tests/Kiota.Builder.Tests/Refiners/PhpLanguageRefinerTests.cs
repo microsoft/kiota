@@ -93,7 +93,7 @@ public class PhpLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
     }
-    
+
     [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()
     {
@@ -103,12 +103,33 @@ public class PhpLanguageRefinerTests
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+
+        model.AddProperty(
+            new CodeProperty
+            {
+                Type = new CodeType
+                {
+                    Name = "string"
+                },
+                Name = "code",
+            },
+            new CodeProperty
+            {
+                Type = new CodeType
+                {
+                    Name = "integer"
+                },
+                Name = "message",
+            }
+        );
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
 
         var declaration = model.StartBlock;
 
         Assert.Contains("ApiException", declaration.Usings.Select(x => x.Name));
         Assert.Equal("ApiException", declaration.Inherits.Name);
+        Assert.Contains("escapedMessage", model.Properties.Select(x => x.Name));
+        Assert.Contains("escapedCode", model.Properties.Select(x => x.Name));
     }
 
     [Fact]
