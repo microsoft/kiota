@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: fwal/setup-swift@v1
         with:
-          swift-version: '5.6.0'
+          swift-version: '5.7'
       - name: Build SDK project
         run: swift build
         working-directory: ${{ env.relativePath }}
