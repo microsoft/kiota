@@ -93,6 +93,23 @@ public class PhpLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
     }
+    
+    [Fact]
+    public async Task AddsExceptionInheritanceOnErrorClasses()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "SomeModel",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+
+        var declaration = model.StartBlock;
+
+        Assert.Contains("ApiException", declaration.Usings.Select(x => x.Name));
+        Assert.Equal("ApiException", declaration.Inherits.Name);
+    }
 
     [Fact]
     public async Task ChangesBackingStoreParameterTypeInApiClientConstructor()
