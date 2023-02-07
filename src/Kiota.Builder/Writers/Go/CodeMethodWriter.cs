@@ -805,7 +805,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 {
                     var parsableSymbol = GetConversionHelperMethodImport(parentClass, "Parsable");
                     WriteCollectionCast(parsableSymbol, bodyParamReference, "cast", writer, string.Empty, false);
-                    bodyParamReference = "cast...";
+                    bodyParamReference = "cast";
                 }
                 writer.WriteLine($"err := {RequestInfoVarName}.SetContentFromParsable{collectionSuffix}({contextParameterName}, m.{requestAdapterPropertyName}, \"{codeElement.RequestBodyContentType}\", {bodyParamReference})");
                 writer.WriteBlock("if err != nil {", "}", "return nil, err");
