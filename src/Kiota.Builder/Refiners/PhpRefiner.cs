@@ -315,7 +315,6 @@ public class PhpRefiner : CommonLanguageRefiner
                     { CodePropertyKind.Options, CodeParameterKind.Options },
                     { CodePropertyKind.QueryParameters, CodeParameterKind.QueryParameter },
                 };
-                
                 var properties = propertyKindToParameterKind.Keys.Select(x => codeClass.GetPropertyOfKind(x))
                     .Where(x => x != null);
                 foreach (var property in properties)

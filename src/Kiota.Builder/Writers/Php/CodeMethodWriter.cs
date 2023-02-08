@@ -100,23 +100,22 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
             writer.WriteLine($"$this->{setterName}({propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote()});");
         }
-        if (currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor))
+        
+        var propertiesToAssign = new Dictionary<CodeParameterKind, CodePropertyKind>()
         {
-            var propertiesToAssign = new Dictionary<CodeParameterKind, CodePropertyKind>()
-            {
-                { CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter },
-                { CodeParameterKind.Headers, CodePropertyKind.Headers },
-                { CodeParameterKind.Options, CodePropertyKind.Options },
-                { CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameters }, // Handles query parameter object as a constructor param in request config classes
-            };
-            foreach (var parameterKind in propertiesToAssign.Keys)
-            {
-                AssignPropertyFromParameter(parentClass, currentMethod, parameterKind, propertiesToAssign[parameterKind], writer);
-            }
-            // Handles various query parameter properties in query parameter classes
-            // Separate call because CodeParameterKind.QueryParameter key is already used in map initialization
-            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameter, writer);
+            { CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter },
+            { CodeParameterKind.Headers, CodePropertyKind.Headers },
+            { CodeParameterKind.Options, CodePropertyKind.Options },
+            { CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameters }, // Handles query parameter object as a constructor param in request config classes
+        };
+        foreach (var parameterKind in propertiesToAssign.Keys)
+        {
+            AssignPropertyFromParameter(parentClass, currentMethod, parameterKind, propertiesToAssign[parameterKind], writer);
         }
+        // Handles various query parameter properties in query parameter classes
+        // Separate call because CodeParameterKind.QueryParameter key is already used in map initialization
+        AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameter, writer);
+        
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
             currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor) &&
             currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter &&

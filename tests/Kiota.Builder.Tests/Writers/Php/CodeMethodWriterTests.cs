@@ -1465,7 +1465,6 @@ public class CodeMethodWriterTests : IDisposable
 
         Assert.Contains("$this->backingStore = BackingStoreFactorySingleton::getInstance()->createBackingStore();", result);
     }
-    
     [Fact]
     public async void WritesGettersAndSettersWithBackingStore()
     {
@@ -1973,7 +1972,6 @@ public class CodeMethodWriterTests : IDisposable
             }
         };
     }
-    
     [Fact]
     public async void WritesRequestConfigurationConstructor()
     {
@@ -2050,7 +2048,6 @@ public class CodeMethodWriterTests : IDisposable
         Assert.NotEmpty(constructor);
         _codeMethodWriter.WriteCodeElement(constructor.First(), languageWriter);
         var result = stringWriter.ToString();
-        
         // params sorted in ascending order by default
         Assert.Contains("public function __construct(?bool $count = null, ?array $select = null, ?int $top = null)", result);
         Assert.Contains("$this->count = $count;", result);
