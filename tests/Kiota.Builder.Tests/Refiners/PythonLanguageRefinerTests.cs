@@ -203,20 +203,32 @@ public class PythonLanguageRefinerTests
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var propToAdd = exception.AddProperty(new CodeProperty
+        
+        exception.AddProperty(new CodeProperty
         {
             Name = "with_traceback",
             Type = new CodeType
             {
                 Name = "boolean"
             }
-        }).First();
+
+        },
+        new CodeProperty
+            {
+                Type = new CodeType
+                {
+                    Name = "integer"
+                },
+                Name = "response_status_code",
+            }
+        ).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         var declaration = exception.StartBlock;
 
         Assert.Contains("APIError", declaration.Usings.Select(x => x.Name));
         Assert.Equal("APIError", declaration.Inherits.Name);
         Assert.Contains("with_traceback_", exception.Properties.Select(x => x.Name));
+        Assert.Contains("response_status_code_", exception.Properties.Select(x => x.Name));
     }
     [Fact]
     public async Task CorrectsCoreType()
