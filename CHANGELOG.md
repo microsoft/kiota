@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added constructors and query parameter factory methods to request configuration classes and constructors to query parameter classes in PHP.
 
 ### Changed
 
@@ -29,7 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added constructors to request configuration and query parameter classes in PHP.
 - Updated the client constructor to set the base_url in path parameters from RequestAdapter's base_url(Python) [#2128](https://github.com/microsoft/kiota/issues/2128)
 - Added support for Raw Url in Request Builders for PHP Generation. [2205](https://github.com/microsoft/kiota/issues/2205)
 - Added support for external documentation links on request execution methods (PHP Generation). [2038](https://github.com/microsoft/kiota/issues/2038)

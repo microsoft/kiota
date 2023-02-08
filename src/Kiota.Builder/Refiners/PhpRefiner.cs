@@ -286,6 +286,12 @@ public class PhpRefiner : CommonLanguageRefiner
         CrawlTree(codeElement, CorrectBackingStoreSetterParam);
     }
 
+    private static readonly Dictionary<CodePropertyKind, CodeParameterKind> propertyKindToParameterKind = new Dictionary<CodePropertyKind, CodeParameterKind>()
+    {
+        { CodePropertyKind.Headers, CodeParameterKind.Headers },
+        { CodePropertyKind.Options, CodeParameterKind.Options },
+        { CodePropertyKind.QueryParameters, CodeParameterKind.QueryParameter },
+    };
     private static void AddRequestConfigurationConstructors(CodeElement codeElement)
     {
         if (codeElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration, CodeClassKind.QueryParameters))
@@ -309,12 +315,6 @@ public class PhpRefiner : CommonLanguageRefiner
 
             if (codeClass.IsOfKind(CodeClassKind.RequestConfiguration))
             {
-                var propertyKindToParameterKind = new Dictionary<CodePropertyKind, CodeParameterKind>()
-                {
-                    { CodePropertyKind.Headers, CodeParameterKind.Headers },
-                    { CodePropertyKind.Options, CodeParameterKind.Options },
-                    { CodePropertyKind.QueryParameters, CodeParameterKind.QueryParameter },
-                };
                 var properties = propertyKindToParameterKind.Keys.Select(x => codeClass.GetPropertyOfKind(x))
                     .Where(x => x != null);
                 foreach (var property in properties)

@@ -73,6 +73,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
 
     private const string UrlTemplateTempVarName = "$urlTplParams";
     private const string RawUrlParameterKey = "request-raw-url";
+    private static readonly Dictionary<CodeParameterKind, CodePropertyKind> propertiesToAssign = new Dictionary<CodeParameterKind, CodePropertyKind>()
+    {
+        { CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter },
+        { CodeParameterKind.Headers, CodePropertyKind.Headers },
+        { CodeParameterKind.Options, CodePropertyKind.Options },
+        { CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameters }, // Handles query parameter object as a constructor param in request config classes
+    };
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
         if (inherits)
@@ -100,14 +107,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
             writer.WriteLine($"$this->{setterName}({propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote()});");
         }
-        
-        var propertiesToAssign = new Dictionary<CodeParameterKind, CodePropertyKind>()
-        {
-            { CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter },
-            { CodeParameterKind.Headers, CodePropertyKind.Headers },
-            { CodeParameterKind.Options, CodePropertyKind.Options },
-            { CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameters }, // Handles query parameter object as a constructor param in request config classes
-        };
         foreach (var parameterKind in propertiesToAssign.Keys)
         {
             AssignPropertyFromParameter(parentClass, currentMethod, parameterKind, propertiesToAssign[parameterKind], writer);
@@ -160,10 +159,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         var properties = parentClass.GetPropertiesOfKind(propertyKind).ToList();
         if (parameters.Any() && parameters.Count.Equals(properties.Count))
         {
-            var j = 0;
-            for (var i = 0; i < parameters.Count; i++, j++)
+            for (var i = 0; i < parameters.Count; i++)
             {
-                writer.WriteLine($"$this->{properties[i].Name.ToFirstCharacterLowerCase()} = ${parameters[j].Name};");
+                writer.WriteLine($"$this->{properties[i].Name.ToFirstCharacterLowerCase()} = ${parameters[i].Name};");
             }
         }
     }
