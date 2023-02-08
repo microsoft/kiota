@@ -315,20 +315,19 @@ public class PhpRefiner : CommonLanguageRefiner
 
             if (codeClass.IsOfKind(CodeClassKind.RequestConfiguration))
             {
-                var properties = propertyKindToParameterKind.Keys.Select(x => codeClass.GetPropertyOfKind(x))
-                    .Where(x => x != null);
-                foreach (var property in properties)
-                {
-                    constructor.AddParameter(new CodeParameter
+                constructor.AddParameter(propertyKindToParameterKind.Keys.Select(x => codeClass.GetPropertyOfKind(x))
+                    .Where(static x => x != null);
+                    .Select(static x =>
+                    (new CodeParameter
                     {
-                        DefaultValue = property!.DefaultValue,
-                        Documentation = property.Documentation,
-                        Name = property.Name,
-                        Kind = propertyKindToParameterKind[property.Kind],
+                        DefaultValue = x!.DefaultValue,
+                        Documentation = x.Documentation,
+                        Name = x.Name,
+                        Kind = propertyKindToParameterKind[x.Kind],
                         Optional = true,
-                        Type = property.Type
-                    });
-                }
+                        Type = x.Type
+                    })
+                    .ToArray());
             }
 
             if (codeClass.IsOfKind(CodeClassKind.QueryParameters))
