@@ -31,7 +31,13 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplaceBinaryByNativeType(generatedCode, "bytes", string.Empty);
             ReplaceReservedNames(
                 generatedCode,
-                new PythonReservedNamesProvider(), x => $"{x}_"
+                new PythonReservedNamesProvider(),
+                static x => $"{x}_"
+            );
+            ReplaceReservedExceptionPropertyNames(
+                generatedCode,
+                new PythonExceptionsReservedNamesProvider(),
+                static x => $"{x}_"
             );
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);

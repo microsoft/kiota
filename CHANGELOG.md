@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added support for multi-valued headers in Python. [#2051](https://github.com/microsoft/kiota/issues/2051)
 
+### Changed
+
+- Fixed a bug where errors/exceptions could override native exception type symbols in Python. [#2257](https://github.com/microsoft/kiota/issues/2257)
+
 ## [0.11.0] - 2023-02-07
 
 ### Added
