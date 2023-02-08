@@ -343,7 +343,7 @@ public class PhpRefiner : CommonLanguageRefiner
                         Optional = true,
                         Type = x.Type
                     });
-                constructorParams.ToList().ForEach(x => constructor.AddParameter(x));
+                constructor.AddParameter(constructorParams.ToArray());
             }
         }
         CrawlTree(codeElement, AddRequestConfigurationConstructors);
