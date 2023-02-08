@@ -144,7 +144,26 @@ public class GoRefiner : CommonLanguageRefiner
             CorrectTypes(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, $"{conventions.StoreHash}.BackingStoreFactoryInstance()", false);
             CorrectBackingStoreTypes(generatedCode);
+            GenerateCodeFiles(generatedCode);
         }, cancellationToken);
+    }
+
+    private void GenerateCodeFiles(CodeElement currentElement)
+    {
+        if (currentElement is CodeInterface codeInterface && currentElement.Parent is CodeNamespace codeNamespace)
+        {
+            var modelName = codeInterface.Name.RemoveSuffix("able");
+            var modelClass = codeNamespace.FindChildByName<CodeClass>(modelName, false) ??
+                             codeNamespace.FindChildByName<CodeClass>(modelName.ToFirstCharacterUpperCase(), false);
+            if (modelClass != null)
+            {
+                var codeFile = codeNamespace.FindFileOrInitializeWith(modelName, modelClass);
+                codeNamespace.RemoveChildElement(codeInterface);
+                codeFile.AddInterfaces(codeInterface);
+            }
+
+        }
+        CrawlTree(currentElement, GenerateCodeFiles);
     }
 
     private string MergeOverLappedStrings(string start, string end)

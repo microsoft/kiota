@@ -6,7 +6,6 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
 
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Kiota.Builder.Tests.Refiners;
 public class GoLanguageRefinerTests
@@ -88,6 +87,24 @@ public class GoLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Empty(baseModel.DiscriminatorInformation.DiscriminatorMappings);
         Assert.Empty(baseModel.Usings.Where(x => x.Name.Equals("models.sub", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [Fact]
+    public async Task GroupsInterfacesToModelClassFile()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+        }).First();
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Single(root.GetChildElements(true).OfType<CodeInterface>());
+
+        var inter = root.GetChildElements(true).OfType<CodeInterface>().First();
+
+        Assert.True(root.IsRootElement(model));
+        Assert.False(root.IsRootElement(inter));
     }
     [Fact]
     public async Task ReplacesModelsByInterfaces()

@@ -13,5 +13,7 @@ public class GoWriter : LanguageWriter
         AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
+        AddOrReplaceCodeElementWriter(new CodeFileBlockEndWriter());
+        AddOrReplaceCodeElementWriter(new CodeFileDeclarationWriter(conventionService));
     }
 }

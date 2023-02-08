@@ -119,6 +119,9 @@ public abstract class LanguageWriter
                 case ClassDeclaration d:
                     ((ICodeElementWriter<ClassDeclaration>)elementWriter).WriteCodeElement(d, this);
                     break;
+                case CodeFileBlockEnd cfb:
+                    ((ICodeElementWriter<CodeFileBlockEnd>)elementWriter).WriteCodeElement(cfb, this);
+                    break;
                 case BlockEnd i:
                     ((ICodeElementWriter<BlockEnd>)elementWriter).WriteCodeElement(i, this);
                     break;
@@ -140,11 +143,15 @@ public abstract class LanguageWriter
                 case InterfaceDeclaration itfd:
                     ((ICodeElementWriter<InterfaceDeclaration>)elementWriter).WriteCodeElement(itfd, this);
                     break;
+                case CodeFileDeclaration cfd:
+                    ((ICodeElementWriter<CodeFileDeclaration>)elementWriter).WriteCodeElement(cfd, this);
+                    break;
             }
         else if (code is not CodeClass &&
                 code is not BlockDeclaration &&
                 code is not BlockEnd &&
-                code is not CodeInterface)
+                code is not CodeInterface &&
+                code is not CodeFile)
             throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
     }
     protected void AddOrReplaceCodeElementWriter<T>(ICodeElementWriter<T> writer) where T : CodeElement

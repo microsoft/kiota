@@ -21,13 +21,16 @@ public class CodeRenderer
         _configuration = configuration;
         _rendererElementComparer = configuration.ShouldRenderMethodsOutsideOfClasses ? new CodeElementOrderComparerWithExternalMethods() : new CodeElementOrderComparer();
     }
-    public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile, CancellationToken cancellationToken)
+    public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, string outputFile, CancellationToken cancellationToken, params CodeElement[] codeElements)
     {
         await using var stream = new FileStream(outputFile, FileMode.Create);
 
         var sw = new StreamWriter(stream);
         writer.SetTextWriter(sw);
-        RenderCode(writer, codeElement);
+
+        foreach (var codeElement in codeElements)
+            RenderCode(writer, codeElement);
+
         if (!cancellationToken.IsCancellationRequested)
             await sw.FlushAsync(); // stream writer doesn't not have a cancellation token overload https://github.com/dotnet/runtime/issues/64340
     }
@@ -44,7 +47,11 @@ public class CodeRenderer
                 case CodeFunction:
                 case CodeInterface:
                     if (writer.PathSegmenter?.GetPath(currentNamespace, codeElement) is string path)
-                        await RenderCodeNamespaceToSingleFileAsync(writer, codeElement, path, cancellationToken);
+                        await RenderCodeNamespaceToSingleFileAsync(writer, path, cancellationToken, codeElement);
+                    break;
+                case CodeFile:
+                    if (writer.PathSegmenter?.GetPath(currentNamespace, codeElement) is string filePath)
+                        await RenderCodeNamespaceToSingleFileAsync(writer, filePath, cancellationToken, codeElement);
                     break;
                 case CodeNamespace codeNamespace:
                     await RenderBarrel(writer, currentNamespace, codeNamespace, cancellationToken);
@@ -62,7 +69,7 @@ public class CodeRenderer
             ShouldRenderNamespaceFile(codeNamespace) &&
             writer.PathSegmenter?.GetPath(parentNamespace, codeNamespace) is string path)
         {
-            await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, path, cancellationToken);
+            await RenderCodeNamespaceToSingleFileAsync(writer, path, cancellationToken, codeNamespace);
         }
     }
     private readonly CodeElementOrderComparer _rendererElementComparer;
