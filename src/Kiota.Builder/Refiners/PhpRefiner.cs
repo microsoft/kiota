@@ -316,9 +316,9 @@ public class PhpRefiner : CommonLanguageRefiner
             if (codeClass.IsOfKind(CodeClassKind.RequestConfiguration))
             {
                 constructor.AddParameter(propertyKindToParameterKind.Keys.Select(x => codeClass.GetPropertyOfKind(x))
-                    .Where(static x => x != null);
+                    .Where(static x => x != null)
                     .Select(static x =>
-                    (new CodeParameter
+                    new CodeParameter
                     {
                         DefaultValue = x!.DefaultValue,
                         Documentation = x.Documentation,
