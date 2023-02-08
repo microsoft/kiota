@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added support for multi-valued headers in Python. [#2051](https://github.com/microsoft/kiota/issues/2051)
+
 ## [0.11.0] - 2023-02-07
 
 ### Added
