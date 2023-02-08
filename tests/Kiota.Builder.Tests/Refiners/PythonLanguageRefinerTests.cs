@@ -195,6 +195,30 @@ public class PythonLanguageRefinerTests
         Assert.EndsWith("_", voidMethod.Name);
     }
     [Fact]
+    public async Task EscapesExceptionPropertiesNames()
+    {
+        var exception = root.AddClass(new CodeClass
+        {
+            Name = "Error403",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        var propToAdd = exception.AddProperty(new CodeProperty
+        {
+            Name = "with_traceback",
+            Type = new CodeType
+            {
+                Name = "boolean"
+            }
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+        var declaration = exception.StartBlock;
+
+        Assert.Contains("APIError", declaration.Usings.Select(x => x.Name));
+        Assert.Equal("APIError", declaration.Inherits.Name);
+        Assert.Contains("with_traceback_", exception.Properties.Select(x => x.Name));
+    }
+    [Fact]
     public async Task CorrectsCoreType()
     {
 
