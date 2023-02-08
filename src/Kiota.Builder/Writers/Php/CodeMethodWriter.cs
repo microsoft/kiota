@@ -114,7 +114,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         // Handles various query parameter properties in query parameter classes
         // Separate call because CodeParameterKind.QueryParameter key is already used in map initialization
         AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameter, writer);
-        
+
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
             currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor) &&
             currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter &&

@@ -1978,7 +1978,7 @@ public class CodeMethodWriterTests : IDisposable
         var queryParamClass = new CodeClass { Name = "TestRequestQueryParameter", Kind = CodeClassKind.QueryParameters };
         root.AddClass(queryParamClass);
         parentClass.Kind = CodeClassKind.RequestConfiguration;
-        parentClass.AddProperty( new [] {
+        parentClass.AddProperty(new[] {
             new CodeProperty
             {
                 Name = "queryParameters",
@@ -2002,7 +2002,7 @@ public class CodeMethodWriterTests : IDisposable
                 Type = new CodeType { Name = "IList<IRequestOption>", IsExternal = true },
             }
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true}, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
         _codeMethodWriter = new CodeMethodWriter(new PhpConventionService(), true);
         var constructor = parentClass.GetMethodsOffKind(CodeMethodKind.Constructor).ToList();
         Assert.NotEmpty(constructor);
@@ -2019,7 +2019,7 @@ public class CodeMethodWriterTests : IDisposable
     public async void WritesQueryParameterConstructor()
     {
         parentClass.Kind = CodeClassKind.QueryParameters;
-        parentClass.AddProperty( new [] {
+        parentClass.AddProperty(new[] {
             new CodeProperty
             {
                 Name = "select",
@@ -2042,7 +2042,7 @@ public class CodeMethodWriterTests : IDisposable
                 Type = new CodeType { Name = "integer" },
             }
         });
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true}, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
         _codeMethodWriter = new CodeMethodWriter(new PhpConventionService(), true);
         var constructor = parentClass.GetMethodsOffKind(CodeMethodKind.Constructor).ToList();
         Assert.NotEmpty(constructor);
