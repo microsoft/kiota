@@ -83,4 +83,28 @@ public class RubyConventionService : CommonLanguageConventionService
         }
     }
 #pragma warning restore CA1822 // Method should be static
+#pragma warning disable CA1822 // Method should be static
+    internal void WriteNamespaceModules(CodeNamespace currentNamespace, LanguageWriter writer)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(currentNamespace);
+        var namespaceName = currentNamespace.Name.NormalizeNameSpaceName("::");
+        var namespaceParts = namespaceName.Split("::", StringSplitOptions.RemoveEmptyEntries);
+        foreach (var namespacePart in namespaceParts)
+        {
+            writer.StartBlock($"module {namespacePart}");
+        }
+    }
+    internal void WriteNamespaceClosing(CodeNamespace currentNamespace, LanguageWriter writer)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(currentNamespace);
+        var namespaceName = currentNamespace.Name.NormalizeNameSpaceName("::");
+        var namespacePartsCount = namespaceName.Split("::", StringSplitOptions.RemoveEmptyEntries).Length;
+        for (var i = 0; i < namespacePartsCount; i++)
+        {
+            writer.CloseBlock("end");
+        }
+    }
+#pragma warning restore CA1822 // Method should be static
 }
