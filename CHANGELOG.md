@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Fixed a bug where errors/exceptions could override native exception type symbols in Python. [#2257](https://github.com/microsoft/kiota/issues/22257)
+- Fixed a bug where errors/exceptions could override native exception type symbols in Python. [#2257](https://github.com/microsoft/kiota/issues/2257)
 - Fixed bug in indexer methods for PHP Generation.
 - Fixed a bug where errors/exceptions could override native exception type symbols for PHP Generation. [#2258](https://github.com/microsoft/kiota/issues/2258)
 - Fixed a bug where most of the Java fields have been prefixed with an underscore.

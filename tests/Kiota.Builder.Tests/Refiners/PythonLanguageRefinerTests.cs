@@ -203,7 +203,7 @@ public class PythonLanguageRefinerTests
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        
+
         exception.AddProperty(new CodeProperty
         {
             Name = "with_traceback",
@@ -214,13 +214,13 @@ public class PythonLanguageRefinerTests
 
         },
         new CodeProperty
+        {
+            Type = new CodeType
             {
-                Type = new CodeType
-                {
-                    Name = "integer"
-                },
-                Name = "response_status_code",
-            }
+                Name = "integer"
+            },
+            Name = "response_status_code",
+        }
         ).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         var declaration = exception.StartBlock;
