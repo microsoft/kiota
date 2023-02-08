@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -7,6 +6,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers;
 
 namespace Kiota.Builder.Refiners;
 public class PhpRefiner : CommonLanguageRefiner
@@ -86,6 +86,8 @@ public class PhpRefiner : CommonLanguageRefiner
             AliasUsingWithSameSymbol(generatedCode);
             RemoveHandlerFromRequestBuilder(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
+            // Because constructors are not added to Query parameter classes by default
+            AddRequestConfigurationConstructors(generatedCode);
         }, cancellationToken);
     }
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
@@ -282,6 +284,70 @@ public class PhpRefiner : CommonLanguageRefiner
         if (codeElement is CodeMethod method && method.Kind == CodeMethodKind.Setter && method.AccessedProperty?.Kind == CodePropertyKind.BackingStore)
             method.Parameters.ToList().ForEach(param => param.Optional = false);
         CrawlTree(codeElement, CorrectBackingStoreSetterParam);
+    }
+
+    private static void AddRequestConfigurationConstructors(CodeElement codeElement)
+    {
+        if (codeElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration, CodeClassKind.QueryParameters))
+        {
+            var constructor = codeClass.GetMethodsOffKind(CodeMethodKind.Constructor).FirstOrDefault();
+            if (constructor == null)
+            {
+                constructor = new CodeMethod
+                {
+                    Name = "constructor",
+                    Kind = CodeMethodKind.Constructor,
+                    IsAsync = false,
+                    Documentation = new()
+                    {
+                        Description = $"Instantiates a new {codeClass.Name} and sets the default values.",
+                    },
+                    ReturnType = new CodeType { Name = "void" },
+                };
+                codeClass.AddMethod(constructor);
+            }
+
+            if (codeClass.IsOfKind(CodeClassKind.RequestConfiguration))
+            {
+                var propertyKindToParameterKind = new Dictionary<CodePropertyKind, CodeParameterKind>()
+                {
+                    { CodePropertyKind.Headers, CodeParameterKind.Headers },
+                    { CodePropertyKind.Options, CodeParameterKind.Options },
+                    { CodePropertyKind.QueryParameters, CodeParameterKind.QueryParameter },
+                };
+                
+                var properties = propertyKindToParameterKind.Keys.Select(x => codeClass.GetPropertyOfKind(x))
+                    .Where(x => x != null);
+                foreach (var property in properties)
+                {
+                    constructor.AddParameter(new CodeParameter
+                    {
+                        DefaultValue = property!.DefaultValue,
+                        Documentation = property.Documentation,
+                        Name = property.Name,
+                        Kind = propertyKindToParameterKind[property.Kind],
+                        Optional = true,
+                        Type = property.Type
+                    });
+                }
+            }
+
+            if (codeClass.IsOfKind(CodeClassKind.QueryParameters))
+            {
+                var constructorParams = codeClass.GetPropertiesOfKind(CodePropertyKind.QueryParameter)
+                    .Select(x => new CodeParameter
+                    {
+                        DefaultValue = x.DefaultValue,
+                        Documentation = x.Documentation,
+                        Name = x.Name,
+                        Kind = CodeParameterKind.QueryParameter,
+                        Optional = true,
+                        Type = x.Type
+                    });
+                constructorParams.ToList().ForEach(x => constructor.AddParameter(x));
+            }
+        }
+        CrawlTree(codeElement, AddRequestConfigurationConstructors);
     }
 }
 

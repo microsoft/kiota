@@ -102,7 +102,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         }
         if (currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor))
         {
-            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
+            var propertiesToAssign = new Dictionary<CodeParameterKind, CodePropertyKind>()
+            {
+                { CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter },
+                { CodeParameterKind.Headers, CodePropertyKind.Headers },
+                { CodeParameterKind.Options, CodePropertyKind.Options },
+                { CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameters }, // Handles query parameter object as a constructor param in request config classes
+            };
+            foreach (var parameterKind in propertiesToAssign.Keys)
+            {
+                AssignPropertyFromParameter(parentClass, currentMethod, parameterKind, propertiesToAssign[parameterKind], writer);
+            }
+            // Handles various query parameter properties in query parameter classes
+            // Separate call because CodeParameterKind.QueryParameter key is already used in map initialization
+            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameter, writer);
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
             currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor) &&
@@ -144,11 +157,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     }
     private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer)
     {
-        var property = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(propertyKind));
-        var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
-        if (property != null && parameter != null)
+        var parameters = currentMethod.Parameters.Where(x => x.IsOfKind(parameterKind)).ToList();
+        var properties = parentClass.GetPropertiesOfKind(propertyKind).ToList();
+        if (parameters.Any() && parameters.Count.Equals(properties.Count))
         {
-            writer.WriteLine($"$this->{property.Name.ToFirstCharacterLowerCase()} = ${parameter.Name};");
+            var j = 0;
+            for (var i = 0; i < parameters.Count; i++, j++)
+            {
+                writer.WriteLine($"$this->{properties[i].Name.ToFirstCharacterLowerCase()} = ${parameters[j].Name};");
+            }
         }
     }
 
