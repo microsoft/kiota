@@ -975,7 +975,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public void WriteGetterAdditionalData()
+    public async void WriteGetterAdditionalData()
     {
         var getter = new CodeMethod
         {
@@ -986,7 +986,7 @@ public class CodeMethodWriterTests : IDisposable
             },
             ReturnType = new CodeType
             {
-                Name = "additionalData",
+                Name = "IDictionary<string, object>",
                 IsNullable = false
             },
             Kind = CodeMethodKind.Getter,
@@ -1000,9 +1000,10 @@ public class CodeMethodWriterTests : IDisposable
                     Name = "additionalData"
                 }
             },
-            Parent = parentClass
         };
+        parentClass.AddMethod(getter);
 
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
         _codeMethodWriter.WriteCodeElement(getter, languageWriter);
         var result = stringWriter.ToString();
         Assert.Contains("public function getAdditionalData(): ?array", result);

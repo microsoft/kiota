@@ -186,9 +186,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             .ToList();
         var returnDocString = GetDocCommentReturnType(codeMethod, accessedProperty);
         if (!isVoidable)
+        {
+            var nullableSuffix = (codeMethod.ReturnType.IsNullable ? "|null" : "");
             returnDocString = (codeMethod.Kind == CodeMethodKind.RequestExecutor)
                 ? "@return Promise"
-                : $"@return {returnDocString}{(codeMethod.ReturnType.IsNullable ? "|null" : "")}";
+                : $"@return {returnDocString}{nullableSuffix}";
+        }
         else returnDocString = String.Empty;
         conventions.WriteLongDescription(codeMethod.Documentation,
             writer,
@@ -230,33 +233,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => "__construct",
             _ => codeMethod.Name.ToFirstCharacterLowerCase()
         };
-        if (codeMethod.IsOfKind(CodeMethodKind.Deserializer))
-        {
-            writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)}{(codeMethod.IsStatic ? " static" : string.Empty)} function getFieldDeserializers(): array {{");
-            writer.IncreaseIndent();
-            return;
-        }
-
-        if (codeMethod.IsOfKind(CodeMethodKind.Getter) &&
-            codeMethod.AccessedProperty != null &&
-            codeMethod.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData))
-        {
-            writer.StartBlock($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}(): ?array {{");
-            return;
-        }
-        var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType, codeMethod), StringComparison.OrdinalIgnoreCase);
-        var optionalCharacterReturn = (codeMethod.ReturnType.IsNullable && !isVoidable) ? "?" : "";
+        var isVoid = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType, codeMethod), StringComparison.OrdinalIgnoreCase);
+        var optionalCharacterReturn = (codeMethod.ReturnType.IsNullable && !isVoid) ? "?" : "";
         var returnValue = isConstructor ? string.Empty : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType, codeMethod)}";
-        if (isConstructor && codeMethod.Parent is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder))
-        {
-            writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)}{(codeMethod.IsStatic ? " static" : string.Empty)} function {methodName}({methodParameters}) {{");
-        }
-        else
-        {
-            writer.WriteLine(
-                $"{conventions.GetAccessModifier(codeMethod.Access)} {(codeMethod.IsStatic ? "static " : string.Empty)}function {methodName}({methodParameters}){(!codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) ? $"{returnValue}" : ": Promise")} {{");
-        }
-
+        writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} {(codeMethod.IsStatic ? "static " : string.Empty)}"
+            + $"function {methodName}({methodParameters}){returnValue} {{");
         writer.IncreaseIndent();
     }
 
@@ -722,7 +703,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 var parameterNames = string.Join(", ", codeElement.Parameters.Order(parameterOrderComparer).Select(x => $"${x.Name.ToFirstCharacterLowerCase()}"));
                 writer.WriteLine($"return new {conventions.GetTypeString(codeElement.ReturnType, codeElement)}({parameterNames});");
                 break;
-        };
+        }
     }
 
     private void WriteModelFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)

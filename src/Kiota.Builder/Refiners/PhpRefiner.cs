@@ -88,6 +88,7 @@ public class PhpRefiner : CommonLanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             // Because constructors are not added to Query parameter classes by default
             AddRequestConfigurationConstructors(generatedCode);
+            AddQueryParameterFactoryMethod(generatedCode);
         }, cancellationToken);
     }
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
@@ -214,11 +215,22 @@ public class PhpRefiner : CommonLanguageRefiner
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
 
-    private static void CorrectMethodType(CodeMethod method)
+    private void CorrectMethodType(CodeMethod method)
     {
         if (method.IsOfKind(CodeMethodKind.Deserializer))
         {
             method.ReturnType.Name = "array";
+        }
+        if (method.IsOfKind(CodeMethodKind.Getter)
+            && method.AccessedProperty != null
+            && method.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData))
+        {
+            method.ReturnType.Name = "array";
+            method.ReturnType.IsNullable = _configuration.UsesBackingStore;
+        }
+        if (method.IsOfKind(CodeMethodKind.RequestExecutor))
+        {
+            method.ReturnType.Name = "Promise";
         }
         CorrectCoreTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
             .Select(static x => x.Type)
@@ -328,39 +340,6 @@ public class PhpRefiner : CommonLanguageRefiner
                         Type = x.Type
                     })
                     .ToArray());
-                var queryParameterProperty = codeClass.GetPropertyOfKind(CodePropertyKind.QueryParameters);
-                if (queryParameterProperty != null)
-                {
-                    var queryParamFactoryMethod = new CodeMethod
-                    {
-                        Name = "withQueryParameters",
-                        IsStatic = true,
-                        Access = AccessModifier.Public,
-                        Kind = CodeMethodKind.Factory,
-                        Documentation = new CodeDocumentation { Description = $"Instantiates a new {queryParameterProperty.Type.Name}." },
-                        ReturnType = queryParameterProperty.Type
-                    };
-                    queryParamFactoryMethod.ReturnType.IsNullable = false;
-                    if (queryParameterProperty.Type is CodeType codeType && codeType.TypeDefinition is CodeClass queryParamsClass)
-                    {
-                        var properties = queryParamsClass.GetPropertiesOfKind(CodePropertyKind.QueryParameter);
-                        if (properties.Any())
-                        {
-                            queryParamFactoryMethod.AddParameter(properties
-                                .Select(x => new CodeParameter
-                                {
-                                    DefaultValue = x.DefaultValue,
-                                    Documentation = x.Documentation,
-                                    Name = x.Name,
-                                    Kind = CodeParameterKind.QueryParameter,
-                                    Optional = true,
-                                    Type = x.Type
-                                })
-                                .ToArray());
-                        }
-                    }
-                    codeClass.AddMethod(queryParamFactoryMethod);
-                }
             }
 
             if (codeClass.IsOfKind(CodeClassKind.QueryParameters))
@@ -383,6 +362,50 @@ public class PhpRefiner : CommonLanguageRefiner
             }
         }
         CrawlTree(codeElement, AddRequestConfigurationConstructors);
+    }
+
+    private static void AddQueryParameterFactoryMethod(CodeElement codeElement)
+    {
+        if (codeElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration))
+        {
+            var queryParameterProperty = codeClass.GetPropertyOfKind(CodePropertyKind.QueryParameters);
+            if (queryParameterProperty != null)
+            {
+                var queryParamFactoryMethod = new CodeMethod
+                {
+                    Name = "withQueryParameters",
+                    IsStatic = true,
+                    Access = AccessModifier.Public,
+                    Kind = CodeMethodKind.Factory,
+                    Documentation = new CodeDocumentation
+                    {
+                        Description = $"Instantiates a new {queryParameterProperty.Type.Name}."
+                    },
+                    ReturnType = queryParameterProperty.Type
+                };
+                queryParamFactoryMethod.ReturnType.IsNullable = false;
+                if (queryParameterProperty.Type is CodeType codeType && codeType.TypeDefinition is CodeClass queryParamsClass)
+                {
+                    var properties = queryParamsClass.GetPropertiesOfKind(CodePropertyKind.QueryParameter);
+                    if (properties.Any())
+                    {
+                        queryParamFactoryMethod.AddParameter(properties
+                            .Select(x => new CodeParameter
+                            {
+                                DefaultValue = x.DefaultValue,
+                                Documentation = x.Documentation,
+                                Name = x.Name,
+                                Kind = CodeParameterKind.QueryParameter,
+                                Optional = true,
+                                Type = x.Type
+                            })
+                            .ToArray());
+                    }
+                }
+                codeClass.AddMethod(queryParamFactoryMethod);
+            }
+        }
+        CrawlTree(codeElement, AddQueryParameterFactoryMethod);
     }
 }
 
