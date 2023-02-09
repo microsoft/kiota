@@ -88,7 +88,7 @@ public class KiotaBuilder
         sw.Start();
         if (originalDocument == null)
         {
-            openApiDocument = CreateOpenApiDocument(input, generating);
+            openApiDocument = await CreateOpenApiDocument(input, generating);
             if (openApiDocument != null)
                 originalDocument = new OpenApiDocument(openApiDocument);
         }
@@ -298,7 +298,7 @@ public class KiotaBuilder
         return input;
     }
 
-    public OpenApiDocument? CreateOpenApiDocument(Stream input, bool generating = false)
+    public async Task<OpenApiDocument?> CreateOpenApiDocument(Stream input, bool generating = false)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -308,7 +308,7 @@ public class KiotaBuilder
                     ValidationRuleSet.GetDefaultRuleSet(); //workaround since validation rule set doesn't support clearing rules
         if (generating)
             ruleSet.AddKiotaValidationRules(config);
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
+        var settings = new OpenApiReaderSettings
         {
             ExtensionParsers = new()
             {
@@ -326,26 +326,41 @@ public class KiotaBuilder
                 },
             },
             RuleSet = ruleSet,
-        });
-        var doc = reader.Read(input, out var diag);
+        };
+        try
+        {
+            var rawUri = config.OpenAPIFilePath.TrimEnd('/');
+            var lastSlashIndex = rawUri.LastIndexOf('/');
+            if (lastSlashIndex < 0)
+                lastSlashIndex = rawUri.Length - 1;
+            var documentUri = new Uri(rawUri[..lastSlashIndex]);
+            settings.BaseUrl = documentUri;
+            settings.LoadExternalRefs = true;
+        }
+        catch
+        {
+            // couldn't parse the URL, it's probably a local file
+        }
+        var reader = new OpenApiStreamReader(settings);
+        var readResult = await reader.ReadAsync(input);
         stopwatch.Stop();
         if (generating)
-            foreach (var warning in diag.Warnings)
+            foreach (var warning in readResult.OpenApiDiagnostic.Warnings)
                 logger.LogWarning("OpenAPI warning: {pointer} - {warning}", warning.Pointer, warning.Message);
-        if (diag.Errors.Any())
+        if (readResult.OpenApiDiagnostic.Errors.Any())
         {
-            logger.LogTrace("{timestamp}ms: Parsed OpenAPI with errors. {count} paths found.", stopwatch.ElapsedMilliseconds, doc?.Paths?.Count ?? 0);
-            foreach (var parsingError in diag.Errors)
+            logger.LogTrace("{timestamp}ms: Parsed OpenAPI with errors. {count} paths found.", stopwatch.ElapsedMilliseconds, readResult.OpenApiDocument?.Paths?.Count ?? 0);
+            foreach (var parsingError in readResult.OpenApiDiagnostic.Errors)
             {
                 logger.LogError("OpenAPI error: {pointer} - {message}", parsingError.Pointer, parsingError.Message);
             }
         }
         else
         {
-            logger.LogTrace("{timestamp}ms: Parsed OpenAPI successfully. {count} paths found.", stopwatch.ElapsedMilliseconds, doc?.Paths?.Count ?? 0);
+            logger.LogTrace("{timestamp}ms: Parsed OpenAPI successfully. {count} paths found.", stopwatch.ElapsedMilliseconds, readResult.OpenApiDocument?.Paths?.Count ?? 0);
         }
 
-        return doc;
+        return readResult.OpenApiDocument;
     }
     public static string GetDeeperMostCommonNamespaceNameForModels(OpenApiDocument document)
     {

@@ -81,7 +81,7 @@ components:
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
-        var document = builder.CreateOpenApiDocument(fs);
+        var document = await builder.CreateOpenApiDocument(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
@@ -117,7 +117,7 @@ servers:
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
-        var document = builder.CreateOpenApiDocument(fs);
+        var document = await builder.CreateOpenApiDocument(fs);
         var node = builder.CreateUriSpace(document);
         var extensionResult = await builder.GetLanguagesInformationAsync(new CancellationToken());
         Assert.NotNull(extensionResult);
@@ -179,7 +179,7 @@ servers:
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
-        var document = builder.CreateOpenApiDocument(fs);
+        var document = await builder.CreateOpenApiDocument(fs);
         var node = builder.CreateUriSpace(document);
         var extensionResult = await builder.GetLanguagesInformationAsync(new CancellationToken());
         Assert.Null(extensionResult);
