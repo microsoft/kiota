@@ -188,7 +188,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (!isVoidable)
             returnDocString = (codeMethod.Kind == CodeMethodKind.RequestExecutor)
                 ? "@return Promise"
-                : $"@return {returnDocString}{(codeMethod.ReturnType.IsNullable? "|null" : "")}";
+                : $"@return {returnDocString}{(codeMethod.ReturnType.IsNullable ? "|null" : "")}";
         else returnDocString = String.Empty;
         conventions.WriteLongDescription(codeMethod.Documentation,
             writer,
@@ -245,7 +245,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             return;
         }
         var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType, codeMethod), StringComparison.OrdinalIgnoreCase);
-        var optionalCharacterReturn = (codeMethod.ReturnType.IsNullable && !isVoidable) ? "?": "";
+        var optionalCharacterReturn = (codeMethod.ReturnType.IsNullable && !isVoidable) ? "?" : "";
         var returnValue = isConstructor ? string.Empty : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType, codeMethod)}";
         if (isConstructor && codeMethod.Parent is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder))
         {
