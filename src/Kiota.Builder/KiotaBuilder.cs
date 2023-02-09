@@ -463,7 +463,6 @@ public class KiotaBuilder
     private static readonly string coreInterfaceType = "IRequestAdapter";
     private static readonly string requestAdapterParameterName = "requestAdapter";
     private static readonly string constructorMethodName = "constructor";
-    private static readonly HashSet<string> httpVerbs = new(StringComparer.OrdinalIgnoreCase) { "get", "post", "put", "patch", "delete", "head", "options", "trace" };
     /// <summary>
     /// Create a CodeClass instance that is a request builder class for the OpenApiUrlTreeNode
     /// </summary>
@@ -503,8 +502,6 @@ public class KiotaBuilder
         foreach (var child in currentNode.Children)
         {
             var propIdentifier = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes);
-            if (httpVerbs.Contains(propIdentifier))
-                propIdentifier += "Path"; // we don't run the change of an operation conflicting with a path on the same request builder
             var propType = child.Value.DoesNodeBelongToItemSubnamespace() ? propIdentifier + itemRequestBuilderSuffix : propIdentifier + requestBuilderSuffix;
 
             if (child.Value.IsPathSegmentWithSingleSimpleParameter())
