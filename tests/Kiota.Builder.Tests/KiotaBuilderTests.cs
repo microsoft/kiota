@@ -4920,4 +4920,110 @@ paths:
         Assert.NotNull(method);
         Assert.Equal("userId", method.Parameters.Last(static x => x.IsOfKind(CodeParameterKind.Path)).Name);
     }
+    [Fact]
+    public async Task DisambiguatesOperationsConflictingWithPath1()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.0
+info:
+  title: Microsoft Graph get user API
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0/
+paths:
+  /me:
+    get:
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.user'
+  /me/get:
+    get:
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.user'
+components:
+  schemas:
+    microsoft.graph.user:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = builder.CreateOpenApiDocument(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.me");
+        Assert.NotNull(requestBuilderNS);
+        var getRB = requestBuilderNS.FindChildByName<CodeClass>("meRequestBuilder", false);
+        Assert.NotNull(getRB);
+        Assert.NotNull(getRB.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && "Get".Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
+        Assert.NotNull(getRB.Properties.FirstOrDefault(static x => x.IsOfKind(CodePropertyKind.RequestBuilder) && "GetPath".Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
+
+        File.Delete(tempFilePath);
+    }
+    [Fact]
+    public async Task DisambiguatesOperationsConflictingWithPath2()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.0
+info:
+  title: Microsoft Graph get user API
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0/
+paths:
+  /me/get:
+    get:
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.user'
+  /me:
+    get:
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.user'
+components:
+  schemas:
+    microsoft.graph.user:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = builder.CreateOpenApiDocument(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.me");
+        Assert.NotNull(requestBuilderNS);
+        var getRB = requestBuilderNS.FindChildByName<CodeClass>("meRequestBuilder", false);
+        Assert.NotNull(getRB);
+        Assert.NotNull(getRB.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && "Get".Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
+        Assert.NotNull(getRB.Properties.FirstOrDefault(static x => x.IsOfKind(CodePropertyKind.RequestBuilder) && "GetPath".Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
+
+        File.Delete(tempFilePath);
+    }
 }
