@@ -328,6 +328,39 @@ public class PhpRefiner : CommonLanguageRefiner
                         Type = x.Type
                     })
                     .ToArray());
+                var queryParameterProperty = codeClass.GetPropertyOfKind(CodePropertyKind.QueryParameters);
+                if (queryParameterProperty != null)
+                {
+                    var queryParamFactoryMethod = new CodeMethod
+                    {
+                        Name = "withQueryParameters",
+                        IsStatic = true,
+                        Access = AccessModifier.Public,
+                        Kind = CodeMethodKind.Factory,
+                        Documentation = new CodeDocumentation { Description = $"Instantiates a new {queryParameterProperty.Type.Name}." },
+                        ReturnType = queryParameterProperty.Type
+                    };
+                    queryParamFactoryMethod.ReturnType.IsNullable = false;
+                    if (queryParameterProperty.Type is CodeType codeType && codeType.TypeDefinition is CodeClass queryParamsClass)
+                    {
+                        var properties = queryParamsClass.GetPropertiesOfKind(CodePropertyKind.QueryParameter);
+                        if (properties.Any())
+                        {
+                            queryParamFactoryMethod.AddParameter(properties
+                                .Select(x => new CodeParameter
+                                {
+                                    DefaultValue = x.DefaultValue,
+                                    Documentation = x.Documentation,
+                                    Name = x.Name,
+                                    Kind = CodeParameterKind.QueryParameter,
+                                    Optional = true,
+                                    Type = x.Type
+                                })
+                                .ToArray());
+                        }
+                    }
+                    codeClass.AddMethod(queryParamFactoryMethod);
+                }
             }
 
             if (codeClass.IsOfKind(CodeClassKind.QueryParameters))
@@ -341,8 +374,12 @@ public class PhpRefiner : CommonLanguageRefiner
                         Kind = CodeParameterKind.QueryParameter,
                         Optional = true,
                         Type = x.Type
-                    });
-                constructor.AddParameter(constructorParams.ToArray());
+                    })
+                    .ToArray();
+                if (constructorParams.Any())
+                {
+                    constructor.AddParameter(constructorParams);
+                }
             }
         }
         CrawlTree(codeElement, AddRequestConfigurationConstructors);

@@ -2016,6 +2016,56 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
+    public async void WritesQueryParameterFactoryMethod()
+    {
+        var queryParamClass = new CodeClass { Name = "TestRequestQueryParameter", Kind = CodeClassKind.QueryParameters };
+        queryParamClass.AddProperty(new[]
+        {
+            new CodeProperty
+            {
+                Name = "select",
+                Kind = CodePropertyKind.QueryParameter,
+                Documentation = new() { Description = "Select properties to be returned", },
+                Type = new CodeType { Name = "string", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            },
+            new CodeProperty
+            {
+                Name = "count",
+                Kind = CodePropertyKind.QueryParameter,
+                Documentation = new() { Description = "Include count of items", },
+                Type = new CodeType { Name = "boolean" },
+            },
+            new CodeProperty
+            {
+                Name = "top",
+                Kind = CodePropertyKind.QueryParameter,
+                Documentation = new() { Description = "Show only the first n items", },
+                Type = new CodeType { Name = "integer" },
+            }
+        });
+        root.AddClass(queryParamClass);
+        parentClass.Kind = CodeClassKind.RequestConfiguration;
+        parentClass.AddProperty(new[] {
+            new CodeProperty
+            {
+                Name = "queryParameters",
+                Kind = CodePropertyKind.QueryParameters,
+                Documentation = new() { Description = "Request query parameters", },
+                Type = new CodeType { Name = queryParamClass.Name, TypeDefinition = queryParamClass },
+            }
+        });
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
+        _codeMethodWriter = new CodeMethodWriter(new PhpConventionService(), true);
+        var constructor = parentClass.GetMethodsOffKind(CodeMethodKind.Factory).ToList();
+        Assert.NotEmpty(constructor);
+        _codeMethodWriter.WriteCodeElement(constructor.First(), languageWriter);
+        var result = stringWriter.ToString();
+
+        Assert.Contains("public static function withQueryParameters(?bool $count = null, ?array $select = null, ?int $top = null)", result);
+        Assert.Contains("return new TestRequestQueryParameter($count, $select, $top);", result);
+    }
+
+    [Fact]
     public async void WritesQueryParameterConstructor()
     {
         parentClass.Kind = CodeClassKind.QueryParameters;

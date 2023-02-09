@@ -22,13 +22,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         var inherits = parentClass.StartBlock.Inherits != null;
         var extendsModelClass = inherits && parentClass.StartBlock.Inherits?.TypeDefinition is CodeClass codeClass &&
                                     codeClass.IsOfKind(CodeClassKind.Model);
-        var orNullReturn = codeElement.ReturnType.IsNullable ? new[] { "?", "|null" } : new[] { string.Empty, string.Empty };
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var config = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
         var requestParams = new RequestParams(requestBodyParam, config);
 
-        WriteMethodPhpDocs(codeElement, writer, orNullReturn);
-        WriteMethodsAndParameters(codeElement, writer, orNullReturn, codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor));
+        WriteMethodPhpDocs(codeElement, writer);
+        WriteMethodsAndParameters(codeElement, writer, codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor));
 
         switch (codeElement.Kind)
         {
@@ -166,7 +165,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         }
     }
 
-    private void WriteMethodPhpDocs(CodeMethod codeMethod, LanguageWriter writer, IReadOnlyList<string> orNullReturn)
+    private void WriteMethodPhpDocs(CodeMethod codeMethod, LanguageWriter writer)
     {
         var methodDescription = codeMethod.Documentation.Description;
 
@@ -189,7 +188,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (!isVoidable)
             returnDocString = (codeMethod.Kind == CodeMethodKind.RequestExecutor)
                 ? "@return Promise"
-                : $"@return {returnDocString}{orNullReturn[1]}";
+                : $"@return {returnDocString}{(codeMethod.ReturnType.IsNullable? "|null" : "")}";
         else returnDocString = String.Empty;
         conventions.WriteLongDescription(codeMethod.Documentation,
             writer,
@@ -219,7 +218,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     }
 
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
-    private void WriteMethodsAndParameters(CodeMethod codeMethod, LanguageWriter writer, IReadOnlyList<string> orNullReturn, bool isConstructor = false)
+    private void WriteMethodsAndParameters(CodeMethod codeMethod, LanguageWriter writer, bool isConstructor = false)
     {
         var methodParameters = string.Join(", ", codeMethod.Parameters
                                                             .Order(parameterOrderComparer)
@@ -245,8 +244,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.StartBlock($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}(): ?array {{");
             return;
         }
-        var isVoidable = "void".Equals(isConstructor ? null : conventions.GetTypeString(codeMethod.ReturnType, codeMethod), StringComparison.OrdinalIgnoreCase);
-        var optionalCharacterReturn = isVoidable ? string.Empty : orNullReturn[0];
+        var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType, codeMethod), StringComparison.OrdinalIgnoreCase);
+        var optionalCharacterReturn = (codeMethod.ReturnType.IsNullable && !isVoidable) ? "?": "";
         var returnValue = isConstructor ? string.Empty : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType, codeMethod)}";
         if (isConstructor && codeMethod.Parent is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder))
         {
@@ -713,6 +712,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     private const string ResultVarName = "$result";
 
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
+        switch (parentClass.Kind)
+        {
+            case CodeClassKind.Model:
+                WriteModelFactoryMethodBody(codeElement, parentClass, writer);
+                break;
+            default:
+                var parameterNames = string.Join(", ", codeElement.Parameters.Order(parameterOrderComparer).Select(x => $"${x.Name.ToFirstCharacterLowerCase()}"));
+                writer.WriteLine($"return new {conventions.GetTypeString(codeElement.ReturnType, codeElement)}({parameterNames});");
+                break;
+        };
+    }
+
+    private void WriteModelFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType || parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             writer.WriteLine($"{ResultVarName} = new {parentClass.Name.ToFirstCharacterUpperCase()}();");
