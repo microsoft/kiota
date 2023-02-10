@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where errors/exceptions could override native exception type symbols in Python. [#2257](https://github.com/microsoft/kiota/issues/2257)
+- Fixed a bug where descriptions with a path segment matching an HTTP verb would fail to generate. [#2231](https://github.com/microsoft/kiota/issues/2231)
 
 ## [0.11.0] - 2023-02-07
 

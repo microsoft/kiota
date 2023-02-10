@@ -87,8 +87,12 @@ public static class OpenApiUrlTreeNodeExtensions
     }
     public static string GetNavigationPropertyName(this OpenApiUrlTreeNode currentNode, HashSet<string> structuredMimeTypes, string? suffix = default, string? prefix = default, OpenApiOperation? operation = default, OpenApiResponse? response = default, OpenApiSchema? schema = default, bool requestBody = false)
     {
-        return currentNode.GetSegmentName(structuredMimeTypes, suffix, prefix, operation, response, schema, requestBody, static x => string.Join(string.Empty, x.Select(static (y, idx) => idx == 0 ? y : y.ToFirstCharacterUpperCase())));
+        var result = currentNode.GetSegmentName(structuredMimeTypes, suffix, prefix, operation, response, schema, requestBody, static x => string.Join(string.Empty, x.Select(static (y, idx) => idx == 0 ? y : y.ToFirstCharacterUpperCase())));
+        if (httpVerbs.Contains(result))
+            return $"{result}Path"; // we don't run the change of an operation conflicting with a path on the same request builder
+        return result;
     }
+    private static readonly HashSet<string> httpVerbs = new(StringComparer.OrdinalIgnoreCase) { "get", "post", "put", "patch", "delete", "head", "options", "trace" };
     private static string GetSegmentName(this OpenApiUrlTreeNode currentNode, HashSet<string> structuredMimeTypes, string? suffix, string? prefix, OpenApiOperation? operation, OpenApiResponse? response, OpenApiSchema? schema, bool requestBody, Func<IEnumerable<string>, string> segmentsReducer)
     {
         var rawClassName = schema?.Reference?.GetClassName() is string className && !string.IsNullOrEmpty(className) ?
