@@ -12,16 +12,12 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, RubyConventionService>
         if (!(codeElement?.Options.Any() ?? false))
             return;
         if (codeElement.Parent is CodeNamespace ns)
-        {
-            writer.WriteLine($"module {ns.Name.NormalizeNameSpaceName("::")}");
-            writer.IncreaseIndent();
-        }
+            conventions.WriteNamespaceModules(ns, writer);
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
-        writer.WriteLine($"{codeElement.Name.ToFirstCharacterUpperCase()} = {{");
-        writer.IncreaseIndent();
+        writer.StartBlock($"{codeElement.Name.ToFirstCharacterUpperCase()} = {{");
         codeElement.Options.ToList().ForEach(x => writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: :{x.Name.ToFirstCharacterUpperCase()},"));
         writer.CloseBlock();
-        if (codeElement.Parent is CodeNamespace)
-            writer.CloseBlock("end");
+        if (codeElement.Parent is CodeNamespace ns2)
+            conventions.WriteNamespaceClosing(ns2, writer);
     }
 }

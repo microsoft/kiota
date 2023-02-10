@@ -49,7 +49,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
         writer.WriteLine();
         if (codeElement.Parent?.Parent is CodeNamespace ns)
         {
-            writer.StartBlock($"module {ns.Name.NormalizeNameSpaceName("::")}");
+            conventions.WriteNamespaceModules(ns, writer);
         }
 
         var derivation = codeElement.Inherits == null ? string.Empty : $" < {conventions.GetNormalizedNamespacePrefixForType(codeElement.Inherits)}{codeElement.Inherits.Name.ToFirstCharacterUpperCase()}";
