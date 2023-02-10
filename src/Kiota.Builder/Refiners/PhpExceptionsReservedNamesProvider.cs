@@ -20,6 +20,7 @@ public class PhpExceptionsReservedNamesProvider : IReservedNamesProvider
         "getLine",
         "getTrace",
         "getTraceAsString",
+        "getResponseStatusCode",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }
