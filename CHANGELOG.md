@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support for multi-valued headers in Python. [#2051](https://github.com/microsoft/kiota/issues/2051)
+- Added `getResponseStatusCode` to PHP exceptions reserved names provider. [#2243](https://github.com/microsoft/kiota/issues/2243)
 
 ### Changed
 
