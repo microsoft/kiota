@@ -373,7 +373,7 @@ public class PhpRefiner : CommonLanguageRefiner
             {
                 var queryParamFactoryMethod = new CodeMethod
                 {
-                    Name = "withQueryParameters",
+                    Name = "addQueryParameters",
                     IsStatic = true,
                     Access = AccessModifier.Public,
                     Kind = CodeMethodKind.Factory,
