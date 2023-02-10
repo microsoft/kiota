@@ -235,9 +235,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         };
         var isVoid = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType, codeMethod), StringComparison.OrdinalIgnoreCase);
         var optionalCharacterReturn = (codeMethod.ReturnType.IsNullable && !isVoid) ? "?" : "";
-        var returnValue = isConstructor ? string.Empty : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType, codeMethod)}";
+        var returnValue = (codeMethod.Kind == CodeMethodKind.RequestExecutor) ? "Promise" : $"{optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType, codeMethod)}";
         writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} {(codeMethod.IsStatic ? "static " : string.Empty)}"
-            + $"function {methodName}({methodParameters}){returnValue} {{");
+            + $"function {methodName}({methodParameters}){(isConstructor ? "" : $": {returnValue}")} {{");
         writer.IncreaseIndent();
     }
 

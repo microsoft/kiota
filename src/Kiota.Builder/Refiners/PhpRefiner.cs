@@ -228,10 +228,6 @@ public class PhpRefiner : CommonLanguageRefiner
             method.ReturnType.Name = "array";
             method.ReturnType.IsNullable = _configuration.UsesBackingStore;
         }
-        if (method.IsOfKind(CodeMethodKind.RequestExecutor))
-        {
-            method.ReturnType.Name = "Promise";
-        }
         CorrectCoreTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
             .Select(static x => x.Type)
             .Union(new[] { method.ReturnType })

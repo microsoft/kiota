@@ -197,7 +197,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public void WriteRequestExecutor()
+    public async void WriteRequestExecutor()
     {
         CodeProperty[] properties =
         {
@@ -250,10 +250,11 @@ public class CodeMethodWriterTests : IDisposable
         codeMethod.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
         codeMethod.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
         codeMethod.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error401 });
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
         var result = stringWriter.ToString();
 
-        Assert.Contains("Promise", result);
+        Assert.Contains("public function post(): Promise", result);
         Assert.Contains("$requestInfo = $this->createPostRequestInformation();", result);
         Assert.Contains("RejectedPromise", result);
         Assert.Contains("@link https://learn.microsoft.com/ Learning", result);
