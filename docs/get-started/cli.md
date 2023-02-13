@@ -7,17 +7,37 @@ parent: Get started
 ## Required tools
 A commandline tool is required. We recommend:
 - [Windows Terminal + version](https://apps.microsoft.com/store/detail/windows-terminal/9N0DX20HK701?hl=en-us&gl=us)
+- [.NET SDK 7.0](https://get.dot.net/7)
 - A commandline that supports Bash?
 - MacOS terminal
 - PowerShell version 7.3.2
 
 ## Target project requirements
-Download the CLI SDK to get started for 
-Windows, Mac, or Linux here on the assets link of the latest release: [CLI SDK Download](https://github.com/microsoftgraph/msgraph-cli/releases)
+Before you can compile and run the generated files, you will need to make sure they are part of a project with the required dependencies. After creating a new project, or reusing an existing one, you will need to add references to the [abstraction](https://github.com/microsoft/kiota-abstractions-dotnet), [authentication](https://github.com/microsoft/kiota-authentication-azure-dotnet), [cli-commons](https://github.com/microsoft/kiota-cli-commons), [http](https://github.com/microsoft/kiota-http-dotnet), and [FORM](https://github.com/microsoft/kiota-serialization-form-dotnet), [JSON](https://github.com/microsoft/kiota-serialization-json-dotnet) and [text](https://github.com/microsoft/kiota-serialization-text-dotnet) serialization packages from the NuGet feed.
 
+## Creating target projects
 
-#
+> **Note:** you can use an existing project if you have one, in that case, you can skip the following section.
+
+Execute the following command in the directory you want to create a new project.
+
+```bash
+dotnet new console -o GetUserClient
+dotnet new gitignore
+```
+
 ## Adding dependencies
+
+```bash
+dotnet add package Microsoft.Kiota.Abstractions --prerelease
+dotnet add package Microsoft.Kiota.Cli.Commons --prerelease
+dotnet add package Microsoft.Kiota.Http.HttpClientLibrary --prerelease
+dotnet add package Microsoft.Kiota.Serialization.Form --prerelease
+dotnet add package Microsoft.Kiota.Serialization.Json --prerelease
+dotnet add package Microsoft.Kiota.Serialization.Text --prerelease
+dotnet add package Microsoft.Kiota.Authentication.Azure --prerelease
+dotnet add package Azure.Identity
+```
 
 ### Getting access to the packages
 
@@ -33,7 +53,7 @@ Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** a
 You can then use the Kiota command line tool to generate the SDK classes.
 
 ```bash
-#TBD
+kiota generate --openapi getme.yml --language shell -c GetUserApiClient -n GetUserClient.ApiClient -o ./Client
 ```
 
 ## Registering an application in Azure AD
@@ -44,12 +64,25 @@ You can then use the Kiota command line tool to generate the SDK classes.
 
 Follow the instructions in [Register an application for Microsoft identity platform authentication](register-app.md) to get an application ID (also know as a client ID).
 
-## Creating the client application
+The final step is to update the **Program.cs** file that was generated as part of the console application to include the code below. Replace `YOUR_CLIENT_ID` with the client ID from your app registration.
 
-Replace `YOUR_CLIENT_ID` with the client ID from your app registration.
+```csharp
+using Azure.Identity;
+using GetUserClient.ApiClient;
+using Microsoft.Kiota.Authentication.Azure;
+using Microsoft.Kiota.Http.HttpClientLibrary;
 
-``` bash
-mgc login --client-id `YOUR_CLIENT_ID` --tenant-id `YOUR_TENANT_ID` --scopes User.ReadWrite --scopes Mail.ReadWrite
+namespace GetUserClient;
+
+class Program
+{
+    static async Task<int> Main(string[] args)
+    {
+        var rootCommand = new GetUserApiClient().BuildRootCommand();
+        rootCommand.Description = "CLI description";
+    }
+}
+
 ```
 
 ## Executing the application
