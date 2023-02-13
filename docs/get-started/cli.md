@@ -70,6 +70,7 @@ The final step is to update the **Program.cs** file that was generated as part o
 using Azure.Identity;
 using GetUserClient.ApiClient;
 using Microsoft.Kiota.Authentication.Azure;
+using Microsoft.Kiota.Cli.Commons.Extensions;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 
 namespace GetUserClient;
@@ -80,54 +81,49 @@ class Program
     {
         var rootCommand = new GetUserApiClient().BuildRootCommand();
         rootCommand.Description = "CLI description";
+
+        // Set up services
+        var builder = new CommandLineBuilder(rootCommand)
+                .UseDefaults()
+                .UseRequestAdapter(ic =>
+                {
+                    var clientId = "YOUR_CLIENT_ID";
+
+                    // The auth provider will only authorize requests to
+                    // the allowed hosts, in this case Microsoft Graph
+                    var allowedHosts = new [] { "graph.microsoft.com" };
+                    var graphScopes = new [] { "User.Read" };
+                    var credential = new DeviceCodeCredential((code, cancellation) =>
+                    {
+                        Console.WriteLine(code.Message);
+                        return Task.FromResult(0);
+                    },
+                    clientId);
+
+                    var authProvider = new AzureIdentityAuthenticationProvider(credential, allowedHosts, scopes: graphScopes);
+                    return new HttpClientRequestAdapter(authProvider);
+                }).RegisterCommonServices();
+        
+        return await builder.Build().InvokeAsync(args);
     }
 }
 
 ```
 
-## Executing the application
-Navigate to your download folder and use the **mgc** command to run commands on the CLI SDK. 
-Add -h to your commands to view additional commands.
+> **Note:**
+>
+> - If the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.
+> - If the target API relies on an API key for authentication, you can use the **ApiKeyAuthenticationProvider** instead.
+> - If the target API requires an `Authorization bearer <token>` header but doesn't rely on the Microsoft identity platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
+> - If the target API requires any other form of authentication schemes, you can implement the **IAuthenticationProvider** interface.
 
 
-### Authentication
-The SDK supports both delegeted and app-only authentication strategies. Run the command below to see supported authentication strategies.
+When ready to execute the application, execute the following command in your project directory.
 
-``` bash
-#View supported authentication strategies. Default is Device Code
-mgc login --strategy 
+```bash
+dotnet run -- me get
 ```
 
-
-#### **Delegated access**
-**1. DeviceCode authentication strategy**
-
-
-``` bash
-#Using the Default authentication (which is Device Code)
-mgc login
-```
-OR
-
-``` bash
-#Using the DeviceCode authentication  explicitly
-mgc login --strategy DeviceCode
-```
-
-**2.Interactive Browser authentication strategy**
-``` bash
-# Using interactive Browser authentication.
-mgc login --strategy InteractiveBrowser
-
-```
-
-#### **App-only access**
-**1. Client Certificate authentication strategy**
-``` bash
-# Using Client Certificate authentication.
-mgc login --strategy ClientCertificate
-
-```
 ### Samples
 You can find additional samples here: [CLI SDK samples](https://github.com/microsoftgraph/msgraph-cli/tree/main/samples)
 
