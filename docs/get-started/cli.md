@@ -101,5 +101,5 @@ You can find additional samples here: [CLI SDK samples](https://github.com/micro
 
 ## See also
 
-- [kiota-samples repository](https://github.com/microsoft/kiota-samples/tree/main/get-started/java) contains the code from this guide.
+- [kiota-samples repository](https://github.com/microsoft/kiota-samples/tree/main/get-started) contains the code from this guide.
 - [ToDoItem Sample API](https://github.com/microsoft/kiota-samples/tree/main/sample-api) implements a sample OpenAPI in ASP.NET Core and sample clients in multiple languages.
