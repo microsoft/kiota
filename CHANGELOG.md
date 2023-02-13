@@ -9,11 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [0.11.1] - 2023-02-13
+
+### Added
+
 - Added support for multi-valued headers in Python. [#2051](https://github.com/microsoft/kiota/issues/2051)
 - Added `getResponseStatusCode` to PHP exceptions reserved names provider. [#2243](https://github.com/microsoft/kiota/issues/2243)
 
 ### Changed
 
+- Fixed a bug where search would fail because of a parsing issue. [#2290](https://github.com/microsoft/kiota/issues/2290)
 - Fixed a bug where Ruby namespaces would fail to load with Rails.
 - Fixed a bug where errors/exceptions could override native exception type symbols in Python. [#2257](https://github.com/microsoft/kiota/issues/2257)
 - Fixed a bug where descriptions with a path segment matching an HTTP verb would fail to generate. [#2231](https://github.com/microsoft/kiota/issues/2231)
