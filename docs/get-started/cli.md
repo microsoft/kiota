@@ -33,7 +33,7 @@ Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** a
 You can then use the Kiota command line tool to generate the SDK classes.
 
 ```bash
-kiota generate -l java -d getme.yml -c GetUserApiClient -n getuserclient.apiclient -o ./app/src/main/java/getuserclient/apiclient
+#TBD
 ```
 
 ## Registering an application in Azure AD
