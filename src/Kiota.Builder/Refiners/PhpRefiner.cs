@@ -377,9 +377,8 @@ public class PhpRefiner : CommonLanguageRefiner
                     {
                         Description = $"Instantiates a new {queryParameterProperty.Type.Name}."
                     },
-                    ReturnType = queryParameterProperty.Type
+                    ReturnType = new CodeType { Name = queryParameterProperty.Type.Name, TypeDefinition = queryParameterProperty.Type, IsNullable = false }
                 };
-                queryParamFactoryMethod.ReturnType.IsNullable = false;
                 if (queryParameterProperty.Type is CodeType codeType && codeType.TypeDefinition is CodeClass queryParamsClass)
                 {
                     var properties = queryParamsClass.GetPropertiesOfKind(CodePropertyKind.QueryParameter);
