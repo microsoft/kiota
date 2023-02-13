@@ -10,7 +10,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:microsoft-kiota.helloWorld"
+    "onCommand:microsoft-kiota.helloWorld",
+    "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {
