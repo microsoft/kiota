@@ -620,7 +620,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         public string ReleasesUrl { get; set; }
 #endif
         /// <summary>The score property</summary>
-        public long? Score
+        public double? Score
         {
             get; set;
         }
@@ -898,7 +898,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
                 {"pulls_url", n => { PullsUrl = n.GetStringValue(); } },
                 {"pushed_at", n => { PushedAt = n.GetDateTimeOffsetValue(); } },
                 {"releases_url", n => { ReleasesUrl = n.GetStringValue(); } },
-                {"score", n => { Score = n.GetLongValue(); } },
+                {"score", n => { Score = n.GetDoubleValue(); } },
                 {"size", n => { Size = n.GetIntValue(); } },
                 {"ssh_url", n => { SshUrl = n.GetStringValue(); } },
                 {"stargazers_count", n => { StargazersCount = n.GetIntValue(); } },
@@ -996,7 +996,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
             writer.WriteStringValue("pulls_url", PullsUrl);
             writer.WriteDateTimeOffsetValue("pushed_at", PushedAt);
             writer.WriteStringValue("releases_url", ReleasesUrl);
-            writer.WriteLongValue("score", Score);
+            writer.WriteDoubleValue("score", Score);
             writer.WriteIntValue("size", Size);
             writer.WriteStringValue("ssh_url", SshUrl);
             writer.WriteIntValue("stargazers_count", StargazersCount);
