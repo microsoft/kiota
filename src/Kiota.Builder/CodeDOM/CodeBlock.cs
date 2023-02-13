@@ -32,9 +32,9 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
         return new CodeElement[] { StartBlock, EndBlock }.Union(InnerChildElements.Values);
     }
 
-    public void UpdateChildElement(string currentDeclarationName, string newDeclarationName)
+    public void RenameChildElement(string currentDeclarationName, string newDeclarationName)
     {
-        var codeElement = InnerChildElements.First(x => x.Key == currentDeclarationName);
+        var codeElement = InnerChildElements.First(x => x.Key.Equals(currentDeclarationName, StringComparison.OrdinalIgnoreCase));
         InnerChildElements.TryRemove(currentDeclarationName, out _);
         InnerChildElements.GetOrAdd(newDeclarationName, codeElement.Value);
 

@@ -16,7 +16,7 @@ namespace Kiota.Builder.Writers.TypeScript
         public override void WriteCodeElement(InterfaceDeclaration interfaceDeclaration, LanguageWriter writer)
         {
             if (interfaceDeclaration == null) throw new ArgumentNullException(nameof(interfaceDeclaration));
-            if (writer == null) throw new ArgumentNullException(nameof(writer));
+            ArgumentNullException.ThrowIfNull(writer);
             var parentNamespace = interfaceDeclaration.GetImmediateParentOfType<CodeNamespace>();
             _codeUsingWriter.WriteCodeElement(interfaceDeclaration.Usings, parentNamespace, writer);
 
@@ -24,17 +24,12 @@ namespace Kiota.Builder.Writers.TypeScript
             foreach (var inherit in interfaceDeclaration.Implements)
             {
                 var name = conventions.GetTypeString(inherit, interfaceDeclaration);
-                if (!(inherit.TypeDefinition is CodeInterface))
-                {
-                    name = $"{name}";
-                }
                 inheritSymbol = (!String.IsNullOrWhiteSpace(inheritSymbol) ? inheritSymbol + ", " : String.Empty) + name;
             }
 
             var derivation = (String.IsNullOrWhiteSpace(inheritSymbol) ? string.Empty : $" extends {inheritSymbol}");
 
-            writer.WriteLine($"export interface {interfaceDeclaration.Name.ToFirstCharacterUpperCase()}{derivation} {{");
-            writer.IncreaseIndent();
+            writer.StartBlock($"export interface {interfaceDeclaration.Name.ToFirstCharacterUpperCase()}{derivation} {{");
         }
     }
 }

@@ -442,7 +442,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             CodeMethodKind.Setter => "set ",
             _ => string.Empty
         };
-        var shouldHaveTypeSuffix = !code.IsAccessor && !isConstructor && returnType != ""; ;
+        var shouldHaveTypeSuffix = !code.IsAccessor && !isConstructor && !string.IsNullOrEmpty(returnType);
         var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
         writer.WriteLine($"{accessModifier}{functionPrefix}{accessorPrefix}{staticPrefix}{methodName}{asyncPrefix}({parameters}){returnTypeSuffix} {{");
     }

@@ -2,8 +2,7 @@
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 
-namespace Kiota.Builder.CodeRenderers
-{
+namespace Kiota.Builder.CodeRenderers;
     public class TypeScriptCodeRenderer : CodeRenderer
     {
         public TypeScriptCodeRenderer(GenerationConfiguration configuration) : base(configuration) { }
@@ -12,4 +11,3 @@ namespace Kiota.Builder.CodeRenderers
             return codeNamespace.CodeInterfaces.Any();
         }
     }
-}

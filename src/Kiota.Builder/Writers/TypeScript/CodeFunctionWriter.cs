@@ -103,21 +103,19 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             throw new InvalidOperationException("Interface parameter not found for code interface");
 
         var codeInterface = (CodeInterface)codeType.TypeDefinition;
-        var inherits = codeInterface.StartBlock.Implements.FirstOrDefault(x => x.TypeDefinition is CodeInterface);
         writer.IncreaseIndent();
 
-        if (inherits != null)
+        if (inherits = codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType inherits)
         {
-            writer.WriteLine($"serialize{inherits?.TypeDefinition?.Name.ToFirstCharacterUpperCase()}(writer, {param.Name.ToFirstCharacterLowerCase()})");
+            writer.WriteLine($"serialize{inherits.TypeDefinition!.Name.ToFirstCharacterUpperCase()}(writer, {param.Name.ToFirstCharacterLowerCase()})");
         }
 
-        foreach (var otherProp in codeInterface.Properties.Where(static x => x.Kind == CodePropertyKind.Custom && !x.ExistsInBaseType && !x.ReadOnly))
+        foreach (var otherProp in codeInterface.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom) && !x.ExistsInBaseType && !x.ReadOnly))
         {
             WritePropertySerializer(codeInterface.Name.ToFirstCharacterLowerCase(), otherProp, writer, codeElement);
         }
 
-        var additionalDataProperty = codeInterface.GetPropertyOfKind(CodePropertyKind.AdditionalData);
-        if (additionalDataProperty != null)
+        if (codeInterface.GetPropertyOfKind(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
             writer.WriteLine($"writer.writeAdditionalData({codeInterface.Name.ToFirstCharacterLowerCase()}.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
         writer.DecreaseIndent();
     }
@@ -162,13 +160,9 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     private string GetSerializationMethodName(CodeTypeBase propType)
     {
         var propertyType = localConventions?.TranslateType(propType);
-        if (propertyType != null && propType is CodeType currentType)
+        if (!string.IsNullOrEmpty(propertyType) && propType is CodeType currentType && GetSerializationMethodNameForCodeType(currentType, propertyType) is string result && !String.IsNullOrWhiteSpace(result))
         {
-            var result = GetSerializationMethodNameForCodeType(currentType, propertyType);
-            if (!String.IsNullOrWhiteSpace(result))
-            {
-                return result;
-            }
+            return result;
         }
         return propertyType switch
         {
@@ -179,10 +173,9 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private static string? GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
     {
-        var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         if (propType.TypeDefinition is CodeEnum currentEnum)
             return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}>";
-        else if (isCollection)
+        else if (propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
         {
             if (propType.TypeDefinition == null)
                 return $"writeCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
@@ -194,18 +187,14 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private void WriteDeserializerFunction(CodeFunction codeFunction, LanguageWriter writer)
     {
-        var param = codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault();
-
-        if (param?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface)
+        if (codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault() is CodeParameter param && param.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface)
         {
 
-            var inherits = codeInterface?.StartBlock?.Implements.FirstOrDefault(x => x.TypeDefinition is CodeInterface);
 
-            var properties = codeInterface?.Properties.Where(static x => x.Kind == CodePropertyKind.Custom && !x.ExistsInBaseType);
+            var properties = codeInterface.Properties.Where(static x => x.Kind == CodePropertyKind.Custom && !x.ExistsInBaseType);
 
-            writer.WriteLine("return {");
-            writer.IncreaseIndent();
-            if (inherits != null)
+            writer.StartBlock("return {");
+            if (codeInterface.StartBlock.Implements.FirstOrDefault(x => x.TypeDefinition is CodeInterface) is CodeInterface inherits)
             {
                 writer.WriteLine($"...deserializeInto{inherits?.TypeDefinition?.Name.ToFirstCharacterUpperCase()}({param.Name.ToFirstCharacterLowerCase()}),");
             }
@@ -218,8 +207,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
                     writer.WriteLine($"\"{keyName}\": n => {{ {param.Name.ToFirstCharacterLowerCase()}.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeFunction)}; }},");
                 }
             }
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.CloseBlock();
         }
         else
             throw new InvalidOperationException($"Model interface for deserializer function {codeFunction.Name} is not available");
@@ -229,7 +217,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = localConventions?.GetTypeString(propType, codeFunction, false);
-        if (propertyType != null && propType is CodeType currentType)
+        if (!string.IsNullOrEmpty(propertyType) && propType is CodeType currentType)
         {
             if (currentType.TypeDefinition is CodeEnum currentEnum)
                 return $"getEnumValue{(currentEnum.Flags || isCollection ? "s" : string.Empty)}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
