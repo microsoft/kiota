@@ -16,7 +16,6 @@ Download the CLI SDK to get started for
 Windows, Mac, or Linux here on the assets link of the latest release: [CLI SDK Download](https://github.com/microsoftgraph/msgraph-cli/releases)
 
 
-#
 ## Adding dependencies
 
 ### Getting access to the packages
