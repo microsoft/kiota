@@ -3,10 +3,13 @@
 import * as vscode from "vscode";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
+let kiotaOutputChannel: vscode.LogOutputChannel;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) : Promise<void> {
+  kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", { log: true });
+  kiotaOutputChannel.debug
   const statusBarCommandId = "microsoft-kiota.status";
   context.subscriptions.push(
     vscode.commands.registerCommand(statusBarCommandId, async () => {
@@ -33,56 +36,89 @@ export async function activate(context: vscode.ExtensionContext) : Promise<void>
   kiotaStatusBarItem.command = statusBarCommandId;
   context.subscriptions.push(kiotaStatusBarItem);
 
-  // register some listener that make sure the status bar
-  // item always up-to-date
-  context.subscriptions.push(
-    vscode.window.onDidChangeActiveTextEditor(async() => await updateStatusBarItem())
-  );
-
   // update status bar item once at start
   await updateStatusBarItem();
-  // Use the console to output diagnostic information (console.log) and errors (console.error)
-  // This line of code will only be executed once when your extension is activated
-  console.log(
-    'Congratulations, your extension "microsoft-kiota" is now active!'
-  );
-
-  // The command has been defined in the package.json file
-  // Now provide the implementation of the command with registerCommand
-  // The commandId parameter must match the command field in package.json
   let disposable = vscode.commands.registerCommand(
-    "microsoft-kiota.helloWorld",
-    () => {
-      // The code you place here will be executed every time your command is executed
-      // Display a message box to the user
-      vscode.window.showInformationMessage("Hello World from Microsoft Kiota!");
+    "microsoft-kiota.updateClients",
+    async () => {
+      if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+        vscode.window.showErrorMessage("No workspace folder found, open a folder first");
+        return;
+      }
+      await updateStatusBarItem();
+      try {
+        kiotaOutputChannel.clear();
+        kiotaOutputChannel.show();
+        kiotaOutputChannel.info(`updating workspace with path ${vscode.workspace.workspaceFolders[0].uri.fsPath}`);
+        const result = await runKiotaCommand(["update", "-o", vscode.workspace.workspaceFolders[0].uri.fsPath]);
+        if(result.stderr) {
+          kiotaOutputChannel.error(result.stderr);
+          vscode.window.showErrorMessage(result.stderr);
+        } else {
+          kiotaOutputChannel.info(result.stdout);
+          vscode.window.showInformationMessage(result.stdout);
+        }
+      } catch (error) {
+        const result = error as KiotaCommandResult;
+        if(result.stderr) {
+          kiotaOutputChannel.error(result.stderr);
+          vscode.window.showErrorMessage(result.stderr);
+        } else if (result.stdout) {
+          const cleanedUpOutput = result
+                                    .stdout
+                                    .replace(/\sKiota.Builder.KiotaBuilder\[0\](\r\n|\n|\r|\s)+/gm, "")
+                                    .split("\r\n").filter((line) => line.startsWith("erro:") || line.startsWith("crit:"))
+                                    .join("\r\n");
+          kiotaOutputChannel.error(cleanedUpOutput);
+          vscode.window.showErrorMessage(cleanedUpOutput);
+          //this is janky the console app should write to stderr, or we should use wasm and implement a logger
+        }
+      }
     }
   );
 
   context.subscriptions.push(disposable);
 }
 
-function getKiotaVersion(): Promise<string> {
+type KiotaCommandResult = { stdout: string; stderr: string };
+
+function runKiotaCommand(args: string[]): Promise<KiotaCommandResult> {
   return new Promise((resolve, reject) => {
     const cp = require("child_process");
-    cp.exec("kiota --version", (err: any, stdout: string, stderr: any) => {
-      if (stdout) {
-        const version = stdout.split("+")[0];
-        if (version) {
-          resolve(version);
-          return;
-        }
+    const child = cp.spawn("kiota", args);
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (data: string) => (stdout += data));
+    child.stderr.on("data", (data: string) => (stderr += data));
+
+    child.on('close', (code: number) => {
+      if (code !== 0) {
+        reject({ stdout, stderr });
+      } else {
+        resolve({ stdout, stderr });
       }
-      reject();
     });
   });
+}
+
+async function getKiotaVersion(): Promise<string> {
+  const result = await runKiotaCommand(["--version"]);
+  if (result.stdout) {
+    const version = result.stdout.split("+")[0];
+    if (version) {
+      kiotaOutputChannel.info(`kiota version: ${version}`);
+      return version;
+    }
+  }
+  kiotaOutputChannel.error(`kiota version: not found`);
+  kiotaOutputChannel.show();
+  return '';
 }
 
 async function updateStatusBarItem(): Promise<void> {
   try {
     const version = await getKiotaVersion();
     kiotaStatusBarItem.text = `$(extensions-info-message) kiota ${version}`;
-    kiotaStatusBarItem.show();
   } catch (error) {
     kiotaStatusBarItem.text = `$(extensions-warning-message) kiota not found`;
     kiotaStatusBarItem.backgroundColor = new vscode.ThemeColor(

@@ -10,15 +10,14 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:microsoft-kiota.helloWorld",
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "microsoft-kiota.helloWorld",
-        "title": "Hello World"
+        "command": "microsoft-kiota.updateClients",
+        "title": "Kiota: update API clients in the current workspace"
       }
     ]
   },
