@@ -215,11 +215,15 @@ public class GoRefiner : CommonLanguageRefiner
 
     private static void CorrectTypes(CodeElement currentElement)
     {
-        if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility, CodeMethodKind.RequestBuilderBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters) && currentElement.Parent is CodeClass _)
+        if (currentElement is CodeMethod currentMethod &&
+            currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility, CodeMethodKind.RequestBuilderBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters) &&
+            currentElement.Parent is CodeClass _ &&
+            currentMethod.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace currentNamespace &&
+            currentNamespace.Depth > 0 && currentMethod.ReturnType is CodeType ct &&
+            ct.TypeDefinition is not null &&
+            !ct.Name.Equals(ct.TypeDefinition.Name))
         {
-            var currentNamespace = currentMethod.GetImmediateParentOfType<CodeNamespace>();
-            if (currentNamespace.Depth > 0 && currentMethod.ReturnType is CodeType ct && !ct.Name.Equals(ct.TypeDefinition?.Name))
-                ct.Name = ct.TypeDefinition!.Name;
+            ct.Name = ct.TypeDefinition.Name;
         }
         CrawlTree(currentElement, CorrectTypes);
     }
