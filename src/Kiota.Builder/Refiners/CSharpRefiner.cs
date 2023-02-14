@@ -52,7 +52,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new() {
                     CodePropertyKind.Custom,
                 },
-                static s => s.ToPascalCase(new[] { '_' }));
+                static s => s.ToPascalCase(UnderscoreArray));
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             cancellationToken.ThrowIfCancellationRequested();

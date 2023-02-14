@@ -73,7 +73,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.BackingStore
                 },
-                static s => s.ToCamelCase(new[] { '_' }),
+                static s => s.ToCamelCase(UnderscoreArray),
                 _configuration.UsesBackingStore,
                 true,
                 "get",
