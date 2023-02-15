@@ -226,7 +226,7 @@ public class PhpRefiner : CommonLanguageRefiner
             && method.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
             method.ReturnType.Name = "array";
-            method.ReturnType.IsNullable = _configuration.UsesBackingStore;
+            method.ReturnType.IsNullable = true;
         }
         CorrectCoreTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
             .Select(static x => x.Type)

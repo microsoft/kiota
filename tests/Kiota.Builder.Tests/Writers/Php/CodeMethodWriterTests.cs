@@ -1004,7 +1004,7 @@ public class CodeMethodWriterTests : IDisposable
         };
         parentClass.AddMethod(getter);
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         _codeMethodWriter.WriteCodeElement(getter, languageWriter);
         var result = stringWriter.ToString();
         Assert.Contains("public function getAdditionalData(): ?array", result);
