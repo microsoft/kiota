@@ -119,7 +119,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     {
         if (string.IsNullOrEmpty(source))
             return string.Empty;
-        return Path.IsPathRooted(source) || source.StartsWith("http") ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
+        return Path.IsPathRooted(source) || source.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
     }
     protected void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment)
     {
