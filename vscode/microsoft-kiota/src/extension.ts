@@ -52,29 +52,26 @@ export async function activate(context: vscode.ExtensionContext) : Promise<void>
         kiotaOutputChannel.clear();
         kiotaOutputChannel.show();
         kiotaOutputChannel.info(`updating workspace with path ${vscode.workspace.workspaceFolders[0].uri.fsPath}`);
-        const result = await runKiotaCommand(["update", "-o", vscode.workspace.workspaceFolders[0].uri.fsPath]);
-        if(result.stderr) {
-          kiotaOutputChannel.error(result.stderr);
-          vscode.window.showErrorMessage(result.stderr);
-        } else {
-          kiotaOutputChannel.info(result.stdout);
-          vscode.window.showInformationMessage(result.stdout);
-        }
+        await connectToKiota(async (connection) => {
+          const request = new rpc.RequestType<string, KiotaLogEntry[], void>('Update');
+          const result = await connection.sendRequest(request, vscode.workspace.workspaceFolders![0].uri.fsPath);
+          const informationMessages = result.filter((x) => x.level === 2);
+          const errorMessages = result.filter((x) => x.level === 5 || x.level === 4);
+          if(errorMessages.length > 0) {
+            errorMessages.forEach(element => {
+              kiotaOutputChannel.error(element.message);
+              vscode.window.showErrorMessage(element.message);
+            });
+          } else {
+            informationMessages.forEach(element => {
+              kiotaOutputChannel.info(element.message);
+              vscode.window.showInformationMessage(element.message);
+            });
+          }
+        });
       } catch (error) {
-        const result = error as KiotaCommandResult;
-        if(result.stderr) {
-          kiotaOutputChannel.error(result.stderr);
-          vscode.window.showErrorMessage(result.stderr);
-        } else if (result.stdout) {
-          const cleanedUpOutput = result
-                                    .stdout
-                                    .replace(/\sKiota.Builder.KiotaBuilder\[0\](\r\n|\n|\r|\s)+/gm, "")
-                                    .split("\r\n").filter((line) => line.startsWith("erro:") || line.startsWith("crit:"))
-                                    .join("\r\n");
-          kiotaOutputChannel.error(cleanedUpOutput);
-          vscode.window.showErrorMessage(cleanedUpOutput);
-          //this is janky the console app should write to stderr, or we should use wasm and implement a logger
-        }
+        kiotaOutputChannel.error("error updating the clients {0}", error);
+        vscode.window.showErrorMessage("error updating the clients {0}", error as string);
       }
     }
   );
@@ -82,54 +79,51 @@ export async function activate(context: vscode.ExtensionContext) : Promise<void>
   context.subscriptions.push(disposable);
 }
 
-type KiotaCommandResult = { stdout: string; stderr: string };
-
-function runKiotaCommand(args: string[]): Promise<KiotaCommandResult> {
-  return new Promise((resolve, reject) => {
-    const child = cp.spawn("kiota", args);
-    let stdout = "";
-    let stderr = "";
-    child.stdout.on("data", (data: string) => (stdout += data));
-    child.stderr.on("data", (data: string) => (stderr += data));
-
-    child.on('close', (code: number) => {
-      if (code !== 0) {
-        reject({ stdout, stderr });
-      } else {
-        resolve({ stdout, stderr });
-      }
-    });
-  });
+interface KiotaLogEntry {
+  level: number;
+  message: string;
 }
 
-async function getKiotaVersion(): Promise<string> {
+async function connectToKiota<T>(callback:(connection: rpc.MessageConnection) => Promise<T | undefined>): Promise<T | undefined> {
   const childProcess = cp.spawn("C:\\sources\\github\\kiota\\src\\Kiota.JsonRpcServer\\bin\\Debug\\net7.0\\Kiota.JsonRpcServer.exe", ["stdio"]);
   let connection = rpc.createMessageConnection(
     new rpc.StreamMessageReader(childProcess.stdout),
     new rpc.StreamMessageWriter(childProcess.stdin));
-  
-  let request = new rpc.RequestType0<string, void>('GetVersion');
-  
-  connection.listen();
-  
-  const result = await connection.sendRequest(request);
-  connection.dispose();
-  childProcess.kill();
-  if (result) {
-    const version = result.split("+")[0];
-    if (version) {
-      kiotaOutputChannel.info(`kiota version: ${version}`);
-      return version;
+    connection.listen();
+    try {
+      return await callback(connection);
+    } catch (error) {
+      console.error(error);
+      return undefined;
+    } finally {
+      connection.dispose();
+      childProcess.kill();
     }
-  }
-  kiotaOutputChannel.error(`kiota version: not found`);
-  kiotaOutputChannel.show();
-  return '';
+}
+
+function getKiotaVersion(): Promise<string | undefined> {
+  return connectToKiota<string>(async (connection) => {
+    const request = new rpc.RequestType0<string, void>('GetVersion');
+    const result = await connection.sendRequest(request);
+    if (result) {
+      const version = result.split("+")[0];
+      if (version) {
+        kiotaOutputChannel.info(`kiota version: ${version}`);
+        return version;
+      }
+    }
+    kiotaOutputChannel.error(`kiota version: not found`);
+    kiotaOutputChannel.show();
+    return undefined;
+  });
 }
 
 async function updateStatusBarItem(): Promise<void> {
   try {
     const version = await getKiotaVersion();
+    if (!version) {
+      throw new Error("kiota not found");
+    }
     kiotaStatusBarItem.text = `$(extensions-info-message) kiota ${version}`;
   } catch (error) {
     kiotaStatusBarItem.text = `$(extensions-warning-message) kiota not found`;

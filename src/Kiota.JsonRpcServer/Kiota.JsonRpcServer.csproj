@@ -10,9 +10,12 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <LangVersion>Latest</LangVersion>
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\Microsoft.OpenApi.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
 </Project>

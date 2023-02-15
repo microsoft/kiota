@@ -1,9 +1,7 @@
-﻿using System;
-using System.IO;
-using System.IO.Pipes;
-using System.Threading.Tasks;
+﻿using System.IO.Pipes;
 using Nerdbank.Streams;
 using StreamJsonRpc;
+namespace Kiota.JsonRpcServer;
 class Program
 {
     static async Task<int> Main(string[] args)
