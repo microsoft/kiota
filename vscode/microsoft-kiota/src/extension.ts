@@ -1,6 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
+import * as cp from 'child_process';
+import * as rpc from 'vscode-jsonrpc/node';
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -84,7 +86,6 @@ type KiotaCommandResult = { stdout: string; stderr: string };
 
 function runKiotaCommand(args: string[]): Promise<KiotaCommandResult> {
   return new Promise((resolve, reject) => {
-    const cp = require("child_process");
     const child = cp.spawn("kiota", args);
     let stdout = "";
     let stderr = "";
@@ -102,9 +103,20 @@ function runKiotaCommand(args: string[]): Promise<KiotaCommandResult> {
 }
 
 async function getKiotaVersion(): Promise<string> {
-  const result = await runKiotaCommand(["--version"]);
-  if (result.stdout) {
-    const version = result.stdout.split("+")[0];
+  const childProcess = cp.spawn("C:\\sources\\github\\kiota\\src\\Kiota.JsonRpcServer\\bin\\Debug\\net7.0\\Kiota.JsonRpcServer.exe", ["stdio"]);
+  let connection = rpc.createMessageConnection(
+    new rpc.StreamMessageReader(childProcess.stdout),
+    new rpc.StreamMessageWriter(childProcess.stdin));
+  
+  let request = new rpc.RequestType0<string, void>('GetVersion');
+  
+  connection.listen();
+  
+  const result = await connection.sendRequest(request);
+  connection.dispose();
+  childProcess.kill();
+  if (result) {
+    const version = result.split("+")[0];
     if (version) {
       kiotaOutputChannel.info(`kiota version: ${version}`);
       return version;

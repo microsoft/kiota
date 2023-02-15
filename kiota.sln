@@ -23,6 +23,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiota.Web.Tests", "tests\Ki
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KiotaGenerated", "src\Kiota.Generated\KiotaGenerated.csproj", "{01ABDF23-60CD-4CE3-8DC7-8654C4BA1EE8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiota.JsonRpcServer", "src\Kiota.JsonRpcServer\Kiota.JsonRpcServer.csproj", "{39FA33F3-BC06-4EDD-B863-074770EF83AE}"
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +62,10 @@ Global
 		{01ABDF23-60CD-4CE3-8DC7-8654C4BA1EE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01ABDF23-60CD-4CE3-8DC7-8654C4BA1EE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01ABDF23-60CD-4CE3-8DC7-8654C4BA1EE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39FA33F3-BC06-4EDD-B863-074770EF83AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39FA33F3-BC06-4EDD-B863-074770EF83AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39FA33F3-BC06-4EDD-B863-074770EF83AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39FA33F3-BC06-4EDD-B863-074770EF83AE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -73,5 +78,6 @@ Global
 		{C27E6F75-8E64-4F3D-8EA0-E632BFAFF600} = {EAAC5CEA-33B8-495D-9CD0-B36794B8AFE7}
 		{A2584ED3-5C92-4BC7-9120-D97F5404B52C} = {2DF34BB8-B19F-4623-9E3D-9F59A14C0660}
 		{01ABDF23-60CD-4CE3-8DC7-8654C4BA1EE8} = {EAAC5CEA-33B8-495D-9CD0-B36794B8AFE7}
+		{39FA33F3-BC06-4EDD-B863-074770EF83AE} = {EAAC5CEA-33B8-495D-9CD0-B36794B8AFE7}
 	EndGlobalSection
 EndGlobal
