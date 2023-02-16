@@ -607,9 +607,7 @@ public class TypeScriptLanguageRefinerTests
         }).First();
 
         requestConfig.AddProperty(new CodeProperty { Name = queryParam.Name, Type = new CodeType { Name = queryParam.Name, TypeDefinition = queryParam } });
-        requestConfig.AddProperty(new CodeProperty { Name = queryParam.Name, Type = new CodeType { Name = queryParam.Name, TypeDefinition = queryParam } });
-
-
+        queryParam.AddProperty(new CodeProperty { Name = "stringProp", Type = new CodeType { Name = "string" } });
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, testNS);
         Assert.Contains(testNS.CodeInterfaces, x => x.Name == "requestConfig");

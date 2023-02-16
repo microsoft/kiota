@@ -328,11 +328,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         if (codeElement.Parent is CodeNamespace codeNamespace)
         {
-            codeNamespace.UpdateChildElement(codeElement.Name, newDeclarationName);
+            codeNamespace.RenameChildElement(codeElement.Name, newDeclarationName);
         }
         else if (codeElement.Parent is CodeClass codeClass)
         {
-            codeClass.UpdateChildElement(codeElement.Name, newDeclarationName);
+            codeClass.RenameChildElement(codeElement.Name, newDeclarationName);
         }
     }
     private static void ReplaceReservedEnumNames(CodeEnum currentEnum, IReservedNamesProvider provider, Func<string, string> replacement)

@@ -126,7 +126,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             return codeType.TypeDefinition?.Name ?? string.Empty;
         }
 
-        return (codeType.TypeDefinition?.Name ?? codeType.Name).ToFirstCharacterUpperCase();
+        return (!string.IsNullOrEmpty(codeType.TypeDefinition?.Name) ? codeType.TypeDefinition?.Name : codeType.Name).ToFirstCharacterUpperCase();
     }
 #pragma warning disable CA1822 // Method should be static
     public bool IsPrimitiveType(string typeName)

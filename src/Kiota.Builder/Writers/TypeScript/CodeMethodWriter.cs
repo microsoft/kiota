@@ -186,7 +186,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
-        if (!parentClass.IsOfKind(CodeClassKind.Model) && (inherits || parentClass.IsErrorDefinition))
+        if (inherits || parentClass.IsErrorDefinition)
             writer.WriteLine("super();");
 
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(DirectAccessProperties)
@@ -321,11 +321,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     {
         if (!codeElement.ReturnType.IsCollection) return fullTypeName;
         var clone = codeElement.ReturnType.Clone() as CodeTypeBase;
-        if (clone == null)
-        {
-            throw new InvalidOperationException($"Something went wrong when cloning {codeElement.ReturnType.Name}");
-        }
-        clone.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None;
+        clone!.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None;
         return conventions.GetTypeString(clone, codeElement);
     }
     private const string RequestInfoVarName = "requestInfo";
