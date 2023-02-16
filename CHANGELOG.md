@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where go refiner would fail with a null reference.
+- Fixed a bug where PHP model getAdditionalData() would not return nullable types.
 
 ## [0.11.1] - 2023-02-13
 
