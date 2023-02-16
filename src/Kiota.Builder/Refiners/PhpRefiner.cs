@@ -183,7 +183,7 @@ public class PhpRefiner : CommonLanguageRefiner
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
             currentProperty.Type.Name = "array";
-            currentProperty.Type.IsNullable = false;
+            currentProperty.Type.IsNullable = true;
             currentProperty.DefaultValue = "[]";
             currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
         }
@@ -220,13 +220,6 @@ public class PhpRefiner : CommonLanguageRefiner
         if (method.IsOfKind(CodeMethodKind.Deserializer))
         {
             method.ReturnType.Name = "array";
-        }
-        if (method.IsOfKind(CodeMethodKind.Getter)
-            && method.AccessedProperty != null
-            && method.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData))
-        {
-            method.ReturnType.Name = "array";
-            method.ReturnType.IsNullable = true;
         }
         CorrectCoreTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
             .Select(static x => x.Type)
