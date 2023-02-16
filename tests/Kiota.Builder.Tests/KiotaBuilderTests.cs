@@ -5026,7 +5026,6 @@ components:
 
         File.Delete(tempFilePath);
     }
-    
     [Fact]
     public async Task IndexerAndRequestBuilderNamesMatch()
     {
@@ -5063,19 +5062,14 @@ components:
         var node = builder.CreateUriSpace(document!);
         var codeModel = builder.CreateSourceModel(node);
         var collectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts");
-        
         Assert.NotNull(collectionRequestBuilderNamespace);
         var collectionRequestBuilder = collectionRequestBuilderNamespace.FindChildByName<CodeClass>("postsRequestBuilder");
         var collectionIndexer = collectionRequestBuilder.Indexer;
-        
         Assert.NotNull(collectionIndexer);
         var itemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts.item");
-        
         Assert.NotNull(itemRequestBuilderNamespace);
         var itemRequestBuilder = itemRequestBuilderNamespace.FindChildByName<CodeClass>("postItemRequestBuilder");
-        
-        Assert.Equal(collectionIndexer.ReturnType.Name,itemRequestBuilder.Name);
-
+        Assert.Equal(collectionIndexer.ReturnType.Name, itemRequestBuilder.Name);
         File.Delete(tempFilePath);
     }
 }
