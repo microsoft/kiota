@@ -101,8 +101,8 @@ public class CodePropertyWriterTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         propertyWriter.WriteCodeElement(property, languageWriter);
         var result = stringWriter.ToString();
-        Assert.Contains("private array $additionalData;", result);
-        Assert.Contains("@var array<string, mixed>", result);
+        Assert.Contains("private ?array $additionalData = null;", result);
+        Assert.Contains("@var array<string, mixed>|null", result);
     }
 
     [Fact]

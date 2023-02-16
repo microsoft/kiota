@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a bug where go refiner would fail with a null reference.
 - Fixes a bug where request builders would be incorrectly generated due to inconsistent suffix generation
+- Fixed a bug where PHP model getAdditionalData() would not return nullable types.
 
 ## [0.11.1] - 2023-02-13
 
