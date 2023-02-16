@@ -978,33 +978,21 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public async void WriteGetterAdditionalData()
     {
-        var getter = new CodeMethod
+        var property = new CodeProperty
         {
-            Name = "getAdditionalData",
-            Documentation = new()
+            Name = "additionalData",
+            Access = AccessModifier.Private,
+            Kind = CodePropertyKind.AdditionalData,
+            Type = new CodeType
             {
-                Description = "This method gets the emailAddress",
-            },
-            ReturnType = new CodeType
-            {
-                Name = "IDictionary<string, object>",
-                IsNullable = false
-            },
-            Kind = CodeMethodKind.Getter,
-            AccessedProperty = new CodeProperty
-            {
-                Name = "additionalData",
-                Access = AccessModifier.Private,
-                Kind = CodePropertyKind.AdditionalData,
-                Type = new CodeType
-                {
-                    Name = "additionalData"
-                }
-            },
+                Name = "additionalData"
+            }
         };
-        parentClass.AddMethod(getter);
+        parentClass.AddProperty(property);
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        var getter = parentClass.GetMethodsOffKind(CodeMethodKind.Getter)
+            .First(x => x.AccessedProperty != null && x.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData));
         _codeMethodWriter.WriteCodeElement(getter, languageWriter);
         var result = stringWriter.ToString();
         Assert.Contains("public function getAdditionalData(): ?array", result);
