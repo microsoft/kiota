@@ -75,7 +75,7 @@ public class KiotaBuilder
         await using var input = await (originalDocument == null ?
                                         LoadStream(inputPath, cancellationToken) :
                                         Task.FromResult<Stream>(new MemoryStream()));
-        if (input == null)
+        if (input.Length == 0)
             return (0, null, false);
         StopLogAndReset(sw, $"step {++stepId} - reading the stream - took");
 
@@ -95,6 +95,10 @@ public class KiotaBuilder
         else
             openApiDocument = new OpenApiDocument(originalDocument);
         StopLogAndReset(sw, $"step {++stepId} - parsing the document - took");
+
+        sw.Start();
+        UpdateConfigurationFromOpenApiDocument();
+        StopLogAndReset(sw, $"step {++stepId} - updating generation configuration from kiota extension - took");
 
         // Should Generate
         sw.Start();
@@ -122,6 +126,13 @@ public class KiotaBuilder
 
         return (stepId, openApiTree, shouldGenerate);
     }
+    private void UpdateConfigurationFromOpenApiDocument()
+    {
+        if (openApiDocument == null ||
+            GetLanguagesInformationInternal() is not LanguagesInformation languagesInfo) return;
+
+        config.UpdateConfigurationFromLanguagesInformation(languagesInfo);
+    }
     private async Task<bool> ShouldGenerate(CancellationToken cancellationToken)
     {
         if (config.CleanOutput) return true;
@@ -134,9 +145,14 @@ public class KiotaBuilder
         return !comparer.Equals(existingLock, configurationLock);
     }
 
-    public async Task<LanguagesInformation?> GetLanguageInformationAsync(CancellationToken cancellationToken)
+    public async Task<LanguagesInformation?> GetLanguagesInformationAsync(CancellationToken cancellationToken)
     {
         await GetTreeNodeInternal(config.OpenAPIFilePath, false, new Stopwatch(), cancellationToken);
+
+        return GetLanguagesInformationInternal();
+    }
+    private LanguagesInformation? GetLanguagesInformationInternal()
+    {
         if (openApiDocument == null)
             return null;
         if (openApiDocument.Extensions.TryGetValue(OpenApiKiotaExtension.Name, out var ext) && ext is OpenApiKiotaExtension kiotaExt)
@@ -468,7 +484,7 @@ public class KiotaBuilder
         else
         {
             var targetNS = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace;
-            var className = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNode.GetClassName(config.StructuredMimeTypes, itemRequestBuilderSuffix) : currentNode.GetClassName(config.StructuredMimeTypes, requestBuilderSuffix);
+            var className = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, itemRequestBuilderSuffix) : currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, requestBuilderSuffix);
             codeClass = targetNS.AddClass(new CodeClass
             {
                 Name = className.CleanupSymbolName(),
@@ -486,8 +502,8 @@ public class KiotaBuilder
         foreach (var child in currentNode.Children)
         {
             var propIdentifier = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes);
-            var className = child.Value.GetClassName(config.StructuredMimeTypes);
-            var propType = child.Value.DoesNodeBelongToItemSubnamespace() ? className + itemRequestBuilderSuffix : className + requestBuilderSuffix;
+            var propType = child.Value.DoesNodeBelongToItemSubnamespace() ? propIdentifier + itemRequestBuilderSuffix : propIdentifier + requestBuilderSuffix;
+
             if (child.Value.IsPathSegmentWithSingleSimpleParameter())
                 codeClass.Indexer = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode);
             else if (child.Value.IsComplexPathMultipleParameters())

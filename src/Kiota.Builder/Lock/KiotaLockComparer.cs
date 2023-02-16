@@ -10,6 +10,7 @@ namespace Kiota.Builder.Lock;
 /// </summary>
 public class KiotaLockComparer : IEqualityComparer<KiotaLock>
 {
+    private static readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer = new();
     /// <inheritdoc/>
     public bool Equals(KiotaLock? x, KiotaLock? y)
     {
@@ -20,7 +21,7 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
     {
         if (obj == null) return 0;
         return
-            string.Join(",", obj.DisabledValidationRules?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 47 +
+            _stringIEnumerableDeepComparer.GetHashCode(obj.DisabledValidationRules?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 47 +
             GetVersionHashCode(obj.KiotaVersion) * 43 +
             GetVersionHashCode(obj.LockFileVersion) * 41 +
             (string.IsNullOrEmpty(obj.DescriptionLocation) ? 0 : obj.DescriptionLocation.GetHashCode()) * 37 +
@@ -30,11 +31,11 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
             (string.IsNullOrEmpty(obj.Language) ? 0 : obj.Language.GetHashCode()) * 19 +
             obj.UsesBackingStore.GetHashCode() * 17 +
             obj.IncludeAdditionalData.GetHashCode() * 13 +
-            string.Join(",", obj.Serializers?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 11 +
-            string.Join(",", obj.Deserializers?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 7 +
-            string.Join(",", obj.StructuredMimeTypes?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 5 +
-            string.Join(",", obj.IncludePatterns?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 3 +
-            string.Join(",", obj.ExcludePatterns?.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()).GetHashCode() * 2;
+            _stringIEnumerableDeepComparer.GetHashCode(obj.Serializers?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 11 +
+            _stringIEnumerableDeepComparer.GetHashCode(obj.Deserializers?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 7 +
+            _stringIEnumerableDeepComparer.GetHashCode(obj.StructuredMimeTypes?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 5 +
+            _stringIEnumerableDeepComparer.GetHashCode(obj.IncludePatterns?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 3 +
+            _stringIEnumerableDeepComparer.GetHashCode(obj.ExcludePatterns?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 2;
     }
     private static int GetVersionHashCode(string version)
     {

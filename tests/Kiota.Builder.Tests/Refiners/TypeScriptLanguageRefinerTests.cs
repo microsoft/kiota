@@ -236,7 +236,7 @@ public class TypeScriptLanguageRefinerTests
     private const string PathParametersDefaultName = "Dictionary<string, object>";
     private const string PathParametersDefaultValue = "new Dictionary<string, object>";
     private const string DateTimeOffsetDefaultName = "DateTimeOffset";
-    private const string AddiationalDataDefaultName = "new Dictionary<string, object>()";
+    private const string AdditionalDataDefaultName = "new Dictionary<string, object>()";
     private const string HandlerDefaultName = "IResponseHandler";
     [Fact]
     public async Task EscapesReservedKeywords()
@@ -289,7 +289,7 @@ public class TypeScriptLanguageRefinerTests
             Kind = CodePropertyKind.AdditionalData,
             Type = new CodeType
             {
-                Name = AddiationalDataDefaultName
+                Name = AdditionalDataDefaultName
             }
         }, new()
         {
@@ -365,7 +365,7 @@ public class TypeScriptLanguageRefinerTests
         Assert.Empty(interFaceModel.Properties.Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
         Assert.Empty(interFaceModel.Properties.Where(x => FactoryDefaultName.Equals(x.Type.Name)));
         Assert.Empty(interFaceModel.Properties.Where(x => DateTimeOffsetDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(interFaceModel.Properties.Where(x => AddiationalDataDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(interFaceModel.Properties.Where(x => AdditionalDataDefaultName.Equals(x.Type.Name)));
         Assert.Empty(interFaceModel.Properties.Where(x => PathParametersDefaultName.Equals(x.Type.Name)));
         Assert.Empty(interFaceModel.Properties.Where(x => PathParametersDefaultValue.Equals(x.DefaultValue)));
         Assert.Contains(deserializerFunction.OriginalLocalMethod.Parameters, x => interFaceModel.Name.Equals(x.Type.Name));

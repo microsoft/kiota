@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Lock;
 
 namespace Kiota.Builder.Configuration;
 public class GenerationConfiguration : ICloneable
@@ -113,5 +114,24 @@ public class GenerationConfiguration : ICloneable
             ClearCache = ClearCache,
             DisabledValidationRules = new(DisabledValidationRules ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
         };
+    }
+    private static readonly StringIEnumerableDeepComparer comparer = new();
+    internal void UpdateConfigurationFromLanguagesInformation(LanguagesInformation languagesInfo)
+    {
+        if (!languagesInfo.TryGetValue(Language.ToString(), out var languageInfo)) return;
+
+        var defaultConfiguration = new GenerationConfiguration();
+        if (!string.IsNullOrEmpty(languageInfo.ClientClassName) &&
+            ClientClassName.Equals(defaultConfiguration.ClientClassName, StringComparison.Ordinal) &&
+            !ClientClassName.Equals(languageInfo.ClientClassName, StringComparison.Ordinal))
+            ClientClassName = languageInfo.ClientClassName;
+        if (!string.IsNullOrEmpty(languageInfo.ClientNamespaceName) &&
+            ClientNamespaceName.Equals(defaultConfiguration.ClientNamespaceName, StringComparison.Ordinal) &&
+            !ClientNamespaceName.Equals(languageInfo.ClientNamespaceName, StringComparison.Ordinal))
+            ClientNamespaceName = languageInfo.ClientNamespaceName;
+        if (languageInfo.StructuredMimeTypes.Any() &&
+            comparer.Equals(StructuredMimeTypes, defaultConfiguration.StructuredMimeTypes) &&
+            !comparer.Equals(languageInfo.StructuredMimeTypes, StructuredMimeTypes))
+            StructuredMimeTypes = new(languageInfo.StructuredMimeTypes, StringComparer.OrdinalIgnoreCase);
     }
 }

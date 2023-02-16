@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
@@ -114,5 +115,25 @@ public class GenerateSample : IDisposable
             OutputPath = $".\\Generated\\ErrorInlineParents\\{language}",
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+    }
+    [InlineData(GenerationLanguage.Java)]
+    [Theory]
+    public async Task GeneratesIdiomaticChildrenNames(GenerationLanguage language)
+    {
+        var logger = LoggerFactory.Create(builder =>
+        {
+        }).CreateLogger<KiotaBuilder>();
+
+        var OutputPath = $".\\Generated\\NoUnderscoresInObjectNames\\{language}";
+        var configuration = new GenerationConfiguration
+        {
+            Language = language,
+            OpenAPIFilePath = "NoUnderscoresInModel.yaml",
+            OutputPath = OutputPath,
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+
+        Assert.Empty(Directory.GetFiles(OutputPath, "*_*", SearchOption.AllDirectories));
     }
 }

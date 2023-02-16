@@ -8,11 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added constructors and query parameter factory methods to request configuration classes and constructors to query parameter classes in PHP.
+- Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
 
+### Changed
+
+## [0.11.1] - 2023-02-13
+
+### Added
+
+- Added support for multi-valued headers in Python. [#2051](https://github.com/microsoft/kiota/issues/2051)
+- Added `getResponseStatusCode` to PHP exceptions reserved names provider. [#2243](https://github.com/microsoft/kiota/issues/2243)
+
+### Changed
+
+- Fixed a bug where search would fail because of a parsing issue. [#2290](https://github.com/microsoft/kiota/issues/2290)
+- Fixed a bug where Ruby namespaces would fail to load with Rails.
+- Fixed a bug where errors/exceptions could override native exception type symbols in Python. [#2257](https://github.com/microsoft/kiota/issues/2257)
+- Fixed a bug where descriptions with a path segment matching an HTTP verb would fail to generate. [#2231](https://github.com/microsoft/kiota/issues/2231)
+
+## [0.11.0] - 2023-02-07
+
+### Added
+
+- Updated the client constructor to set the base_url in path parameters from RequestAdapter's base_url(Python) [#2128](https://github.com/microsoft/kiota/issues/2128)
 - Added support for Raw Url in Request Builders for PHP Generation. [2205](https://github.com/microsoft/kiota/issues/2205)
-- Added support for external documentation links on request execution methods (PHP Generation). [2138](https://github.com/microsoft/kiota/issues/2138)
+- Added support for external documentation links on request execution methods (PHP Generation). [2038](https://github.com/microsoft/kiota/issues/2038)
 - Added support for nullable reference types in dotnet for projects running Netstandard 2.1/Net 6.0 and above [2073](https://github.com/microsoft/kiota/issues/2073)
 - Added support for multi-value headers to CLI generation. (Shell)
+- Added support for overriding some of the generation settings in the OpenAPI description. [#2197](https://github.com/microsoft/kiota/issues/2197)
 - Added support for multi-value headers for PHP Generation. [#2052](https://github.com/microsoft/kiota/issues/2052)
 - Added support for Composed types (De)Serialization for PHP Generation. [#1814](https://github.com/microsoft/kiota/issues/1814)
 - Added support for backing store in Go. [466](https://github.com/microsoft/kiota/issues/466)
@@ -21,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed bug in indexer methods for PHP Generation.
+- Fixed a bug where errors/exceptions could override native exception type symbols for PHP Generation. [#2258](https://github.com/microsoft/kiota/issues/2258)
 - Fixed a bug where most of the Java fields have been prefixed with an underscore.
 - Mangle properties and/or accessors names per language to have more idiomatic APIs.
 - Using fully qualified identifier for java.util.function.Consumer to avoid conflicts in Java.
@@ -31,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where reserved names replacement wouldn't check whether the name was already in use (all languages).
 - Fixed a bug where default OpenAPI.net validation rules could not be disabled.
 - Fixed a race condition in namespace disambiguation for CSharp.
+- Fixed a bug where errors/exceptions could override native exception type symbols. [#2190](https://github.com/microsoft/kiota/issues/2190)
 - Removed the ResponseHandler parameter in RequestAdapter to be a RequestOption in Python [#1857](https://github.com/microsoft/kiota/issues/1857)
 - Updated the client constructor to set the baseUrl path parameter from RequestAdapter's baseUrl(PHP) [#2129](https://github.com/microsoft/kiota/issues/2129)
 - The Lock file uses a project version coming from a Source Generator instead of the one looked up with reflection. [#2147](https://github.com/microsoft/kiota/issues/2147)
@@ -41,12 +68,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed CreateXXXRequestInformation methods to ToXXXRequestInformation for a better auto-completion experience. [#2071](https://github.com/microsoft/kiota/issues/2071)
 - Renamed Go request adapter methods to remove the async suffix. [#2084](https://github.com/microsoft/kiota/issues/2084)
 - Fixed a bug where CLI query/header/path parameters would not be deduplicated. [#2059](https://github.com/microsoft/kiota/issues/2059)
-- Removes unused generated import for PHP Generation.
+- Removed unused generated import for PHP Generation.
+- Fixed a bug where long namespaces would make Ruby packaging fail.
 - Fixed a bug where classes with namespace names are generated outside namespace in Python. [#2188](https://github.com/microsoft/kiota/issues/2188)
 - Changed signature of escaped reserved names from {x}_escaped to {x}_ in line with Python style guides.
 - Add null checks in generated Shell language code.
 - Fixed a bug where Go indexers would fail to pass the index parameter.
 - Fixed a bug where path segments with parameters could be missing words. [#2209](https://github.com/microsoft/kiota/issues/2209)
+- Fixed a bug where refiners could generate duplicate properties.
+- Fixed a bug where Go collections would try to use variadic parameters where not supported.
+- Removed the need to provide a RequestAdapter in Shell command builders.
 
 ## [0.10.0] - 2023-01-04
 
@@ -304,7 +335,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Getting Started steps for PHP. [#1642](https://github.com/microsoft/kiota/pull/1642)
 - Defined the Access Token Provider interface (Ruby) [#1638](https://github.com/microsoft/kiota/issues/1638)
 - Added Continuous Access Evalution infrastructure (Ruby) [#1643](https://github.com/microsoft/kiota/issues/1643)
-- Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
 
 ### Changed
 

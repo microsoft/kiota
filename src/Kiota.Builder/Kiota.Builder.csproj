@@ -14,7 +14,7 @@
     <Title>Microsoft.OpenApi.Kiota.Builder</Title>
     <PackageId>Microsoft.OpenApi.Kiota.Builder</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <Version>0.10.0-preview</Version>
+    <Version>0.11.1-preview</Version>
     <PackageReleaseNotes>
       https://github.com/microsoft/kiota/releases
     </PackageReleaseNotes>
@@ -34,10 +34,10 @@
     <PackageReference Include="Microsoft.Kiota.Http.HttpClientLibrary" Version="1.0.0-rc.6" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.0.0-rc.3" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Text" Version="1.0.0-rc.3" />
-    <PackageReference Include="Microsoft.OpenApi" Version="1.6.0" />
-    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="1.6.1" />
+    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.1" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-    <PackageReference Include="YamlDotNet" Version="12.3.1" />
+    <PackageReference Include="YamlDotNet" Version="13.0.0" />
     <ProjectReference Include="..\Kiota.Generated\KiotaGenerated.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 

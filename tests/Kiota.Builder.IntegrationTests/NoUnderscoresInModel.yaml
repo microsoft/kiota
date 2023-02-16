@@ -1,0 +1,37 @@
+openapi: 3.0.0
+info:
+  title: Test
+  version: 1.0.0
+  description: something
+paths:
+  /api/metrics/v1:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestList'
+          description: Test
+      description: Returns a test list
+components:
+  schemas:
+    TestList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Value"
+    Value:
+      type: object
+      properties:
+        additional:
+          type: object
+          additionalProperties:
+            type: string
+        values:
+          type: array
+          items:
+            type: string

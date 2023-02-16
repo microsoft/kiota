@@ -95,6 +95,44 @@ public class PhpLanguageRefinerTests
     }
 
     [Fact]
+    public async Task AddsExceptionInheritanceOnErrorClasses()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "SomeModel",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+
+        model.AddProperty(
+            new CodeProperty
+            {
+                Type = new CodeType
+                {
+                    Name = "string"
+                },
+                Name = "code",
+            },
+            new CodeProperty
+            {
+                Type = new CodeType
+                {
+                    Name = "integer"
+                },
+                Name = "message",
+            }
+        );
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+
+        var declaration = model.StartBlock;
+
+        Assert.Contains("ApiException", declaration.Usings.Select(x => x.Name));
+        Assert.Equal("ApiException", declaration.Inherits.Name);
+        Assert.Contains("escapedMessage", model.Properties.Select(x => x.Name));
+        Assert.Contains("escapedCode", model.Properties.Select(x => x.Name));
+    }
+
+    [Fact]
     public async Task ChangesBackingStoreParameterTypeInApiClientConstructor()
     {
         var apiClientClass = new CodeClass { Name = "ApiClient", Kind = CodeClassKind.Custom };

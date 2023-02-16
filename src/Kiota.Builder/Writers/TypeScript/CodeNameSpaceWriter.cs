@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.CodeDOM;
+﻿using System.Linq;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript;
@@ -14,18 +15,14 @@ public class CodeNameSpaceWriter : BaseElementWriter<CodeNamespace, TypeScriptCo
     /// <param name="writer"></param>
     public override void WriteCodeElement(CodeNamespace codeElement, LanguageWriter writer)
     {
-        foreach (var codeFunction in codeElement.Functions)
-        {
-            writer.WriteLine($"export * from './{codeFunction.Name.ToFirstCharacterLowerCase()}'");
-        }
-
         foreach (var e in codeElement.Enums)
         {
             writer.WriteLine($"export * from './{e.Name.ToFirstCharacterLowerCase()}'");
         }
-        foreach (var c in codeElement.CodeInterfaces)
+
+        foreach (var element in Enumerable.Concat<CodeElement>(codeElement.Functions, codeElement.CodeInterfaces))
         {
-            writer.WriteLine($"export * from './{c.Name.ToFirstCharacterLowerCase()}'");
+            writer.WriteLine($"export * from './{element.Name.ToFirstCharacterLowerCase()}'");
         }
     }
 }

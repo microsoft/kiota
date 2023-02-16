@@ -9,9 +9,9 @@ public class CodeBlockEndWriter : BaseElementWriter<BlockEnd, RubyConventionServ
     {
         if (codeElement.Parent is CodeEnum) return;
         writer.CloseBlock(End);
-        if (codeElement?.Parent is CodeClass codeClass && codeClass.Parent is CodeNamespace)
+        if (codeElement?.Parent is CodeClass codeClass && codeClass.Parent is CodeNamespace ns)
         {
-            writer.CloseBlock(End);
+            conventions.WriteNamespaceClosing(ns, writer);
         }
     }
 }

@@ -333,13 +333,14 @@ public class CodeMethodWriterTests : IDisposable
         AddRequestProperties();
         AddRequestBodyParameters();
         method.AcceptedResponseTypes.Add("application/json");
+        method.AcceptedResponseTypes.Add("text/plain");
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("request_info = RequestInformation()", result);
         Assert.Contains("request_info.http_method = Method", result);
         Assert.Contains("request_info.url_template = ", result);
         Assert.Contains("request_info.path_parameters = ", result);
-        Assert.Contains("request_info.headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("request_info.headers[\"Accept\"] = [\"application/json, text/plain\"]", result);
         Assert.Contains("if c:", result);
         Assert.Contains("request_info.add_request_headers", result);
         Assert.Contains("request_info.add_request_options", result);
@@ -356,13 +357,14 @@ public class CodeMethodWriterTests : IDisposable
         AddRequestProperties();
         AddRequestBodyParameters(true);
         method.AcceptedResponseTypes.Add("application/json");
+        method.AcceptedResponseTypes.Add("text/plain");
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("request_info = RequestInformation()", result);
         Assert.Contains("request_info.http_method = Method", result);
         Assert.Contains("request_info.url_template = ", result);
         Assert.Contains("request_info.path_parameters = ", result);
-        Assert.Contains("request_info.headers[\"Accept\"] = \"application/json\"", result);
+        Assert.Contains("request_info.headers[\"Accept\"] = [\"application/json, text/plain\"]", result);
         Assert.Contains("if c:", result);
         Assert.Contains("request_info.add_request_headers", result);
         Assert.Contains("request_info.add_request_options", result);
@@ -822,6 +824,17 @@ public class CodeMethodWriterTests : IDisposable
     {
         method.Kind = CodeMethodKind.ClientConstructor;
         method.IsAsync = false;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Dict[str, str]",
+                IsExternal = true,
+            }
+        });
         var coreProp = parentClass.AddProperty(new CodeProperty
         {
             Name = "core",
@@ -845,6 +858,8 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("__init__(", result);
         Assert.Contains("register_default_serializer", result);
         Assert.Contains("register_default_deserializer", result);
+        Assert.Contains("self.core.base_url = \"https://graph.microsoft.com/v1.0\"", result);
+        Assert.Contains("self.path_parameters[\"base_url\"] = self.core.base_url", result);
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore()

@@ -10,6 +10,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Refiners;
 public abstract class CommonLanguageRefiner : ILanguageRefiner
 {
+    protected static readonly char[] UnderscoreArray = new[] { '_' };
     protected CommonLanguageRefiner(GenerationConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -108,6 +109,28 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         return false;
     }
+    protected static void CorrectClassNames(CodeElement current, Func<string, string> refineClassName)
+    {
+        if (current is CodeClass currentClass &&
+            refineClassName(currentClass.Name) is string refinedClassName &&
+            !currentClass.Name.Equals(refinedClassName))
+        {
+            currentClass.Name = refinedClassName;
+        }
+        else if (current is CodeProperty currentProperty &&
+                refineClassName(currentProperty.Type.Name) is string refinedPropertyTypeName &&
+                !currentProperty.Type.Name.Equals(refinedPropertyTypeName))
+        {
+            currentProperty.Type.Name = refinedPropertyTypeName;
+        }
+        else if (current is CodeMethod currentMethod &&
+                refineClassName(currentMethod.ReturnType.Name) is string refinedMethodTypeName &&
+                !currentMethod.ReturnType.Name.Equals(refinedMethodTypeName))
+        {
+            currentMethod.ReturnType.Name = refinedMethodTypeName;
+        }
+        CrawlTree(current, x => CorrectClassNames(x, refineClassName));
+    }
     protected static void ReplacePropertyNames(CodeElement current, HashSet<CodePropertyKind> propertyKindsToReplace, Func<string, string> refineAccessorName)
     {
         if (!(propertyKindsToReplace?.Any() ?? true)) return;
@@ -120,7 +143,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             if (string.IsNullOrEmpty(currentProperty.SerializationName))
                 currentProperty.SerializationName = currentProperty.Name;
-            currentProperty.Name = refineAccessorName(currentProperty.Name);
+
+            var refinedName = refineAccessorName(currentProperty.Name);
+            if (!parentClass.Properties.Any(property => refinedName.Equals(property.Name, StringComparison.OrdinalIgnoreCase)))// ensure the refinement won't generate a duplicate
+                currentProperty.Name = refinedName;
         }
         CrawlTree(current, x => ReplacePropertyNames(x, propertyKindsToReplace!, refineAccessorName));
     }
@@ -244,6 +270,16 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 return newReplacement;
             index++;
         }
+    }
+    protected static void ReplaceReservedExceptionPropertyNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement)
+    {
+        ReplaceReservedNames(
+            current,
+            provider,
+            replacement,
+            null,
+            static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && x.Parent is CodeClass parent && parent.IsOfKind(CodeClassKind.Model) && parent.IsErrorDefinition
+        );
     }
     protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type>? codeElementExceptions = null, Func<CodeElement, bool>? shouldReplaceCallback = null)
     {

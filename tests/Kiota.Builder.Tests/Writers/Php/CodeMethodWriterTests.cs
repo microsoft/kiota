@@ -197,7 +197,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public void WriteRequestExecutor()
+    public async void WriteRequestExecutor()
     {
         CodeProperty[] properties =
         {
@@ -250,10 +250,11 @@ public class CodeMethodWriterTests : IDisposable
         codeMethod.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
         codeMethod.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
         codeMethod.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error401 });
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
         var result = stringWriter.ToString();
 
-        Assert.Contains("Promise", result);
+        Assert.Contains("public function post(): Promise", result);
         Assert.Contains("$requestInfo = $this->createPostRequestInformation();", result);
         Assert.Contains("RejectedPromise", result);
         Assert.Contains("@link https://learn.microsoft.com/ Learning", result);
@@ -975,7 +976,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public void WriteGetterAdditionalData()
+    public async void WriteGetterAdditionalData()
     {
         var getter = new CodeMethod
         {
@@ -986,7 +987,7 @@ public class CodeMethodWriterTests : IDisposable
             },
             ReturnType = new CodeType
             {
-                Name = "additionalData",
+                Name = "IDictionary<string, object>",
                 IsNullable = false
             },
             Kind = CodeMethodKind.Getter,
@@ -1000,9 +1001,10 @@ public class CodeMethodWriterTests : IDisposable
                     Name = "additionalData"
                 }
             },
-            Parent = parentClass
         };
+        parentClass.AddMethod(getter);
 
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         _codeMethodWriter.WriteCodeElement(getter, languageWriter);
         var result = stringWriter.ToString();
         Assert.Contains("public function getAdditionalData(): ?array", result);
@@ -1066,7 +1068,7 @@ public class CodeMethodWriterTests : IDisposable
         };
         codeMethod.AddParameter(new CodeParameter
         {
-            Kind = CodeParameterKind.Path,
+            Kind = CodeParameterKind.Custom,
             Name = "id",
             Type = new CodeType
             {
@@ -1077,7 +1079,7 @@ public class CodeMethodWriterTests : IDisposable
         _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
         var result = stringWriter.ToString();
         Assert.Contains("function messageById(string $id): MessageRequestBuilder {", result);
-        Assert.Contains("return new MessageRequestBuilder($this->pathParameters, $this->requestAdapter, $id);", result);
+        Assert.Contains("return new MessageRequestBuilder($this->pathParameters, $this->requestAdapter);", result);
     }
 
     [Fact]
@@ -1465,7 +1467,6 @@ public class CodeMethodWriterTests : IDisposable
 
         Assert.Contains("$this->backingStore = BackingStoreFactorySingleton::getInstance()->createBackingStore();", result);
     }
-
     [Fact]
     public async void WritesGettersAndSettersWithBackingStore()
     {
@@ -1973,4 +1974,137 @@ public class CodeMethodWriterTests : IDisposable
             }
         };
     }
+    [Fact]
+    public async void WritesRequestConfigurationConstructor()
+    {
+        var queryParamClass = new CodeClass { Name = "TestRequestQueryParameter", Kind = CodeClassKind.QueryParameters };
+        root.AddClass(queryParamClass);
+        parentClass.Kind = CodeClassKind.RequestConfiguration;
+        parentClass.AddProperty(new[] {
+            new CodeProperty
+            {
+                Name = "queryParameters",
+                Kind = CodePropertyKind.QueryParameters,
+                Documentation = new() { Description = "Request query parameters", },
+                Type = new CodeType { Name = queryParamClass.Name, TypeDefinition = queryParamClass },
+            },
+            new CodeProperty
+            {
+                Name = "headers",
+                Access = AccessModifier.Public,
+                Kind = CodePropertyKind.Headers,
+                Documentation = new() { Description = "Request headers", },
+                Type = new CodeType { Name = "RequestHeaders", IsExternal = true },
+            },
+            new CodeProperty
+            {
+                Name = "options",
+                Kind = CodePropertyKind.Options,
+                Documentation = new() { Description = "Request options", },
+                Type = new CodeType { Name = "IList<IRequestOption>", IsExternal = true },
+            }
+        });
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
+        _codeMethodWriter = new CodeMethodWriter(new PhpConventionService(), true);
+        var constructor = parentClass.GetMethodsOffKind(CodeMethodKind.Constructor).ToList();
+        Assert.NotEmpty(constructor);
+        _codeMethodWriter.WriteCodeElement(constructor.First(), languageWriter);
+        var result = stringWriter.ToString();
+
+        Assert.Contains("public function __construct(?array $headers = null, ?array $options = null, ?TestRequestQueryParameter $queryParameters = null)", result);
+        Assert.Contains("$this->headers = $headers;", result);
+        Assert.Contains("$this->options = $options;", result);
+        Assert.Contains("$this->queryParameters = $queryParameters;", result);
+    }
+
+    [Fact]
+    public async void WritesQueryParameterFactoryMethod()
+    {
+        var queryParamClass = new CodeClass { Name = "TestRequestQueryParameter", Kind = CodeClassKind.QueryParameters };
+        queryParamClass.AddProperty(new[]
+        {
+            new CodeProperty
+            {
+                Name = "select",
+                Kind = CodePropertyKind.QueryParameter,
+                Documentation = new() { Description = "Select properties to be returned", },
+                Type = new CodeType { Name = "string", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            },
+            new CodeProperty
+            {
+                Name = "count",
+                Kind = CodePropertyKind.QueryParameter,
+                Documentation = new() { Description = "Include count of items", },
+                Type = new CodeType { Name = "boolean" },
+            },
+            new CodeProperty
+            {
+                Name = "top",
+                Kind = CodePropertyKind.QueryParameter,
+                Documentation = new() { Description = "Show only the first n items", },
+                Type = new CodeType { Name = "integer" },
+            }
+        });
+        root.AddClass(queryParamClass);
+        parentClass.Kind = CodeClassKind.RequestConfiguration;
+        parentClass.AddProperty(new[] {
+            new CodeProperty
+            {
+                Name = "queryParameters",
+                Kind = CodePropertyKind.QueryParameters,
+                Documentation = new() { Description = "Request query parameters", },
+                Type = new CodeType { Name = queryParamClass.Name, TypeDefinition = queryParamClass },
+            }
+        });
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
+        _codeMethodWriter = new CodeMethodWriter(new PhpConventionService(), true);
+        var constructor = parentClass.GetMethodsOffKind(CodeMethodKind.Factory).ToList();
+        Assert.NotEmpty(constructor);
+        _codeMethodWriter.WriteCodeElement(constructor.First(), languageWriter);
+        var result = stringWriter.ToString();
+
+        Assert.Contains("public static function addQueryParameters(?bool $count = null, ?array $select = null, ?int $top = null)", result);
+        Assert.Contains("return new TestRequestQueryParameter($count, $select, $top);", result);
+    }
+
+    [Fact]
+    public async void WritesQueryParameterConstructor()
+    {
+        parentClass.Kind = CodeClassKind.QueryParameters;
+        parentClass.AddProperty(new[] {
+            new CodeProperty
+            {
+                Name = "select",
+                Kind = CodePropertyKind.QueryParameter,
+                Documentation = new() { Description = "Select properties to be returned", },
+                Type = new CodeType { Name = "string", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            },
+            new CodeProperty
+            {
+                Name = "count",
+                Kind = CodePropertyKind.QueryParameter,
+                Documentation = new() { Description = "Include count of items", },
+                Type = new CodeType { Name = "boolean" },
+            },
+            new CodeProperty
+            {
+                Name = "top",
+                Kind = CodePropertyKind.QueryParameter,
+                Documentation = new() { Description = "Show only the first n items", },
+                Type = new CodeType { Name = "integer" },
+            }
+        });
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
+        _codeMethodWriter = new CodeMethodWriter(new PhpConventionService(), true);
+        var constructor = parentClass.GetMethodsOffKind(CodeMethodKind.Constructor).ToList();
+        Assert.NotEmpty(constructor);
+        _codeMethodWriter.WriteCodeElement(constructor.First(), languageWriter);
+        var result = stringWriter.ToString();
+        // params sorted in ascending order by default
+        Assert.Contains("public function __construct(?bool $count = null, ?array $select = null, ?int $top = null)", result);
+        Assert.Contains("$this->count = $count;", result);
+        Assert.Contains("$this->select = $select;", result);
+        Assert.Contains("$this->top = $top;", result);
+    }
+
 }

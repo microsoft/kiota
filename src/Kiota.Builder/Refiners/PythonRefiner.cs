@@ -31,7 +31,13 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplaceBinaryByNativeType(generatedCode, "bytes", string.Empty);
             ReplaceReservedNames(
                 generatedCode,
-                new PythonReservedNamesProvider(), x => $"{x}_"
+                new PythonReservedNamesProvider(),
+                static x => $"{x}_"
+            );
+            ReplaceReservedExceptionPropertyNames(
+                generatedCode,
+                new PythonExceptionsReservedNamesProvider(),
+                static x => $"{x}_"
             );
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
@@ -136,7 +142,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if (currentProperty.IsOfKind(CodePropertyKind.Options))
             currentProperty.Type.Name = "List[RequestOption]";
         else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
-            currentProperty.Type.Name = "Dict[str, str]";
+            currentProperty.Type.Name = "Dict[str, Union[str, List[str]]]";
         else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameters))
             currentProperty.Type.Name = $"{currentProperty.Parent?.Parent?.Name.ToFirstCharacterUpperCase()}.{currentProperty.Type.Name.ToFirstCharacterUpperCase()}";
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))

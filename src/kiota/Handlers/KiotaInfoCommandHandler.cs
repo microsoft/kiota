@@ -74,7 +74,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
                 try
                 {
                     var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient);
-                    var result = await builder.GetLanguageInformationAsync(cancellationToken);
+                    var result = await builder.GetLanguagesInformationAsync(cancellationToken);
                     if (result != null)
                         instructions = result;
                 }

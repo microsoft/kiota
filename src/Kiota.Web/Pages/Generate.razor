@@ -234,7 +234,7 @@
                 Directory.CreateDirectory(Path.GetDirectoryName(zipFilePath)!);
             ZipFile.CreateFromDirectory(OutputPath, zipFilePath);
             DownloadUrl = zipFilePath;
-            var informationSource = await builder.GetLanguageInformationAsync(ComponentDetached).ConfigureAwait(false) ?? (await GetConfiguration(ComponentDetached).ConfigureAwait(false))?.Languages;
+            var informationSource = await builder.GetLanguagesInformationAsync(ComponentDetached).ConfigureAwait(false) ?? (await GetConfiguration(ComponentDetached).ConfigureAwait(false))?.Languages;
             if (informationSource?.TryGetValue(generationConfiguration.Language.ToString(), out var languageInformation) ?? false) {
                 foreach(var dependency in languageInformation.Dependencies)
                     Dependencies += $"{string.Format(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version)}{Environment.NewLine}";

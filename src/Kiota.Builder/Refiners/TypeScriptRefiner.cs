@@ -35,13 +35,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", string.Empty, isNullable: true);
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
+            ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}Escaped");
+            ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), x => $"{x}Escaped");
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
                 },
-                static s => s.ToCamelCase(new[] { '_' }),
+                static s => s.ToCamelCase(UnderscoreArray),
                 _configuration.UsesBackingStore,
                 false,
                 string.Empty,

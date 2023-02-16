@@ -18,6 +18,17 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             LowerCaseNamespaceNames(generatedCode);
+            var reservedNamesProvider = new JavaReservedNamesProvider();
+            CorrectClassNames(generatedCode, s =>
+            {
+                if (s.Contains('_') &&
+                     s.ToPascalCase(UnderscoreArray) is string refinedName &&
+                    !reservedNamesProvider.ReservedNames.Contains(s) &&
+                    !reservedNamesProvider.ReservedNames.Contains(refinedName))
+                    return refinedName;
+                else
+                    return s;
+            });
             RemoveClassNamePrefixFromNestedClasses(generatedCode);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, true);
@@ -34,21 +45,22 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new() {
                     CodePropertyKind.Custom,
                 },
-                static s => s.ToCamelCase(new[] { '_' }));
+                static s => s.ToCamelCase(UnderscoreArray));
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.BackingStore,
                 },
-                static s => s.ToCamelCase(new[] { '_' }),
+                static s => s.ToCamelCase(UnderscoreArray),
                 _configuration.UsesBackingStore,
                 true,
                 "get",
                 "set",
                 string.Empty
             );
-            ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
+            ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}Escaped");
+            ReplaceReservedExceptionPropertyNames(generatedCode, new JavaExceptionsReservedNamesProvider(), x => $"{x}Escaped");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
