@@ -5026,4 +5026,50 @@ components:
 
         File.Delete(tempFilePath);
     }
+    [Fact]
+    public async Task IndexerAndRequestBuilderNamesMatch()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.0
+info:
+  title: Microsoft Graph get user API
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0/
+paths:
+  /me/posts/{post-id}:
+    get:
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.post'
+components:
+  schemas:
+    microsoft.graph.post:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = builder.CreateOpenApiDocument(fs);
+        var node = builder.CreateUriSpace(document!);
+        var codeModel = builder.CreateSourceModel(node);
+        var collectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts");
+        Assert.NotNull(collectionRequestBuilderNamespace);
+        var collectionRequestBuilder = collectionRequestBuilderNamespace.FindChildByName<CodeClass>("postsRequestBuilder");
+        var collectionIndexer = collectionRequestBuilder.Indexer;
+        Assert.NotNull(collectionIndexer);
+        var itemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts.item");
+        Assert.NotNull(itemRequestBuilderNamespace);
+        var itemRequestBuilder = itemRequestBuilderNamespace.FindChildByName<CodeClass>("postItemRequestBuilder");
+        Assert.Equal(collectionIndexer.ReturnType.Name, itemRequestBuilder.Name);
+        File.Delete(tempFilePath);
+    }
 }
