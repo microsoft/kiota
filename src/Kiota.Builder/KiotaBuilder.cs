@@ -502,7 +502,7 @@ public class KiotaBuilder
         foreach (var child in currentNode.Children)
         {
             var propIdentifier = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes);
-            var propType = child.Value.DoesNodeBelongToItemSubnamespace() ? propIdentifier + itemRequestBuilderSuffix : propIdentifier + requestBuilderSuffix;
+            var propType = child.Value.DoesNodeBelongToItemSubnamespace() ? child.Value.GetNavigationPropertyName(config.StructuredMimeTypes, itemRequestBuilderSuffix) : child.Value.GetNavigationPropertyName(config.StructuredMimeTypes, requestBuilderSuffix);
 
             if (child.Value.IsPathSegmentWithSingleSimpleParameter())
                 codeClass.Indexer = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode);
