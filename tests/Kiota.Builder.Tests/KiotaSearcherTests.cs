@@ -76,7 +76,7 @@ public class KiotaSearcherTests : IDisposable
     {
         var searchConfiguration = searchConfigurationFactory;
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, searchConfiguration, httpClient, null, null);
-        var results = await searcher.SearchAsync("apisguru::github.com:api.github.com", string.Empty, new CancellationToken());
+        var results = await searcher.SearchAsync("apisguru::github.com:api.github.com.2022-11-28", string.Empty, new CancellationToken());
         Assert.Single(results);
     }
     public void Dispose()
