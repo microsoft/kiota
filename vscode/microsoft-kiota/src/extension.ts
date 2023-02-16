@@ -1,8 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import * as rpc from 'vscode-jsonrpc/node';
-import { OpenApiTreeProvider } from "./openApiTreeProvider";
+import * as rpc from "vscode-jsonrpc/node";
+import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { connectToKiota, KiotaLogEntry } from "./kiotaInterop";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
@@ -10,10 +10,15 @@ let kiotaOutputChannel: vscode.LogOutputChannel;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export async function activate(context: vscode.ExtensionContext) : Promise<void> {
-  kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", { log: true });
-  const statusBarCommandId = "microsoft-kiota.status";
-  const treeViewId = 'openApiExplorer';
+export async function activate(
+  context: vscode.ExtensionContext
+): Promise<void> {
+  kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", {
+    log: true,
+  });
+  const extensionId = "microsoft-kiota";
+  const statusBarCommandId = `${extensionId}.status`;
+  const treeViewId = `${extensionId}.openApiExplorer`;
   context.subscriptions.push(
     vscode.commands.registerCommand(statusBarCommandId, async () => {
       const response = await vscode.window.showInformationMessage(
@@ -22,19 +27,32 @@ export async function activate(context: vscode.ExtensionContext) : Promise<void>
         "No"
       );
       if (response === "Yes") {
-        vscode.env.openExternal(
-          vscode.Uri.parse(
-            "https://aka.ms/get/kiota"
-          )
-        );
+        vscode.env.openExternal(vscode.Uri.parse("https://aka.ms/get/kiota"));
       }
     })
   );
 
-  const openApiTreeProvider = new OpenApiTreeProvider("https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json");
+  const openApiTreeProvider = new OpenApiTreeProvider(
+    "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json"
+  );
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
-    vscode.commands.registerCommand(`${treeViewId}.refreshEntry`, () => openApiTreeProvider.refresh())
+    vscode.commands.registerCommand(
+      `${treeViewId}.addToSelectedEndpoints`,
+      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, false)
+    ),
+    vscode.commands.registerCommand(
+      `${treeViewId}.addAllToSelectedEndpoints`,
+      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, true)
+    ),
+    vscode.commands.registerCommand(
+      `${treeViewId}.removeFromSelectedEndpoints`,
+      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, false)
+    ),
+    vscode.commands.registerCommand(
+      `${treeViewId}.removeAllFromSelectedEndpoints`,
+      (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, true)
+    )
   );
 
   // create a new status bar item that we can now manage
@@ -50,27 +68,41 @@ export async function activate(context: vscode.ExtensionContext) : Promise<void>
   let disposable = vscode.commands.registerCommand(
     "microsoft-kiota.updateClients",
     async () => {
-      if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
-        vscode.window.showErrorMessage("No workspace folder found, open a folder first");
+      if (
+        !vscode.workspace.workspaceFolders ||
+        vscode.workspace.workspaceFolders.length === 0
+      ) {
+        vscode.window.showErrorMessage(
+          "No workspace folder found, open a folder first"
+        );
         return;
       }
       await updateStatusBarItem();
       try {
         kiotaOutputChannel.clear();
         kiotaOutputChannel.show();
-        kiotaOutputChannel.info(`updating workspace with path ${vscode.workspace.workspaceFolders[0].uri.fsPath}`);
+        kiotaOutputChannel.info(
+          `updating workspace with path ${vscode.workspace.workspaceFolders[0].uri.fsPath}`
+        );
         await connectToKiota(async (connection) => {
-          const request = new rpc.RequestType<string, KiotaLogEntry[], void>('Update');
-          const result = await connection.sendRequest(request, vscode.workspace.workspaceFolders![0].uri.fsPath);
+          const request = new rpc.RequestType<string, KiotaLogEntry[], void>(
+            "Update"
+          );
+          const result = await connection.sendRequest(
+            request,
+            vscode.workspace.workspaceFolders![0].uri.fsPath
+          );
           const informationMessages = result.filter((x) => x.level === 2);
-          const errorMessages = result.filter((x) => x.level === 5 || x.level === 4);
-          if(errorMessages.length > 0) {
-            errorMessages.forEach(element => {
+          const errorMessages = result.filter(
+            (x) => x.level === 5 || x.level === 4
+          );
+          if (errorMessages.length > 0) {
+            errorMessages.forEach((element) => {
               kiotaOutputChannel.error(element.message);
               vscode.window.showErrorMessage(element.message);
             });
           } else {
-            informationMessages.forEach(element => {
+            informationMessages.forEach((element) => {
               kiotaOutputChannel.info(element.message);
               vscode.window.showInformationMessage(element.message);
             });
@@ -78,7 +110,10 @@ export async function activate(context: vscode.ExtensionContext) : Promise<void>
         });
       } catch (error) {
         kiotaOutputChannel.error("error updating the clients {0}", error);
-        vscode.window.showErrorMessage("error updating the clients {0}", error as string);
+        vscode.window.showErrorMessage(
+          "error updating the clients {0}",
+          error as string
+        );
       }
     }
   );
@@ -88,7 +123,7 @@ export async function activate(context: vscode.ExtensionContext) : Promise<void>
 
 function getKiotaVersion(): Promise<string | undefined> {
   return connectToKiota<string>(async (connection) => {
-    const request = new rpc.RequestType0<string, void>('GetVersion');
+    const request = new rpc.RequestType0<string, void>("GetVersion");
     const result = await connection.sendRequest(request);
     if (result) {
       const version = result.split("+")[0];

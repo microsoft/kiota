@@ -26,24 +26,75 @@
     "views": {
      "kiota-openapi-explorer": [
       {
-        "id": "openApiExplorer",
+        "id": "microsoft-kiota.openApiExplorer",
         "name": "Kiota OpenAPI Explorer",
         "icon": "media/openapi.svg",
         "contextualTitle": "OpenAPI Explorer"
       }
-     ],
-     "explorer": [
-      {
-        "id": "jsonOutline",
-        "name": "Json Outline",
-        "when": "jsonOutlineEnabled"
-      }
      ]
+    },
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "microsoft-kiota.openApiExplorer.addToSelectedEndpoints",
+          "when": "view == microsoft-kiota.openApiExplorer",
+          "group": "inline"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.addAllToSelectedEndpoints",
+          "when": "view == microsoft-kiota.openApiExplorer"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.removeFromSelectedEndpoints",
+          "when": "view == microsoft-kiota.openApiExplorer",
+          "group": "inline"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints",
+          "when": "view == microsoft-kiota.openApiExplorer"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "microsoft-kiota.openApiExplorer.addToSelectedEndpoints",
+          "when": "false"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.addAllToSelectedEndpoints",
+          "when": "false"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.removeFromSelectedEndpoints",
+          "when": "false"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints",
+          "when": "false"
+        }  
+      ]
     },
     "commands": [
       {
         "command": "microsoft-kiota.updateClients",
         "title": "Kiota: update API clients in the current workspace"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.addToSelectedEndpoints",
+        "title": "Add",
+        "icon": "$(add)"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.addAllToSelectedEndpoints",
+        "title": "Add All"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.removeFromSelectedEndpoints",
+        "title": "Remove",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints",
+        "title": "Remove All"
       }
     ]
   },
