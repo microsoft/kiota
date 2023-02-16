@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -7,6 +6,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers;
 
 namespace Kiota.Builder.Refiners;
 public class PhpRefiner : CommonLanguageRefiner
@@ -86,6 +86,9 @@ public class PhpRefiner : CommonLanguageRefiner
             AliasUsingWithSameSymbol(generatedCode);
             RemoveHandlerFromRequestBuilder(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
+            // Because constructors are not added to Query parameter classes by default
+            AddRequestConfigurationConstructors(generatedCode);
+            AddQueryParameterFactoryMethod(generatedCode);
         }, cancellationToken);
     }
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
@@ -212,11 +215,18 @@ public class PhpRefiner : CommonLanguageRefiner
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
 
-    private static void CorrectMethodType(CodeMethod method)
+    private void CorrectMethodType(CodeMethod method)
     {
         if (method.IsOfKind(CodeMethodKind.Deserializer))
         {
             method.ReturnType.Name = "array";
+        }
+        if (method.IsOfKind(CodeMethodKind.Getter)
+            && method.AccessedProperty != null
+            && method.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData))
+        {
+            method.ReturnType.Name = "array";
+            method.ReturnType.IsNullable = true;
         }
         CorrectCoreTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
             .Select(static x => x.Type)
@@ -282,6 +292,115 @@ public class PhpRefiner : CommonLanguageRefiner
         if (codeElement is CodeMethod method && method.Kind == CodeMethodKind.Setter && method.AccessedProperty?.Kind == CodePropertyKind.BackingStore)
             method.Parameters.ToList().ForEach(param => param.Optional = false);
         CrawlTree(codeElement, CorrectBackingStoreSetterParam);
+    }
+
+    private static readonly Dictionary<CodePropertyKind, CodeParameterKind> propertyKindToParameterKind = new Dictionary<CodePropertyKind, CodeParameterKind>()
+    {
+        { CodePropertyKind.Headers, CodeParameterKind.Headers },
+        { CodePropertyKind.Options, CodeParameterKind.Options },
+        { CodePropertyKind.QueryParameters, CodeParameterKind.QueryParameter },
+    };
+    private static void AddRequestConfigurationConstructors(CodeElement codeElement)
+    {
+        if (codeElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration, CodeClassKind.QueryParameters))
+        {
+            var constructor = codeClass.GetMethodsOffKind(CodeMethodKind.Constructor).FirstOrDefault();
+            if (constructor == null)
+            {
+                constructor = new CodeMethod
+                {
+                    Name = "constructor",
+                    Kind = CodeMethodKind.Constructor,
+                    IsAsync = false,
+                    Documentation = new()
+                    {
+                        Description = $"Instantiates a new {codeClass.Name} and sets the default values.",
+                    },
+                    ReturnType = new CodeType { Name = "void" },
+                };
+                codeClass.AddMethod(constructor);
+            }
+
+            if (codeClass.IsOfKind(CodeClassKind.RequestConfiguration))
+            {
+                constructor.AddParameter(propertyKindToParameterKind.Keys.Select(x => codeClass.GetPropertyOfKind(x))
+                    .Where(static x => x != null)
+                    .Select(static x =>
+                    new CodeParameter
+                    {
+                        DefaultValue = x!.DefaultValue,
+                        Documentation = x.Documentation,
+                        Name = x.Name,
+                        Kind = propertyKindToParameterKind[x.Kind],
+                        Optional = true,
+                        Type = x.Type
+                    })
+                    .ToArray());
+            }
+
+            if (codeClass.IsOfKind(CodeClassKind.QueryParameters))
+            {
+                var constructorParams = codeClass.GetPropertiesOfKind(CodePropertyKind.QueryParameter)
+                    .Select(x => new CodeParameter
+                    {
+                        DefaultValue = x.DefaultValue,
+                        Documentation = x.Documentation,
+                        Name = x.Name,
+                        Kind = CodeParameterKind.QueryParameter,
+                        Optional = true,
+                        Type = x.Type
+                    })
+                    .ToArray();
+                if (constructorParams.Any())
+                {
+                    constructor.AddParameter(constructorParams);
+                }
+            }
+        }
+        CrawlTree(codeElement, AddRequestConfigurationConstructors);
+    }
+
+    private static void AddQueryParameterFactoryMethod(CodeElement codeElement)
+    {
+        if (codeElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration))
+        {
+            var queryParameterProperty = codeClass.GetPropertyOfKind(CodePropertyKind.QueryParameters);
+            if (queryParameterProperty != null)
+            {
+                var queryParamFactoryMethod = new CodeMethod
+                {
+                    Name = "addQueryParameters",
+                    IsStatic = true,
+                    Access = AccessModifier.Public,
+                    Kind = CodeMethodKind.Factory,
+                    Documentation = new CodeDocumentation
+                    {
+                        Description = $"Instantiates a new {queryParameterProperty.Type.Name}."
+                    },
+                    ReturnType = new CodeType { Name = queryParameterProperty.Type.Name, TypeDefinition = queryParameterProperty.Type, IsNullable = false }
+                };
+                if (queryParameterProperty.Type is CodeType codeType && codeType.TypeDefinition is CodeClass queryParamsClass)
+                {
+                    var properties = queryParamsClass.GetPropertiesOfKind(CodePropertyKind.QueryParameter);
+                    if (properties.Any())
+                    {
+                        queryParamFactoryMethod.AddParameter(properties
+                            .Select(x => new CodeParameter
+                            {
+                                DefaultValue = x.DefaultValue,
+                                Documentation = x.Documentation,
+                                Name = x.Name,
+                                Kind = CodeParameterKind.QueryParameter,
+                                Optional = true,
+                                Type = x.Type
+                            })
+                            .ToArray());
+                    }
+                }
+                codeClass.AddMethod(queryParamFactoryMethod);
+            }
+        }
+        CrawlTree(codeElement, AddQueryParameterFactoryMethod);
     }
 }
 

@@ -166,7 +166,7 @@ public static class KiotaHost
     }
     private static Command GetDownloadCommand()
     {
-        var searchTermArgument = new Argument<string>("searchTerm", "The term to search for.");
+        var keyArgument = new Argument<string>("key", "The search result key to download the description for. Use the search command to get the key.");
         var defaultConfiguration = new DownloadConfiguration();
 
         var logLevelOption = GetLogLevelOption();
@@ -180,7 +180,7 @@ public static class KiotaHost
         var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);
 
         var searchCommand = new Command("download", "Downloads an OpenAPI description from multiple registries."){
-            searchTermArgument,
+            keyArgument,
             logLevelOption,
             clearCacheOption,
             versionOption,
@@ -189,7 +189,7 @@ public static class KiotaHost
         };
         searchCommand.Handler = new KiotaDownloadCommandHandler
         {
-            SearchTermArgument = searchTermArgument,
+            SearchTermArgument = keyArgument,
             LogLevelOption = logLevelOption,
             ClearCacheOption = clearCacheOption,
             VersionOption = versionOption,

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added constructors and query parameter factory methods to request configuration classes and constructors to query parameter classes in PHP.
 
 ### Changed
 
