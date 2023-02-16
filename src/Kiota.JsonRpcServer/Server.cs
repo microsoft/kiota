@@ -3,6 +3,8 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
 using Kiota.Generated;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Services;
+
 namespace Kiota.JsonRpcServer;
 internal class Server
 {
@@ -47,6 +49,23 @@ internal class Server
             logger.LogCritical("error updating the client: {exceptionMessage}", ex.Message);
         }
         return logger.LogEntries;
+    }
+    public async Task<ShowResult> ShowAsync(string descriptionPath, string[] includeFilters, string[] excludeFilters, CancellationToken cancellationToken)
+    {
+        var logger = new ForwardedLogger<KiotaBuilder>();
+        var configuration = new GenerationConfiguration
+        {
+            IncludePatterns = includeFilters.ToHashSet(),
+            ExcludePatterns = excludeFilters.ToHashSet(),
+            OpenAPIFilePath = GetAbsolutePath(descriptionPath),
+        };
+        var urlTreeNode = await new KiotaBuilder(logger, configuration, httpClient).GetUrlTreeNodeAsync(cancellationToken);
+        var rootNode = urlTreeNode != null ? ConvertOpenApiUrlTreeNodeToPathItem(urlTreeNode) : null;
+        return new ShowResult(logger.LogEntries, rootNode);
+    }
+    private static PathItem ConvertOpenApiUrlTreeNodeToPathItem(OpenApiUrlTreeNode node)
+    {
+        return new PathItem(node.Path, node.Segment, node.Children.Select(x => ConvertOpenApiUrlTreeNodeToPathItem(x.Value)).ToArray());
     }
     protected static string GetAbsolutePath(string source)
     {

@@ -1,8 +1,9 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import * as cp from 'child_process';
 import * as rpc from 'vscode-jsonrpc/node';
+import { OpenApiTreeProvider } from "./openApiTreeProvider";
+import { connectToKiota, KiotaLogEntry } from "./kiotaInterop";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -11,8 +12,8 @@ let kiotaOutputChannel: vscode.LogOutputChannel;
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) : Promise<void> {
   kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", { log: true });
-  kiotaOutputChannel.debug
   const statusBarCommandId = "microsoft-kiota.status";
+  const treeViewId = 'openApiExplorer';
   context.subscriptions.push(
     vscode.commands.registerCommand(statusBarCommandId, async () => {
       const response = await vscode.window.showInformationMessage(
@@ -28,6 +29,12 @@ export async function activate(context: vscode.ExtensionContext) : Promise<void>
         );
       }
     })
+  );
+
+  const openApiTreeProvider = new OpenApiTreeProvider("https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json");
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
+    vscode.commands.registerCommand(`${treeViewId}.refreshEntry`, () => openApiTreeProvider.refresh())
   );
 
   // create a new status bar item that we can now manage
@@ -77,28 +84,6 @@ export async function activate(context: vscode.ExtensionContext) : Promise<void>
   );
 
   context.subscriptions.push(disposable);
-}
-
-interface KiotaLogEntry {
-  level: number;
-  message: string;
-}
-
-async function connectToKiota<T>(callback:(connection: rpc.MessageConnection) => Promise<T | undefined>): Promise<T | undefined> {
-  const childProcess = cp.spawn("C:\\sources\\github\\kiota\\src\\Kiota.JsonRpcServer\\bin\\Debug\\net7.0\\Kiota.JsonRpcServer.exe", ["stdio"]);
-  let connection = rpc.createMessageConnection(
-    new rpc.StreamMessageReader(childProcess.stdout),
-    new rpc.StreamMessageWriter(childProcess.stdin));
-    connection.listen();
-    try {
-      return await callback(connection);
-    } catch (error) {
-      console.error(error);
-      return undefined;
-    } finally {
-      connection.dispose();
-      childProcess.kill();
-    }
 }
 
 function getKiotaVersion(): Promise<string | undefined> {

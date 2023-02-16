@@ -14,6 +14,32 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "kiota-openapi-explorer",
+          "title": "Kiota OpenAPI Explorer",
+          "icon": "media/openapi.svg"
+        }
+      ]
+    },
+    "views": {
+     "kiota-openapi-explorer": [
+      {
+        "id": "openApiExplorer",
+        "name": "Kiota OpenAPI Explorer",
+        "icon": "media/openapi.svg",
+        "contextualTitle": "OpenAPI Explorer"
+      }
+     ],
+     "explorer": [
+      {
+        "id": "jsonOutline",
+        "name": "Json Outline",
+        "when": "jsonOutlineEnabled"
+      }
+     ]
+    },
     "commands": [
       {
         "command": "microsoft-kiota.updateClients",
