@@ -55,3 +55,62 @@ export enum KiotaGenerationLanguage {
     Ruby = 7,
     Shell = 8,
 }
+export function generationLanguageToString(language: KiotaGenerationLanguage): string {
+    switch (language) {
+        case KiotaGenerationLanguage.CSharp:
+            return "CSharp";
+        case KiotaGenerationLanguage.Java:
+            return "Java";
+        case KiotaGenerationLanguage.TypeScript:
+            return "TypeScript";
+        case KiotaGenerationLanguage.PHP:
+            return "PHP";
+        case KiotaGenerationLanguage.Python:
+            return "Python";
+        case KiotaGenerationLanguage.Go:
+            return "Go";
+        case KiotaGenerationLanguage.Swift:
+            return "Swift";
+        case KiotaGenerationLanguage.Ruby:
+            return "Ruby";
+        case KiotaGenerationLanguage.Shell:
+            return "Shell";
+        default:
+            throw new Error("unknown language");
+    }
+}
+export function parseGenerationLanguage(value: string): KiotaGenerationLanguage {
+    switch (value) {
+        case "CSharp":
+            return KiotaGenerationLanguage.CSharp;
+        case "Java":
+            return KiotaGenerationLanguage.Java;
+        case "TypeScript":
+            return KiotaGenerationLanguage.TypeScript;
+        case "PHP":
+            return KiotaGenerationLanguage.PHP;
+        case "Python":
+            return KiotaGenerationLanguage.Python;
+        case "Go":
+            return KiotaGenerationLanguage.Go;
+        case "Swift":
+            return KiotaGenerationLanguage.Swift;
+        case "Ruby":
+            return KiotaGenerationLanguage.Ruby;
+        case "Shell":
+            return KiotaGenerationLanguage.Shell;
+        default:
+            throw new Error("unknown language");
+    }
+}
+export const allGenerationLanguages = [
+    KiotaGenerationLanguage.CSharp,
+    KiotaGenerationLanguage.Go,
+    KiotaGenerationLanguage.Java,
+    KiotaGenerationLanguage.PHP,
+    KiotaGenerationLanguage.Python,
+    KiotaGenerationLanguage.Ruby,
+    KiotaGenerationLanguage.Shell,
+    KiotaGenerationLanguage.Swift,
+    KiotaGenerationLanguage.TypeScript,
+]

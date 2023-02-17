@@ -3,7 +3,8 @@
 import * as vscode from "vscode";
 import * as rpc from "vscode-jsonrpc/node";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
-import { connectToKiota, KiotaGenerationLanguage, KiotaLogEntry } from "./kiotaInterop";
+import { connectToKiota, KiotaGenerationLanguage, KiotaLogEntry, parseGenerationLanguage } from "./kiotaInterop";
+import { generateSteps } from "./generateSteps";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -72,14 +73,15 @@ export async function activate(
           );
           return;
         }
+        const config = await generateSteps();
         await generateClient(
           openApiTreeProvider.descriptionUrl,
-          "./output",
-          KiotaGenerationLanguage.CSharp,
+          typeof config.outputPath === "string" ? config.outputPath : './output',
+          typeof config.language === "string" ? parseGenerationLanguage(config.language) : KiotaGenerationLanguage.CSharp,
           selectedPaths,
           [],
-          '',
-          '');
+          typeof config.clientClassName === "string" ? config.clientClassName : 'ApiClient',
+          typeof config.clientNamespaceName === "string" ? config.clientNamespaceName : 'ApiSdk');
     })
   );
 
