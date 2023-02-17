@@ -3,7 +3,7 @@
 import * as vscode from "vscode";
 import * as rpc from "vscode-jsonrpc/node";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
-import { connectToKiota, KiotaLogEntry } from "./kiotaInterop";
+import { connectToKiota, KiotaGenerationLanguage, KiotaLogEntry } from "./kiotaInterop";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -52,7 +52,35 @@ export async function activate(
     vscode.commands.registerCommand(
       `${treeViewId}.removeAllFromSelectedEndpoints`,
       (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, true)
-    )
+    ),
+    vscode.commands.registerCommand(
+      `${treeViewId}.generateClient`,
+      async () => {
+        const selectedPaths = openApiTreeProvider.getSelectedPaths();
+        if (selectedPaths.length === 0) {
+          vscode.window.showErrorMessage(
+            "No endpoints selected, select endpoints first"
+          );
+          return;
+        }
+        if (
+          !vscode.workspace.workspaceFolders ||
+          vscode.workspace.workspaceFolders.length === 0
+        ) {
+          vscode.window.showErrorMessage(
+            "No workspace folder found, open a folder first"
+          );
+          return;
+        }
+        await generateClient(
+          openApiTreeProvider.descriptionUrl,
+          "./output",
+          KiotaGenerationLanguage.CSharp,
+          selectedPaths,
+          [],
+          '',
+          '');
+    })
   );
 
   // create a new status bar item that we can now manage
@@ -119,6 +147,37 @@ export async function activate(
   );
 
   context.subscriptions.push(disposable);
+}
+
+function generateClient(descriptionPath: string, output: string, language: KiotaGenerationLanguage, includeFilters: string[], excludeFilters: string[], clientClassName: string, clientNamespaceName: string): Promise<void> {
+  return connectToKiota<void>(async (connection) => {
+    const request = new rpc.RequestType7<string, string, KiotaGenerationLanguage, string[], string[], string, string, KiotaLogEntry[], void>(
+      "Generate"
+    );
+    const result = await connection.sendRequest(
+      request,
+      descriptionPath,
+      output,
+      language,
+      includeFilters,
+      excludeFilters,
+      clientClassName,
+      clientNamespaceName
+    );
+    const informationMessages = result.filter((x) => x.level === 2);
+    const errorMessages = result.filter((x) => x.level === 5 || x.level === 4);
+    if (errorMessages.length > 0) {
+      errorMessages.forEach((element) => {
+        kiotaOutputChannel.error(element.message);
+        vscode.window.showErrorMessage(element.message);
+      });
+    } else {
+      informationMessages.forEach((element) => {
+        kiotaOutputChannel.info(element.message);
+        vscode.window.showInformationMessage(element.message);
+      });
+    }
+  });
 }
 
 function getKiotaVersion(): Promise<string | undefined> {

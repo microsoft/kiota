@@ -34,6 +34,13 @@
      ]
     },
     "menus": {
+      "view/title": [
+        {
+          "command": "microsoft-kiota.openApiExplorer.generateClient",
+          "when": "view == microsoft-kiota.openApiExplorer",
+          "group": "navigation"
+        }
+      ],
       "view/item/context": [
         {
           "command": "microsoft-kiota.openApiExplorer.addToSelectedEndpoints",
@@ -76,7 +83,12 @@
     "commands": [
       {
         "command": "microsoft-kiota.updateClients",
-        "title": "Kiota: update API clients in the current workspace"
+        "title": "Kiota: Update API clients in the current workspace"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.generateClient",
+        "title": "Kiota: Generate API client",
+        "icon": "$(play)"
       },
       {
         "command": "microsoft-kiota.openApiExplorer.addToSelectedEndpoints",

@@ -63,6 +63,35 @@ internal class Server
         var rootNode = urlTreeNode != null ? ConvertOpenApiUrlTreeNodeToPathItem(urlTreeNode) : null;
         return new ShowResult(logger.LogEntries, rootNode);
     }
+    public async Task<List<LogEntry>> GenerateAsync(string descriptionPath, string output, GenerationLanguage language, string[] includeFilters, string[] excludeFilters, string clientClassName, string clientNamespaceName, CancellationToken cancellationToken)
+    {
+        var logger = new ForwardedLogger<KiotaBuilder>();
+        var configuration = new GenerationConfiguration
+        {
+            IncludePatterns = includeFilters.ToHashSet(),
+            ExcludePatterns = excludeFilters.ToHashSet(),
+            OpenAPIFilePath = GetAbsolutePath(descriptionPath),
+            OutputPath = GetAbsolutePath(output),
+            Language = language,
+        };
+        if (!string.IsNullOrEmpty(clientClassName))
+            configuration.ClientClassName = clientClassName;
+        if (!string.IsNullOrEmpty(clientNamespaceName))
+            configuration.ClientNamespaceName = clientNamespaceName;
+        try
+        {
+            var result = await new KiotaBuilder(logger, configuration, httpClient).GenerateClientAsync(cancellationToken);
+            if (result)
+                logger.LogInformation("Generation of {clientClassName} client for {language} at {outputPath} completed", configuration.ClientClassName, configuration.Language, configuration.OutputPath);
+            else
+                logger.LogInformation("Client generation skipped, client is up to date");
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical("error generating the client: {exceptionMessage}", ex.Message);
+        }
+        return logger.LogEntries;
+    }
     private static PathItem ConvertOpenApiUrlTreeNodeToPathItem(OpenApiUrlTreeNode node)
     {
         return new PathItem(node.Path, node.Segment, node.Children.Select(x => ConvertOpenApiUrlTreeNodeToPathItem(x.Value)).ToArray());

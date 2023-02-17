@@ -6,9 +6,9 @@ import { connectToKiota, KiotaOpenApiNode, KiotaShowConfiguration, KiotaShowResu
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<OpenApiTreeNode | undefined | null | void> = new vscode.EventEmitter<OpenApiTreeNode | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<OpenApiTreeNode | undefined | null | void> = this._onDidChangeTreeData.event;
-    constructor(private descriptionUrl: string,
-        private includeFilters: string[] = [],
-        private excludeFilters: string[] = []) {
+    constructor(public readonly descriptionUrl: string,
+        public readonly includeFilters: string[] = [],
+        public readonly excludeFilters: string[] = []) {
         
     }
     public select(item: OpenApiTreeNode, selected: boolean, recursive: boolean): void {
@@ -46,6 +46,20 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     getTreeItem(element: OpenApiTreeNode): vscode.TreeItem {
         return element;
+    }
+    public getSelectedPaths(): string[] {
+        if (!this.rawRootNode) {
+            return [];
+        }
+        return this.findSelectedPaths(this.rawRootNode);
+    }
+    private findSelectedPaths(currentNode: KiotaOpenApiNode): string[] {
+        const result: string[] = [];
+        if(currentNode.selected) {
+            result.push(currentNode.path);
+        }
+        currentNode.children.forEach(x => result.push(...this.findSelectedPaths(x)));
+        return result;
     }
     private getPathSegments(path: string): string[] {
         return path.replace('/', '').split('\\').filter(x => x !== ''); // the root node is always /
