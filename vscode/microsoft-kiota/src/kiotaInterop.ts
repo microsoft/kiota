@@ -39,9 +39,22 @@ export interface KiotaShowConfiguration {
     descriptionPath: string;
 }
 
-export interface KiotaShowResult {
+interface KiotaLoggedResult {
     logs: KiotaLogEntry[];
+}
+export interface KiotaShowResult extends KiotaLoggedResult {
     rootNode?: KiotaOpenApiNode;
+}
+
+export interface KiotaSearchResult extends KiotaLoggedResult {
+    results: Record<string, KiotaSearchResultItem>;
+}
+export interface KiotaSearchResultItem {
+  Title: string;
+  Description: string;
+  ServiceUrl?: string;
+  DescriptionUrl?: string;
+  VersionLabels?: string[];
 }
 
 export enum KiotaGenerationLanguage {

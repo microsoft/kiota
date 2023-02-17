@@ -1,12 +1,59 @@
-import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, ExtensionContext, QuickInputButtons } from 'vscode';
-import { allGenerationLanguages, generationLanguageToString } from './kiotaInterop';
+import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons } from 'vscode';
+import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem } from './kiotaInterop';
+
+
+export async function searchSteps(searchCallBack: (searchQuery: string) => Promise<Record<string, KiotaSearchResultItem> | undefined>) {
+    const state = {} as Partial<SearchState>;
+    const title = 'Search for an API description';
+    let step = 1;
+    let totalSteps = 2;
+    async function inputSearchQuery(input: MultiStepInput, state: Partial<SearchState>) {
+        state.searchQuery = await input.showInputBox({
+            title,
+            step: step++,
+            totalSteps: totalSteps,
+            value: state.searchQuery || '',
+            prompt: 'Enter a search query',
+            validate: validateIsNotEmpty,
+            shouldResume: shouldResume
+        });
+
+        state.searchResults = await searchCallBack(state.searchQuery);
+        return (input: MultiStepInput) => pickSearchResult(input, state);
+    }
+    async function pickSearchResult(input: MultiStepInput, state: Partial<SearchState>) {
+        const items: QuickSearchPickItem[] = [];
+        if(state.searchResults) {
+            for (const key of Object.keys(state.searchResults)) {
+                const value = state.searchResults[key];
+                items.push({label: key, description: value.Description, descriptionUrl: value.DescriptionUrl});
+            }
+        }
+        const pick = await input.showQuickPick({
+            title,
+            step: step++,
+            totalSteps: totalSteps,
+            placeholder: 'Pick a search result',
+            items: items,
+            shouldResume: shouldResume
+        });
+        state.descriptionPath = items.find(x => x.label === pick?.label)?.descriptionUrl || '';
+    }
+    await MultiStepInput.run(input => inputSearchQuery(input, state));
+    return state;
+}
+
+interface SearchItem {
+    descriptionUrl?: string;
+}
+type QuickSearchPickItem = QuickPickItem & SearchItem;
 
 export async function generateSteps() {
-    const state = {} as Partial<State>;
+    const state = {} as Partial<GenerateState>;
     const title = 'Generate an API client';
     let step = 1;
     let totalSteps = 4;
-    async function inputClientClassName(input: MultiStepInput, state: Partial<State>) {
+    async function inputClientClassName(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.clientClassName = await input.showInputBox({
 			title,
 			step: step++,
@@ -19,7 +66,7 @@ export async function generateSteps() {
 		});
 		return (input: MultiStepInput) => inputClientNamespaceName(input, state);
 	}
-    async function inputClientNamespaceName(input: MultiStepInput, state: Partial<State>) {
+    async function inputClientNamespaceName(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.clientNamespaceName = await input.showInputBox({
 			title,
 			step: step++,
@@ -32,7 +79,7 @@ export async function generateSteps() {
 		});
 		return (input: MultiStepInput) => inputOutputPath(input, state);
 	}
-    async function inputOutputPath(input: MultiStepInput, state: Partial<State>) {
+    async function inputOutputPath(input: MultiStepInput, state: Partial<GenerateState>) {
 		state.outputPath = await input.showInputBox({
 			title,
 			step: step++,
@@ -45,7 +92,7 @@ export async function generateSteps() {
 		});
 		return (input: MultiStepInput) => pickLanguage(input, state);
 	}
-    async function pickLanguage(input: MultiStepInput, state: Partial<State>) {
+    async function pickLanguage(input: MultiStepInput, state: Partial<GenerateState>) {
 		const pick = await input.showQuickPick({
 			title,
 			step: 1,
@@ -72,10 +119,20 @@ function validateIsNotEmpty(value: string) {
     return Promise.resolve(value.length > 0 ? undefined : 'Required');
 }
 
-interface State {
+interface BaseStepsState {
     title: string;
     step: number;
     totalSteps: number;
+}
+
+interface SearchState extends BaseStepsState {
+    searchQuery: string;
+    searchResults: Record<string, KiotaSearchResultItem>;
+    descriptionPath: string;
+}
+
+
+interface GenerateState extends BaseStepsState {
     clientClassName: string;
     clientNamespaceName: QuickPickItem | string;
     language: QuickPickItem | string;

@@ -3,8 +3,8 @@
 import * as vscode from "vscode";
 import * as rpc from "vscode-jsonrpc/node";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
-import { connectToKiota, KiotaGenerationLanguage, KiotaLogEntry, parseGenerationLanguage } from "./kiotaInterop";
-import { generateSteps } from "./generateSteps";
+import { connectToKiota, KiotaGenerationLanguage, KiotaLogEntry, KiotaSearchResult, KiotaSearchResultItem, parseGenerationLanguage } from "./kiotaInterop";
+import { generateSteps, searchSteps } from "./steps";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -33,9 +33,7 @@ export async function activate(
     })
   );
 
-  const openApiTreeProvider = new OpenApiTreeProvider(
-    "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json"
-  );
+  const openApiTreeProvider = new OpenApiTreeProvider();
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
     vscode.commands.registerCommand(
@@ -74,6 +72,12 @@ export async function activate(
           return;
         }
         const config = await generateSteps();
+        if (!openApiTreeProvider.descriptionUrl) {
+          vscode.window.showErrorMessage(
+            "No description url found, select a description first"
+          );
+          return;
+        }
         await generateClient(
           openApiTreeProvider.descriptionUrl,
           typeof config.outputPath === "string" ? config.outputPath : './output',
@@ -82,6 +86,15 @@ export async function activate(
           [],
           typeof config.clientClassName === "string" ? config.clientClassName : 'ApiClient',
           typeof config.clientNamespaceName === "string" ? config.clientNamespaceName : 'ApiSdk');
+    }),
+    vscode.commands.registerCommand(
+      `${extensionId}.searchApiDescription`,
+      async () => {
+        const config = await searchSteps(searchDescription);
+        if(config.descriptionPath) {
+          openApiTreeProvider.descriptionUrl = config.descriptionPath;
+          vscode.commands.executeCommand(`${treeViewId}.focus`);
+        }
     })
   );
 
@@ -149,6 +162,22 @@ export async function activate(
   );
 
   context.subscriptions.push(disposable);
+}
+
+function searchDescription(searchTerm: string): Promise<Record<string, KiotaSearchResultItem> | undefined> {
+  return connectToKiota<Record<string, KiotaSearchResultItem>>(async (connection) => {
+    const request = new rpc.RequestType<string, KiotaSearchResult, void>(
+      "Search"
+    );
+    const result = await connection.sendRequest(
+      request,
+      searchTerm
+    );
+    if(result) {
+      return result.results;
+    }
+    return undefined;
+  });
 }
 
 function generateClient(descriptionPath: string, output: string, language: KiotaGenerationLanguage, includeFilters: string[], excludeFilters: string[], clientClassName: string, clientNamespaceName: string): Promise<void> {

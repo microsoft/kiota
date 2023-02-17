@@ -50,6 +50,14 @@ internal class Server
         }
         return logger.LogEntries;
     }
+    public async Task<SearchOperationResult> SearchAsync(string searchTerm, CancellationToken cancellationToken)
+    {
+        var logger = new ForwardedLogger<KiotaSearcher>();
+        var configuration = new SearchConfiguration { };
+        var searchService = new KiotaSearcher(logger, configuration, httpClient, null, (_) => Task.FromResult(false));
+        var results = await searchService.SearchAsync(searchTerm, string.Empty, cancellationToken);
+        return new(logger.LogEntries, results);
+    }
     public async Task<ShowResult> ShowAsync(string descriptionPath, string[] includeFilters, string[] excludeFilters, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
