@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BlazorApplicationInsights" Version="2.1.0" />
+    <PackageReference Include="BlazorApplicationInsights" Version="2.2.0" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.3.0" />
     <PackageReference Include="markdig" Version="0.30.4" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.3" />
