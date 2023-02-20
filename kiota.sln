@@ -24,6 +24,7 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KiotaGenerated", "src\Kiota.Generated\KiotaGenerated.csproj", "{01ABDF23-60CD-4CE3-8DC7-8654C4BA1EE8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiota.JsonRpcServer", "src\Kiota.JsonRpcServer\Kiota.JsonRpcServer.csproj", "{39FA33F3-BC06-4EDD-B863-074770EF83AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
