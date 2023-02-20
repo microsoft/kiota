@@ -6,7 +6,8 @@ parent: Get started
 
 ## Required tools
 A commandline tool is required. We recommend:
-- [Windows Terminal + version](https://apps.microsoft.com/store/detail/windows-terminal/9N0DX20HK701?hl=en-us&gl=us)
+- [Windows Terminal + version](https://apps.microsoft.com/store/detail/windows-terminal/9N0DX20HK701)
+
 - A commandline that supports Bash?
 - MacOS terminal
 - PowerShell version 7.3.2
