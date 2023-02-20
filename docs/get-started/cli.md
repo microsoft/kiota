@@ -10,7 +10,6 @@ A commandline tool is required. We recommend:
 
 - A commandline that supports Bash?
 - MacOS terminal
-- PowerShell version 7.3.2
 
 ## Target project requirements
 Download the CLI SDK to get started for 
