@@ -88,7 +88,7 @@ public class KiotaBuilder
         sw.Start();
         if (originalDocument == null)
         {
-            openApiDocument = await CreateOpenApiDocument(input, generating);
+            openApiDocument = await CreateOpenApiDocumentAsync(input, generating, cancellationToken);
             if (openApiDocument != null)
                 originalDocument = new OpenApiDocument(openApiDocument);
         }
@@ -243,9 +243,27 @@ public class KiotaBuilder
         .ToList()
         .ForEach(x => doc.Paths.Remove(x));
     }
-    private void SetApiRootUrl()
+    internal void SetApiRootUrl()
     {
-        config.ApiRootUrl = openApiDocument?.Servers.FirstOrDefault()?.Url.TrimEnd('/');
+        var candidateUrl = openApiDocument?.Servers.FirstOrDefault()?.Url;
+        if (string.IsNullOrEmpty(candidateUrl))
+        {
+            logger.LogWarning("No server url found in the OpenAPI document. The base url will need to be set when using the client.");
+            return;
+        }
+        else if (!candidateUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) && config.OpenAPIFilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                candidateUrl = new Uri(new Uri(config.OpenAPIFilePath), candidateUrl).ToString();
+            }
+            catch
+            {
+                logger.LogWarning("Could not resolve the server url from the OpenAPI document. The base url will need to be set when using the client.");
+                return;
+            }
+        }
+        config.ApiRootUrl = candidateUrl.TrimEnd(ForwardSlash);
     }
     private void StopLogAndReset(Stopwatch sw, string prefix)
     {
@@ -298,7 +316,8 @@ public class KiotaBuilder
         return input;
     }
 
-    public async Task<OpenApiDocument?> CreateOpenApiDocument(Stream input, bool generating = false)
+    private static readonly char ForwardSlash = '/';
+    public async Task<OpenApiDocument?> CreateOpenApiDocumentAsync(Stream input, bool generating = false, CancellationToken cancellationToken = default)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -329,8 +348,8 @@ public class KiotaBuilder
         };
         try
         {
-            var rawUri = config.OpenAPIFilePath.TrimEnd('/');
-            var lastSlashIndex = rawUri.LastIndexOf('/');
+            var rawUri = config.OpenAPIFilePath.TrimEnd(ForwardSlash);
+            var lastSlashIndex = rawUri.LastIndexOf(ForwardSlash);
             if (lastSlashIndex < 0)
                 lastSlashIndex = rawUri.Length - 1;
             var documentUri = new Uri(rawUri[..lastSlashIndex]);
@@ -342,7 +361,7 @@ public class KiotaBuilder
             // couldn't parse the URL, it's probably a local file
         }
         var reader = new OpenApiStreamReader(settings);
-        var readResult = await reader.ReadAsync(input);
+        var readResult = await reader.ReadAsync(input); //TODO pass the cancellation token when the library patch is out
         stopwatch.Stop();
         if (generating)
             foreach (var warning in readResult.OpenApiDiagnostic.Warnings)
