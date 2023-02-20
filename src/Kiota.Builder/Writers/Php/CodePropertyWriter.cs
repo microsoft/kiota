@@ -51,7 +51,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionS
             CodePropertyKind.AdditionalData => "array<string, mixed>",
             CodePropertyKind.PathParameters => "array<string, mixed>",
             CodePropertyKind.Headers => "array<string, array<string>|string>",
-            CodePropertyKind.Options => "array<string, RequestOption>",
+            CodePropertyKind.Options => "array<RequestOption>",
             _ => $"array<{conventions.TranslateType(codeProperty.Type)}>"
         };
     }
