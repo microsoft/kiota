@@ -1,4 +1,4 @@
-using Kiota.Builder.SearchProviders;
+﻿using Kiota.Builder.SearchProviders;
 
 namespace Kiota.JsonRpcServer;
 

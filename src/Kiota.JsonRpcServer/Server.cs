@@ -1,4 +1,4 @@
-using Kiota.Builder;
+﻿using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
 using Kiota.Generated;
@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Services;
 
 namespace Kiota.JsonRpcServer;
-internal class Server
+internal class Server : IServer
 {
     private static readonly HttpClient httpClient = new();
     public string GetVersion()
@@ -29,7 +29,12 @@ internal class Server
         try
         {
             var locks = await Task.WhenAll(lockFileDirectoryPaths.Select(x => lockService.GetLockFromDirectoryAsync(x, cancellationToken)
-                                                                            .ContinueWith(t => (lockInfo: t.Result, lockDirectoryPath: x), cancellationToken)));
+                                                                            .ContinueWith(
+                                                                                (t, _) => (lockInfo: t.Result, lockDirectoryPath: x),
+                                                                                null,
+                                                                                cancellationToken,
+                                                                                TaskContinuationOptions.None,
+                                                                                TaskScheduler.Default)));
             var configurations = locks.Select(x =>
             {
                 var config = (GenerationConfiguration)defaultConfiguration.Clone();
@@ -41,8 +46,8 @@ internal class Server
                                     .Select(x => new KiotaBuilder(logger, x, httpClient)
                                                 .GenerateClientAsync(cancellationToken)));
             foreach (var (lockInfo, lockDirectoryPath) in locks)
-                logger.LogInformation($"Update of {lockInfo?.ClientClassName} client for {lockInfo?.Language} at {lockDirectoryPath} completed");
-            logger.LogInformation($"Update of {locks.Length} clients completed successfully");
+                logger.LogInformation("Update of {clientClassName} client for {language} at {lockDirectoryPath} completed", lockInfo?.ClientClassName, lockInfo?.Language, lockDirectoryPath);
+            logger.LogInformation("Update of {length} clients completed successfully", locks.Length);
         }
         catch (Exception ex)
         {

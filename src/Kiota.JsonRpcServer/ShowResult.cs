@@ -1,4 +1,4 @@
-namespace Kiota.JsonRpcServer;
+﻿namespace Kiota.JsonRpcServer;
 
 public record PathItem(string path, string segment, PathItem[] children);
 
