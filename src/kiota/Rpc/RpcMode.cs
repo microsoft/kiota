@@ -1,4 +1,4 @@
-namespace kiota.Rpc;
+﻿namespace kiota.Rpc;
 
 public enum RpcMode
 {
