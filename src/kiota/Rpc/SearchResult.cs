@@ -1,5 +1,6 @@
-﻿using Kiota.Builder.SearchProviders;
+﻿using System.Collections.Generic;
+using Kiota.Builder.SearchProviders;
 
-namespace Kiota.JsonRpcServer;
+namespace kiota.Rpc;
 
 public record SearchOperationResult(List<LogEntry> logs, IDictionary<string, SearchResult> results);

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using kiota.Handlers;
+using kiota.Rpc;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Validation;
@@ -26,6 +27,7 @@ public static class KiotaHost
         rootCommand.AddCommand(GetUpdateCommand());
         rootCommand.AddCommand(GetLoginCommand());
         rootCommand.AddCommand(GetLogoutCommand());
+        rootCommand.AddCommand(GetRpcCommand());
         return rootCommand;
     }
     private static Command GetGitHubLoginCommand()
@@ -163,6 +165,26 @@ public static class KiotaHost
             ClearCacheOption = clearCacheOption,
         };
         return displayCommand;
+    }
+    internal static Command GetRpcCommand()
+    {
+        var modeOption = new Option<RpcMode>("--mode", "Whether the RPC server should use stdin/stdout or a named pipe.");
+        modeOption.AddAlias("-m");
+        modeOption.SetDefaultValue(RpcMode.Stdio);
+        var pipeNameOption = new Option<string>("--pipe-name", "The name of the named pipe to use for the RPC server.");
+        pipeNameOption.AddAlias("-p");
+        pipeNameOption.SetDefaultValue("KiotaJsonRpc");
+        var commandHandler = new KiotaRpcCommandHandler
+        {
+            ModeOption = modeOption,
+            PipeNameOption = pipeNameOption,
+        };
+        var command = new Command("rpc", "WARNING EXPERIMENTAL: Starts a kiota as a JSON-RPC server.") {
+            modeOption,
+            pipeNameOption,
+        };
+        command.Handler = commandHandler;
+        return command;
     }
     private static Command GetDownloadCommand()
     {

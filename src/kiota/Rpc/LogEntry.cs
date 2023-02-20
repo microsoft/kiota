@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-namespace Kiota.JsonRpcServer;
+namespace kiota.Rpc;
 public record LogEntry(
     LogLevel level,
     string message

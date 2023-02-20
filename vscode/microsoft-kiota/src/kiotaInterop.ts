@@ -3,7 +3,7 @@ import * as cp from 'child_process';
 import * as rpc from 'vscode-jsonrpc/node';
 
 export async function connectToKiota<T>(callback:(connection: rpc.MessageConnection) => Promise<T | undefined>): Promise<T | undefined> {
-  const childProcess = cp.spawn("C:\\sources\\github\\kiota\\src\\Kiota.JsonRpcServer\\bin\\Debug\\net7.0\\Kiota.JsonRpcServer.exe", ["stdio"],{
+  const childProcess = cp.spawn("C:\\sources\\github\\kiota\\src\\kiota\\bin\\Debug\\net7.0\\kiota.exe", ["rpc"],{
     cwd: vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined
   });
   let connection = rpc.createMessageConnection(

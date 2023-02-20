@@ -1,6 +1,9 @@
-﻿using Kiota.Builder;
+﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Kiota.Builder;
 
-namespace Kiota.JsonRpcServer;
+namespace kiota.Rpc;
 internal interface IServer
 {
     string GetVersion();

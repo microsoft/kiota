@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 
-namespace Kiota.JsonRpcServer;
+namespace kiota.Rpc;
 public class ForwardedLogger<T> : ILogger<T>
 {
     public List<LogEntry> LogEntries { get; private set; } = new();

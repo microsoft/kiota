@@ -9,47 +9,47 @@ namespace Kiota.Tests;
 public class KiotaHostTests
 {
     [Fact]
-    public async Task ThrowsOnInvalidOutputPath()
+    public async Task ThrowsOnInvalidOutputPathAsync()
     {
         await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "-o", "A:\\doesnotexist" });
     }
     [Fact]
-    public async Task ThrowsOnInvalidInputPath()
+    public async Task ThrowsOnInvalidInputPathAsync()
     {
         await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "-d", "A:\\doesnotexist" });
     }
     [Fact]
-    public async Task ThrowsOnInvalidInputUrl()
+    public async Task ThrowsOnInvalidInputUrlAsync()
     {
         await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "-d", "https://nonexistentdomain56a535ba-bda6-405e-b5e2-ef5f11bf1003.net/doesnotexist" });
     }
     [Fact]
-    public async Task ThrowsOnInvalidLanguage()
+    public async Task ThrowsOnInvalidLanguageAsync()
     {
         await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "-l", "Pascal" });
     }
     [Fact]
-    public async Task ThrowsOnInvalidLogLevel()
+    public async Task ThrowsOnInvalidLogLevelAsync()
     {
         await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "--ll", "Dangerous" });
     }
     [Fact]
-    public async Task ThrowsOnInvalidClassName()
+    public async Task ThrowsOnInvalidClassNameAsync()
     {
         await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "-c", ".Graph" });
     }
     [Fact]
-    public async Task AcceptsDeserializers()
+    public async Task AcceptsDeserializersAsync()
     {
         await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "--ds", "Kiota.Tests.TestData.TestDeserializer" });
     }
     [Fact]
-    public async Task AcceptsSerializers()
+    public async Task AcceptsSerializersAsync()
     {
         await KiotaHost.GetRootCommand().InvokeAsync(new[] { "generate", "-s", "Kiota.Tests.TestData.TestSerializer" });
     }
     [Fact]
-    public async Task ThrowsOnInvalidSearchTerm()
+    public async Task ThrowsOnInvalidSearchTermAsync()
     {
         await KiotaHost.GetRootCommand().InvokeAsync(new[] { "search" });
     }

@@ -1,11 +1,18 @@
-﻿using Kiota.Builder;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
 using Kiota.Generated;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Services;
 
-namespace Kiota.JsonRpcServer;
+namespace kiota.Rpc;
 internal class Server : IServer
 {
     private static readonly HttpClient httpClient = new();
