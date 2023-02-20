@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
@@ -19,6 +20,7 @@ public class CodePropertyWriterTests
     private readonly LanguageWriter languageWriter;
     private readonly StringWriter stringWriter;
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
+    private readonly ILanguageRefiner phpRefiner = new PhpRefiner(new GenerationConfiguration { Language = GenerationLanguage.PHP });
 
     public CodePropertyWriterTests()
     {
@@ -220,5 +222,27 @@ public class CodePropertyWriterTests
         Assert.Contains("@QueryParameter(\"%24select\")", result);
         Assert.Contains("@var array<string>|null $select", result);
         Assert.Contains("private ?array $select", result);
+    }
+
+    [Fact]
+    public async void WriteRequestOption()
+    {
+        var options = new CodeProperty
+        {
+            Name = "options",
+            Kind = CodePropertyKind.Options,
+            Access = AccessModifier.Public,
+            Type = new CodeType
+            {
+                Name = "IList<IRequestOption>", IsExternal = true
+            }
+        };
+        parentClass.AddProperty(options);
+        await phpRefiner.Refine(root, new CancellationToken());
+        propertyWriter.WriteCodeElement(options, languageWriter);
+        var result = stringWriter.ToString();
+
+        Assert.Contains("@var array<RequestOption>|null $options", result);
+        Assert.Contains("public ?array $options = null;", result);
     }
 }
