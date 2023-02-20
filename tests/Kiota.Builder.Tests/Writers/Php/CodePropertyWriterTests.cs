@@ -234,7 +234,8 @@ public class CodePropertyWriterTests
             Access = AccessModifier.Public,
             Type = new CodeType
             {
-                Name = "IList<IRequestOption>", IsExternal = true
+                Name = "IList<IRequestOption>",
+                IsExternal = true
             }
         };
         parentClass.AddProperty(options);
