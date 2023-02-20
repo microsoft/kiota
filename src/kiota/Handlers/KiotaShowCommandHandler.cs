@@ -58,7 +58,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         using (loggerFactory)
         {
             var descriptionProvided = !string.IsNullOrEmpty(openapi) && string.IsNullOrEmpty(searchTerm);
-            var (searchResultDescription, statusCode) = await GetDescriptionFromSearch(openapi, searchTerm, version, loggerFactory, logger, cancellationToken);
+            var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, searchTerm, version, loggerFactory, logger, cancellationToken);
             if (statusCode.HasValue)
             {
                 return statusCode.Value;

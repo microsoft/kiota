@@ -55,7 +55,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
                 return 0;
             }
 
-            var (searchResultDescription, statusCode) = await GetDescriptionFromSearch(openapi, searchTerm, version, loggerFactory, logger, cancellationToken);
+            var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, searchTerm, version, loggerFactory, logger, cancellationToken);
             if (statusCode.HasValue)
             {
                 return statusCode.Value;

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -8,7 +7,7 @@ namespace kiota.Handlers;
 
 internal abstract class KiotaSearchBasedCommandHandler : BaseKiotaCommandHandler
 {
-    protected async Task<(string, int?)> GetDescriptionFromSearch(string openapi, string searchTerm, string version, ILoggerFactory loggerFactory, ILogger logger, CancellationToken cancellationToken)
+    protected async Task<(string, int?)> GetDescriptionFromSearchAsync(string openapi, string searchTerm, string version, ILoggerFactory loggerFactory, ILogger logger, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(openapi) && !string.IsNullOrEmpty(searchTerm))
         {
