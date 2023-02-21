@@ -11,7 +11,7 @@ namespace Kiota.Builder.Caching;
 
 public class DocumentCachingProvider
 {
-    private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(() => SHA256.Create());
+    private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(SHA256.Create);
     public bool ClearCache
     {
         get; set;

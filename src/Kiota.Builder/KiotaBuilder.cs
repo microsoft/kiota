@@ -49,7 +49,7 @@ public class KiotaBuilder
         this.config = config;
         this.httpClient = client;
     }
-    private void CleanOutputDirectory()
+    private async Task CleanOutputDirectory(CancellationToken cancellationToken)
     {
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
         {
@@ -57,6 +57,7 @@ public class KiotaBuilder
             // not using Directory.Delete on the main directory because it's locked when mapped in a container
             foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
                 Directory.Delete(subDir, true);
+            await lockManagementService.BackupLockFileAsync(config.OutputPath, cancellationToken);
             foreach (var subFile in Directory.EnumerateFiles(config.OutputPath))
                 File.Delete(subFile);
         }
@@ -173,7 +174,7 @@ public class KiotaBuilder
 
         try
         {
-            CleanOutputDirectory();
+            await CleanOutputDirectory(cancellationToken);
             // doing this verification at the beginning to give immediate feedback to the user
             Directory.CreateDirectory(config.OutputPath);
         }
@@ -181,32 +182,40 @@ public class KiotaBuilder
         {
             throw new InvalidOperationException($"Could not open/create output directory {config.OutputPath}, reason: {ex.Message}", ex);
         }
-        var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, sw, cancellationToken);
-
-        if (!shouldGenerate)
+        try
         {
-            logger.LogInformation("No changes detected, skipping generation");
-            return false;
+            var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, sw, cancellationToken);
+
+            if (!shouldGenerate)
+            {
+                logger.LogInformation("No changes detected, skipping generation");
+                return false;
+            }
+            // Create Source Model
+            sw.Start();
+            var generatedCode = CreateSourceModel(openApiTree);
+            StopLogAndReset(sw, $"step {++stepId} - create source model - took");
+
+            // RefineByLanguage
+            sw.Start();
+            await ApplyLanguageRefinement(config, generatedCode, cancellationToken);
+            StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
+
+            // Write language source
+            sw.Start();
+            await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken);
+            StopLogAndReset(sw, $"step {++stepId} - writing files - took");
+
+            // Write lock file
+            sw.Start();
+            await UpdateLockFile(cancellationToken);
+            StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
         }
-        // Create Source Model
-        sw.Start();
-        var generatedCode = CreateSourceModel(openApiTree);
-        StopLogAndReset(sw, $"step {++stepId} - create source model - took");
-
-        // RefineByLanguage
-        sw.Start();
-        await ApplyLanguageRefinement(config, generatedCode, cancellationToken);
-        StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
-
-        // Write language source
-        sw.Start();
-        await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken);
-        StopLogAndReset(sw, $"step {++stepId} - writing files - took");
-
-        // Write lock file
-        sw.Start();
-        await UpdateLockFile(cancellationToken);
-        StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
+        catch
+        {
+            await lockManagementService.RestoreLockFileAsync(config.OutputPath, cancellationToken);
+            throw;
+        }
         return true;
     }
     private readonly LockManagementService lockManagementService = new();
