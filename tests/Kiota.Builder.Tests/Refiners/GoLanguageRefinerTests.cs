@@ -90,7 +90,7 @@ public class GoLanguageRefinerTests
     }
 
     [Fact]
-    public async Task GroupsInterfacesToModelClassFile()
+    public async Task AddCodeFileToHierachy()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -99,12 +99,14 @@ public class GoLanguageRefinerTests
         }).First();
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Single(root.GetChildElements(true).OfType<CodeInterface>());
+        Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
 
-        var inter = root.GetChildElements(true).OfType<CodeInterface>().First();
+        var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
 
-        Assert.True(root.IsRootElement(model));
-        Assert.False(root.IsRootElement(inter));
+        Assert.Single(root.GetChildElements(true).OfType<CodeFile>());
+
+        Assert.Single(codeFile.GetChildElements(true).OfType<CodeInterface>());
+        Assert.Single(codeFile.GetChildElements(true).OfType<CodeClass>());
     }
     [Fact]
     public async Task ReplacesModelsByInterfaces()
@@ -153,8 +155,10 @@ public class GoLanguageRefinerTests
         }).First();
         Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Single(root.GetChildElements(true).OfType<CodeInterface>());
-        var inter = root.GetChildElements(true).OfType<CodeInterface>().First();
+
+        var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
+        Assert.Single(codeFile.GetChildElements(true).OfType<CodeInterface>());
+        var inter = codeFile.GetChildElements(true).OfType<CodeInterface>().First();
 
         Assert.NotEqual(model.Name, inter.Name);
         var propertyType = property.Type as CodeType;
@@ -210,7 +214,9 @@ public class GoLanguageRefinerTests
         executorMethod.AddParameter(executorParameter);
         Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Single(root.GetChildElements(true).OfType<CodeInterface>());
+
+        var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
+        Assert.Single(codeFile.GetChildElements(true).OfType<CodeInterface>());
         var responseInter = requestBuilder.GetChildElements(true).OfType<CodeInterface>().LastOrDefault();
         Assert.NotNull(responseInter);
     }
