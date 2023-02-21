@@ -67,51 +67,45 @@ public class LockManagementService : ILockManagementService
         await using var fileStream = File.Open(lockFilePath, FileMode.Create);
         await JsonSerializer.SerializeAsync(fileStream, lockInfo, options, cancellationToken);
     }
+    /// <inheritdoc/>
     public Task BackupLockFileAsync(string directoryPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(directoryPath);
-        return BackupLockFileInternalAsync(directoryPath, cancellationToken);
+        return BackupLockFileInternalAsync(directoryPath);
     }
-    /// <inheritdoc/>
-    private static async Task BackupLockFileInternalAsync(string directoryPath, CancellationToken cancellationToken)
+    private static Task BackupLockFileInternalAsync(string directoryPath)
     {
         var lockFilePath = Path.Combine(directoryPath, LockFileName);
         if (File.Exists(lockFilePath))
         {
             var backupFilePath = GetBackupFilePath(directoryPath);
-            if (File.Exists(backupFilePath))
-                File.Delete(backupFilePath);
-            var targeDirectory = Path.GetDirectoryName(backupFilePath);
-            if (string.IsNullOrEmpty(targeDirectory)) return;
-            if (!Directory.Exists(targeDirectory))
-                Directory.CreateDirectory(targeDirectory);
-            await using var fileStream = File.Open(lockFilePath, FileMode.Open);
-            await using var backupFileStream = File.Open(backupFilePath, FileMode.Create);
-            await fileStream.CopyToAsync(backupFileStream, cancellationToken);
+            var targetDirectory = Path.GetDirectoryName(backupFilePath);
+            if (string.IsNullOrEmpty(targetDirectory)) return Task.CompletedTask;
+            if (!Directory.Exists(targetDirectory))
+                Directory.CreateDirectory(targetDirectory);
+            File.Copy(lockFilePath, backupFilePath, true);
         }
+        return Task.CompletedTask;
     }
     /// <inheritdoc/>
     public Task RestoreLockFileAsync(string directoryPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(directoryPath);
-        return RestoreLockFileInternalAsync(directoryPath, cancellationToken);
+        return RestoreLockFileInternalAsync(directoryPath);
     }
-    private static async Task RestoreLockFileInternalAsync(string directoryPath, CancellationToken cancellationToken)
+    private static Task RestoreLockFileInternalAsync(string directoryPath)
     {
         var lockFilePath = Path.Combine(directoryPath, LockFileName);
-        if (File.Exists(lockFilePath))
-            File.Delete(lockFilePath);
         var targetDirectory = Path.GetDirectoryName(lockFilePath);
-        if (string.IsNullOrEmpty(targetDirectory)) return;
+        if (string.IsNullOrEmpty(targetDirectory)) return Task.CompletedTask;
         if (!Directory.Exists(targetDirectory))
             Directory.CreateDirectory(targetDirectory);
         var backupFilePath = GetBackupFilePath(directoryPath);
         if (File.Exists(backupFilePath))
         {
-            await using var backupFileStream = File.Open(backupFilePath, FileMode.Open);
-            await using var fileStream = File.Open(lockFilePath, FileMode.Create);
-            await backupFileStream.CopyToAsync(fileStream, cancellationToken);
+            File.Copy(backupFilePath, lockFilePath, true);
         }
+        return Task.CompletedTask;
     }
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(SHA256.Create);
     private static string GetBackupFilePath(string outputPath)
