@@ -361,7 +361,7 @@ public class KiotaBuilder
             // couldn't parse the URL, it's probably a local file
         }
         var reader = new OpenApiStreamReader(settings);
-        var readResult = await reader.ReadAsync(input); //TODO pass the cancellation token when the library patch is out
+        var readResult = await reader.ReadAsync(input, cancellationToken);
         stopwatch.Stop();
         if (generating)
             foreach (var warning in readResult.OpenApiDiagnostic.Warnings)
