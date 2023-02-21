@@ -88,7 +88,7 @@ public class KiotaBuilder
         sw.Start();
         if (originalDocument == null)
         {
-            openApiDocument = CreateOpenApiDocument(input, generating);
+            openApiDocument = await CreateOpenApiDocumentAsync(input, generating, cancellationToken);
             if (openApiDocument != null)
                 originalDocument = new OpenApiDocument(openApiDocument);
         }
@@ -243,9 +243,27 @@ public class KiotaBuilder
         .ToList()
         .ForEach(x => doc.Paths.Remove(x));
     }
-    private void SetApiRootUrl()
+    internal void SetApiRootUrl()
     {
-        config.ApiRootUrl = openApiDocument?.Servers.FirstOrDefault()?.Url.TrimEnd('/');
+        var candidateUrl = openApiDocument?.Servers.FirstOrDefault()?.Url;
+        if (string.IsNullOrEmpty(candidateUrl))
+        {
+            logger.LogWarning("No server url found in the OpenAPI document. The base url will need to be set when using the client.");
+            return;
+        }
+        else if (!candidateUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) && config.OpenAPIFilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                candidateUrl = new Uri(new Uri(config.OpenAPIFilePath), candidateUrl).ToString();
+            }
+            catch
+            {
+                logger.LogWarning("Could not resolve the server url from the OpenAPI document. The base url will need to be set when using the client.");
+                return;
+            }
+        }
+        config.ApiRootUrl = candidateUrl.TrimEnd(ForwardSlash);
     }
     private void StopLogAndReset(Stopwatch sw, string prefix)
     {
@@ -298,7 +316,8 @@ public class KiotaBuilder
         return input;
     }
 
-    public OpenApiDocument? CreateOpenApiDocument(Stream input, bool generating = false)
+    private static readonly char ForwardSlash = '/';
+    public async Task<OpenApiDocument?> CreateOpenApiDocumentAsync(Stream input, bool generating = false, CancellationToken cancellationToken = default)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -308,7 +327,7 @@ public class KiotaBuilder
                     ValidationRuleSet.GetDefaultRuleSet(); //workaround since validation rule set doesn't support clearing rules
         if (generating)
             ruleSet.AddKiotaValidationRules(config);
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
+        var settings = new OpenApiReaderSettings
         {
             ExtensionParsers = new()
             {
@@ -326,26 +345,41 @@ public class KiotaBuilder
                 },
             },
             RuleSet = ruleSet,
-        });
-        var doc = reader.Read(input, out var diag);
+        };
+        try
+        {
+            var rawUri = config.OpenAPIFilePath.TrimEnd(ForwardSlash);
+            var lastSlashIndex = rawUri.LastIndexOf(ForwardSlash);
+            if (lastSlashIndex < 0)
+                lastSlashIndex = rawUri.Length - 1;
+            var documentUri = new Uri(rawUri[..lastSlashIndex]);
+            settings.BaseUrl = documentUri;
+            settings.LoadExternalRefs = true;
+        }
+        catch
+        {
+            // couldn't parse the URL, it's probably a local file
+        }
+        var reader = new OpenApiStreamReader(settings);
+        var readResult = await reader.ReadAsync(input, cancellationToken);
         stopwatch.Stop();
         if (generating)
-            foreach (var warning in diag.Warnings)
+            foreach (var warning in readResult.OpenApiDiagnostic.Warnings)
                 logger.LogWarning("OpenAPI warning: {pointer} - {warning}", warning.Pointer, warning.Message);
-        if (diag.Errors.Any())
+        if (readResult.OpenApiDiagnostic.Errors.Any())
         {
-            logger.LogTrace("{timestamp}ms: Parsed OpenAPI with errors. {count} paths found.", stopwatch.ElapsedMilliseconds, doc?.Paths?.Count ?? 0);
-            foreach (var parsingError in diag.Errors)
+            logger.LogTrace("{timestamp}ms: Parsed OpenAPI with errors. {count} paths found.", stopwatch.ElapsedMilliseconds, readResult.OpenApiDocument?.Paths?.Count ?? 0);
+            foreach (var parsingError in readResult.OpenApiDiagnostic.Errors)
             {
                 logger.LogError("OpenAPI error: {pointer} - {message}", parsingError.Pointer, parsingError.Message);
             }
         }
         else
         {
-            logger.LogTrace("{timestamp}ms: Parsed OpenAPI successfully. {count} paths found.", stopwatch.ElapsedMilliseconds, doc?.Paths?.Count ?? 0);
+            logger.LogTrace("{timestamp}ms: Parsed OpenAPI successfully. {count} paths found.", stopwatch.ElapsedMilliseconds, readResult.OpenApiDocument?.Paths?.Count ?? 0);
         }
 
-        return doc;
+        return readResult.OpenApiDocument;
     }
     public static string GetDeeperMostCommonNamespaceNameForModels(OpenApiDocument document)
     {

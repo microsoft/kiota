@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added constructors and query parameter factory methods to request configuration classes and constructors to query parameter classes in PHP.
+- Added support for relative server URL. [#2278](https://github.com/microsoft/kiota/issues/2278)
 
 ### Changed
 
