@@ -152,7 +152,7 @@ public class GoRefiner : CommonLanguageRefiner
     {
         if (currentElement is CodeInterface codeInterface && currentElement.Parent is CodeNamespace codeNamespace)
         {
-            var modelName = codeInterface.Name.RemoveSuffix("able");
+            var modelName = codeInterface.Name.TrimSuffix("able");
             var modelClass = codeNamespace.FindChildByName<CodeClass>(modelName, false) ??
                              codeNamespace.FindChildByName<CodeClass>(modelName.ToFirstCharacterUpperCase(), false);
             if (modelClass != null)
