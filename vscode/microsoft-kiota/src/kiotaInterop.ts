@@ -22,7 +22,7 @@ export async function connectToKiota<T>(callback:(connection: rpc.MessageConnect
 }
 
 export interface KiotaLogEntry {
-  level: number;
+  level: LogLevel;
   message: string;
 }
 
@@ -126,4 +126,21 @@ export const allGenerationLanguages = [
     KiotaGenerationLanguage.Shell,
     KiotaGenerationLanguage.Swift,
     KiotaGenerationLanguage.TypeScript,
-]
+];
+
+/**
+ * The log level from Kiota
+ * @see https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loglevel?view=dotnet-plat-ext-7.0
+ */
+export enum LogLevel {
+    trace = 0,
+    debug = 1,
+    information = 2,
+    warning = 3,
+    error = 4,
+    critical = 5,
+    none = 6,
+}
+export function getLogEntriesForLevel(logEntries: KiotaLogEntry[], ...levels: LogLevel[]): KiotaLogEntry[] {
+    return logEntries.filter((entry) => levels.indexOf(entry.level) !== -1);
+}

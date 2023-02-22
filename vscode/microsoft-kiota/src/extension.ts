@@ -3,7 +3,7 @@
 import * as vscode from "vscode";
 import * as rpc from "vscode-jsonrpc/node";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
-import { connectToKiota, KiotaGenerationLanguage, KiotaLogEntry, KiotaSearchResult, KiotaSearchResultItem, parseGenerationLanguage } from "./kiotaInterop";
+import { connectToKiota, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaLogEntry, KiotaSearchResult, KiotaSearchResultItem, LogLevel, parseGenerationLanguage } from "./kiotaInterop";
 import { generateSteps, searchSteps } from "./steps";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
@@ -135,10 +135,8 @@ export async function activate(
             request,
             vscode.workspace.workspaceFolders![0].uri.fsPath
           );
-          const informationMessages = result.filter((x) => x.level === 2);
-          const errorMessages = result.filter(
-            (x) => x.level === 5 || x.level === 4
-          );
+          const informationMessages = getLogEntriesForLevel(result, LogLevel.information);
+          const errorMessages = getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error);
           if (errorMessages.length > 0) {
             errorMessages.forEach((element) => {
               kiotaOutputChannel.error(element.message);
@@ -195,8 +193,8 @@ function generateClient(descriptionPath: string, output: string, language: Kiota
       clientClassName,
       clientNamespaceName
     );
-    const informationMessages = result.filter((x) => x.level === 2);
-    const errorMessages = result.filter((x) => x.level === 5 || x.level === 4);
+    const informationMessages = getLogEntriesForLevel(result, LogLevel.information);
+    const errorMessages = getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error);
     if (errorMessages.length > 0) {
       errorMessages.forEach((element) => {
         kiotaOutputChannel.error(element.message);
