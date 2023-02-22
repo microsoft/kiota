@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace kiota.Rpc;
 public class ForwardedLogger<T> : ILogger<T>
 {
-    public List<LogEntry> LogEntries { get; private set; } = new();
+    public List<LogEntry> LogEntries { get; } = new();
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull
     {

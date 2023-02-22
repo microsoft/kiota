@@ -49,7 +49,7 @@ internal class Server : IServer
                 config.OutputPath = x.lockDirectoryPath;
                 return config;
             }).ToArray();
-            var results = await Task.WhenAll(configurations
+            _ = await Task.WhenAll(configurations
                                     .Select(x => new KiotaBuilder(logger, x, httpClient)
                                                 .GenerateClientAsync(cancellationToken)));
             foreach (var (lockInfo, lockDirectoryPath) in locks)
