@@ -11,8 +11,14 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         public readonly excludeFilters: string[] = []) {
         
     }
+    public closeDescription() {
+        this.descriptionUrl = '';
+        this.rawRootNode = undefined;
+        this.refresh();
+    }
     public set descriptionUrl(descriptionUrl: string) {
         this._descriptionUrl = descriptionUrl;
+        this.rawRootNode = undefined;
         this.refresh();
     }
     public get descriptionUrl(): string {
@@ -84,6 +90,9 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     private rawRootNode: KiotaOpenApiNode | undefined;
     async getChildren(element?: OpenApiTreeNode): Promise<OpenApiTreeNode[]> {
+        if (!this.descriptionUrl || this.descriptionUrl.length === 0) {
+            return [];
+        }
         if (!this.rawRootNode) {
             const result = await connectToKiota(async (connection) => {
                 const request = new rpc.RequestType<KiotaShowConfiguration, KiotaShowResult, void>('Show');

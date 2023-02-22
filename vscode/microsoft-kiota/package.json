@@ -36,12 +36,17 @@
     "menus": {
       "view/title": [
         {
+          "command": "microsoft-kiota.searchApiDescription",
+          "when": "view == microsoft-kiota.openApiExplorer",
+          "group": "navigation"
+        },
+        {
           "command": "microsoft-kiota.openApiExplorer.generateClient",
           "when": "view == microsoft-kiota.openApiExplorer",
           "group": "navigation"
         },
         {
-          "command": "microsoft-kiota.searchApiDescription",
+          "command": "microsoft-kiota.openApiExplorer.closeDescription",
           "when": "view == microsoft-kiota.openApiExplorer",
           "group": "navigation"
         }
@@ -117,6 +122,11 @@
       {
         "command": "microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints",
         "title": "Remove All"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.closeDescription",
+        "title": "Kiota: Close API description",
+        "icon": "$(close)"
       }
     ]
   },

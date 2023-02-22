@@ -95,7 +95,10 @@ export async function activate(
           openApiTreeProvider.descriptionUrl = config.descriptionPath;
           vscode.commands.executeCommand(`${treeViewId}.focus`);
         }
-    })
+    }),
+    vscode.commands.registerCommand(
+      `${treeViewId}.closeDescription`,
+      () => openApiTreeProvider.closeDescription())
   );
 
   // create a new status bar item that we can now manage
