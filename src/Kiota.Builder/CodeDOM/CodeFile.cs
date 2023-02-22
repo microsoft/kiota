@@ -8,7 +8,7 @@ public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
 {
     public IEnumerable<T> AddElements<T>(params T[] elements) where T : CodeElement
     {
-        if (elements == null || elements.Any(x => x == null))
+        if (elements == null || elements.Any(static x => x == null))
             throw new ArgumentNullException(nameof(elements));
         if (!elements.Any())
             throw new ArgumentOutOfRangeException(nameof(elements));
