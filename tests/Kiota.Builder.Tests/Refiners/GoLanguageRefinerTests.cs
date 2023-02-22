@@ -90,7 +90,7 @@ public class GoLanguageRefinerTests
     }
 
     [Fact]
-    public async Task AddCodeFileToHierachy()
+    public async Task AddCodeFileToHierarchy()
     {
         var model = root.AddClass(new CodeClass
         {
@@ -98,7 +98,7 @@ public class GoLanguageRefinerTests
             Kind = CodeClassKind.Model,
         }).First();
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go, UsesBackingStore = true }, root);
         Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
 
         var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
@@ -107,6 +107,41 @@ public class GoLanguageRefinerTests
 
         Assert.Single(codeFile.GetChildElements(true).OfType<CodeInterface>());
         Assert.Single(codeFile.GetChildElements(true).OfType<CodeClass>());
+    }
+
+    [Fact]
+    public async Task TestBackingStoreTypesUseinterfaces()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+        }).First();
+
+        var modelB = root.AddClass(new CodeClass
+        {
+            Name = "somemodelB",
+            Kind = CodeClassKind.Model,
+        }).First();
+
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "Getter",
+            Type = new CodeType { Name = "somemodelB", TypeDefinition = modelB },
+            Access = AccessModifier.Public,
+            Kind = CodePropertyKind.Custom,
+        }).First();
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go, UsesBackingStore = true }, root);
+        Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
+
+        var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
+
+        Assert.Equal(2, root.GetChildElements(true).OfType<CodeFile>().Count());
+
+        Assert.Single(codeFile.GetChildElements(true).OfType<CodeInterface>());
+        Assert.Single(codeFile.GetChildElements(true).OfType<CodeClass>());
+        Assert.Equal("somemodelBable", property.Type.Name);
     }
     [Fact]
     public async Task ReplacesModelsByInterfaces()
