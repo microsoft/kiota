@@ -33,13 +33,12 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
 
     public CodeFile FindFileOrInitializeWith(string fileName, params CodeElement[] children)
     {
-        var file = FindChildByName<CodeFile>(fileName, false);
-        if (file == null)
-        {
-            file = new CodeFile(fileName, children);
-            RemoveChildElementByName(fileName);
-            AddRange(file);
-        }
+        if (FindChildByName<CodeFile>(fileName, false) is CodeFile existingFile)
+            return existingFile;
+        
+        var file = new CodeFile(fileName, children);
+        RemoveChildElementByName(fileName);
+        AddRange(file);
         return file;
     }
 
