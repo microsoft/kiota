@@ -35,7 +35,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     {
         if (FindChildByName<CodeFile>(fileName, false) is CodeFile existingFile)
             return existingFile;
-        
+
         var file = new CodeFile(fileName, children);
         RemoveChildElementByName(fileName);
         AddRange(file);
