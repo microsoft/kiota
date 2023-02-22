@@ -9,12 +9,29 @@ using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
 using Kiota.Generated;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Services;
 
 namespace kiota.Rpc;
 internal class Server : IServer
 {
+    protected KiotaConfiguration Configuration
+    {
+        get => (KiotaConfiguration)ConfigurationFactory.Value.Clone();
+    }
+    private readonly Lazy<KiotaConfiguration> ConfigurationFactory = new(() =>
+    {
+        var builder = new ConfigurationBuilder();
+        using var defaultStream = new MemoryStream(Kiota.Generated.KiotaAppSettings.Default());
+        var configuration = builder.AddJsonStream(defaultStream)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddEnvironmentVariables(prefix: "KIOTA_")
+                .Build();
+        var configObject = new KiotaConfiguration();
+        configuration.Bind(configObject);
+        return configObject;
+    });
     private static readonly HttpClient httpClient = new();
     public string GetVersion()
     {
@@ -27,7 +44,6 @@ internal class Server : IServer
         var searchPath = GetAbsolutePath(output);
         var lockService = new LockManagementService();
         var lockFileDirectoryPaths = lockService.GetDirectoriesContainingLockFile(searchPath);
-        var defaultConfiguration = new GenerationConfiguration();
         if (!lockFileDirectoryPaths.Any())
         {
             logger.LogCritical("No lock file found. Please run the generation command first.");
@@ -44,7 +60,7 @@ internal class Server : IServer
                                                                                 TaskScheduler.Default)));
             var configurations = locks.Select(x =>
             {
-                var config = (GenerationConfiguration)defaultConfiguration.Clone();
+                var config = Configuration.Generation;
                 x.lockInfo?.UpdateGenerationConfigurationFromLock(config);
                 config.OutputPath = x.lockDirectoryPath;
                 return config;
@@ -65,7 +81,7 @@ internal class Server : IServer
     public async Task<SearchOperationResult> SearchAsync(string searchTerm, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaSearcher>();
-        var configuration = new SearchConfiguration { };
+        var configuration = Configuration.Search;
         var searchService = new KiotaSearcher(logger, configuration, httpClient, null, (_) => Task.FromResult(false));
         var results = await searchService.SearchAsync(searchTerm, string.Empty, cancellationToken);
         return new(logger.LogEntries, results);
@@ -73,12 +89,10 @@ internal class Server : IServer
     public async Task<ShowResult> ShowAsync(string descriptionPath, string[] includeFilters, string[] excludeFilters, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
-        var configuration = new GenerationConfiguration
-        {
-            IncludePatterns = includeFilters.ToHashSet(),
-            ExcludePatterns = excludeFilters.ToHashSet(),
-            OpenAPIFilePath = GetAbsolutePath(descriptionPath),
-        };
+        var configuration = Configuration.Generation;
+        configuration.IncludePatterns = includeFilters.ToHashSet();
+        configuration.ExcludePatterns = excludeFilters.ToHashSet();
+        configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
         var urlTreeNode = await new KiotaBuilder(logger, configuration, httpClient).GetUrlTreeNodeAsync(cancellationToken);
         var rootNode = urlTreeNode != null ? ConvertOpenApiUrlTreeNodeToPathItem(urlTreeNode) : null;
         return new ShowResult(logger.LogEntries, rootNode);
@@ -86,14 +100,12 @@ internal class Server : IServer
     public async Task<List<LogEntry>> GenerateAsync(string descriptionPath, string output, GenerationLanguage language, string[] includeFilters, string[] excludeFilters, string clientClassName, string clientNamespaceName, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
-        var configuration = new GenerationConfiguration
-        {
-            IncludePatterns = includeFilters.ToHashSet(),
-            ExcludePatterns = excludeFilters.ToHashSet(),
-            OpenAPIFilePath = GetAbsolutePath(descriptionPath),
-            OutputPath = GetAbsolutePath(output),
-            Language = language,
-        };
+        var configuration = Configuration.Generation;
+        configuration.IncludePatterns = includeFilters.ToHashSet();
+        configuration.ExcludePatterns = excludeFilters.ToHashSet();
+        configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
+        configuration.OutputPath = GetAbsolutePath(output);
+        configuration.Language = language;
         if (!string.IsNullOrEmpty(clientClassName))
             configuration.ClientClassName = clientClassName;
         if (!string.IsNullOrEmpty(clientNamespaceName))
@@ -112,6 +124,23 @@ internal class Server : IServer
         }
         return logger.LogEntries;
     }
+    public Task<LanguagesInformation> InfoAsync(GenerationLanguage language, string descriptionPath, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(descriptionPath);
+        return InfoInternalAsync(language, descriptionPath, cancellationToken);
+    }
+    private async Task<LanguagesInformation> InfoInternalAsync(GenerationLanguage language, string descriptionPath, CancellationToken cancellationToken)
+    {
+        var logger = new ForwardedLogger<KiotaBuilder>();
+        var configuration = Configuration.Generation;
+        configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
+        configuration.Language = language;
+        var builder = new KiotaBuilder(logger, configuration, httpClient);
+        var result = await builder.GetLanguagesInformationAsync(cancellationToken);
+        if (result is not null) return result;
+        return Configuration.Languages;
+    }
+
     private static PathItem ConvertOpenApiUrlTreeNodeToPathItem(OpenApiUrlTreeNode node)
     {
         return new PathItem(node.Path, node.Segment, node.Children.Select(x => ConvertOpenApiUrlTreeNodeToPathItem(x.Value)).ToArray());
