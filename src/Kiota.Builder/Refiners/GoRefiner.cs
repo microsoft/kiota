@@ -206,18 +206,20 @@ public class GoRefiner : CommonLanguageRefiner
                 .Distinct()
                 .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
 
-            var targetNameSpace = codeClass.GetImmediateParentOfType<CodeNamespace>();
-            var modelsNameSpace = findClientNameSpace(targetNameSpace)
+            var currentNameSpace = codeClass.GetImmediateParentOfType<CodeNamespace>();
+            var modelsNameSpace = findClientNameSpace(currentNameSpace)
                 ?.FindNamespaceByName($"{_configuration.ClientNamespaceName}.models");
 
             foreach (var property in propertiesToCorrect)
             {
-                if (property.Type is CodeType codeType && codeType.TypeDefinition is CodeClass)
+                if (property.Type is CodeType codeType && codeType.TypeDefinition is CodeClass typeClass)
                 {
+                    var targetNameSpace = typeClass.GetImmediateParentOfType<CodeNamespace>();
                     var interfaceName = $"{codeType.Name}able";
                     var existing = targetNameSpace.FindChildByName<CodeInterface>(interfaceName, false) ??
-                                   modelsNameSpace?.FindChildByName<CodeInterface>(interfaceName) ??
-                                   modelsNameSpace?.FindChildByName<CodeInterface>(interfaceName.ToFirstCharacterUpperCase());
+                                   targetNameSpace.FindChildByName<CodeInterface>(interfaceName.ToFirstCharacterUpperCase(), false) ??
+                                   modelsNameSpace?.FindChildByName<CodeInterface>(interfaceName, false) ??
+                                   modelsNameSpace?.FindChildByName<CodeInterface>(interfaceName.ToFirstCharacterUpperCase(), false);
 
                     if (existing == null)
                         continue;
