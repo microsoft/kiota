@@ -144,7 +144,24 @@ public class GoRefiner : CommonLanguageRefiner
             CorrectTypes(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, $"{conventions.StoreHash}.BackingStoreFactoryInstance()", false);
             CorrectBackingStoreTypes(generatedCode);
+            GenerateCodeFiles(generatedCode);
         }, cancellationToken);
+    }
+
+    private void GenerateCodeFiles(CodeElement currentElement)
+    {
+        if (currentElement is CodeInterface codeInterface && currentElement.Parent is CodeNamespace codeNamespace)
+        {
+            var modelName = codeInterface.Name.TrimSuffix("able");
+            var modelClass = codeNamespace.FindChildByName<CodeClass>(modelName, false) ??
+                             codeNamespace.FindChildByName<CodeClass>(modelName.ToFirstCharacterUpperCase(), false);
+            if (modelClass != null)
+            {
+                codeNamespace.TryAddCodeFile(modelName, modelClass, codeInterface);
+            }
+
+        }
+        CrawlTree(currentElement, GenerateCodeFiles);
     }
 
     private string MergeOverLappedStrings(string start, string end)
@@ -187,18 +204,20 @@ public class GoRefiner : CommonLanguageRefiner
                 .Distinct()
                 .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
 
-            var targetNameSpace = codeClass.GetImmediateParentOfType<CodeNamespace>();
-            var modelsNameSpace = findClientNameSpace(targetNameSpace)
+            var currentNameSpace = codeClass.GetImmediateParentOfType<CodeNamespace>();
+            var modelsNameSpace = findClientNameSpace(currentNameSpace)
                 ?.FindNamespaceByName($"{_configuration.ClientNamespaceName}.models");
 
             foreach (var property in propertiesToCorrect)
             {
-                if (property.Type is CodeType codeType && codeType.TypeDefinition is CodeClass)
+                if (property.Type is CodeType codeType && codeType.TypeDefinition is CodeClass typeClass)
                 {
+                    var targetNameSpace = typeClass.GetImmediateParentOfType<CodeNamespace>();
                     var interfaceName = $"{codeType.Name}able";
                     var existing = targetNameSpace.FindChildByName<CodeInterface>(interfaceName, false) ??
-                                   modelsNameSpace?.FindChildByName<CodeInterface>(interfaceName) ??
-                                   modelsNameSpace?.FindChildByName<CodeInterface>(interfaceName.ToFirstCharacterUpperCase());
+                                   targetNameSpace.FindChildByName<CodeInterface>(interfaceName.ToFirstCharacterUpperCase(), false) ??
+                                   modelsNameSpace?.FindChildByName<CodeInterface>(interfaceName, false) ??
+                                   modelsNameSpace?.FindChildByName<CodeInterface>(interfaceName.ToFirstCharacterUpperCase(), false);
 
                     if (existing == null)
                         continue;

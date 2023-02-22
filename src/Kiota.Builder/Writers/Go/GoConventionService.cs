@@ -136,6 +136,11 @@ public class GoConventionService : CommonLanguageConventionService
                currentTypDefinition.Parent is CodeNamespace typeDefNS &&
                targetNamespace != typeDefNS)
                 return typeDefNS.GetNamespaceImportSymbol();
+            if (currentType.TypeDefinition is IProprietableBlock typeDefinition &&
+                typeDefinition.Parent is CodeFile codeFile &&
+                codeFile.Parent is CodeNamespace fileTypeDefNS &&
+                targetNamespace != fileTypeDefNS)
+                return fileTypeDefNS.GetNamespaceImportSymbol();
             if (currentType.TypeDefinition is CodeEnum currentEnumDefinition &&
                currentEnumDefinition.Parent is CodeNamespace enumNS &&
                targetNamespace != enumNS)

@@ -43,6 +43,7 @@ public class CodeRenderer
                 case CodeEnum:
                 case CodeFunction:
                 case CodeInterface:
+                case CodeFile:
                     if (writer.PathSegmenter?.GetPath(currentNamespace, codeElement) is string path)
                         await RenderCodeNamespaceToSingleFileAsync(writer, codeElement, path, cancellationToken);
                     break;

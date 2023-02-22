@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -29,6 +30,20 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
             StartBlock.Name = name;
         }
     }
+
+    public CodeFile TryAddCodeFile(string fileName, params CodeElement[] children)
+    {
+        var file = FindChildByName<CodeFile>(fileName, false) ?? new CodeFile { Name = fileName };
+        RemoveChildElement(children);
+        RemoveChildElementByName(fileName);
+        file.AddElements(children);
+
+        if (!file.IsChildOf(this, true))
+            AddRange(file);
+
+        return file;
+    }
+
     public bool IsParentOf(CodeNamespace childNamespace)
     {
         ArgumentNullException.ThrowIfNull(childNamespace);
