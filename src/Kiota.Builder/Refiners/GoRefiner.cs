@@ -157,9 +157,7 @@ public class GoRefiner : CommonLanguageRefiner
                              codeNamespace.FindChildByName<CodeClass>(modelName.ToFirstCharacterUpperCase(), false);
             if (modelClass != null)
             {
-                var codeFile = codeNamespace.FindFileOrInitializeWith(modelName, modelClass);
-                codeNamespace.RemoveChildElement(codeInterface);
-                codeFile.AddInterfaces(codeInterface);
+                codeNamespace.TryAddCodeFile(modelName, modelClass, codeInterface);
             }
 
         }

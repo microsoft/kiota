@@ -31,14 +31,16 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
         }
     }
 
-    public CodeFile FindFileOrInitializeWith(string fileName, params CodeElement[] children)
+    public CodeFile TryAddCodeFile(string fileName, params CodeElement[] children)
     {
-        if (FindChildByName<CodeFile>(fileName, false) is CodeFile existingFile)
-            return existingFile;
-
-        var file = new CodeFile(fileName, children);
+        var file = FindChildByName<CodeFile>(fileName, false) ?? new CodeFile { Name = fileName };
+        RemoveChildElement(children);
         RemoveChildElementByName(fileName);
-        AddRange(file);
+        file.AddElements(children);
+
+        if (!file.IsChildOf(this, true))
+            AddRange(file);
+
         return file;
     }
 

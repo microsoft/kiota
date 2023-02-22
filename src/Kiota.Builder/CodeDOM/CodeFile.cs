@@ -6,14 +6,7 @@ namespace Kiota.Builder.CodeDOM;
 
 public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
 {
-
-    public CodeFile(string name, params CodeElement[] children)
-    {
-        Name = name;
-        AddElements(children);
-    }
-
-    private IEnumerable<T> AddElements<T>(params T[] elements) where T : CodeElement
+    public IEnumerable<T> AddElements<T>(params T[] elements) where T : CodeElement
     {
         if (elements == null || elements.Any(x => x == null))
             throw new ArgumentNullException(nameof(elements));
@@ -22,11 +15,6 @@ public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
 
         return AddRange(elements);
     }
-
-    public IEnumerable<CodeClass> AddClasses(params CodeClass[] codeClasses) => AddElements(codeClasses);
-
-    public IEnumerable<CodeInterface> AddInterfaces(params CodeInterface[] codeInterfaces) =>
-        AddElements(codeInterfaces);
 
     public IEnumerable<CodeUsing> GetUsings()
     {

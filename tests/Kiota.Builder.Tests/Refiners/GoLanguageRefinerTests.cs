@@ -110,7 +110,7 @@ public class GoLanguageRefinerTests
     }
 
     [Fact]
-    public async Task TestBackingStoreTypesUseinterfaces()
+    public async Task TestBackingStoreTypesUseInterfaces()
     {
         var model = root.AddClass(new CodeClass
         {
