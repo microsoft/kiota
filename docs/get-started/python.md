@@ -85,8 +85,8 @@ auth_provider = AzureIdentityAuthenticationProvider(credential, None, graph_scop
 request_adapter = HttpxRequestAdapter(auth_provider)
 client = GetUserApiClient(request_adapter)
 
-me = asyncio.run(client.me().get())
-print(f"Hello {me.displayName}, your ID is {me.id}")
+me = asyncio.run(client.me.get())
+print(f"Hello {me.display_name}, your ID is {me.id}")
 ```
 
 > **Note:**
