@@ -68,4 +68,11 @@ You can author your README using Visual Studio Code. Here are some useful editor
 * [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
 * [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
 
+## Debugging the extension
+
+1. in `src/kiota` run `dotnet watch build`
+1. in `vscode/microsoft-kiota` run `code . && npm i && npm run watch`
+1. edit `kiotaInterop` and replace `C:\\sources\\github\\kiota\\src\\kiota\\bin\\Debug\\net7.0\\kiota.exe` by the correct file path 
+1. in the code instance that was opened at step 2, just press f5
+
 **Enjoy!**
