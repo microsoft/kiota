@@ -177,3 +177,21 @@ export function maturityLevelToString(level: MaturityLevel): string {
             throw new Error("unknown level");
     }
 }
+
+export interface LockFile {
+    descriptionHash: string;
+    descriptionLocation: string;
+    language: string;
+    lockFileVersion: string;
+    kiotaVersion: string;
+    clientClassName: string;
+    clientNamespaceName: string;
+    usesBackingStore: boolean;
+    includeAdditionalData: boolean;
+    serializers: string[];
+    deserializers: string[];
+    structuredMimeTypes: string[];
+    includePatterns: string[];
+    excludePatterns: string[];
+    disabledValidationRules: string[];
+}

@@ -36,7 +36,7 @@ export class DependenciesViewProvider implements vscode.WebviewViewProvider {
 		const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'views', 'deps', 'vscode.css'));
         
         const installationBlock = this._languageInformation?.DependencyInstallCommand ? `<h2>Installation commands:</h2>
-            <pre>${this._languageInformation.Dependencies.map(dep => this._languageInformation!.DependencyInstallCommand.replace('{0}', dep.Name).replace('{1}', dep.Version)).join('\n')}</pre>`
+            <pre>${this._languageInformation.Dependencies.map(dep => this._languageInformation!.DependencyInstallCommand.replace(/\{0\}/g, dep.Name).replace(/\{1\}/g, dep.Version)).join('\n')}</pre>`
         : '';
 
 		return `<!DOCTYPE html>

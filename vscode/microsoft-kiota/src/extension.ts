@@ -29,6 +29,12 @@ export async function activate(
   const openApiTreeProvider = new OpenApiTreeProvider();
   const dependenciesInfoProvider = new DependenciesViewProvider(context.extensionUri);
   context.subscriptions.push(
+    vscode.commands.registerCommand(`${extensionId}.selectLock`, async (node: {fsPath: string}) => {
+      await openApiTreeProvider.loadLockFile(node.fsPath);
+      if(openApiTreeProvider.descriptionUrl) {
+        vscode.commands.executeCommand(`${treeViewId}.focus`);
+      }
+    }),
     vscode.commands.registerCommand(statusBarCommandId, async () => {
       const response = await vscode.window.showInformationMessage(
         `Open installation instructions for kiota?`,
@@ -77,7 +83,14 @@ export async function activate(
           return;
         }
         let languagesInformation = await getLanguageInformation();
-        const config = await generateSteps(languagesInformation);
+        const config = await generateSteps({
+          clientClassName: openApiTreeProvider.clientClassName,
+          clientNamespaceName: openApiTreeProvider.clientNamespaceName,
+          language: openApiTreeProvider.language,
+          outputPath: openApiTreeProvider.outputPath
+        },
+          languagesInformation
+        );
         if (!openApiTreeProvider.descriptionUrl) {
           vscode.window.showErrorMessage(
             "No description url found, select a description first"

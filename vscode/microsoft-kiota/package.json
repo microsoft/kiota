@@ -51,6 +51,13 @@
      ]
     },
     "menus": {
+      "explorer/context":[
+        {
+          "command": "microsoft-kiota.selectLock",
+          "group": "2_kiota@1",
+          "when": "resourceLangId == json && resourceFilename =~ /kiota-lock\\.json$/"
+        }
+      ],
       "view/title": [
         {
           "command": "microsoft-kiota.searchApiDescription",
@@ -90,6 +97,10 @@
       ],
       "commandPalette": [
         {
+          "command": "microsoft-kiota.selectLock",
+          "when": "false"
+        },
+        {
           "command": "microsoft-kiota.openApiExplorer.addToSelectedEndpoints",
           "when": "false"
         },
@@ -109,40 +120,54 @@
     },
     "commands": [
       {
+        "command": "microsoft-kiota.selectLock",
+        "category": "Kiota",
+        "title": "Select lock file for API explorer view",
+        "icon": "$(file-symlink-file)"
+      },
+      {
         "command": "microsoft-kiota.updateClients",
-        "title": "Kiota: Update API clients in the current workspace"
+        "category": "Kiota",
+        "title": "Update API clients in the current workspace"
       },
       {
         "command": "microsoft-kiota.openApiExplorer.generateClient",
-        "title": "Kiota: Generate API client",
+        "category": "Kiota",
+        "title": "Generate API client",
         "icon": "$(play)"
       },
       {
         "command": "microsoft-kiota.searchApiDescription",
-        "title": "Kiota: Search for an API description",
+        "category": "Kiota",
+        "title": "Search for an API description",
         "icon": "$(search)"
       },
       {
         "command": "microsoft-kiota.openApiExplorer.addToSelectedEndpoints",
+        "category": "Kiota",
         "title": "Add",
         "icon": "$(add)"
       },
       {
         "command": "microsoft-kiota.openApiExplorer.addAllToSelectedEndpoints",
+        "category": "Kiota",
         "title": "Add All"
       },
       {
         "command": "microsoft-kiota.openApiExplorer.removeFromSelectedEndpoints",
+        "category": "Kiota",
         "title": "Remove",
         "icon": "$(remove)"
       },
       {
         "command": "microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints",
+        "category": "Kiota",
         "title": "Remove All"
       },
       {
         "command": "microsoft-kiota.openApiExplorer.closeDescription",
-        "title": "Kiota: Close API description",
+        "category": "Kiota",
+        "title": "Close API description",
         "icon": "$(close)"
       }
     ]

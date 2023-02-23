@@ -1,4 +1,4 @@
-import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons } from 'vscode';
+import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 
 
@@ -48,8 +48,11 @@ interface SearchItem {
 }
 type QuickSearchPickItem = QuickPickItem & SearchItem;
 
-export async function generateSteps(languagesInformation?: LanguagesInformation) {
-    const state = {} as Partial<GenerateState>;
+export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation) {
+    const state = {...existingConfiguration} as Partial<GenerateState>;
+    if(typeof state.outputPath === 'string') {
+        state.outputPath = workspace.asRelativePath(state.outputPath);
+    }
     const title = 'Generate an API client';
     let step = 1;
     let totalSteps = 4;
@@ -93,18 +96,22 @@ export async function generateSteps(languagesInformation?: LanguagesInformation)
 		return (input: MultiStepInput) => pickLanguage(input, state);
 	}
     async function pickLanguage(input: MultiStepInput, state: Partial<GenerateState>) {
+        const items = allGenerationLanguages.map(x => {
+            const lngName = generationLanguageToString(x);
+            const lngInfo = languagesInformation ? languagesInformation[lngName] : undefined;
+            const lngMaturity = lngInfo ? ` - ${maturityLevelToString(lngInfo.MaturityLevel)}` : '';
+            return {
+                label: `${lngName}${lngMaturity}`,
+                languageName: lngName,
+            } as (QuickPickItem & {languageName: string});
+        });
 		const pick = await input.showQuickPick({
 			title,
-			step: 1,
-			totalSteps: 3,
+			step: step++,
+			totalSteps: totalSteps,
 			placeholder: 'Pick a language',
-			items: allGenerationLanguages.map(x => {
-                const lngName = generationLanguageToString(x);
-                const lngInfo = languagesInformation ? languagesInformation[lngName] : undefined;
-                const lngMaturity = lngInfo ? ` - ${maturityLevelToString(lngInfo.MaturityLevel)}` : '';
-                return {label: `${lngName}${lngMaturity}`};
-            }),
-			activeItem: typeof state.language !== 'string' ? state.language : undefined,
+			items,
+			activeItem: typeof state.language === 'string' ? items.find(x => x.languageName === state.language) : undefined,
 			shouldResume: shouldResume
 		});
 		state.language = pick.label.split('-')[0].trim();
@@ -224,9 +231,6 @@ class MultiStepInput {
 				input.ignoreFocusOut = ignoreFocusOut ?? false;
 				input.placeholder = placeholder;
 				input.items = items;
-				if (activeItem) {
-					input.activeItems = [activeItem];
-				}
 				input.buttons = [
 					...(this.steps.length > 1 ? [QuickInputButtons.Back] : []),
 					...(buttons || [])
@@ -252,6 +256,9 @@ class MultiStepInput {
 				}
 				this.current = input;
 				this.current.show();
+                if (activeItem) {
+					input.activeItems = [activeItem];
+				}
 			});
 		} finally {
 			disposables.forEach(d => d.dispose());
