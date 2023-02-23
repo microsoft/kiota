@@ -1,5 +1,5 @@
 import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons } from 'vscode';
-import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem } from './kiotaInterop';
+import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 
 
 export async function searchSteps(searchCallBack: (searchQuery: string) => Promise<Record<string, KiotaSearchResultItem> | undefined>) {
@@ -48,7 +48,7 @@ interface SearchItem {
 }
 type QuickSearchPickItem = QuickPickItem & SearchItem;
 
-export async function generateSteps() {
+export async function generateSteps(languagesInformation?: LanguagesInformation) {
     const state = {} as Partial<GenerateState>;
     const title = 'Generate an API client';
     let step = 1;
@@ -98,11 +98,16 @@ export async function generateSteps() {
 			step: 1,
 			totalSteps: 3,
 			placeholder: 'Pick a language',
-			items: allGenerationLanguages.map(x => { return {label: generationLanguageToString(x)};}),
+			items: allGenerationLanguages.map(x => {
+                const lngName = generationLanguageToString(x);
+                const lngInfo = languagesInformation ? languagesInformation[lngName] : undefined;
+                const lngMaturity = lngInfo ? ` - ${maturityLevelToString(lngInfo.MaturityLevel)}` : '';
+                return {label: `${lngName}${lngMaturity}`};
+            }),
 			activeItem: typeof state.language !== 'string' ? state.language : undefined,
 			shouldResume: shouldResume
 		});
-		state.language = pick;
+		state.language = pick.label.split('-')[0].trim();
 	}
     await MultiStepInput.run(input => inputClientClassName(input, state));
     return state;

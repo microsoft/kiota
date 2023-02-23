@@ -124,6 +124,10 @@ internal class Server : IServer
         }
         return logger.LogEntries;
     }
+    public LanguagesInformation Info()
+    {
+        return Configuration.Languages;
+    }
     public Task<LanguagesInformation> InfoAsync(GenerationLanguage language, string descriptionPath, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(descriptionPath);

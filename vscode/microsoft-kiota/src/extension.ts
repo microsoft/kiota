@@ -76,7 +76,8 @@ export async function activate(
           );
           return;
         }
-        const config = await generateSteps();
+        let languagesInformation = await getLanguageInformation();
+        const config = await generateSteps(languagesInformation);
         if (!openApiTreeProvider.descriptionUrl) {
           vscode.window.showErrorMessage(
             "No description url found, select a description first"
@@ -106,7 +107,7 @@ export async function activate(
               vscode.window.showInformationMessage(element.message);
             });
           }
-          const languagesInformation = await getLanguageInformation(
+          languagesInformation = await getLanguageInformation(
             language,
             openApiTreeProvider.descriptionUrl);
           if (languagesInformation) {

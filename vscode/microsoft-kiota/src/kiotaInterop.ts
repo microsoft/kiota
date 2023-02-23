@@ -165,3 +165,15 @@ export enum MaturityLevel {
     preview = 1,
     stable = 2,
 }
+export function maturityLevelToString(level: MaturityLevel): string {
+    switch (level) {
+        case MaturityLevel.experimental:
+            return "experimental";
+        case MaturityLevel.preview:
+            return "preview";
+        case MaturityLevel.stable:
+            return "stable";
+        default:
+            throw new Error("unknown level");
+    }
+}
