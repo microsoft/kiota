@@ -144,3 +144,24 @@ export enum LogLevel {
 export function getLogEntriesForLevel(logEntries: KiotaLogEntry[], ...levels: LogLevel[]): KiotaLogEntry[] {
     return logEntries.filter((entry) => levels.indexOf(entry.level) !== -1);
 }
+
+export interface LanguagesInformation {
+    [key: string]: LanguageInformation;
+}
+export interface LanguageInformation {
+    MaturityLevel: MaturityLevel;
+    Dependencies: LanguageDependency[];
+    DependencyInstallCommand: string;
+    ClientNamespaceName: string;
+    ClientClassName: string;
+    StructuredMimeTypes: string[];
+}
+export interface LanguageDependency {
+    Name: string;
+    Version: string;
+}
+export enum MaturityLevel {
+    experimental = 0,
+    preview = 1,
+    stable = 2,
+}
