@@ -8,6 +8,8 @@ import { generateSteps, searchSteps } from "./steps";
 import { getKiotaVersion } from "./getKiotaVersion";
 import { searchDescription } from "./searchDescription";
 import { generateClient } from "./generateClient";
+import { getLanguageInformation } from "./getLanguageInformation";
+import { DependenciesViewProvider } from "./dependenciesViewProvider";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -23,6 +25,9 @@ export async function activate(
   const extensionId = "microsoft-kiota";
   const statusBarCommandId = `${extensionId}.status`;
   const treeViewId = `${extensionId}.openApiExplorer`;
+  const dependenciesInfo = `${extensionId}.dependenciesInfo`;
+  const openApiTreeProvider = new OpenApiTreeProvider();
+  const dependenciesInfoProvider = new DependenciesViewProvider(context.extensionUri);
   context.subscriptions.push(
     vscode.commands.registerCommand(statusBarCommandId, async () => {
       const response = await vscode.window.showInformationMessage(
@@ -33,11 +38,8 @@ export async function activate(
       if (response === "Yes") {
         vscode.env.openExternal(vscode.Uri.parse("https://aka.ms/get/kiota"));
       }
-    })
-  );
-
-  const openApiTreeProvider = new OpenApiTreeProvider();
-  context.subscriptions.push(
+    }),
+    vscode.window.registerWebviewViewProvider(dependenciesInfo, dependenciesInfoProvider),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
     vscode.commands.registerCommand(
       `${treeViewId}.addToSelectedEndpoints`,
@@ -81,10 +83,11 @@ export async function activate(
           );
           return;
         }
+        const language = typeof config.language === "string" ? parseGenerationLanguage(config.language) : KiotaGenerationLanguage.CSharp;
         const result = await generateClient(
           openApiTreeProvider.descriptionUrl,
           typeof config.outputPath === "string" ? config.outputPath : './output',
-          typeof config.language === "string" ? parseGenerationLanguage(config.language) : KiotaGenerationLanguage.CSharp,
+          language,
           selectedPaths,
           [],
           typeof config.clientClassName === "string" ? config.clientClassName : 'ApiClient',
@@ -102,6 +105,12 @@ export async function activate(
               kiotaOutputChannel.info(element.message);
               vscode.window.showInformationMessage(element.message);
             });
+          }
+          const languagesInformation = await getLanguageInformation(
+            language,
+            openApiTreeProvider.descriptionUrl);
+          if (languagesInformation) {
+            dependenciesInfoProvider.update(languagesInformation, language);
           }
     }),
     vscode.commands.registerCommand(

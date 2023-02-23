@@ -21,6 +21,13 @@
           "title": "Kiota OpenAPI Explorer",
           "icon": "media/openapi.svg"
         }
+      ],
+      "panel": [
+        {
+          "id": "kiota-dependencies-info",
+          "title": "Kiota Dependencies Information",
+          "icon": "media/dependencies.svg"
+        }
       ]
     },
     "views": {
@@ -30,6 +37,16 @@
         "name": "Kiota OpenAPI Explorer",
         "icon": "media/openapi.svg",
         "contextualTitle": "OpenAPI Explorer"
+      }
+     ],
+     "kiota-dependencies-info": [
+      {
+        "id": "microsoft-kiota.dependenciesInfo",
+        "name": "Kiota Dependencies Information",
+        "icon": "media/dependencies.svg",
+        "contextualTitle": "Dependencies Information",
+        "type": "webview",
+        "visibility": "visible"
       }
      ]
     },
