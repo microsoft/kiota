@@ -1,0 +1,99 @@
+name: integration-tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      [
+        "abstractions/**",
+        "authentication/**",
+        "serialization/**",
+        "http/**",
+        "**.md",
+        ".vscode/**",
+        "**.svg",
+      ]
+  pull_request:
+    paths-ignore:
+      [
+        "abstractions/**",
+        "authentication/**",
+        "serialization/**",
+        "http/**",
+        "**.md",
+        ".vscode/**",
+        "**.svg",
+      ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 7.0.x
+      - name: Restore workloads
+        run: dotnet workload restore
+      - name: Restore dependencies
+        run: dotnet restore kiota.sln
+      - name: Build
+        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish
+        # -p:PublishTrimmed=true -p:PublishAot=true should be enabled to make test run faster, but there are still limitations
+      - uses: actions/upload-artifact@v3
+        with:
+          name: generator
+          path: publish
+  java-it:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: generator
+          path: publish
+      - name: Generate Java Code
+        run: ./it/java/generate.sh
+      - uses: actions/cache@v3
+        with:
+          path: /root/.jbang
+          key: $-jbang-$
+          restore-keys: |
+            $-jbang-
+      - name: jbang
+        uses: jbangdev/jbang-action@v0.104.0
+        with:
+          script: ./it/java/test.java
+        env:
+          JBANG_REPO: /root/.jbang/repository
+  java:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        description: [
+          https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json
+        ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: generator
+          path: publish
+      - name: Generate Java Code
+        run: generate --language Java --openapi ${{ matrix.description }} --output ./it/java/src
+      - uses: actions/cache@v3
+        with:
+          path: /root/.jbang
+          key: $-jbang-$
+          restore-keys: |
+            $-jbang-
+      - name: jbang
+        uses: jbangdev/jbang-action@v0.103.2
+        with:
+          script: ./it/java/test.java
+        env:
+          JBANG_REPO: /root/.jbang/repository
