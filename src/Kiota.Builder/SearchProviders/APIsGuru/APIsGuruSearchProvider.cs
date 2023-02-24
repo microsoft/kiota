@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Caching;
@@ -37,7 +38,7 @@ public class APIsGuruSearchProvider : ISearchProvider
         if (SearchUri == null)
             return new Dictionary<string, SearchResult>();
         await using var rawDocument = await cachingProvider.GetDocumentAsync(SearchUri, "search", "apisguru.json", "application/json", cancellationToken);
-        var apiEntries = JsonSerializer.Deserialize<Dictionary<string, ApiEntry>>(rawDocument);
+        var apiEntries = JsonSerializer.Deserialize(rawDocument, ApiEntriesJsonContext.Default.ApiEntries);
         if (apiEntries == null)
             return new Dictionary<string, SearchResult>();
         var candidates = apiEntries
@@ -55,3 +56,15 @@ public class APIsGuruSearchProvider : ISearchProvider
     }
     private static string GetVersionKey(bool singleCandidate, string? version, KeyValuePair<string, ApiEntry> x) => singleCandidate && !string.IsNullOrEmpty(version) ? version : x.Value.preferred;
 }
+
+
+internal class ApiEntries : Dictionary<string, ApiEntry>
+{
+
+}
+
+[JsonSerializable(typeof(ApiEntries))]
+internal partial class ApiEntriesJsonContext : JsonSerializerContext
+{
+}
+
