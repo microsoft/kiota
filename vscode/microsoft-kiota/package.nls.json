@@ -1,0 +1,17 @@
+{
+  "microsoft-kiota.dependenciesInfo.name": "Kiota Dependencies Information",
+  "microsoft-kiota.dependenciesInfo.contextualTitle": "Dependencies Information",
+  "microsoft-kiota.openApiExplorer.name": "Kiota OpenAPI Explorer",
+  "microsoft-kiota.openApiExplorer.contextualTitle": "OpenAPI Explorer",
+  "kiota-dependencies-info.panel.title": "Kiota Dependencies Information",
+  "kiota-openapi-explorer.activitybar.title": "Kiota OpenAPI Explorer",
+  "microsoft-kiota.selectLock.title": "Select lock file for API explorer view",
+  "microsoft-kiota.updateClients.title": "Update API clients in the current workspace",
+  "microsoft-kiota.openApiExplorer.generateClient.title": "Generate API client",
+  "microsoft-kiota.searchApiDescription.title": "Search for an API description",
+  "microsoft-kiota.openApiExplorer.addToSelectedEndpoints.title": "Add",
+  "microsoft-kiota.openApiExplorer.removeFromSelectedEndpoints.title": "Remove",
+  "microsoft-kiota.openApiExplorer.addAllToSelectedEndpoints.title": "Add all",
+  "microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Remove all",
+  "microsoft-kiota.openApiExplorer.closeDescription.title": "Close API description"
+}

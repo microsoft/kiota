@@ -13,45 +13,46 @@
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
+  "l10n": "./l10n",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
         {
           "id": "kiota-openapi-explorer",
-          "title": "Kiota OpenAPI Explorer",
+          "title": "%kiota-openapi-explorer.activitybar.title%",
           "icon": "media/openapi.svg"
         }
       ],
       "panel": [
         {
           "id": "kiota-dependencies-info",
-          "title": "Kiota Dependencies Information",
+          "title": "%kiota-dependencies-info.panel.title%",
           "icon": "media/dependencies.svg"
         }
       ]
     },
     "views": {
-     "kiota-openapi-explorer": [
-      {
-        "id": "microsoft-kiota.openApiExplorer",
-        "name": "Kiota OpenAPI Explorer",
-        "icon": "media/openapi.svg",
-        "contextualTitle": "OpenAPI Explorer"
-      }
-     ],
-     "kiota-dependencies-info": [
-      {
-        "id": "microsoft-kiota.dependenciesInfo",
-        "name": "Kiota Dependencies Information",
-        "icon": "media/dependencies.svg",
-        "contextualTitle": "Dependencies Information",
-        "type": "webview",
-        "visibility": "visible"
-      }
-     ]
+      "kiota-openapi-explorer": [
+        {
+          "id": "microsoft-kiota.openApiExplorer",
+          "name": "%microsoft-kiota.openApiExplorer.name%",
+          "icon": "media/openapi.svg",
+          "contextualTitle": "%microsoft-kiota.openApiExplorer.contextualTitle%"
+        }
+      ],
+      "kiota-dependencies-info": [
+        {
+          "id": "microsoft-kiota.dependenciesInfo",
+          "name": "%microsoft-kiota.dependenciesInfo.name%",
+          "icon": "media/dependencies.svg",
+          "contextualTitle": "%microsoft-kiota.dependenciesInfo.contextualTitle%",
+          "type": "webview",
+          "visibility": "visible"
+        }
+      ]
     },
     "menus": {
-      "explorer/context":[
+      "explorer/context": [
         {
           "command": "microsoft-kiota.selectLock",
           "group": "2_kiota@1",
@@ -115,59 +116,59 @@
         {
           "command": "microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints",
           "when": "false"
-        }  
+        }
       ]
     },
     "commands": [
       {
         "command": "microsoft-kiota.selectLock",
         "category": "Kiota",
-        "title": "Select lock file for API explorer view",
+        "title": "%microsoft-kiota.selectLock.title%",
         "icon": "$(file-symlink-file)"
       },
       {
         "command": "microsoft-kiota.updateClients",
         "category": "Kiota",
-        "title": "Update API clients in the current workspace"
+        "title": "%microsoft-kiota.updateClients.title%"
       },
       {
         "command": "microsoft-kiota.openApiExplorer.generateClient",
         "category": "Kiota",
-        "title": "Generate API client",
+        "title": "%microsoft-kiota.openApiExplorer.generateClient.title%",
         "icon": "$(play)"
       },
       {
         "command": "microsoft-kiota.searchApiDescription",
         "category": "Kiota",
-        "title": "Search for an API description",
+        "title": "%microsoft-kiota.searchApiDescription.title%",
         "icon": "$(search)"
       },
       {
         "command": "microsoft-kiota.openApiExplorer.addToSelectedEndpoints",
         "category": "Kiota",
-        "title": "Add",
+        "title": "%microsoft-kiota.openApiExplorer.addToSelectedEndpoints.title%",
         "icon": "$(add)"
       },
       {
         "command": "microsoft-kiota.openApiExplorer.addAllToSelectedEndpoints",
         "category": "Kiota",
-        "title": "Add All"
+        "title": "%microsoft-kiota.openApiExplorer.addAllToSelectedEndpoints.title%"
       },
       {
         "command": "microsoft-kiota.openApiExplorer.removeFromSelectedEndpoints",
         "category": "Kiota",
-        "title": "Remove",
+        "title": "%microsoft-kiota.openApiExplorer.removeFromSelectedEndpoints.title%",
         "icon": "$(remove)"
       },
       {
         "command": "microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints",
         "category": "Kiota",
-        "title": "Remove All"
+        "title": "%microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints.title%"
       },
       {
         "command": "microsoft-kiota.openApiExplorer.closeDescription",
         "category": "Kiota",
-        "title": "Close API description",
+        "title": "%microsoft-kiota.openApiExplorer.closeDescription.title%",
         "icon": "$(close)"
       }
     ]
@@ -200,6 +201,7 @@
     "webpack-cli": "^5.0.1"
   },
   "dependencies": {
+    "@vscode/l10n": "^0.0.11",
     "vscode-jsonrpc": "^8.1.0"
   }
 }
