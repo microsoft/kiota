@@ -75,7 +75,7 @@ jobs:
     strategy:
       matrix:
         description: [
-          https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json
+          'https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json'
         ]
     steps:
       - uses: actions/checkout@v3
