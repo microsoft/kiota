@@ -86,7 +86,7 @@ jobs:
           path: publish
       - run: chmod +x ./publish/kiota
       - name: Generate Java Code
-        run: generate --language Java --openapi ${{ matrix.description }} --output ./it/java/src
+        run: ./publish/kiota generate --language Java --openapi ${{ matrix.description }} --output ./it/java/src
       - uses: actions/cache@v3
         with:
           path: /root/.jbang
