@@ -48,7 +48,12 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
             try
             {
                 var locks = await Task.WhenAll(lockFileDirectoryPaths.Select(x => lockService.GetLockFromDirectoryAsync(x, cancellationToken)
-                                                                                .ContinueWith(t => (lockInfo: t.Result, lockDirectoryPath: x), cancellationToken)));
+                                                                                .ContinueWith(
+                                                                                    (t, _) => (lockInfo: t.Result, lockDirectoryPath: x),
+                                                                                    null,
+                                                                                    cancellationToken,
+                                                                                    TaskContinuationOptions.None,
+                                                                                    TaskScheduler.Default)));
                 var configurations = locks.Select(x =>
                 {
                     var config = (GenerationConfiguration)Configuration.Generation.Clone();

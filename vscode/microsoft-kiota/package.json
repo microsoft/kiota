@@ -1,0 +1,213 @@
+{
+  "name": "microsoft-kiota",
+  "displayName": "Microsoft Kiota",
+  "description": "REST API client generator based on OpenAPI",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "l10n": "./l10n",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "kiota-openapi-explorer",
+          "title": "%kiota-openapi-explorer.activitybar.title%",
+          "icon": "media/openapi.svg"
+        }
+      ],
+      "panel": [
+        {
+          "id": "kiota-dependencies-info",
+          "title": "%kiota-dependencies-info.panel.title%",
+          "icon": "media/dependencies.svg"
+        }
+      ]
+    },
+    "views": {
+      "kiota-openapi-explorer": [
+        {
+          "id": "microsoft-kiota.openApiExplorer",
+          "name": "%microsoft-kiota.openApiExplorer.name%",
+          "icon": "media/openapi.svg",
+          "contextualTitle": "%microsoft-kiota.openApiExplorer.contextualTitle%"
+        }
+      ],
+      "kiota-dependencies-info": [
+        {
+          "id": "microsoft-kiota.dependenciesInfo",
+          "name": "%microsoft-kiota.dependenciesInfo.name%",
+          "icon": "media/dependencies.svg",
+          "contextualTitle": "%microsoft-kiota.dependenciesInfo.contextualTitle%",
+          "type": "webview",
+          "visibility": "visible"
+        }
+      ]
+    },
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "microsoft-kiota.selectLock",
+          "group": "2_kiota@1",
+          "when": "resourceLangId == json && resourceFilename =~ /kiota-lock\\.json$/"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "microsoft-kiota.searchApiDescription",
+          "when": "view == microsoft-kiota.openApiExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.generateClient",
+          "when": "view == microsoft-kiota.openApiExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.closeDescription",
+          "when": "view == microsoft-kiota.openApiExplorer",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "microsoft-kiota.openApiExplorer.addToSelectedEndpoints",
+          "when": "view == microsoft-kiota.openApiExplorer",
+          "group": "inline"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.addAllToSelectedEndpoints",
+          "when": "view == microsoft-kiota.openApiExplorer"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.removeFromSelectedEndpoints",
+          "when": "view == microsoft-kiota.openApiExplorer",
+          "group": "inline"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints",
+          "when": "view == microsoft-kiota.openApiExplorer"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "microsoft-kiota.selectLock",
+          "when": "false"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.addToSelectedEndpoints",
+          "when": "false"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.addAllToSelectedEndpoints",
+          "when": "false"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.removeFromSelectedEndpoints",
+          "when": "false"
+        },
+        {
+          "command": "microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints",
+          "when": "false"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "microsoft-kiota.selectLock",
+        "category": "Kiota",
+        "title": "%microsoft-kiota.selectLock.title%",
+        "icon": "$(file-symlink-file)"
+      },
+      {
+        "command": "microsoft-kiota.updateClients",
+        "category": "Kiota",
+        "title": "%microsoft-kiota.updateClients.title%"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.generateClient",
+        "category": "Kiota",
+        "title": "%microsoft-kiota.openApiExplorer.generateClient.title%",
+        "icon": "$(play)"
+      },
+      {
+        "command": "microsoft-kiota.searchApiDescription",
+        "category": "Kiota",
+        "title": "%microsoft-kiota.searchApiDescription.title%",
+        "icon": "$(search)"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.addToSelectedEndpoints",
+        "category": "Kiota",
+        "title": "%microsoft-kiota.openApiExplorer.addToSelectedEndpoints.title%",
+        "icon": "$(add)"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.addAllToSelectedEndpoints",
+        "category": "Kiota",
+        "title": "%microsoft-kiota.openApiExplorer.addAllToSelectedEndpoints.title%"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.removeFromSelectedEndpoints",
+        "category": "Kiota",
+        "title": "%microsoft-kiota.openApiExplorer.removeFromSelectedEndpoints.title%",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints",
+        "category": "Kiota",
+        "title": "%microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints.title%"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.closeDescription",
+        "category": "Kiota",
+        "title": "%microsoft-kiota.openApiExplorer.closeDescription.title%",
+        "icon": "$(close)"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.openDescription",
+        "category": "Kiota",
+        "title": "%microsoft-kiota.openApiExplorer.openDescription.title%",
+        "icon": "$(go-to-file)"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.0.1",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.75.0",
+    "@typescript-eslint/eslint-plugin": "^5.49.0",
+    "@typescript-eslint/parser": "^5.49.0",
+    "@vscode/test-electron": "^2.2.2",
+    "eslint": "^8.33.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.1.0",
+    "ts-loader": "^9.4.2",
+    "typescript": "^4.9.4",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
+  },
+  "dependencies": {
+    "@vscode/l10n": "^0.0.11",
+    "vscode-jsonrpc": "^8.1.0"
+  }
+}

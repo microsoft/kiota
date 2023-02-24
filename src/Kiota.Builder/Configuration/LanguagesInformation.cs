@@ -7,7 +7,7 @@ using Microsoft.OpenApi.Writers;
 
 namespace Kiota.Builder.Configuration;
 
-public class LanguagesInformation : Dictionary<string, LanguageInformation>, IOpenApiSerializable
+public class LanguagesInformation : Dictionary<string, LanguageInformation>, IOpenApiSerializable, ICloneable
 {
     public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
     public void SerializeAsV3(IOpenApiWriter writer)
@@ -26,5 +26,13 @@ public class LanguagesInformation : Dictionary<string, LanguageInformation>, IOp
         foreach (var property in rawObject)
             extension.Add(property.Key, LanguageInformation.Parse(property.Value));
         return extension;
+    }
+
+    public object Clone()
+    {
+        var result = new LanguagesInformation();
+        foreach (var entry in this)
+            result.Add(entry.Key, entry.Value);// records don't need to be cloned as they are immutable
+        return result;
     }
 }
