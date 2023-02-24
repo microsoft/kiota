@@ -170,6 +170,12 @@
         "category": "Kiota",
         "title": "%microsoft-kiota.openApiExplorer.closeDescription.title%",
         "icon": "$(close)"
+      },
+      {
+        "command": "microsoft-kiota.openApiExplorer.openDescription",
+        "category": "Kiota",
+        "title": "%microsoft-kiota.openApiExplorer.openDescription.title%",
+        "icon": "$(go-to-file)"
       }
     ]
   },

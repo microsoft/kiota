@@ -13,5 +13,6 @@
   "microsoft-kiota.openApiExplorer.removeFromSelectedEndpoints.title": "Remove",
   "microsoft-kiota.openApiExplorer.addAllToSelectedEndpoints.title": "Add all",
   "microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Remove all",
-  "microsoft-kiota.openApiExplorer.closeDescription.title": "Close API description"
+  "microsoft-kiota.openApiExplorer.closeDescription.title": "Close API description",
+  "microsoft-kiota.openApiExplorer.openDescription.title": "Open API description"
 }

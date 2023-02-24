@@ -4,7 +4,7 @@ import * as vscode from "vscode";
 import * as rpc from "vscode-jsonrpc/node";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import { connectToKiota, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaLogEntry, LogLevel, parseGenerationLanguage } from "./kiotaInterop";
-import { generateSteps, searchSteps } from "./steps";
+import { generateSteps, openSteps, searchSteps } from "./steps";
 import { getKiotaVersion } from "./getKiotaVersion";
 import { searchDescription } from "./searchDescription";
 import { generateClient } from "./generateClient";
@@ -138,7 +138,16 @@ export async function activate(
     }),
     vscode.commands.registerCommand(
       `${treeViewId}.closeDescription`,
-      () => openApiTreeProvider.closeDescription())
+      () => openApiTreeProvider.closeDescription()),
+    vscode.commands.registerCommand(
+      `${treeViewId}.openDescription`,
+      async () => {
+        const openState = await openSteps();
+        if(openState.descriptionPath) {
+          openApiTreeProvider.descriptionUrl = openState.descriptionPath;
+          vscode.commands.executeCommand(`${treeViewId}.focus`);
+        }
+      }),
   );
 
   // create a new status bar item that we can now manage

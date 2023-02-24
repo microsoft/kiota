@@ -2,6 +2,26 @@ import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickI
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 
 
+export async function openSteps() {
+    const state = {} as Partial<OpenState>;
+    const title = 'Search for an API description';
+    let step = 1;
+    let totalSteps = 1;
+    async function inputPathOrUrl(input: MultiStepInput, state: Partial<OpenState>) {
+        state.descriptionPath = await input.showInputBox({
+            title,
+            step: step++,
+            totalSteps: totalSteps,
+            value: state.descriptionPath || '',
+            prompt: 'A path or url to an OpenAPI description',
+            validate: validateIsNotEmpty,
+            shouldResume: shouldResume
+        });
+    }
+    await MultiStepInput.run(input => inputPathOrUrl(input, state));
+    return state;
+};
+
 export async function searchSteps(searchCallBack: (searchQuery: string) => Promise<Record<string, KiotaSearchResultItem> | undefined>) {
     const state = {} as Partial<SearchState>;
     const title = 'Search for an API description';
@@ -140,6 +160,10 @@ interface BaseStepsState {
 interface SearchState extends BaseStepsState {
     searchQuery: string;
     searchResults: Record<string, KiotaSearchResultItem>;
+    descriptionPath: string;
+}
+
+interface OpenState extends BaseStepsState {
     descriptionPath: string;
 }
 
