@@ -36,12 +36,13 @@ export async function activate(
       }
     }),
     vscode.commands.registerCommand(statusBarCommandId, async () => {
+      const yesAnswer = vscode.l10n.t('Yes');
       const response = await vscode.window.showInformationMessage(
-        `Open installation instructions for kiota?`,
-        "Yes",
-        "No"
+        vscode.l10n.t('Open installation instructions for kiota?'),
+        yesAnswer,
+        vscode.l10n.t('No')
       );
-      if (response === "Yes") {
+      if (response === yesAnswer) {
         vscode.env.openExternal(vscode.Uri.parse("https://aka.ms/get/kiota"));
       }
     }),
@@ -69,7 +70,7 @@ export async function activate(
         const selectedPaths = openApiTreeProvider.getSelectedPaths();
         if (selectedPaths.length === 0) {
           vscode.window.showErrorMessage(
-            "No endpoints selected, select endpoints first"
+            vscode.l10n.t('No endpoints selected, select endpoints first')
           );
           return;
         }
@@ -78,7 +79,7 @@ export async function activate(
           vscode.workspace.workspaceFolders.length === 0
         ) {
           vscode.window.showErrorMessage(
-            "No workspace folder found, open a folder first"
+            vscode.l10n.t('No workspace folder found, open a folder first')
           );
           return;
         }
@@ -93,7 +94,7 @@ export async function activate(
         );
         if (!openApiTreeProvider.descriptionUrl) {
           vscode.window.showErrorMessage(
-            "No description url found, select a description first"
+            vscode.l10n.t('No description found, select a description first')
           );
           return;
         }
@@ -168,8 +169,8 @@ export async function activate(
         vscode.workspace.workspaceFolders.length === 0
       ) {
         vscode.window.showErrorMessage(
-          "No workspace folder found, open a folder first"
-        );
+          vscode.l10n.t('No workspace folder found, open a folder first')
+          );
         return;
       }
       await updateStatusBarItem();
@@ -177,7 +178,7 @@ export async function activate(
         kiotaOutputChannel.clear();
         kiotaOutputChannel.show();
         kiotaOutputChannel.info(
-          `updating workspace with path ${vscode.workspace.workspaceFolders[0].uri.fsPath}`
+          vscode.l10n.t('updating client with path {path}', {path: vscode.workspace.workspaceFolders[0].uri.fsPath}),
         );
         await connectToKiota(async (connection) => {
           const request = new rpc.RequestType<string, KiotaLogEntry[], void>(
@@ -202,9 +203,9 @@ export async function activate(
           }
         });
       } catch (error) {
-        kiotaOutputChannel.error("error updating the clients {0}", error);
+        kiotaOutputChannel.error(vscode.l10n.t('error updating the clients {error}'), error);
         vscode.window.showErrorMessage(
-          "error updating the clients {0}",
+          vscode.l10n.t('error updating the clients {error}'),
           error as string
         );
       }
@@ -222,7 +223,7 @@ async function updateStatusBarItem(): Promise<void> {
     }
     kiotaStatusBarItem.text = `$(extensions-info-message) kiota ${version}`;
   } catch (error) {
-    kiotaStatusBarItem.text = `$(extensions-warning-message) kiota not found`;
+    kiotaStatusBarItem.text = `$(extensions-warning-message) kiota ${vscode.l10n.t('not found')}`;
     kiotaStatusBarItem.backgroundColor = new vscode.ThemeColor(
       "statusBarItem.errorBackground"
     );

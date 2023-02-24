@@ -9,11 +9,11 @@ export function getKiotaVersion(kiotaOutputChannel: vscode.LogOutputChannel): Pr
       if (result) {
         const version = result.split("+")[0];
         if (version) {
-          kiotaOutputChannel.info(`kiota version: ${version}`);
+          kiotaOutputChannel.info(`kiota: ${version}`);
           return version;
         }
       }
-      kiotaOutputChannel.error(`kiota version: not found`);
+      kiotaOutputChannel.error(`kiota: ${vscode.l10n.t('not found')}`);
       kiotaOutputChannel.show();
       return undefined;
     });

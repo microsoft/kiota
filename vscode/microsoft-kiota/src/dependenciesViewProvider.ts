@@ -35,7 +35,11 @@ export class DependenciesViewProvider implements vscode.WebviewViewProvider {
 		const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'views', 'deps', 'reset.css'));
 		const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'views', 'deps', 'vscode.css'));
         
-        const installationBlock = this._languageInformation?.DependencyInstallCommand ? `<h2>Installation commands:</h2>
+        const installationCommands = vscode.l10n.t('Installation commands');
+        const noLanguageSelected = vscode.l10n.t('No language selected, select a language first');
+        const title = vscode.l10n.t('Kiota Dependencies Information');
+        const dependencies = vscode.l10n.t('Dependencies');
+        const installationBlock = this._languageInformation?.DependencyInstallCommand ? `<h2>${installationCommands}</h2>
             <pre>${this._languageInformation.Dependencies.map(dep => this._languageInformation!.DependencyInstallCommand.replace(/\{0\}/g, dep.Name).replace(/\{1\}/g, dep.Version)).join('\n')}</pre>`
         : '';
 
@@ -46,11 +50,11 @@ export class DependenciesViewProvider implements vscode.WebviewViewProvider {
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<link href="${styleResetUri}" rel="stylesheet">
 				<link href="${styleVSCodeUri}" rel="stylesheet">
-				<title>Kiota Dependencies Information</title>
+				<title>${title}</title>
 			</head>
 			<body>
-                <h1>${this._language !== undefined ? generationLanguageToString(this._language) : 'No language selected'}</h1>
-                <h2>Dependencies:</h2>
+                <h1>${this._language !== undefined ? generationLanguageToString(this._language) : noLanguageSelected}</h1>
+                <h2>${dependencies}</h2>
 				<ul>
                     ${this._languageInformation ? this._languageInformation?.Dependencies.map(dep => `<li>${dep.Name} (${dep.Version})</li>`).join('') : ''}
 				</ul>

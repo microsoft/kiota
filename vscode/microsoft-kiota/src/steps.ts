@@ -1,10 +1,10 @@
-import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace } from 'vscode';
+import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
 
 
 export async function openSteps() {
     const state = {} as Partial<OpenState>;
-    const title = 'Search for an API description';
+    const title = l10n.t('Open an API description');
     let step = 1;
     let totalSteps = 1;
     async function inputPathOrUrl(input: MultiStepInput, state: Partial<OpenState>) {
@@ -13,7 +13,7 @@ export async function openSteps() {
             step: step++,
             totalSteps: totalSteps,
             value: state.descriptionPath || '',
-            prompt: 'A path or url to an OpenAPI description',
+            prompt: l10n.t('A path or url to an OpenAPI description'),
             validate: validateIsNotEmpty,
             shouldResume: shouldResume
         });
@@ -24,7 +24,7 @@ export async function openSteps() {
 
 export async function searchSteps(searchCallBack: (searchQuery: string) => Promise<Record<string, KiotaSearchResultItem> | undefined>) {
     const state = {} as Partial<SearchState>;
-    const title = 'Search for an API description';
+    const title = l10n.t('Search for an API description');
     let step = 1;
     let totalSteps = 2;
     async function inputSearchQuery(input: MultiStepInput, state: Partial<SearchState>) {
@@ -33,7 +33,7 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Promi
             step: step++,
             totalSteps: totalSteps,
             value: state.searchQuery || '',
-            prompt: 'Enter a search query',
+            prompt: l10n.t('Enter a search query'),
             validate: validateIsNotEmpty,
             shouldResume: shouldResume
         });
@@ -53,7 +53,7 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Promi
             title,
             step: step++,
             totalSteps: totalSteps,
-            placeholder: 'Pick a search result',
+            placeholder: l10n.t('Pick a search result'),
             items: items,
             shouldResume: shouldResume
         });
@@ -73,7 +73,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
     if(typeof state.outputPath === 'string') {
         state.outputPath = workspace.asRelativePath(state.outputPath);
     }
-    const title = 'Generate an API client';
+    const title = l10n.t('Generate an API client');
     let step = 1;
     let totalSteps = 4;
     async function inputClientClassName(input: MultiStepInput, state: Partial<GenerateState>) {
@@ -83,7 +83,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 			totalSteps: totalSteps,
 			value: state.clientClassName || '',
             placeholder: 'ApiClient',
-			prompt: 'Choose a name for the client class',
+			prompt: l10n.t('Choose a name for the client class'),
 			validate: validateIsNotEmpty,
 			shouldResume: shouldResume
 		});
@@ -96,7 +96,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 			totalSteps: totalSteps,
 			value: typeof state.clientNamespaceName === 'string' ? state.clientNamespaceName : '',
 			placeholder: 'ApiSDK',
-			prompt: 'Choose a name for the client class namespace',
+			prompt: l10n.t('Choose a name for the client class namespace'),
 			validate: validateIsNotEmpty,
 			shouldResume: shouldResume
 		});
@@ -109,7 +109,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 			totalSteps: totalSteps,
 			value: typeof state.outputPath === 'string' ? state.outputPath : '',
 			placeholder: 'myproject/apiclient',
-			prompt: 'Enter an output path relative to the root of the project',
+			prompt: l10n.t('Enter an output path relative to the root of the project'),
 			validate: validateIsNotEmpty,
 			shouldResume: shouldResume
 		});
@@ -129,7 +129,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 			title,
 			step: step++,
 			totalSteps: totalSteps,
-			placeholder: 'Pick a language',
+			placeholder: l10n.t('Pick a language'),
 			items,
 			activeItem: typeof state.language === 'string' ? items.find(x => x.languageName === state.language) : undefined,
 			shouldResume: shouldResume
