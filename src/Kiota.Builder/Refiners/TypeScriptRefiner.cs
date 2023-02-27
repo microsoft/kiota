@@ -435,9 +435,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (currentClass.Kind == CodeClassKind.Model)
             {
                 var targetNS = currentClass.GetImmediateParentOfType<CodeNamespace>();
-
-                var existing = targetNS.Classes.FirstOrDefault(x => x == currentClass);
-                if (existing == null)
+                if (targetNS.Classes.FirstOrDefault(x => x == currentClass) == null)
                 {
                     return;
                 }
