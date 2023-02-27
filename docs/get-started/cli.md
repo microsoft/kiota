@@ -10,7 +10,6 @@ A commandline tool is required. We recommend:
 - [.NET SDK 7.0](https://get.dot.net/7)
 - A commandline that supports Bash?
 - MacOS terminal
-- PowerShell version 7.3.2
 
 ## Target project requirements
 Before you can compile and run the generated files, you will need to make sure they are part of a project with the required dependencies. After creating a new project, or reusing an existing one, you will need to add references to the [abstraction](https://github.com/microsoft/kiota-abstractions-dotnet), [authentication](https://github.com/microsoft/kiota-authentication-azure-dotnet), [cli-commons](https://github.com/microsoft/kiota-cli-commons), [http](https://github.com/microsoft/kiota-http-dotnet), and [FORM](https://github.com/microsoft/kiota-serialization-form-dotnet), [JSON](https://github.com/microsoft/kiota-serialization-json-dotnet) and [text](https://github.com/microsoft/kiota-serialization-text-dotnet) serialization packages from the NuGet feed.
