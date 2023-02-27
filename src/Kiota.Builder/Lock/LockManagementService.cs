@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,5 +66,51 @@ public class LockManagementService : ILockManagementService
         var lockFilePath = Path.Combine(directoryPath, LockFileName);
         await using var fileStream = File.Open(lockFilePath, FileMode.Create);
         await JsonSerializer.SerializeAsync(fileStream, lockInfo, options, cancellationToken);
+    }
+    /// <inheritdoc/>
+    public Task BackupLockFileAsync(string directoryPath, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
+        return BackupLockFileInternalAsync(directoryPath);
+    }
+    private static Task BackupLockFileInternalAsync(string directoryPath)
+    {
+        var lockFilePath = Path.Combine(directoryPath, LockFileName);
+        if (File.Exists(lockFilePath))
+        {
+            var backupFilePath = GetBackupFilePath(directoryPath);
+            var targetDirectory = Path.GetDirectoryName(backupFilePath);
+            if (string.IsNullOrEmpty(targetDirectory)) return Task.CompletedTask;
+            if (!Directory.Exists(targetDirectory))
+                Directory.CreateDirectory(targetDirectory);
+            File.Copy(lockFilePath, backupFilePath, true);
+        }
+        return Task.CompletedTask;
+    }
+    /// <inheritdoc/>
+    public Task RestoreLockFileAsync(string directoryPath, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
+        return RestoreLockFileInternalAsync(directoryPath);
+    }
+    private static Task RestoreLockFileInternalAsync(string directoryPath)
+    {
+        var lockFilePath = Path.Combine(directoryPath, LockFileName);
+        var targetDirectory = Path.GetDirectoryName(lockFilePath);
+        if (string.IsNullOrEmpty(targetDirectory)) return Task.CompletedTask;
+        if (!Directory.Exists(targetDirectory))
+            Directory.CreateDirectory(targetDirectory);
+        var backupFilePath = GetBackupFilePath(directoryPath);
+        if (File.Exists(backupFilePath))
+        {
+            File.Copy(backupFilePath, lockFilePath, true);
+        }
+        return Task.CompletedTask;
+    }
+    private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(SHA256.Create);
+    private static string GetBackupFilePath(string outputPath)
+    {
+        var hashedPath = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(outputPath))).Replace("-", string.Empty);
+        return Path.Combine(Path.GetTempPath(), "kiota", "backup", hashedPath, LockFileName);
     }
 }

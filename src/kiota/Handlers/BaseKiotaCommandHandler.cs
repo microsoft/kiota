@@ -93,7 +93,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     }
     public int Invoke(InvocationContext context)
     {
-        return InvokeAsync(context).GetAwaiter().GetResult();
+        throw new InvalidOperationException("This command handler is async only");
     }
     public abstract Task<int> InvokeAsync(InvocationContext context);
     protected (ILoggerFactory, ILogger<T>) GetLoggerAndFactory<T>(InvocationContext context)
@@ -119,7 +119,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     {
         if (string.IsNullOrEmpty(source))
             return string.Empty;
-        return Path.IsPathRooted(source) || source.StartsWith("http") ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
+        return Path.IsPathRooted(source) || source.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? source : NormalizeSlashesInPath(Path.Combine(Directory.GetCurrentDirectory(), source));
     }
     protected void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment)
     {
@@ -288,7 +288,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         DisplayHint("Hint: use the search command to search for an OpenAPI description.",
                     "Example: kiota search <search term>");
     }
-    protected async Task DisplayLoginHint(ILogger logger, CancellationToken token)
+    protected async Task DisplayLoginHintAsync(ILogger logger, CancellationToken token)
     {
         var deviceCodeAuthProvider = GetGitHubDeviceStorageService(logger);
         var patStorage = GetGitHubPatStorageService(logger);

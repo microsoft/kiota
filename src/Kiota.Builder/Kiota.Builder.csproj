@@ -34,10 +34,10 @@
     <PackageReference Include="Microsoft.Kiota.Http.HttpClientLibrary" Version="1.0.0-rc.6" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.0.0-rc.3" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Text" Version="1.0.0-rc.3" />
-    <PackageReference Include="Microsoft.OpenApi" Version="1.6.1" />
-    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.1" />
+    <PackageReference Include="Microsoft.OpenApi" Version="1.6.2" />
+    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.2" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-    <PackageReference Include="YamlDotNet" Version="13.0.0" />
+    <PackageReference Include="YamlDotNet" Version="13.0.1" />
     <ProjectReference Include="..\Kiota.Generated\KiotaGenerated.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 

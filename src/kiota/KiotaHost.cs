@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using kiota.Handlers;
+using kiota.Rpc;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Validation;
@@ -26,6 +27,7 @@ public static class KiotaHost
         rootCommand.AddCommand(GetUpdateCommand());
         rootCommand.AddCommand(GetLoginCommand());
         rootCommand.AddCommand(GetLogoutCommand());
+        rootCommand.AddCommand(GetRpcCommand());
         return rootCommand;
     }
     private static Command GetGitHubLoginCommand()
@@ -164,9 +166,29 @@ public static class KiotaHost
         };
         return displayCommand;
     }
+    internal static Command GetRpcCommand()
+    {
+        var modeOption = new Option<RpcMode>("--mode", "Whether the RPC server should use stdin/stdout or a named pipe.");
+        modeOption.AddAlias("-m");
+        modeOption.SetDefaultValue(RpcMode.Stdio);
+        var pipeNameOption = new Option<string>("--pipe-name", "The name of the named pipe to use for the RPC server.");
+        pipeNameOption.AddAlias("-p");
+        pipeNameOption.SetDefaultValue("KiotaJsonRpc");
+        var commandHandler = new KiotaRpcCommandHandler
+        {
+            ModeOption = modeOption,
+            PipeNameOption = pipeNameOption,
+        };
+        var command = new Command("rpc", "WARNING EXPERIMENTAL: Starts a kiota as a JSON-RPC server.") {
+            modeOption,
+            pipeNameOption,
+        };
+        command.Handler = commandHandler;
+        return command;
+    }
     private static Command GetDownloadCommand()
     {
-        var searchTermArgument = new Argument<string>("searchTerm", "The term to search for.");
+        var keyArgument = new Argument<string>("key", "The search result key to download the description for. Use the search command to get the key.");
         var defaultConfiguration = new DownloadConfiguration();
 
         var logLevelOption = GetLogLevelOption();
@@ -180,7 +202,7 @@ public static class KiotaHost
         var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);
 
         var searchCommand = new Command("download", "Downloads an OpenAPI description from multiple registries."){
-            searchTermArgument,
+            keyArgument,
             logLevelOption,
             clearCacheOption,
             versionOption,
@@ -189,7 +211,7 @@ public static class KiotaHost
         };
         searchCommand.Handler = new KiotaDownloadCommandHandler
         {
-            SearchTermArgument = searchTermArgument,
+            SearchTermArgument = keyArgument,
             LogLevelOption = logLevelOption,
             ClearCacheOption = clearCacheOption,
             VersionOption = versionOption,

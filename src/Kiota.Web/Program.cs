@@ -6,6 +6,7 @@ using Kiota.Web.Authentication.GitHub;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Fast.Components.FluentUI;
+using Microsoft.Fast.Components.FluentUI.Infrastructure;
 using Microsoft.JSInterop;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -15,23 +16,8 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
 builder.Services.AddLocalization();
-builder.Services.AddFluentUIComponents(configuration =>
-{
-    ArgumentNullException.ThrowIfNull(configuration);
-    configuration.IconConfiguration.Sizes = new[]
-    {
-        IconSize.Size16,
-        IconSize.Size20,
-        IconSize.Size24,
-        IconSize.Size28,
-    };
-    configuration.IconConfiguration.Variants = new[]
-    {
-        IconVariant.Regular
-    };
-    configuration.EmojiConfiguration.Styles = Array.Empty<EmojiStyle>();
-    configuration.EmojiConfiguration.Groups = Array.Empty<EmojiGroup>();
-});
+LibraryConfiguration config = new(ConfigurationGenerator.GetIconConfiguration(), ConfigurationGenerator.GetEmojiConfiguration());
+builder.Services.AddFluentUIComponents(config);
 builder.Services.AddBlazorApplicationInsights();
 var configObject = new KiotaConfiguration();
 builder.Configuration.Bind(configObject);

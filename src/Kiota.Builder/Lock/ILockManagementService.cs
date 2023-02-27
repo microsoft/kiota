@@ -33,4 +33,16 @@ public interface ILockManagementService
     /// <param name="lockInfo">The lock information to write.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     Task WriteLockFileAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Backs up the lock file for a Kiota project to the target directory.
+    /// </summary>
+    /// <param name="directoryPath">The target directory to write the lock file from.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    Task BackupLockFileAsync(string directoryPath, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Restores the lock file for a Kiota project to the target directory.
+    /// </summary>
+    /// <param name="directoryPath">The target directory to write the lock file to.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    Task RestoreLockFileAsync(string directoryPath, CancellationToken cancellationToken = default);
 }

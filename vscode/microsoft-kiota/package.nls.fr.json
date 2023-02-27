@@ -1,0 +1,18 @@
+{
+  "microsoft-kiota.dependenciesInfo.name": "Informations sur les dépendances Kiota",
+  "microsoft-kiota.dependenciesInfo.contextualTitle": "Information de dépendances",
+  "microsoft-kiota.openApiExplorer.name": "Explorateur OpenAPI Kiota",
+  "microsoft-kiota.openApiExplorer.contextualTitle": "Explorateur OpenAPI",
+  "kiota-dependencies-info.panel.title": "Informations sur les dépendances Kiota",
+  "kiota-openapi-explorer.activitybar.title": "Explorateur OpenAPI Kiota",
+  "microsoft-kiota.selectLock.title": "Sélectionner pour la vue explorateur d'API",
+  "microsoft-kiota.updateClients.title": "Mettre à jour les clients d'API dans l'environment courant",
+  "microsoft-kiota.openApiExplorer.generateClient.title": "Générer le client d'API",
+  "microsoft-kiota.searchApiDescription.title": "Rechercher une description d'API",
+  "microsoft-kiota.openApiExplorer.addToSelectedEndpoints.title": "Ajouter",
+  "microsoft-kiota.openApiExplorer.removeFromSelectedEndpoints.title": "Supprimer",
+  "microsoft-kiota.openApiExplorer.addAllToSelectedEndpoints.title": "Tout ajouter",
+  "microsoft-kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Tout supprimer",
+  "microsoft-kiota.openApiExplorer.closeDescription.title": "Fermer la description d'API",
+  "microsoft-kiota.openApiExplorer.openDescription.title": "Ouvrir une description d'API"
+}

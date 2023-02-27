@@ -48,7 +48,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             {
                 var searcher = await GetKiotaSearcherAsync(loggerFactory, cancellationToken).ConfigureAwait(false);
                 var results = await searcher.SearchAsync(searchTerm, version, cancellationToken);
-                await DisplayResults(searchTerm, version, results, logger, cancellationToken);
+                await DisplayResultsAsync(searchTerm, version, results, logger, cancellationToken);
                 return 0;
             }
             catch (Exception ex)
@@ -63,7 +63,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private async Task DisplayResults(string searchTerm, string version, IDictionary<string, SearchResult> results, ILogger logger, CancellationToken cancellationToken)
+    private async Task DisplayResultsAsync(string searchTerm, string version, IDictionary<string, SearchResult> results, ILogger logger, CancellationToken cancellationToken)
     {
         if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm))
         {
@@ -91,7 +91,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
             var layout = new StackLayoutView { view };
             console.Append(layout);
             DisplaySearchHint(results.Keys.FirstOrDefault(), version);
-            await DisplayLoginHint(logger, cancellationToken);
+            await DisplayLoginHintAsync(logger, cancellationToken);
             DisplaySearchAddHint();
         }
     }

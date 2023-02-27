@@ -6,7 +6,6 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
 
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Kiota.Builder.Tests.Refiners;
 public class GoLanguageRefinerTests
@@ -89,6 +88,61 @@ public class GoLanguageRefinerTests
         Assert.Empty(baseModel.DiscriminatorInformation.DiscriminatorMappings);
         Assert.Empty(baseModel.Usings.Where(x => x.Name.Equals("models.sub", StringComparison.OrdinalIgnoreCase)));
     }
+
+    [Fact]
+    public async Task AddCodeFileToHierarchy()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+        }).First();
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go, UsesBackingStore = true }, root);
+        Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
+
+        var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
+
+        Assert.Single(root.GetChildElements(true).OfType<CodeFile>());
+
+        Assert.Single(codeFile.GetChildElements(true).OfType<CodeInterface>());
+        Assert.Single(codeFile.GetChildElements(true).OfType<CodeClass>());
+    }
+
+    [Fact]
+    public async Task TestBackingStoreTypesUseInterfaces()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+        }).First();
+
+        var modelB = root.AddClass(new CodeClass
+        {
+            Name = "somemodelB",
+            Kind = CodeClassKind.Model,
+        }).First();
+
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "Getter",
+            Type = new CodeType { Name = "somemodelB", TypeDefinition = modelB },
+            Access = AccessModifier.Public,
+            Kind = CodePropertyKind.Custom,
+        }).First();
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go, UsesBackingStore = true }, root);
+        Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
+
+        var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
+
+        Assert.Equal(2, root.GetChildElements(true).OfType<CodeFile>().Count());
+
+        Assert.Single(codeFile.GetChildElements(true).OfType<CodeInterface>());
+        Assert.Single(codeFile.GetChildElements(true).OfType<CodeClass>());
+        Assert.Equal("somemodelBable", property.Type.Name);
+    }
     [Fact]
     public async Task ReplacesModelsByInterfaces()
     {
@@ -136,8 +190,10 @@ public class GoLanguageRefinerTests
         }).First();
         Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Single(root.GetChildElements(true).OfType<CodeInterface>());
-        var inter = root.GetChildElements(true).OfType<CodeInterface>().First();
+
+        var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
+        Assert.Single(codeFile.GetChildElements(true).OfType<CodeInterface>());
+        var inter = codeFile.GetChildElements(true).OfType<CodeInterface>().First();
 
         Assert.NotEqual(model.Name, inter.Name);
         var propertyType = property.Type as CodeType;
@@ -193,7 +249,9 @@ public class GoLanguageRefinerTests
         executorMethod.AddParameter(executorParameter);
         Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Single(root.GetChildElements(true).OfType<CodeInterface>());
+
+        var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
+        Assert.Single(codeFile.GetChildElements(true).OfType<CodeInterface>());
         var responseInter = requestBuilder.GetChildElements(true).OfType<CodeInterface>().LastOrDefault();
         Assert.NotNull(responseInter);
     }
