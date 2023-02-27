@@ -29,7 +29,7 @@ internal class Server : IServer
                 .AddEnvironmentVariables(prefix: "KIOTA_")
                 .Build();
         var configObject = new KiotaConfiguration();
-        configuration.Bind(configObject);
+        configObject.BindConfiguration(configuration);
         return configObject;
     });
     private static readonly HttpClient httpClient = new();
