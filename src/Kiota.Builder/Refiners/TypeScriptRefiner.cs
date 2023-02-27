@@ -394,15 +394,18 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Type = new CodeType { Name = ReturnFinalInterfaceName(modelInterface.Name), TypeDefinition = modelInterface }
         });
 
-        codeFunction.AddUsing(new CodeUsing
+        if(modelInterface.Parent != null && modelInterface.Parent.Name != null) 
         {
-            Name = modelInterface.Parent?.Name!,
-            Declaration = new CodeType
+            codeFunction.AddUsing(new CodeUsing
             {
-                Name = ReturnFinalInterfaceName(modelInterface.Name),
-                TypeDefinition = modelInterface
-            }
-        });
+                Name = modelInterface.Parent.Name,
+                Declaration = new CodeType
+                {
+                    Name = ReturnFinalInterfaceName(modelInterface.Name),
+                    TypeDefinition = modelInterface
+                }
+            });
+        }
     }
 
     /// <summary>
