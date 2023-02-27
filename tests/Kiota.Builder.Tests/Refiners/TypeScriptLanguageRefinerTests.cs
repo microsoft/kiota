@@ -244,9 +244,9 @@ public class TypeScriptLanguageRefinerTests
         var model = TestHelper.CreateModelClass("break");
         root.AddClass(model);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-        var interFaceModel = root.CodeInterfaces.First(x => x.Name == "Break_escaped");
+        var interFaceModel = root.CodeInterfaces.First(x => x.Name == "BreakEscaped");
         Assert.NotEqual("break", interFaceModel.Name);
-        Assert.Contains("escaped", interFaceModel.Name);
+        Assert.Contains("Escaped", interFaceModel.Name);
     }
 
     [Fact]
