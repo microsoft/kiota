@@ -87,20 +87,19 @@ class Program
                 .UseRequestAdapter(ic =>
                 {
                     var clientId = "YOUR_CLIENT_ID";
+                    var clientSecret = "YOUR_CLIENT_SECRET"
+                    var tenantId = "YOUR_TENANT_ID";
 
                     // The auth provider will only authorize requests to
                     // the allowed hosts, in this case Microsoft Graph
                     var allowedHosts = new [] { "graph.microsoft.com" };
                     var graphScopes = new [] { "User.Read" };
-                    var credential = new DeviceCodeCredential((code, cancellation) =>
-                    {
-                        Console.WriteLine(code.Message);
-                        return Task.FromResult(0);
-                    },
-                    clientId);
+                    var credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
 
                     var authProvider = new AzureIdentityAuthenticationProvider(credential, allowedHosts, scopes: graphScopes);
-                    return new HttpClientRequestAdapter(authProvider);
+                    var adapter = new HttpClientRequestAdapter(authProvider);
+                    adapter.BaseUrl = "https://graph.microsoft.com/v1.0";
+                    return adapter;
                 }).RegisterCommonServices();
         
         return await builder.Build().InvokeAsync(args);
