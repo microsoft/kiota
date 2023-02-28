@@ -394,7 +394,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Type = new CodeType { Name = ReturnFinalInterfaceName(modelInterface.Name), TypeDefinition = modelInterface }
         });
 
-        if(modelInterface.Parent != null)
+        if (modelInterface.Parent != null)
         {
             codeFunction.AddUsing(new CodeUsing
             {
@@ -537,7 +537,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var serializationFunctions = GetSerializationFunctionsForNamespace(modelClass);
         var serializer = serializationFunctions.Item1;
         var deserializer = serializationFunctions.Item2;
-        if(serializer.Parent != null)
+        if (serializer.Parent != null)
         {
             targetClass.AddUsing(new CodeUsing
             {
@@ -549,8 +549,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 }
             });
         }
-        
-        if(deserializer.Parent != null)
+
+        if (deserializer.Parent != null)
         {
             targetClass.AddUsing(new CodeUsing
             {
@@ -562,7 +562,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 }
             });
         }
-        
+
     }
 
     private static void ProcessModelsAssociatedWithMethods(CodeMethod codeMethod, CodeClass requestBuilderClass, Func<CodeClass, string> interfaceNamingCallback)
@@ -652,7 +652,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
 
         elemType.TypeDefinition = interfaceElement;
-        if(elemType.Parent != null)
+        if (elemType.Parent != null)
         {
             requestBuilder.AddUsing(new CodeUsing
             {
@@ -745,7 +745,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var parentSerializer = parentSerializationFunctions.Item1;
         var parentDeserializer = parentSerializationFunctions.Item2;
 
-        if(parentSerializer.Parent != null)
+        if (parentSerializer.Parent != null)
         {
             serializer.AddUsing(new CodeUsing
             {
@@ -758,7 +758,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
         }
 
-        if(parentDeserializer.Parent != null)
+        if (parentDeserializer.Parent != null)
         {
             deserializer.AddUsing(new CodeUsing
             {
@@ -791,7 +791,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 throw new InvalidOperationException($"Serialization function for property {property.Name} not found");
             }
 
-            if(serializationFunction.Parent != null) 
+            if (serializationFunction.Parent != null)
             {
                 codeFunction.AddUsing(new CodeUsing
                 {
@@ -806,7 +806,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
 
             var interfaceProperty = CreateModelInterface(property, interfaceNamingCallback);
-            if(interfaceProperty.Parent != null)
+            if (interfaceProperty.Parent != null)
             {
                 codeFunction.AddUsing(new CodeUsing
                 {
@@ -933,7 +933,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             && parsableFactoryFunction.OriginalLocalMethod?.ReturnType is CodeType codeType && codeType?.TypeDefinition is CodeClass modelReturnClass)
         {
             var modelDeserializerFunction = GetSerializationFunctionsForNamespace(modelReturnClass).Item2;
-            if(modelDeserializerFunction.Parent != null) 
+            if (modelDeserializerFunction.Parent != null)
             {
                 parsableFactoryFunction.AddUsing(new CodeUsing
                 {
@@ -945,14 +945,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     },
                 });
             }
-            
+
             foreach (var mappedType in parsableFactoryFunction.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
             {
                 if (mappedType.Value is CodeType type && type.TypeDefinition is CodeClass mappedClass)
                 {
                     var deserializer = GetSerializationFunctionsForNamespace(mappedClass).Item2;
 
-                    if(deserializer.Parent != null) 
+                    if (deserializer.Parent != null)
                     {
                         parsableFactoryFunction.AddUsing(new CodeUsing
                         {
