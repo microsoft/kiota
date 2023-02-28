@@ -394,7 +394,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Type = new CodeType { Name = ReturnFinalInterfaceName(modelInterface.Name), TypeDefinition = modelInterface }
         });
 
-        if(modelInterface.Parent != null && modelInterface.Parent.Name != null) 
+        if(modelInterface.Parent != null)
         {
             codeFunction.AddUsing(new CodeUsing
             {
@@ -537,25 +537,32 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var serializationFunctions = GetSerializationFunctionsForNamespace(modelClass);
         var serializer = serializationFunctions.Item1;
         var deserializer = serializationFunctions.Item2;
-        targetClass.AddUsing(new CodeUsing
+        if(serializer.Parent != null)
         {
-            Name = serializer.Parent?.Name!,
-            Declaration = new CodeType
+            targetClass.AddUsing(new CodeUsing
             {
-                Name = serializer.Name,
-                TypeDefinition = serializer
-            }
-        });
-
-        targetClass.AddUsing(new CodeUsing
+                Name = serializer.Parent.Name,
+                Declaration = new CodeType
+                {
+                    Name = serializer.Name,
+                    TypeDefinition = serializer
+                }
+            });
+        }
+        
+        if(deserializer.Parent != null)
         {
-            Name = deserializer.Parent?.Name!,
-            Declaration = new CodeType
+            targetClass.AddUsing(new CodeUsing
             {
-                Name = deserializer.Name,
-                TypeDefinition = deserializer
-            }
-        });
+                Name = deserializer.Parent.Name,
+                Declaration = new CodeType
+                {
+                    Name = deserializer.Name,
+                    TypeDefinition = deserializer
+                }
+            });
+        }
+        
     }
 
     private static void ProcessModelsAssociatedWithMethods(CodeMethod codeMethod, CodeClass requestBuilderClass, Func<CodeClass, string> interfaceNamingCallback)
@@ -639,17 +646,20 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             requestBuilder.AddUsing(new CodeUsing
             {
-                Name = interfaceElement?.Name!,
+                Name = interfaceElement.Name,
                 Declaration = interfaceCodeType
             });
         }
 
         elemType.TypeDefinition = interfaceElement;
-        requestBuilder.AddUsing(new CodeUsing
+        if(elemType.Parent != null)
         {
-            Name = elemType.Parent?.Name!,
-            Declaration = interfaceCodeType
-        });
+            requestBuilder.AddUsing(new CodeUsing
+            {
+                Name = elemType.Parent.Name,
+                Declaration = interfaceCodeType
+            });
+        }
     }
 
     private static CodeInterface CreateModelInterface(CodeClass modelClass, Func<CodeClass, string> interfaceNamingCallback)
@@ -735,25 +745,31 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var parentSerializer = parentSerializationFunctions.Item1;
         var parentDeserializer = parentSerializationFunctions.Item2;
 
-        serializer.AddUsing(new CodeUsing
+        if(parentSerializer.Parent != null)
         {
-            Name = parentSerializer.Parent?.Name!,
-            Declaration = new CodeType
+            serializer.AddUsing(new CodeUsing
             {
-                Name = parentSerializer.Name,
-                TypeDefinition = parentSerializer
-            }
-        });
+                Name = parentSerializer.Parent.Name,
+                Declaration = new CodeType
+                {
+                    Name = parentSerializer.Name,
+                    TypeDefinition = parentSerializer
+                }
+            });
+        }
 
-        deserializer.AddUsing(new CodeUsing
+        if(parentDeserializer.Parent != null)
         {
-            Name = parentDeserializer.Parent?.Name!,
-            Declaration = new CodeType
+            deserializer.AddUsing(new CodeUsing
             {
-                Name = parentDeserializer.Name,
-                TypeDefinition = parentDeserializer
-            }
-        });
+                Name = parentDeserializer.Parent.Name,
+                Declaration = new CodeType
+                {
+                    Name = parentDeserializer.Name,
+                    TypeDefinition = parentDeserializer
+                }
+            });
+        }
     }
 
     private static void SetUsingInModelInterface(CodeInterface modelInterface, (CodeInterface, CodeUsing) propertyTypeAndUsing)
@@ -774,27 +790,34 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 throw new InvalidOperationException($"Serialization function for property {property.Name} not found");
             }
-            codeFunction.AddUsing(new CodeUsing
-            {
-                Name = serializationFunction.Parent?.Name!,
-                Declaration = new CodeType
-                {
-                    Name = serializationFunction.Name,
-                    TypeDefinition = serializationFunction
 
-                }
-            });
+            if(serializationFunction.Parent != null) 
+            {
+                codeFunction.AddUsing(new CodeUsing
+                {
+                    Name = serializationFunction.Parent.Name,
+                    Declaration = new CodeType
+                    {
+                        Name = serializationFunction.Name,
+                        TypeDefinition = serializationFunction
+
+                    }
+                });
+            }
 
             var interfaceProperty = CreateModelInterface(property, interfaceNamingCallback);
-            codeFunction.AddUsing(new CodeUsing
+            if(interfaceProperty.Parent != null)
             {
-                Name = interfaceProperty.Parent?.Name!,
-                Declaration = new CodeType
+                codeFunction.AddUsing(new CodeUsing
                 {
-                    Name = interfaceProperty.Name,
-                    TypeDefinition = interfaceProperty
-                }
-            });
+                    Name = interfaceProperty.Parent.Name,
+                    Declaration = new CodeType
+                    {
+                        Name = interfaceProperty.Name,
+                        TypeDefinition = interfaceProperty
+                    }
+                });
+            }
         }
     }
 
@@ -910,30 +933,37 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             && parsableFactoryFunction.OriginalLocalMethod?.ReturnType is CodeType codeType && codeType?.TypeDefinition is CodeClass modelReturnClass)
         {
             var modelDeserializerFunction = GetSerializationFunctionsForNamespace(modelReturnClass).Item2;
-            parsableFactoryFunction.AddUsing(new CodeUsing
+            if(modelDeserializerFunction.Parent != null) 
             {
-                Name = modelDeserializerFunction.Parent?.Name!,
-                Declaration = new CodeType
+                parsableFactoryFunction.AddUsing(new CodeUsing
                 {
-                    Name = modelDeserializerFunction.Name,
-                    TypeDefinition = modelDeserializerFunction
-                },
-            });
+                    Name = modelDeserializerFunction.Parent.Name,
+                    Declaration = new CodeType
+                    {
+                        Name = modelDeserializerFunction.Name,
+                        TypeDefinition = modelDeserializerFunction
+                    },
+                });
+            }
+            
             foreach (var mappedType in parsableFactoryFunction.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
             {
                 if (mappedType.Value is CodeType type && type.TypeDefinition is CodeClass mappedClass)
                 {
                     var deserializer = GetSerializationFunctionsForNamespace(mappedClass).Item2;
 
-                    parsableFactoryFunction.AddUsing(new CodeUsing
+                    if(deserializer.Parent != null) 
                     {
-                        Name = deserializer.Parent?.Name!,
-                        Declaration = new CodeType
+                        parsableFactoryFunction.AddUsing(new CodeUsing
                         {
-                            Name = deserializer.Name,
-                            TypeDefinition = deserializer
-                        },
-                    });
+                            Name = deserializer.Parent.Name,
+                            Declaration = new CodeType
+                            {
+                                Name = deserializer.Name,
+                                TypeDefinition = deserializer
+                            },
+                        });
+                    }
                 }
             }
 
