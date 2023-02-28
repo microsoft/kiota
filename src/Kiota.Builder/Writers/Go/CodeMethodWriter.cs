@@ -869,7 +869,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         {
             if (isCollection)
                 if (currentType.TypeDefinition == null)
-                    return $"GetCollectionOfPrimitiveValues(\"{propertyTypeName.ToLower()}\")";
+                    return $"GetCollectionOfPrimitiveValues(\"{propertyTypeName.ToLowerInvariant()}\")";
                 else if (currentType.TypeDefinition is CodeEnum)
                     return $"GetCollectionOfEnumValues({conventions.GetImportedStaticMethodName(propType, parentClass, "Parse")})";
                 else
