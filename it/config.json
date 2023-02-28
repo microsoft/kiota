@@ -1,0 +1,3 @@
+{
+  "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json": "-e /gists -e /gists/** -e /users/*/gists -e /orgs/*/migrations -e /orgs/*/migrations/** -e /user/migrations -e /user/migrations/** -e /users/*/gpg_keys -e /user/gpg_keys -e /user/gpg_keys/**"
+}
