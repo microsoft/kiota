@@ -1,4 +1,4 @@
-
+﻿
 using System.Text.Json.Serialization;
 using Kiota.Builder.Configuration;
 
