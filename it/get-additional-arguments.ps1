@@ -24,9 +24,12 @@ if ($null -eq $descriptionValue) {
     exit 0
 }
 
-$command = "--output ./it/$language";
+$command = "--output './it/$language'";
 if ($language -eq "csharp") {
-    $command += "/client"
+    $command = "--output './it/$language/client'"
+}
+elseif ($language -eq "java") {
+    $command = "--output './it/$language/src'"
 }
 
 if ($descriptionValue.PSObject.Properties.Name -contains "ExcludePatterns") {

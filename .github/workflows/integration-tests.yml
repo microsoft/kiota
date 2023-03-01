@@ -114,7 +114,7 @@ jobs:
         run: |
           ORIGINAL="${{ matrix.description }}"
           REPLACED="${ORIGINAL//[-:<>|\*\?\\\/\.]//_}"
-          echo "ARTKEY=$REPLACED\n" > $GITHUB_OUTPUT
+          echo "ARTKEY=$REPLACED" > $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v3
         if: always()
         with:
