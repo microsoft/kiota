@@ -110,7 +110,7 @@ jobs:
         run: |
           $additionalCommand = . ./it/get-additional-arguments.ps1 -descriptionUrl ${{ matrix.description }}
           Write-Host "Additional command: $additionalCommand"
-          ./publish/kiota generate --language Java --openapi ${{ matrix.description }} --output ./it/java/src $additionalCommand
+          ./publish/kiota generate --language Java --openapi ${{ matrix.description }} --output ./it/java/src$additionalCommand
         shell: pwsh
       - uses: actions/cache@v3
         with:

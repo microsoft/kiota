@@ -22,13 +22,13 @@ $command = "";
 
 if ($descriptionValue.PSObject.Properties.Name -contains "ExcludePatterns") {
     $descriptionValue.ExcludePatterns | ForEach-Object {
-        $command += " -e $($_.Pattern)"
+        $command += " -e '$($_.Pattern)'"
     }
 }
 
 if ($descriptionValue.PSObject.Properties.Name -contains "IncludePatterns") {
     $descriptionValue.IncludePatterns | ForEach-Object {
-        $command += " -i $($_.Pattern)"
+        $command += " -i '$($_.Pattern)'"
     }
 }
 
