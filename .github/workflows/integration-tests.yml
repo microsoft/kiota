@@ -110,9 +110,14 @@ jobs:
       - run: dotnet build
         if: matrix.language == 'csharp'
         working-directory: ./it/csharp
+      - id: replace_url
+        run: |
+          ORIGINAL="${{ matrix.description }}"
+          REPLACED="${ORIGINAL//[-:<>|\*\?\\\/\.]//_}"
+          echo "ARTKEY=$REPLACED\n" > $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: generation-results-${{ matrix.language }}-${{ matrix.description }}
+          name: generation-results-${{ matrix.language }}-${{ steps.replace_url.outputs.ARTKEY }}
           path: it/${{ matrix.language }}
       
