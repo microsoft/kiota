@@ -21,6 +21,7 @@ public static class ValidationRuleSetExtensions
         ruleSet.AddRuleIfEnabled(configuration, new UrlFormEncodedComplex());
         ruleSet.AddRuleIfEnabled(configuration, new DivergentResponseSchema(configuration));
         ruleSet.AddRuleIfEnabled(configuration, new MissingDiscriminator(configuration));
+        ruleSet.AddRuleIfEnabled(configuration, new UnsupportedInheritanceSemantics(configuration));
     }
     private static void AddRuleIfEnabled<T>(this ValidationRuleSet ruleSet, GenerationConfiguration configuration, T instance) where T : ValidationRule
     {
