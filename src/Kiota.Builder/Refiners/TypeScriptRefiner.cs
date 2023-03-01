@@ -838,8 +838,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
              */
 
             // If  the property is of external type or an enum type. 
-            if (mProp.Type is CodeType ct && (ct.IsExternal || ct.TypeDefinition is not CodeClass) 
-                && modelClass.Usings.FirstOrDefault(x => x.Name.EqualsIgnoreCase(ct.Name) || (x.Declaration != null && x.Declaration.Name.EqualsIgnoreCase(ct.Name))) is CodeUsing usingExternal)
+            if (mProp.Type is CodeType ct && (ct.IsExternal || ct.TypeDefinition is not CodeClass) && modelClass.Usings.FirstOrDefault(x => x.Name.EqualsIgnoreCase(ct.Name) || (x.Declaration != null && x.Declaration.Name.EqualsIgnoreCase(ct.Name))) is CodeUsing usingExternal)
             {
                 modelInterface.AddUsing(usingExternal);
                 serializer.AddUsing(usingExternal);
