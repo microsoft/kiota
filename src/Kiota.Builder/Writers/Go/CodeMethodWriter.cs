@@ -863,13 +863,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeClass parentClass)
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-        var propertyTypeName = conventions.GetTypeString(propType, parentClass, false, false);
+        var propertyTypeName = conventions.GetTypeString(propType, parentClass, false, false, false);
         var propertyTypeNameWithoutImportSymbol = conventions.TranslateType(propType, false);
         if (propType is CodeType currentType)
         {
             if (isCollection)
                 if (currentType.TypeDefinition == null)
-                    return $"GetCollectionOfPrimitiveValues(\"{propertyTypeName.ToFirstCharacterLowerCase()}\")";
+                    return $"GetCollectionOfPrimitiveValues(\"{propertyTypeName.ToLowerInvariant()}\")";
                 else if (currentType.TypeDefinition is CodeEnum)
                     return $"GetCollectionOfEnumValues({conventions.GetImportedStaticMethodName(propType, parentClass, "Parse")})";
                 else
@@ -924,9 +924,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         }
         var collectionPrefix = propType.IsCollection ? "CollectionOf" : string.Empty;
         var collectionSuffix = propType.IsCollection ? "s" : string.Empty;
-        var propertyTypeName = conventions.GetTypeString(propType, parentBlock, false, false)
-                                .Split('.')
-                                .Last()
+        var propertyTypeName = conventions.GetTypeString(propType, parentBlock, false, false, false)
                                 .ToFirstCharacterUpperCase();
         var reference = (isEnum, isComplexType, propType.IsCollection) switch
         {
