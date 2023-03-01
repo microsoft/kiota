@@ -111,6 +111,7 @@ jobs:
         if: matrix.language == 'csharp'
         working-directory: ./it/csharp
       - id: replace_url
+        if: always()
         run: |
           ORIGINAL="${{ matrix.description }}"
           REPLACED="${ORIGINAL//[-:<>|\*\?\\\/\.]//_}"
