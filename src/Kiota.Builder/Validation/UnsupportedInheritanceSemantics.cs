@@ -33,7 +33,7 @@ public class UnsupportedInheritanceSemantics : ValidationRule<OpenApiDocument>
 
     private static IEnumerable<string> GetAllProperties(string prefix, OpenApiSchema schema)
     {
-        var fullPrefix = string.IsNullOrEmpty(prefix) ? "" : prefix + ".";
+        var fullPrefix = string.IsNullOrEmpty(prefix) ? string.Empty : prefix + ".";
         var inlinedProperties = schema.Properties
                 .Concat(schema.AllOf.SelectMany(static x => x.Properties))
                 .Concat(schema.AnyOf.SelectMany(static x => x.Properties))
