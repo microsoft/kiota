@@ -1,9 +1,15 @@
 param(
-    [Parameter(Mandatory = $true)][string]$descriptionUrl
+    [Parameter(Mandatory = $true)][string]$descriptionUrl,
+    [Parameter(Mandatory = $true)][string]$language
 )
 
 if ([string]::IsNullOrEmpty($descriptionUrl)) {
     Write-Error "Description URL is empty"
+    exit 1
+}
+
+if ([string]::IsNullOrEmpty($language)) {
+    Write-Error "Language is empty"
     exit 1
 }
 
@@ -18,7 +24,10 @@ if ($null -eq $descriptionValue) {
     exit 0
 }
 
-$command = "";
+$command = "--output ./it/$language";
+if ($language -eq "csharp") {
+    $command += "/client"
+}
 
 if ($descriptionValue.PSObject.Properties.Name -contains "ExcludePatterns") {
     $descriptionValue.ExcludePatterns | ForEach-Object {
@@ -30,6 +39,10 @@ if ($descriptionValue.PSObject.Properties.Name -contains "IncludePatterns") {
     $descriptionValue.IncludePatterns | ForEach-Object {
         $command += " -i '$($_.Pattern)'"
     }
+}
+
+if ($language -eq "csharp") {
+    $command += " --namespace-name 'app.first'"
 }
 
 return $command

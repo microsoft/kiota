@@ -54,73 +54,16 @@ jobs:
         with:
           name: tests
           path: tests/**/*.yaml
-  java-it:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: generator
-          path: publish
-      - uses: actions/download-artifact@v3
-        with:
-          name: it
-          path: it
-      - uses: actions/download-artifact@v3
-        with:
-          name: tests
-          path: tests
-      - run: chmod +x ./publish/kiota
-      - name: Generate Java Code
-        run: |
-          ./publish/kiota generate --language Java --openapi ./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml --output ./it/java/src
-          ./publish/kiota generate --language Java --openapi ./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml --output ./it/java/src --namespace-name "no.underscores"
-      - uses: actions/cache@v3
-        with:
-          path: /root/.jbang
-          key: $-jbang-$
-          restore-keys: |
-            $-jbang-
-      - name: jbang
-        uses: jbangdev/jbang-action@v0.104.0
-        with:
-          script: ./it/java/test.java
-        env:
-          JBANG_REPO: /root/.jbang/repository
-  csharp-it:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: generator
-          path: publish
-      - uses: actions/download-artifact@v3
-        with:
-          name: it
-          path: it
-      - uses: actions/download-artifact@v3
-        with:
-          name: tests
-          path: tests
-      - run: chmod +x ./publish/kiota
-      - name: Generate CSharp Code
-        run: |
-          ./publish/kiota generate --language CSharp --openapi ./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml --output ./it/dotnet/src/first --namespace-name "app.first"
-          ./publish/kiota generate --language CSharp --openapi ./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml --output ./it/dotnet/src/second --namespace-name "app.second"
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 7.0.x
-      - run: dotnet build
-        working-directory: ./it/csharp
-  java:
+  language-integration-tests:
     runs-on: ubuntu-latest
     needs: build
     strategy:
       fail-fast: false
       matrix:
+        language: [ java, csharp ]
         description: [
+          './tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml',
+          './tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml',
           'https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json'
         ]
     steps:
@@ -132,25 +75,44 @@ jobs:
         with:
           name: it
           path: it
+      - uses: actions/download-artifact@v3
+        with:
+          name: tests
+          path: tests
       - run: chmod +x ./publish/kiota
       - run: chmod +x ./it/get-additional-arguments.ps1
-      - name: Generate Java Code
+      - name: Generate Code
         run: |
           $additionalCommand = . ./it/get-additional-arguments.ps1 -descriptionUrl ${{ matrix.description }}
-          Write-Host "Additional command: $additionalCommand"
-          $finalCommand = "./publish/kiota generate --language Java --openapi ${{ matrix.description }} --output ./it/java/src$additionalCommand"
+          $finalCommand = "./publish/kiota generate --language ${{ matrix.language }} --openapi ${{ matrix.description }}$additionalCommand"
           Write-Host "Final command: $finalCommand"
           iex $finalCommand
         shell: pwsh
       - uses: actions/cache@v3
+        if: matrix.language == 'java'
         with:
           path: /root/.jbang
           key: $-jbang-$
           restore-keys: |
             $-jbang-
       - name: jbang
-        uses: jbangdev/jbang-action@v0.103.2
+        if: matrix.language == 'java'
+        uses: jbangdev/jbang-action@v0.104.0
         with:
           script: ./it/java/test.java
         env:
           JBANG_REPO: /root/.jbang/repository
+      - name: Setup .NET
+        if: matrix.language == 'csharp'
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 7.0.x
+      - run: dotnet build
+        if: matrix.language == 'csharp'
+        working-directory: ./it/csharp
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: generation-results-${{ matrix.language }}-${{ matrix.description }}
+          path: it/${{ matrix.language }}
+      
