@@ -46,15 +46,22 @@ jobs:
         with:
           name: generator
           path: publish
+      - uses: actions/upload-artifact@v3
+        with:
+          name: it
+          path: it
   java-it:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
         with:
           name: generator
           path: publish
+      - uses: actions/download-artifact@v3
+        with:
+          name: it
+          path: it
       - run: chmod +x ./publish/kiota
       - name: Generate Java Code
         run: ./it/java/generate.sh
@@ -79,14 +86,22 @@ jobs:
           'https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json'
         ]
     steps:
-      - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
         with:
           name: generator
           path: publish
+      - uses: actions/download-artifact@v3
+        with:
+          name: it
+          path: it
+      - run: |
+          $additionalCommand = . ./it/get-additional-arguments.ps1 -descriptionUrl ${{ matrix.description }}
+          echo "::set-output name=command::${additionalCommand}"
+        id: AdditionalArgs
+        shell: pwsh
       - run: chmod +x ./publish/kiota
       - name: Generate Java Code
-        run: ./publish/kiota generate --language Java --openapi ${{ matrix.description }} --output ./it/java/src
+        run: ./publish/kiota generate --language Java --openapi ${{ matrix.description }} --output ./it/java/src ${{ steps.AdditionalArgs.outputs.additionalCommand }}
       - uses: actions/cache@v3
         with:
           path: /root/.jbang

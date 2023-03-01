@@ -1,3 +1,46 @@
 {
-  "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json": "-e /gists -e /gists/** -e /users/*/gists -e /orgs/*/migrations -e /orgs/*/migrations/** -e /user/migrations -e /user/migrations/** -e /users/*/gpg_keys -e /user/gpg_keys -e /user/gpg_keys/**"
+  "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json": {
+    "ExcludePatterns": [
+      {
+        "Pattern": "/gists",
+        "Rationale": "https://github.com/github/rest-api-description/issues/214"
+      },
+      {
+        "Pattern": "/gists/**",
+        "Rationale": "https://github.com/github/rest-api-description/issues/214"
+      },
+      {
+        "Pattern": "/users/*/gists",
+        "Rationale": "https://github.com/github/rest-api-description/issues/214"
+      },
+      {
+        "Pattern": "/orgs/*/migrations",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2246"
+      },
+      {
+        "Pattern": "/orgs/*/migrations/**",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2246"
+      },
+      {
+        "Pattern": "/user/migrations",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2246"
+      },
+      {
+        "Pattern": "/user/migrations/**",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2246"
+      },
+      {
+        "Pattern": "/users/*/gpg_keys",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2247"
+      },
+      {
+        "Pattern": "/user/gpg_keys",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2247"
+      },
+      {
+        "Pattern": "/user/gpg_keys/**",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2247"
+      }
+    ]
+  }
 }
