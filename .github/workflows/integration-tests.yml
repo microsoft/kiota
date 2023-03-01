@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ java, csharp ]
+        language: [ java, csharp, go ]
         description: [
           './tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml',
           './tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml',
@@ -110,6 +110,10 @@ jobs:
       - run: dotnet build
         if: matrix.language == 'csharp'
         working-directory: ./it/csharp
+      - run: |
+          rm **/obj/** -r
+        if: always() && matrix.language == 'csharp'
+        shell: pwsh
       - id: replace_url
         if: always()
         run: |

@@ -15,10 +15,13 @@ if ([string]::IsNullOrEmpty($language)) {
 
 $command = " --output './it/$language'";
 if ($language -eq "csharp") {
-    $command = " --output './it/$language/client'"
+    $command = " --output './it/$language/client' --namespace-name 'app.client'"
 }
 elseif ($language -eq "java") {
     $command = " --output './it/$language/src'"
+}
+elseif ($language -eq "go") {
+    $command = " --output './it/$language/client' --namespace-name 'integrationtest.client'"
 }
 
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -38,10 +41,6 @@ if ($null -ne $descriptionValue) {
             $command += " -i '$($_.Pattern)'"
         }
     }
-}
-
-if ($language -eq "csharp") {
-    $command += " --namespace-name 'app.client'"
 }
 
 return $command
