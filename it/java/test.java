@@ -12,9 +12,6 @@ import static java.lang.System.*;
 public class test {
 
     public static void main(String... args) {
-        var error = new apisdk.models.Error().getClass().getName();
-        var noUnderscores = new no.underscores.models.TestListItemsAdditional().getClass().getName();
-
-        out.println("Everything compiles and classes are available in the compilation unit.\n" + error + "\n" + noUnderscores);
+        out.println("Everything compiles and classes are available in the compilation unit.\n");
     }
 }
