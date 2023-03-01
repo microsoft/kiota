@@ -63,6 +63,7 @@ jobs:
           name: it
           path: it
       - run: chmod +x ./publish/kiota
+      - run: chmod +x ./it/java/generate.sh
       - name: Generate Java Code
         run: ./it/java/generate.sh
       - uses: actions/cache@v3
@@ -94,12 +95,13 @@ jobs:
         with:
           name: it
           path: it
+      - run: chmod +x ./publish/kiota
+      - run: chmod +x ./it/get-additional-arguments.ps1
       - run: |
           $additionalCommand = . ./it/get-additional-arguments.ps1 -descriptionUrl ${{ matrix.description }}
-          echo "::set-output name=command::${additionalCommand}"
+          echo "command=${additionalCommand}" >> $GITHUB_ENV
         id: AdditionalArgs
         shell: pwsh
-      - run: chmod +x ./publish/kiota
       - name: Generate Java Code
         run: ./publish/kiota generate --language Java --openapi ${{ matrix.description }} --output ./it/java/src ${{ steps.AdditionalArgs.outputs.additionalCommand }}
       - uses: actions/cache@v3
