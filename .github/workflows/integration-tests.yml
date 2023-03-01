@@ -71,9 +71,10 @@ jobs:
           name: tests
           path: tests
       - run: chmod +x ./publish/kiota
-      - run: chmod +x ./it/java/generate.sh
       - name: Generate Java Code
-        run: ./it/java/generate.sh
+        run: |
+          ./publish/kiota generate --language Java --openapi ./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml --output ./it/java/src
+          ./publish/kiota generate --language Java --openapi ./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml --output ./it/java/src --namespace-name "no.underscores"
       - uses: actions/cache@v3
         with:
           path: /root/.jbang
@@ -86,6 +87,33 @@ jobs:
           script: ./it/java/test.java
         env:
           JBANG_REPO: /root/.jbang/repository
+  csharp-it:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: generator
+          path: publish
+      - uses: actions/download-artifact@v3
+        with:
+          name: it
+          path: it
+      - uses: actions/download-artifact@v3
+        with:
+          name: tests
+          path: tests
+      - run: chmod +x ./publish/kiota
+      - name: Generate CSharp Code
+        run: |
+          ./publish/kiota generate --language CSharp --openapi ./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml --output ./it/dotnet/src/first --namespace-name "app.first"
+          ./publish/kiota generate --language CSharp --openapi ./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml --output ./it/dotnet/src/second --namespace-name "app.second"
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 7.0.x
+      - run: dotnet build
+        working-directory: ./it/csharp
   java:
     runs-on: ubuntu-latest
     needs: build
@@ -110,7 +138,9 @@ jobs:
         run: |
           $additionalCommand = . ./it/get-additional-arguments.ps1 -descriptionUrl ${{ matrix.description }}
           Write-Host "Additional command: $additionalCommand"
-          ./publish/kiota generate --language Java --openapi ${{ matrix.description }} --output ./it/java/src$additionalCommand
+          $finalCommand = "./publish/kiota generate --language Java --openapi ${{ matrix.description }} --output ./it/java/src$additionalCommand"
+          Write-Host "Final command: $finalCommand"
+          iex $finalCommand
         shell: pwsh
       - uses: actions/cache@v3
         with:
