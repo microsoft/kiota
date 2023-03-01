@@ -45,7 +45,7 @@ public class UnsupportedInheritanceSemantics : ValidationRule<OpenApiDocument>
     }
     private static void ValidateSchema(OpenApiSchema schema, IValidationContext context)
     {
-        var allProperties = GetAllProperties("", schema);
+        var allProperties = GetAllProperties(string.Empty, schema);
         if (allProperties.Count() != allProperties.Distinct().Count())
         {
             context.CreateWarning(nameof(UnsupportedInheritanceSemantics), $"The schema {schema.GetSchemaName()} is using inheritance and one or more fields is overwritten.");
