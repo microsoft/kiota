@@ -50,6 +50,10 @@ jobs:
         with:
           name: it
           path: it
+      - uses: actions/upload-artifact@v3
+        with:
+          name: tests
+          path: tests/**/*.yaml
   java-it:
     runs-on: ubuntu-latest
     needs: build
@@ -62,6 +66,10 @@ jobs:
         with:
           name: it
           path: it
+      - uses: actions/download-artifact@v3
+        with:
+          name: tests
+          path: tests
       - run: chmod +x ./publish/kiota
       - run: chmod +x ./it/java/generate.sh
       - name: Generate Java Code
@@ -82,6 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     strategy:
+      fail-fast: false
       matrix:
         description: [
           'https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json'
@@ -97,13 +106,12 @@ jobs:
           path: it
       - run: chmod +x ./publish/kiota
       - run: chmod +x ./it/get-additional-arguments.ps1
-      - run: |
-          $additionalCommand = . ./it/get-additional-arguments.ps1 -descriptionUrl ${{ matrix.description }}
-          echo "command=${additionalCommand}" >> $GITHUB_OUTPUT
-        id: AdditionalArgs
-        shell: pwsh
       - name: Generate Java Code
-        run: ./publish/kiota generate --language Java --openapi ${{ matrix.description }} --output ./it/java/src ${{ steps.AdditionalArgs.outputs.additionalCommand }}
+        run: |
+          $additionalCommand = . ./it/get-additional-arguments.ps1 -descriptionUrl ${{ matrix.description }}
+          Write-Host "Additional command: $additionalCommand"
+          ./publish/kiota generate --language Java --openapi ${{ matrix.description }} --output ./it/java/src $additionalCommand
+        shell: pwsh
       - uses: actions/cache@v3
         with:
           path: /root/.jbang
