@@ -83,7 +83,7 @@ jobs:
       - run: chmod +x ./it/get-additional-arguments.ps1
       - name: Generate Code
         run: |
-          $additionalCommand = . ./it/get-additional-arguments.ps1 -descriptionUrl ${{ matrix.description }}
+          $additionalCommand = . ./it/get-additional-arguments.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
           $finalCommand = "./publish/kiota generate --language ${{ matrix.language }} --openapi ${{ matrix.description }}$additionalCommand"
           Write-Host "Final command: $finalCommand"
           iex $finalCommand
