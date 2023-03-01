@@ -99,7 +99,7 @@ jobs:
       - run: chmod +x ./it/get-additional-arguments.ps1
       - run: |
           $additionalCommand = . ./it/get-additional-arguments.ps1 -descriptionUrl ${{ matrix.description }}
-          echo "command=${additionalCommand}" >> $GITHUB_ENV
+          echo "command=${additionalCommand}" >> $GITHUB_OUTPUT
         id: AdditionalArgs
         shell: pwsh
       - name: Generate Java Code
