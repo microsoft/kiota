@@ -96,4 +96,20 @@ public class StringExtensionsTests
     {
         Assert.Equal(expected, input.CleanupSymbolName());
     }
+
+    [Fact]
+    public void EqualsIgnoreCase()
+    {
+        string a = null;
+        string b = null;
+        string c = string.Empty;
+        Assert.True(a.EqualsIgnoreCase(b));
+        Assert.False(a.EqualsIgnoreCase(c));
+        Assert.False(a.EqualsIgnoreCase("Ab"));
+        Assert.True("Aa".EqualsIgnoreCase("aa"));
+        Assert.False("Aa".EqualsIgnoreCase("Ab"));
+        Assert.True("AaAaAa".EqualsIgnoreCase("aaaaaa"));
+        Assert.True("".EqualsIgnoreCase(""));
+        Assert.True("Joe_Doe".EqualsIgnoreCase("joe_doe"));
+    }
 }

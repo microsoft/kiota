@@ -184,4 +184,13 @@ public static class StringExtensions
     /// <returns></returns>
     public static string CleanupXMLString(this string? original)
         => SecurityElement.Escape(original) ?? string.Empty;
+
+    /// <summary>
+    /// Checks if 2 strings are equal, case insensitive
+    /// </summary>
+    /// <param name="a">The first or current string</param>
+    /// <param name="b">The second string</param>
+    /// <returns></returns>
+    public static bool EqualsIgnoreCase(this string? a, string? b)
+        => String.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 }
