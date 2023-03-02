@@ -111,7 +111,7 @@ jobs:
         if: matrix.language == 'csharp'
         working-directory: ./it/csharp
       - run: |
-          rm obj -r -ErrorAction SilentlyContinue
+          Remove-Item obj -Recurse -ErrorAction SilentlyContinue
         if: always() && matrix.language == 'csharp'
         working-directory: ./it/csharp
         shell: pwsh
