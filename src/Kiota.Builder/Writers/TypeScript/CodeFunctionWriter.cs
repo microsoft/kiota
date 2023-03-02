@@ -98,9 +98,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private void WriteSerializerFunction(CodeFunction codeElement, LanguageWriter writer)
     {
-        var param = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(x => x.Type is CodeType type && type.TypeDefinition is CodeInterface);
+        var param = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(static x => x.Type is CodeType type && type.TypeDefinition is CodeInterface);
         if (param == null || param.Type is not CodeType codeType || codeType.TypeDefinition is not CodeInterface codeInterface)
-
             throw new InvalidOperationException("Interface parameter not found for code interface");
 
         writer.IncreaseIndent();
@@ -230,15 +229,14 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, codeFunction.OriginalLocalMethod)})"
         };
     }
+    
     private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeMethod currentElement)
     {
-        var returnType = localConventions?.GetTypeString(targetClassType, currentElement, false);
-        var targetClassName = localConventions?.TranslateType(targetClassType);
-        if (targetClassName != null)
+        if (localConventions?.TranslateType(targetClassType) is string targetClassName)
         {
+            var returnType = localConventions?.GetTypeString(targetClassType, currentElement, false);
             var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
-            if (targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
-                return resultName;
+            if (targetClassName.EqualsIgnoreCase(returnType)) return resultName;
             if (targetClassType is CodeType currentType &&
                 currentType.TypeDefinition is CodeInterface definitionClass &&
                 definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
@@ -252,13 +250,13 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
                 return methodName.ToFirstCharacterUpperCase();// static function is aliased
             }
         }
-        throw new InvalidOperationException($"Unable to find factory method for {targetClassName}");
+        throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
     }
 
     private string? getSerializerAlias(CodeType propType, CodeFunction codeFunction, string propertySerializerName)
     {
-        var parentNameSpace = propType.TypeDefinition?.Parent as CodeNamespace;
-        var serializationFunction = parentNameSpace?.FindChildByName<CodeFunction>(propertySerializerName);
+        if (propType.TypeDefinition?.Parent is not CodeNamespace parentNameSpace) return string.Empty;
+        var serializationFunction = parentNameSpace.FindChildByName<CodeFunction>(propertySerializerName);
         return localConventions?.GetTypeString(new CodeType
         {
             TypeDefinition = serializationFunction
