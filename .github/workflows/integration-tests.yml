@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ java, csharp, go ]
+        language: [ java, csharp, go, typescript ]
         description: [
           './tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml',
           './tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml',
@@ -126,6 +126,16 @@ jobs:
       - run: go build
         if: matrix.language == 'go'
         working-directory: ./it/go
+      - uses: action/setup-node@v2
+        if: matrix.language == 'typescript'
+        with:
+          node-version: '18'
+      - run: npm install
+        if: matrix.language == 'typescript'
+        working-directory: ./it/typescript
+      - run: npm run build
+        if: matrix.language == 'typescript'
+        working-directory: ./it/typescript
       - id: replace_url
         if: always()
         run: |

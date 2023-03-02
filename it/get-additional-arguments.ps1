@@ -23,6 +23,9 @@ elseif ($language -eq "java") {
 elseif ($language -eq "go") {
     $command = " --output './it/$language/client' --namespace-name 'integrationtest/client'"
 }
+elseif ($language -eq "typescript") {
+    $command = " --output './it/$language/src/app/client' --namespace-name 'app.client'"
+}
 
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $configPath = Join-Path -Path $scriptPath -ChildPath "config.json"
