@@ -748,7 +748,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
         }
 
-        if (parentDeserializer.Parent is CodeElement)
+        if (parentDeserializer.Parent is not null)
         {
             deserializer.AddUsing(new CodeUsing
             {
@@ -774,13 +774,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (propertySerializerFunctionName != codeFunction.Name)
         {
-            var serializationFunction = GetSerializationFunctionsForNamespace(property).Item1;
-
-            if (serializationFunction == null)
-            {
-                throw new InvalidOperationException($"Serialization function for property {property.Name} not found");
-            }
-
+            var serializationFunction = GetSerializationFunctionsForNamespace(property).Item1 ?? throw new InvalidOperationException($"Serialization function for property {property.Name} not found");
             if (serializationFunction.Parent is not null)
             {
                 codeFunction.AddUsing(new CodeUsing
@@ -855,11 +849,15 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static (CodeInterface, CodeUsing) ReturnUpdatedModelInterfaceTypeAndUsing(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback)
     {
         var propertyInterfaceType = CreateModelInterface(sourceClass, interfaceNamingCallback);
+        if (propertyInterfaceType.Parent is null)
+        {
+            throw new InvalidOperationException($"{propertyInterfaceType}'s parent is null");
+        }
         originalType.Name = propertyInterfaceType.Name;
         originalType.TypeDefinition = propertyInterfaceType;
         return (propertyInterfaceType, new CodeUsing
         {
-            Name = propertyInterfaceType.Parent?.Name!,
+            Name = propertyInterfaceType.Parent.Name,
             Declaration = new CodeType
             {
                 Name = propertyInterfaceType.Name,
