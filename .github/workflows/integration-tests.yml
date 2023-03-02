@@ -64,7 +64,7 @@ jobs:
         description: [
           './tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml',
           './tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml',
-          'https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json'
+          'https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.yaml'
         ]
     steps:
       - uses: actions/download-artifact@v3
@@ -136,6 +136,10 @@ jobs:
       - run: npm run build
         if: matrix.language == 'typescript'
         working-directory: ./it/typescript
+      - run: |
+          Remove-Item node_modules -Recurse -ErrorAction SilentlyContinue
+          Remove-Item dist -Recurse -ErrorAction SilentlyContinue
+        if: always() && matrix.language == 'typescript'
       - id: replace_url
         if: always()
         run: |
