@@ -9,7 +9,7 @@ Style/StringLiteralsInInterpolation:
   EnforcedStyle: double_quotes
 
 Layout/LineLength:
-  Max: 120
+  Enabled: false
 
 Layout/TrailingWhitespace:
   Enabled: false
@@ -48,4 +48,37 @@ Style/EmptyLiteral:
   Enabled: false
 
 Layout/EmptyLineAfterGuardClause:
+  Enabled: false
+
+Style/MethodCallWithoutArgsParentheses:
+  Enabled: false
+
+Style/TrailingCommaInHashLiteral:
+  Enabled: false
+
+Style/TrivialAccessors:
+  Enabled: false
+
+Naming/ClassAndModuleCamelCase:
+  Enabled: false
+
+Naming/AccessorMethodName:
+  Enabled: false
+
+Layout/IndentationStyle:
+  Enabled: false
+
+Layout/SpaceAroundEqualsInParameterDefault:
+  Enabled: false
+
+Style/RedundantSelf:
+  Enabled: false
+
+Layout/FirstArgumentIndentation:
+  Enabled: false
+
+Layout/ClosingParenthesisIndentation:
+  Enabled: false
+
+Lint/EmptyFile:
   Enabled: false
