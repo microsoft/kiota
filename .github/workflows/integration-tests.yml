@@ -111,14 +111,15 @@ jobs:
         if: matrix.language == 'csharp'
         working-directory: ./it/csharp
       - run: |
-          rm **/obj/** -r
+          rm obj -r -ErrorAction SilentlyContinue
         if: always() && matrix.language == 'csharp'
+        working-directory: ./it/csharp
         shell: pwsh
       - name: Setup Go
         if: matrix.language == 'go'
         uses: actions/setup-go@v2
         with:
-          go-version: 1.20
+          go-version: '^1.20'
       - run: go install
         if: matrix.language == 'go'
         working-directory: ./it/go

@@ -21,7 +21,7 @@ elseif ($language -eq "java") {
     $command = " --output './it/$language/src'"
 }
 elseif ($language -eq "go") {
-    $command = " --output './it/$language/client' --namespace-name 'integrationtest.client'"
+    $command = " --output './it/$language/client' --namespace-name 'client'"
 }
 
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
