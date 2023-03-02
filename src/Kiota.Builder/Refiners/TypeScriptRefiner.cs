@@ -649,7 +649,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
 
         elemType.TypeDefinition = interfaceElement;
-        if (elemType.Parent is CodeElement)
+        if (elemType.Parent is not null)
         {
             requestBuilder.AddUsing(new CodeUsing
             {
@@ -677,20 +677,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Kind = CodeInterfaceKind.Model,
         };
 
-        var modelInterface = shouldInsertUnderParentClass ?
+        var modelInterface = (shouldInsertUnderParentClass ?
                        modelParentClass?.AddInnerInterface(insertValue).First() :
-                       namespaceOfModel.AddInterface(insertValue).First();
-
+                       namespaceOfModel.AddInterface(insertValue).First()) ?? throw new InvalidOperationException("Model interface can't be null");
         var classModelChildItems = modelClass.GetChildElements(true);
 
         var props = classModelChildItems.OfType<CodeProperty>();
-        if (modelInterface is CodeInterface)
-        {
-            ProcessModelClassDeclaration(modelClass, modelInterface, interfaceNamingCallback);
-            ProcessModelClassProperties(modelClass, modelInterface, props, interfaceNamingCallback);
-        }
-        else
-            throw new InvalidOperationException("");
+        ProcessModelClassDeclaration(modelClass, modelInterface, interfaceNamingCallback);
+        ProcessModelClassProperties(modelClass, modelInterface, props, interfaceNamingCallback);
         return modelInterface;
     }
 
@@ -741,7 +735,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var parentSerializer = parentSerializationFunctions.Item1;
         var parentDeserializer = parentSerializationFunctions.Item2;
 
-        if (parentSerializer.Parent is CodeElement)
+        if (parentSerializer.Parent is not null)
         {
             serializer.AddUsing(new CodeUsing
             {
@@ -787,7 +781,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 throw new InvalidOperationException($"Serialization function for property {property.Name} not found");
             }
 
-            if (serializationFunction.Parent is CodeElement)
+            if (serializationFunction.Parent is not null)
             {
                 codeFunction.AddUsing(new CodeUsing
                 {
@@ -802,7 +796,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
 
             var interfaceProperty = CreateModelInterface(property, interfaceNamingCallback);
-            if (interfaceProperty.Parent is CodeElement)
+            if (interfaceProperty.Parent is not null)
             {
                 codeFunction.AddUsing(new CodeUsing
                 {
@@ -918,7 +912,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             && parsableFactoryFunction.OriginalLocalMethod?.ReturnType is CodeType codeType && codeType?.TypeDefinition is CodeClass modelReturnClass)
         {
             var modelDeserializerFunction = GetSerializationFunctionsForNamespace(modelReturnClass).Item2;
-            if (modelDeserializerFunction.Parent is CodeElement)
+            if (modelDeserializerFunction.Parent is not null)
             {
                 parsableFactoryFunction.AddUsing(new CodeUsing
                 {
@@ -937,7 +931,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 {
                     var deserializer = GetSerializationFunctionsForNamespace(mappedClass).Item2;
 
-                    if (deserializer.Parent is CodeElement)
+                    if (deserializer.Parent is not null)
                     {
                         parsableFactoryFunction.AddUsing(new CodeUsing
                         {
