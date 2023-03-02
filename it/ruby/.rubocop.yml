@@ -82,3 +82,9 @@ Layout/ClosingParenthesisIndentation:
 
 Lint/EmptyFile:
   Enabled: false
+
+Style/MixinGrouping:
+  Enabled: false
+
+Layout/SpaceInsideHashLiteralBraces:
+  Enabled: false
