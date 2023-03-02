@@ -140,6 +140,7 @@ jobs:
           Remove-Item node_modules -Recurse -ErrorAction SilentlyContinue
           Remove-Item dist -Recurse -ErrorAction SilentlyContinue
         if: always() && matrix.language == 'typescript'
+        shell: pwsh
       - id: replace_url
         if: always()
         run: |
