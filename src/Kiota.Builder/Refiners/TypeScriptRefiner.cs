@@ -880,14 +880,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             var interfaceParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface);
 
-            if (interfaceParameter?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface modelInterface)
+            if (interfaceParameter?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface ci && ci.GetChildElements(true).OfType<CodeProperty>() is IEnumerable<CodeProperty> props)
             {
-                if (modelInterface.GetChildElements(true).OfType<CodeProperty>() is IEnumerable<CodeProperty> props)
+                foreach (var property in props)
                 {
-                    foreach (var property in props)
-                    {
-                        AddPropertyFactoryUsingToDeserializer(codeFunction, property, functionNameCallback);
-                    }
+                    AddPropertyFactoryUsingToDeserializer(codeFunction, property, functionNameCallback);
                 }
             }
         }
