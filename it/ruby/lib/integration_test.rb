@@ -2,7 +2,7 @@
 
 require_relative "integration_test/version"
 
-module IntegrationTest
+module Integration_test
   class Error < StandardError; end
   # Your code goes here...
 end

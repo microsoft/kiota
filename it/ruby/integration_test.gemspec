@@ -4,7 +4,7 @@ require_relative "lib/integration_test/version"
 
 Gem::Specification.new do |spec|
   spec.name = "integration_test"
-  spec.version = IntegrationTest::VERSION
+  spec.version = Integration_test::VERSION
   spec.authors = ["Microsoft Graph DevX"]
   spec.email = ["graphsdkpub+ruby@microsoft.com"]
 

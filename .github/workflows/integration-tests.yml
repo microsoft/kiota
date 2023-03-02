@@ -149,9 +149,18 @@ jobs:
           working-directory: ./it/ruby
           ruby-version: '3.2.0'
           bundler-cache: true
+      - run: git init #required for bundler to work
+        if: matrix.language == 'ruby'
+        working-directory: ./it/ruby
       - run: bundle exec rake
         if: matrix.language == 'ruby'
         working-directory: ./it/ruby
+      - run: |
+          Remove-Item vendor -Recurse -ErrorAction SilentlyContinue
+          Remove-Item .git -Recurse -ErrorAction SilentlyContinue
+        if: always() && matrix.language == 'ruby'
+        working-directory: ./it/ruby
+        shell: pwsh
       - id: replace_url
         if: always()
         run: |
