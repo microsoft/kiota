@@ -149,7 +149,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             }
             writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName});");
         }
-
     }
 
     private string GetSerializationMethodName(CodeTypeBase propType)
@@ -184,8 +183,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     {
         if (codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault() is CodeParameter param && param.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface)
         {
-
-
             var properties = codeInterface.Properties.Where(static x => x.Kind == CodePropertyKind.Custom && !x.ExistsInBaseType);
 
             writer.StartBlock("return {");
@@ -193,7 +190,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             {
                 writer.WriteLine($"...deserializeInto{inherits?.Name.ToFirstCharacterUpperCase()}({param.Name.ToFirstCharacterLowerCase()}),");
             }
-
 
             foreach (var otherProp in properties)
             {
@@ -229,7 +225,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, codeFunction.OriginalLocalMethod)})"
         };
     }
-    
+
     private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeMethod currentElement)
     {
         if (localConventions?.TranslateType(targetClassType) is string targetClassName)

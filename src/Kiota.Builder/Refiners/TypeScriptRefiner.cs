@@ -762,9 +762,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
     }
 
-    private static void SetUsingInModelInterface(CodeInterface modelInterface, (CodeInterface, CodeUsing) propertyTypeAndUsing)
+    private static void SetUsingInModelInterface(CodeInterface modelInterface, (CodeInterface?, CodeUsing?) propertyTypeAndUsing)
     {
-        if (modelInterface.Name != propertyTypeAndUsing.Item1.Name)
+        if (propertyTypeAndUsing.Item1 is not null && propertyTypeAndUsing.Item2 is not null && modelInterface.Name != propertyTypeAndUsing.Item1.Name)
         {
             modelInterface.AddUsing(propertyTypeAndUsing.Item2);
         }
@@ -846,13 +846,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
     }
 
-    private static (CodeInterface, CodeUsing) ReturnUpdatedModelInterfaceTypeAndUsing(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback)
+    private static (CodeInterface?, CodeUsing?) ReturnUpdatedModelInterfaceTypeAndUsing(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback)
     {
         var propertyInterfaceType = CreateModelInterface(sourceClass, interfaceNamingCallback);
         if (propertyInterfaceType.Parent is null)
-        {
-            throw new InvalidOperationException($"{propertyInterfaceType}'s parent is null");
-        }
+            return (null, null);
         originalType.Name = propertyInterfaceType.Name;
         originalType.TypeDefinition = propertyInterfaceType;
         return (propertyInterfaceType, new CodeUsing
