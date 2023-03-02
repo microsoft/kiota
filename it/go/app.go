@@ -1,7 +1,7 @@
 package integrationtest
 
 import (
-	"integrationtest/client"
+	c "client"
 	azidentity "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	a "github.com/microsoft/kiota-authentication-azure-go"
 	r "github.com/microsoft/kiota-http-go"
@@ -30,6 +30,6 @@ func main() {
 		fmt.Printf("Error creating adapter: %v\n", err)
 		return
 	}
-	client := u.NewApiClient(adapter)
+	client := c.NewApiClient(adapter)
 	fmt.Printf("Message: %v\n", client)
 }
