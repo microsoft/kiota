@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ java, csharp, go, typescript ]
+        language: [ java, csharp, go, typescript, ruby ]
         description: [
           './tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml',
           './tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml',
@@ -142,6 +142,16 @@ jobs:
         if: always() && matrix.language == 'typescript'
         working-directory: ./it/typescript
         shell: pwsh
+      - name: Set up Ruby
+        if: matrix.language == 'ruby'
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: ./it/ruby
+          ruby-version: '3.2.0'
+          bundler-cache: true
+      - run: bundle exec rake
+        if: matrix.language == 'ruby'
+        working-directory: ./it/ruby
       - id: replace_url
         if: always()
         run: |

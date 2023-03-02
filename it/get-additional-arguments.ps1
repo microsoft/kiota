@@ -26,6 +26,9 @@ elseif ($language -eq "go") {
 elseif ($language -eq "typescript") {
     $command = " --output './it/$language/src/app/client' --namespace-name 'app.client'"
 }
+elseif ($language -eq "ruby") {
+    $command = " --output './it/$language/lib/integration_test/client' --namespace-name 'integration_test.client'"
+}
 
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $configPath = Join-Path -Path $scriptPath -ChildPath "config.json"
