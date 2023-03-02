@@ -1,5 +1,5 @@
 {
-  "https://api.apis.guru/v2/specs/github.com/api.github.com/1.1.4/openapi.json": {
+  "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.yaml": {
     "ExcludePatterns": [
       {
         "Pattern": "/gists",
