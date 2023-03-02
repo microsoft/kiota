@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "integration_test/version"
-require_relative "integration_test/client"
+require_relative "integration_test/client/client"
 
 module Integration_test
   class Error < StandardError; end

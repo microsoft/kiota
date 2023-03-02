@@ -117,7 +117,7 @@ jobs:
         shell: pwsh
       - name: Setup Go
         if: matrix.language == 'go'
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: '^1.20'
       - run: go install
@@ -158,6 +158,7 @@ jobs:
       - run: |
           Remove-Item vendor -Recurse -ErrorAction SilentlyContinue
           Remove-Item .git -Recurse -ErrorAction SilentlyContinue
+          Remove-Item Gemfile.lock -ErrorAction SilentlyContinue
         if: always() && matrix.language == 'ruby'
         working-directory: ./it/ruby
         shell: pwsh
