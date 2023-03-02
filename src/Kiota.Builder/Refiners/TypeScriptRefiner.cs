@@ -245,9 +245,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                 .ToList()
                 .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
-            var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
-            if (urlTplParams != null &&
-                urlTplParams.Type is CodeType originalType)
+            if (currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter urlTplParams && urlTplParams.Type is CodeType originalType)
             {
                 originalType.Name = "Record<string, unknown>";
                 urlTplParams.Documentation.Description = "The raw url or the Url template parameters for the request.";
@@ -303,8 +301,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
 
             var targetNS = codeClass.GetImmediateParentOfType<CodeNamespace>();
-            var existing = targetNS.FindChildByName<CodeInterface>(codeClass.Name, false);
-            if (existing != null)
+            if (targetNS.FindChildByName<CodeInterface>(codeClass.Name, false) is not null)
                 return;
 
             var insertValue = new CodeInterface
@@ -373,7 +370,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Name = $"{ModelDeserializerPrefix}{modelClass.Name.ToFirstCharacterUpperCase()}",
         };
 
-        foreach (var codeUsing in modelClass.Usings.Where(x => x.Declaration != null && x.Declaration.IsExternal))
+        foreach (var codeUsing in modelClass.Usings.Where(x => x.Declaration is CodeType && x.Declaration.IsExternal))
         {
             deserializerFunction.AddUsing(codeUsing);
             serializerFunction.AddUsing(codeUsing);
@@ -394,7 +391,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Type = new CodeType { Name = ReturnFinalInterfaceName(modelInterface.Name), TypeDefinition = modelInterface }
         });
 
-        if (modelInterface.Parent != null)
+        if (modelInterface.Parent is CodeElement)
         {
             codeFunction.AddUsing(new CodeUsing
             {
@@ -537,7 +534,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var serializationFunctions = GetSerializationFunctionsForNamespace(modelClass);
         var serializer = serializationFunctions.Item1;
         var deserializer = serializationFunctions.Item2;
-        if (serializer.Parent != null)
+        if (serializer.Parent is CodeElement)
         {
             targetClass.AddUsing(new CodeUsing
             {
@@ -550,7 +547,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
         }
 
-        if (deserializer.Parent != null)
+        if (deserializer.Parent is CodeElement)
         {
             targetClass.AddUsing(new CodeUsing
             {
@@ -652,7 +649,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
 
         elemType.TypeDefinition = interfaceElement;
-        if (elemType.Parent != null)
+        if (elemType.Parent is CodeElement)
         {
             requestBuilder.AddUsing(new CodeUsing
             {
@@ -670,8 +667,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
          */
         var temporaryInterfaceName = interfaceNamingCallback.Invoke(modelClass);
         var namespaceOfModel = modelClass.GetImmediateParentOfType<CodeNamespace>();
-        var existing = namespaceOfModel.FindChildByName<CodeInterface>(temporaryInterfaceName, false);
-        if (existing != null)
+        if (namespaceOfModel.FindChildByName<CodeInterface>(temporaryInterfaceName, false) is CodeInterface existing)
             return existing;
         var modelParentClass = modelClass.Parent as CodeClass;
         var shouldInsertUnderParentClass = modelParentClass != null;
@@ -688,7 +684,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var classModelChildItems = modelClass.GetChildElements(true);
 
         var props = classModelChildItems.OfType<CodeProperty>();
-        if (modelInterface != null)
+        if (modelInterface is CodeInterface)
         {
             ProcessModelClassDeclaration(modelClass, modelInterface, interfaceNamingCallback);
             ProcessModelClassProperties(modelClass, modelInterface, props, interfaceNamingCallback);
@@ -745,7 +741,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var parentSerializer = parentSerializationFunctions.Item1;
         var parentDeserializer = parentSerializationFunctions.Item2;
 
-        if (parentSerializer.Parent != null)
+        if (parentSerializer.Parent is CodeElement)
         {
             serializer.AddUsing(new CodeUsing
             {
@@ -758,7 +754,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
         }
 
-        if (parentDeserializer.Parent != null)
+        if (parentDeserializer.Parent is CodeElement)
         {
             deserializer.AddUsing(new CodeUsing
             {
@@ -791,7 +787,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 throw new InvalidOperationException($"Serialization function for property {property.Name} not found");
             }
 
-            if (serializationFunction.Parent != null)
+            if (serializationFunction.Parent is CodeElement)
             {
                 codeFunction.AddUsing(new CodeUsing
                 {
@@ -806,7 +802,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
 
             var interfaceProperty = CreateModelInterface(property, interfaceNamingCallback);
-            if (interfaceProperty.Parent != null)
+            if (interfaceProperty.Parent is CodeElement)
             {
                 codeFunction.AddUsing(new CodeUsing
                 {
@@ -886,8 +882,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
             if (interfaceParameter?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface modelInterface)
             {
-                var props = modelInterface.GetChildElements(true).OfType<CodeProperty>();
-                if (props != null)
+                if (modelInterface.GetChildElements(true).OfType<CodeProperty>() is IEnumerable<CodeProperty> props)
                 {
                     foreach (var property in props)
                     {
@@ -905,10 +900,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             var staticMethodName = functionNameCallback.Invoke(propertyType);
             var staticMethodNS = propertyType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
-            var staticMethod = staticMethodNS.Functions.FirstOrDefault(x => string.Equals(staticMethodName, x.Name, StringComparison.OrdinalIgnoreCase));
-            if (staticMethod != null)
+            if (staticMethodNS.Functions.FirstOrDefault(x => x.Name.EqualsIgnoreCase(staticMethodName)) is CodeFunction staticMethod)
             {
-
                 codeFunction.AddUsing(new CodeUsing
                 {
                     Name = staticMethodName,
@@ -928,7 +921,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             && parsableFactoryFunction.OriginalLocalMethod?.ReturnType is CodeType codeType && codeType?.TypeDefinition is CodeClass modelReturnClass)
         {
             var modelDeserializerFunction = GetSerializationFunctionsForNamespace(modelReturnClass).Item2;
-            if (modelDeserializerFunction.Parent != null)
+            if (modelDeserializerFunction.Parent is CodeElement)
             {
                 parsableFactoryFunction.AddUsing(new CodeUsing
                 {
@@ -947,7 +940,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 {
                     var deserializer = GetSerializationFunctionsForNamespace(mappedClass).Item2;
 
-                    if (deserializer.Parent != null)
+                    if (deserializer.Parent is CodeElement)
                     {
                         parsableFactoryFunction.AddUsing(new CodeUsing
                         {
