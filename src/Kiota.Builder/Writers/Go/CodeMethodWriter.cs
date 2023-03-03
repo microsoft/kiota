@@ -279,7 +279,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     }
     private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer, bool inherits)
     {
-        var className = parentClass.Name.ToLower();
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
             WriteSerializerBodyForUnionModel(parentClass, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
