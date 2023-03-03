@@ -4,3 +4,5 @@ parameters:
   polluteScopeWithLoopInitialAssignments: false
   paths:
     - src
+  ignoreErrors:
+    - "#Property [\w\\:$]+ is never read, only written\.?#"
