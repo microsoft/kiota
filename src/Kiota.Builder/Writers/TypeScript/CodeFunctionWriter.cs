@@ -17,7 +17,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     }
     private TypeScriptConventionService? localConventions;
     private readonly CodeUsingWriter _codeUsingWriter;
-    private static HashSet<string> customSerializatioWriters = new HashSet<string> { "writeObjectValue", "writeCollectionOfObjectValues" };
+    private static readonly HashSet<string> customSerializatioWriters = new HashSet<string> { "writeObjectValue", "writeCollectionOfObjectValues" };
+
     public override void WriteCodeElement(CodeFunction codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);

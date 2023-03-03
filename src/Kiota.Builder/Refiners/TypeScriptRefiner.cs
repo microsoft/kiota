@@ -367,7 +367,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Name = $"{ModelDeserializerPrefix}{modelClass.Name.ToFirstCharacterUpperCase()}",
         };
 
-        foreach (var codeUsing in modelClass.Usings.Where(x => x.Declaration is CodeType && x.Declaration.IsExternal))
+        foreach (var codeUsing in modelClass.Usings.Where(x => x.Declaration is not null && x.Declaration.IsExternal))
         {
             deserializerFunction.AddUsing(codeUsing);
             serializerFunction.AddUsing(codeUsing);
@@ -497,7 +497,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
                 AddInterfaceParamToSerializer(modelInterface, serializationFunctions.Item2);
             }
-            else if (currentClass.Kind == CodeClassKind.RequestBuilder)
+            else if (currentClass.IsOfKind(CodeClassKind.RequestBuilder))
             {
                 ProcessorRequestBuilders(currentClass, interfaceNamingCallback);
             }
@@ -515,15 +515,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private static (CodeFunction, CodeFunction) GetSerializationFunctionsForNamespace(CodeClass codeClass)
     {
-        if (codeClass.Parent == null)
+        if (codeClass.Parent is not CodeNamespace parentNamespace)
             throw new InvalidOperationException($"Model class {codeClass}'s parent namespace is null");
-        var parentNamespace = codeClass.Parent as CodeNamespace;
-        var serializer = parentNamespace?.FindChildByName<CodeFunction>($"{ModelSerializerPrefix}{codeClass.Name.ToFirstCharacterUpperCase()}");
-        var deserializer = parentNamespace?.FindChildByName<CodeFunction>($"{ModelDeserializerPrefix}{codeClass.Name.ToFirstCharacterUpperCase()}");
-        if (serializer == null || deserializer == null)
-        {
-            throw new InvalidOperationException($"Serializer or deserializer not found for {codeClass.Name}");
-        }
+        var serializer = (parentNamespace?.FindChildByName<CodeFunction>($"{ModelSerializerPrefix}{codeClass.Name.ToFirstCharacterUpperCase()}")) ??
+            throw new InvalidOperationException($"Serializer not found for {codeClass.Name}");
+        var deserializer = (parentNamespace?.FindChildByName<CodeFunction>($"{ModelDeserializerPrefix}{codeClass.Name.ToFirstCharacterUpperCase()}")) ??
+            throw new InvalidOperationException($"Deserializer not found for {codeClass.Name}");
         return (serializer, deserializer);
     }
     private static void AddSerializationUsingToRequestBuilder(CodeClass modelClass, CodeClass targetClass)
@@ -531,7 +528,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var serializationFunctions = GetSerializationFunctionsForNamespace(modelClass);
         var serializer = serializationFunctions.Item1;
         var deserializer = serializationFunctions.Item2;
-        if (serializer.Parent is CodeElement)
+        if (serializer.Parent is not null)
         {
             targetClass.AddUsing(new CodeUsing
             {
@@ -556,7 +553,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 }
             });
         }
-
     }
 
     private static void ProcessModelsAssociatedWithMethods(CodeMethod codeMethod, CodeClass requestBuilderClass, Func<CodeClass, string> interfaceNamingCallback)
@@ -564,7 +560,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         /*
          * Setting request body parameter type of request executor to model interface.
          */
-        var requestBodyParam = codeMethod.Parameters?.FirstOrDefault(x => x.Kind == CodeParameterKind.RequestBody);
+        var requestBodyParam = codeMethod.Parameters.FirstOrDefault(static x => x.Kind == CodeParameterKind.RequestBody);
         var requestBodyClass = (requestBodyParam?.Type is CodeType requestBodyType) ? requestBodyType.TypeDefinition as CodeClass : null;
         if (requestBodyParam != null && requestBodyClass != null)
         {
@@ -580,7 +576,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (requestBodyClass != null && requestBodyClass != returnClass)
             {
                 AddSerializationUsingToRequestBuilder(requestBodyClass, parentClass);
-
             }
         }
         if (codeMethod?.ErrorMappings != null && codeMethod.ErrorMappings.Any())
@@ -636,7 +631,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             TypeDefinition = interfaceElement,
         };
         requestBuilder.RemoveUsingsByDeclarationName(elemType.Name);
-        if (!requestBuilder.Usings.Any(x => x?.Declaration?.TypeDefinition == elemType.TypeDefinition))
+        if (!requestBuilder.Usings.Any(x => x.Declaration?.TypeDefinition == elemType.TypeDefinition))
         {
             requestBuilder.AddUsing(new CodeUsing
             {
@@ -718,7 +713,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 TypeDefinition = impl.TypeDefinition,
             });
 
-            modelInterface.AddUsing(modelClass.Usings.First(x => x.Name == impl.Name));
+            modelInterface.AddUsing(modelClass.Usings.First(x => x.Name.Equals(impl.Name)));
         }
     }
 
@@ -769,7 +764,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void SetUsingsOfPropertyInSerializationFunctions(string propertySerializerFunctionName, CodeFunction codeFunction, CodeClass property, Func<CodeClass, string> interfaceNamingCallback)
     {
-        if (propertySerializerFunctionName != codeFunction.Name)
+        if (!propertySerializerFunctionName.Equals(codeFunction.Name))
         {
             var serializationFunction = GetSerializationFunctionsForNamespace(property).Item1 ?? throw new InvalidOperationException($"Serialization function for property {property.Name} not found");
             if (serializationFunction.Parent is not null)
