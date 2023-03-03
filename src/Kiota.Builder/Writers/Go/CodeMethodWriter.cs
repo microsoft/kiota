@@ -279,6 +279,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     }
     private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer, bool inherits)
     {
+        var className = parentClass.Name.ToLower();
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
             WriteSerializerBodyForUnionModel(parentClass, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
@@ -925,6 +926,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var collectionPrefix = propType.IsCollection ? "CollectionOf" : string.Empty;
         var collectionSuffix = propType.IsCollection ? "s" : string.Empty;
         var propertyTypeName = conventions.GetTypeString(propType, parentBlock, false, false, false)
+                                .Split('.')
+                                .Last()
                                 .ToFirstCharacterUpperCase();
         var reference = (isEnum, isComplexType, propType.IsCollection) switch
         {
