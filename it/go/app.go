@@ -6,6 +6,7 @@ import (
 	a "github.com/microsoft/kiota-authentication-azure-go"
 	r "github.com/microsoft/kiota-http-go"
     "fmt"
+    "context"
 )
 
 func main() {

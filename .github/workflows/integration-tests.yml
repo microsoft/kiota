@@ -89,9 +89,6 @@ jobs:
           $isSuppressed = . ./it/get-is-suppressed.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
           Write-Output "IS_SUPPRESSED=$($isSuppressed.ToString().ToLowerInvariant())" >> $Env:GITHUB_OUTPUT
         shell: pwsh
-      - name: Temporary Test step for the suppressed condition
-        if: steps.check-suppressed.outputs.IS_SUPPRESSED == 'true'
-        run : echo "hello world"
       - name: Generate Code
         run: |
           $additionalCommand = . ./it/get-additional-arguments.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
