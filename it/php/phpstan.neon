@@ -5,4 +5,4 @@ parameters:
   paths:
     - src
   ignoreErrors:
-    - '#Property [\w\\:$]+ is never read, only written\.?#'
+    - '#Property [\w\\:\$]+ is never read, only written\.?#'
