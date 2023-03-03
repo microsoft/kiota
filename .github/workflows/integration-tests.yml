@@ -87,7 +87,7 @@ jobs:
         id: check-suppressed
         run: |
           $isSuppressed = . ./it/get-is-suppressed.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
-          echo "IS_SUPPRESSED=$($isSuppressed.ToString().ToLowerInvariant())" > $GITHUB_OUTPUT
+          Write-Output "IS_SUPPRESSED=$($isSuppressed.ToString().ToLowerInvariant())" >> $Env:GITHUB_OUTPUT
         shell: pwsh
       - name: Temporary Test step for the suppressed condition
         if: steps.check-suppressed.outputs.IS_SUPPRESSED == 'true'
@@ -186,7 +186,7 @@ jobs:
         run: |
           ORIGINAL="${{ matrix.description }}"
           REPLACED="${ORIGINAL//[-:<>|\*\?\\\/\.]/_}"
-          echo "ARTKEY=$REPLACED" > $GITHUB_OUTPUT
+          echo "ARTKEY=$REPLACED" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v3
         if: always()
         with:
