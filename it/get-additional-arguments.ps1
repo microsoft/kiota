@@ -29,6 +29,9 @@ elseif ($language -eq "typescript") {
 elseif ($language -eq "ruby") {
     $command = " --output './it/$language/lib/integration_test/client' --namespace-name 'integration_test.client'"
 }
+elseif ($language -eq "php") {
+    $command = " --output './it/$language/src/client' --namespace-name 'integration_test.client'"
+}
 
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $configPath = Join-Path -Path $scriptPath -ChildPath "config.json"

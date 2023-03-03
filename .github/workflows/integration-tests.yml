@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ java, csharp, go, typescript, ruby ]
+        language: [ java, csharp, go, typescript, ruby, php ]
         description: [
           './tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml',
           './tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml',
@@ -177,6 +177,24 @@ jobs:
           Remove-Item Gemfile.lock -ErrorAction SilentlyContinue
         if: always() && matrix.language == 'ruby'
         working-directory: ./it/ruby
+        shell: pwsh
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: xdebug
+        if: matrix.language == 'php'
+      - run: composer install
+        if: matrix.language == 'php'
+        working-directory: ./it/php
+      - run: ./vendor/bin/phpstan
+        if: matrix.language == 'php'
+        working-directory: ./it/php
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
+      - run: |
+          Remove-Item vendor -Recurse -ErrorAction SilentlyContinue
+          Remove-Item composer.lock -ErrorAction SilentlyContinue
+        if: always() && matrix.language == 'php'
+        working-directory: ./it/php
         shell: pwsh
       - id: replace_url
         if: always()

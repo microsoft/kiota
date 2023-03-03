@@ -1,0 +1,26 @@
+{
+  "name": "integration/test",
+  "description": "simple integration test project",
+  "type": "library",
+  "require": {
+    "microsoft/kiota-serialization-text": "*",
+    "microsoft/kiota-http-guzzle": "*",
+    "microsoft/kiota-serialization-json": "*",
+    "microsoft/kiota-authentication-phpleague": "*"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^1.2.0"
+  },
+  "minimum-stability": "stable",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "Integration\\Test\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Integration\\Test\\": "src/"
+    }
+  }
+}
