@@ -41,6 +41,12 @@
         "Pattern": "/user/gpg_keys/**",
         "Rationale": "https://github.com/github/rest-api-description/issues/2247"
       }
+    ],
+    "Suppressions": [
+      {
+        "Language": "typescript",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
+      }
     ]
   }
 }

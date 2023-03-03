@@ -88,3 +88,6 @@ Style/MixinGrouping:
 
 Layout/SpaceInsideHashLiteralBraces:
   Enabled: false
+
+Layout/TrailingEmptyLines:
+  Enabled: false

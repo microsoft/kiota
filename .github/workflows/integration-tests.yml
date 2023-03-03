@@ -79,8 +79,16 @@ jobs:
         with:
           name: tests
           path: tests
-      - run: chmod +x ./publish/kiota
-      - run: chmod +x ./it/get-additional-arguments.ps1
+      - run: |
+          chmod +x ./publish/kiota
+          chmod +x ./it/get-additional-arguments.ps1
+          chmod +x ./it/get-is-suppressed.ps1
+      - name: Check if test is suppressed
+        id: check-suppressed
+        run: |
+          $isSuppressed = . ./it/get-is-suppressed.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
+          echo "IS_SUPPRESSED=$isSuppressed" > $GITHUB_OUTPUT
+        shell: pwsh
       - name: Generate Code
         run: |
           $additionalCommand = . ./it/get-additional-arguments.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
@@ -88,6 +96,7 @@ jobs:
           Write-Host "Final command: $finalCommand"
           iex $finalCommand
         shell: pwsh
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
       - uses: actions/cache@v3
         if: matrix.language == 'java'
         with:
@@ -102,6 +111,7 @@ jobs:
           script: ./it/java/test.java
         env:
           JBANG_REPO: /root/.jbang/repository
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
       - name: Setup .NET
         if: matrix.language == 'csharp'
         uses: actions/setup-dotnet@v3
@@ -110,6 +120,7 @@ jobs:
       - run: dotnet build
         if: matrix.language == 'csharp'
         working-directory: ./it/csharp
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
       - run: |
           Remove-Item obj -Recurse -ErrorAction SilentlyContinue
         if: always() && matrix.language == 'csharp'
@@ -122,9 +133,11 @@ jobs:
           go-version: '^1.20'
       - run: go install
         if: matrix.language == 'go'
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
         working-directory: ./it/go
       - run: go build
         if: matrix.language == 'go'
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
         working-directory: ./it/go
       - uses: actions/setup-node@v3
         if: matrix.language == 'typescript'
@@ -135,6 +148,7 @@ jobs:
         working-directory: ./it/typescript
       - run: npm run build
         if: matrix.language == 'typescript'
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
         working-directory: ./it/typescript
       - run: |
           Remove-Item node_modules -Recurse -ErrorAction SilentlyContinue
@@ -145,6 +159,7 @@ jobs:
       - name: Set up Ruby
         if: matrix.language == 'ruby'
         uses: ruby/setup-ruby@v1
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
         with:
           working-directory: ./it/ruby
           ruby-version: '3.2.0'
@@ -154,6 +169,7 @@ jobs:
         working-directory: ./it/ruby
       - run: bundle exec rake
         if: matrix.language == 'ruby'
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
         working-directory: ./it/ruby
       - run: |
           Remove-Item vendor -Recurse -ErrorAction SilentlyContinue

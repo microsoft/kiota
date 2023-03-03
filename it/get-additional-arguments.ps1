@@ -35,18 +35,22 @@ $configPath = Join-Path -Path $scriptPath -ChildPath "config.json"
 $jsonValue = Get-Content -Path $configPath -Raw | ConvertFrom-Json
 $descriptionValue = $jsonValue.psobject.properties.Where({ $_.name -eq $descriptionUrl }).value
 if ($null -ne $descriptionValue) {
-    Write-Information "No configuration found for $descriptionUrl"
     if ($descriptionValue.PSObject.Properties.Name -contains "ExcludePatterns") {
         $descriptionValue.ExcludePatterns | ForEach-Object {
+            Write-Information "Excluding $($_.Pattern) rationale: $($_.Rationale)"
             $command += " -e '$($_.Pattern)'"
         }
     }
 
     if ($descriptionValue.PSObject.Properties.Name -contains "IncludePatterns") {
         $descriptionValue.IncludePatterns | ForEach-Object {
+            Write-Information "Including $($_.Pattern) rationale: $($_.Rationale)"
             $command += " -i '$($_.Pattern)'"
         }
     }
+}
+else {
+    Write-Information "No configuration found for $descriptionUrl"
 }
 
 return $command
