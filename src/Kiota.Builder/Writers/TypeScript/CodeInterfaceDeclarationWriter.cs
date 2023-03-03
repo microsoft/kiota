@@ -22,7 +22,7 @@ namespace Kiota.Builder.Writers.TypeScript
             var parentNamespace = interfaceDeclaration.GetImmediateParentOfType<CodeNamespace>();
             _codeUsingWriter.WriteCodeElement(interfaceDeclaration.Usings, parentNamespace, writer);
 
-            var derivation = interfaceDeclaration.Implements.Any() ? $" extends {interfaceDeclaration.Implements.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}" : string.Empty;
+            var derivation = interfaceDeclaration.Implements.Any() ? $" extends {interfaceDeclaration.Implements.Select(static x => x.Name).Aggregate(static (x, y) => x + ", " + y)}" : string.Empty;
             writer.StartBlock($"export interface {interfaceDeclaration.Name.ToFirstCharacterUpperCase()}{derivation} {{");
         }
     }

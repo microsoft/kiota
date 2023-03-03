@@ -320,8 +320,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName)
     {
         if (!codeElement.ReturnType.IsCollection) return fullTypeName;
-        var clone = codeElement.ReturnType.Clone() as CodeTypeBase;
-        clone!.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None;
+        var clone = (CodeTypeBase)codeElement.ReturnType.Clone();
+        clone.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None;
         return conventions.GetTypeString(clone, codeElement);
     }
     private const string RequestInfoVarName = "requestInfo";
@@ -368,27 +368,25 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private void ComposeContentInRequestGeneratorBody(CodeParameter requestBody, CodeProperty requestAdapterProperty, string contentType, LanguageWriter writer)
     {
         if (requestBody.Type.Name.Equals(localConventions?.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+        {
             writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestBody.Name});");
+            return;
+        }
+
+        var spreadOperator = requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
+        if (requestBody.Type is CodeType currentType && currentType.TypeDefinition is CodeInterface codeInterface)
+        {
+            var serializerName = $"serialize{codeInterface.Name.ToFirstCharacterUpperCase()}";
+            var setMethodName = "setContentFromParsable";
+            var body = "body";
+            writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", {body} as any, {serializerName});");
+
+        }
         else
         {
-            var spreadOperator = requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-            var setMethodName = "";
-            var body = "";
-            if (requestBody.Type is CodeType currentType && currentType.TypeDefinition is CodeInterface codeInterface)
-            {
-                var serializerName = $"serialize{codeInterface.Name.ToFirstCharacterUpperCase()}";
-                setMethodName = "setContentFromParsable";
-                body = "body";
-                writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", {body} as any, {serializerName});");
-
-            }
-            else
-            {
-                setMethodName = "setContentFromScalar";
-                body = $"{spreadOperator}{requestBody.Name}";
-                writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", {body});");
-            }
-
+            var setMethodName = "setContentFromScalar";
+            var body = $"{spreadOperator}{requestBody.Name}";
+            writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", {body});");
         }
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"this.{property.Name}";

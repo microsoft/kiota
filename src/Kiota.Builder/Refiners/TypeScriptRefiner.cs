@@ -107,7 +107,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 },
                 CodeMethodKind.Factory
             );
-            static string factoryNameCallbackFromType(CodeType x) => factoryNameCallbackFromTypeName(x?.TypeDefinition?.Name);
+            static string factoryNameCallbackFromType(CodeType x) => factoryNameCallbackFromTypeName(x.TypeDefinition?.Name);
             cancellationToken.ThrowIfCancellationRequested();
             AddStaticMethodsUsingsForDeserializer(
                 generatedCode,
@@ -350,10 +350,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void CreateSerializationFunctions(CodeClass modelClass)
     {
         var namespaceOfModel = modelClass.GetImmediateParentOfType<CodeNamespace>();
-
-        var serializerMethod = modelClass.Methods.FirstOrDefault(x => x.Kind == CodeMethodKind.Serializer);
-        var deserializerMethod = modelClass.Methods.FirstOrDefault(x => x.Kind == CodeMethodKind.Deserializer);
-        if (serializerMethod == null || deserializerMethod == null)
+        if (modelClass.Methods.FirstOrDefault(static x => x.Kind == CodeMethodKind.Serializer) is not CodeMethod serializerMethod || modelClass.Methods.FirstOrDefault(static x => x.Kind == CodeMethodKind.Deserializer) is not CodeMethod deserializerMethod)
         {
             throw new InvalidOperationException($"The refiner was unable to create local serializer/derserializer method for {modelClass.Name}");
         }
@@ -391,7 +388,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Type = new CodeType { Name = ReturnFinalInterfaceName(modelInterface.Name), TypeDefinition = modelInterface }
         });
 
-        if (modelInterface.Parent is CodeElement)
+        if (modelInterface.Parent is not null)
         {
             codeFunction.AddUsing(new CodeUsing
             {
@@ -547,7 +544,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
         }
 
-        if (deserializer.Parent is CodeElement)
+        if (deserializer.Parent is not null)
         {
             targetClass.AddUsing(new CodeUsing
             {
