@@ -58,6 +58,10 @@
       {
         "Language": "csharp",
         "Rationale": "https://github.com/microsoft/kiota/issues/2351"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2351"
       }
     ]
   }

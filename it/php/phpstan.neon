@@ -6,3 +6,4 @@ parameters:
     - src
   ignoreErrors:
     - '#Property [\w\\:\$]+ is never read, only written\.?#'
+    - '#Part [\s\w\(\)\$\\]+ of encapsed string cannot be cast to string\.#'
