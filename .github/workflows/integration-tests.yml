@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ java, csharp, go, typescript, ruby, php ]
+        language: [ java, csharp, go, typescript, ruby, php, python ]
         description: [
           './tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml',
           './tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml',
@@ -196,6 +196,24 @@ jobs:
         if: always() && matrix.language == 'php'
         working-directory: ./it/php
         shell: pwsh
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+        if: matrix.language == 'python'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pipenv install --dev --skip-lock
+        if: matrix.language == 'python'
+        working-directory: ./it/python
+      - run: |
+          pipenv run pylint integration_test --disable=W --rcfile=.pylintrc
+          pipenv run mypy integration_test
+        if: matrix.language == 'python'
+        working-directory: ./it/python
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
       - id: replace_url
         if: always()
         run: |

@@ -32,6 +32,9 @@ elseif ($language -eq "ruby") {
 elseif ($language -eq "php") {
     $command = " --output './it/$language/src/client' --namespace-name 'integration.test.client'"
 }
+elseif ($language -eq "python") {
+    $command = " --output './it/$language/integration_test/client' --namespace-name 'integration_test.client'"
+}
 
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $configPath = Join-Path -Path $scriptPath -ChildPath "config.json"
