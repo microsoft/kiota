@@ -80,6 +80,7 @@ disable=long-suffix,
         C0103,
         R0801,
         R0904,
+        line-too-long,
 
 
 # Enable the message, report, category or checker with the given id(s). You can
