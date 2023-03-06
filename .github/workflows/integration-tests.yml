@@ -61,11 +61,18 @@ jobs:
       fail-fast: false
       matrix:
         language: [ java, csharp, go, typescript, ruby, php, python ]
-        description: [
-          './tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml',
-          './tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml',
-          'https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.yaml'
-        ]
+        description:
+          - './tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml'
+          - './tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml'
+          - 'https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.yaml'
+          - 'https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twitter.com/current/2.61/openapi.yaml'
+          - 'https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/notion.com/1.0.0/openapi.yaml'
+          - 'https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/stripe.com/2022-11-15/openapi.yaml'
+          - 'https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml'
+          - 'https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/meraki.com/v1.31.0/openapi.yaml'
+          - 'https://developers.pipedrive.com/docs/api/v1/openapi.yaml'
+          - 'https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twilio.com/api/1.39.1/openapi.yaml'
+          - 'https://api.apis.guru/v2/specs/docusign.net/v2.1/openapi.yaml'
     steps:
       - uses: actions/download-artifact@v3
         with:
