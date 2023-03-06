@@ -600,7 +600,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 }
             }
         }
-        
         if (codeMethod?.ErrorMappings != null && codeMethod.ErrorMappings.Any())
         {
             ProcessModelClassAssociatedWithErrorMappings(codeMethod);
