@@ -1,4 +1,4 @@
-from ./client/api_client.py import ApiClient
+from .client.api_client import ApiClient
 from azure.identity.aio import DefaultAzureCredential
 from kiota_authentication_azure.azure_identity_authentication_provider import AzureIdentityAuthenticationProvider
 from kiota_http import HttpxRequestAdapter
