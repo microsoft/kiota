@@ -10,14 +10,13 @@ namespace Kiota.Builder.Writers.TypeScript;
 
 public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConventionService>
 {
-    private TypeScriptConventionService? localConventions;
-    private readonly CodeUsingWriter _codeUsingWriter;
-    private static readonly HashSet<string> customSerializatioWriters = new(StringComparer.OrdinalIgnoreCase) { "writeObjectValue", "writeCollectionOfObjectValues" };
-
     public CodeFunctionWriter(TypeScriptConventionService conventionService, string clientNamespaceName) : base(conventionService)
     {
         _codeUsingWriter = new(clientNamespaceName);
     }
+    private TypeScriptConventionService? localConventions;
+    private readonly CodeUsingWriter _codeUsingWriter;
+    private static readonly HashSet<string> customSerializatioWriters = new(StringComparer.OrdinalIgnoreCase) { "writeObjectValue", "writeCollectionOfObjectValues" };
 
     public override void WriteCodeElement(CodeFunction codeElement, LanguageWriter writer)
     {

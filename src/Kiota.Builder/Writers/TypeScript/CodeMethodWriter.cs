@@ -25,7 +25,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
         localConventions = new TypeScriptConventionService(writer); //because we allow inline type definitions for methods parameters
         var returnType = localConventions.GetTypeString(codeElement.ReturnType, codeElement);
-        var isVoid = "void".Equals(returnType, StringComparison.OrdinalIgnoreCase);
+        var isVoid = "void".EqualsIgnoreCase(returnType);
         WriteMethodDocumentation(codeElement, writer, isVoid);
         WriteMethodPrototype(codeElement, writer, returnType, isVoid);
         writer.IncreaseIndent();
@@ -84,8 +84,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
     private static void WriteQueryParametersMapper(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
-        var parameter = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.QueryParametersMapperParameter));
-        if (parameter == null) throw new InvalidOperationException("QueryParametersMapper should have a parameter of type QueryParametersMapper");
+        var parameter = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.QueryParametersMapperParameter)) ?? throw new InvalidOperationException("QueryParametersMapper should have a parameter of type QueryParametersMapper");
         var parameterName = parameter.Name.ToFirstCharacterLowerCase();
         writer.WriteLine($"switch({parameterName}) {{");
         writer.IncreaseIndent();

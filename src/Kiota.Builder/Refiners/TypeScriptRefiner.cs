@@ -560,47 +560,50 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         /*
          * Setting request body parameter type of request executor to model interface.
          */
-        var requestBodyParam = codeMethod.Parameters.FirstOrDefault(static x => x.Kind == CodeParameterKind.RequestBody);
-        var requestBodyClass = (requestBodyParam?.Type is CodeType requestBodyType) ? requestBodyType.TypeDefinition as CodeClass : null;
-        if (requestBodyParam != null && requestBodyClass != null)
+        if (codeMethod.Parameters.FirstOrDefault(static x => x.Kind == CodeParameterKind.RequestBody) is CodeParameter requestBodyParam)
         {
-            SetTypeAsModelInterface(CreateModelInterface(requestBodyClass, interfaceNamingCallback), (CodeType)requestBodyParam.Type, requestBuilderClass);
-        }
-        var parentClass = codeMethod?.GetImmediateParentOfType<CodeClass>();
-        if (codeMethod?.ReturnType is CodeType returnType &&
-            returnType.TypeDefinition is CodeClass returnClass &&
-            returnClass.IsOfKind(CodeClassKind.Model) && parentClass != null && parentClass.Name != returnClass.Name)
-        {
-            AddSerializationUsingToRequestBuilder(returnClass, parentClass);
-            SetTypeAsModelInterface(CreateModelInterface(returnClass, interfaceNamingCallback), returnType, requestBuilderClass);
-            if (requestBodyClass != null && requestBodyClass != returnClass)
+            if (requestBodyParam?.Type is CodeType requestBodyType && requestBodyType.TypeDefinition is CodeClass requestBodyClass)
             {
-                AddSerializationUsingToRequestBuilder(requestBodyClass, parentClass);
+                SetTypeAsModelInterface(CreateModelInterface(requestBodyClass, interfaceNamingCallback), (CodeType)requestBodyParam.Type, requestBuilderClass);
+
+                if (codeMethod?.Kind == CodeMethodKind.RequestGenerator)
+                {
+                    ProcessModelClassAssociatedWithRequestGenerator(codeMethod, requestBodyClass);
+                }
+
+                if (codeMethod?.ReturnType is CodeType returnType &&
+                    returnType.TypeDefinition is CodeClass returnClass &&
+                    codeMethod?.GetImmediateParentOfType<CodeClass>() is CodeClass parentClass &&
+                    returnClass.IsOfKind(CodeClassKind.Model) && parentClass.Name != returnClass.Name)
+                {
+                    AddSerializationUsingToRequestBuilder(returnClass, parentClass);
+                    SetTypeAsModelInterface(CreateModelInterface(returnClass, interfaceNamingCallback), returnType, requestBuilderClass);
+                    if (requestBodyClass != returnClass)
+                    {
+                        AddSerializationUsingToRequestBuilder(requestBodyClass, parentClass);
+                    }
+
+                    if (parentClass.Name != requestBodyClass.Name)
+                    {
+                        var modelInterface = CreateModelInterface(requestBodyClass, interfaceNamingCallback);
+                        parentClass.AddUsing(
+                            new CodeUsing
+                            {
+                                Name = modelInterface.Parent?.Name!,
+                                Declaration = new CodeType
+                                {
+                                    Name = modelInterface.Name,
+                                    TypeDefinition = modelInterface
+                                }
+                            });
+                    }
+                }
             }
         }
+        
         if (codeMethod?.ErrorMappings != null && codeMethod.ErrorMappings.Any())
         {
             ProcessModelClassAssociatedWithErrorMappings(codeMethod);
-        }
-
-        if (codeMethod?.Kind == CodeMethodKind.RequestGenerator && requestBodyClass != null)
-        {
-            ProcessModelClassAssociatedWithRequestGenerator(codeMethod, requestBodyClass);
-        }
-
-        if (requestBodyClass != null && parentClass != null && parentClass.Name != requestBodyClass.Name)
-        {
-            var modelInterface = CreateModelInterface(requestBodyClass, interfaceNamingCallback);
-            parentClass.AddUsing(
-                new CodeUsing
-                {
-                    Name = modelInterface.Parent?.Name!,
-                    Declaration = new CodeType
-                    {
-                        Name = modelInterface.Name,
-                        TypeDefinition = modelInterface
-                    }
-                });
         }
     }
     private static void ProcessModelClassAssociatedWithErrorMappings(CodeMethod codeMethod)
