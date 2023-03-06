@@ -50,6 +50,22 @@
       {
         "Language": "go",
         "Rationale": "https://github.com/microsoft/kiota/issues/2353"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1813"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      },
+      {
+        "Language": "csharp",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2360"
+      },
+      {
+        "Language": "java",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2362"
       }
     ]
   },
@@ -62,6 +78,22 @@
       {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2351"
+      },
+      {
+        "Language": "go",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2351"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2351"
+      }
+    ]
+  },
+  "./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml": {
+    "Suppressions": [
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2361"
       }
     ]
   }
