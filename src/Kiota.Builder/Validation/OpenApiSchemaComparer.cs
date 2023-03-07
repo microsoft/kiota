@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 
@@ -34,12 +35,12 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
                 discriminatorComparer.GetHashCode(obj.Discriminator) * 41 +
                 (GetHashCodeInternal(obj.AdditionalProperties, visitedSchemas) * 37) +
                 Convert.ToInt32(obj.AdditionalPropertiesAllowed) * 31 +
-                (SumUnchecked(obj.Properties.Select(x => GetHashCodeInternal(x.Value, visitedSchemas) + x.Key.GetHashCode())) * 29) +
+                (obj.Properties.Select(x => GetHashCodeInternal(x.Value, visitedSchemas) + x.Key.GetHashCode()).SumUnchecked() * 29) +
                 openApiAnyComparer.GetHashCode(obj.Default) * 23 +
                 (GetHashCodeInternal(obj.Items, visitedSchemas) * 19) +
-                (SumUnchecked(obj.OneOf.Select(x => GetHashCodeInternal(x, visitedSchemas))) * 17) +
-                (SumUnchecked(obj.AnyOf.Select(x => GetHashCodeInternal(x, visitedSchemas))) * 11) +
-                (SumUnchecked(obj.AllOf.Select(x => GetHashCodeInternal(x, visitedSchemas))) * 7) +
+                (obj.OneOf.Select(x => GetHashCodeInternal(x, visitedSchemas)).SumUnchecked() * 17) +
+                (obj.AnyOf.Select(x => GetHashCodeInternal(x, visitedSchemas)).SumUnchecked() * 11) +
+                (obj.AllOf.Select(x => GetHashCodeInternal(x, visitedSchemas)).SumUnchecked() * 7) +
                 (string.IsNullOrEmpty(obj.Format) ? 0 : obj.Format.GetHashCode()) * 5 +
                 (string.IsNullOrEmpty(obj.Type) ? 0 : obj.Type.GetHashCode()) * 3 +
                 (string.IsNullOrEmpty(obj.Title) ? 0 : obj.Title.GetHashCode()) * 2;
@@ -69,13 +70,6 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
          - Xml
         */
     }
-    private static int SumUnchecked(IEnumerable<int> values)
-    {
-        unchecked
-        {
-            return values.Aggregate(0, static (acc, x) => acc + x);
-        }
-    }
 }
 
 internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscriminator>
@@ -90,7 +84,7 @@ internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscrimin
     {
         if (obj == null) return 0;
         return (string.IsNullOrEmpty(obj.PropertyName) ? 0 : obj.PropertyName.GetHashCode()) * 89 +
-            (obj.Mapping?.Select(static x => x.Key.GetHashCode() + (string.IsNullOrEmpty(x.Value) ? 0 : x.Value.GetHashCode())).Sum() ?? 0) * 83;
+            (obj.Mapping?.Select(static x => x.Key.GetHashCode() + (string.IsNullOrEmpty(x.Value) ? 0 : x.Value.GetHashCode())).SumUnchecked() ?? 0) * 83;
     }
 }
 internal class OpenApiAnyComparer : IEqualityComparer<IOpenApiAny>
