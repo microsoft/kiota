@@ -177,14 +177,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
             StringComparison.OrdinalIgnoreCase) && !codeMethod.IsOfKind(CodeMethodKind.RequestExecutor);
 
-        var accessedProperty = codeMethod.AccessedProperty;
-        var isSetterForAdditionalData = codeMethod.IsOfKind(CodeMethodKind.Setter) &&
-                                        (accessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false);
-
         var parametersWithOrWithoutDescription = codeMethod.Parameters
-            .Select(x => GetParameterDocString(codeMethod, x, isSetterForAdditionalData))
+            .Select(x => GetParameterDocString(codeMethod, x))
             .ToList();
-        var returnDocString = GetDocCommentReturnType(codeMethod, accessedProperty);
+        var returnDocString = GetDocCommentReturnType(codeMethod);
         if (!isVoidable)
         {
             var nullableSuffix = (codeMethod.ReturnType.IsNullable ? "|null" : "");
@@ -200,24 +196,25 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
 
     }
 
-    private string GetDocCommentReturnType(CodeMethod codeMethod, CodeProperty? accessedProperty)
+    private string GetDocCommentReturnType(CodeMethod codeMethod)
     {
         return codeMethod.Kind switch
         {
             CodeMethodKind.Deserializer => "array<string, callable>",
-            CodeMethodKind.Getter when accessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false => "array<string, mixed>",
-            CodeMethodKind.Getter when accessedProperty?.Type.IsCollection ?? false => $"array<{conventions.TranslateType(accessedProperty.Type)}>",
+            CodeMethodKind.Getter when codeMethod.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false => "array<string, mixed>",
+            CodeMethodKind.Getter when codeMethod.AccessedProperty?.Type.IsCollection ?? false => $"array<{conventions.TranslateType(codeMethod.AccessedProperty.Type)}>",
             _ => conventions.GetTypeString(codeMethod.ReturnType, codeMethod)
         };
     }
 
-    private string GetParameterDocString(CodeMethod codeMethod, CodeParameter x, bool isSetterForAdditionalData = false)
+    private string GetParameterDocString(CodeMethod codeMethod, CodeParameter x)
     {
-        return codeMethod.Kind switch
+        if (codeMethod.IsOfKind(CodeMethodKind.Setter)
+            && (codeMethod.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false))
         {
-            CodeMethodKind.Setter => $"@param {(isSetterForAdditionalData ? "array<string,mixed> $value" : conventions.GetParameterDocNullable(x, x))} {x?.Documentation.Description}",
-            _ => $"@param {conventions.GetParameterDocNullable(x, x)} {x.Documentation.Description}"
-        };
+            return "array<string,mixed> $value";
+        }
+        return $"@param {conventions.GetParameterDocNullable(x, x)} {x?.Documentation.Description}";
     }
 
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
