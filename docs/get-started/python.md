@@ -56,11 +56,11 @@ Follow the instructions in [Register an application for Microsoft identity platf
 
 ## Creating the client application
 
-Create a file in the root of the project named **get_user.py** and add the following code. Replace `YOUR_CLIENT_ID` with the client ID from your app registration.
+Create a file in the root of the project named **get_user.py** and add the following code. Replace `TENANT_ID`, `CLIENT_ID`, `AUTH_CODE` and `REDIRECT_URL` with the corresponding values from your app registration.
 
 ```py
 import asyncio
-from azure.identity.aio import DefaultAzureCredential
+from azure.identity.aio import AuthorizationCodeCredential
 
 from kiota_authentication_azure.azure_identity_authentication_provider import AzureIdentityAuthenticationProvider
 from kiota_http.httpx_request_adapter import HttpxRequestAdapter
@@ -73,14 +73,13 @@ from client.get_user_api_client import GetUserApiClient
 # See: https://stackoverflow.com/questions/63860576/asyncio-event-loop-is-closed-when-using-asyncio-run
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-credential = DefaultAzureCredential()
-# The auth provider will only authorize requests to
-# the allowed hosts, in this case Microsoft Graph
+credential=AuthorizationCodeCredential(
+    tenant_id = 'TENANT_ID',
+    client_id = 'CLIENT_ID',
+    authorization_code = 'AUTH_CODE',
+    redirect_uri = 'REDIRECT_URL')
 
-allowed_hosts = ['graph.microsoft.com']
-graph_scopes = ['https://graph.microsoft.com/.default']
-auth_provider = AzureIdentityAuthenticationProvider(credential, None, graph_scopes, allowed_hosts)
-
+auth_provider = AzureIdentityAuthenticationProvider(credential)
 
 request_adapter = HttpxRequestAdapter(auth_provider)
 client = GetUserApiClient(request_adapter)
