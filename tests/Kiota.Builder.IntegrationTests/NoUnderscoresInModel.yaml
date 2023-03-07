@@ -11,11 +11,34 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TestList'
+                $ref: "#/components/schemas/TestList"
           description: Test
       description: Returns a test list
+  /api/permissions/v1:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/app-permissions"
+          description: Test
+      description: Returns a app permissions
 components:
   schemas:
+    app-permissions:
+      title: App Permissions
+      type: object
+      description: The permissions granted to the user-to-server access token.
+      properties:
+        pages:
+          type: string
+          description:
+            The level of permission to grant the access token to retrieve
+            Pages statuses, configuration, and builds, as well as create new builds.
+          enum:
+            - read
+            - write
     TestList:
       type: object
       properties:
