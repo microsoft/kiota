@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where request builders would be incorrectly generated due to inconsistent suffix generation
 - Fixed a bug where PHP model getAdditionalData() would not return nullable types.
 - Fixed bug in request options PHPDoc type.
+- Fixed a bug where java refiner would emit enums without normalizing the name.
 
 ## [0.11.1] - 2023-02-13
 
