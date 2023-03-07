@@ -516,7 +516,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         ArgumentNullException.ThrowIfNull(codeComposedType);
         CodeClass newClass;
         var description =
-            $"Composed type wrapper for classes {codeComposedType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}";
+            $"Composed type wrapper for classes {codeComposedType.Types.Select(static x => x.Name).Aggregate(static (x, y) => x + ", " + y)}";
         if (!supportsInnerClasses)
         {
             var @namespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
@@ -547,7 +547,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         else
         {
-            if (codeComposedType.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase))
+            if (codeComposedType.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase) || codeClass.FindChildByName<CodeProperty>(codeComposedType.Name, false) is not null)
                 codeComposedType.Name = $"{codeComposedType.Name}Wrapper";
             newClass = codeClass.AddInnerClass(new CodeClass
             {
@@ -561,7 +561,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         newClass.AddProperty(codeComposedType
                                 .Types
-                                .Select(x => new CodeProperty
+                                .Select(static x => new CodeProperty
                                 {
                                     Name = x.Name,
                                     Type = x,
