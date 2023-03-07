@@ -100,16 +100,20 @@
   "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/notion.com/1.0.0/openapi.yaml": {
     "ExcludePatterns": [
       {
-        "Pattern": "/v1/databases/*/query",
+        "Pattern": "/v1/databases/**",
         "Rationale": "next_cursor in commentResponse is invalid"
       },
       {
-        "Pattern": "/v1/blocks/*/children",
+        "Pattern": "/v1/blocks/**",
         "Rationale": "next_cursor in commentResponse is invalid"
       },
       {
         "Pattern": "/v1/comments",
         "Rationale": "next_cursor in commentResponse is invalid"
+      },
+      {
+        "Pattern": "/v1/users/*",
+        "Rationale": "avatar_url in usersResponse is invalid"
       }
     ]
   },
@@ -118,6 +122,78 @@
       {
         "Pattern": "/maps/api/directions/json",
         "Rationale": "DirectionsGeocodedWaypoint.partial_match is invalid"
+      }
+    ]
+  },
+  "https://developers.pipedrive.com/docs/api/v1/openapi.yaml": {
+    "ExcludePatterns": [
+      {
+        "Pattern": "/itemSearch/field",
+        "Rationale": "$field_key for fieldResponse_data is invalid"
+      },
+      {
+        "Pattern": "/subscriptions/*/payments",
+        "Rationale": "data for model paymentsResponse is invalid"
+      },
+      {
+        "Pattern": "/permissionSets/**",
+        "Rationale": "error 404 is invalid"
+      }
+    ]
+  },
+  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twilio.com/api/1.39.1/openapi.yaml": {
+    "ExcludePatterns": [
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Addresses/*/DependentPhoneNumbers.json",
+        "Rationale": "dependent_phone_number is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Recordings.json",
+        "Rationale": "encryption_details is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Recordings/*.json",
+        "Rationale": "encryption_details is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Conferences/*/Recordings.json",
+        "Rationale": "encryption_details is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Calls/*/Recordings.json",
+        "Rationale": "encryption_details is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Calls/*/Recordings/*.json",
+        "Rationale": "encryption_details is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Conferences/*/Recordings/*.json",
+        "Rationale": "encryption_details is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Calls/FeedbackSummary.json",
+        "Rationale": "issues is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Calls/FeedbackSummary/*.json",
+        "Rationale": "issues is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Calls/*/Events.json",
+        "Rationale": "request is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/IncomingPhoneNumbers/*/AssignedAddOns.json",
+        "Rationale": "configuration is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/IncomingPhoneNumbers/*/AssignedAddOns/*.json",
+        "Rationale": "configuration is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Calls/*/Payments.json",
+        "Rationale": "Parameter is invalid"
       }
     ]
   }
