@@ -96,5 +96,29 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/2361"
       }
     ]
+  },
+  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/notion.com/1.0.0/openapi.yaml": {
+    "ExcludePatterns": [
+      {
+        "Pattern": "/v1/databases/*/query",
+        "Rationale": "next_cursor in commentResponse is invalid"
+      },
+      {
+        "Pattern": "/v1/blocks/*/children",
+        "Rationale": "next_cursor in commentResponse is invalid"
+      },
+      {
+        "Pattern": "/v1/comments",
+        "Rationale": "next_cursor in commentResponse is invalid"
+      }
+    ]
+  },
+  "https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml": {
+    "ExcludePatterns": [
+      {
+        "Pattern": "/maps/api/directions/json",
+        "Rationale": "DirectionsGeocodedWaypoint.partial_match is invalid"
+      }
+    ]
   }
 }
