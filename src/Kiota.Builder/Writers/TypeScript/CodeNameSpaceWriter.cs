@@ -18,14 +18,11 @@ public class CodeNameSpaceWriter : BaseElementWriter<CodeNamespace, TypeScriptCo
     public override void WriteCodeElement(CodeNamespace codeElement, LanguageWriter writer)
     {
         var sb = new StringBuilder();
-
-        Parallel.ForEach(codeElement.Enums.Concat<CodeElement>(codeElement.Functions).Concat(codeElement.CodeInterfaces), element =>
+        foreach (var element in codeElement.Enums.Concat<CodeElement>(codeElement.Functions).Concat(codeElement.CodeInterfaces))
         {
             var name = element.Name.ToFirstCharacterLowerCase();
             sb.AppendLine($"export * from './{name}'");
-        });
-
+        }
         writer.Write(sb.ToString());
     }
-
 }
