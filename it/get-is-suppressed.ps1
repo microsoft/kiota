@@ -20,7 +20,7 @@ $descriptionValue = $jsonValue.psobject.properties.Where({ $_.name -eq $descript
 
 if ($null -ne $descriptionValue) {
     if ($descriptionValue.PSObject.Properties.Name -contains "Suppressions") {
-        $languageInformation = $descriptionValue.Suppressions | Where-Object { $_.Language -eq $language } | Select-Object -First 1
+        $languageInformation = $descriptionValue.Suppressions | Where-Object { $_.Language -eq $language -or $_.Language -eq "all" } | Select-Object -First 1
         if ($null -ne $languageInformation) {
             Write-Warning "Suppressed $descriptionUrl for $language, rationale: $($languageInformation.Rationale)"
             return $true
