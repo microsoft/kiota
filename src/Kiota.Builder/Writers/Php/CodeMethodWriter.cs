@@ -212,7 +212,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (codeMethod.IsOfKind(CodeMethodKind.Setter)
             && (codeMethod.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false))
         {
-            return "array<string,mixed> $value";
+            return $"@param array<string,mixed> $value {x?.Documentation.Description}";
         }
         return $"@param {conventions.GetParameterDocNullable(x, x)} {x?.Documentation.Description}";
     }
