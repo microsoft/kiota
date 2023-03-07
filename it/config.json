@@ -62,10 +62,6 @@
       {
         "Language": "csharp",
         "Rationale": "https://github.com/microsoft/kiota/issues/2360"
-      },
-      {
-        "Language": "java",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2362"
       }
     ]
   },
