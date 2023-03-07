@@ -97,10 +97,11 @@ public class PhpConventionService : CommonLanguageConventionService
             CodeParameterKind.Serializer => $"SerializationWriter {GetParameterName(parameter)}",
             _ => $"{typeString} {GetParameterName(parameter)}"
         };
-        var qualified = parameter.Optional
+        var optional = parameter.Optional ? "?" : "";
+        var qualified = (parameter.Optional
             && targetElement is CodeMethod methodTarget
-            && !methodTarget.IsOfKind(CodeMethodKind.Setter);
-        return parameter.Optional ? $"?{parameterSuffix}{(qualified ? " = null" : string.Empty)}" : parameterSuffix;
+            && !methodTarget.IsOfKind(CodeMethodKind.Setter)) ? " = null" : "";
+        return $"{optional}{parameterSuffix}{qualified}";
     }
     public string GetParameterDocNullable(CodeParameter parameter, CodeElement codeElement)
     {
