@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.0.0] - 2023-03-10
+
+- 📢📢📢 Kiota is Generally Available with C# as a first stable language and more to follow soon! 🚀🚀🚀
+
+### Added
+
 - Added constructors and query parameter factory methods to request configuration classes and constructors to query parameter classes in PHP.
 - Added support for relative server URL. [#2278](https://github.com/microsoft/kiota/issues/2278)
 - Added restoration of the kiota-lock when the generation fails with clean output. [#2292](https://github.com/microsoft/kiota/issues/2292)
