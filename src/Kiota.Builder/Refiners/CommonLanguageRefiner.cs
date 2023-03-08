@@ -109,33 +109,41 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         return false;
     }
-    protected static void CorrectClassNames(CodeElement current, Func<string, string> refineClassName)
+    protected static void CorrectNames(CodeElement current, Func<string, string> refineName,
+        bool classNames = true,
+        bool propertyNames = true,
+        bool methodNames = true,
+        bool enumNames = true)
     {
         if (current is CodeClass currentClass &&
-            refineClassName(currentClass.Name) is string refinedClassName &&
+            classNames &&
+            refineName(currentClass.Name) is string refinedClassName &&
             !currentClass.Name.Equals(refinedClassName))
         {
             currentClass.Name = refinedClassName;
         }
         else if (current is CodeProperty currentProperty &&
-                refineClassName(currentProperty.Type.Name) is string refinedPropertyTypeName &&
+                propertyNames &&
+                refineName(currentProperty.Type.Name) is string refinedPropertyTypeName &&
                 !currentProperty.Type.Name.Equals(refinedPropertyTypeName))
         {
             currentProperty.Type.Name = refinedPropertyTypeName;
         }
         else if (current is CodeMethod currentMethod &&
-                refineClassName(currentMethod.ReturnType.Name) is string refinedMethodTypeName &&
+                methodNames &&
+                refineName(currentMethod.ReturnType.Name) is string refinedMethodTypeName &&
                 !currentMethod.ReturnType.Name.Equals(refinedMethodTypeName))
         {
             currentMethod.ReturnType.Name = refinedMethodTypeName;
         }
         else if (current is CodeEnum currentEnum &&
-            refineClassName(currentEnum.Name) is string refinedEnumName &&
+            enumNames &&
+            refineName(currentEnum.Name) is string refinedEnumName &&
             !currentEnum.Name.Equals(refinedEnumName))
         {
             currentEnum.Name = refinedEnumName;
         }
-        CrawlTree(current, x => CorrectClassNames(x, refineClassName));
+        CrawlTree(current, x => CorrectNames(x, refineName));
     }
     protected static void ReplacePropertyNames(CodeElement current, HashSet<CodePropertyKind> propertyKindsToReplace, Func<string, string> refineAccessorName)
     {
