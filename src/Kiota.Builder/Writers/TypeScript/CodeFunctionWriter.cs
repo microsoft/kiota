@@ -230,9 +230,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     {
         if (localConventions?.TranslateType(targetClassType) is string targetClassName)
         {
-            var returnType = localConventions?.GetTypeString(targetClassType, currentElement, false);
             var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
-            if (targetClassName.EqualsIgnoreCase(returnType)) return resultName;
+            if (localConventions?.GetTypeString(targetClassType, currentElement, false) is string returnType && targetClassName.EqualsIgnoreCase(returnType)) return resultName;
             if (targetClassType is CodeType currentType &&
                 currentType.TypeDefinition is CodeInterface definitionClass &&
                 definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
