@@ -115,3 +115,6 @@ Naming/PredicateName:
 
 Metrics/ClassLength:
   Enabled: false
+
+Metrics/ModuleLength:
+  Enabled: false

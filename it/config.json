@@ -40,10 +40,6 @@
       {
         "Pattern": "/user/gpg_keys/**",
         "Rationale": "https://github.com/github/rest-api-description/issues/2247"
-      },
-      {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
     ],
     "Suppressions": [
@@ -70,6 +66,10 @@
       {
         "Language": "java",
         "Rationale": "https://github.com/microsoft/kiota/issues/2372"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
     ]
   },
