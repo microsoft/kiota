@@ -62,6 +62,10 @@
       {
         "Language": "csharp",
         "Rationale": "https://github.com/microsoft/kiota/issues/2360"
+      },
+      {
+        "Language": "java",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2372"
       }
     ]
   },
@@ -90,6 +94,10 @@
       {
         "Language": "python",
         "Rationale": "https://github.com/microsoft/kiota/issues/2361"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2374"
       }
     ]
   },
@@ -115,6 +123,12 @@
         "Pattern": "/v1/pages/*",
         "Rationale": "code in pageResponse is invalid"
       }
+    ],
+    "Suppressions": [
+      {
+        "Language": "java",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2372"
+      }
     ]
   },
   "https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml": {
@@ -122,6 +136,12 @@
       {
         "Pattern": "/maps/api/directions/json",
         "Rationale": "DirectionsGeocodedWaypoint.partial_match is invalid"
+      }
+    ],
+    "Suppressions": [
+      {
+        "Language": "go",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2373"
       }
     ]
   },
@@ -230,6 +250,26 @@
       {
         "Language": "csharp",
         "Rationale": "https://github.com/microsoft/kiota/issues/2369"
+      },
+      {
+        "Language": "java",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2372"
+      }
+    ]
+  },
+  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twitter.com/current/2.61/openapi.yaml ": {
+    "Suppressions": [
+      {
+        "Language": "java",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2372"
+      },
+      {
+        "Language": "typescript",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1816"
       }
     ]
   }

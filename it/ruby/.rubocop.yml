@@ -32,7 +32,13 @@ Style/DefWithParentheses:
 Style/RedundantReturn:
   Enabled: false
 
+Style/IfUnlessModifier:
+  Enabled: false
+
 Layout/EmptyLineBetweenDefs:
+  Enabled: false
+
+Style/MutableConstant:
   Enabled: false
 
 Lint/Void:
@@ -90,4 +96,13 @@ Layout/SpaceInsideHashLiteralBraces:
   Enabled: false
 
 Layout/TrailingEmptyLines:
+  Enabled: false
+
+Metrics/MethodLength:
+  Enabled: false
+
+Metrics/AbcSize:
+  Enabled: false
+
+Naming/ConstantName:
   Enabled: false
