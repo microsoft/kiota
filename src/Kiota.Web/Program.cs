@@ -3,6 +3,7 @@ using BlazorApplicationInsights;
 using Kiota.Builder.Configuration;
 using Kiota.Web;
 using Kiota.Web.Authentication.GitHub;
+using Kiota.Web.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Fast.Components.FluentUI;
@@ -24,6 +25,7 @@ builder.Configuration.Bind(configObject);
 builder.Services.AddSingleton(configObject);
 builder.Services.AddPatAuthentication();
 builder.Services.AddSearchService();
+builder.RootComponents.RegisterCustomElement<SdkGenerator>("sdk-generator");
 
 var host = builder.Build();
 
