@@ -1,0 +1,244 @@
+﻿@using Kiota.Builder
+@using Kiota.Builder.Configuration
+@using System.Linq
+@using System.IO
+@using System.IO.Compression
+@using System.Security.Cryptography
+@using System.Text
+@using System.Text.Json
+@using System.Text.Json.Serialization;
+@using System.Threading
+@using Kiota.Web.Pages;
+@using Microsoft.Extensions.Localization;
+@using Microsoft.Fast.Components.FluentUI
+@using Microsoft.Kiota.Abstractions.Authentication;
+
+@inject HttpClient Http
+@inject ILoggerFactory LoggerFactory
+@inject IJSRuntime JSRuntime
+
+<h1>Generate</h1>
+
+<div>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@DescriptionUrl>DescriptionUrl</FluentTextField>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@NamespaceName>NamespacePrefix</FluentTextField>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@ClientClassName>ClientClassName</FluentTextField>
+    <FluentTextArea class="full-width-field" @bind-Value=@IncludePatterns Placeholder="**/messages/**" Rows="10" Resize="TextAreaResize.Vertical">
+        <span>IncludePatterns</span>
+    </FluentTextArea>
+    <FluentTextArea class="full-width-field" @bind-Value=@ExcludePatterns Placeholder="**/users/**" Rows="10" Resize="TextAreaResize.Vertical">
+        <span>ExcludePatterns</span>
+    </FluentTextArea>
+    <label for="language">Language</label><br />
+    <FluentSelect TOption="GenerationLanguage?"
+                  Id="language"
+                  @bind-SelectedOption="@Language"
+                  Required=@true
+                  Items="Enum.GetValues<GenerationLanguage>().Select(static x => new Nullable<GenerationLanguage>(x)).OrderBy(static x => x.ToString(), StringComparer.OrdinalIgnoreCase)"
+                  OptionText="@(x => (configuration?.Languages?.TryGetValue(x!.ToString()!, out var languageInfo) ?? false) ? $"{x} - {languageInfo.MaturityLevel}" : x.ToString())" />
+    <FluentDivider Role="DividerRole.Separator"></FluentDivider>
+    <FluentCheckbox @bind-Value=@IncludeAdditionalData>AdditionalData</FluentCheckbox>
+    <FluentDivider Role="DividerRole.Separator"></FluentDivider>
+    <FluentCheckbox @bind-Value=@UsesBackingStore>BackingStore</FluentCheckbox>
+    <FluentDivider Role="DividerRole.Separator"></FluentDivider>
+    <FluentButton @onclick="GenerateClient" Appearance="Appearance.Accent" Disabled="@(string.IsNullOrEmpty(DescriptionUrl) || IsLoading)">GenerateAction</FluentButton>
+    <FluentButton @onclick="DownloadClient" Appearance="Appearance.Neutral" Disabled="@string.IsNullOrEmpty(DownloadUrl)">Download</FluentButton>
+    @if (IsLoading)
+    {
+        <FluentProgress></FluentProgress>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(Dependencies))
+{
+    <div class="log-container">
+        <h2>Dependencies</h2>
+        <pre class="log-box">@Dependencies</pre>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Logs))
+{
+    <div class="log-container">
+        <h2>Logs</h2>
+        <pre class="log-box">@Logs</pre>
+    </div>
+}
+
+@code {
+
+    [Parameter] public string? Version { get; set; }
+    [Parameter] public string? ClientClassName { get; set; }
+    [Parameter] public string? NamespaceName { get; set; }
+    [Parameter] public bool UsesBackingStore { get; set; } = false;
+    [Parameter] public bool IncludeAdditionalData { get; set; } = false;
+    [Parameter] public string? DescriptionUrl { get; set; }
+    [Parameter] public string? IncludePatterns { get; set; }
+    [Parameter] public string? ExcludePatterns { get; set; }
+    [Parameter] public GenerationLanguage? Language { get; set; }
+    [Parameter] public string? Serializers { get; set; }
+    [Parameter] public string? Deserializers { get; set; }
+    [Parameter] public string? StructuredMimeTypes { get; set; }
+
+    private bool IsLoading { get; set; }
+    private HashSet<string> SerializersList { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> DeserializersList { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> StructuredMimeTypesList { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    private string? OutputPath { get; set; }
+    private string? DownloadUrl { get; set; }
+    private string? Dependencies { get; set; }
+    private string? Logs { get; set; }
+
+    [Inject] private KiotaSearcher? KiotaSearcher { get; set; }
+    private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(() => SHA256.Create());
+    [Inject] private IApplicationInsights? AppInsights { get; set; }
+
+    private const string generateClientTelemetryKey = "generateclient";
+    private const string downloadTelemetryKey = "download";
+    private static KiotaConfiguration? configuration;
+
+    Dictionary<string, string?> GetInstrumentationContent()
+    {
+        return new Dictionary<string, string?> {
+        { "language", Language?.ToString() },
+        { "includePatterns", IncludePatterns},
+        { "excludePatterns", ExcludePatterns },
+        { "additionalData", IncludeAdditionalData.ToString() },
+        { "backingStore", UsesBackingStore.ToString() }
+        };
+    }
+
+
+    private Task GenerateClient()
+    {
+        if (string.IsNullOrEmpty(DescriptionUrl))
+        {
+            return Task.CompletedTask;
+        }
+        else
+        {
+            DownloadUrl = string.Empty;
+            Dependencies = string.Empty;
+            Logs = string.Empty;
+            IsLoading = true;
+            return GenerateClientInternal();
+        }
+    }
+
+    private async Task GenerateClientInternal()
+    {
+        if (AppInsights != null)
+            await AppInsights.StartTrackEvent(generateClientTelemetryKey).ConfigureAwait(false);
+        if (Language == null)
+            Language = GenerationLanguage.CSharp;
+        if (DescriptionUrl is null || HashAlgorithm.Value is null)
+            return;
+        var hashedUrl = BitConverter.ToString(HashAlgorithm.Value.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl))).Replace("-", string.Empty);
+        OutputPath = Path.Combine(Path.GetTempPath(), "kiota", "generation", hashedUrl);
+        var defaultConfiguration = new GenerationConfiguration();
+        var generationConfiguration = new GenerationConfiguration
+            {
+                OpenAPIFilePath = DescriptionUrl,
+                IncludePatterns = IncludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet() ?? new(),
+                ExcludePatterns = ExcludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet() ?? new(),
+                Language = Language.Value,
+                OutputPath = OutputPath,
+                ClientClassName = ClientClassName ?? defaultConfiguration.ClientClassName,
+                ClientNamespaceName = NamespaceName ?? defaultConfiguration.ClientNamespaceName,
+                IncludeAdditionalData = IncludeAdditionalData,
+                UsesBackingStore = UsesBackingStore,
+                Serializers = SerializersList,
+                Deserializers = DeserializersList,
+                StructuredMimeTypes = StructuredMimeTypesList,
+            };
+        var logBuilder = new StringBuilder();
+        var builderLogger = new StringBuilderLogger<KiotaBuilder>(LoggerFactory.CreateLogger<KiotaBuilder>(), logBuilder, LogLevel.Warning);
+        var builder = new KiotaBuilder(builderLogger, generationConfiguration, Http);
+        try
+        {
+            await builder.GenerateClientAsync(ComponentDetached).ConfigureAwait(false);
+            var zipFilePath = Path.Combine(Path.GetTempPath(), "kiota", "clients", hashedUrl, "client.zip");
+            if (File.Exists(zipFilePath))
+                File.Delete(zipFilePath);
+            else
+                Directory.CreateDirectory(Path.GetDirectoryName(zipFilePath)!);
+            ZipFile.CreateFromDirectory(OutputPath, zipFilePath);
+            DownloadUrl = zipFilePath;
+            var informationSource = await builder.GetLanguagesInformationAsync(ComponentDetached).ConfigureAwait(false) ?? (await GetConfiguration(ComponentDetached).ConfigureAwait(false))?.Languages;
+            if (informationSource?.TryGetValue(generationConfiguration.Language.ToString(), out var languageInformation) ?? false)
+            {
+                foreach (var dependency in languageInformation.Dependencies)
+                    Dependencies += $"{string.Format(languageInformation.DependencyInstallCommand, dependency.Name, dependency.Version)}{Environment.NewLine}";
+            }
+            Logs = logBuilder.ToString();
+        }
+        catch (Exception ex)
+        {
+            if (string.IsNullOrEmpty(Logs)) Logs = logBuilder.ToString();
+            Logs += "ERROR : " + ex.Message;
+        }
+        finally
+        {
+            if (AppInsights != null)
+                await AppInsights.StopTrackEvent(generateClientTelemetryKey, GetInstrumentationContent()).ConfigureAwait(false);
+            IsLoading = false;
+        }
+    }
+
+    private async Task DownloadClient()
+    {
+        if (!string.IsNullOrEmpty(DownloadUrl))
+        {
+            if (AppInsights != null)
+                await AppInsights.StartTrackEvent(downloadTelemetryKey).ConfigureAwait(false);
+            using var fileStream = File.OpenRead(DownloadUrl);
+            using var ms = new MemoryStream();
+            await fileStream.CopyToAsync(ms).ConfigureAwait(false);
+            await JSRuntime.InvokeVoidAsync("BlazorDownloadFile", "client.zip", "application/zip", ms.ToArray());
+            if (AppInsights != null)
+                await AppInsights.StopTrackEvent(downloadTelemetryKey, GetInstrumentationContent()).ConfigureAwait(false);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var defaultConfiguration = new GenerationConfiguration();
+
+
+        if (!string.IsNullOrEmpty(Serializers))
+            SerializersList = new HashSet<string>(Serializers.Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.OrdinalIgnoreCase);
+        else
+            SerializersList = defaultConfiguration.Serializers;
+
+        if (!string.IsNullOrEmpty(Deserializers))
+            DeserializersList = new HashSet<string>(Deserializers.Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.OrdinalIgnoreCase);
+        else
+            DeserializersList = defaultConfiguration.Deserializers;
+
+        if (!string.IsNullOrEmpty(StructuredMimeTypes))
+            StructuredMimeTypesList = new HashSet<string>(StructuredMimeTypes.Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.OrdinalIgnoreCase);
+        else
+            StructuredMimeTypesList = defaultConfiguration.StructuredMimeTypes;
+
+        await GetConfiguration(ComponentDetached);
+        await base.OnParametersSetAsync();
+    }
+
+    private async Task<KiotaConfiguration?> GetConfiguration(CancellationToken cancellationToken)
+    {
+        if (configuration == null)
+            configuration = await Http.GetFromJsonAsync<KiotaConfiguration>(
+                "appsettings.json",
+                new JsonSerializerOptions
+                    {
+                        Converters ={
+                        new JsonStringEnumConverter( JsonNamingPolicy.CamelCase)
+                            },
+
+                    },
+                cancellationToken);
+
+        return configuration;
+    }
+
+}
