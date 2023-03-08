@@ -562,15 +562,15 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             SetTypeAsModelInterface(CreateModelInterface(requestBodyClass, interfaceNamingCallback), requestBodyType, requestBuilderClass);
 
-            if (codeMethod?.Kind == CodeMethodKind.RequestGenerator)
+            if (codeMethod.Kind == CodeMethodKind.RequestGenerator)
             {
                 ProcessModelClassAssociatedWithRequestGenerator(codeMethod, requestBodyClass);
             }
 
-            if (codeMethod?.ReturnType is CodeType returnType &&
+            if (codeMethod.ReturnType is CodeType returnType &&
                 returnType.TypeDefinition is CodeClass returnClass &&
-                codeMethod?.GetImmediateParentOfType<CodeClass>() is CodeClass parentClass &&
-                returnClass.IsOfKind(CodeClassKind.Model) && parentClass.Name != returnClass.Name)
+                codeMethod.GetImmediateParentOfType<CodeClass>() is CodeClass parentClass &&
+                returnClass.IsOfKind(CodeClassKind.Model) && !parentClass.Name.Equals(returnClass.Name))
             {
                 AddSerializationUsingToRequestBuilder(returnClass, parentClass);
                 SetTypeAsModelInterface(CreateModelInterface(returnClass, interfaceNamingCallback), returnType, requestBuilderClass);
@@ -579,23 +579,21 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     AddSerializationUsingToRequestBuilder(requestBodyClass, parentClass);
                 }
 
-                if (parentClass.Name != requestBodyClass.Name)
+                if (!parentClass.Name.Equals(requestBodyClass.Name) && CreateModelInterface(requestBodyClass, interfaceNamingCallback) is CodeInterface modelInterface && modelInterface.Parent is not null)
                 {
-                    var modelInterface = CreateModelInterface(requestBodyClass, interfaceNamingCallback);
-                    parentClass.AddUsing(
-                        new CodeUsing
+                    parentClass.AddUsing(new CodeUsing
+                    {
+                        Name = modelInterface.Parent.Name,
+                        Declaration = new CodeType
                         {
-                            Name = modelInterface.Parent?.Name!,
-                            Declaration = new CodeType
-                            {
-                                Name = modelInterface.Name,
-                                TypeDefinition = modelInterface
-                            }
-                        });
+                            Name = modelInterface.Name,
+                            TypeDefinition = modelInterface
+                        }
+                    });
                 }
             }
         }
-        if (codeMethod?.ErrorMappings != null && codeMethod.ErrorMappings.Any())
+        if (codeMethod.ErrorMappings.Any())
         {
             ProcessModelClassAssociatedWithErrorMappings(codeMethod);
         }
@@ -658,17 +656,16 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var namespaceOfModel = modelClass.GetImmediateParentOfType<CodeNamespace>();
         if (namespaceOfModel.FindChildByName<CodeInterface>(temporaryInterfaceName, false) is CodeInterface existing)
             return existing;
-        var modelParentClass = modelClass.Parent as CodeClass;
-        var shouldInsertUnderParentClass = modelParentClass != null;
+
         var insertValue = new CodeInterface
         {
             Name = temporaryInterfaceName,
             Kind = CodeInterfaceKind.Model,
         };
 
-        var modelInterface = (shouldInsertUnderParentClass ?
-                       modelParentClass?.AddInnerInterface(insertValue).First() :
-                       namespaceOfModel.AddInterface(insertValue).First()) ?? throw new InvalidOperationException("Model interface can't be null");
+        var modelInterface = (modelClass.Parent is CodeClass modelParentClass ?
+                       modelParentClass.AddInnerInterface(insertValue).First() :
+                       namespaceOfModel.AddInterface(insertValue).First());
         var classModelChildItems = modelClass.GetChildElements(true);
 
         var props = classModelChildItems.OfType<CodeProperty>();
@@ -753,7 +750,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void SetUsingInModelInterface(CodeInterface modelInterface, (CodeInterface?, CodeUsing?) propertyTypeAndUsing)
     {
-        if (propertyTypeAndUsing.Item1 is not null && propertyTypeAndUsing.Item2 is not null && modelInterface.Name != propertyTypeAndUsing.Item1.Name)
+        if (propertyTypeAndUsing.Item1 is not null && propertyTypeAndUsing.Item2 is not null && !modelInterface.Name.Equals(propertyTypeAndUsing.Item1.Name))
         {
             modelInterface.AddUsing(propertyTypeAndUsing.Item2);
         }
@@ -761,10 +758,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void SetUsingsOfPropertyInSerializationFunctions(string propertySerializerFunctionName, CodeFunction codeFunction, CodeClass property, Func<CodeClass, string> interfaceNamingCallback)
     {
-        if (!propertySerializerFunctionName.Equals(codeFunction.Name))
+        if (!propertySerializerFunctionName.EqualsIgnoreCase(codeFunction.Name))
         {
-            var serializationFunction = GetSerializationFunctionsForNamespace(property).Item1 ?? throw new InvalidOperationException($"Serialization function for property {property.Name} not found");
-            if (serializationFunction.Parent is not null)
+            if (GetSerializationFunctionsForNamespace(property).Item1 is CodeFunction serializationFunction && serializationFunction.Parent is not null)
             {
                 codeFunction.AddUsing(new CodeUsing
                 {
@@ -855,16 +851,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     protected static void AddStaticMethodsUsingsToDeserializerFunctions(CodeElement currentElement, Func<CodeType, string> functionNameCallback)
     {
-        if (currentElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod is CodeMethod currentMethod && currentMethod.Kind == CodeMethodKind.Deserializer)
+        if (currentElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod is CodeMethod currentMethod && currentMethod.Kind == CodeMethodKind.Deserializer && currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface) is CodeParameter interfaceParameter && interfaceParameter?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface ci)
         {
-            var interfaceParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface);
-
-            if (interfaceParameter?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface ci && ci.GetChildElements(true).OfType<CodeProperty>() is IEnumerable<CodeProperty> props)
+            foreach (var property in ci.Properties)
             {
-                foreach (var property in props)
-                {
-                    AddPropertyFactoryUsingToDeserializer(codeFunction, property, functionNameCallback);
-                }
+                AddPropertyFactoryUsingToDeserializer(codeFunction, property, functionNameCallback);
             }
         }
         CrawlTree(currentElement, x => AddStaticMethodsUsingsToDeserializerFunctions(x, functionNameCallback));
@@ -893,8 +884,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void AddDeserializerUsingToDisriminatorFactory(CodeElement codeElement)
     {
-        if (codeElement is CodeFunction parsableFactoryFunction && parsableFactoryFunction.OriginalLocalMethod.Kind == CodeMethodKind.Factory
-            && parsableFactoryFunction.OriginalLocalMethod?.ReturnType is CodeType codeType && codeType?.TypeDefinition is CodeClass modelReturnClass)
+        if (codeElement is CodeFunction parsableFactoryFunction && parsableFactoryFunction.OriginalLocalMethod.Kind == CodeMethodKind.Factory &&
+            parsableFactoryFunction.OriginalLocalMethod?.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeClass modelReturnClass)
         {
             var modelDeserializerFunction = GetSerializationFunctionsForNamespace(modelReturnClass).Item2;
             if (modelDeserializerFunction.Parent is not null)
