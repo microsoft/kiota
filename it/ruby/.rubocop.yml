@@ -92,6 +92,9 @@ Lint/EmptyFile:
 Style/MixinGrouping:
   Enabled: false
 
+Style/AccessorGrouping:
+  Enabled: false
+
 Layout/SpaceInsideHashLiteralBraces:
   Enabled: false
 
@@ -105,4 +108,10 @@ Metrics/AbcSize:
   Enabled: false
 
 Naming/ConstantName:
+  Enabled: false
+
+Naming/PredicateName:
+  Enabled: false
+
+Metrics/ClassLength:
   Enabled: false

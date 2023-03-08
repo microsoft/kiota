@@ -40,6 +40,10 @@
       {
         "Pattern": "/user/gpg_keys/**",
         "Rationale": "https://github.com/github/rest-api-description/issues/2247"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
     ],
     "Suppressions": [
@@ -98,6 +102,10 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/2374"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
     ]
   },
@@ -128,6 +136,10 @@
       {
         "Language": "java",
         "Rationale": "https://github.com/microsoft/kiota/issues/2372"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
     ]
   },
@@ -142,6 +154,10 @@
       {
         "Language": "go",
         "Rationale": "https://github.com/microsoft/kiota/issues/2373"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
     ]
   },
@@ -226,6 +242,10 @@
       {
         "Language": "csharp",
         "Rationale": "https://github.com/microsoft/kiota/issues/2369"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
     ]
   },
@@ -254,10 +274,14 @@
       {
         "Language": "java",
         "Rationale": "https://github.com/microsoft/kiota/issues/2372"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
     ]
   },
-  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twitter.com/current/2.61/openapi.yaml ": {
+  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twitter.com/current/2.61/openapi.yaml": {
     "Suppressions": [
       {
         "Language": "java",
@@ -270,6 +294,10 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
     ]
   }
