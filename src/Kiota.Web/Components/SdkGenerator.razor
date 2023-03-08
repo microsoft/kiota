@@ -1,48 +1,51 @@
-﻿@using Kiota.Builder
+﻿@using Microsoft.Extensions.Localization
+@using Microsoft.Fast.Components.FluentUI
+@using Microsoft.Kiota.Abstractions.Authentication;
+
+@using Kiota.Builder
 @using Kiota.Builder.Configuration
-@using System.Linq
+@using System.Globalization
 @using System.IO
 @using System.IO.Compression
+@using System.Linq
 @using System.Security.Cryptography
 @using System.Text
 @using System.Text.Json
 @using System.Text.Json.Serialization;
 @using System.Threading
-@using Kiota.Web.Pages;
-@using Microsoft.Extensions.Localization;
-@using Microsoft.Fast.Components.FluentUI
-@using Microsoft.Kiota.Abstractions.Authentication;
 
 @inject HttpClient Http
 @inject ILoggerFactory LoggerFactory
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SdkGenTranslator> Loc
 
-<h1>Generate</h1>
+<h1>@Loc["Generate"]</h1>
 
 <div>
-    <FluentTextField Required="true" class="full-width-field" @bind-Value=@DescriptionUrl>DescriptionUrl</FluentTextField>
-    <FluentTextField Required="true" class="full-width-field" @bind-Value=@NamespaceName>NamespacePrefix</FluentTextField>
-    <FluentTextField Required="true" class="full-width-field" @bind-Value=@ClientClassName>ClientClassName</FluentTextField>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@DescriptionUrl>@Loc["DescriptionUrl"]</FluentTextField>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@NamespaceName>@Loc["NamespacePrefix"]</FluentTextField>
+    <FluentTextField Required="true" class="full-width-field" @bind-Value=@ClientClassName>@Loc["ClientClassName"]</FluentTextField>
     <FluentTextArea class="full-width-field" @bind-Value=@IncludePatterns Placeholder="**/messages/**" Rows="10" Resize="TextAreaResize.Vertical">
-        <span>IncludePatterns</span>
+        <span>@Loc["IncludePatterns"]</span>
     </FluentTextArea>
     <FluentTextArea class="full-width-field" @bind-Value=@ExcludePatterns Placeholder="**/users/**" Rows="10" Resize="TextAreaResize.Vertical">
-        <span>ExcludePatterns</span>
+        <span>@Loc["ExcludePatterns"]</span>
     </FluentTextArea>
-    <label for="language">Language</label><br />
-    <FluentSelect TOption="GenerationLanguage?"
+    <label for="language">@Loc["Language"]</label><br />
+    <FluentSelect TOption="GenerationLanguage"
                   Id="language"
-                  @bind-SelectedOption="@Language"
+                  @bind-SelectedOption="@LanguageToGenerate"
+                  Items="Enum.GetValues<GenerationLanguage>()"
                   Required=@true
-                  Items="Enum.GetValues<GenerationLanguage>().Select(static x => new Nullable<GenerationLanguage>(x)).OrderBy(static x => x.ToString(), StringComparer.OrdinalIgnoreCase)"
-                  OptionText="@(x => (configuration?.Languages?.TryGetValue(x!.ToString()!, out var languageInfo) ?? false) ? $"{x} - {languageInfo.MaturityLevel}" : x.ToString())" />
+                  OptionText="@(x => (configuration?.Languages?.TryGetValue(x!.ToString()!, out var languageInfo) ?? false) ? $"{x} - {languageInfo.MaturityLevel}" : x.ToString())" 
+    />
     <FluentDivider Role="DividerRole.Separator"></FluentDivider>
-    <FluentCheckbox @bind-Value=@IncludeAdditionalData>AdditionalData</FluentCheckbox>
+    <FluentCheckbox @bind-Value=@IncludeAdditionalData>@Loc["AdditionalData"]</FluentCheckbox>
     <FluentDivider Role="DividerRole.Separator"></FluentDivider>
-    <FluentCheckbox @bind-Value=@UsesBackingStore>BackingStore</FluentCheckbox>
+    <FluentCheckbox @bind-Value=@UsesBackingStore>@Loc["BackingStore"]</FluentCheckbox>
     <FluentDivider Role="DividerRole.Separator"></FluentDivider>
-    <FluentButton @onclick="GenerateClient" Appearance="Appearance.Accent" Disabled="@(string.IsNullOrEmpty(DescriptionUrl) || IsLoading)">GenerateAction</FluentButton>
-    <FluentButton @onclick="DownloadClient" Appearance="Appearance.Neutral" Disabled="@string.IsNullOrEmpty(DownloadUrl)">Download</FluentButton>
+    <FluentButton @onclick="GenerateClient" Appearance="Appearance.Accent" Disabled="@(string.IsNullOrEmpty(DescriptionUrl) || IsLoading)">@Loc["GenerateAction"]</FluentButton>
+    <FluentButton @onclick="DownloadClient" Appearance="Appearance.Neutral" Disabled="@string.IsNullOrEmpty(DownloadUrl)">@Loc["Download"]</FluentButton>
     @if (IsLoading)
     {
         <FluentProgress></FluentProgress>
@@ -66,48 +69,56 @@
 }
 
 @code {
-
-    [Parameter] public string? Version { get; set; }
     [Parameter] public string? ClientClassName { get; set; }
     [Parameter] public string? NamespaceName { get; set; }
-    [Parameter] public bool UsesBackingStore { get; set; } = false;
-    [Parameter] public bool IncludeAdditionalData { get; set; } = false;
+    [Parameter] public string? BackingStore { get; set; }
+    [Parameter] public string? AdditionalData { get; set; }
     [Parameter] public string? DescriptionUrl { get; set; }
     [Parameter] public string? IncludePatterns { get; set; }
     [Parameter] public string? ExcludePatterns { get; set; }
-    [Parameter] public GenerationLanguage? Language { get; set; }
+    [Parameter] public string? Language { get; set; }
     [Parameter] public string? Serializers { get; set; }
     [Parameter] public string? Deserializers { get; set; }
     [Parameter] public string? StructuredMimeTypes { get; set; }
 
+    private static GenerationConfiguration defaultConfiguration = new GenerationConfiguration();
+    private static KiotaConfiguration? configuration;
+
+    #region Derived from parameters
+    private HashSet<string> SerializersList { get; set; } = defaultConfiguration.Serializers;
+    private HashSet<string> DeserializersList { get; set; } = defaultConfiguration.Deserializers;
+    private HashSet<string> StructuredMimeTypesList { get; set; } = defaultConfiguration.StructuredMimeTypes;
+    public GenerationLanguage LanguageToGenerate { get; set; } = defaultConfiguration.Language;
+    public bool UsesBackingStore { get; set; } = defaultConfiguration.UsesBackingStore;
+    public bool IncludeAdditionalData { get; set; } = defaultConfiguration.IncludeAdditionalData;
+    public string? PatternsToInclude { get; set; }
+    public string? PatternsToExclude { get; set; }
+    public string ClassNameToGenerate { get; set; } = defaultConfiguration.ClientClassName;
+    public string ClientNamespaceName { get; set; } = defaultConfiguration.ClientNamespaceName;
+    #endregion
+
     private bool IsLoading { get; set; }
-    private HashSet<string> SerializersList { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    private HashSet<string> DeserializersList { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    private HashSet<string> StructuredMimeTypesList { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     private string? OutputPath { get; set; }
     private string? DownloadUrl { get; set; }
     private string? Dependencies { get; set; }
     private string? Logs { get; set; }
 
-    [Inject] private KiotaSearcher? KiotaSearcher { get; set; }
-    private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(() => SHA256.Create());
     [Inject] private IApplicationInsights? AppInsights { get; set; }
 
+    private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(() => SHA256.Create());
     private const string generateClientTelemetryKey = "generateclient";
     private const string downloadTelemetryKey = "download";
-    private static KiotaConfiguration? configuration;
 
     Dictionary<string, string?> GetInstrumentationContent()
     {
         return new Dictionary<string, string?> {
         { "language", Language?.ToString() },
-        { "includePatterns", IncludePatterns},
-        { "excludePatterns", ExcludePatterns },
+        { "includePatterns", PatternsToInclude},
+        { "excludePatterns", PatternsToExclude },
         { "additionalData", IncludeAdditionalData.ToString() },
         { "backingStore", UsesBackingStore.ToString() }
         };
     }
-
 
     private Task GenerateClient()
     {
@@ -129,22 +140,19 @@
     {
         if (AppInsights != null)
             await AppInsights.StartTrackEvent(generateClientTelemetryKey).ConfigureAwait(false);
-        if (Language == null)
-            Language = GenerationLanguage.CSharp;
         if (DescriptionUrl is null || HashAlgorithm.Value is null)
             return;
         var hashedUrl = BitConverter.ToString(HashAlgorithm.Value.ComputeHash(Encoding.UTF8.GetBytes(DescriptionUrl))).Replace("-", string.Empty);
         OutputPath = Path.Combine(Path.GetTempPath(), "kiota", "generation", hashedUrl);
-        var defaultConfiguration = new GenerationConfiguration();
         var generationConfiguration = new GenerationConfiguration
             {
                 OpenAPIFilePath = DescriptionUrl,
                 IncludePatterns = IncludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet() ?? new(),
                 ExcludePatterns = ExcludePatterns?.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim()).ToHashSet() ?? new(),
-                Language = Language.Value,
+                Language = LanguageToGenerate,
                 OutputPath = OutputPath,
-                ClientClassName = ClientClassName ?? defaultConfiguration.ClientClassName,
-                ClientNamespaceName = NamespaceName ?? defaultConfiguration.ClientNamespaceName,
+                ClientClassName = ClassNameToGenerate,
+                ClientNamespaceName = ClientNamespaceName,
                 IncludeAdditionalData = IncludeAdditionalData,
                 UsesBackingStore = UsesBackingStore,
                 Serializers = SerializersList,
@@ -202,23 +210,35 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        var defaultConfiguration = new GenerationConfiguration();
+        if (!string.IsNullOrEmpty(IncludePatterns))
+            IncludePatterns = string.Join(Environment.NewLine, IncludePatterns.Split(',', StringSplitOptions.RemoveEmptyEntries));
 
+        if (!string.IsNullOrEmpty(ExcludePatterns))
+            ExcludePatterns = string.Join(Environment.NewLine, ExcludePatterns.Split(',', StringSplitOptions.RemoveEmptyEntries));
+
+        if (!string.IsNullOrEmpty(ClientClassName))
+            ClassNameToGenerate = ClientClassName;
+
+        if (!string.IsNullOrEmpty(NamespaceName))
+            ClientNamespaceName = NamespaceName;
+
+        if (!string.IsNullOrEmpty(Language) && Enum.TryParse<GenerationLanguage>(Language, true, out var language))
+            LanguageToGenerate = language;
+
+        if (!string.IsNullOrEmpty(BackingStore) && bool.TryParse(BackingStore, out var backingStore))
+            UsesBackingStore = backingStore;
+
+        if (!string.IsNullOrEmpty(AdditionalData) && bool.TryParse(AdditionalData, out var additionalData))
+            IncludeAdditionalData = additionalData;
 
         if (!string.IsNullOrEmpty(Serializers))
             SerializersList = new HashSet<string>(Serializers.Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.OrdinalIgnoreCase);
-        else
-            SerializersList = defaultConfiguration.Serializers;
 
         if (!string.IsNullOrEmpty(Deserializers))
             DeserializersList = new HashSet<string>(Deserializers.Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.OrdinalIgnoreCase);
-        else
-            DeserializersList = defaultConfiguration.Deserializers;
 
         if (!string.IsNullOrEmpty(StructuredMimeTypes))
             StructuredMimeTypesList = new HashSet<string>(StructuredMimeTypes.Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.OrdinalIgnoreCase);
-        else
-            StructuredMimeTypesList = defaultConfiguration.StructuredMimeTypes;
 
         await GetConfiguration(ComponentDetached);
         await base.OnParametersSetAsync();
@@ -233,7 +253,7 @@
                     {
                         Converters ={
                         new JsonStringEnumConverter( JsonNamingPolicy.CamelCase)
-                            },
+                                            },
 
                     },
                 cancellationToken);
