@@ -22,6 +22,17 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             var suffix = "Model";
             DisambiguateClassesWithNamespaceNames(generatedCode, classesToDisambiguate, suffix);
             UpdateReferencesToDisambiguatedClasses(generatedCode, classesToDisambiguate, suffix);
+            var reservedNamesProvider = new RubyReservedNamesProvider();
+            CorrectNames(generatedCode, s =>
+            {
+                if (s.Contains('_') &&
+                     s.ToPascalCase(UnderscoreArray) is string refinedName &&
+                    !reservedNamesProvider.ReservedNames.Contains(s) &&
+                    !reservedNamesProvider.ReservedNames.Contains(refinedName))
+                    return refinedName;
+                else
+                    return s;
+            }, false, false, false, true);
             cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, true);
             RemoveCancellationParameter(generatedCode);
@@ -56,7 +67,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 false,
                 new[] { CodeClassKind.RequestConfiguration });
             ShortenLongNamespaceNames(generatedCode);
-            ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
+            ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_escaped");
             if (generatedCode.FindNamespaceByName(_configuration.ClientNamespaceName)?.Parent is CodeNamespace parentOfClientNS)
                 AddNamespaceModuleImports(parentOfClientNS, generatedCode);
             var defaultConfiguration = new GenerationConfiguration();
