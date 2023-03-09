@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Fixed a bug where float64 would not be mapped in Java.
+## [1.0.1] - 2023-03-11
+
+- Fixed a bug where double would not be mapped properly.
 
 ## [1.0.0] - 2023-03-10
 

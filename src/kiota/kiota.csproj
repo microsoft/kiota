@@ -14,7 +14,7 @@
     <Title>Microsoft.OpenApi.Kiota</Title>
     <PackageId>Microsoft.OpenApi.Kiota</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <PackageReleaseNotes>
       https://github.com/microsoft/kiota/releases
     </PackageReleaseNotes>
