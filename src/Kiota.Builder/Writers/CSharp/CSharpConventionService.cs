@@ -226,7 +226,7 @@ public class CSharpConventionService : CommonLanguageConventionService
             "boolean" => "bool",
             "int64" => "long",
             "string" or "float" or "double" or "object" or "void" or "decimal" or "sbyte" or "byte" => type.Name.ToLowerInvariant(),// little casing hack
-            "binary" => "byte[]",
+            "binary" or "base64" or "base64url" => "byte[]",
             _ => type.Name?.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
     }

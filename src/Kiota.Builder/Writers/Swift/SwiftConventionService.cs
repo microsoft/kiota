@@ -99,7 +99,7 @@ public class SwiftConventionService : CommonLanguageConventionService
             "double" or "decimal" => "Float64",
             "guid" => "UUID",
             "void" or "uint8" or "int8" or "int32" or "int64" or "float32" or "float64" or "string" => type.Name.ToFirstCharacterUpperCase(),
-            "binary" => "[UInt8]",
+            "binary" or "base64" or "base64url" => "[UInt8]",
             "DateTimeOffset" => "Date", // TODO
             _ => type.Name?.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };

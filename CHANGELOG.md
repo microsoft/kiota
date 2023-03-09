@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where byte and binary types would be wrongly mapped. [#2357](https://github.com/microsoft/kiota/issues/2357)
 - Fixed a bug where go refiner would fail with a null reference.
 - Fixes a bug where request builders would be incorrectly generated due to inconsistent suffix generation
 - Fixed a bug where PHP model getAdditionalData() would not return nullable types.
