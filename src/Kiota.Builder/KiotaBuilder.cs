@@ -903,7 +903,7 @@ public class KiotaBuilder
                 ("number" or "integer", "uint8") => "byte",
                 ("number" or "integer", "int64") => "int64",
                 ("number", "int32") => "integer",
-                ("number", _) => "float64",
+                ("number", _) => "double",
                 ("integer", _) => "integer",
                 ("boolean", _) => "boolean",
                 (_, "byte") => "base64",
