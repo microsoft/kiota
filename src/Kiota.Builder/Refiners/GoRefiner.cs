@@ -542,6 +542,11 @@ public class GoRefiner : CommonLanguageRefiner
         {
             if (currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is CodeParameter rawUrlParam)
                 rawUrlParam.Type.IsNullable = false;
+            if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathsParam)
+            {
+                pathsParam.Type.Name = "map[string]string";
+                pathsParam.Type.IsNullable = true;
+            }
 
             currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.RequestAdapter))
                 .Where(static x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))

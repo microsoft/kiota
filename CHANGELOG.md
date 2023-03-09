@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.0.1] - 2023-03-11
+
+- Fixed a bug where double would not be mapped properly.
+
 ## [1.0.0] - 2023-03-10
 
 - 📢📢📢 Kiota is Generally Available with C# as a first stable language and more to follow soon! 🚀🚀🚀
