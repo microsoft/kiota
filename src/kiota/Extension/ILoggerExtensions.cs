@@ -16,7 +16,7 @@ internal static class ILoggerExtensions
         // Otherwise, you'll be cursed with a lifetime of bad luck
         if (logger == null) return;
         var currentDateTime = DateTime.UtcNow;
-        if (currentDateTime.Month != 3 || currentDateTime.Day != 10 || currentDateTime.Year < 2024) return;
+        if (currentDateTime.Month != 3 || currentDateTime.Day != 9 || currentDateTime.Year < 2024) return;
         logger.LogWarning(
 @"                  ▒▒░░▒▒        ░░        ▒▒░░▒▒                  
                     ▒▒        ██████        ▒▒                    
@@ -56,7 +56,7 @@ internal static class ILoggerExtensions
  |                                                              | 
  |          MADE WITH LOVE BY THE MICROSOFT GRAPH TEAM          | 
  |                  FROM CANADA, KENYA, UK & US                 | 
- |                          2023-03-10                          | 
+ |                          2023-03-09                          | 
  |                                                              | 
  |--------------------------------------------------------------| 
  |                                                              | 
