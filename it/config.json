@@ -140,6 +140,10 @@
       {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2381"
       }
     ]
   },
@@ -158,6 +162,10 @@
       {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2381"
       }
     ]
   },
@@ -246,6 +254,10 @@
       {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2381"
       }
     ]
   },
@@ -278,6 +290,10 @@
       {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2381"
       }
     ]
   },
@@ -298,6 +314,10 @@
       {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2381"
       }
     ]
   }
