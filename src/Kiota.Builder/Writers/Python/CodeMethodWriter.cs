@@ -311,6 +311,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     }
     private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits)
     {
+        _codeUsingWriter.WriteInternalImports(parentClass, writer);
         writer.WriteLine("fields = {");
         writer.IncreaseIndent();
         foreach (var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType))
@@ -352,6 +353,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var errorMappingVarName = "None";
         if (codeElement.ErrorMappings.Any())
         {
+            _codeUsingWriter.WriteInternalErrorMappingImports(parentClass, writer);
             errorMappingVarName = "error_mapping";
             writer.WriteLine($"{errorMappingVarName}: Dict[str, ParsableFactory] = {{");
             writer.IncreaseIndent();
@@ -365,6 +367,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         writer.IncreaseIndent();
         writer.WriteLine("raise Exception(\"Http core is null\") ");
         writer.DecreaseIndent();
+        _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.ReturnType.Name, writer);
         writer.WriteLine($"return await self.request_adapter.{genericTypeForSendMethod}(request_info,{newFactoryParameter} {errorMappingVarName})");
     }
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName)
