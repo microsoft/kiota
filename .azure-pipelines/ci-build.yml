@@ -44,13 +44,13 @@ stages:
         inputs:
           version: 7.x
 
-      - task: PoliCheck@1
+      - task: PoliCheck@2
         displayName: 'Run PoliCheck "/src"'
         inputs:
           inputType: CmdLine
           cmdLineArgs: '/F:$(Build.SourcesDirectory)/src /T:9 /Sev:"1|2" /PE:2 /O:poli_result_src.xml'
 
-      - task: PoliCheck@1
+      - task: PoliCheck@2
         displayName: 'Run PoliCheck "/tests"'
         inputs:
           inputType: CmdLine
@@ -91,14 +91,14 @@ stages:
         workingDirectory: $(Build.SourcesDirectory)
 
       # CredScan
-      - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@2
+      - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@3
         displayName: 'Run CredScan - Src'
         inputs:
           toolMajorVersion: 'V2'
           scanFolder: '$(Build.SourcesDirectory)\src'
           debugMode: false
 
-      - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@2
+      - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@3
         displayName: 'Run CredScan - Tests'
         inputs:
           toolMajorVersion: 'V2'
@@ -111,7 +111,7 @@ stages:
           FileDirPath: '$(ProductBinPath)'
         enabled: false
 
-      - task: BinSkim@3
+      - task: BinSkim@4
         displayName: 'Run BinSkim - Product Binaries'
         inputs:
           InputType: Basic
@@ -121,12 +121,12 @@ stages:
           AnalyzeHashes: true
           AnalyzeEnvironment: true
 
-      - task: PublishSecurityAnalysisLogs@2
+      - task: PublishSecurityAnalysisLogs@3
         displayName: 'Publish Security Analysis Logs'
         inputs:
           ArtifactName: SecurityLogs
 
-      - task: PostAnalysis@1
+      - task: PostAnalysis@2
         displayName: 'Post Analysis'
         inputs:
           BinSkim: true
