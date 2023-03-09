@@ -890,7 +890,7 @@ public class KiotaBuilder
             var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
             var primitiveTypeName = (typeName?.ToLowerInvariant(), format?.ToLowerInvariant()) switch
             {
-                ("string", "base64url") => "binary",
+                ("string", "base64url") => "base64url",
                 ("file", _) => "binary",
                 ("string", "duration") => "TimeSpan",
                 ("string", "time") => "TimeOnly",
@@ -906,7 +906,8 @@ public class KiotaBuilder
                 ("number", _) => "float64",
                 ("integer", _) => "integer",
                 ("boolean", _) => "boolean",
-                (_, "byte" or "binary") => "binary",
+                (_, "byte") => "base64",
+                (_, "binary") => "binary",
                 (_, _) => string.Empty,
             };
             if (!string.IsNullOrEmpty(primitiveTypeName))

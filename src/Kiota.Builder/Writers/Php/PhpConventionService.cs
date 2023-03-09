@@ -65,7 +65,7 @@ public class PhpConventionService : CommonLanguageConventionService
             "decimal" or "byte" or "guid" => "string",
             "integer" or "int32" or "int64" or "sbyte" => "int",
             "object" or "string" or "array" or "float" or "void" => typeName.ToLowerInvariant(),
-            "binary" => "StreamInterface",
+            "binary" or "base64" or "base64url" => "StreamInterface",
             _ => typeName.ToFirstCharacterUpperCase()
         };
     }

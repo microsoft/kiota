@@ -452,19 +452,19 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(current, c => AddDefaultImports(c, evaluators));
     }
-    private const string BinaryType = "binary";
+    private static readonly HashSet<string> BinaryTypes = new(StringComparer.OrdinalIgnoreCase) { "binary", "base64", "base64url" };
     protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false, bool isNullable = false)
     {
         if (currentElement is CodeMethod currentMethod)
         {
             var shouldInsertUsing = false;
-            if (BinaryType.Equals(currentMethod.ReturnType?.Name))
+            if (!string.IsNullOrEmpty(currentMethod.ReturnType?.Name) && BinaryTypes.Contains(currentMethod.ReturnType.Name))
             {
                 currentMethod.ReturnType.Name = symbol;
                 currentMethod.ReturnType.IsNullable = isNullable;
                 shouldInsertUsing = !string.IsNullOrWhiteSpace(ns);
             }
-            var binaryParameter = currentMethod.Parameters.FirstOrDefault(static x => x.Type?.Name?.Equals(BinaryType) ?? false);
+            var binaryParameter = currentMethod.Parameters.FirstOrDefault(static x => BinaryTypes.Contains(x.Type?.Name ?? string.Empty));
             if (binaryParameter != null)
             {
                 binaryParameter.Type.Name = symbol;

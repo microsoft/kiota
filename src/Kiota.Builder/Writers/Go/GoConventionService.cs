@@ -96,7 +96,7 @@ public class GoConventionService : CommonLanguageConventionService
             "DateTimeOffset" or "Time" when !includeImportSymbol => "Time",
             "DateOnly" or "TimeOnly" or "ISODuration" when includeImportSymbol => $"{SerializationHash}.{type.Name}",
             "DateOnly" or "TimeOnly" or "ISODuration" when !includeImportSymbol => type.Name,
-            "binary" => "[]byte",
+            "binary" or "base64" or "base64url" => "[]byte",
             "string" or "float32" or "float64" or "int32" or "int64" => type.Name,
             "String" or "Int64" or "Int32" or "Float32" or "Float64" => type.Name.ToFirstCharacterLowerCase(), //casing hack
             "context.Context" => "context.Context",
@@ -121,7 +121,7 @@ public class GoConventionService : CommonLanguageConventionService
         if (typeName?.StartsWith("map[") ?? false) return true;
         return typeName?.ToLowerInvariant() switch
         {
-            "binary" or "void" or "[]byte" => true,
+            "binary" or "base64" or "base64url" or "void" or "[]byte" => true,
             _ => false,
         };
     }
