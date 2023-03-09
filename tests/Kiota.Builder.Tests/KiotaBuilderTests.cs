@@ -2591,7 +2591,7 @@ paths:
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Assert.Contains("simpleObject", typeNames);
-        Assert.Contains("float64", typeNames);
+        Assert.Contains("double", typeNames);
     }
     [Fact]
     public void UnionOfInlineSchemasWorks()
@@ -2750,7 +2750,7 @@ paths:
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Assert.Contains("simpleObject", typeNames);
-        Assert.Contains("float64", typeNames);
+        Assert.Contains("double", typeNames);
     }
     [Fact]
     public void IntersectionOfInlineSchemasWorks()
@@ -3003,7 +3003,7 @@ paths:
     [InlineData("integer", "int8", "sbyte")]
     [InlineData("number", "uint8", "byte")]
     [InlineData("integer", "uint8", "byte")]
-    [InlineData("number", "", "float64")]
+    [InlineData("number", "", "double")]
     [InlineData("integer", "", "integer")]
     [InlineData("boolean", "", "boolean")]
     [InlineData("", "byte", "base64")]
@@ -3071,7 +3071,7 @@ paths:
     [InlineData("integer", "int8", "sbyte")]
     [InlineData("number", "uint8", "byte")]
     [InlineData("integer", "uint8", "byte")]
-    [InlineData("number", "", "float64")]
+    [InlineData("number", "", "double")]
     [InlineData("integer", "", "integer")]
     [InlineData("boolean", "", "boolean")]
     [InlineData("", "byte", "base64")]
