@@ -1012,7 +1012,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 });
             }
         }
-        CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, parseNodeInterfaceName, addFactoryMethodImport, addUsings));
+        CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, parseNodeInterfaceName, addFactoryMethodImport, addUsings, includeParentNamespace));
     }
     protected static void ReplaceLocalMethodsByGlobalFunctions(CodeElement currentElement, Func<CodeMethod, string> nameUpdateCallback, Func<CodeMethod, CodeUsing[]>? usingsCallback, params CodeMethodKind[] kindsToReplace)
     {
