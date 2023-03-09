@@ -126,7 +126,7 @@ public class GitHubSearchProvider : ISearchProvider
                 .WithNamingConvention(new YamlNamingConvention())
                 .IgnoreUnmatchedProperties()
                 .Build());
-    private static Task<IndexRoot?> deserializeDocumentFromJson(Stream document) => JsonSerializer.DeserializeAsync(document, indexRootContext.IndexRoot);
+    private static async Task<IndexRoot?> deserializeDocumentFromJson(Stream document, CancellationToken cancellationToken) => await JsonSerializer.DeserializeAsync(document, indexRootContext.IndexRoot, cancellationToken);
     private static readonly IndexRootJsonContext indexRootContext = new(new JsonSerializerOptions
     {
         PropertyNameCaseInsensitive = true,
@@ -150,7 +150,7 @@ public class GitHubSearchProvider : ISearchProvider
             await using var document = await documentCachingProvider.GetDocumentAsync(targetUrl, "search", targetUrl.GetFileName(), accept, cancellationToken);
             var indexFile = accept.ToLowerInvariant() switch
             {
-                "application/json" => deserializeDocumentFromJson(document),
+                "application/json" => await deserializeDocumentFromJson(document, cancellationToken),
                 "text/yaml" => deserializeDocumentFromYaml<IndexRoot>(document),
                 _ => throw new InvalidOperationException($"Unsupported accept type {accept}"),
             };

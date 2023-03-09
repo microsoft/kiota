@@ -38,7 +38,7 @@ public class APIsGuruSearchProvider : ISearchProvider
         if (SearchUri == null)
             return new Dictionary<string, SearchResult>();
         await using var rawDocument = await cachingProvider.GetDocumentAsync(SearchUri, "search", "apisguru.json", "application/json", cancellationToken);
-        var apiEntries = JsonSerializer.Deserialize(rawDocument, ApiEntriesJsonContext.Default.ApiEntries);
+        var apiEntries = await JsonSerializer.DeserializeAsync(rawDocument, ApiEntriesJsonContext.Default.ApiEntries, cancellationToken);
         if (apiEntries == null)
             return new Dictionary<string, SearchResult>();
         var candidates = apiEntries
