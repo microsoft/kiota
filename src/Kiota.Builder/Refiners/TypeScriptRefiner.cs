@@ -663,9 +663,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Kind = CodeInterfaceKind.Model,
         };
 
-        var modelInterface = (modelClass.Parent is CodeClass modelParentClass ?
+        var modelInterface = modelClass.Parent is CodeClass modelParentClass ?
                        modelParentClass.AddInnerInterface(insertValue).First() :
-                       namespaceOfModel.AddInterface(insertValue).First());
+                       namespaceOfModel.AddInterface(insertValue).First();
         var classModelChildItems = modelClass.GetChildElements(true);
 
         var props = classModelChildItems.OfType<CodeProperty>();
