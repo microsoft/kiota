@@ -5,7 +5,11 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Python;
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventionService>
 {
-    public CodePropertyWriter(PythonConventionService conventionService) : base(conventionService) { }
+    private readonly CodeUsingWriter _codeUsingWriter;
+    public CodePropertyWriter(PythonConventionService conventionService, string clientNamespaceName) : base(conventionService)
+    {
+        _codeUsingWriter = new(clientNamespaceName);
+    }
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement, true, writer);
@@ -21,6 +25,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                 writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}(self) -> {returnType}:");
                 writer.IncreaseIndent();
                 conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+                _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.Type.Name, writer);
                 conventions.AddRequestBuilderBody(parentClass, returnType, writer);
                 writer.CloseBlock(string.Empty);
                 break;
