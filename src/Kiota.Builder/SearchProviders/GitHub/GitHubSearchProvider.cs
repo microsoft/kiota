@@ -126,7 +126,7 @@ public class GitHubSearchProvider : ISearchProvider
                 .WithNamingConvention(new YamlNamingConvention())
                 .IgnoreUnmatchedProperties()
                 .Build());
-    private static IndexRoot? deserializeDocumentFromJson(Stream document) => JsonSerializer.Deserialize(document, indexRootContext.IndexRoot);
+    private static Task<IndexRoot?> deserializeDocumentFromJson(Stream document) => JsonSerializer.DeserializeAsync(document, indexRootContext.IndexRoot);
     private static readonly IndexRootJsonContext indexRootContext = new(new JsonSerializerOptions
     {
         PropertyNameCaseInsensitive = true,
