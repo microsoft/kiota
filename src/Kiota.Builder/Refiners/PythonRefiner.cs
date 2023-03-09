@@ -90,6 +90,12 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddQueryParameterMapperMethod(
                 generatedCode
             );
+            AddDiscriminatorMappingsUsingsToParentClasses(
+                generatedCode,
+                "ParseNode",
+                addUsings: true,
+                includeParentNamespace: true
+            );
             RemoveHandlerFromRequestBuilder(generatedCode);
         }, cancellationToken);
     }
