@@ -42,7 +42,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaSearcher>(context);
         using (loggerFactory)
         {
-            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
+            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
 
             try
             {

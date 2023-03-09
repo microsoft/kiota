@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Caching;
@@ -125,7 +126,8 @@ public class GitHubSearchProvider : ISearchProvider
                 .WithNamingConvention(new YamlNamingConvention())
                 .IgnoreUnmatchedProperties()
                 .Build());
-    private static T? deserializeDocumentFromJson<T>(Stream document) => JsonSerializer.Deserialize<T>(document, new JsonSerializerOptions
+    private static async Task<IndexRoot?> deserializeDocumentFromJson(Stream document, CancellationToken cancellationToken) => await JsonSerializer.DeserializeAsync(document, indexRootContext.IndexRoot, cancellationToken);
+    private static readonly IndexRootJsonContext indexRootContext = new(new JsonSerializerOptions
     {
         PropertyNameCaseInsensitive = true,
     });
@@ -148,7 +150,7 @@ public class GitHubSearchProvider : ISearchProvider
             await using var document = await documentCachingProvider.GetDocumentAsync(targetUrl, "search", targetUrl.GetFileName(), accept, cancellationToken);
             var indexFile = accept.ToLowerInvariant() switch
             {
-                "application/json" => deserializeDocumentFromJson<IndexRoot>(document),
+                "application/json" => await deserializeDocumentFromJson(document, cancellationToken),
                 "text/yaml" => deserializeDocumentFromYaml<IndexRoot>(document),
                 _ => throw new InvalidOperationException($"Unsupported accept type {accept}"),
             };

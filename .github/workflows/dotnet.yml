@@ -114,28 +114,3 @@ jobs:
             ./${{ matrix.os }}/kiota info -l Java
             exit 1
           fi
-
-  java-it:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Restore workloads
-        run: dotnet workload restore
-      - name: Restore dependencies
-        run: dotnet restore kiota.sln
-      - name: Build
-        run: dotnet build kiota.sln --no-restore
-      - name: Generate Java Code
-        run: ./it/java/generate.sh
-      - uses: actions/cache@v3
-        with:
-          path: /root/.jbang
-          key: $-jbang-$
-          restore-keys: |
-            $-jbang-
-      - name: jbang
-        uses: jbangdev/jbang-action@v0.104.0
-        with:
-          script: ./it/java/test.java
-        env:
-          JBANG_REPO: /root/.jbang/repository
