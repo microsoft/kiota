@@ -113,6 +113,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer)
     {
+        _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.ReturnType.Name, writer);
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
             codeElement.OriginalIndexer != null)
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"self.{pathParametersProperty.Name}",
@@ -121,6 +122,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     }
     private void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer)
     {
+        _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.ReturnType.Name, writer);
         var codePathParameters = codeElement.Parameters
                                                     .Where(x => x.IsOfKind(CodeParameterKind.Path));
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, pathParameters: codePathParameters);
