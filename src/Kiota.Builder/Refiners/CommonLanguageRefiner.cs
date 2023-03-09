@@ -953,7 +953,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace, addNamespaceToInheritDeclaration));
     }
-    protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true)
+    protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true, bool includeParentNamespace = false)
     {
         if (currentElement is CodeMethod currentMethod &&
             currentMethod.Parent is CodeClass parentClass &&
@@ -963,7 +963,21 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 (parentClass.DiscriminatorInformation?.HasBasicDiscriminatorInformation ?? false) &&
                 parentClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentClassNamespace)
             {
-                if (addUsings)
+                if (addUsings && includeParentNamespace)
+                    declaration.AddUsings(parentClass.DiscriminatorInformation.DiscriminatorMappings
+                        .Select(static x => x.Value)
+                        .OfType<CodeType>()
+                        .Where(static x => x.TypeDefinition != null)
+                        .Select(x => new CodeUsing
+                        {
+                            Name = x.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name,
+                            Declaration = new CodeType
+                            {
+                                Name = x.TypeDefinition.Name,
+                                TypeDefinition = x.TypeDefinition,
+                            },
+                        }).ToArray());
+                else if (addUsings && !includeParentNamespace)
                     declaration.AddUsings(parentClass.DiscriminatorInformation.DiscriminatorMappings
                         .Select(static x => x.Value)
                         .OfType<CodeType>()
