@@ -129,6 +129,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             currentMethod.ReturnType.Name = refinedMethodTypeName;
         }
+        else if (current is CodeEnum currentEnum &&
+            refineClassName(currentEnum.Name) is string refinedEnumName &&
+            !currentEnum.Name.Equals(refinedEnumName))
+        {
+            currentEnum.Name = refinedEnumName;
+        }
         CrawlTree(current, x => CorrectClassNames(x, refineClassName));
     }
     protected static void ReplacePropertyNames(CodeElement current, HashSet<CodePropertyKind> propertyKindsToReplace, Func<string, string> refineAccessorName)

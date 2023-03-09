@@ -1999,6 +1999,9 @@ public class CodeMethodWriterTests : IDisposable
         _codeMethodWriter.WriteCodeElement(constructor.First(), languageWriter);
         var result = stringWriter.ToString();
 
+        Assert.Contains("@param array<string, array<string>|string>|null $headers", result);
+        Assert.Contains("@param array<RequestOption>|null $options", result);
+        Assert.Contains("@param TestRequestQueryParameter|null $queryParameters", result);
         Assert.Contains("public function __construct(?array $headers = null, ?array $options = null, ?TestRequestQueryParameter $queryParameters = null)", result);
         Assert.Contains("$this->headers = $headers;", result);
         Assert.Contains("$this->options = $options;", result);

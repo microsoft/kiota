@@ -94,15 +94,14 @@ public class PhpConventionService : CommonLanguageConventionService
             CodeParameterKind.RequestAdapter => $"RequestAdapter {GetParameterName(parameter)}",
             CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",
             CodeParameterKind.PathParameters => GetParameterName(parameter),
-            CodeParameterKind.RequestConfiguration => $"{parameter.Type.Name.ToFirstCharacterUpperCase()} {GetParameterName(parameter)}",
             CodeParameterKind.Serializer => $"SerializationWriter {GetParameterName(parameter)}",
-            CodeParameterKind.BackingStore => $"{parameter.Type.Name.ToFirstCharacterUpperCase()} {GetParameterName(parameter)}",
             _ => $"{typeString} {GetParameterName(parameter)}"
-
         };
-        var qualified = parameter?.Optional != null && parameter.Optional &&
-                        targetElement is CodeMethod methodTarget && !methodTarget.IsOfKind(CodeMethodKind.Setter);
-        return parameter?.Optional != null && parameter.Optional ? $"?{parameterSuffix}{(qualified ? " = null" : string.Empty)}" : parameterSuffix;
+        var optional = parameter.Optional ? "?" : "";
+        var qualified = (parameter.Optional
+            && targetElement is CodeMethod methodTarget
+            && !methodTarget.IsOfKind(CodeMethodKind.Setter)) ? " = null" : "";
+        return $"{optional}{parameterSuffix}{qualified}";
     }
     public string GetParameterDocNullable(CodeParameter parameter, CodeElement codeElement)
     {
@@ -111,14 +110,22 @@ public class PhpConventionService : CommonLanguageConventionService
         {
             return $"array<string, mixed>|string{(parameter.Optional ? "|null" : string.Empty)} {parameterSignature[0]}";
         }
-
-        var isCollection = parameter.Type.IsCollection;
-        var collectionDoc = isCollection ? $"array<{TranslateType(parameter.Type)}>{(parameter.Optional ? "|null" : string.Empty)} {parameterSignature[1]}" : string.Empty;
-        return parameter.Optional switch
+        if (parameter.Type.IsCollection)
         {
-            true => $"{(isCollection ? collectionDoc : $"{parameterSignature[0].Trim('?')}|null {parameterSignature[1]}")}",
-            _ => isCollection ? collectionDoc : string.Join(' ', parameterSignature)
+            return $"{GetCollectionDocString(parameter)} {parameterSignature[1]}";
+        }
+        return parameter.Optional ? $"{parameterSignature[0].Trim('?')}|null {parameterSignature[1]}" : string.Join(' ', parameterSignature);
+    }
+    private string GetCollectionDocString(CodeParameter codeParameter)
+    {
+        var doc = codeParameter.Kind switch
+        {
+            CodeParameterKind.PathParameters => $"array<string, mixed>|string",
+            CodeParameterKind.Headers => "array<string, array<string>|string>",
+            CodeParameterKind.Options => "array<RequestOption>",
+            _ => $"array<{TranslateType(codeParameter.Type)}>"
         };
+        return codeParameter.Optional ? $"{doc}|null" : doc;
     }
 
     private static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/");
