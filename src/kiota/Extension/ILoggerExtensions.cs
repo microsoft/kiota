@@ -85,6 +85,7 @@ internal static class ILoggerExtensions
  |                        Andrew Omondi                         | 
  |                        DeVere Dyett                          | 
  |                        Caleb Kiage                           | 
+ |                        Irvine Sunday                         | 
  |                        Japheth Obala                         | 
  |                        Nikitha Chettiar                      | 
  |                        Philip Gichuhi                        | 
