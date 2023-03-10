@@ -111,8 +111,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void CorrectNames(CodeElement current, Func<string, string> refineName,
         bool classNames = true,
-        bool propertyNames = true,
-        bool methodNames = true,
         bool enumNames = true)
     {
         if (current is CodeClass currentClass &&
@@ -123,18 +121,28 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentClass.Name = refinedClassName;
         }
         else if (current is CodeProperty currentProperty &&
-                propertyNames &&
+                classNames &&
                 refineName(currentProperty.Type.Name) is string refinedPropertyTypeName &&
                 !currentProperty.Type.Name.Equals(refinedPropertyTypeName))
         {
             currentProperty.Type.Name = refinedPropertyTypeName;
         }
         else if (current is CodeMethod currentMethod &&
-                methodNames &&
-                refineName(currentMethod.ReturnType.Name) is string refinedMethodTypeName &&
-                !currentMethod.ReturnType.Name.Equals(refinedMethodTypeName))
+                classNames)
         {
-            currentMethod.ReturnType.Name = refinedMethodTypeName;
+            foreach (var param in currentMethod.Parameters)
+            {
+                if (refineName(param.Type.Name) is string refinedTypeName &&
+                    !param.Type.Name.Equals(refinedTypeName))
+                {
+                    param.Type.Name = refinedTypeName;
+                }
+            };
+            if (refineName(currentMethod.ReturnType.Name) is string refinedMethodTypeName &&
+                !currentMethod.ReturnType.Name.Equals(refinedMethodTypeName))
+            {
+                currentMethod.ReturnType.Name = refinedMethodTypeName;
+            }
         }
         else if (current is CodeEnum currentEnum &&
             enumNames &&
