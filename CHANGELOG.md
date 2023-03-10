@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.1] - 2023-03-11
 
 - Fixed a bug where double would not be mapped properly.
+- Changed python import mechanism to facilitate code completion. [#2380](https://github.com/microsoft/kiota/issues/2380)
+- Fixed a bug where discriminator methods were missing possible types in Python [#2381](https://github.com/microsoft/kiota/issues/2381)
 
 ## [1.0.0] - 2023-03-10
 
