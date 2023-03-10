@@ -468,7 +468,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void AddDefaultImports(CodeElement current, IEnumerable<AdditionalUsingEvaluator> evaluators)
     {
         var usingsToAdd = evaluators.Where(x => x.CodeElementEvaluator.Invoke(current))
-                        .SelectMany(x => usingSelector(x))
+                        .SelectMany(usingSelector)
                         .ToArray();
         if (usingsToAdd.Any())
         {
@@ -1406,5 +1406,29 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
 
         CrawlTree(currentElement, RemoveHandlerFromRequestBuilder);
+    }
+    protected static void MoveRequestBuilderPropertiesToBaseType(CodeElement currentElement, CodeUsing baseTypeUsing, AccessModifier? accessModifier = null)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+        {
+            if (currentClass.StartBlock.Inherits == null)
+            {
+                currentClass.StartBlock.Inherits = new CodeType
+                {
+                    Name = baseTypeUsing.Name
+                };
+                currentClass.AddUsing(baseTypeUsing);
+            }
+
+            var properties = currentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.PathParameters, CodePropertyKind.UrlTemplate, CodePropertyKind.RequestAdapter));
+            foreach (var property in properties)
+            {
+                property.ExistsInExternalBaseType = true;
+                if (accessModifier.HasValue)
+                    property.Access = accessModifier.Value;
+            }
+        }
+
+        CrawlTree(currentElement, x => MoveRequestBuilderPropertiesToBaseType(x, baseTypeUsing, accessModifier));
     }
 }

@@ -447,7 +447,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
     {
         if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is not CodeProperty requestAdapterProperty) return;
-        var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterLowerCase();
+        var requestAdapterPropertyName = BaseRequestBuilderVarName + "." + requestAdapterProperty.Name.ToFirstCharacterUpperCase();
         var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
         WriteSerializationRegistration(method.SerializerModules, writer, parentClass, "RegisterDefaultSerializer", "SerializationWriterFactory");
         WriteSerializationRegistration(method.DeserializerModules, writer, parentClass, "RegisterDefaultDeserializer", "ParseNodeFactory");
@@ -457,7 +457,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             writer.WriteLine($"m.{requestAdapterPropertyName}.SetBaseUrl(\"{method.BaseUrl}\")");
             writer.CloseBlock();
             if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
-                writer.WriteLine($"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}[\"baseurl\"] = m.{requestAdapterPropertyName}.GetBaseUrl()");
+                writer.WriteLine($"m.{BaseRequestBuilderVarName}.{pathParametersProperty.Name.ToFirstCharacterUpperCase()}[\"baseurl\"] = m.{requestAdapterPropertyName}.GetBaseUrl()");
         }
         if (backingStoreParameter != null)
             writer.WriteLine($"m.{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
@@ -481,14 +481,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         {
             writer.IncreaseIndent();
             var parentClassName = parentClass.StartBlock.Inherits!.Name.ToFirstCharacterUpperCase();
-            writer.WriteLine($"{parentClassName}: *{conventions.GetImportedStaticMethodName(parentClass.StartBlock.Inherits, parentClass)}(),");
+            var newMethodName = conventions.GetImportedStaticMethodName(parentClass.StartBlock.Inherits, parentClass);
+            if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
+                currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter &&
+                parentClass.Properties.OfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
+                writer.WriteLine($"{parentClassName}: *{newMethodName}({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue}),");
+            else
+                writer.WriteLine($"{parentClassName}: *{newMethodName}(),");
             writer.DecreaseIndent();
         }
         writer.CloseBlock(decreaseIndent: false);
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
-                                                                        CodePropertyKind.RequestBuilder,
-                                                                        CodePropertyKind.UrlTemplate,
-                                                                        CodePropertyKind.PathParameters)
+                                                                        CodePropertyKind.RequestBuilder)
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderBy(static x => x.Name))
         {
@@ -519,27 +523,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         {
             if (currentMethod.IsOfKind(CodeMethodKind.Constructor))
             {
-                if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam)
+                if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam &&
+                    parentClass.Properties.OfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
                     conventions.AddParametersAssignment(writer,
                                                         pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
                                                         pathParametersParam.Name.ToFirstCharacterLowerCase(),
+                                                        $"m.{BaseRequestBuilderVarName}.{pathParametersProperty.Name.ToFirstCharacterUpperCase()}",
                                                         currentMethod.Parameters
                                                                     .Where(static x => x.IsOfKind(CodeParameterKind.Path))
                                                                     .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
                                                                     .ToArray());
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
             }
-            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
-        }
-    }
-    private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string? variableName = default)
-    {
-        if (parentClass.GetPropertyOfKind(propertyKind) is CodeProperty property)
-        {
-            if (!string.IsNullOrEmpty(variableName))
-                writer.WriteLine($"m.{property.Name.ToFirstCharacterLowerCase()} = {variableName}");
-            else if (currentMethod.Parameters.OfKind(parameterKind) is CodeParameter parameter)
-                writer.WriteLine($"m.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name}");
         }
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
@@ -557,7 +551,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     {
         var pathParameters = codeElement.Parameters.Where(static x => x.IsOfKind(CodeMethod.ParameterKindForConvertedIndexers));
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
-            conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}", pathParameters.Select(static x => (x.Type, x.SerializationName, x.Name.ToFirstCharacterLowerCase())).ToArray());
+            conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"m.{pathParametersProperty.Name.ToFirstCharacterUpperCase()}", parameters: pathParameters.Select(static x => (x.Type, x.SerializationName, x.Name.ToFirstCharacterLowerCase())).ToArray());
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, codeElement.Parameters.Except(pathParameters).ToArray());
     }
     private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits)
@@ -725,7 +719,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var assignmentPrefix = isVoid ?
                     "err =" :
                     "res, err :=";
-        writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}({contextVarName}, {RequestInfoVarName}, {constructorFunction}{errorMappingVarName})");
+        writer.WriteLine($"{assignmentPrefix} m.{BaseRequestBuilderVarName}.RequestAdapter.{sendMethodName}({contextVarName}, {RequestInfoVarName}, {constructorFunction}{errorMappingVarName})");
         WriteReturnError(writer, returnType);
         var valueVarName = string.Empty;
         if (codeElement.ReturnType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
@@ -783,7 +777,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
-        var requestAdapterPropertyName = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter)?.Name.ToFirstCharacterLowerCase();
+        var requestAdapterPropertyName = BaseRequestBuilderVarName + "." + parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter)?.Name.ToFirstCharacterUpperCase();
         var contextParameterName = codeElement.Parameters.OfKind(CodeParameterKind.Cancellation)?.Name.ToFirstCharacterLowerCase();
         writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformation()");
         if (parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty &&
@@ -843,7 +837,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         }
         writer.WriteLine($"return {RequestInfoVarName}, nil");
     }
-    private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"m.{property.Name.ToFirstCharacterLowerCase()}";
+    private const string BaseRequestBuilderVarName = "BaseRequestBuilder";
+    private static string GetPropertyCall(CodeProperty property, string defaultValue)
+    {
+        return property switch
+        {
+            null => defaultValue,
+            _ when property.ExistsInExternalBaseType => $"m.{BaseRequestBuilderVarName}.{property.Name.ToFirstCharacterUpperCase()}",
+            _ => $"m.{property.Name.ToFirstCharacterLowerCase()}"
+        };
+    }
 
     private static void WriteReturnError(LanguageWriter writer, params string[] returnTypes)
     {
