@@ -94,7 +94,7 @@ public static class OpenApiSchemaExtensions
     }
     public static bool IsEnum(this OpenApiSchema schema)
     {
-        return schema?.Enum?.Any() ?? false;
+        return (schema?.Enum?.Any() ?? false) && (string.IsNullOrEmpty(schema.Type) || "string".Equals(schema.Type, StringComparison.OrdinalIgnoreCase)); // number and boolean enums are not supported
     }
     public static bool IsComposedEnum(this OpenApiSchema schema)
     {
