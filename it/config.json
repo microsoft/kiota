@@ -184,7 +184,12 @@
         "Rationale": "error 404 is invalid"
       }
     ],
-    "Suppressions": []
+    "Suppressions": [
+      {
+        "Language": "all",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2351"
+      }
+    ]
   },
   "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twilio.com/api/1.39.1/openapi.yaml": {
     "ExcludePatterns": [
@@ -257,7 +262,12 @@
     ]
   },
   "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/stripe.com/2022-11-15/openapi.yaml": {
-    "Suppressions": []
+    "Suppressions": [
+      {
+        "Language": "all",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2352"
+      }
+    ]
   },
   "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/meraki.com/v1.31.0/openapi.yaml": {
     "Suppressions": [
