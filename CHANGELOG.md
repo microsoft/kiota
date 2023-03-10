@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where java refiner would emit enums without normalizing the name.
 - Fixed bug in request configuration class constructor PHPDoc.
 - Fixed a bug where ruby refiner would emit enums without normalizing the name.
+- Fixed a bug where java refiner would emit method's parameters types without normalizing the name.
 
 ## [0.11.1] - 2023-02-13
 
