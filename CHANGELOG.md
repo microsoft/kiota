@@ -9,18 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.0.1] - 2023-03-11
+
+- Fixed a bug where double would not be mapped properly.
+
+## [1.0.0] - 2023-03-10
+
+- 📢📢📢 Kiota is Generally Available with C# as a first stable language and more to follow soon! 🚀🚀🚀
+
+### Added
+
 - Added constructors and query parameter factory methods to request configuration classes and constructors to query parameter classes in PHP.
 - Added support for relative server URL. [#2278](https://github.com/microsoft/kiota/issues/2278)
 - Added restoration of the kiota-lock when the generation fails with clean output. [#2292](https://github.com/microsoft/kiota/issues/2292)
 
 ### Changed
 
+- Fixed a bug where byte and binary types would be wrongly mapped. [#2357](https://github.com/microsoft/kiota/issues/2357)
 - Fixed a bug where go refiner would fail with a null reference.
 - Fixes a bug where request builders would be incorrectly generated due to inconsistent suffix generation
 - Fixed a bug where PHP model getAdditionalData() would not return nullable types.
 - Fixed bug in request options PHPDoc type.
 - Fixed a bug where java refiner would emit enums without normalizing the name.
 - Fixed bug in request configuration class constructor PHPDoc.
+- Fixed a bug where ruby refiner would emit enums without normalizing the name.
 
 ## [0.11.1] - 2023-02-13
 

@@ -19,6 +19,7 @@ public class InconsistentTypeFormatPair : ValidationRule<OpenApiSchema>
             "base64url",
             "uuid",
             "binary",
+            "byte",
         },
         ["integer"] = new(StringComparer.OrdinalIgnoreCase) {
             "int32",

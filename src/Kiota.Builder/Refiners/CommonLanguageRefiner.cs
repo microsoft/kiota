@@ -109,33 +109,41 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         return false;
     }
-    protected static void CorrectClassNames(CodeElement current, Func<string, string> refineClassName)
+    protected static void CorrectNames(CodeElement current, Func<string, string> refineName,
+        bool classNames = true,
+        bool propertyNames = true,
+        bool methodNames = true,
+        bool enumNames = true)
     {
         if (current is CodeClass currentClass &&
-            refineClassName(currentClass.Name) is string refinedClassName &&
+            classNames &&
+            refineName(currentClass.Name) is string refinedClassName &&
             !currentClass.Name.Equals(refinedClassName))
         {
             currentClass.Name = refinedClassName;
         }
         else if (current is CodeProperty currentProperty &&
-                refineClassName(currentProperty.Type.Name) is string refinedPropertyTypeName &&
+                propertyNames &&
+                refineName(currentProperty.Type.Name) is string refinedPropertyTypeName &&
                 !currentProperty.Type.Name.Equals(refinedPropertyTypeName))
         {
             currentProperty.Type.Name = refinedPropertyTypeName;
         }
         else if (current is CodeMethod currentMethod &&
-                refineClassName(currentMethod.ReturnType.Name) is string refinedMethodTypeName &&
+                methodNames &&
+                refineName(currentMethod.ReturnType.Name) is string refinedMethodTypeName &&
                 !currentMethod.ReturnType.Name.Equals(refinedMethodTypeName))
         {
             currentMethod.ReturnType.Name = refinedMethodTypeName;
         }
         else if (current is CodeEnum currentEnum &&
-            refineClassName(currentEnum.Name) is string refinedEnumName &&
+            enumNames &&
+            refineName(currentEnum.Name) is string refinedEnumName &&
             !currentEnum.Name.Equals(refinedEnumName))
         {
             currentEnum.Name = refinedEnumName;
         }
-        CrawlTree(current, x => CorrectClassNames(x, refineClassName));
+        CrawlTree(current, x => CorrectNames(x, refineName));
     }
     protected static void ReplacePropertyNames(CodeElement current, HashSet<CodePropertyKind> propertyKindsToReplace, Func<string, string> refineAccessorName)
     {
@@ -444,19 +452,19 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(current, c => AddDefaultImports(c, evaluators));
     }
-    private const string BinaryType = "binary";
+    private static readonly HashSet<string> BinaryTypes = new(StringComparer.OrdinalIgnoreCase) { "binary", "base64", "base64url" };
     protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false, bool isNullable = false)
     {
         if (currentElement is CodeMethod currentMethod)
         {
             var shouldInsertUsing = false;
-            if (BinaryType.Equals(currentMethod.ReturnType?.Name))
+            if (!string.IsNullOrEmpty(currentMethod.ReturnType?.Name) && BinaryTypes.Contains(currentMethod.ReturnType.Name))
             {
                 currentMethod.ReturnType.Name = symbol;
                 currentMethod.ReturnType.IsNullable = isNullable;
                 shouldInsertUsing = !string.IsNullOrWhiteSpace(ns);
             }
-            var binaryParameter = currentMethod.Parameters.FirstOrDefault(static x => x.Type?.Name?.Equals(BinaryType) ?? false);
+            var binaryParameter = currentMethod.Parameters.FirstOrDefault(static x => BinaryTypes.Contains(x.Type?.Name ?? string.Empty));
             if (binaryParameter != null)
             {
                 binaryParameter.Type.Name = symbol;
@@ -508,7 +516,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         ArgumentNullException.ThrowIfNull(codeComposedType);
         CodeClass newClass;
         var description =
-            $"Composed type wrapper for classes {codeComposedType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}";
+            $"Composed type wrapper for classes {codeComposedType.Types.Select(static x => x.Name).Aggregate(static (x, y) => x + ", " + y)}";
         if (!supportsInnerClasses)
         {
             var @namespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
@@ -539,7 +547,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         else
         {
-            if (codeComposedType.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase))
+            if (codeComposedType.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase) || codeClass.FindChildByName<CodeProperty>(codeComposedType.Name, false) is not null)
                 codeComposedType.Name = $"{codeComposedType.Name}Wrapper";
             newClass = codeClass.AddInnerClass(new CodeClass
             {
@@ -553,7 +561,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         newClass.AddProperty(codeComposedType
                                 .Types
-                                .Select(x => new CodeProperty
+                                .Select(static x => new CodeProperty
                                 {
                                     Name = x.Name,
                                     Type = x,

@@ -270,20 +270,21 @@ public static class KiotaHost
         var parameterName = "--disable-validation-rules";
         var option = new Option<List<string>>(parameterName, () => new List<string>(), "The OpenAPI description validation rules to disable. Accepts multiple values.");
         option.AddAlias("--dvr");
-        if (typeof(NoServerEntry).Namespace is string nsName &&
-            Assembly.GetAssembly(typeof(NoServerEntry)) is Assembly assembly)
-        {
-            var validationRules = assembly.GetTypes()
-                                            .Where(x => nsName.Equals(x.Namespace, StringComparison.OrdinalIgnoreCase) &&
-                                                        x.IsClass &&
-                                                        !x.IsAbstract &&
-                                                        x.IsSubclassOf(typeof(ValidationRule)))
-                                            .Select(static x => x.Name)
-                                            .Union(new[] { "All" })
-                                            .ToArray();
-            option.AddValidator(x => ValidateKnownValues(x, parameterName, validationRules));
-            option.ArgumentHelpName = string.Join(",", validationRules);
-        }
+        var validationRules = new[] {
+                                    nameof(DivergentResponseSchema),
+                                    nameof(GetWithBody),
+                                    nameof(InconsistentTypeFormatPair),
+                                    nameof(KnownAndNotSupportedFormats),
+                                    nameof(MissingDiscriminator),
+                                    nameof(MultipleServerEntries),
+                                    nameof(NoContentWithBody),
+                                    nameof(NoServerEntry),
+                                    nameof(UrlFormEncodedComplex),
+                                    nameof(ValidationRuleSetExtensions),
+                                    "All"
+                                    };
+        option.AddValidator(x => ValidateKnownValues(x, parameterName, validationRules));
+        option.ArgumentHelpName = string.Join(",", validationRules);
         option.Arity = ArgumentArity.ZeroOrMore;
         return option;
     }

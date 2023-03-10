@@ -1,0 +1,20 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+# Specify your gem's dependencies in integration_test.gemspec
+gemspec
+
+gem "rake", "~> 13.0"
+
+gem "rspec", "~> 3.0"
+
+gem "rubocop", "~> 1.21"
+
+gem "microsoft_kiota_abstractions", "~> 0.13.0"
+
+gem "microsoft_kiota_faraday", "~> 0.11.0"
+
+gem "microsoft_kiota_serialization_json", "~> 0.8.0"
+
+gem "microsoft_kiota_authentication_oauth", "~> 0.7.0"

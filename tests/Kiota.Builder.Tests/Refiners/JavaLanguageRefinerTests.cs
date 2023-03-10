@@ -165,6 +165,17 @@ public class JavaLanguageRefinerTests
         Assert.Contains("Escaped", model.Name);
     }
     [Fact]
+    public async Task ConvertEnumsToPascalCase()
+    {
+        var model = root.AddEnum(new CodeEnum
+        {
+            Name = "foo_bar"
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        Assert.NotEqual("foo_bar", model.Name);
+        Assert.Contains("FooBar", model.Name);
+    }
+    [Fact]
     public async Task AddsDefaultImports()
     {
         var model = root.AddClass(new CodeClass

@@ -19,7 +19,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             LowerCaseNamespaceNames(generatedCode);
             var reservedNamesProvider = new JavaReservedNamesProvider();
-            CorrectClassNames(generatedCode, s =>
+            CorrectNames(generatedCode, s =>
             {
                 if (s.Contains('_') &&
                      s.ToPascalCase(UnderscoreArray) is string refinedName &&

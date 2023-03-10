@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,8 +25,11 @@ using Xunit;
 namespace Kiota.Builder.Tests;
 public class KiotaBuilderTests : IDisposable
 {
+    private readonly List<string> _tempFiles = new();
     public void Dispose()
     {
+        foreach (var file in _tempFiles)
+            File.Delete(file);
         _httpClient.Dispose();
         GC.SuppressFinalize(this);
     }
@@ -34,7 +38,7 @@ public class KiotaBuilderTests : IDisposable
     [InlineData("https://graph.microsoft.com/docs/description.yaml", "../v1.0", "https://graph.microsoft.com/v1.0")]
     [InlineData("https://graph.microsoft.com/description.yaml", "https://graph.microsoft.com/v1.0", "https://graph.microsoft.com/v1.0")]
     [Theory]
-    public async Task SupportsRelativeServerUrl(string descriptionUrl, string serverRelativeUrl, string expexted)
+    public async Task SupportsRelativeServerUrl(string descriptionUrl, string serverRelativeUrl, string expected)
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
@@ -66,14 +70,14 @@ paths:
         Assert.NotNull(clientBuilder);
         var constructor = clientBuilder.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
         Assert.NotNull(constructor);
-        Assert.Equal(expexted, constructor.BaseUrl);
+        Assert.Equal(expected, constructor.BaseUrl);
     }
     private readonly HttpClient _httpClient = new();
     [Fact]
     public async Task ParsesEnumDescriptions()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -119,7 +123,6 @@ components:
           - value: Premium_LRS");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
@@ -131,14 +134,21 @@ components:
         Assert.Equal("Standard_LRS", firstOption.SerializationName);
         Assert.Equal("StandardLocalRedundancy", firstOption.Name);
         Assert.NotEmpty(firstOption.Documentation.Description);
-
-        File.Delete(tempFilePath);
+    }
+    private static async Task<Stream> GetDocumentStream(string document)
+    {
+        var ms = new MemoryStream();
+        await using var tw = new StreamWriter(ms, Encoding.UTF8, leaveOpen: true);
+        tw.Write(document);
+        await tw.FlushAsync();
+        ms.Seek(0, SeekOrigin.Begin);
+        return ms;
     }
     [Fact]
     public async Task ParsesKiotaExtension()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -155,7 +165,6 @@ servers:
   - url: https://graph.microsoft.com/v1.0");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var extensionResult = await builder.GetLanguagesInformationAsync(new CancellationToken());
@@ -166,8 +175,6 @@ servers:
         Assert.Single(csharpInfo.Dependencies);
         Assert.Equal("Microsoft.Graph.Core", csharpInfo.Dependencies.First().Name);
         Assert.Equal("3.0.0", csharpInfo.Dependencies.First().Version);
-
-        File.Delete(tempFilePath);
     }
     [Fact]
     public async Task UpdatesGenerationConfigurationFromInformation()
@@ -202,13 +209,13 @@ servers:
         Assert.Equal("Microsoft.Graph", configuration.ClientNamespaceName);
         Assert.Contains("application/json", configuration.StructuredMimeTypes);
         Assert.Contains("application/xml", configuration.StructuredMimeTypes);
-        File.Delete(tempFilePath);
+        _tempFiles.Add(tempFilePath);
     }
     [Fact]
     public async Task DoesntFailOnEmptyKiotaExtension()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -217,13 +224,10 @@ servers:
   - url: https://graph.microsoft.com/v1.0");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var extensionResult = await builder.GetLanguagesInformationAsync(new CancellationToken());
         Assert.Null(extensionResult);
-
-        File.Delete(tempFilePath);
     }
     [Fact]
     public async Task GetsUrlTreeNode()
@@ -252,7 +256,7 @@ paths:
         Assert.Equal("/", treeNode.Segment);
         Assert.Equal("enumeration", treeNode.Children.First().Value.Segment);
 
-        File.Delete(tempFilePath);
+        _tempFiles.Add(tempFilePath);
     }
     [Fact]
     public async Task DoesntThrowOnMissingServerForV2()
@@ -262,7 +266,7 @@ paths:
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         await builder.GenerateClientAsync(new());
-        File.Delete(tempFilePath);
+        _tempFiles.Add(tempFilePath);
     }
     [Fact]
     public void Single_root_node_creates_single_request_builder_class()
@@ -2587,7 +2591,7 @@ paths:
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Assert.Contains("simpleObject", typeNames);
-        Assert.Contains("int64", typeNames);
+        Assert.Contains("double", typeNames);
     }
     [Fact]
     public void UnionOfInlineSchemasWorks()
@@ -2746,7 +2750,7 @@ paths:
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Assert.Contains("simpleObject", typeNames);
-        Assert.Contains("int64", typeNames);
+        Assert.Contains("double", typeNames);
     }
     [Fact]
     public void IntersectionOfInlineSchemasWorks()
@@ -2984,7 +2988,7 @@ paths:
     [InlineData("string", "duration", "TimeSpan")]
     [InlineData("string", "date", "DateOnly")]
     [InlineData("string", "time", "TimeOnly")]
-    [InlineData("string", "base64url", "binary")]
+    [InlineData("string", "base64url", "base64url")]
     [InlineData("string", "uuid", "Guid")]
     // floating points can only be declared as numbers
     [InlineData("number", "double", "double")]
@@ -2999,10 +3003,10 @@ paths:
     [InlineData("integer", "int8", "sbyte")]
     [InlineData("number", "uint8", "byte")]
     [InlineData("integer", "uint8", "byte")]
-    [InlineData("number", "", "int64")]
+    [InlineData("number", "", "double")]
     [InlineData("integer", "", "integer")]
     [InlineData("boolean", "", "boolean")]
-    [InlineData("", "byte", "binary")]
+    [InlineData("", "byte", "base64")]
     [InlineData("", "binary", "binary")]
     [InlineData("file", null, "binary")]
     [Theory]
@@ -3053,7 +3057,7 @@ paths:
     [InlineData("string", "duration", "TimeSpan")]
     [InlineData("string", "date", "DateOnly")]
     [InlineData("string", "time", "TimeOnly")]
-    [InlineData("string", "base64url", "binary")]
+    [InlineData("string", "base64url", "base64url")]
     // floating points can only be declared as numbers
     [InlineData("number", "double", "double")]
     [InlineData("number", "float", "float")]
@@ -3067,10 +3071,10 @@ paths:
     [InlineData("integer", "int8", "sbyte")]
     [InlineData("number", "uint8", "byte")]
     [InlineData("integer", "uint8", "byte")]
-    [InlineData("number", "", "int64")]
+    [InlineData("number", "", "double")]
     [InlineData("integer", "", "integer")]
     [InlineData("boolean", "", "boolean")]
-    [InlineData("", "byte", "binary")]
+    [InlineData("", "byte", "base64")]
     [InlineData("", "binary", "binary")]
     [InlineData("file", null, "binary")]
     [Theory]
@@ -4963,7 +4967,7 @@ paths:
     public async Task DisambiguatesOperationsConflictingWithPath1()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.0
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.0
 info:
   title: Microsoft Graph get user API
   version: 1.0.0
@@ -4999,7 +5003,6 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
@@ -5009,14 +5012,12 @@ components:
         Assert.NotNull(getRB);
         Assert.NotNull(getRB.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && "Get".Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
         Assert.NotNull(getRB.Properties.FirstOrDefault(static x => x.IsOfKind(CodePropertyKind.RequestBuilder) && "GetPath".Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
-
-        File.Delete(tempFilePath);
     }
     [Fact]
     public async Task DisambiguatesOperationsConflictingWithPath2()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.0
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.0
 info:
   title: Microsoft Graph get user API
   version: 1.0.0
@@ -5052,7 +5053,6 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
@@ -5062,14 +5062,12 @@ components:
         Assert.NotNull(getRB);
         Assert.NotNull(getRB.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && "Get".Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
         Assert.NotNull(getRB.Properties.FirstOrDefault(static x => x.IsOfKind(CodePropertyKind.RequestBuilder) && "GetPath".Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
-
-        File.Delete(tempFilePath);
     }
     [Fact]
     public async Task IndexerAndRequestBuilderNamesMatch()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.0
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.0
 info:
   title: Microsoft Graph get user API
   version: 1.0.0
@@ -5096,7 +5094,6 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document!);
         var codeModel = builder.CreateSourceModel(node);
@@ -5109,6 +5106,5 @@ components:
         Assert.NotNull(itemRequestBuilderNamespace);
         var itemRequestBuilder = itemRequestBuilderNamespace.FindChildByName<CodeClass>("postItemRequestBuilder");
         Assert.Equal(collectionIndexer.ReturnType.Name, itemRequestBuilder.Name);
-        File.Delete(tempFilePath);
     }
 }

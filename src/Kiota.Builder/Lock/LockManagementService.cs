@@ -47,7 +47,7 @@ public class LockManagementService : ILockManagementService
     }
     private static async Task<KiotaLock?> GetLockFromStreamInternalAsync(Stream stream, CancellationToken cancellationToken)
     {
-        return await JsonSerializer.DeserializeAsync<KiotaLock>(stream, options, cancellationToken);
+        return await JsonSerializer.DeserializeAsync(stream, context.KiotaLock, cancellationToken);
     }
     /// <inheritdoc/>
     public Task WriteLockFileAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken = default)
@@ -61,11 +61,12 @@ public class LockManagementService : ILockManagementService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
     };
+    private static readonly KiotaLockGenerationContext context = new(options);
     private static async Task WriteLockFileInternalAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken)
     {
         var lockFilePath = Path.Combine(directoryPath, LockFileName);
         await using var fileStream = File.Open(lockFilePath, FileMode.Create);
-        await JsonSerializer.SerializeAsync(fileStream, lockInfo, options, cancellationToken);
+        await JsonSerializer.SerializeAsync(fileStream, lockInfo, context.KiotaLock, cancellationToken);
     }
     /// <inheritdoc/>
     public Task BackupLockFileAsync(string directoryPath, CancellationToken cancellationToken = default)
