@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Fixed a bug where a CLI client would not set the content types for requests. (Shell)
 
 ## [1.0.1] - 2023-03-11
 
