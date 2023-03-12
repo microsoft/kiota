@@ -623,7 +623,8 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             }
 
             // Set the content type header. Will not add the code if the method has no RequestBodyContentType or if there's no body parameter.
-            if (generatorMethod.Parameters.Any(p => p.IsOfKind(CodeParameterKind.RequestBody)) && !string.IsNullOrWhiteSpace(generatorMethod.RequestBodyContentType)) {
+            if (generatorMethod.Parameters.Any(p => p.IsOfKind(CodeParameterKind.RequestBody)) && !string.IsNullOrWhiteSpace(generatorMethod.RequestBodyContentType))
+            {
                 writer.WriteLine($"requestInfo.SetContentFromParsable({RequestAdapterParamName}, \"{generatorMethod.RequestBodyContentType}\", model);");
             }
         }
