@@ -904,7 +904,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     .Properties
                     .Where(pp =>
                         !currentClass.ContainsMember(pp.Name) &&
-                        !currentClass.Properties.Any(cp => cp.Name.Equals(pp.Name, StringComparison.OrdinalIgnoreCase)));
+                        !currentClass.Properties.Any(cp => cp.Name.Equals(pp.Name, StringComparison.OrdinalIgnoreCase)))
+                    .Select(p =>
+                    {
+                        p.Parent = currentClass;
+                        return p;
+                    });
                 if (propertiesToAdd.Any())
                     currentClass.AddProperty(propertiesToAdd.ToArray());
 
@@ -912,13 +917,23 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     .Methods
                     .Where(pm =>
                         !currentClass.ContainsMember(pm.Name) &&
-                        !currentClass.Methods.Any(cm => cm.Name.Equals(pm.Name, StringComparison.OrdinalIgnoreCase)));
+                        !currentClass.Methods.Any(cm => cm.Name.Equals(pm.Name, StringComparison.OrdinalIgnoreCase)))
+                    .Select(m =>
+                    {
+                        m.Parent = currentClass;
+                        return m;
+                    });
                 if (methodsToAdd.Any())
                     currentClass.AddMethod(methodsToAdd.ToArray());
 
                 var usingsToAdd = currentParent
                     .Usings
-                    .Where(pu => !currentClass.Usings.Any(cu => cu.Name.Equals(pu.Name, StringComparison.OrdinalIgnoreCase)));
+                    .Where(pu => !currentClass.Usings.Any(cu => cu.Name.Equals(pu.Name, StringComparison.OrdinalIgnoreCase)))
+                    .Select(u =>
+                    {
+                        u.Parent = currentClass;
+                        return u;
+                    });
                 if (usingsToAdd.Any())
                     currentClass.AddUsing(usingsToAdd.ToArray());
             }
