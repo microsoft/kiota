@@ -14,7 +14,7 @@ $testPath = Join-Path -Path $scriptPath -ChildPath $language
 
 Push-Location $testPath
 if ($language -eq "csharp") {
-    Invoke-Expression "(cd $testPath/csharp && dotnet build)"
+    Invoke-Expression "dotnet build"
 }
 elseif ($language -eq "java") {
     Invoke-Expression "${HOME}/.jbang/bin/jbang test.java"
