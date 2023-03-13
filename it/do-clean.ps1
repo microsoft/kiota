@@ -9,21 +9,24 @@ if ([string]::IsNullOrEmpty($language)) {
     exit 1
 }
 
+$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$testPath = Join-Path -Path $scriptPath -ChildPath $language
+
+Push-Location $testPath
 if ($language -eq "csharp") {
-    Remove-Item ./it/csharp/obj -Recurse -ErrorAction SilentlyContinue
+    Remove-Item obj -Recurse -ErrorAction SilentlyContinue
 }
 elseif ($language -eq "typescript") {
-    Remove-Item ./it/typescript/node_modules -Recurse -ErrorAction SilentlyContinue
-    Remove-Item ./it/typescript/dist -Recurse -ErrorAction SilentlyContinue
+    Remove-Item node_modules -Recurse -ErrorAction SilentlyContinue
+    Remove-Item dist -Recurse -ErrorAction SilentlyContinue
 }
 elseif ($language -eq "ruby") {
-    Remove-Item ./it/ruby/vendor -Recurse -ErrorAction SilentlyContinue
-    Remove-Item ./it/ruby/.git -Recurse -ErrorAction SilentlyContinue
-    Remove-Item ./it/ruby/Gemfile.lock -ErrorAction SilentlyContinue
+    Remove-Item vendor -Recurse -ErrorAction SilentlyContinue
+    Remove-Item .git -Recurse -ErrorAction SilentlyContinue
+    Remove-Item Gemfile.lock -ErrorAction SilentlyContinue
 }
 elseif ($language -eq "php") {
-    Remove-Item ./it/php/vendor -Recurse -ErrorAction SilentlyContinue
-    Remove-Item ./it/php/composer.lock -ErrorAction SilentlyContinue
+    Remove-Item vendor -Recurse -ErrorAction SilentlyContinue
+    Remove-Item composer.lock -ErrorAction SilentlyContinue
 }
-
-return
+Pop-Location

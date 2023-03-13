@@ -122,11 +122,12 @@ jobs:
           Write-Output "IS_SUPPRESSED=$($isSuppressed.ToString().ToLowerInvariant())" >> $Env:GITHUB_OUTPUT
         shell: pwsh
       - name: Generate Code
-        run: make it-setup description=${{ matrix.description }} language=${{ matrix.language }}
+        shell: pwsh
+        run: ./it/generate-code.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
         continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
-      - run: make it-run language=${{ matrix.language }}
+      - run: ./it/exec-cmd.ps1 -language ${{ matrix.language }}
         continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
-      - run: make it-clean language=${{ matrix.language }}
+      - run: ./it/do-clean.ps1 -language ${{ matrix.language }}
         if: always()
 
       - id: replace_url
