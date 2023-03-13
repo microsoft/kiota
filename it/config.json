@@ -191,7 +191,7 @@
       }
     ]
   },
-  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twilio.com/api/1.39.1/openapi.yaml": {
+  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twilio.com/api/1.39.2/openapi.yaml": {
     "ExcludePatterns": [
       {
         "Pattern": "/2010-04-01/Accounts/*/Addresses/*/DependentPhoneNumbers.json",
