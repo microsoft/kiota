@@ -907,28 +907,33 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             foreach (var currentParent in parentClass.GetInheritanceTree())
             {
-
-                var propertiesToAdd = currentParent
+                foreach (var p in currentParent
                     .Properties
                     .Where(pp =>
                         !currentClass.ContainsMember(pp.Name) &&
-                        !currentClass.Properties.Any(cp => cp.Name.Equals(pp.Name, StringComparison.OrdinalIgnoreCase)));
-                if (propertiesToAdd.Any())
-                    currentClass.AddProperty(propertiesToAdd.ToArray());
+                        !currentClass.Properties.Any(cp => cp.Name.Equals(pp.Name, StringComparison.OrdinalIgnoreCase))))
+                {
+                    p.Parent = currentClass;
+                    currentClass.AddProperty(p);
+                }
 
-                var methodsToAdd = currentParent
+                foreach (var m in currentParent
                     .Methods
                     .Where(pm =>
                         !currentClass.ContainsMember(pm.Name) &&
-                        !currentClass.Methods.Any(cm => cm.Name.Equals(pm.Name, StringComparison.OrdinalIgnoreCase)));
-                if (methodsToAdd.Any())
-                    currentClass.AddMethod(methodsToAdd.ToArray());
+                        !currentClass.Methods.Any(cm => cm.Name.Equals(pm.Name, StringComparison.OrdinalIgnoreCase))))
+                {
+                    m.Parent = currentClass;
+                    currentClass.AddMethod(m);
+                }
 
-                var usingsToAdd = currentParent
+                foreach (var u in currentParent
                     .Usings
-                    .Where(pu => !currentClass.Usings.Any(cu => cu.Name.Equals(pu.Name, StringComparison.OrdinalIgnoreCase)));
-                if (usingsToAdd.Any())
-                    currentClass.AddUsing(usingsToAdd.ToArray());
+                    .Where(pu => !currentClass.Usings.Any(cu => cu.Name.Equals(pu.Name, StringComparison.OrdinalIgnoreCase))))
+                {
+                    u.Parent = currentClass;
+                    currentClass.AddUsing(u);
+                }
             }
         }
     }

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where a CLI client would not set the content types for requests. (Shell)
 
 - Fixed a bug where boolean or number enums would be mapped to enums instead of primitive types. [#2367](https://github.com/microsoft/kiota/issues/2367)
+- Fixed a bug where CSharp inherited constructor name was incorrect. [#2351](https://github.com/microsoft/kiota/issues/2351)
 - Fixed a bug where java refiner would emit method's parameters types without normalizing the name.
 
 ## [1.0.1] - 2023-03-11

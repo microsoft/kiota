@@ -54,7 +54,6 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 },
                 static s => s.ToPascalCase(UnderscoreArray));
             DisambiguatePropertiesWithClassNames(generatedCode);
-            AddConstructorsForDefaultValues(generatedCode, false);
             cancellationToken.ThrowIfCancellationRequested();
             AddSerializationModulesImport(generatedCode);
             AddParentClassToErrorClasses(
@@ -62,6 +61,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ApiException",
                 "Microsoft.Kiota.Abstractions"
             );
+            AddConstructorsForDefaultValues(generatedCode, false);
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "IParseNode"
