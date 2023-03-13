@@ -1431,6 +1431,23 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(currentElement, x => MoveRequestBuilderPropertiesToBaseType(x, baseTypeUsing, accessModifier));
     }
+    protected static void RemoveRequestConfigurationClassesCommonProperties(CodeElement currentElement, CodeUsing baseTypeUsing)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestConfiguration))
+        {
+            if (currentClass.StartBlock.Inherits == null)
+            {
+                currentClass.StartBlock.Inherits = new CodeType
+                {
+                    Name = baseTypeUsing.Name
+                };
+                currentClass.AddUsing(baseTypeUsing);
+            }
+            currentClass.RemovePropertiesOfKind(CodePropertyKind.Headers, CodePropertyKind.Options);
+        }
+
+        CrawlTree(currentElement, x => RemoveRequestConfigurationClassesCommonProperties(x, baseTypeUsing));
+    }
     protected static void RemoveRequestConfigurationClasses(CodeElement currentElement, CodeUsing configurationParameterTypeUsing, CodeType defaultValueForGenericTypeParam)
     {
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestConfiguration) &&

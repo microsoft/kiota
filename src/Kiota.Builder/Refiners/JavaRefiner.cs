@@ -28,6 +28,16 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                         IsExternal = true
                     }
                 });
+            RemoveRequestConfigurationClassesCommonProperties(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseRequestConfiguration",
+                    Declaration = new CodeType
+                    {
+                        Name = "com.microsoft.kiota",
+                        IsExternal = true
+                    }
+                });
             var reservedNamesProvider = new JavaReservedNamesProvider();
             CorrectNames(generatedCode, s =>
             {
@@ -216,16 +226,12 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             "com.microsoft.kiota.store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             "com.microsoft.kiota.store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton"),
-        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
-            "java.util", "Collections"),
         new (static x => x is CodeProperty prop && "decimal".Equals(prop.Type.Name, StringComparison.OrdinalIgnoreCase) ||
                 x is CodeMethod method && "decimal".Equals(method.ReturnType.Name, StringComparison.OrdinalIgnoreCase) ||
                 x is CodeParameter para && "decimal".Equals(para.Type.Name, StringComparison.OrdinalIgnoreCase),
             "java.math", "BigDecimal"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(prop.SerializationName),
                 "com.microsoft.kiota", "QueryParameter"),
-        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
-                "com.microsoft.kiota", "RequestHeaders"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
             "com.microsoft.kiota.serialization", "ParseNodeHelper"),
     };
@@ -238,15 +244,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
-        else if (currentProperty.IsOfKind(CodePropertyKind.Options))
-        {
-            currentProperty.Type.Name = "java.util.List<RequestOption>"; //fully qualified name to avoid conflict with generated types
-            currentProperty.DefaultValue = "Collections.emptyList()";
-        }
-        else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
-        {
-            currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
-        }
         else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter))
             currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))

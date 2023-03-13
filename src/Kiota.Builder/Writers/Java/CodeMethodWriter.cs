@@ -553,23 +553,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             writer.WriteLines($"final {requestConfigTypeName} {RequestConfigVarName} = new {requestConfigTypeName}();",
                         $"{requestParams.requestConfiguration.Name}.accept({RequestConfigVarName});");
             var queryString = requestParams.QueryParameters;
-            var headers = requestParams.Headers;
-            var options = requestParams.Options;
             if (queryString != null)
             {
                 var queryStringName = $"{RequestConfigVarName}.{queryString.Name.ToFirstCharacterLowerCase()}";
                 writer.WriteLine($"{RequestInfoVarName}.addQueryParameters({queryStringName});");
             }
-            if (headers != null)
-            {
-                var headersName = $"{RequestConfigVarName}.{headers.Name.ToFirstCharacterLowerCase()}";
-                writer.WriteLine($"{RequestInfoVarName}.headers.putAll({headersName});");
-            }
-            if (options != null)
-            {
-                var optionsName = $"{RequestConfigVarName}.{options.Name.ToFirstCharacterLowerCase()}";
-                writer.WriteLine($"{RequestInfoVarName}.addRequestOptions({optionsName});");
-            }
+            writer.WriteLines($"{RequestInfoVarName}.headers.putAll({RequestConfigVarName}.headers);",
+                             $"{RequestInfoVarName}.addRequestOptions({RequestConfigVarName}.options);");
 
             writer.CloseBlock();
         }
