@@ -187,7 +187,7 @@
     "Suppressions": [
       {
         "Language": "all",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2367"
+        "Rationale": "https://github.com/microsoft/kiota/issues/2351"
       }
     ]
   },
@@ -265,7 +265,7 @@
     "Suppressions": [
       {
         "Language": "all",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2367"
+        "Rationale": "https://github.com/microsoft/kiota/issues/2352"
       }
     ]
   },

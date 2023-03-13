@@ -5107,4 +5107,76 @@ components:
         var itemRequestBuilder = itemRequestBuilderNamespace.FindChildByName<CodeClass>("postItemRequestBuilder");
         Assert.Equal(collectionIndexer.ReturnType.Name, itemRequestBuilder.Name);
     }
+    [Fact]
+    public async Task MapsBooleanEnumToBooleanType()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.0
+info:
+    title: Microsoft Graph get user API
+    version: 1.0.0
+servers:
+    - url: https://graph.microsoft.com/v1.0/
+paths:
+    /me:
+        get:
+            responses:
+                200:
+                    description: Success!
+                    content:
+                        application/json:
+                            schema:
+                                type: boolean
+                                enum:
+                                    - true
+                                    - false");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document!);
+        var codeModel = builder.CreateSourceModel(node);
+        var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.me");
+        Assert.NotNull(requestBuilderNS);
+        var getRB = requestBuilderNS.FindChildByName<CodeClass>("meRequestBuilder", false);
+        Assert.NotNull(getRB);
+        var getMethod = getRB.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && "Get".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(getMethod);
+        Assert.Equal("boolean", getMethod.ReturnType.Name);
+    }
+    [Fact]
+    public async Task MapsNumberEnumToDoubleType()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.0
+info:
+    title: Microsoft Graph get user API
+    version: 1.0.0
+servers:
+    - url: https://graph.microsoft.com/v1.0/
+paths:
+    /me:
+        get:
+            responses:
+                200:
+                    description: Success!
+                    content:
+                        application/json:
+                            schema:
+                                type: number
+                                enum:
+                                    - 1
+                                    - 2");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document!);
+        var codeModel = builder.CreateSourceModel(node);
+        var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.me");
+        Assert.NotNull(requestBuilderNS);
+        var getRB = requestBuilderNS.FindChildByName<CodeClass>("meRequestBuilder", false);
+        Assert.NotNull(getRB);
+        var getMethod = getRB.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && "Get".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(getMethod);
+        Assert.Equal("double", getMethod.ReturnType.Name);
+    }
 }
