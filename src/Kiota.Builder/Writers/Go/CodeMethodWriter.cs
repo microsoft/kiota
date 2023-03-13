@@ -519,22 +519,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterUpperCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"Set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
             writer.WriteLine($"m.{setterName}({defaultValueReference})");
         }
-        if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
-        {
-            if (currentMethod.IsOfKind(CodeMethodKind.Constructor))
-            {
-                if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam &&
-                    parentClass.Properties.OfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
-                    conventions.AddParametersAssignment(writer,
-                                                        pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
-                                                        pathParametersParam.Name.ToFirstCharacterLowerCase(),
-                                                        $"m.{BaseRequestBuilderVarName}.{pathParametersProperty.Name.ToFirstCharacterUpperCase()}",
-                                                        currentMethod.Parameters
-                                                                    .Where(static x => x.IsOfKind(CodeParameterKind.Path))
-                                                                    .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
-                                                                    .ToArray());
-            }
-        }
+        if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) && currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+            currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam &&
+            parentClass.Properties.OfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
+            conventions.AddParametersAssignment(writer,
+                                                    pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
+                                                    pathParametersParam.Name.ToFirstCharacterLowerCase(),
+                                                    $"m.{BaseRequestBuilderVarName}.{pathParametersProperty.Name.ToFirstCharacterUpperCase()}",
+                                                    currentMethod.Parameters
+                                                                .Where(static x => x.IsOfKind(CodeParameterKind.Path))
+                                                                .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
+                                                                .ToArray());
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
