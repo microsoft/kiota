@@ -18,6 +18,16 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             LowerCaseNamespaceNames(generatedCode);
+            MoveRequestBuilderPropertiesToBaseType(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseRequestBuilder",
+                    Declaration = new CodeType
+                    {
+                        Name = "com.microsoft.kiota",
+                        IsExternal = true
+                    }
+                });
             var reservedNamesProvider = new JavaReservedNamesProvider();
             CorrectNames(generatedCode, s =>
             {
