@@ -125,9 +125,13 @@ jobs:
         shell: pwsh
         run: ./it/generate-code.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
         continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
-      - run: ./it/exec-cmd.ps1 -language ${{ matrix.language }}
+      - name: Execute the IT test
+        shell: pwsh
+        run: ./it/exec-cmd.ps1 -language ${{ matrix.language }}
         continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
-      - run: ./it/do-clean.ps1 -language ${{ matrix.language }}
+      - name: Cleanup the IT folder
+        shell: pwsh
+        run: ./it/do-clean.ps1 -language ${{ matrix.language }}
         if: always()
 
       - id: replace_url
