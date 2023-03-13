@@ -1431,4 +1431,33 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(currentElement, x => MoveRequestBuilderPropertiesToBaseType(x, baseTypeUsing, accessModifier));
     }
+    protected static void RemoveRequestConfigurationClasses(CodeElement currentElement, CodeUsing configurationParameterTypeUsing, CodeType defaultValueForGenericTypeParam)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestConfiguration) &&
+            currentClass.Parent is CodeClass parentClass)
+        {
+            parentClass.RemoveChildElement(currentClass);
+            var configurationParameters = parentClass.Methods
+                                                    .SelectMany(static x => x.Parameters)
+                                                    .Where(x => x.IsOfKind(CodeParameterKind.RequestConfiguration) && x.Type is CodeType type && type.TypeDefinition == currentClass)
+                                                    .ToArray();
+            if (configurationParameters.Any())
+            {
+                parentClass.AddUsing(configurationParameterTypeUsing);
+                var genericTypeParamValue = currentClass.Properties.OfKind(CodePropertyKind.QueryParameters)?.Type as CodeType ?? defaultValueForGenericTypeParam;
+                var configurationParameterType = new CodeType
+                {
+                    Name = configurationParameterTypeUsing.Name,
+                };
+                foreach (var configurationParameter in configurationParameters)
+                {
+                    var newType = (CodeType)configurationParameterType.Clone();
+                    newType.GenericTypeParameterValues.Add(genericTypeParamValue);
+                    configurationParameter.Type = newType;
+                }
+            }
+        }
+
+        CrawlTree(currentElement, x => RemoveRequestConfigurationClasses(x, configurationParameterTypeUsing, defaultValueForGenericTypeParam));
+    }
 }
