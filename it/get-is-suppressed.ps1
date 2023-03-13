@@ -1,3 +1,5 @@
+#!/usr/bin/env pwsh
+
 param(
     [Parameter(Mandatory = $true)][string]$descriptionUrl,
     [Parameter(Mandatory = $true)][string]$language

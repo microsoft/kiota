@@ -1,3 +1,5 @@
+#!/usr/bin/env pwsh
+
 param(
     [Parameter(Mandatory = $true)][string]$descriptionUrl,
     [Parameter(Mandatory = $true)][string]$language
@@ -13,27 +15,27 @@ if ([string]::IsNullOrEmpty($language)) {
     exit 1
 }
 
-$command = " --output './it/$language'";
+$command = " --output `"./it/$language`"";
 if ($language -eq "csharp") {
-    $command = " --output './it/$language/client' --namespace-name 'app.client'"
+    $command = " --output `"./it/$language/client`" --namespace-name `"app.client`""
 }
 elseif ($language -eq "java") {
-    $command = " --output './it/$language/src'"
+    $command = " --output `"./it/$language/src`""
 }
 elseif ($language -eq "go") {
-    $command = " --output './it/$language/client' --namespace-name 'integrationtest/client'"
+    $command = " --output `"./it/$language/client`" --namespace-name `"integrationtest/client`""
 }
 elseif ($language -eq "typescript") {
-    $command = " --output './it/$language/src/app/client' --namespace-name 'app.client'"
+    $command = " --output `"./it/$language/src/app/client`" --namespace-name `"app.client`""
 }
 elseif ($language -eq "ruby") {
-    $command = " --output './it/$language/lib/integration_test/client' --namespace-name 'integration_test.client'"
+    $command = " --output `"./it/$language/lib/integration_test/client`" --namespace-name `"integration_test.client`""
 }
 elseif ($language -eq "php") {
-    $command = " --output './it/$language/src/client' --namespace-name 'integration.test.client'"
+    $command = " --output `"./it/$language/src/client`" --namespace-name `"integration.test.client`""
 }
 elseif ($language -eq "python") {
-    $command = " --output './it/$language/integration_test/client' --namespace-name 'integration_test.client'"
+    $command = " --output `"./it/$language/integration_test/client`" --namespace-name `"integration_test.client`""
 }
 
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -44,14 +46,14 @@ if ($null -ne $descriptionValue) {
     if ($descriptionValue.PSObject.Properties.Name -contains "ExcludePatterns") {
         $descriptionValue.ExcludePatterns | ForEach-Object {
             Write-Information "Excluding $($_.Pattern) rationale: $($_.Rationale)"
-            $command += " -e '$($_.Pattern)'"
+            $command += " -e `"$($_.Pattern)`""
         }
     }
 
     if ($descriptionValue.PSObject.Properties.Name -contains "IncludePatterns") {
         $descriptionValue.IncludePatterns | ForEach-Object {
             Write-Information "Including $($_.Pattern) rationale: $($_.Rationale)"
-            $command += " -i '$($_.Pattern)'"
+            $command += " -i `"$($_.Pattern)`""
         }
     }
 }
