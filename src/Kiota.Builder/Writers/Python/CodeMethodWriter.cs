@@ -312,7 +312,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits)
     {
         _codeUsingWriter.WriteInternalImports(parentClass, writer);
-        writer.WriteLine("fields = {");
+        writer.WriteLine("fields: Dict[str, function] = {");
         writer.IncreaseIndent();
         foreach (var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType))
         {
