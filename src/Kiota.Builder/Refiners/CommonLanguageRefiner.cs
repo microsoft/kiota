@@ -116,14 +116,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if (current is CodeClass currentClass &&
             classNames &&
             refineName(currentClass.Name) is string refinedClassName &&
-            !currentClass.Name.Equals(refinedClassName))
+            !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal))
         {
             currentClass.Name = refinedClassName;
         }
         else if (current is CodeProperty currentProperty &&
                 classNames &&
                 refineName(currentProperty.Type.Name) is string refinedPropertyTypeName &&
-                !currentProperty.Type.Name.Equals(refinedPropertyTypeName))
+                !currentProperty.Type.Name.Equals(refinedPropertyTypeName, StringComparison.Ordinal))
         {
             currentProperty.Type.Name = refinedPropertyTypeName;
         }
@@ -133,13 +133,13 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             foreach (var param in currentMethod.Parameters)
             {
                 if (refineName(param.Type.Name) is string refinedTypeName &&
-                    !param.Type.Name.Equals(refinedTypeName))
+                    !param.Type.Name.Equals(refinedTypeName, StringComparison.Ordinal))
                 {
                     param.Type.Name = refinedTypeName;
                 }
             };
             if (refineName(currentMethod.ReturnType.Name) is string refinedMethodTypeName &&
-                !currentMethod.ReturnType.Name.Equals(refinedMethodTypeName))
+                !currentMethod.ReturnType.Name.Equals(refinedMethodTypeName, StringComparison.Ordinal))
             {
                 currentMethod.ReturnType.Name = refinedMethodTypeName;
             }
@@ -147,7 +147,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         else if (current is CodeEnum currentEnum &&
             enumNames &&
             refineName(currentEnum.Name) is string refinedEnumName &&
-            !currentEnum.Name.Equals(refinedEnumName))
+            !currentEnum.Name.Equals(refinedEnumName, StringComparison.Ordinal))
         {
             currentEnum.Name = refinedEnumName;
         }
