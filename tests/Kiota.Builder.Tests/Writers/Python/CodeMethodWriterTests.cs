@@ -465,7 +465,7 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("from . import somecustomtype", result);
-        Assert.Contains("fields: Dict[str, function] =", result);
+        Assert.Contains("fields: Dict[str, Callable[[Any], None]] =", result);
         Assert.Contains("get_str_value", result);
         Assert.Contains("get_int_value", result);
         Assert.Contains("get_float_value", result);
