@@ -120,6 +120,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             currentClass.Name = refinedClassName;
         }
+        else if (current is CodeIndexer currentIndexer &&
+                refineName(currentIndexer.ReturnType.Name) is string refinedIndexerName &&
+                !currentIndexer.ReturnType.Name.Equals(refinedIndexerName, StringComparison.Ordinal))
+        {
+            currentIndexer.ReturnType.Name = refinedIndexerName;
+        }
         else if (current is CodeProperty currentProperty &&
                 classNames &&
                 refineName(currentProperty.Type.Name) is string refinedPropertyTypeName &&
