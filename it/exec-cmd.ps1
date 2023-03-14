@@ -18,6 +18,17 @@ if ($language -eq "csharp") {
 }
 elseif ($language -eq "java") {
     Invoke-Expression "${HOME}/.jbang/bin/jbang test.java"
+
+    $srcPath = Join-Path -Path $testPath -ChildPath "src"
+    $kiotaLockPath = Join-Path -Path $srcPath -ChildPath "kiota-lock.json"
+    $jsonValue = Get-Content -Path $kiotaLockPath -Raw | ConvertFrom-Json
+    if ( $jsonValue.descriptionLocation.endswith("./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml") )
+    {
+        $basicTestPath = Join-Path -Path $testPath -ChildPath "basic"
+        Push-Location $basicTestPath
+        Invoke-Expression "mvn --batch-mode clean test"
+        Pop-Location
+    }
 }
 elseif ($language -eq "go") {
     Invoke-Expression "go install && go build"
