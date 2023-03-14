@@ -28,6 +28,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                         IsExternal = true
                     }
                 });
+            RemoveRequestConfigurationClasses(generatedCode);
             var classesToDisambiguate = new HashSet<CodeClass>();
             var suffix = "Model";
             DisambiguateClassesWithNamespaceNames(generatedCode, classesToDisambiguate, suffix);
