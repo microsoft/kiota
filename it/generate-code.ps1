@@ -25,17 +25,11 @@ switch ($dev)
 {
     $true {
         Write-Warning "Using kiota in dev mode"
-        $kiotaExec = Join-Path -Path $rootPath -ChildPath "src"
-        $kiotaExec = Join-Path -Path $kiotaExec -ChildPath "kiota"
-        $kiotaExec = Join-Path -Path $kiotaExec -ChildPath "bin"
-        $kiotaExec = Join-Path -Path $kiotaExec -ChildPath "Debug"
-        $kiotaExec = Join-Path -Path $kiotaExec -ChildPath "net7.0"
-        $kiotaExec = Join-Path -Path $kiotaExec -ChildPath "kiota"
+        $kiotaExec = Join-Path -Path $rootPath -ChildPath "src" -AdditionalChildPath "kiota", "bin", "Debug", "net7.0", "kiota"
         break
     }
     default { 
-        $kiotaExec = Join-Path -Path $rootPath -ChildPath "publish"
-        $kiotaExec = Join-Path -Path $kiotaExec -ChildPath "kiota"
+        $kiotaExec = Join-Path -Path $rootPath -ChildPath "publish" -AdditionalChildPath "kiota"
         break
     }
 }
