@@ -297,10 +297,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter &&
                 parentClass.Properties.OfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty &&
                 !string.IsNullOrEmpty(urlTemplateProperty.DefaultValue))
+            {
+                var thirdParameterName = string.Empty;
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
-                    writer.WriteLine($"super({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue}, {pathParametersParameter.Name.ToFirstCharacterLowerCase()});");
-                else
-                    writer.WriteLine($"super({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue});");
+                    thirdParameterName = $", {pathParametersParameter.Name}";
+                else if (currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is CodeParameter rawUrlParameter)
+                    thirdParameterName = $", {rawUrlParameter.Name}";
+                writer.WriteLine($"super({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue}{thirdParameterName});");
+            }
             else
                 writer.WriteLine("super();");
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
@@ -326,26 +330,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             writer.WriteLine($"this.{setterName}({defaultValue});");
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
-            parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp)
-        {
-            if (currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+            parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
+            currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
                 currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam)
-            {
-                var pathParameters = currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path));
-                if (pathParameters.Any())
-                    conventions.AddParametersAssignment(writer,
-                                                        pathParametersParam.Type,
-                                                        pathParametersParam.Name.ToFirstCharacterLowerCase(),
-                                                        $"this.{pathParametersProp.Name.ToFirstCharacterLowerCase()}.",
-                                                        pathParameters
-                                                                    .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
-                                                                    .ToArray());
-            }
-            else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor) &&
-                    currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is CodeParameter rawUrlParam)
-            {
-                writer.WriteLine($"this.{pathParametersProp.Name.ToFirstCharacterLowerCase()}.put(\"{Constants.RawUrlParameterName}\", Objects.requireNonNull({rawUrlParam.Name.ToFirstCharacterLowerCase()}));");
-            }
+        {
+            var pathParameters = currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path));
+            if (pathParameters.Any())
+                conventions.AddParametersAssignment(writer,
+                                                    pathParametersParam.Type,
+                                                    pathParametersParam.Name.ToFirstCharacterLowerCase(),
+                                                    $"this.{pathParametersProp.Name.ToFirstCharacterLowerCase()}.",
+                                                    pathParameters
+                                                                .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
+                                                                .ToArray());
         }
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
