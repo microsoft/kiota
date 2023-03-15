@@ -144,6 +144,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     param.Type.Name = refinedTypeName;
                 }
             };
+            foreach (var errorMapping in currentMethod.ErrorMappings)
+            {
+                if (refineName(errorMapping.Value.Name) is string refinedTypeName &&
+                    !errorMapping.Value.Name.Equals(refinedTypeName, StringComparison.Ordinal))
+                {
+                    errorMapping.Value.Name = refinedTypeName;
+                }
+            }
             if (refineName(currentMethod.ReturnType.Name) is string refinedMethodTypeName &&
                 !currentMethod.ReturnType.Name.Equals(refinedMethodTypeName, StringComparison.Ordinal))
             {
