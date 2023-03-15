@@ -24,7 +24,8 @@ elseif ($language -eq "java") {
     $jsonValue = Get-Content -Path $kiotaLockPath -Raw | ConvertFrom-Json
     if ( $jsonValue.descriptionLocation.endswith("./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml") )
     {
-        $scriptPath/start-mockserver.ps1 -descriptionUrl $jsonValue.descriptionLocation
+        $startMockserverScript = Join-Path -Path $scriptPath -ChildPath "start-mockserver.ps1"
+        $startMockserverScript -descriptionUrl $jsonValue.descriptionLocation
 
         $basicTestPath = Join-Path -Path $testPath -ChildPath "basic"
         Push-Location $basicTestPath
