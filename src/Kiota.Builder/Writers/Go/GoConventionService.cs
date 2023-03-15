@@ -189,16 +189,19 @@ public class GoConventionService : CommonLanguageConventionService
         writer.WriteLines($"return {moduleName}New{constructorName}Internal({urlTemplateParams}, m.BaseRequestBuilder.{requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix})");
     }
     public override string TempDictionaryVarName => "urlTplParams";
-    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase? pathParametersType, string pathParametersReference, string pathParametersTarget = "", params (CodeTypeBase, string, string)[] parameters)
+    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase? pathParametersType, string pathParametersReference, string pathParametersTarget, bool copyMap, params (CodeTypeBase, string, string)[] parameters)
     {
         if (pathParametersType == null) return;
         var mapTypeName = pathParametersType.Name;
         var isTempTarget = string.IsNullOrEmpty(pathParametersTarget);
         if (isTempTarget)
             writer.WriteLine($"{TempDictionaryVarName} := make({mapTypeName})");
-        writer.StartBlock($"for idx, item := range {pathParametersReference} {{");
-        writer.WriteLine($"{(isTempTarget ? TempDictionaryVarName : pathParametersTarget)}[idx] = item");
-        writer.CloseBlock();
+        if (copyMap)
+        {
+            writer.StartBlock($"for idx, item := range {pathParametersReference} {{");
+            writer.WriteLine($"{(isTempTarget ? TempDictionaryVarName : pathParametersTarget)}[idx] = item");
+            writer.CloseBlock();
+        }
         foreach (var p in parameters)
         {
             var isStringStruct = !p.Item1.IsNullable && p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase);
