@@ -44,6 +44,5 @@ Start-Process java -ArgumentList "-jar", "$mockServerPath", "-serverPort", "1080
 if ($descriptionUrl.StartsWith("./")) {
   $descriptionUrl = $descriptionUrl.replace("./", "file:$rootPath/", 1)
 }
-Write-Error $descriptionUrl
 
 Retry({Invoke-WebRequest -Method PUT -Body "{ `"specUrlOrPayload`": `"$descriptionUrl`"}" -Uri http://localhost:1080/mockserver/openapi -ContentType application/json})

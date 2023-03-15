@@ -25,7 +25,8 @@ elseif ($language -eq "java") {
     if ( $jsonValue.descriptionLocation.endswith("./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml") )
     {
         $startMockserverScript = Join-Path -Path $scriptPath -ChildPath "start-mockserver.ps1"
-        $startMockserverScript -descriptionUrl $jsonValue.descriptionLocation
+        $descriptionUrl = $jsonValue.descriptionLocation
+        Invoke-Expression "$startMockserverScript -descriptionUrl $descriptionUrl"
 
         $basicTestPath = Join-Path -Path $testPath -ChildPath "basic"
         Push-Location $basicTestPath
