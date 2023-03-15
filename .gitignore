@@ -447,3 +447,4 @@ reports/
 *.prefs
 
 samples/
+/it/mockserver.jar
