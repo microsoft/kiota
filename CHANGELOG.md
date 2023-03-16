@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where CSharp inherited constructor name was incorrect. [#2351](https://github.com/microsoft/kiota/issues/2351)
 - Fixed a bug where java refiner would emit method's parameters types without normalizing the name.
 - Fixed a bug where java refiner would emit incorrect returning types and error mappings without normalizing the name.
+- Changed the name of the static query parameter factory method from `addQueryParameters` to `createQueryParameters` in PHP
 
 ## [1.0.1] - 2023-03-11
 
