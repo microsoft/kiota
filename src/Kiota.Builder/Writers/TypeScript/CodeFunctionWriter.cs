@@ -129,9 +129,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var isCollectionOfEnum = IsCodePropertyCollectionOfEnum(codeProperty);
         var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
-
-        var propertyTypeName = (codeProperty.Type as CodeType)?.TypeDefinition?.Name;
-
         var propType = localConventions?.GetTypeString(codeProperty.Type, codeProperty.Parent!, false);
 
         var serializationName = GetSerializationMethodName(codeProperty.Type);
