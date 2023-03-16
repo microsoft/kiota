@@ -393,6 +393,32 @@ public class JavaLanguageRefinerTests
         Assert.False(method.Parameters.Any());
         Assert.DoesNotContain(cancellationParam, method.Parameters);
     }
+    [Fact]
+    public async Task NormalizeMethodTypesNames()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var method = model.AddMethod(new CodeMethod
+        {
+            Name = "getMethod",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        var cancellationParam = new CodeParameter
+        {
+            Name = "something",
+            Type = new CodeType { Name = "foo_bar" },
+        };
+        method.AddParameter(cancellationParam);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        Assert.Equal("FooBar", method.Parameters.First().Type.Name);
+    }
     #endregion
     #region JavaLanguageRefinerTests
     [Fact]

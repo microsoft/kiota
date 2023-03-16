@@ -621,6 +621,12 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 var paramIdent = NormalizeToIdentifier(param.Name).ToFirstCharacterLowerCase();
                 writer.WriteLine($"if ({paramIdent} is not null) requestInfo.Headers.Add(\"{paramName}\", {paramIdent});");
             }
+
+            // Set the content type header. Will not add the code if the method has no RequestBodyContentType or if there's no body parameter.
+            if (generatorMethod.Parameters.Any(p => p.IsOfKind(CodeParameterKind.RequestBody)) && !string.IsNullOrWhiteSpace(generatorMethod.RequestBodyContentType))
+            {
+                writer.WriteLine($"requestInfo.SetContentFromParsable({RequestAdapterParamName}, \"{generatorMethod.RequestBodyContentType}\", model);");
+            }
         }
         else
         {

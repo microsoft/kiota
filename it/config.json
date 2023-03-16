@@ -64,10 +64,6 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/2360"
       },
       {
-        "Language": "java",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2372"
-      },
-      {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
@@ -134,10 +130,6 @@
     ],
     "Suppressions": [
       {
-        "Language": "java",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2372"
-      },
-      {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       },
@@ -187,11 +179,11 @@
     "Suppressions": [
       {
         "Language": "all",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2367"
+        "Rationale": "https://github.com/microsoft/kiota/issues/2351"
       }
     ]
   },
-  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twilio.com/api/1.39.1/openapi.yaml": {
+  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twilio.com/api/1.39.2/openapi.yaml": {
     "ExcludePatterns": [
       {
         "Pattern": "/2010-04-01/Accounts/*/Addresses/*/DependentPhoneNumbers.json",
@@ -265,7 +257,7 @@
     "Suppressions": [
       {
         "Language": "all",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2367"
+        "Rationale": "https://github.com/microsoft/kiota/issues/2352"
       }
     ]
   },
@@ -284,10 +276,6 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/2369"
       },
       {
-        "Language": "java",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2372"
-      },
-      {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       },
@@ -299,10 +287,6 @@
   },
   "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twitter.com/current/2.61/openapi.yaml": {
     "Suppressions": [
-      {
-        "Language": "java",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2372"
-      },
       {
         "Language": "typescript",
         "Rationale": "https://github.com/microsoft/kiota/issues/1812"

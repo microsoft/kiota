@@ -32,7 +32,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                     return refinedName;
                 else
                     return s;
-            }, false, false, false, true);
+            }, false, true);
             cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, true);
             RemoveCancellationParameter(generatedCode);
