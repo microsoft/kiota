@@ -42,7 +42,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         if (parameters.Any())
             writer.WriteLines(parameters.Select(p =>
                 $"{TempDictionaryVarName}[\"{p.Item2}\"] = {p.Item3}"
-            ).ToArray());
+            ));
     }
 #pragma warning restore CA1822 // Method should be static
     public override string GetAccessModifier(AccessModifier access)

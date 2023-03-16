@@ -244,7 +244,7 @@ public class TypeScriptLanguageRefinerTests
         var model = TestHelper.CreateModelClass("break");
         root.AddClass(model);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-        var interFaceModel = root.CodeInterfaces.First(x => "BreakEscaped".Equals(x.Name, StringComparison.Ordinal));
+        var interFaceModel = root.Interfaces.First(x => "BreakEscaped".Equals(x.Name, StringComparison.Ordinal));
         Assert.NotEqual("break", interFaceModel.Name);
         Assert.Contains("Escaped", interFaceModel.Name);
     }
@@ -359,7 +359,7 @@ public class TypeScriptLanguageRefinerTests
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
-        var interFaceModel = root.CodeInterfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
+        var interFaceModel = root.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
         var deserializerFunction = root.FindChildByName<CodeFunction>($"DeserializeInto{model.Name.ToFirstCharacterUpperCase()}");
         var serializationFunction = root.FindChildByName<CodeFunction>($"Serialize{model.Name.ToFirstCharacterUpperCase()}");
         Assert.Empty(interFaceModel.Properties.Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
@@ -388,7 +388,7 @@ public class TypeScriptLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
-        var modelInterface = root.CodeInterfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
+        var modelInterface = root.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
         Assert.Equal("Date", modelInterface.Properties.First(x => x.Name == codeProperty.Name).Type.Name);
     }
@@ -408,7 +408,7 @@ public class TypeScriptLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
-        var modelInterface = root.CodeInterfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
+        var modelInterface = root.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
         Assert.Equal("DateOnly", modelInterface.Properties.First(x => x.Name == codeProperty.Name).Type.Name);
     }
@@ -427,7 +427,7 @@ public class TypeScriptLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
-        var modelInterface = root.CodeInterfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
+        var modelInterface = root.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
         Assert.Equal("TimeOnly", modelInterface.Properties.First(x => x.Name == codeProperty.Name).Type.Name);
 
@@ -448,7 +448,7 @@ public class TypeScriptLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
-        var modelInterface = root.CodeInterfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
+        var modelInterface = root.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
         Assert.Equal("Duration", modelInterface.Properties.First(x => x.Name == codeProperty.Name).Type.Name);
     }
@@ -535,9 +535,9 @@ public class TypeScriptLanguageRefinerTests
             });
         model.AddUsing(using2);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-        var modelInterface = graphNS.CodeInterfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
-        var source1Interface = modelsNS.CodeInterfaces.First(x => x.Name == source1.Name.ToFirstCharacterUpperCase());
-        var source2Interface = submodelsNS.CodeInterfaces.First(x => x.Name == source2.Name.ToFirstCharacterUpperCase());
+        var modelInterface = graphNS.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
+        var source1Interface = modelsNS.Interfaces.First(x => x.Name == source1.Name.ToFirstCharacterUpperCase());
+        var source2Interface = submodelsNS.Interfaces.First(x => x.Name == source2.Name.ToFirstCharacterUpperCase());
         var modelUsing1 = modelInterface.Usings.First(x => x.Declaration.TypeDefinition == source2Interface);
         var modelUsing2 = modelInterface.Usings.First(x => x.Declaration.TypeDefinition == source1Interface);
         Assert.Equal(modelUsing1.Declaration.Name, modelUsing2.Declaration.Name);
@@ -587,7 +587,7 @@ public class TypeScriptLanguageRefinerTests
         testNS.AddClass(model);
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, testNS);
-        Assert.Contains(testNS.CodeInterfaces, x => x.Name == "ModelA");
+        Assert.Contains(testNS.Interfaces, x => x.Name == "ModelA");
     }
 
     [Fact]
@@ -610,8 +610,8 @@ public class TypeScriptLanguageRefinerTests
         queryParam.AddProperty(new CodeProperty { Name = "stringProp", Type = new CodeType { Name = "string" } });
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, testNS);
-        Assert.Contains(testNS.CodeInterfaces, x => x.Name == "requestConfig");
-        Assert.Contains(testNS.CodeInterfaces, x => x.Name == "queryParams");
+        Assert.Contains(testNS.Interfaces, x => x.Name == "requestConfig");
+        Assert.Contains(testNS.Interfaces, x => x.Name == "queryParams");
         Assert.False(testNS.Classes.Any());
         Assert.DoesNotContain(testNS.Classes, x => x.Name == "requestConfig");
         Assert.DoesNotContain(testNS.Classes, x => x.Name == "queryParams");

@@ -89,7 +89,7 @@ public class CSharpConventionService : CommonLanguageConventionService
                         nullCheck = $"if ({identName} is not null) ";
                 }
                 return $"{nullCheck}{TempDictionaryVarName}.Add(\"{name}\", {identName});";
-            }).ToArray());
+            }));
         }
     }
 #pragma warning restore CA1822 // Method should be static

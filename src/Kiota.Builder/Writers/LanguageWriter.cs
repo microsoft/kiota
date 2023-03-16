@@ -70,12 +70,16 @@ public abstract class LanguageWriter
     {
         writer?.WriteLine(includeIndent ? GetIndent() + line : line);
     }
-    internal void WriteLines(params string[] lines)
+    internal void WriteLines(IEnumerable<string> lines)
     {
         foreach (var line in lines)
         {
             WriteLine(line);
         }
+    }
+    internal void WriteLines(params string[] lines)
+    {
+        WriteLines(lines);
     }
     internal void StartBlock(string symbol = "{", bool increaseIndent = true)
     {

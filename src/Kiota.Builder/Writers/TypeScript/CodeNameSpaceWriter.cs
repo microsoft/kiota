@@ -1,6 +1,5 @@
-﻿using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -17,12 +16,12 @@ public class CodeNameSpaceWriter : BaseElementWriter<CodeNamespace, TypeScriptCo
     /// <param name="writer"></param>
     public override void WriteCodeElement(CodeNamespace codeElement, LanguageWriter writer)
     {
-        var sb = new StringBuilder();
-        foreach (var element in codeElement.Enums.Concat<CodeElement>(codeElement.Functions).Concat(codeElement.CodeInterfaces))
-        {
-            var name = element.Name.ToFirstCharacterLowerCase();
-            sb.AppendLine($"export * from './{name}'");
-        }
-        writer.Write(sb.ToString());
+        writer.WriteLines(codeElement.Enums
+                                    .Concat<CodeElement>(codeElement.Functions)
+                                    .Concat(codeElement.Interfaces)
+                                    .OrderBy(static x => x is CodeEnum ? 0 : 1)
+                                    .ThenBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                    .Select(static x => x.Name.ToFirstCharacterLowerCase())
+                                    .Select(static x => $"export * from './{x}'"));
     }
 }
