@@ -25,9 +25,11 @@ components:
             code:
               format: int32
               type: integer
+              example: 123
     ObjectReference:
       type: object
       properties:
         id:
           description: Unique identifier.
           type: string
+          example: my-sample-id

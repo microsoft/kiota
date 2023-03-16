@@ -39,7 +39,9 @@ if(-not(Test-path $mockServerPath -PathType leaf)) {
 }
 
 # start the mock server in background
-Start-Process java -ArgumentList "-jar", "$mockServerPath", "-serverPort", "1080", "-logLevel", "DEBUG"
+$mockServerProcess = Start-Process java -ArgumentList "-jar", "$mockServerPath", "-serverPort", "1080", "-logLevel", "DEBUG" -PassThru
+$mockServerPIDFile = Join-Path -Path $scriptPath -ChildPath "mockserver.pid"
+$mockserverProcess.ID | Out-File $mockServerPIDFile
 
 if ($descriptionUrl.StartsWith("./")) {
   $descriptionUrl = $descriptionUrl.replace("./", "file:$rootPath/", 1)

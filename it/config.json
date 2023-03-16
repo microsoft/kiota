@@ -70,6 +70,7 @@
     ]
   },
   "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml": {
+    "MockServerITFolder": "basic",
     "Suppressions": [
       {
         "Language": "php",
