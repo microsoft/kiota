@@ -54,6 +54,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
     {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
+        Assert.DoesNotContain("@dataclass", result);
         Assert.Contains("class ParentClass()", result);
     }
     [Fact]
@@ -70,6 +71,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
         });
         codeElementWriter.WriteCodeElement(declaration, writer);
         var result = tw.ToString();
+        Assert.DoesNotContain("()", result);
         Assert.Contains("(SecondInterface, SomeInterface):", result);
     }
     [Fact]
