@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
+
 ### Changed
 
 - Fixed a bug where a CLI client would not set the content types for requests. (Shell)
@@ -30,10 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added constructors and query parameter factory methods to request configuration classes and constructors to query parameter classes in PHP.
-- Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
 - Added support for relative server URL. [#2278](https://github.com/microsoft/kiota/issues/2278)
 - Added restoration of the kiota-lock when the generation fails with clean output. [#2292](https://github.com/microsoft/kiota/issues/2292)
-
 
 ### Changed
 
