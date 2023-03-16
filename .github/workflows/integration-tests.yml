@@ -59,8 +59,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # language: [java, csharp, go, typescript, ruby, php, python]
-        language: [java, csharp]
+        language:
+          - java
+          - csharp
+          # - go
+          # - typescript
+          # - ruby
+          # - php
+          # - python
         description:
           - "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml"
@@ -80,14 +86,14 @@ jobs:
           name: generator
           path: publish
       - run: chmod a+x ./publish/kiota
-
+      # Common dependency needed to run MockServer
       - name: Set up JDK 11
-        if: matrix.language == 'java'
         uses: actions/setup-java@v3
         with:
           java-version: "11"
           distribution: "temurin"
           cache: "maven"
+
       - name: Setup JBang
         if: matrix.language == 'java'
         run: curl -Ls https://sh.jbang.dev | bash -s - app setup

@@ -4,7 +4,6 @@ param(
     [Parameter(Mandatory = $true)][string]$descriptionUrl,
     [Parameter(Mandatory = $true)][string]$language
 )
-$ErrorActionPreference = "Stop"
 
 if ([string]::IsNullOrEmpty($language)) {
     Write-Error "Language is empty"
@@ -65,7 +64,7 @@ if ($language -eq "csharp") {
 }
 elseif ($language -eq "java") {
     Invoke-Call -ScriptBlock {
-        Invoke-Expression "${HOME}/.jbang/bin/jbang test.java"
+        mvn clean compile --batch-mode
     } -ErrorAction Stop
 
     if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {

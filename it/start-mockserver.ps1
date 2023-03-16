@@ -26,7 +26,7 @@ function Retry([Action]$action)
         }            
         $attempts--
         if ($attempts -gt 0) { sleep $sleepInSeconds }
-    } while ($attempts -gt 0)    
+    } while ($attempts -gt 0)
 }
 
 $mockServerUrl="https://repo1.maven.org/maven2/org/mock-server/mockserver-netty/5.14.0/mockserver-netty-5.14.0-shaded.jar"
@@ -38,7 +38,7 @@ if(-not(Test-path $mockServerPath -PathType leaf)) {
   Invoke-WebRequest $mockServerUrl -OutFile $mockServerPath
 }
 
-# start the mock server in background
+# start MockServer in background
 $mockServerProcess = Start-Process java -ArgumentList "-jar", "$mockServerPath", "-serverPort", "1080", "-logLevel", "DEBUG" -PassThru
 $mockServerPIDFile = Join-Path -Path $scriptPath -ChildPath "mockserver.pid"
 $mockserverProcess.ID | Out-File $mockServerPIDFile
@@ -47,4 +47,5 @@ if ($descriptionUrl.StartsWith("./")) {
   $descriptionUrl = $descriptionUrl.replace("./", "file:$rootPath/", 1)
 }
 
-Retry({Invoke-WebRequest -Method PUT -Body "{ `"specUrlOrPayload`": `"$descriptionUrl`"}" -Uri http://localhost:1080/mockserver/openapi -ContentType application/json})
+# provision MockServer to mock the specific openapi description https://www.mock-server.com/mock_server/using_openapi.html#button_open_api_filepath
+Retry({Invoke-WebRequest -Method PUT -Body "{ `"specUrlOrPayload`": `"$descriptionUrl`" }" -Uri http://localhost:1080/mockserver/openapi -ContentType application/json})
