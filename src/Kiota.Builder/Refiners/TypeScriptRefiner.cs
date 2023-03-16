@@ -579,7 +579,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     AddSerializationUsingToRequestBuilder(requestBodyClass, parentClass);
                 }
 
-                if (!parentClass.Name.Equals(requestBodyClass.Name) && CreateModelInterface(requestBodyClass, interfaceNamingCallback) is CodeInterface modelInterface && modelInterface.Parent is not null)
+                if (!parentClass.Name.Equals(requestBodyClass.Name, StringComparison.OrdinalIgnoreCase) && CreateModelInterface(requestBodyClass, interfaceNamingCallback) is CodeInterface modelInterface && modelInterface.Parent is not null)
                 {
                     parentClass.AddUsing(new CodeUsing
                     {
