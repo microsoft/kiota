@@ -177,7 +177,7 @@ public class TypeScriptLanguageRefinerTests
             Kind = CodeClassKind.RequestBuilder,
         }).First();
         var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
-        var errorClass = subNS.AddClass(TestHelper.CreateModelClass("rror4XX")).First();
+        var errorClass = subNS.AddClass(TestHelper.CreateModelClass("Error4XX")).First();
         errorClass.IsErrorDefinition = true;
         var requestExecutor = requestBuilder.AddMethod(new CodeMethod
         {
