@@ -72,14 +72,18 @@ public abstract class LanguageWriter
     }
     internal void WriteLines(IEnumerable<string> lines)
     {
+        WriteLinesInternal(lines);
+    }
+    internal void WriteLines(params string[] lines)
+    {
+        WriteLinesInternal(lines);
+    }
+    private void WriteLinesInternal(IEnumerable<string> lines)
+    {
         foreach (var line in lines)
         {
             WriteLine(line);
         }
-    }
-    internal void WriteLines(params string[] lines)
-    {
-        WriteLines(lines);
     }
     internal void StartBlock(string symbol = "{", bool increaseIndent = true)
     {
