@@ -60,23 +60,26 @@ if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
 
 Push-Location $testPath
 if ($language -eq "csharp") {
-    dotnet build
+    Invoke-Call -ScriptBlock {
+        dotnet build
+    } -ErrorAction Stop
 }
 elseif ($language -eq "java") {
     if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
         $itTestPath = Join-Path -Path $testPath -ChildPath $mockSeverITFolder
         Push-Location $itTestPath
-        # START: Specific Java provisioning and execution
+
         $itTestPathSources = Join-Path -Path $testPath -ChildPath "src" -AdditionalChildPath "*"
         $itTestPathDest = Join-Path -Path $itTestPath -ChildPath "src" -AdditionalChildPath "main", "java"
         if (Test-Path $itTestPathDest) {
             Remove-Item $itTestPathDest -Force -Recurse
         }
         Copy-Item -Path $itTestPathSources -Destination $itTestPathDest -Recurse
+
         Invoke-Call -ScriptBlock {
             mvn clean test --batch-mode
         } -ErrorAction Stop
-        # END
+
         Pop-Location
     } else {
         Invoke-Call -ScriptBlock {
