@@ -10,8 +10,6 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Refiners;
 public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 {
-
-    private static int conflictsCount = 0;
     private static readonly CodePropertyKind[] UnusedPropKinds = new[] { CodePropertyKind.RequestAdapter };
     private static readonly CodeParameterKind[] UnusedParamKinds = new[] { CodeParameterKind.RequestAdapter };
     private static readonly CodeMethodKind[] UnusedMethodKinds = new[] { CodeMethodKind.RequestBuilderWithParameters };
@@ -65,97 +63,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             AddSerializationModulesImport(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             CreateCommandBuilders(generatedCode);
-            ProbeForConflicts(generatedCode);
-            if (conflictsCount > 0)
-            {
-                // Warn on conflicts.
-                Console.WriteLine($"Found {conflictsCount} command conflicts.");
-            }
         }, cancellationToken);
-    }
-    private static void ProbeForConflicts(CodeElement currentElement)
-    {
-        // Warn about potential for duplicates e.g. GET /drives vs GET /drives/{drive-id}/list
-        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
-        {
-            var commandBuilders = currentClass.GetChildElements().OfType<CodeMethod>()
-                    .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder));
-            Dictionary<string, CodeMethod> classCommands = new(StringComparer.OrdinalIgnoreCase);
-
-            static string GetElementParentClass(in CodeMethod element)
-            {
-                if (element.Parent is CodeElement e)
-                {
-                    CodeElement? classParent = e.Parent;
-                    LinkedList<string> nameLl = new();
-                    nameLl.AddLast(e.Name);
-                    while (classParent is not CodeNamespace && classParent is not null)
-                    {
-                        nameLl.AddFirst(classParent.Name);
-
-                        classParent = classParent?.Parent;
-                    }
-
-                    if (!string.IsNullOrEmpty(classParent?.Name))
-                    {
-                        nameLl.AddFirst(classParent.Name);
-                    }
-                    return string.Join(".", nameLl);
-                }
-                else
-                {
-                    return "N/A";
-                }
-            }
-
-            static void AddOrWarn(in string name, in CodeMethod c, ref Dictionary<string, CodeMethod> table)
-            {
-                if (!table.TryAdd(name, c))
-                {
-                    // Adding the method failed.
-                    var existing = table[name];
-                    if (c != existing)
-                    {
-                        // WARN...
-                        var warning = $"Warning: Conflicting commands named {name}.";
-                        conflictsCount++;
-                        Console.WriteLine(warning);
-                        Console.WriteLine($"New: {GetElementParentClass(c)}.{c.Name}\nExisting: {GetElementParentClass(existing)}.{existing.Name}");
-                    }
-                }
-            }
-
-            foreach (var cmd in commandBuilders)
-            {
-                var name = cmd.SimpleName;
-                if (cmd.HttpMethod is null)
-                {
-                    if (cmd.OriginalMethod?.Kind == CodeMethodKind.ClientConstructor)
-                    {
-                        AddOrWarn("__root__", cmd, ref classCommands);
-                    }
-                    else if (cmd.OriginalIndexer is not null)
-                    {
-                        var subCmds = cmd.OriginalIndexer.ReturnType.AllTypes.First()
-                                .TypeDefinition?.GetChildElements(true)
-                                .OfType<CodeMethod>()
-                                .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder)) ??
-                            Enumerable.Empty<CodeMethod>();
-                        foreach (var subCmd in subCmds)
-                        {
-                            AddOrWarn(subCmd.SimpleName, subCmd, ref classCommands);
-                        }
-                    }
-
-                }
-                else
-                {
-                    AddOrWarn(name, cmd, ref classCommands);
-                }
-            }
-        }
-
-        CrawlTree(currentElement, ProbeForConflicts);
     }
 
     private static void CreateCommandBuilders(CodeElement currentElement)
