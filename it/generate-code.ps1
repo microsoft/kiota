@@ -21,15 +21,20 @@ $additionalArgumentCmd = Join-Path -Path $scriptPath -ChildPath "get-additional-
 $additionalArguments = Invoke-Expression "$additionalArgumentCmd -descriptionUrl $descriptionUrl -language $language"
 $rootPath = Join-Path -Path $scriptPath -ChildPath ".."
 
+$executableName = "kiota"
+if ($IsWindows) {
+    $executableName = "kiota.exe"
+}
+
 switch ($dev)
 {
     $true {
         Write-Warning "Using kiota in dev mode"
-        $kiotaExec = Join-Path -Path $rootPath -ChildPath "src" -AdditionalChildPath "kiota", "bin", "Debug", "net7.0", "kiota"
+        $kiotaExec = Join-Path -Path $rootPath -ChildPath "src" -AdditionalChildPath "kiota", "bin", "Debug", "net7.0", $executableName
         break
     }
     default { 
-        $kiotaExec = Join-Path -Path $rootPath -ChildPath "publish" -AdditionalChildPath "kiota"
+        $kiotaExec = Join-Path -Path $rootPath -ChildPath "publish" -AdditionalChildPath $executableName
         break
     }
 }
