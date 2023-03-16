@@ -136,9 +136,9 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
         var serializationName = GetSerializationMethodName(codeProperty.Type);
 
-        if (customSerializatioWriters.Contains(serializationName))
+        if (customSerializatioWriters.Contains(serializationName) && codeProperty.Type is CodeType propType && propType.TypeDefinition is not null)
         {
-            var serializeName = getSerializerAlias((codeProperty.Type as CodeType)!, codeFunction, $"serialize{propertyTypeName}");
+            var serializeName = getSerializerAlias(propType, codeFunction, $"serialize{propType.Name}");
             writer.WriteLine($"writer.{serializationName}<{propType}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}, {serializeName});");
         }
         else
