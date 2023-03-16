@@ -242,11 +242,153 @@ public class ShellCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var builder = new TestRequestBuilder", result);
-        Assert.Contains("var command = new Command(\"item\");", result);
-        Assert.Contains("command.AddCommand(builder.BuildTestMethod1());", result);
-        Assert.Contains("foreach (var cmd in builder.BuildTestMethod2()) {", result);
-        Assert.Contains("command.AddCommand(cmd);", result);
+        Assert.Contains("var commands = new List<Command>();", result);
+        Assert.Contains("commands.Add(builder.BuildTestMethod1());", result);
+        Assert.Contains("commands.AddRange(builder.BuildTestMethod2());", result);
+        Assert.Contains("return commands;", result);
+    }
+
+    [Fact]
+    public void WritesMatchingIndexerCommandsIntoExecutableCommand()
+    {
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.Documentation.Description = "Test description";
+        method.SimpleName = "User";
+        method.HttpMethod = HttpMethod.Get;
+        var stringType = new CodeType
+        {
+            Name = "string",
+        };
+        var generatorMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.RequestGenerator,
+            Name = "CreateGetRequestInformation",
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
+        };
+        method.OriginalMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.RequestExecutor,
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
+            Parent = method.Parent
+        };
+        var codeClass = method.Parent as CodeClass;
+        codeClass.AddMethod(generatorMethod);
+
+        var type = new CodeClass { Name = "TestItemRequestBuilder", Kind = CodeClassKind.RequestBuilder };
+        type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod1", SimpleName = "User", ReturnType = new CodeType() });
+        type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod2", SimpleName = "User", ReturnType = new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array } });
+        type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod3", SimpleName = "Test", ReturnType = new CodeType() });
+        type.Parent = CodeNamespace.InitRootNamespace();
+        type.Parent.Name = "Test.Name.Sub";
+        var indexerReturn = new CodeType
+            {
+                Name = "TestItemRequestBuilder",
+                TypeDefinition = type
+            };
+        var im = new CodeMethod
+        {
+            ReturnType = new CodeType
+            {
+                Name = "Command",
+                IsExternal = true
+            },
+            Kind = CodeMethodKind.CommandBuilder,
+            SimpleName = "testItem-indexer",
+            OriginalIndexer = new CodeIndexer
+            {
+                ReturnType = indexerReturn,
+                Name = "testItem-idx",
+                IndexType = new CodeType
+                {
+                    Name = "string",
+                }
+            }
+        };
+
+        codeClass.AddMethod(im);
+
+        writer.Write(method);
+        var result = tw.ToString();
+        
+        Assert.Contains("var testItemIdx = new TestItemRequestBuilder();", result);
+        Assert.Contains("var command = testItemIdx.BuildTestMethod1();", result);
+        Assert.Contains("foreach (var testItemIdxCmd in testItemIdx.BuildTestMethod2())", result);
+        Assert.Contains("command.AddCommand(testItemIdxCmd);", result);
+        Assert.Contains("command.SetHandler(async (invocationContext)", result);
         Assert.Contains("return command;", result);
+        Assert.DoesNotContain("command.AddCommand(builder.BuildTestMethod3());", result);
+    }
+
+    [Fact]
+    public void WritesMatchingIndexerCommandsIntoContainerCommand()
+    {
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.SimpleName = "User";
+        
+        var ns = CodeNamespace.InitRootNamespace();
+        ns.Name = "Test.Name.Sub";
+        var codeClass = method.Parent as CodeClass;
+        var navTd = new CodeClass {
+            Name = "TestItem2RequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+            Parent = codeClass.Parent
+        };
+        method.AccessedProperty = new CodeProperty
+        {
+            Type = new CodeType
+            {
+                Name = "TestRequestBuilder",
+                TypeDefinition = navTd
+            }
+        };
+
+        navTd.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod11", SimpleName = "T", ReturnType = new CodeType() });
+        
+        var type = new CodeClass { Name = "TestItemRequestBuilder", Kind = CodeClassKind.RequestBuilder };
+        type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod1", SimpleName = "User", ReturnType = new CodeType() });
+        type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod2", SimpleName = "User", ReturnType = new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array } });
+        type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod3", SimpleName = "Test", ReturnType = new CodeType() });
+        type.Parent = ns;
+        var indexerReturn = new CodeType
+            {
+                Name = "TestItemRequestBuilder",
+                TypeDefinition = type
+            };
+        var im = new CodeMethod
+        {
+            ReturnType = new CodeType
+            {
+                Name = "Command",
+                IsExternal = true
+            },
+            Kind = CodeMethodKind.CommandBuilder,
+            SimpleName = "testItem-indexer",
+            OriginalIndexer = new CodeIndexer
+            {
+                ReturnType = indexerReturn,
+                Name = "testItem-indexer",
+                IndexType = new CodeType
+                {
+                    Name = "string",
+                }
+            }
+        };
+
+        codeClass.AddMethod(im);
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var testItemIndexer = new TestItemRequestBuilder();", result);
+        Assert.Contains("var command = testItemIndexer.BuildTestMethod1();", result);
+        Assert.Contains("foreach (var testItemIndexerCmd in testItemIndexer.BuildTestMethod2())", result);
+        Assert.Contains("command.AddCommand(testItemIndexerCmd);", result);
+        Assert.Contains("var builder = new TestRequestBuilder", result);
+        Assert.Contains("command.AddCommand(builder.BuildTestMethod11());", result);
+        Assert.Contains("return command;", result);
+        Assert.DoesNotContain("command.AddCommand(builder.BuildTestMethod3());", result);
     }
 
     [Fact]
@@ -282,7 +424,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var command = new Command(\"user\");", result);
         Assert.Contains("var builder = new TestRequestBuilder", result);
         Assert.Contains("command.AddCommand(builder.BuildTestMethod1());", result);
-        Assert.Contains("foreach (var cmd in builder.BuildTestMethod2()) {", result);
+        Assert.Contains("foreach (var cmd in builder.BuildTestMethod2())", result);
         Assert.Contains("command.AddCommand(cmd);", result);
         Assert.Contains("return command;", result);
     }
@@ -345,7 +487,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         // Test case insensitive match
         Assert.Contains("var builder = new Test.A.B.C.D.E.F.TestRequestBuilder2", result);
         Assert.Contains("command.AddCommand(builder.BuildTestMethod1());", result);
-        Assert.Contains("foreach (var cmd in builder.BuildTestMethod2()) {", result);
+        Assert.Contains("foreach (var cmd in builder.BuildTestMethod2())", result);
         Assert.Contains("command.AddCommand(cmd);", result);
         Assert.Contains("return command;", result);
     }

@@ -10,6 +10,8 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Refiners;
 public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 {
+
+    private static int conflictsCount = 0;
     private static readonly CodePropertyKind[] UnusedPropKinds = new[] { CodePropertyKind.RequestAdapter };
     private static readonly CodeParameterKind[] UnusedParamKinds = new[] { CodeParameterKind.RequestAdapter };
     private static readonly CodeMethodKind[] UnusedMethodKinds = new[] { CodeMethodKind.RequestBuilderWithParameters };
@@ -63,7 +65,97 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             AddSerializationModulesImport(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             CreateCommandBuilders(generatedCode);
+            ProbeForConflicts(generatedCode);
+            if (conflictsCount > 0)
+            {
+                // Warn on conflicts.
+                Console.WriteLine($"Found {conflictsCount} command conflicts.");
+            }
         }, cancellationToken);
+    }
+    private static void ProbeForConflicts(CodeElement currentElement)
+    {
+        // Warn about potential for duplicates e.g. GET /drives vs GET /drives/{drive-id}/list
+        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+        {
+            var commandBuilders = currentClass.GetChildElements().OfType<CodeMethod>()
+                    .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder));
+            Dictionary<string, CodeMethod> classCommands = new(StringComparer.OrdinalIgnoreCase);
+
+            static string GetElementParentClass(in CodeMethod element)
+            {
+                if (element.Parent is CodeElement e)
+                {
+                    CodeElement? classParent = e.Parent;
+                    LinkedList<string> nameLl = new();
+                    nameLl.AddLast(e.Name);
+                    while (classParent is not CodeNamespace && classParent is not null)
+                    {
+                        nameLl.AddFirst(classParent.Name);
+
+                        classParent = classParent?.Parent;
+                    }
+
+                    if (!string.IsNullOrEmpty(classParent?.Name))
+                    {
+                        nameLl.AddFirst(classParent.Name);
+                    }
+                    return string.Join(".", nameLl);
+                }
+                else
+                {
+                    return "N/A";
+                }
+            }
+
+            static void AddOrWarn(in string name, in CodeMethod c, ref Dictionary<string, CodeMethod> table)
+            {
+                if (!table.TryAdd(name, c))
+                {
+                    // Adding the method failed.
+                    var existing = table[name];
+                    if (c != existing)
+                    {
+                        // WARN...
+                        var warning = $"Warning: Conflicting commands named {name}.";
+                        conflictsCount++;
+                        Console.WriteLine(warning);
+                        Console.WriteLine($"New: {GetElementParentClass(c)}.{c.Name}\nExisting: {GetElementParentClass(existing)}.{existing.Name}");
+                    }
+                }
+            }
+
+            foreach (var cmd in commandBuilders)
+            {
+                var name = cmd.SimpleName;
+                if (cmd.HttpMethod is null)
+                {
+                    if (cmd.OriginalMethod?.Kind == CodeMethodKind.ClientConstructor)
+                    {
+                        AddOrWarn("__root__", cmd, ref classCommands);
+                    }
+                    else if (cmd.OriginalIndexer is not null)
+                    {
+                        var subCmds = cmd.OriginalIndexer.ReturnType.AllTypes.First()
+                                .TypeDefinition?.GetChildElements(true)
+                                .OfType<CodeMethod>()
+                                .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder)) ??
+                            Enumerable.Empty<CodeMethod>();
+                        foreach (var subCmd in subCmds)
+                        {
+                            AddOrWarn(subCmd.SimpleName, subCmd, ref classCommands);
+                        }
+                    }
+
+                }
+                else
+                {
+                    AddOrWarn(name, cmd, ref classCommands);
+                }
+            }
+        }
+
+        CrawlTree(currentElement, ProbeForConflicts);
     }
 
     private static void CreateCommandBuilders(CodeElement currentElement)
@@ -72,8 +164,19 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         {
             // Remove request executor
             RemoveUnusedParameters(currentClass);
+
+            var children = currentClass.GetChildElements();
+            var indexers = children.OfType<CodeIndexer>();
+            var classHasIndexers = indexers.Any();
+
+            // Clone executors & convert to build command
+            var requestExecutors = children.OfType<CodeMethod>()
+                .Where(e => e.IsOfKind(CodeMethodKind.RequestExecutor));
+            CreateCommandBuildersFromRequestExecutors(currentClass, classHasIndexers, requestExecutors);
+
             // Replace Nav Properties with BuildXXXCommand methods
-            var navProperties = currentClass.GetChildElements().OfType<CodeProperty>().Where(e => e.IsOfKind(CodePropertyKind.RequestBuilder));
+            var navProperties = children.OfType<CodeProperty>()
+                .Where(e => e.IsOfKind(CodePropertyKind.RequestBuilder));
             foreach (var navProp in navProperties)
             {
                 var method = CreateBuildCommandMethod(navProp, currentClass);
@@ -81,17 +184,12 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
                 currentClass.RemoveChildElement(navProp);
             }
 
-            // Build command for indexers
-            var indexers = currentClass.GetChildElements().OfType<CodeIndexer>();
-            var classHasIndexers = indexers.Any();
+            // Add build command for indexers. If an indexer's type has methods with the same name, they will be skipped.
+            // Deduplication is managed in method writer.
             CreateCommandBuildersFromIndexers(currentClass, indexers);
 
-            // Clone executors & convert to build command
-            var requestExecutors = currentClass.GetChildElements().OfType<CodeMethod>().Where(e => e.IsOfKind(CodeMethodKind.RequestExecutor));
-            CreateCommandBuildersFromRequestExecutors(currentClass, classHasIndexers, requestExecutors);
-
             // Build root command
-            var clientConstructor = currentClass.GetChildElements().OfType<CodeMethod>().FirstOrDefault(m => m.IsOfKind(CodeMethodKind.ClientConstructor));
+            var clientConstructor = children.OfType<CodeMethod>().FirstOrDefault(m => m.IsOfKind(CodeMethodKind.ClientConstructor));
             if (clientConstructor != null)
             {
                 var rootMethod = new CodeMethod
@@ -128,15 +226,14 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         foreach (var requestMethod in requestMethods)
         {
             var clone = (CodeMethod)requestMethod.Clone();
-            var cmdName = clone.HttpMethod switch
+            var cmdName = clone.Name;
+            if (clone.HttpMethod is HttpMethod m)
             {
-                HttpMethod.Get when classHasIndexers => "List",
-                HttpMethod.Post when classHasIndexers => "Create",
-                _ => clone.Name,
-            };
+                cmdName = GetCommandNameFromHttpMethod(m, classHasIndexers);
+            }
 
             clone.IsAsync = false;
-            clone.Name = $"Build{cmdName}Command";
+            clone.Name = $"Build{cmdName.CleanupSymbolName().ToFirstCharacterUpperCase()}Command";
             clone.Documentation = (CodeDocumentation)requestMethod.Documentation.Clone();
             clone.ReturnType = CreateCommandType();
             clone.Kind = CodeMethodKind.CommandBuilder;
@@ -148,20 +245,33 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         }
     }
 
+    private static string GetCommandNameFromHttpMethod(HttpMethod httpMethod, bool classHasIndexers)
+    {
+        return httpMethod switch
+        {
+            HttpMethod.Get when classHasIndexers => "List",
+            HttpMethod.Post when classHasIndexers => "Create",
+            _ => httpMethod.ToString(),
+        };
+    }
+
     private static void CreateCommandBuildersFromIndexers(CodeClass currentClass, IEnumerable<CodeIndexer> indexers)
     {
         foreach (var indexer in indexers)
         {
             var method = new CodeMethod
             {
-                Name = "BuildCommand",
+                Name = $"BuildCommand",
                 IsAsync = false,
                 Kind = CodeMethodKind.CommandBuilder,
                 OriginalIndexer = indexer,
                 Documentation = (CodeDocumentation)indexer.Documentation.Clone(),
                 // ReturnType setter assigns the parent
-                ReturnType = CreateCommandType()
+                ReturnType = CreateCommandType(),
+                SimpleName = indexer.Name
             };
+            method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+
             currentClass.AddMethod(method);
             currentClass.RemoveChildElement(indexer);
         }
@@ -181,7 +291,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         var codeMethod = new CodeMethod
         {
             IsAsync = false,
-            Name = $"Build{navProperty.Name.ToFirstCharacterUpperCase()}Command",
+            Name = $"Build{navProperty.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}Command",
             Kind = CodeMethodKind.CommandBuilder,
             Documentation = (CodeDocumentation)navProperty.Documentation.Clone(),
             ReturnType = CreateCommandType(),
