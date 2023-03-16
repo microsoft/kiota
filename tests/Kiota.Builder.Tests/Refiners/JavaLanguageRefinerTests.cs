@@ -165,6 +165,17 @@ public class JavaLanguageRefinerTests
         Assert.Contains("Escaped", model.Name);
     }
     [Fact]
+    public async Task ConvertEnumsToPascalCase()
+    {
+        var model = root.AddEnum(new CodeEnum
+        {
+            Name = "foo_bar"
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        Assert.NotEqual("foo_bar", model.Name);
+        Assert.Contains("FooBar", model.Name);
+    }
+    [Fact]
     public async Task AddsDefaultImports()
     {
         var model = root.AddClass(new CodeClass
@@ -381,6 +392,32 @@ public class JavaLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root); //using CSharp so the cancelletionToken doesn't get removed
         Assert.False(method.Parameters.Any());
         Assert.DoesNotContain(cancellationParam, method.Parameters);
+    }
+    [Fact]
+    public async Task NormalizeMethodTypesNames()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var method = model.AddMethod(new CodeMethod
+        {
+            Name = "getMethod",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        var cancellationParam = new CodeParameter
+        {
+            Name = "something",
+            Type = new CodeType { Name = "foo_bar" },
+        };
+        method.AddParameter(cancellationParam);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        Assert.Equal("FooBar", method.Parameters.First().Type.Name);
     }
     #endregion
     #region JavaLanguageRefinerTests

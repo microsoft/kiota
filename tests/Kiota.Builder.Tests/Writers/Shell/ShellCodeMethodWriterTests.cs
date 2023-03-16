@@ -691,6 +691,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Kind = CodeMethodKind.RequestGenerator,
             Name = "CreatePostRequestInformation",
+            RequestBodyContentType = "application/text",
             HttpMethod = method.HttpMethod,
             ReturnType = stringType,
         };
@@ -701,12 +702,14 @@ public class ShellCodeMethodWriterTests : IDisposable
             ReturnType = stringType,
             Parent = method.Parent
         };
-        method.OriginalMethod.AddParameter(new CodeParameter
+        var bodyParam = new CodeParameter
         {
             Name = "body",
             Kind = CodeParameterKind.RequestBody,
             Type = bodyType,
-        });
+        };
+        method.OriginalMethod.AddParameter(bodyParam);
+        generatorMethod.AddParameter(bodyParam);
         var codeClass = method.Parent as CodeClass;
         codeClass.AddMethod(generatorMethod);
 
@@ -730,6 +733,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
+        Assert.Contains("requestInfo.SetContentFromParsable(reqAdapter, \"application/text\", model);", result);
         Assert.Contains("var response = await reqAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken) ?? Stream.Null;", result);
         Assert.Contains("return command;", result);
     }

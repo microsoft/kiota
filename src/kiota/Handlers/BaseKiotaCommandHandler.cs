@@ -49,7 +49,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
                 .AddEnvironmentVariables(prefix: "KIOTA_")
                 .Build();
         var configObject = new KiotaConfiguration();
-        configuration.Bind(configObject);
+        configObject.BindConfiguration(configuration);
         return configObject;
     });
     private const string GitHubScope = "repo";

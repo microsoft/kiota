@@ -122,6 +122,17 @@ public class RubyLanguageRefinerTests
         Assert.Contains("escaped", model.Name);
     }
     [Fact]
+    public async Task ConvertEnumsToPascalCase()
+    {
+        var model = root.AddEnum(new CodeEnum
+        {
+            Name = "foo_bar"
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+        Assert.NotEqual("foo_bar", model.Name);
+        Assert.Contains("FooBar", model.Name);
+    }
+    [Fact]
     public async Task ReplacesDateTimeOffsetByNativeType()
     {
         var model = root.AddClass(new CodeClass

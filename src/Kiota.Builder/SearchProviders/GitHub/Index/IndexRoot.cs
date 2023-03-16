@@ -1,7 +1,13 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Kiota.Builder.SearchProviders.GitHub.Index;
 
+
+[JsonSerializable(typeof(IndexRoot))]
+internal partial class IndexRootJsonContext : JsonSerializerContext
+{
+}
 public class IndexRoot
 {
     public List<IndexApiEntry> Apis { get; set; } = new();

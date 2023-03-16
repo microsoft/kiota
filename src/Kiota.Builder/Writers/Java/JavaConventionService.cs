@@ -80,7 +80,7 @@ public class JavaConventionService : CommonLanguageConventionService
             "sbyte" => "Short",
             "decimal" => "BigDecimal",
             "void" or "boolean" when !type.IsNullable => type.Name, //little casing hack
-            "binary" => "byte[]",
+            "binary" or "base64" or "base64url" => "byte[]",
             "Guid" => "UUID",
             _ when type.Name.Contains('.') => type.Name, // casing
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",

@@ -25,15 +25,15 @@ Patches ship as needed, and they include security and non-security bug fixes.
 
 ## Language support
 
-Language support in Kiota is either general availability (GA), preview or experimental for each language.
+Language support in Kiota is either stable, preview or experimental for each language.
 
 The following criteria is used to determine the maturity levels.
 
-- **General availability**: Kiota provides full functionality for the language and has been used to generate production API clients.
-- **Preview**: Kiota is at or near the level of general availability but hasn't been used to generate production API clients.
+- **Stable**: Kiota provides full functionality for the language and has been used to generate production API clients.
+- **Preview**: Kiota is at or near the level of table but hasn't been used to generate production API clients.
 - **Experimental**: Kiota provides some functionality for the language but is still in early stages. Some features may not work correctly or at all.
 
-Breaking changes to languages that are generally available (GA) will result in major version change for Kiota tooling.
+Breaking changes to languages that are stable will result in major version change for Kiota tooling.
 
 The current status of language support can be queried by using the following command.
 

@@ -1,0 +1,156 @@
+name: integration-tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      [
+        "abstractions/**",
+        "authentication/**",
+        "serialization/**",
+        "http/**",
+        "**.md",
+        ".vscode/**",
+        "**.svg",
+      ]
+  pull_request:
+    paths-ignore:
+      [
+        "abstractions/**",
+        "authentication/**",
+        "serialization/**",
+        "http/**",
+        "**.md",
+        ".vscode/**",
+        "**.svg",
+      ]
+
+concurrency:
+  # Only run once for latest commit per ref and cancel other (previous) runs.
+  group: ci-integration-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 7.0.x
+      - name: Restore workloads
+        run: dotnet workload restore
+      - name: Restore dependencies
+        run: dotnet restore kiota.sln
+      - name: Build
+        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish
+        # -p:PublishTrimmed=true -p:PublishAot=true should be enabled to make test run faster, but there are still limitations
+      - uses: actions/upload-artifact@v3
+        with:
+          name: generator
+          path: publish
+  integration:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [java, csharp, go, typescript, ruby, php, python]
+        description:
+          - "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml"
+          - "./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml"
+          - "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.yaml"
+          - "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twitter.com/current/2.61/openapi.yaml"
+          - "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/notion.com/1.0.0/openapi.yaml"
+          - "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/stripe.com/2022-11-15/openapi.yaml"
+          - "https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml"
+          - "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/meraki.com/v1.31.0/openapi.yaml"
+          - "https://developers.pipedrive.com/docs/api/v1/openapi.yaml"
+          - "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twilio.com/api/1.39.2/openapi.yaml"
+          - "https://api.apis.guru/v2/specs/docusign.net/v2.1/openapi.yaml"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: generator
+          path: publish
+      - run: chmod a+x ./publish/kiota
+
+      - name: Setup Java
+        if: matrix.language == 'java'
+        run: curl -Ls https://sh.jbang.dev | bash -s - app setup
+      - name: Setup .NET
+        if: matrix.language == 'csharp'
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 7.0.x
+      - name: Setup Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@v4
+        with:
+          go-version: "^1.20"
+      - name: Setup Typescript
+        if: matrix.language == 'typescript'
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+      - name: Setup Ruby
+        if: matrix.language == 'ruby'
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: ./it/ruby
+          ruby-version: "3.2.0"
+          bundler-cache: true
+      - name: Setup PHP
+        if: matrix.language == 'php'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          coverage: xdebug
+      - name: Setup Python
+        if: matrix.language == 'python'
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Check if test is suppressed
+        id: check-suppressed
+        run: |
+          $isSuppressed = . ./it/get-is-suppressed.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
+          Write-Output "IS_SUPPRESSED=$($isSuppressed.ToString().ToLowerInvariant())" >> $Env:GITHUB_OUTPUT
+        shell: pwsh
+      - name: Generate Code
+        shell: pwsh
+        run: ./it/generate-code.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
+      - name: Execute the IT test
+        shell: pwsh
+        run: ./it/exec-cmd.ps1 -language ${{ matrix.language }}
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
+      - name: Cleanup the IT folder
+        shell: pwsh
+        run: ./it/do-clean.ps1 -language ${{ matrix.language }}
+        if: always()
+
+      - id: replace_url
+        if: always()
+        run: |
+          ORIGINAL="${{ matrix.description }}"
+          REPLACED="${ORIGINAL//[-:<>|\*\?\\\/\.]/_}"
+          echo "ARTKEY=$REPLACED" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: generation-results-${{ matrix.language }}-${{ steps.replace_url.outputs.ARTKEY }}
+          path: it/${{ matrix.language }}
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [integration]
+    steps:
+      - uses: jimschubert/delete-artifacts-action@v1
+        with:
+          artifact_name: "generator"
+          min_bytes: "0"

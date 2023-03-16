@@ -19,7 +19,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             LowerCaseNamespaceNames(generatedCode);
             var reservedNamesProvider = new JavaReservedNamesProvider();
-            CorrectClassNames(generatedCode, s =>
+            CorrectNames(generatedCode, s =>
             {
                 if (s.Contains('_') &&
                      s.ToPascalCase(UnderscoreArray) is string refinedName &&
@@ -216,7 +216,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "com.microsoft.kiota", "QueryParameter"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
                 "com.microsoft.kiota", "RequestHeaders"),
-        new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
+        new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
             "com.microsoft.kiota.serialization", "ParseNodeHelper"),
     };
     private static void CorrectPropertyType(CodeProperty currentProperty)

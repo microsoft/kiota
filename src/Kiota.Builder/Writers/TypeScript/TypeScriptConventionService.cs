@@ -113,7 +113,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return type.Name switch
         {
             "integer" or "int64" or "float" or "double" or "byte" or "sbyte" or "decimal" => "number",
-            "binary" or "Guid" => "string",
+            "binary" or "base64" or "base64url" or "Guid" => "string",
             "String" or "Object" or "Boolean" or "Void" or "string" or "object" or "boolean" or "void" => type.Name.ToFirstCharacterLowerCase(), // little casing hack
             _ => GetCodeTypeName(type) is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };

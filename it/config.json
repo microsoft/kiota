@@ -1,0 +1,308 @@
+{
+  "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.yaml": {
+    "ExcludePatterns": [
+      {
+        "Pattern": "/gists",
+        "Rationale": "https://github.com/github/rest-api-description/issues/214"
+      },
+      {
+        "Pattern": "/gists/**",
+        "Rationale": "https://github.com/github/rest-api-description/issues/214"
+      },
+      {
+        "Pattern": "/users/*/gists",
+        "Rationale": "https://github.com/github/rest-api-description/issues/214"
+      },
+      {
+        "Pattern": "/orgs/*/migrations",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2246"
+      },
+      {
+        "Pattern": "/orgs/*/migrations/**",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2246"
+      },
+      {
+        "Pattern": "/user/migrations",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2246"
+      },
+      {
+        "Pattern": "/user/migrations/**",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2246"
+      },
+      {
+        "Pattern": "/users/*/gpg_keys",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2247"
+      },
+      {
+        "Pattern": "/user/gpg_keys",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2247"
+      },
+      {
+        "Pattern": "/user/gpg_keys/**",
+        "Rationale": "https://github.com/github/rest-api-description/issues/2247"
+      }
+    ],
+    "Suppressions": [
+      {
+        "Language": "typescript",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
+      },
+      {
+        "Language": "go",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2353"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1813"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      },
+      {
+        "Language": "csharp",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2360"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      }
+    ]
+  },
+  "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml": {
+    "Suppressions": [
+      {
+        "Language": "csharp",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2351"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2351"
+      },
+      {
+        "Language": "go",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2351"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2351"
+      }
+    ]
+  },
+  "./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml": {
+    "Suppressions": [
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2361"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2374"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      }
+    ]
+  },
+  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/notion.com/1.0.0/openapi.yaml": {
+    "ExcludePatterns": [
+      {
+        "Pattern": "/v1/databases/**",
+        "Rationale": "next_cursor in commentResponse is invalid"
+      },
+      {
+        "Pattern": "/v1/blocks/**",
+        "Rationale": "next_cursor in commentResponse is invalid"
+      },
+      {
+        "Pattern": "/v1/comments",
+        "Rationale": "next_cursor in commentResponse is invalid"
+      },
+      {
+        "Pattern": "/v1/users/*",
+        "Rationale": "avatar_url in usersResponse is invalid"
+      },
+      {
+        "Pattern": "/v1/pages/*",
+        "Rationale": "code in pageResponse is invalid"
+      }
+    ],
+    "Suppressions": [
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2381"
+      }
+    ]
+  },
+  "https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml": {
+    "ExcludePatterns": [
+      {
+        "Pattern": "/maps/api/directions/json",
+        "Rationale": "DirectionsGeocodedWaypoint.partial_match is invalid"
+      }
+    ],
+    "Suppressions": [
+      {
+        "Language": "go",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2373"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2381"
+      }
+    ]
+  },
+  "https://developers.pipedrive.com/docs/api/v1/openapi.yaml": {
+    "ExcludePatterns": [
+      {
+        "Pattern": "/itemSearch/field",
+        "Rationale": "$field_key for fieldResponse_data is invalid"
+      },
+      {
+        "Pattern": "/subscriptions/*/payments",
+        "Rationale": "data for model paymentsResponse is invalid"
+      },
+      {
+        "Pattern": "/permissionSets/**",
+        "Rationale": "error 404 is invalid"
+      }
+    ],
+    "Suppressions": [
+      {
+        "Language": "all",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2351"
+      }
+    ]
+  },
+  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twilio.com/api/1.39.2/openapi.yaml": {
+    "ExcludePatterns": [
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Addresses/*/DependentPhoneNumbers.json",
+        "Rationale": "dependent_phone_number is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Recordings.json",
+        "Rationale": "encryption_details is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Recordings/*.json",
+        "Rationale": "encryption_details is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Conferences/*/Recordings.json",
+        "Rationale": "encryption_details is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Calls/*/Recordings.json",
+        "Rationale": "encryption_details is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Calls/*/Recordings/*.json",
+        "Rationale": "encryption_details is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Conferences/*/Recordings/*.json",
+        "Rationale": "encryption_details is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Calls/FeedbackSummary.json",
+        "Rationale": "issues is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Calls/FeedbackSummary/*.json",
+        "Rationale": "issues is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Calls/*/Events.json",
+        "Rationale": "request is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/IncomingPhoneNumbers/*/AssignedAddOns.json",
+        "Rationale": "configuration is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/IncomingPhoneNumbers/*/AssignedAddOns/*.json",
+        "Rationale": "configuration is invalid"
+      },
+      {
+        "Pattern": "/2010-04-01/Accounts/*/Calls/*/Payments.json",
+        "Rationale": "Parameter is invalid"
+      }
+    ],
+    "Suppressions": [
+      {
+        "Language": "csharp",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2369"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2381"
+      }
+    ]
+  },
+  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/stripe.com/2022-11-15/openapi.yaml": {
+    "Suppressions": [
+      {
+        "Language": "all",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2352"
+      }
+    ]
+  },
+  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/meraki.com/v1.31.0/openapi.yaml": {
+    "Suppressions": [
+      {
+        "Language": "all",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2368"
+      }
+    ]
+  },
+  "https://api.apis.guru/v2/specs/docusign.net/v2.1/openapi.yaml": {
+    "Suppressions": [
+      {
+        "Language": "csharp",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2369"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2381"
+      }
+    ]
+  },
+  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twitter.com/current/2.61/openapi.yaml": {
+    "Suppressions": [
+      {
+        "Language": "typescript",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2381"
+      }
+    ]
+  }
+}

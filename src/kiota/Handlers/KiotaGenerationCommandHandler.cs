@@ -115,7 +115,8 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
         using (loggerFactory)
         {
-            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
+            logger.AppendInternalTracing();
+            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration, KiotaConfigurationJsonContext.Default.KiotaConfiguration));
 
             try
             {

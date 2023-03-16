@@ -1,0 +1,3 @@
+{
+  "include": ["build/*.js", ".eslintrc.js"]
+}
