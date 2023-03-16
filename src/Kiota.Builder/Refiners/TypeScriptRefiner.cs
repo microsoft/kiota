@@ -758,7 +758,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void SetUsingsOfPropertyInSerializationFunctions(string propertySerializerFunctionName, CodeFunction codeFunction, CodeClass property, Func<CodeClass, string> interfaceNamingCallback)
     {
-        if (!propertySerializerFunctionName.EqualsIgnoreCase(codeFunction.Name, StringComparison.OrdinalIgnoreCase))
+        if (!propertySerializerFunctionName.EqualsIgnoreCase(codeFunction.Name))
         {
             if (GetSerializationFunctionsForNamespace(property).Item1 is CodeFunction serializationFunction && serializationFunction.Parent is not null)
             {
