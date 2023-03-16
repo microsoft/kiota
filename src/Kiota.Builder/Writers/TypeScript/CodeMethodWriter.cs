@@ -376,16 +376,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         if (requestBody.Type is CodeType currentType && currentType.TypeDefinition is CodeInterface codeInterface)
         {
             var serializerName = $"serialize{codeInterface.Name.ToFirstCharacterUpperCase()}";
-            var setMethodName = "setContentFromParsable";
-            var body = "body";
-            writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", {body} as any, {serializerName});");
-
+            writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", body as any, {serializerName});");
         }
         else
         {
-            var setMethodName = "setContentFromScalar";
-            var body = $"{spreadOperator}{requestBody.Name}";
-            writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", {body});");
+            writer.WriteLine($"{RequestInfoVarName}.setContentFromScalar(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", {spreadOperator}{requestBody.Name});");
         }
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"this.{property.Name}";
