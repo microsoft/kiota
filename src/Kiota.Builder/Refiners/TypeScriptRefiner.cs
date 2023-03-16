@@ -750,7 +750,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void SetUsingInModelInterface(CodeInterface modelInterface, (CodeInterface?, CodeUsing?) propertyTypeAndUsing)
     {
-        if (propertyTypeAndUsing.Item1 is not null && propertyTypeAndUsing.Item2 is not null && !modelInterface.Name.Equals(propertyTypeAndUsing.Item1.Name))
+        if (propertyTypeAndUsing.Item1 is not null && propertyTypeAndUsing.Item2 is not null && !modelInterface.Name.Equals(propertyTypeAndUsing.Item1.Name, StringComparison.OrdinalIgnoreCase))
         {
             modelInterface.AddUsing(propertyTypeAndUsing.Item2);
         }
