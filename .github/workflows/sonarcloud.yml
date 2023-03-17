@@ -4,10 +4,28 @@ on:
   push:
     branches:
       - main
-    paths-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', '**.md', '.vscode/**', '**.svg']
+    paths-ignore:
+      [
+        "abstractions/**",
+        "authentication/**",
+        "serialization/**",
+        "http/**",
+        "**.md",
+        ".vscode/**",
+        "**.svg",
+      ]
   pull_request:
     types: [opened, synchronize, reopened]
-    paths-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', '**.md', '.vscode/**', '**.svg']
+    paths-ignore:
+      [
+        "abstractions/**",
+        "authentication/**",
+        "serialization/**",
+        "http/**",
+        "**.md",
+        ".vscode/**",
+        "**.svg",
+      ]
 
 env:
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -22,7 +40,7 @@ jobs:
       - name: Check whether unity activation requests should be done
         id: checksecret_job
         run: |
-            echo "is_SONAR_TOKEN_set=${{ env.SONAR_TOKEN != '' }}" >> $GITHUB_OUTPUT
+          echo "is_SONAR_TOKEN_set=${{ env.SONAR_TOKEN != '' }}" >> $GITHUB_OUTPUT
   build:
     needs: [checksecret]
     if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
@@ -32,7 +50,7 @@ jobs:
       - name: Set up JDK 11
         uses: actions/setup-java@v3
         with:
-          distribution: 'adopt'
+          distribution: "adopt"
           java-version: 11
       - name: Setup .NET 5 # At the moment the scanner requires dotnet 5 https://www.nuget.org/packages/dotnet-sonarscanner
         uses: actions/setup-dotnet@v3
@@ -44,7 +62,7 @@ jobs:
           dotnet-version: 7.0.x
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - name: Cache SonarCloud packages
         uses: actions/cache@v3
         with:
@@ -66,13 +84,14 @@ jobs:
           dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
       - name: Build and analyze
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
           CollectCoverage: true
-          CoverletOutputFormat: 'opencover' # https://github.com/microsoft/vstest/issues/4014#issuecomment-1307913682
+          CoverletOutputFormat: "opencover" # https://github.com/microsoft/vstest/issues/4014#issuecomment-1307913682
         shell: pwsh
         run: |
           ./.sonar/scanner/dotnet-sonarscanner begin /k:"microsoft_kiota" /o:"microsoft" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="tests/**/coverage.opencover.xml"
           dotnet workload restore
+          dotnet workload install wasm-tools
           dotnet build
           dotnet test kiota.sln --no-build --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
           ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
