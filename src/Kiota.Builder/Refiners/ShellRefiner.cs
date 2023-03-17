@@ -85,12 +85,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             // Replace Nav Properties with BuildXXXCommand methods
             var navProperties = children.OfType<CodeProperty>()
                 .Where(e => e.IsOfKind(CodePropertyKind.RequestBuilder));
-            foreach (var navProp in navProperties)
-            {
-                var method = CreateBuildCommandMethod(navProp, currentClass);
-                currentClass.AddMethod(method);
-                currentClass.RemoveChildElement(navProp);
-            }
+            CreateCommandBuildersFromNavProps(currentClass, navProperties);
 
             // Add build command for indexers. If an indexer's type has methods with the same name, they will be skipped.
             // Deduplication is managed in method writer.
@@ -185,6 +180,26 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         }
     }
 
+    private static void CreateCommandBuildersFromNavProps(CodeClass currentClass, IEnumerable<CodeProperty> navProperties)
+    {
+        foreach (var navProperty in navProperties)
+        {
+            var method = new CodeMethod
+            {
+                IsAsync = false,
+                Name = $"Build{navProperty.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}NavCommand",
+                Kind = CodeMethodKind.CommandBuilder,
+                Documentation = (CodeDocumentation)navProperty.Documentation.Clone(),
+                ReturnType = CreateCommandType(),
+                AccessedProperty = navProperty,
+                SimpleName = navProperty.Name,
+                Parent = currentClass
+            };
+            currentClass.AddMethod(method);
+            currentClass.RemoveChildElement(navProperty);
+        }
+    }
+
     private static CodeType CreateCommandType()
     {
         return new CodeType
@@ -192,22 +207,6 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             Name = "Command",
             IsExternal = true,
         };
-    }
-
-    private static CodeMethod CreateBuildCommandMethod(CodeProperty navProperty, CodeClass parent)
-    {
-        var codeMethod = new CodeMethod
-        {
-            IsAsync = false,
-            Name = $"Build{navProperty.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}Command",
-            Kind = CodeMethodKind.CommandBuilder,
-            Documentation = (CodeDocumentation)navProperty.Documentation.Clone(),
-            ReturnType = CreateCommandType(),
-            AccessedProperty = navProperty,
-            SimpleName = navProperty.Name,
-            Parent = parent
-        };
-        return codeMethod;
     }
 
     private static readonly AdditionalUsingEvaluator[] additionalUsingEvaluators = {

@@ -82,7 +82,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             parametersList.Add(bodyParam);
         }
 
-        InitializeSharedCommandWithIndex(codeElement, parentClass, writer, name);
+        InitializeSharedCommand(codeElement, parentClass, writer, name);
         writer.WriteLine("// Create options for all the parameters");
         // investigate exploding query params
         // Check the possible formatting options for headers in a cli.
@@ -169,15 +169,15 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         writer.WriteLine($"return {CommandVariableName};");
     }
 
-    private void InitializeSharedCommandWithIndex(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string name)
+    private void InitializeSharedCommand(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string name)
     {
-        // If there's a matching indexer command with the same name as this
+        // If there's a matching command with the same name as this
         // command, use its command builder instead of creating a new command.
         // This reduces the probability of duplicate subcommand names
         // e.g. if we have a route like GET /tests, the generated command will
         // be "mgc tests list". Say we have another route that's
-        // GET /tests/{test-id}/list. In this case, we want the command to
-        // reach this endpoint to be "mgc tests list get". If we didn't use
+        // GET /tests/{test-id}/list. In this case, we want the command that
+        // reaches this endpoint to be "mgc tests list get". If we didn't use
         // this technique, the generated command would actually be "mgc tests
         // list list get".
         var commandInfo = GetCommandBuilderFromIndexer(codeElement, writer, parentClass);
@@ -185,11 +185,22 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         if (commandInfo.HasValue)
         {
             var (builderName, method) = commandInfo.Value;
-            initializer = $"{builderName}.{method.Name}()";
+            initializer = $"{builderName}.{NormalizeToIdentifier(method.Name)}()";
         }
         else
         {
-            initializer = $"new Command(\"{name}\")";
+            // Try reusing nav commands too. e.g. GET /tests and GET /tests/list/
+            // Should resolve to mgc tests lists and mgc tests list get respectively.
+            var navCmd = GetCommandBuilderFromNavProperties(codeElement, parentClass);
+
+            if (navCmd is not null)
+            {
+                initializer = $"{navCmd.Name}()";
+            }
+            else
+            {
+                initializer = $"new Command(\"{name}\")";
+            }
         }
         writer.WriteLine($"var {CommandVariableName} = {initializer};");
         WriteCommandDescription(codeElement, writer);
@@ -212,16 +223,34 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         // to control the outcome. The actual commands will not be the same as the
         // SimpleName.
         var match = indexer.ReturnType.AllTypes.First().TypeDefinition?.GetChildElements(true).OfType<CodeMethod>()
-                .Where(m => !m.ReturnType.IsCollection)
+                .Where(m => !m.ReturnType.IsCollection && m.HttpMethod == null) // Guard against pulling in executable commands.
                 .FirstOrDefault(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase));
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
         if (match is null) return null;
 
         var targetClass = conventions.GetTypeString(indexer.ReturnType, codeElement);
-        var builderName = NormalizeToIdentifier(indexer.Name);
+        var builderName = NormalizeToIdentifier(indexer.Name).ToFirstCharacterLowerCase();
         AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {builderName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
-        
+
         return (builderName, match);
+    }
+
+#pragma warning disable CA1822
+    private CodeMethod? GetCommandBuilderFromNavProperties(CodeMethod codeElement, CodeClass parent)
+    {
+#pragma warning restore CA1822
+        // We match based on SimpleName which should contain at least one valid
+        // identifier character in the name.
+        if (string.IsNullOrWhiteSpace(codeElement.SimpleName.CleanupSymbolName())) return null;
+        // Assumption is that there can only be 1 nav property with a specific
+        // name per code class. This code will throw if multiple nav properties
+        // exist with the same name.
+        var property = parent.GetChildElements().OfType<CodeMethod>()
+                .SingleOrDefault(m => m != codeElement && m.IsOfKind(CodeMethodKind.CommandBuilder) && m.AccessedProperty != null && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase));
+
+        if (property is null) return null;
+
+        return property;
     }
 
     private void AddMatchingIndexerCommandsAsSubCommands(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, CodeMethod? exclude = null)
@@ -514,7 +543,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
 
     private void WriteNavCommand(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, string name)
     {
-        InitializeSharedCommandWithIndex(codeElement, parent, writer, name);
+        InitializeSharedCommand(codeElement, parent, writer, name);
 
         if ((codeElement.AccessedProperty?.Type) is CodeType codeReturnType)
         {
@@ -527,8 +556,19 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 Enumerable.Empty<CodeMethod>();
             AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
+            var duplicates = builderMethods
+                .Where(m => !string.IsNullOrWhiteSpace(m.SimpleName.CleanupSymbolName()))
+                .Select(m => m.SimpleName)
+                .GroupBy(n => n, StringComparer.OrdinalIgnoreCase)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
             foreach (var method in builderMethods)
             {
+                // If the nav property has more than 1 match, then it means it
+                // has been initialized by another command builder. Skip it.
+                if (method.AccessedProperty is not null && duplicates.Contains(method.SimpleName)) continue;
                 if (method.ReturnType.IsCollection)
                 {
                     writer.WriteLine($"foreach (var cmd in {BuilderInstanceName}.{method.Name}())");
