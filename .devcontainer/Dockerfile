@@ -1,4 +1,4 @@
-# See here for image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.224.3/containers/dotnet/.devcontainer/base.Dockerfile
+# See here for image contents: https://github.com/microsoft/vscode-dev-containers/blob/v0.245.2/containers/dotnet/.devcontainer/Dockerfile
 
 ARG VARIANT="7.0-bullseye-slim"
 FROM mcr.microsoft.com/vscode/devcontainers/dotnet:0-${VARIANT}
