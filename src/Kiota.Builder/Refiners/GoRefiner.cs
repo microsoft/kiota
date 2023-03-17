@@ -85,11 +85,6 @@ public class GoRefiner : CommonLanguageRefiner
                 false,
                 "Get",
                 "Set");
-            AddParentClassToErrorClasses(
-                    generatedCode,
-                    "ApiError",
-                    "github.com/microsoft/kiota-abstractions-go"
-            );
             AddConstructorsForDefaultValues(
                 generatedCode,
                 true,
@@ -122,6 +117,11 @@ public class GoRefiner : CommonLanguageRefiner
                 new[] { "github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer" },
                 new[] { "github.com/microsoft/kiota-abstractions-go/serialization.ParseNodeFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultDeserializer" });
             cancellationToken.ThrowIfCancellationRequested();
+            AddParentClassToErrorClasses(
+                    generatedCode,
+                    "ApiError",
+                    "github.com/microsoft/kiota-abstractions-go"
+            );
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",
