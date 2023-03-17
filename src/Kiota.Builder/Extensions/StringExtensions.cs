@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
@@ -150,7 +151,14 @@ public static class StringExtensions
     {
         if (string.IsNullOrEmpty(original)) return string.Empty;
 
-        var result = propertyCleanupRegex.Replace(original,
+        var result = original;
+        foreach (var norm in NormalizedSymbols)
+        {
+            if (result.Contains(norm.Key, StringComparison.OrdinalIgnoreCase))
+                result = NormalizeSymbol(result, norm.Value.Item1, norm.Value.Item2);
+        }
+
+        result = propertyCleanupRegex.Replace(result,
                                 static x => x.Groups.Keys.Contains(CleanupGroupName) ?
                                                 x.Groups[CleanupGroupName].Value.ToFirstCharacterUpperCase() :
                                                 string.Empty); //strip out any invalid characters, and replace any following one by its uppercase version
@@ -176,7 +184,21 @@ public static class StringExtensions
         {'8', "Eight"},
         {'9', "Nine"},
     };
+    public static string NormalizeSymbol(string original, string symbol, string replacement)
+    {
 
+        Regex startRegex = new(@"^(?<symbol>" + symbol + ")", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+        // Regex endRegex = new(@"(?<symbol>" + symbol + ")$", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+        // Regex midRegex = new(@"(?<symbol>" + symbol + ")", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+        var result = startRegex.Replace(original, replacement + "_");
+        // result = endRegex.Replace(result, "_" + replacement);
+        // result = midRegex.Replace(result, "_" + replacement + "_");
+        return result;
+    }
+    private static readonly Dictionary<string, (string, string)> NormalizedSymbols = new() {
+        {"+", ("\\+", "plus")},
+        {"-", ("\\-", "minus")},
+    };
     /// <summary>
     /// Cleanup the XML string
     /// </summary>

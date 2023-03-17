@@ -122,7 +122,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 !current.Name.Equals(refinedName, StringComparison.Ordinal))
             current.Name = refinedName;
     }
-
     protected static void CorrectNames(CodeElement current, Func<string, string> refineName,
         bool classNames = true,
         bool enumNames = true)
