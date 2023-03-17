@@ -1433,7 +1433,7 @@ public class KiotaBuilder
                 Name = (optionDescription?.Name is string name && !string.IsNullOrEmpty(name) ?
                         name :
                         enumValue).CleanupSymbolName(),
-                SerializationName = !string.IsNullOrEmpty(optionDescription?.Name) ? enumValue : string.Empty,
+                SerializationName = enumValue,
                 Documentation = new()
                 {
                     Description = optionDescription?.Description ?? string.Empty,

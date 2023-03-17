@@ -151,11 +151,11 @@ public static class StringExtensions
     {
         if (string.IsNullOrEmpty(original)) return string.Empty;
 
-        var result = original;
-        foreach (var norm in NormalizedSymbols)
+        string result = (String)original.Clone();
+        foreach (var norm in NormalizedTrailingSymbols)
         {
-            if (result.Contains(norm.Key, StringComparison.OrdinalIgnoreCase))
-                result = NormalizeSymbol(result, norm.Value.Item1, norm.Value.Item2);
+            if (result.StartsWith(norm.Key, StringComparison.OrdinalIgnoreCase))
+                result = NormalizeTrailingSymbol(result, norm.Value.Item1, norm.Value.Item2);
         }
 
         result = propertyCleanupRegex.Replace(result,
@@ -184,18 +184,13 @@ public static class StringExtensions
         {'8', "Eight"},
         {'9', "Nine"},
     };
-    public static string NormalizeSymbol(string original, string symbol, string replacement)
+    public static string NormalizeTrailingSymbol(string original, string symbol, string replacement)
     {
 
         Regex startRegex = new(@"^(?<symbol>" + symbol + ")", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
-        // Regex endRegex = new(@"(?<symbol>" + symbol + ")$", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
-        // Regex midRegex = new(@"(?<symbol>" + symbol + ")", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
-        var result = startRegex.Replace(original, replacement + "_");
-        // result = endRegex.Replace(result, "_" + replacement);
-        // result = midRegex.Replace(result, "_" + replacement + "_");
-        return result;
+        return startRegex.Replace((String)original.Clone(), replacement + "_");
     }
-    private static readonly Dictionary<string, (string, string)> NormalizedSymbols = new() {
+    private static readonly Dictionary<string, (string, string)> NormalizedTrailingSymbols = new() {
         {"+", ("\\+", "plus")},
         {"-", ("\\-", "minus")},
     };

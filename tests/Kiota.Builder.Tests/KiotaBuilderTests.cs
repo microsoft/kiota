@@ -103,6 +103,8 @@ components:
     StorageAccountType:
       type: string
       enum:
+        - +1
+        - -1
         - Standard_LRS
         - Standard_ZRS
         - Standard_GRS
@@ -112,6 +114,8 @@ components:
         name: AccountType
         modelAsString: false
         values:
+          - value: +1
+          - value: -1
           - value: Standard_LRS
             description: Locally redundant storage.
             name: StandardLocalRedundancy
@@ -131,9 +135,17 @@ components:
         var enumDef = modelsNS.FindChildByName<CodeEnum>("StorageAccountType", false);
         Assert.NotNull(enumDef);
         var firstOption = enumDef.Options.First();
-        Assert.Equal("Standard_LRS", firstOption.SerializationName);
-        Assert.Equal("StandardLocalRedundancy", firstOption.Name);
-        Assert.NotEmpty(firstOption.Documentation.Description);
+        Assert.Equal("+1", firstOption.SerializationName);
+        Assert.Equal("plus_1", firstOption.Name);
+        Assert.Empty(firstOption.Documentation.Description);
+        var secondOption = enumDef.Options.ElementAt(1);
+        Assert.Equal("-1", secondOption.SerializationName);
+        Assert.Equal("minus_1", secondOption.Name);
+        Assert.Empty(secondOption.Documentation.Description);
+        var thirdOption = enumDef.Options.ElementAt(2);
+        Assert.Equal("Standard_LRS", thirdOption.SerializationName);
+        Assert.Equal("StandardLocalRedundancy", thirdOption.Name);
+        Assert.NotEmpty(thirdOption.Documentation.Description);
     }
     private static async Task<Stream> GetDocumentStream(string document)
     {
