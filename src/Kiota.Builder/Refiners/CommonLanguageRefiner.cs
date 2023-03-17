@@ -109,6 +109,20 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         return false;
     }
+    private static void FixTypeName(CodeTypeBase current, Func<string, string> refineName)
+    {
+        if (current is CodeComposedTypeBase composed)
+        {
+            foreach (var type in composed.Types)
+            {
+                FixTypeName(type, refineName);
+            }
+        }
+        else if (refineName(current.Name) is string refinedName &&
+                !current.Name.Equals(refinedName, StringComparison.Ordinal))
+            current.Name = refinedName;
+    }
+
     protected static void CorrectNames(CodeElement current, Func<string, string> refineName,
         bool classNames = true,
         bool enumNames = true)
@@ -120,42 +134,32 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             currentClass.Name = refinedClassName;
         }
-        else if (current is CodeIndexer currentIndexer &&
-                refineName(currentIndexer.ReturnType.Name) is string refinedIndexerName &&
-                !currentIndexer.ReturnType.Name.Equals(refinedIndexerName, StringComparison.Ordinal))
+        else if (current is CodeIndexer currentIndexer && classNames)
         {
-            currentIndexer.ReturnType.Name = refinedIndexerName;
+            FixTypeName(currentIndexer.ReturnType, refineName);
         }
-        else if (current is CodeProperty currentProperty &&
-                classNames &&
-                refineName(currentProperty.Type.Name) is string refinedPropertyTypeName &&
-                !currentProperty.Type.Name.Equals(refinedPropertyTypeName, StringComparison.Ordinal))
+        else if (current is CodeProperty currentProperty && classNames)
         {
-            currentProperty.Type.Name = refinedPropertyTypeName;
+            FixTypeName(currentProperty.Type, refineName);
         }
-        else if (current is CodeMethod currentMethod &&
-                classNames)
+        else if (current is CodeMethod currentMethod && classNames)
         {
+            foreach (var param in currentMethod.PathQueryAndHeaderParameters)
+            {
+                FixTypeName(param.Type, refineName);
+            }
             foreach (var param in currentMethod.Parameters)
             {
-                if (refineName(param.Type.Name) is string refinedTypeName &&
-                    !param.Type.Name.Equals(refinedTypeName, StringComparison.Ordinal))
-                {
-                    param.Type.Name = refinedTypeName;
-                }
-            };
+                FixTypeName(param.Type, refineName);
+            }
             foreach (var errorMapping in currentMethod.ErrorMappings)
             {
-                if (refineName(errorMapping.Value.Name) is string refinedTypeName &&
-                    !errorMapping.Value.Name.Equals(refinedTypeName, StringComparison.Ordinal))
-                {
-                    errorMapping.Value.Name = refinedTypeName;
-                }
+                FixTypeName(errorMapping.Value, refineName);
             }
             if (refineName(currentMethod.ReturnType.Name) is string refinedMethodTypeName &&
                 !currentMethod.ReturnType.Name.Equals(refinedMethodTypeName, StringComparison.Ordinal))
             {
-                currentMethod.ReturnType.Name = refinedMethodTypeName;
+                FixTypeName(currentMethod.ReturnType, refineName);
             }
         }
         else if (current is CodeEnum currentEnum &&
