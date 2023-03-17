@@ -118,7 +118,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 FixTypeName(type, refineName);
             }
         }
-        else if (refineName(current.Name) is string refinedName &&
+
+        if (refineName(current.Name) is string refinedName &&
                 !current.Name.Equals(refinedName, StringComparison.Ordinal))
             current.Name = refinedName;
     }
