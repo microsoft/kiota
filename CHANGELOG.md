@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where java refiner would emit method's parameters types without normalizing the name.
 - Fixed a bug where java refiner would emit incorrect returning types and error mappings without normalizing the name.
 - Changed the name of the static query parameter factory method from `addQueryParameters` to `createQueryParameters` in PHP
+- Fixed a bug where java writer would emit incorrect serialization values for escaped enums
+- Fixed a bug where java writer would emit incorrect type names in case of compound types
 
 ## [1.0.1] - 2023-03-11
 

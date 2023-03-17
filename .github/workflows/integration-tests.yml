@@ -102,7 +102,6 @@ jobs:
         if: matrix.language == 'ruby'
         uses: ruby/setup-ruby@v1
         with:
-          working-directory: ./it/ruby
           ruby-version: "3.2.0"
           bundler-cache: true
       - name: Setup PHP
