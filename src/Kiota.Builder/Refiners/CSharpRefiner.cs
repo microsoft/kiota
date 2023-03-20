@@ -16,6 +16,16 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            MoveRequestBuilderPropertiesToBaseType(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseRequestBuilder",
+                    Declaration = new CodeType
+                    {
+                        Name = "Microsoft.Kiota.Abstractions",
+                        IsExternal = true
+                    }
+                });
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);

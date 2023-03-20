@@ -71,10 +71,14 @@ public class CSharpConventionService : CommonLanguageConventionService
         }
     }
     public override string TempDictionaryVarName => "urlTplParams";
-    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters)
+    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, string varName = "", params (CodeTypeBase, string, string)[] parameters)
     {
         if (pathParametersType == null) return;
-        writer.WriteLine($"var {TempDictionaryVarName} = new {pathParametersType.Name}({pathParametersReference});");
+        if (string.IsNullOrEmpty(varName))
+        {
+            varName = TempDictionaryVarName;
+            writer.WriteLine($"var {varName} = new {pathParametersType.Name}({pathParametersReference});");
+        }
         if (parameters.Any())
         {
             writer.WriteLines(parameters.Select(p =>
@@ -88,7 +92,7 @@ public class CSharpConventionService : CommonLanguageConventionService
                     else
                         nullCheck = $"if ({identName} is not null) ";
                 }
-                return $"{nullCheck}{TempDictionaryVarName}.Add(\"{name}\", {identName});";
+                return $"{nullCheck}{varName}.Add(\"{name}\", {identName});";
             }).ToArray());
         }
     }

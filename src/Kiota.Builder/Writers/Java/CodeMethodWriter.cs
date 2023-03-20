@@ -254,7 +254,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private static void AddNullChecks(CodeMethod codeElement, LanguageWriter writer)
     {
         if (!codeElement.IsOverload)
-            foreach (var parameter in codeElement.Parameters.Where(static x => !x.Optional && !x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters)).OrderBy(static x => x.Name))
+            foreach (var parameter in codeElement.Parameters.Where(static x => !x.Optional && !x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters)).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
                 writer.WriteLine($"Objects.requireNonNull({parameter.Name.ToFirstCharacterLowerCase()});");
     }
     private static void WriteRequestBuilderConstructorCall(CodeMethod codeElement, LanguageWriter writer)
@@ -332,7 +332,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
             parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
             currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
-                currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam)
+            currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam)
         {
             var pathParameters = currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path));
             if (pathParameters.Any())
@@ -341,7 +341,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                     $"this.{pathParametersProp.Name.ToFirstCharacterLowerCase()}.",
                                                     pathParameters
-                                                                .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
+                                                                .Select(static x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
                                                                 .ToArray());
         }
     }
