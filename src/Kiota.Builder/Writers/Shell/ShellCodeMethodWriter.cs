@@ -555,7 +555,8 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 Enumerable.Empty<CodeMethod>();
             AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
-            var duplicates = builderMethods.Select(m=> m.SimpleName).Aggregate(new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase), (d, n)=> {
+            var duplicates = builderMethods.Select(m => m.SimpleName).Aggregate(new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase), (d, n) =>
+            {
                 if (string.IsNullOrWhiteSpace(n)) return d;
                 if (d.ContainsKey(n))
                 {
