@@ -1,60 +1,66 @@
 {
-	"name": "C# (.NET)",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"args": { 
-			"VARIANT": "6.0",
-			"NODE_VERSION": "16"
-		}
-	},
-
-	// Set *default* container specific settings.json values on container create.
-	"settings": {},
-
-	// Add the IDs of extensions you want installed when the container is created.
-	"extensions": [
-		"ms-dotnettools.csharp",
-		"formulahendry.dotnet-test-explorer",
-		"editorconfig.editorconfig",
-		"cschleiden.vscode-github-actions",
-		"davidanson.vscode-markdownlint",
-		"esbenp.prettier-vscode",
-		"ms-python.python",
-		"shengchen.vscode-checkstyle",
-		"dbaeumer.vscode-eslint",
-		"vscjava.vscode-java-pack",
-		"github.copilot",
-		"vector-of-bool.gitflow",
-		"waderyan.gitblame",
-		"donjayamanne.githistory",
-		"eamodio.gitlens",
-		"codezombiech.gitignore",
-		"golang.go",
-		"vscjava.vscode-gradle",
-		"kosunix.guid",
-		"wix.vscode-import-cost",
-		"ms-vsliveshare.vsliveshare",
-		"eg2.vscode-npm-script",
-		"fknop.vscode-npm",
-		"ms-vscode.powershell",
-		"rebornix.ruby",
-		"visualstudioexptteam.vscodeintellicode",
-		"streetsidesoftware.code-spell-checker",
-		"sswg.swift-lang",
-		"ms-dotnettools.blazorwasm-companion"
-	],
-	"remoteUser": "vscode",
-	"features": {
-		"github-cli": "latest",
-        "gradle": "latest",
-		"python": "latest",
-		"golang": "latest",
-		"java": "latest",
-		"ruby": "latest",
-		"rust": "latest",
-		"powershell": "latest",
-        "swift": "latest"
-	},
-    "postCreateCommand":
-        "git config pull.rebase false && git config push.default simple && git config remote.origin.prune true && git config commit.gpgsign true && git config tag.gpgsign true && git config core.safecrlf false && [ ! -d ./samples ] && gh repo clone microsoft/kiota-samples samples"
+  "name": "C# (.NET)",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "VARIANT": "7.0",
+      "NODE_VERSION": "18"
+    }
+  },
+  "customizations": {
+    "codespaces": {
+      "repositories": {
+        "microsoft/kiota-samples": {
+          "permissions": {
+            "contents": "read"
+          }
+        }
+      }
+    },
+    "vscode": {
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "formulahendry.dotnet-test-explorer",
+        "editorconfig.editorconfig",
+        "cschleiden.vscode-github-actions",
+        "davidanson.vscode-markdownlint",
+        "esbenp.prettier-vscode",
+        "ms-python.python",
+        "shengchen.vscode-checkstyle",
+        "dbaeumer.vscode-eslint",
+        "vscjava.vscode-java-pack",
+        "github.copilot",
+        "vector-of-bool.gitflow",
+        "waderyan.gitblame",
+        "donjayamanne.githistory",
+        "eamodio.gitlens",
+        "codezombiech.gitignore",
+        "golang.go",
+        "vscjava.vscode-gradle",
+        "kosunix.guid",
+        "wix.vscode-import-cost",
+        "ms-vsliveshare.vsliveshare",
+        "eg2.vscode-npm-script",
+        "fknop.vscode-npm",
+        "ms-vscode.powershell",
+        "rebornix.ruby",
+        "visualstudioexptteam.vscodeintellicode",
+        "streetsidesoftware.code-spell-checker",
+        "sswg.swift-lang",
+        "ms-dotnettools.blazorwasm-companion"
+      ]
+    }
+  },
+  "remoteUser": "vscode",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers-contrib/features/gradle-sdkman:2": {},
+    "ghcr.io/devcontainers/features/python:1": {},
+    "ghcr.io/devcontainers/features/go:1": {},
+    "ghcr.io/devcontainers/features/java:1": {},
+    "ghcr.io/devcontainers/features/rust:1": {},
+    // disabled swift & ruby as their are failing for now
+    "ghcr.io/devcontainers/features/powershell:1": {}
+  }
 }
