@@ -63,8 +63,6 @@ public class TypeScriptLanguageRefinerTests
 
         model.AddMethod(new CodeMethod
         {
-            Name = "factory",
-            Kind = CodeMethodKind.Factory,
             IsAsync = false,
             IsStatic = true,
             ReturnType = new CodeType
