@@ -232,7 +232,7 @@ public class GitHubSearchProvider : ISearchProvider
         {
             var reposPage = await gitHubClient.Search.Repositories.GetAsync(x =>
             {
-                x.QueryParameters.Q = $"{term} topic:{topic}";
+                x.QueryParameters.Q = $"{term} topic:{topic} fork:true";
                 x.QueryParameters.Page = pageNumber;
             }, cancellationToken).ConfigureAwait(false);
             if (reposPage == null)

@@ -2054,7 +2054,7 @@ public class CodeMethodWriterTests : IDisposable
         _codeMethodWriter.WriteCodeElement(constructor.First(), languageWriter);
         var result = stringWriter.ToString();
 
-        Assert.Contains("public static function addQueryParameters(?bool $count = null, ?array $select = null, ?int $top = null)", result);
+        Assert.Contains("public static function createQueryParameters(?bool $count = null, ?array $select = null, ?int $top = null)", result);
         Assert.Contains("return new TestRequestQueryParameter($count, $select, $top);", result);
     }
 
