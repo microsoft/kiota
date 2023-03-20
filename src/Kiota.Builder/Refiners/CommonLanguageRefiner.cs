@@ -1469,6 +1469,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 foreach (var configurationParameter in configurationParameters)
                 {
                     var newType = (CodeType)configurationParameterType.Clone();
+                    newType.ActionOf = configurationParameter.Type.ActionOf;
                     newType.GenericTypeParameterValues.Add(genericTypeParamValue);
                     configurationParameter.Type = newType;
                 }

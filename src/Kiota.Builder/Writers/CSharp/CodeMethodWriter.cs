@@ -8,7 +8,14 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.CSharp;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionService>
 {
-    public CodeMethodWriter(CSharpConventionService conventionService) : base(conventionService) { }
+    /// <summary>
+    /// Flag to avoid pushing a breaking change, remove it and remove the condition that depends on it with V2
+    /// </summary>
+    private readonly bool IsRequestConfigurationGeneric;
+    public CodeMethodWriter(CSharpConventionService conventionService, bool isRequestConfigurationGeneric = false) : base(conventionService)
+    {
+        IsRequestConfigurationGeneric = isRequestConfigurationGeneric;
+    }
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
@@ -420,17 +427,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         if (requestParams.requestConfiguration != null)
         {
             writer.StartBlock($"if ({requestParams.requestConfiguration.Name} != null) {{");
-            writer.WriteLines($"var {RequestConfigVarName} = new {requestParams.requestConfiguration.Type.Name.ToFirstCharacterUpperCase()}();",
+            var requestConfigType = conventions.GetTypeString(requestParams.requestConfiguration.Type, codeElement, false, true, false).ToFirstCharacterUpperCase();
+            writer.WriteLines($"var {RequestConfigVarName} = new {requestConfigType}();",
                             $"{requestParams.requestConfiguration.Name}.Invoke({RequestConfigVarName});");
             var queryString = requestParams.QueryParameters;
-            var headers = requestParams.Headers;
-            var options = requestParams.Options;
-            if (queryString != null)
-                writer.WriteLine($"{RequestInfoVarName}.AddQueryParameters({RequestConfigVarName}.{queryString.Name.ToFirstCharacterUpperCase()});");
-            if (options != null)
-                writer.WriteLine($"{RequestInfoVarName}.AddRequestOptions({RequestConfigVarName}.{options.Name.ToFirstCharacterUpperCase()});");
-            if (headers != null)
-                writer.WriteLine($"{RequestInfoVarName}.AddHeaders({RequestConfigVarName}.{headers.Name.ToFirstCharacterUpperCase()});");
+            if (queryString != null || IsRequestConfigurationGeneric)
+                writer.WriteLine($"{RequestInfoVarName}.AddQueryParameters({RequestConfigVarName}.QueryParameters);");
+            writer.WriteLines($"{RequestInfoVarName}.AddRequestOptions({RequestConfigVarName}.Options);",
+                            $"{RequestInfoVarName}.AddHeaders({RequestConfigVarName}.Headers);");
             writer.CloseBlock();
         }
         writer.WriteLine($"return {RequestInfoVarName};");

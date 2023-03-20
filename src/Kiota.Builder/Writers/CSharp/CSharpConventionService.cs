@@ -133,7 +133,7 @@ public class CSharpConventionService : CommonLanguageConventionService
     {
         return GetTypeString(code, targetElement, includeCollectionInformation, true);
     }
-    public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool includeNullableInformation)
+    public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool includeNullableInformation, bool includeActionInformation = true)
     {
         if (code is CodeComposedTypeBase)
             throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
@@ -148,9 +148,12 @@ public class CSharpConventionService : CommonLanguageConventionService
                 CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
                 _ => string.Empty,
             };
-            if (currentType.ActionOf)
-                return $"Action<{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}>";
-            return $"{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}";
+            var genericParameters = currentType.GenericTypeParameterValues.Any() ?
+                $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
+                string.Empty;
+            if (currentType.ActionOf && includeActionInformation)
+                return $"Action<{collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix}>";
+            return $"{collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix}";
         }
 
         throw new InvalidOperationException($"type of type {code.GetType()} is unknown");

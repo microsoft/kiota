@@ -20,6 +20,31 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            MoveRequestBuilderPropertiesToBaseType(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseRequestBuilder",
+                    Declaration = new CodeType
+                    {
+                        Name = "Microsoft.Kiota.Abstractions",
+                        IsExternal = true
+                    }
+                });
+            RemoveRequestConfigurationClasses(generatedCode,
+                new CodeUsing
+                {
+                    Name = "RequestConfiguration",
+                    Declaration = new CodeType
+                    {
+                        Name = "Microsoft.Kiota.Abstractions",
+                        IsExternal = true
+                    }
+                },
+                new CodeType
+                {
+                    Name = "DefaultQueryParameters",
+                    IsExternal = true,
+                });
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddDefaultImports(generatedCode, additionalUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
