@@ -3,28 +3,28 @@ name: integration-tests
 on:
   workflow_dispatch:
   push:
-  #   branches: [main]
-  #   paths-ignore:
-  #     [
-  #       "abstractions/**",
-  #       "authentication/**",
-  #       "serialization/**",
-  #       "http/**",
-  #       "**.md",
-  #       ".vscode/**",
-  #       "**.svg",
-  #     ]
-  # pull_request:
-  #   paths-ignore:
-  #     [
-  #       "abstractions/**",
-  #       "authentication/**",
-  #       "serialization/**",
-  #       "http/**",
-  #       "**.md",
-  #       ".vscode/**",
-  #       "**.svg",
-  #     ]
+    branches: [main]
+    paths-ignore:
+      [
+        "abstractions/**",
+        "authentication/**",
+        "serialization/**",
+        "http/**",
+        "**.md",
+        ".vscode/**",
+        "**.svg",
+      ]
+  pull_request:
+    paths-ignore:
+      [
+        "abstractions/**",
+        "authentication/**",
+        "serialization/**",
+        "http/**",
+        "**.md",
+        ".vscode/**",
+        "**.svg",
+      ]
 
 concurrency:
   # Only run once for latest commit per ref and cancel other (previous) runs.
