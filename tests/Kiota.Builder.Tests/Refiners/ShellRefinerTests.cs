@@ -137,7 +137,7 @@ public class ShellRefinerTests
         Assert.Contains("Put", methods.Single(m => m.OriginalMethod != null && m.OriginalMethod.Name == "PutTest").SimpleName);
         Assert.Contains("Create", methods.Single(m => m.OriginalMethod != null && m.OriginalMethod.Name == "PostExecutor").SimpleName);
         Assert.Contains("List", methods.Single(m => m.OriginalMethod != null && m.OriginalMethod.Name == "GetExecutor").SimpleName);
-        Assert.Contains("Users-idx", methods.Single(m => m.OriginalIndexer != null && m.OriginalIndexer.Name == "Users-idx").SimpleName);
+        Assert.Contains("UsersIdx", methods.Single(m => m.OriginalIndexer != null && m.OriginalIndexer.Name == "Users-idx").SimpleName);
         Assert.Contains("User", methods.Single(m => m.AccessedProperty != null && m.AccessedProperty.Name == "User").SimpleName);
         Assert.Contains(string.Empty, methods.Single(m => m.OriginalMethod != null && m.OriginalMethod.Kind == CodeMethodKind.ClientConstructor).SimpleName);
         Assert.Contains(string.Empty, methods.Single(m => m.Kind == CodeMethodKind.ClientConstructor).SimpleName);

@@ -141,7 +141,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             clone.ReturnType = CreateCommandType();
             clone.Kind = CodeMethodKind.CommandBuilder;
             clone.OriginalMethod = requestMethod;
-            clone.SimpleName = cmdName;
+            clone.SimpleName = cmdName.CleanupSymbolName();
             clone.ClearParameters();
             currentClass.AddMethod(clone);
             currentClass.RemoveChildElement(requestMethod);
@@ -171,7 +171,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
                 Documentation = (CodeDocumentation)indexer.Documentation.Clone(),
                 // ReturnType setter assigns the parent
                 ReturnType = CreateCommandType(),
-                SimpleName = indexer.Name
+                SimpleName = indexer.Name.CleanupSymbolName()
             };
             method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
 
@@ -192,7 +192,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
                 Documentation = (CodeDocumentation)navProperty.Documentation.Clone(),
                 ReturnType = CreateCommandType(),
                 AccessedProperty = navProperty,
-                SimpleName = navProperty.Name,
+                SimpleName = navProperty.Name.CleanupSymbolName(),
                 Parent = currentClass
             };
             currentClass.AddMethod(method);

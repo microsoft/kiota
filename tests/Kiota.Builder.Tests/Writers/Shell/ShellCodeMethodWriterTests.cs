@@ -227,7 +227,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             ReturnType = new CodeType
             {
-                Name = "TestRequestBuilder",
+                Name = "TestItemRequestBuilder",
                 TypeDefinition = type
             },
             IndexType = new CodeType
@@ -241,7 +241,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
 
-        Assert.Contains("var builder = new TestRequestBuilder", result);
+        Assert.Contains("var builder = new TestItemRequestBuilder", result);
         Assert.Contains("var commands = new List<Command>();", result);
         Assert.Contains("commands.Add(builder.BuildTestMethod1());", result);
         Assert.Contains("commands.AddRange(builder.BuildTestMethod2());", result);
@@ -455,6 +455,71 @@ public class ShellCodeMethodWriterTests : IDisposable
     }
 
     [Fact]
+    public void WritesNavCommandThatSkipsReusedNavCommandInstance()
+    {
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.SimpleName = "User";
+
+        var ns = CodeNamespace.InitRootNamespace();
+        ns.Name = "Test.Name.Sub";
+        var codeClass = method.Parent as CodeClass;
+        var navTd = new CodeClass
+        {
+            Name = "TestNavItemRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+            Parent = codeClass.Parent
+        };
+        method.AccessedProperty = new CodeProperty
+        {
+            Name = "TestProperty",
+            Type = new CodeType
+            {
+                Name = "TestNavRequestBuilder",
+                TypeDefinition = navTd
+            }
+        };
+
+        navTd.AddMethod(new CodeMethod
+        {
+            Kind = CodeMethodKind.CommandBuilder,
+            Name = "BuildNavTestMethod",
+            SimpleName = "Test",
+            ReturnType = new CodeType(),
+            AccessedProperty = new CodeProperty
+            {
+                Name = "TestSubProperty1",
+                Type = new CodeType
+                {
+                    Name = "TestSubRequestBuilder"
+                }
+            }
+        });
+        navTd.AddMethod(new CodeMethod
+        {
+            Kind = CodeMethodKind.CommandBuilder,
+            Name = "BuildExecutableTestMethod",
+            SimpleName = "Test",
+            ReturnType = new CodeType(),
+            OriginalMethod = new CodeMethod
+            {
+                Kind = CodeMethodKind.RequestExecutor,
+                HttpMethod = method.HttpMethod,
+                ReturnType = new CodeType(),
+                Parent = method.Parent
+            }
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("var builder = new TestNavRequestBuilder();", result);
+        Assert.Contains("command.AddCommand(builder.BuildExecutableTestMethod());", result);
+        Assert.Contains("return command;", result);
+        Assert.DoesNotContain("BuildNavTestMethod", result);
+    }
+
+    [Fact]
     public void WritesContainerCommands()
     {
         method.Kind = CodeMethodKind.CommandBuilder;
@@ -468,13 +533,13 @@ public class ShellCodeMethodWriterTests : IDisposable
         ns2.AddClass(t2);
         var t1Sub = new CodeClass { Name = "TestClass1", Kind = CodeClassKind.RequestBuilder };
         ns3.AddClass(t1Sub);
-        t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod1", ReturnType = new CodeType() });
-        t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod2", ReturnType = new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array } });
+        t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethodSingle", ReturnType = new CodeType() });
+        t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethodCollection", ReturnType = new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array } });
         method.AccessedProperty = new CodeProperty
         {
             Type = new CodeType
             {
-                Name = "TestRequestBuilder",
+                Name = "TestNavRequestBuilder",
                 TypeDefinition = t1Sub
             }
         };
@@ -485,9 +550,9 @@ public class ShellCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var builder = new TestRequestBuilder", result);
-        Assert.Contains("command.AddCommand(builder.BuildTestMethod1());", result);
-        Assert.Contains("foreach (var cmd in builder.BuildTestMethod2())", result);
+        Assert.Contains("var builder = new TestNavRequestBuilder", result);
+        Assert.Contains("command.AddCommand(builder.BuildTestMethodSingle());", result);
+        Assert.Contains("foreach (var cmd in builder.BuildTestMethodCollection())", result);
         Assert.Contains("command.AddCommand(cmd);", result);
         Assert.Contains("return command;", result);
     }

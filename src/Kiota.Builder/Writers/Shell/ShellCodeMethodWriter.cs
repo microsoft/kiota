@@ -210,21 +210,20 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     private (string builderName, CodeMethod method)? GetCommandBuilderFromIndexer(CodeMethod codeElement, LanguageWriter writer, CodeClass parent)
     {
         // We match based on SimpleName which should contain at least one valid identifier character.
-        if (string.IsNullOrWhiteSpace(codeElement.SimpleName.CleanupSymbolName())) return null;
+        if (string.IsNullOrWhiteSpace(codeElement.SimpleName)) return null;
         // Assumption is that there can only be 1 indexer per code class. This code will throw if
         // multiple indexers exist.
-        var indexer = parent.GetChildElements().OfType<CodeMethod>()
+        var indexer = parent.GetChildElements(true).OfType<CodeMethod>()
                 .SingleOrDefault(m => m.OriginalIndexer != null)?.OriginalIndexer;
 
         if (indexer is null) return null;
 
         // Find the first non-list indexer command that matches by the name
-        // We compare the SimpleName as is to allow tweaking names in the refiner
-        // to control the outcome. The actual commands will not be the same as the
-        // SimpleName.
+        // The actual command names will not be the same as the SimpleName.
+        // There shouldn't be more than 1 match that is a non-list command.
         var match = indexer.ReturnType.AllTypes.First().TypeDefinition?.GetChildElements(true).OfType<CodeMethod>()
                 .Where(m => !m.ReturnType.IsCollection && m.HttpMethod == null) // Guard against pulling in executable commands.
-                .FirstOrDefault(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase));
+                .SingleOrDefault(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase));
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
         if (match is null) return null;
 
@@ -241,54 +240,54 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
 #pragma warning restore CA1822
         // We match based on SimpleName which should contain at least one valid
         // identifier character in the name.
-        if (string.IsNullOrWhiteSpace(codeElement.SimpleName.CleanupSymbolName())) return null;
+        if (string.IsNullOrWhiteSpace(codeElement.SimpleName)) return null;
         // Assumption is that there can only be 1 nav property with a specific
         // name per code class. This code will throw if multiple nav properties
         // exist with the same name.
-        var property = parent.GetChildElements().OfType<CodeMethod>()
-                .SingleOrDefault(m => m != codeElement && m.IsOfKind(CodeMethodKind.CommandBuilder) && m.AccessedProperty != null && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase));
-
-        if (property is null) return null;
-
-        return property;
+        return parent.GetChildElements(true).OfType<CodeMethod>()
+                .SingleOrDefault(m =>
+                {
+                    var isCommandBuilder = m.IsOfKind(CodeMethodKind.CommandBuilder);
+                    var isNav = m.AccessedProperty != null;
+                    var nameMatch = string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase);
+                    return m != codeElement && isCommandBuilder && isNav && nameMatch;
+                });
     }
 
     private void AddMatchingIndexerCommandsAsSubCommands(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, CodeMethod? exclude = null)
     {
         // We match based on SimpleName which should contain at least one valid identifier character.
-        if (string.IsNullOrWhiteSpace(codeElement.SimpleName.CleanupSymbolName())) return;
-        var indexers = parent.GetChildElements().OfType<CodeMethod>()
-                .Where(m => m.OriginalIndexer != null)
-                .Select(m => m.OriginalIndexer!)
-            ?? Enumerable.Empty<CodeIndexer>();
+        if (string.IsNullOrWhiteSpace(codeElement.SimpleName)) return;
 
-        foreach (var indexer in indexers)
+        // A code class should only have 1 indexer. If there's more than 1 indexer, this code will fail.
+        var indexer = parent.GetChildElements(true).OfType<CodeMethod>()
+                .SingleOrDefault(m => m.OriginalIndexer != null)?.OriginalIndexer;
+        if (indexer is null) return;
+
+        var matches = indexer.ReturnType.AllTypes.First().TypeDefinition?.GetChildElements().OfType<CodeMethod>()
+                .Where(m => m != exclude && m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase))
+                    ?? Enumerable.Empty<CodeMethod>();
+        // If there are no commands in this indexer that match a command in the current class, skip the indexer.
+        if (!matches.Any()) return;
+
+        var targetClass = conventions.GetTypeString(indexer.ReturnType, codeElement);
+        var builderName = NormalizeToIdentifier(indexer.Name);
+        if (exclude is null)
         {
-            var matches = indexer.ReturnType.AllTypes.First().TypeDefinition?.GetChildElements(true).OfType<CodeMethod>()
-                    .Where(m => m != exclude && m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase))
-                        ?? Enumerable.Empty<CodeMethod>();
-            // If there are no commands in this indexer that match a command in the current class, skip the indexer.
-            if (!matches.Any()) continue;
-
-            var targetClass = conventions.GetTypeString(indexer.ReturnType, codeElement);
-            var builderName = NormalizeToIdentifier(indexer.Name);
-            if (exclude is null)
+            AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {builderName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+        }
+        foreach (var method in matches)
+        {
+            if (method.ReturnType.IsCollection)
             {
-                AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {builderName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+                writer.WriteLine($"foreach (var {builderName}Cmd in {builderName}.{method.Name}())");
+                writer.StartBlock();
+                writer.WriteLine($"{CommandVariableName}.AddCommand({builderName}Cmd);");
+                writer.CloseBlock();
             }
-            foreach (var method in matches)
+            else
             {
-                if (method.ReturnType.IsCollection)
-                {
-                    writer.WriteLine($"foreach (var {builderName}Cmd in {builderName}.{method.Name}())");
-                    writer.StartBlock();
-                    writer.WriteLine($"{CommandVariableName}.AddCommand({builderName}Cmd);");
-                    writer.CloseBlock();
-                }
-                else
-                {
-                    writer.WriteLine($"{CommandVariableName}.AddCommand({builderName}.{method.Name}());");
-                }
+                writer.WriteLine($"{CommandVariableName}.AddCommand({builderName}.{method.Name}());");
             }
         }
     }
@@ -556,19 +555,25 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 Enumerable.Empty<CodeMethod>();
             AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
-            var duplicates = builderMethods
-                .Where(m => !string.IsNullOrWhiteSpace(m.SimpleName.CleanupSymbolName()))
-                .Select(m => m.SimpleName)
-                .GroupBy(n => n, StringComparer.OrdinalIgnoreCase)
-                .Where(g => g.Count() > 1)
-                .Select(g => g.Key)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, int> duplicates = new(StringComparer.OrdinalIgnoreCase);
+            foreach (var m in builderMethods)
+            {
+                if (string.IsNullOrWhiteSpace(m.SimpleName)) continue;
+                if (duplicates.ContainsKey(m.SimpleName))
+                {
+                    duplicates[m.SimpleName] += 1;
+                }
+                else
+                {
+                    duplicates[m.SimpleName] = 1;
+                }
+            }
 
             foreach (var method in builderMethods)
             {
                 // If the nav property has more than 1 match, then it means it
                 // has been initialized by another command builder. Skip it.
-                if (method.AccessedProperty is not null && duplicates.Contains(method.SimpleName)) continue;
+                if (method.AccessedProperty is not null && duplicates.TryGetValue(method.SimpleName, out var count) && count > 1) continue;
                 if (method.ReturnType.IsCollection)
                 {
                     writer.WriteLine($"foreach (var cmd in {BuilderInstanceName}.{method.Name}())");
@@ -612,7 +617,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             .OrderBy(static m => m.Name) ??
             Enumerable.Empty<CodeMethod>();
         var parentMethodNames = parent.Methods
-            .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && !string.IsNullOrWhiteSpace(m.SimpleName.CleanupSymbolName()))
+            .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && !string.IsNullOrWhiteSpace(m.SimpleName))
             .Select(m => m.SimpleName)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
