@@ -555,19 +555,19 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 Enumerable.Empty<CodeMethod>();
             AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
-            Dictionary<string, int> duplicates = new(StringComparer.OrdinalIgnoreCase);
-            foreach (var m in builderMethods)
-            {
-                if (string.IsNullOrWhiteSpace(m.SimpleName)) continue;
-                if (duplicates.ContainsKey(m.SimpleName))
+            var duplicates = builderMethods.Select(m=> m.SimpleName).Aggregate(new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase), (d, n)=> {
+                if (string.IsNullOrWhiteSpace(n)) return d;
+                if (d.ContainsKey(n))
                 {
-                    duplicates[m.SimpleName] += 1;
+                    d[n] += 1;
                 }
                 else
                 {
-                    duplicates[m.SimpleName] = 1;
+                    d[n] = 1;
                 }
-            }
+
+                return d;
+            });
 
             foreach (var method in builderMethods)
             {
