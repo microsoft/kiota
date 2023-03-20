@@ -941,16 +941,18 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         !currentClass.ContainsMember(pm.Name) &&
                         !currentClass.Methods.Any(cm => cm.Name.Equals(pm.Name, StringComparison.OrdinalIgnoreCase))))
                 {
-                    m.Parent = currentClass;
-                    currentClass.AddMethod(m);
+                    var newM = (CodeMethod)m.Clone();
+                    newM.Parent = currentClass;
+                    currentClass.AddMethod(newM);
                 }
 
                 foreach (var u in currentParent
                     .Usings
                     .Where(pu => !currentClass.Usings.Any(cu => cu.Name.Equals(pu.Name, StringComparison.OrdinalIgnoreCase))))
                 {
-                    u.Parent = currentClass;
-                    currentClass.AddUsing(u);
+                    var newU = (CodeUsing)u.Clone();
+                    newU.Parent = currentClass;
+                    currentClass.AddUsing(newU);
                 }
             }
         }

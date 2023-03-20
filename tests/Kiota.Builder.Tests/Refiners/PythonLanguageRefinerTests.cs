@@ -123,9 +123,9 @@ public class PythonLanguageRefinerTests
         {
             TypeDefinition = otherModel
         };
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
 
-        Assert.Contains(model.Properties, x => x.Name.Equals("otherProp"));
+        Assert.Contains(model.Properties, x => x.Name.Equals("other_prop"));
         Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));
         Assert.Contains(model.Usings, x => x.Name.Equals("otherNs"));
     }
