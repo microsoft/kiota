@@ -431,13 +431,13 @@ public static class KiotaHost
         var includePatterns = new Option<List<string>>(
             "--include-path",
             () => defaultIncludePatterns.ToList(),
-            "The paths to include in the generation. Glob patterns accepted. Accepts multiple values.");
+            "The paths to include in the generation. Glob patterns accepted. Accepts multiple values. Append #OPERATION to the pattern to specify the operation to include. e.g. users/*/messages#GET");
         includePatterns.AddAlias("-i");
 
         var excludePatterns = new Option<List<string>>(
             "--exclude-path",
             () => defaultExcludePatterns.ToList(),
-            "The paths to exclude from the generation. Glob patterns accepted. Accepts multiple values.");
+            "The paths to exclude from the generation. Glob patterns accepted. Accepts multiple values. Append #OPERATION to the pattern to specify the operation to exclude. e.g. users/*/messages#GET");
         excludePatterns.AddAlias("-e");
         return (includePatterns, excludePatterns);
     }

@@ -80,11 +80,6 @@ public class KiotaBuilder
             return (0, null, false);
         StopLogAndReset(sw, $"step {++stepId} - reading the stream - took");
 
-        // Create patterns
-        sw.Start();
-        var pathPatterns = BuildGlobPatterns();
-        StopLogAndReset(sw, $"step {++stepId} - parsing URI patterns - took");
-
         // Parse OpenAPI
         sw.Start();
         if (originalDocument == null)
@@ -112,7 +107,7 @@ public class KiotaBuilder
 
             // filter paths
             sw.Start();
-            FilterPathsByPatterns(openApiDocument, pathPatterns.Item1, pathPatterns.Item2);
+            FilterPathsByPatterns(openApiDocument);
             StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
 
             SetApiRootUrl();
@@ -227,30 +222,56 @@ public class KiotaBuilder
         };
         await lockManagementService.WriteLockFileAsync(config.OutputPath, configurationLock, cancellationToken);
     }
-    public (List<Glob>, List<Glob>) BuildGlobPatterns()
+    private static readonly GlobComparer globComparer = new();
+    private static Dictionary<Glob, HashSet<OperationType>> GetFilterPatternsFromConfiguration(HashSet<string> configPatterns)
     {
-        var includePatterns = new List<Glob>();
-        var excludePatterns = new List<Glob>();
-        if (config.IncludePatterns?.Any() ?? false)
+        return configPatterns.Select(static x =>
         {
-            includePatterns.AddRange(config.IncludePatterns.Select(static x => Glob.Parse(x)));
-        }
-        if (config.ExcludePatterns?.Any() ?? false)
-        {
-            excludePatterns.AddRange(config.ExcludePatterns.Select(static x => Glob.Parse(x)));
-        }
-        return (includePatterns, excludePatterns);
+            var splat = x.Split('#', StringSplitOptions.RemoveEmptyEntries);
+            var glob = Glob.Parse(splat[0]);
+            var operationTypes = splat.Length > 1 ?
+                                    splat[1].Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                        .Select(static y => Enum.TryParse<OperationType>(y.Trim(), true, out var op) ? op : default(OperationType?)) :
+                                    Enumerable.Empty<OperationType?>();
+            return (glob, operationTypes);
+        }).GroupBy(static x => x.glob, globComparer)
+        .ToDictionary(static x => x.Key,
+                    static x => new HashSet<OperationType>(x.SelectMany(static y => y.operationTypes)
+                                                            .Where(static y => y != null && y.HasValue)
+                                                            .Select(static y => y!.Value)),
+                    globComparer);
     }
-    public static void FilterPathsByPatterns(OpenApiDocument doc, List<Glob> includePatterns, List<Glob> excludePatterns)
+    internal void FilterPathsByPatterns(OpenApiDocument doc)
     {
+        var includePatterns = GetFilterPatternsFromConfiguration(config.IncludePatterns);
+        var excludePatterns = GetFilterPatternsFromConfiguration(config.ExcludePatterns);
         if (!includePatterns.Any() && !excludePatterns.Any()) return;
 
-        doc.Paths.Keys.Except(
-            doc.Paths.Keys.Where(x => (!includePatterns.Any() || includePatterns.Any(y => y.IsMatch(x))) &&
-                                (!excludePatterns.Any() || !excludePatterns.Any(y => y.IsMatch(x))))
-        )
-        .ToList()
-        .ForEach(x => doc.Paths.Remove(x));
+        var nonOperationIncludePatterns = includePatterns.Where(static x => !x.Value.Any()).Select(static x => x.Key).ToList();
+        var nonOperationExcludePatterns = excludePatterns.Where(static x => !x.Value.Any()).Select(static x => x.Key).ToList();
+
+        if (nonOperationIncludePatterns.Any() || nonOperationExcludePatterns.Any())
+            doc.Paths.Keys.Where(x => (nonOperationIncludePatterns.Any() && !nonOperationIncludePatterns.Any(y => y.IsMatch(x))) ||
+                                (nonOperationExcludePatterns.Any() && nonOperationExcludePatterns.Any(y => y.IsMatch(x))))
+            .ToList()
+            .ForEach(x => doc.Paths.Remove(x));
+
+        var operationIncludePatterns = includePatterns.Where(static x => x.Value.Any()).ToList();
+        var operationExcludePatterns = excludePatterns.Where(static x => x.Value.Any()).ToList();
+
+        if (operationIncludePatterns.Any() || operationExcludePatterns.Any())
+        {
+            foreach (var path in doc.Paths)
+            {
+                var pathString = path.Key;
+                path.Value.Operations.Keys.Where(x => (operationIncludePatterns.Any() && !operationIncludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x))) ||
+                                        (operationExcludePatterns.Any() && operationExcludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x))))
+                .ToList()
+                .ForEach(x => path.Value.Operations.Remove(x));
+            }
+            foreach (var path in doc.Paths.Where(static x => !x.Value.Operations.Any()).ToList())
+                doc.Paths.Remove(path.Key);
+        }
     }
     internal void SetApiRootUrl()
     {
@@ -879,7 +900,7 @@ public class KiotaBuilder
             typeNames.AddRange(typeSchema.AnyOf.Select(x => x.Type)); // double is sometimes an anyof string, number and enum
         if (typeSchema?.OneOf?.Any() ?? false)
             typeNames.AddRange(typeSchema.OneOf.Select(x => x.Type)); // double is sometimes an oneof string, number and enum
-        // first value that's not null, and not "object" for primitive collections, the items type matters
+                                                                      // first value that's not null, and not "object" for primitive collections, the items type matters
         var typeName = typeNames.FirstOrDefault(static x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
 
         var isExternal = false;

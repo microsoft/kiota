@@ -4804,8 +4804,7 @@ paths:
                 "*users*"
             }
         }, _httpClient);
-        var filters = builder.BuildGlobPatterns();
-        KiotaBuilder.FilterPathsByPatterns(document, filters.Item1, filters.Item2);
+        builder.FilterPathsByPatterns(document);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.Null(codeModel.FindNamespaceByName("TestSdk.groups"));
@@ -4890,11 +4889,143 @@ paths:
                 "*groups*"
             }
         }, _httpClient);
-        var filters = builder.BuildGlobPatterns();
-        KiotaBuilder.FilterPathsByPatterns(document, filters.Item1, filters.Item2);
+        builder.FilterPathsByPatterns(document);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.Null(codeModel.FindNamespaceByName("TestSdk.groups"));
+    }
+    [Fact]
+    public void SupportsIncludeFilterWithOperation()
+    {
+        var myObjectSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false,
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["users/{id}/messages"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        },
+                        [OperationType.Post] = new OpenApiOperation
+                        {
+                            RequestBody = new OpenApiRequestBody {
+                                Content = {
+                                    ["application/json"] = new OpenApiMediaType {
+                                        Schema = myObjectSchema
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        },
+                        [OperationType.Put] = new OpenApiOperation
+                        {
+                            RequestBody = new OpenApiRequestBody {
+                                Content = {
+                                    ["application/json"] = new OpenApiMediaType {
+                                        Schema = myObjectSchema
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                },
+                ["groups"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                },
+            },
+            Components = new()
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "TestClient",
+            ClientNamespaceName = "TestSdk",
+            ApiRootUrl = "https://localhost",
+            IncludePatterns = new() {
+                "users/*/messages*#get,PATCH", // lowercase is voluntary to test case insensitivity
+                "users/**#POST"
+            }
+        }, _httpClient);
+        builder.FilterPathsByPatterns(document);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.Null(codeModel.FindNamespaceByName("TestSdk.groups"));
+        var messagesNS = codeModel.FindNamespaceByName("TestSdk.users.item.messages");
+        Assert.NotNull(messagesNS);
+        var messagesRS = messagesNS.FindChildByName<CodeClass>("MessagesRequestBuilder");
+        Assert.NotNull(messagesRS);
+        Assert.Single(messagesRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post));
+        Assert.Single(messagesRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
+        Assert.Empty(messagesRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Put));
     }
     [Fact]
     public void SupportsIndexingParametersInSubPaths()
