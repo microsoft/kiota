@@ -186,7 +186,7 @@ public static class StringExtensions
     /// <returns></returns>
     private static string NormalizeSymbolsBeforeCleanup(string original)
     {
-        var result = (String)original.Clone();
+        var result = original;
         if (result.StartsWith("-", StringComparison.OrdinalIgnoreCase))
         {
             result = string.Concat("minus_", result.AsSpan(1));
@@ -206,16 +206,16 @@ public static class StringExtensions
     /// <returns></returns>
     private static string NormalizeSymbolsAfterCleanup(string original)
     {
-        var result = (String)original.Clone();
-        if (result.EndsWith("minus_"))
+        var result = original;
+        if (result.EndsWith("minus_", StringComparison.Ordinal))
         {
             result = result[..^1];
         }
-        if (result.StartsWith("_plus"))
+        if (result.StartsWith("_plus", StringComparison.Ordinal))
         {
             result = result[1..];
         }
-        if (result.EndsWith("plus_"))
+        if (result.EndsWith("plus_", StringComparison.Ordinal))
         {
             result = result[..^1];
         }
