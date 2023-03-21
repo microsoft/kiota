@@ -36,8 +36,10 @@ public class CodeElementOrderComparer : IComparer<CodeElement>
             _ => 0,
         };
     }
-    private static readonly int methodKindWeight = 10;
-    protected static int GetMethodKindFactor(CodeElement element)
+
+    protected virtual int methodKindWeight { get; } = 10;
+
+    protected virtual int GetMethodKindFactor(CodeElement element)
     {
         if (element is CodeMethod method)
             return method.Kind switch
