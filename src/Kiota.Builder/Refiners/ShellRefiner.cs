@@ -69,6 +69,11 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
                 new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum) }
             );
+            ReplaceReservedNames(
+                generatedCode,
+                new CSharpReservedClassNamesProvider(),
+                x => $"{x.ToFirstCharacterUpperCase()}Escaped"
+            );
             // Replace the reserved types
             ReplaceReservedModelTypes(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Object");
             cancellationToken.ThrowIfCancellationRequested();

@@ -62,6 +62,7 @@ public class JavaReservedNamesProvider : IReservedNamesProvider
         "volatile",
         "wait",
         "while",
+        "BaseRequestBuilder",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }
