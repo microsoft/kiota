@@ -120,6 +120,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             currentClass.Name = refinedClassName;
         }
+        else if (current is CodeIndexer currentIndexer &&
+                refineName(currentIndexer.ReturnType.Name) is string refinedIndexerName &&
+                !currentIndexer.ReturnType.Name.Equals(refinedIndexerName, StringComparison.Ordinal))
+        {
+            currentIndexer.ReturnType.Name = refinedIndexerName;
+        }
         else if (current is CodeProperty currentProperty &&
                 classNames &&
                 refineName(currentProperty.Type.Name) is string refinedPropertyTypeName &&
@@ -138,6 +144,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     param.Type.Name = refinedTypeName;
                 }
             };
+            foreach (var errorMapping in currentMethod.ErrorMappings)
+            {
+                if (refineName(errorMapping.Value.Name) is string refinedTypeName &&
+                    !errorMapping.Value.Name.Equals(refinedTypeName, StringComparison.Ordinal))
+                {
+                    errorMapping.Value.Name = refinedTypeName;
+                }
+            }
             if (refineName(currentMethod.ReturnType.Name) is string refinedMethodTypeName &&
                 !currentMethod.ReturnType.Name.Equals(refinedMethodTypeName, StringComparison.Ordinal))
             {
