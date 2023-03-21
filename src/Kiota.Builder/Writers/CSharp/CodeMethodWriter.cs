@@ -257,18 +257,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                                                 .ToArray());
         }
     }
-    private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string? variableName = default)
-    {
-        var property = parentClass.GetPropertyOfKind(propertyKind);
-        if (property != null)
-        {
-            var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
-            if (!string.IsNullOrEmpty(variableName))
-                writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = {variableName};");
-            else if (parameter != null)
-                writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = {parameter.Name};");
-        }
-    }
     private string DefaultDeserializerValue => $"new Dictionary<string, Action<{conventions.ParseNodeInterfaceName}>>";
     private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
