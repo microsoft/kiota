@@ -26,7 +26,10 @@ elseif ($language -eq "typescript") {
     Invoke-Expression "npm install && npm run build"
 }
 elseif ($language -eq "ruby") {
-    Invoke-Expression "git init && bundle exec rake"
+    $clientRb = Join-Path -Path $testPath -ChildPath "client.rb"
+    $dest = Join-Path -Path $testPath -ChildPath "lib" -AdditionalChildPath "integration_test", "client"
+    Copy-Item -Path $clientRb -Destination $dest
+    Invoke-Expression "git init && bundle install && bundle exec rake"
 }
 elseif ($language -eq "php") {
     Invoke-Expression "composer install && ./vendor/bin/phpstan"

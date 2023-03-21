@@ -59,6 +59,7 @@ public class CSharpLanguageRefinerTests
         {
             Name = "otherMethod",
             Kind = CodeMethodKind.RequestGenerator,
+            IsAsync = false,
             ReturnType = new CodeType
             {
                 Name = "string"
@@ -74,7 +75,7 @@ public class CSharpLanguageRefinerTests
         {
             TypeDefinition = otherModel
         };
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
 
         Assert.Contains(model.Properties, x => x.Name.Equals("otherProp"));
         Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));
