@@ -25,7 +25,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
         foreach (var enumOption in enumOptions)
         {
             conventions.WriteShortDescription(enumOption.Documentation.Description, writer);
-            writer.WriteLine($"{enumOption.Name.ToFirstCharacterUpperCase()}(\"{enumOption.Name}\"){(enumOption == lastEnumOption ? ";" : ",")}");
+            writer.WriteLine($"{enumOption.Name.ToFirstCharacterUpperCase()}(\"{enumOption.SerializationName}\"){(enumOption == lastEnumOption ? ";" : ",")}");
         }
         writer.WriteLines("public final String value;",
             $"{enumName}(final String value) {{");

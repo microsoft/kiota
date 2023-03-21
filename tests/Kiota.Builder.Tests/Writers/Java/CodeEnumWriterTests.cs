@@ -76,4 +76,17 @@ public class CodeEnumWriterTests : IDisposable
         Assert.Contains($"/** {option.Documentation.Description} */", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+    [Fact]
+    public void WritesEnumSerializationValue()
+    {
+        var option = new CodeEnumOption
+        {
+            Name = "plus_1",
+            SerializationName = "+1"
+        };
+        currentEnum.AddOption(option);
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains($"Plus_1(\"+1\")", result);
+    }
 }
