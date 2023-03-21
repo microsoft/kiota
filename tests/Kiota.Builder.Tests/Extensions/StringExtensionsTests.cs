@@ -85,20 +85,19 @@ public class StringExtensionsTests
         Assert.Equal("Toto", "toto".NormalizeNameSpaceName("-"));
         Assert.Equal("Microsoft_Graph_Message_Content", "microsoft.Graph.Message.Content".NormalizeNameSpaceName("_"));
     }
-    [Fact]
-    public void NormalizeTrailingSymbols()
-    {
-        Assert.Equal("plus_1", StringExtensions.NormalizeTrailingSymbol("+1", "\\+", "plus"));
-        Assert.Equal("minus_1", StringExtensions.NormalizeTrailingSymbol("-1", "\\-", "minus"));
-    }
-    [InlineData("\" !#$%&'()*+,./:;<=>?@[]\\^`{}|~-", "")]
+    [InlineData("\" !#$%&'()*+,./:;<=>?@[]\\^`{}|~-", "plus")]
     [InlineData("unchanged", "unchanged")]
     [InlineData("@odata.changed", "OdataChanged")]
     [InlineData("specialLast@", "specialLast")]
     [InlineData("kebab-cased", "kebabCased")]
     [InlineData("123Spelled", "OneTwoThreeSpelled")]
     [InlineData("+1", "plus_1")]
+    [InlineData("+1+", "plus_1_plus")]
+    [InlineData("+1+1", "plus_1_plus_1")]
     [InlineData("-1", "minus_1")]
+    [InlineData("-1-", "minus_1")]
+    [InlineData("-1-1", "minus_11")]
+    [InlineData("-", "minus")]
     [Theory]
     public void CleansUpSymbolNames(string input, string expected)
     {

@@ -144,18 +144,13 @@ public static class StringExtensions
     ///<summary>
     /// Cleanup regex that removes all special characters from ASCII 0-127
     ///</summary>
-    private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*+,./:;<=>?@\[\]\\^`{}|~-](?<followingLetter>\w)?", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
+    private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*,./:;<=>?@\[\]\\^`{}|~-](?<followingLetter>\w)?", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     private const string CleanupGroupName = "followingLetter";
     public static string CleanupSymbolName(this string? original)
     {
         if (string.IsNullOrEmpty(original)) return string.Empty;
 
-        string result = (String)original.Clone();
-        foreach (var norm in NormalizedTrailingSymbols)
-        {
-            if (result.StartsWith(norm.Key, StringComparison.OrdinalIgnoreCase))
-                result = NormalizeTrailingSymbol(result, norm.Value.Item1, norm.Value.Item2);
-        }
+        string result = NormalizeSymbolsBeforeCleanup(original);
 
         result = propertyCleanupRegex.Replace(result,
                                 static x => x.Groups.Keys.Contains(CleanupGroupName) ?
@@ -168,6 +163,7 @@ public static class StringExtensions
                                                                     .Select(static x => SpelledOutNumbers[x])
                                                                     .Aggregate(static (z, y) => z + y));
 
+        result = NormalizeSymbolsAfterCleanup(result);
         return result;
     }
     private static readonly Regex NumbersSpellingRegex = new(@"^(?<number>\d+)", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
@@ -183,16 +179,49 @@ public static class StringExtensions
         {'8', "Eight"},
         {'9', "Nine"},
     };
-    public static string NormalizeTrailingSymbol(string original, string symbol, string replacement)
+    /// <summary>
+    /// Normalizing logic for custom symbols handling before cleanup
+    /// </summary>
+    /// <param name="original">The original string</param>
+    /// <returns></returns>
+    private static string NormalizeSymbolsBeforeCleanup(string original)
     {
+        var result = (String)original.Clone();
+        if (result.StartsWith("-", StringComparison.OrdinalIgnoreCase))
+        {
+            result = string.Concat("minus_", result.AsSpan(1));
+        }
 
-        Regex startRegex = new(@"^(?<symbol>" + symbol + ")", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
-        return startRegex.Replace((String)original.Clone(), replacement + "_");
+        if (result.Contains('+', StringComparison.OrdinalIgnoreCase))
+        {
+            result = result.Replace("+", "_plus_", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return result;
     }
-    private static readonly Dictionary<string, (string, string)> NormalizedTrailingSymbols = new() {
-        {"+", ("\\+", "plus")},
-        {"-", ("\\-", "minus")},
-    };
+    /// <summary>
+    /// Normalizing logic for custom symbols handling after cleanup
+    /// </summary>
+    /// <param name="original">The original string</param>
+    /// <returns></returns>
+    private static string NormalizeSymbolsAfterCleanup(string original)
+    {
+        var result = (String)original.Clone();
+        if (result.EndsWith("minus_"))
+        {
+            result = result[..^1];
+        }
+        if (result.StartsWith("_plus"))
+        {
+            result = result[1..];
+        }
+        if (result.EndsWith("plus_"))
+        {
+            result = result[..^1];
+        }
+
+        return result;
+    }
     /// <summary>
     /// Cleanup the XML string
     /// </summary>
