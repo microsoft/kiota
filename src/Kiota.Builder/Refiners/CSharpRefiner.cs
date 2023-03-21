@@ -66,6 +66,11 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
                 new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum) }
             );
+            ReplaceReservedNames(
+                generatedCode,
+                new CSharpReservedClassNamesProvider(),
+                x => $"{x.ToFirstCharacterUpperCase()}Escaped"
+            );
             ReplaceReservedExceptionPropertyNames(
                 generatedCode,
                 new CSharpExceptionsReservedNamesProvider(),

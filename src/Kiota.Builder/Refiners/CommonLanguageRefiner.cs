@@ -336,7 +336,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             // in the CodeNamespace if-block so we also need to update the using references
             if (!codeElementExceptions?.Contains(typeof(CodeNamespace)) ?? true)
                 ReplaceReservedCodeUsingNamespaceSegmentNames(currentDeclaration, provider, replacement);
-            if (currentDeclaration.Inherits?.Name is string inheritName && provider.ReservedNames.Contains(inheritName))
+            if (currentDeclaration.Inherits?.Name is string inheritName && provider.ReservedNames.Contains(inheritName) && (currentDeclaration.Inherits is not CodeType inheritType || !inheritType.IsExternal))
                 currentDeclaration.Inherits.Name = replacement(currentDeclaration.Inherits.Name);
             if (currentClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Value.Name).Any(provider.ReservedNames.Contains))
                 ReplaceMappingNames(currentClass.DiscriminatorInformation.DiscriminatorMappings, provider, replacement);
@@ -1415,7 +1415,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             {
                 currentClass.StartBlock.Inherits = new CodeType
                 {
-                    Name = baseTypeUsing.Name
+                    Name = baseTypeUsing.Name,
+                    IsExternal = true,
                 };
                 currentClass.AddUsing(baseTypeUsing);
             }
@@ -1439,7 +1440,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             {
                 currentClass.StartBlock.Inherits = new CodeType
                 {
-                    Name = baseTypeUsing.Name
+                    Name = baseTypeUsing.Name,
+                    IsExternal = true,
                 };
                 currentClass.AddUsing(baseTypeUsing);
             }
@@ -1465,6 +1467,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 var configurationParameterType = new CodeType
                 {
                     Name = configurationParameterTypeUsing.Name,
+                    IsExternal = true,
                 };
                 foreach (var configurationParameter in configurationParameters)
                 {
