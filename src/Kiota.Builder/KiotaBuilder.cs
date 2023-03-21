@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1253,16 +1253,7 @@ public class KiotaBuilder
         if (string.IsNullOrEmpty(title)) return string.Empty;
         if (parentSchema.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Reference.Id;
         if (parentSchema.Items?.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Items.Reference.Id;
-        return (parentSchema.
-                        AllOf
-                        .FirstOrDefault(x => x.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) ??
-                parentSchema.
-                        AnyOf
-                        .FirstOrDefault(x => x.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) ??
-                parentSchema.
-                        OneOf
-                        .FirstOrDefault(x => x.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false))
-            ?.Reference?.Id;
+        return parentSchema.GetSchemaReferenceIds().FirstOrDefault(refId => refId.EndsWith(title, StringComparison.OrdinalIgnoreCase));
     }
     private CodeTypeBase CreateComposedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string suffixForInlineSchema, CodeNamespace codeNamespace, bool isRequestBody)
     {
