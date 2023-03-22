@@ -14,7 +14,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
     public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
-        if (writer == null) throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(writer);
         var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
         _codeUsingWriter.WriteExternalImports(codeElement, writer); // external imports before internal imports
         _codeUsingWriter.WriteConditionalInternalImports(codeElement, writer, parentNamespace);
@@ -23,11 +23,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
         {
             if (codeElement.Inherits != null)
                 _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.Inherits.Name, writer);
-            if (codeElement.Implements.Any())
-            {
-                foreach (var implement in codeElement.Implements)
-                    _codeUsingWriter.WriteDeferredImport(parentClass, implement.Name, writer);
-            }
+            foreach (var implement in codeElement.Implements)
+                _codeUsingWriter.WriteDeferredImport(parentClass, implement.Name, writer);
 
         }
 

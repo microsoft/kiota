@@ -22,18 +22,18 @@ public class CodeUsingWriter
     {
         var externalImportSymbolsAndPaths = codeElement.Usings
                                                         .Where(static x => x.IsExternal)
-                                                        .Select(x => (x.Name, string.Empty, x.Declaration?.Name))
-                                                        .GroupBy(x => x.Item3)
-                                                        .OrderBy(x => x.Key);
+                                                        .Select(static x => (x.Name, string.Empty, x.Declaration?.Name))
+                                                        .GroupBy(static x => x.Item3)
+                                                        .OrderBy(static x => x.Key);
         if (externalImportSymbolsAndPaths.Any())
         {
             foreach (var codeUsing in externalImportSymbolsAndPaths)
                 if (!string.IsNullOrWhiteSpace(codeUsing.Key))
                 {
-                    if (codeUsing.Key == "-")
-                        writer.WriteLine($"import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(x => x).Aggregate((x, y) => x + ", " + y)}");
+                    if ("-".Equals(codeUsing.Key, StringComparison.OrdinalIgnoreCase))
+                        writer.WriteLine($"import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}");
                     else
-                        writer.WriteLine($"from {codeUsing.Key.ToSnakeCase()} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(x => x).Aggregate((x, y) => x + ", " + y)}");
+                        writer.WriteLine($"from {codeUsing.Key.ToSnakeCase()} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}");
                 }
             writer.WriteLine();
         }
@@ -48,12 +48,12 @@ public class CodeUsingWriter
     {
         var parentNameSpace = parentClass.GetImmediateParentOfType<CodeNamespace>();
         var internalErrorMappingImportSymbolsAndPaths = parentClass.Usings
-                                                        .Where(x => !x.IsExternal)
-                                                        .Where(x => x.Declaration?.TypeDefinition is CodeClass codeClass && codeClass.IsErrorDefinition)
+                                                        .Where(static x => !x.IsExternal)
+                                                        .Where(static x => x.Declaration?.TypeDefinition is CodeClass codeClass && codeClass.IsErrorDefinition)
                                                         .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNameSpace))
-                                                        .GroupBy(x => x.Item3)
-                                                        .Where(x => !string.IsNullOrEmpty(x.Key))
-                                                        .OrderBy(x => x.Key);
+                                                        .GroupBy(static x => x.Item3)
+                                                        .Where(static x => !string.IsNullOrEmpty(x.Key))
+                                                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase);
         WriteCodeUsings(internalErrorMappingImportSymbolsAndPaths, writer);
     }
     /// <summary>
@@ -66,11 +66,11 @@ public class CodeUsingWriter
     {
         var parentNameSpace = parentClass.GetImmediateParentOfType<CodeNamespace>();
         var internalImportSymbolsAndPaths = parentClass.Usings
-                                                        .Where(x => !x.IsExternal)
+                                                        .Where(static x => !x.IsExternal)
                                                         .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNameSpace))
-                                                        .GroupBy(x => x.Item3)
-                                                        .Where(x => !string.IsNullOrEmpty(x.Key))
-                                                        .OrderBy(x => x.Key);
+                                                        .GroupBy(static x => x.Item3)
+                                                        .Where(static x => !string.IsNullOrEmpty(x.Key))
+                                                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase);
         WriteCodeUsings(internalImportSymbolsAndPaths, writer);
     }
     /// <summary>
@@ -83,17 +83,17 @@ public class CodeUsingWriter
     public void WriteConditionalInternalImports(ClassDeclaration codeElement, LanguageWriter writer, CodeNamespace parentNameSpace)
     {
         var internalImportSymbolsAndPaths = codeElement.Usings
-                                                        .Where(x => !x.IsExternal)
+                                                        .Where(static x => !x.IsExternal)
                                                         .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNameSpace))
-                                                        .GroupBy(x => x.Item3)
-                                                        .Where(x => !string.IsNullOrEmpty(x.Key))
-                                                        .OrderBy(x => x.Key);
+                                                        .GroupBy(static x => x.Item3)
+                                                        .Where(static x => !string.IsNullOrEmpty(x.Key))
+                                                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase);
         if (internalImportSymbolsAndPaths.Any())
         {
             writer.WriteLine("if TYPE_CHECKING:");
             writer.IncreaseIndent();
             foreach (var codeUsing in internalImportSymbolsAndPaths)
-                writer.WriteLine($"from {codeUsing.Key.ToSnakeCase()} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(x => x).Aggregate((x, y) => x + ", " + y)}");
+                writer.WriteLine($"from {codeUsing.Key.ToSnakeCase()} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}");
             writer.DecreaseIndent();
             writer.WriteLine();
 
@@ -110,12 +110,12 @@ public class CodeUsingWriter
     {
         var parentNamespace = parentClass.GetImmediateParentOfType<CodeNamespace>();
         var internalImportSymbolsAndPaths = parentClass.Usings
-                                                        .Where(x => !x.IsExternal)
-                                                        .Where(x => string.Equals(x.Declaration?.Name, typeName))
+                                                        .Where(static x => !x.IsExternal)
+                                                        .Where(x => typeName.Equals(x.Declaration?.Name, StringComparison.OrdinalIgnoreCase))
                                                         .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNamespace))
-                                                        .GroupBy(x => x.Item3)
-                                                        .Where(x => !string.IsNullOrEmpty(x.Key))
-                                                        .OrderBy(x => x.Key);
+                                                        .GroupBy(static x => x.Item3)
+                                                        .Where(static x => !string.IsNullOrEmpty(x.Key))
+                                                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase);
         WriteCodeUsings(internalImportSymbolsAndPaths, writer);
     }
 
@@ -124,7 +124,7 @@ public class CodeUsingWriter
         if (importSymbolsAndPaths.Any())
         {
             foreach (var codeUsing in importSymbolsAndPaths)
-                writer.WriteLine($"from {codeUsing.Key.ToSnakeCase()} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(x => x).Aggregate((x, y) => x + ", " + y)}");
+                writer.WriteLine($"from {codeUsing.Key.ToSnakeCase()} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}");
             writer.WriteLine();
         }
     }
