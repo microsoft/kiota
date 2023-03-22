@@ -160,7 +160,7 @@ public class TypeScriptLanguageRefinerTests
         {
             TypeDefinition = otherModel
         };
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
         Assert.Contains(model.Properties, x => x.Name.Equals("otherProp"));
         Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));

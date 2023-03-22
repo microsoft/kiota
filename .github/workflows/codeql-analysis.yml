@@ -14,13 +14,31 @@ name: "CodeQL"
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
-    paths-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', '**.md', '.vscode/**', '**.svg']
+    branches: [main]
+    paths-ignore:
+      [
+        "abstractions/**",
+        "authentication/**",
+        "serialization/**",
+        "http/**",
+        "**.md",
+        ".vscode/**",
+        "**.svg",
+      ]
   pull_request:
     # The branches below must be a subset of the branches above
-    paths-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', '**.md', '.vscode/**', '**.svg']
+    paths-ignore:
+      [
+        "abstractions/**",
+        "authentication/**",
+        "serialization/**",
+        "http/**",
+        "**.md",
+        ".vscode/**",
+        "**.svg",
+      ]
   schedule:
-    - cron: '20 9 * * 5'
+    - cron: "20 9 * * 5"
 
 jobs:
   analyze:
@@ -30,48 +48,50 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'csharp' ]
+        language: ["csharp"]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python' ]
         # Learn more:
         # https://docs.github.com/en/free-pro-team@latest/github/finding-security-vulnerabilities-and-errors-in-your-code/configuring-code-scanning#changing-the-languages-that-are-analyzed
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 7.0.x
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    # Initializes the CodeQL tools for scanning.
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
-      with:
-        languages: ${{ matrix.language }}
-        # If you wish to specify custom queries, you can do so here or in a config file.
-        # By default, queries listed here will override any specified in a config file.
-        # Prefix the list here with "+" to use these queries and those in the config file.
-        # queries: ./path/to/local/query, your-org/your-repo/queries@main
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 7.0.x
 
-    # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
-    # If this step fails, then you should remove it and run the build manually (see below)
-    # - name: Autobuild
-    #   uses: github/codeql-action/autobuild@v2
+      # Initializes the CodeQL tools for scanning.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+          # If you wish to specify custom queries, you can do so here or in a config file.
+          # By default, queries listed here will override any specified in a config file.
+          # Prefix the list here with "+" to use these queries and those in the config file.
+          # queries: ./path/to/local/query, your-org/your-repo/queries@main
 
-    # ℹ️ Command-line programs to run using the OS shell.
-    # 📚 https://git.io/JvXDl
+      # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
+      # If this step fails, then you should remove it and run the build manually (see below)
+      # - name: Autobuild
+      #   uses: github/codeql-action/autobuild@v2
 
-    # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
-    #    and modify them (or add more) to build your code if your project
-    #    uses a compiled language
+      # ℹ️ Command-line programs to run using the OS shell.
+      # 📚 https://git.io/JvXDl
 
-    - name: Restore workloads
-      run: dotnet workload restore
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore -c Release
+      # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
+      #    and modify them (or add more) to build your code if your project
+      #    uses a compiled language
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      - name: Restore workloads
+        run: |
+          dotnet workload restore
+          dotnet workload install wasm-tools
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
