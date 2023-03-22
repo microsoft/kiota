@@ -178,7 +178,7 @@ public static class OpenApiSchemaExtensions
 
         return string.Empty;
     }
-    internal static IEnumerable<KeyValuePair<string, string>> GetDiscriminatorMappings(this OpenApiSchema schema, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex)
+    internal static IEnumerable<KeyValuePair<string, string>> GetDiscriminatorMappings(this OpenApiSchema schema, ConcurrentDictionary<string, ConcurrentDictionary<string, (int, bool)>> inheritanceIndex)
     {
         if (schema == null)
             return Enumerable.Empty<KeyValuePair<string, string>>();
@@ -202,12 +202,15 @@ public static class OpenApiSchemaExtensions
                 .Mapping;
     }
     private static readonly Func<OpenApiSchema, bool> allOfEvaluatorForMappings = static x => x.Discriminator?.Mapping.Any() ?? false;
-    private static IEnumerable<string> GetAllInheritanceSchemaReferences(string currentReferenceId, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex)
+    private static IEnumerable<string> GetAllInheritanceSchemaReferences(string currentReferenceId, ConcurrentDictionary<string, ConcurrentDictionary<string, (int, bool)>> inheritanceIndex)
     {
         ArgumentException.ThrowIfNullOrEmpty(currentReferenceId);
         ArgumentNullException.ThrowIfNull(inheritanceIndex);
         if (inheritanceIndex.TryGetValue(currentReferenceId, out var dependents))
-            return dependents.Keys.Union(dependents.Keys.SelectMany(x => GetAllInheritanceSchemaReferences(x, inheritanceIndex))).Distinct(StringComparer.OrdinalIgnoreCase);
+        {
+            var orderedDependantsKeys = dependents.OrderBy(static x => x.Value.Item1).Reverse().Select(static x => x.Key);
+            return orderedDependantsKeys.Union(orderedDependantsKeys.Order().SelectMany(x => GetAllInheritanceSchemaReferences(x, inheritanceIndex))).Distinct(StringComparer.OrdinalIgnoreCase);
+        }
         return Enumerable.Empty<string>();
     }
 }

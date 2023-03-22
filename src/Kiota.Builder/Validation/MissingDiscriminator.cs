@@ -12,7 +12,7 @@ public class MissingDiscriminator : ValidationRule<OpenApiDocument>
 {
     public MissingDiscriminator(GenerationConfiguration configuration) : base((context, document) =>
     {
-        var idx = new ConcurrentDictionary<string, ConcurrentDictionary<string, bool>>(StringComparer.OrdinalIgnoreCase);
+        var idx = new ConcurrentDictionary<string, ConcurrentDictionary<string, (int, bool)>>(StringComparer.OrdinalIgnoreCase);
         document.InitializeInheritanceIndex(idx);
         if (document.Components != null)
             Parallel.ForEach(document.Components.Schemas, entry =>
@@ -31,7 +31,7 @@ public class MissingDiscriminator : ValidationRule<OpenApiDocument>
     })
     {
     }
-    private static void ValidateSchema(OpenApiSchema schema, IValidationContext context, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> idx, string address)
+    private static void ValidateSchema(OpenApiSchema schema, IValidationContext context, ConcurrentDictionary<string, ConcurrentDictionary<string, (int, bool)>> idx, string address)
     {
         if (!schema.IsAnyOf() && !schema.IsOneOf())
             return;

@@ -1481,7 +1481,7 @@ public class KiotaBuilder
                 .Where(static x => x.Value != null)
                 .Select(static x => KeyValuePair.Create(x.Key, x.Value!));
     }
-    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex = new();
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, (int, bool)>> inheritanceIndex = new();
     private void InitializeInheritanceIndex()
     {
         openApiDocument?.InitializeInheritanceIndex(inheritanceIndex);
