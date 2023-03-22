@@ -363,7 +363,7 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("request_info", result);
-        Assert.Contains("from . import error4_x_x, error401, error5_x_x", result);
+        Assert.Contains("from . import error401, error4_x_x, error5_x_x", result);
         Assert.Contains("error_mapping: Dict[str, ParsableFactory] =", result);
         Assert.Contains("\"4XX\": error4_x_x.Error4XX", result);
         Assert.Contains("\"5XX\": error5_x_x.Error5XX", result);
