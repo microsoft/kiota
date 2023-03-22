@@ -74,19 +74,11 @@
       {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2351"
-      },
-      {
-        "Language": "python",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2351"
       }
     ]
   },
   "./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml": {
     "Suppressions": [
-      {
-        "Language": "python",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2361"
-      },
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/2374"
@@ -124,10 +116,6 @@
       {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2378"
-      },
-      {
-        "Language": "python",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2381"
       }
     ]
   },

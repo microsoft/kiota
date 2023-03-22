@@ -25,7 +25,7 @@ public class PythonConventionService : CommonLanguageConventionService
         var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) && parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty ?
             $"self.{pathParametersProperty.Name.ToSnakeCase()}" :
             urlTemplateVarName;
-        var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}";
+        var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToSnakeCase()}"))}";
         if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
             writer.WriteLine($"return {returnType}(self.{requestAdapterProp.Name.ToSnakeCase()}, {urlTemplateParams}{pathParametersSuffix})");
     }

@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a bug where lookup of reference ids failed for AllOf more than one level up.
 - Fixed a bug where a CLI client would not set the content types for requests. (Shell)
+- Fixed linting errors by re-ordering methods and properties in Python.
+- Changed python import mechanism to facilitate code completion. [#2380](https://github.com/microsoft/kiota/issues/2380)
+- Fixed a bug where discriminator methods were missing possible types in Python [#2381](https://github.com/microsoft/kiota/issues/2381)
 - Fixed a bug where boolean or number enums would be mapped to enums instead of primitive types. [#2367](https://github.com/microsoft/kiota/issues/2367)
 - Fixed a bug where CSharp inherited constructor name was incorrect. [#2351](https://github.com/microsoft/kiota/issues/2351)
 - Fixed a bug where java refiner would emit method's parameters types without normalizing the name.
@@ -24,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where java writer would emit incorrect type names in case of compound types
 - Fixed a bug where go refiner would emit incorrect code when inlining error parents
 - Fixed a bug in PHP where the base URL path parameter key didn't match the URI template.
+
 
 ## [1.0.1] - 2023-03-11
 
