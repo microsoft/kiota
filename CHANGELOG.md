@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support for searching in forks for API descriptions in GitHub. [#2429](https://github.com/microsoft/kiota/issues/2429)
+- Added the ability to filter on operations. [#2431](https://github.com/microsoft/kiota/issues/2431)
 
 ### Changed
 
