@@ -20,7 +20,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
           ORGANIZATION: microsoftgraph
-          PROJECT_NUMBER: 28
+          PROJECT_NUMBER: 220
         run: |
           gh api graphql -f query='
             query($org: String!, $number: Int!) {
