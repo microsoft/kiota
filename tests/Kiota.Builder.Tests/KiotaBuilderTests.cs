@@ -538,6 +538,13 @@ paths:
                                                             Type = "array",
                                                             Items = userSchema
                                                         }
+                                                    },
+                                                    {
+                                                        "unknown", new OpenApiSchema {
+                                                            Type = "array",
+                                                            Items = new OpenApiSchema {
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
@@ -559,12 +566,19 @@ paths:
             }
         };
         var node = OpenApiUrlTreeNode.Create(document, "default");
-        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var mockLogger = new CountLogger<KiotaBuilder>();
+        var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.CreateUriSpace(document);//needed so the component index exists
         var codeModel = builder.CreateSourceModel(node);
         var userClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("user");
         Assert.NotNull(userClass);
+        var userResponseClass = codeModel.FindNamespaceByName("ApiSdk.users.item").FindChildByName<CodeClass>("UsersResponse", false);
+        Assert.NotNull(userResponseClass);
+        var valueProp = userResponseClass.FindChildByName<CodeProperty>("value", false);
+        Assert.NotNull(valueProp);
+        var unknownProp = userResponseClass.FindChildByName<CodeProperty>("unknown", false);
+        Assert.Null(unknownProp);
+        Assert.Equal(1, mockLogger.Count.First(static x => x.Key == LogLevel.Warning).Value);
     }
     [Fact]
     public void TextPlainEndpointsAreSupported()

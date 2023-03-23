@@ -290,7 +290,7 @@ public class KiotaBuilder
         inputPath = inputPath.Trim();
 
         Stream input;
-        if (inputPath.StartsWith("http"))
+        if (inputPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             try
             {
                 var cachingProvider = new DocumentCachingProvider(httpClient, logger)
@@ -945,11 +945,14 @@ public class KiotaBuilder
                 {
                     codeClass.IsErrorDefinition = true;
                 }
-                executorMethod.AddErrorMapping(errorCode, errorType);
+                if (errorType is null)
+                    logger.LogWarning("Could not create error type for {error} in {operation}", errorCode, operation.OperationId);
+                else
+                    executorMethod.AddErrorMapping(errorCode, errorType);
             }
         }
     }
-    private CodeTypeBase GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, OpenApiSchema? schema, OpenApiOperation operation, CodeClass parentClass)
+    private CodeTypeBase? GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, OpenApiSchema? schema, OpenApiOperation operation, CodeClass parentClass)
     {
         if (schema != null)
         {
@@ -969,102 +972,109 @@ public class KiotaBuilder
     }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
-        var parameterClass = CreateOperationParameterClass(currentNode, operationType, operation, parentClass);
-        var requestConfigClass = parentClass.AddInnerClass(new CodeClass
+        try
         {
-            Name = $"{parentClass.Name}{operationType}RequestConfiguration",
-            Kind = CodeClassKind.RequestConfiguration,
-            Documentation = new()
+            var parameterClass = CreateOperationParameterClass(currentNode, operationType, operation, parentClass);
+            var requestConfigClass = parentClass.AddInnerClass(new CodeClass
             {
-                Description = "Configuration for the request such as headers, query parameters, and middleware options.",
-            },
-        }).First();
+                Name = $"{parentClass.Name}{operationType}RequestConfiguration",
+                Kind = CodeClassKind.RequestConfiguration,
+                Documentation = new()
+                {
+                    Description = "Configuration for the request such as headers, query parameters, and middleware options.",
+                },
+            }).First();
 
-        var schema = operation.GetResponseSchema(config.StructuredMimeTypes);
-        var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
-        var executorMethod = new CodeMethod
-        {
-            Name = operationType.ToString(),
-            Kind = CodeMethodKind.RequestExecutor,
-            HttpMethod = method,
-            Parent = parentClass,
-            Documentation = new()
+            var schema = operation.GetResponseSchema(config.StructuredMimeTypes);
+            var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
+            var executorMethod = new CodeMethod
             {
-                DocumentationLink = operation.ExternalDocs?.Url,
-                DocumentationLabel = operation.ExternalDocs?.Description ?? string.Empty,
-                Description = (operation.Description is string description && !string.IsNullOrEmpty(description) ?
-                                description :
-                                operation.Summary)
-                                .CleanupDescription(),
-            },
-            ReturnType = GetExecutorMethodReturnType(currentNode, schema, operation, parentClass),
-        };
-
-        if (operation.Extensions.TryGetValue(OpenApiPagingExtension.Name, out var extension) && extension is OpenApiPagingExtension pagingExtension)
-        {
-            executorMethod.PagingInformation = new PagingInformation
-            {
-                ItemName = pagingExtension.ItemName,
-                NextLinkName = pagingExtension.NextLinkName,
-                OperationName = pagingExtension.OperationName,
+                Name = operationType.ToString(),
+                Kind = CodeMethodKind.RequestExecutor,
+                HttpMethod = method,
+                Parent = parentClass,
+                Documentation = new()
+                {
+                    DocumentationLink = operation.ExternalDocs?.Url,
+                    DocumentationLabel = operation.ExternalDocs?.Description ?? string.Empty,
+                    Description = (operation.Description is string description && !string.IsNullOrEmpty(description) ?
+                                    description :
+                                    operation.Summary)
+                                    .CleanupDescription(),
+                },
+                ReturnType = GetExecutorMethodReturnType(currentNode, schema, operation, parentClass) ?? throw new InvalidSchemaException(),
             };
+
+            if (operation.Extensions.TryGetValue(OpenApiPagingExtension.Name, out var extension) && extension is OpenApiPagingExtension pagingExtension)
+            {
+                executorMethod.PagingInformation = new PagingInformation
+                {
+                    ItemName = pagingExtension.ItemName,
+                    NextLinkName = pagingExtension.NextLinkName,
+                    OperationName = pagingExtension.OperationName,
+                };
+            }
+
+            AddErrorMappingsForExecutorMethod(currentNode, operation, executorMethod);
+            AddRequestConfigurationProperties(parameterClass, requestConfigClass);
+            AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, executorMethod);
+            parentClass.AddMethod(executorMethod);
+
+            var handlerParam = new CodeParameter
+            {
+                Name = "responseHandler",
+                Optional = true,
+                Kind = CodeParameterKind.ResponseHandler,
+                Documentation = new()
+                {
+                    Description = "Response handler to use in place of the default response handling provided by the core service",
+                },
+                Type = new CodeType { Name = "IResponseHandler", IsExternal = true },
+            };
+            executorMethod.AddParameter(handlerParam);// Add response handler parameter
+
+            var cancellationParam = new CodeParameter
+            {
+                Name = "cancellationToken",
+                Optional = true,
+                Kind = CodeParameterKind.Cancellation,
+                Documentation = new()
+                {
+                    Description = "Cancellation token to use when cancelling requests",
+                },
+                Type = new CodeType { Name = "CancellationToken", IsExternal = true },
+            };
+            executorMethod.AddParameter(cancellationParam);// Add cancellation token parameter
+            logger.LogTrace("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
+
+            var generatorMethod = new CodeMethod
+            {
+                Name = $"To{operationType.ToString().ToFirstCharacterUpperCase()}RequestInformation",
+                Kind = CodeMethodKind.RequestGenerator,
+                IsAsync = false,
+                HttpMethod = method,
+                Documentation = new()
+                {
+                    Description = (operation.Description ?? operation.Summary).CleanupDescription(),
+                },
+                ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true },
+                Parent = parentClass,
+            };
+            if (schema != null)
+            {
+                var mediaType = operation.Responses.Values.SelectMany(static x => x.Content).First(x => x.Value.Schema == schema).Key;
+                generatorMethod.AcceptedResponseTypes.Add(mediaType);
+            }
+            if (config.Language == GenerationLanguage.Shell)
+                SetPathAndQueryParameters(generatorMethod, currentNode, operation);
+            AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, generatorMethod);
+            parentClass.AddMethod(generatorMethod);
+            logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
         }
-
-        AddErrorMappingsForExecutorMethod(currentNode, operation, executorMethod);
-        AddRequestConfigurationProperties(parameterClass, requestConfigClass);
-        AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, executorMethod);
-        parentClass.AddMethod(executorMethod);
-
-        var handlerParam = new CodeParameter
+        catch (InvalidSchemaException ex)
         {
-            Name = "responseHandler",
-            Optional = true,
-            Kind = CodeParameterKind.ResponseHandler,
-            Documentation = new()
-            {
-                Description = "Response handler to use in place of the default response handling provided by the core service",
-            },
-            Type = new CodeType { Name = "IResponseHandler", IsExternal = true },
-        };
-        executorMethod.AddParameter(handlerParam);// Add response handler parameter
-
-        var cancellationParam = new CodeParameter
-        {
-            Name = "cancellationToken",
-            Optional = true,
-            Kind = CodeParameterKind.Cancellation,
-            Documentation = new()
-            {
-                Description = "Cancellation token to use when cancelling requests",
-            },
-            Type = new CodeType { Name = "CancellationToken", IsExternal = true },
-        };
-        executorMethod.AddParameter(cancellationParam);// Add cancellation token parameter
-        logger.LogTrace("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
-
-        var generatorMethod = new CodeMethod
-        {
-            Name = $"To{operationType.ToString().ToFirstCharacterUpperCase()}RequestInformation",
-            Kind = CodeMethodKind.RequestGenerator,
-            IsAsync = false,
-            HttpMethod = method,
-            Documentation = new()
-            {
-                Description = (operation.Description ?? operation.Summary).CleanupDescription(),
-            },
-            ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true },
-            Parent = parentClass,
-        };
-        if (schema != null)
-        {
-            var mediaType = operation.Responses.Values.SelectMany(static x => x.Content).First(x => x.Value.Schema == schema).Key;
-            generatorMethod.AcceptedResponseTypes.Add(mediaType);
+            logger.LogWarning(ex, "Could not create method for {operation} in {path} because the schema was invalid", operation.OperationId, currentNode.Path);
         }
-        if (config.Language == GenerationLanguage.Shell)
-            SetPathAndQueryParameters(generatorMethod, currentNode, operation);
-        AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, generatorMethod);
-        parentClass.AddMethod(generatorMethod);
-        logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
     }
     private static readonly Func<OpenApiParameter, CodeParameter> GetCodeParameterFromApiParameter = x =>
     {
@@ -1145,7 +1155,8 @@ public class KiotaBuilder
     {
         if (operation.GetRequestSchema(config.StructuredMimeTypes) is OpenApiSchema requestBodySchema)
         {
-            var requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, $"{operationType}RequestBody", isRequestBody: true);
+            var requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, $"{operationType}RequestBody", isRequestBody: true) ??
+                throw new InvalidSchemaException();
             method.AddParameter(new CodeParameter
             {
                 Name = "body",
@@ -1321,7 +1332,7 @@ public class KiotaBuilder
         }
         return unionType;
     }
-    private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false)
+    private CodeTypeBase? CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false)
     {
         var (codeNamespace, responseValue, suffix) = schema.IsReferencedSchema() switch
         {
@@ -1356,11 +1367,11 @@ public class KiotaBuilder
             return GetPrimitiveType(schema, string.Empty);
         if (schema.AnyOf.Any() || schema.OneOf.Any() || schema.AllOf.Any()) // we have an empty node because of some local override for schema properties and need to unwrap it.
             return CreateModelDeclarations(currentNode, (schema.AnyOf.FirstOrDefault() ?? schema.OneOf.FirstOrDefault() ?? schema.AllOf.FirstOrDefault())!, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
-        throw new InvalidSchemaException("unhandled case, might be object type or array type");
+        return null;
     }
-    private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
+    private CodeTypeBase? CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
     {
-        CodeTypeBase type = GetPrimitiveType(schema.Items, string.Empty);
+        CodeTypeBase? type = GetPrimitiveType(schema.Items, string.Empty);
         bool isEnumOrComposedCollectionType = schema.Items.IsEnum() //the collection could be an enum type so override with strong type instead of string type.
                                     || (schema.Items.IsComposedEnum() && string.IsNullOrEmpty(schema.Items.Format));//the collection could be a composed type with an enum type so override with strong type instead of string type.
         if ((string.IsNullOrEmpty(type.Name)
@@ -1370,6 +1381,7 @@ public class KiotaBuilder
             var targetNamespace = GetShortestNamespace(codeNamespace, schema.Items);
             type = CreateModelDeclarations(currentNode, schema.Items, operation, targetNamespace, string.Empty, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody);
         }
+        if (type is null) return null;
         type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
         return type;
     }
@@ -1554,17 +1566,16 @@ public class KiotaBuilder
                                     var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
                                     var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
                                                         (rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns);
-#if RELEASE
-                                    try {
-#endif
                                     var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
-                                    return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
-#if RELEASE
-                                    } catch (InvalidSchemaException ex) {
-                                        throw new InvalidOperationException($"Error creating property {x.Key} for model {model.Name} in API path {currentNode.Path}, the schema is invalid.", ex);
+                                    if (definition == null)
+                                    {
+                                        logger.LogWarning("Omitted property {propertyName} for model {modelName} in API path {apiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
+                                        return null;
                                     }
-#endif
+                                    return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
                                 })
+                                .Where(static x => x != null)
+                                .Select(static x => x!)
                                 .ToArray());
         }
         else if (schema?.AllOf?.Any(x => x.IsObject()) ?? false)

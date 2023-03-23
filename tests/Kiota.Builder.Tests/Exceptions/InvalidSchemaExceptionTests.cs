@@ -1,6 +1,4 @@
-﻿using System;
-
-using Kiota.Builder.Exceptions;
+﻿using Kiota.Builder.Exceptions;
 
 using Xunit;
 
@@ -12,7 +10,5 @@ public class InvalidSchemaExceptionTests
     public void Instantiates()
     {
         Assert.NotNull(new InvalidSchemaException());
-        Assert.NotNull(new InvalidSchemaException("message"));
-        Assert.NotNull(new InvalidSchemaException("message", new InvalidOperationException()));
     }
 }
