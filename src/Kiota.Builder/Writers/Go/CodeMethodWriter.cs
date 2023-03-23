@@ -528,7 +528,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam &&
             parentClass.Properties.OfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
             conventions.AddParametersAssignment(writer,
-                                                    pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
+                                                    pathParametersParam.Type.AllTypes.FirstOrDefault(),
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                     $"m.{BaseRequestBuilderVarName}.{pathParametersProperty.Name.ToFirstCharacterUpperCase()}",
                                                     false,
