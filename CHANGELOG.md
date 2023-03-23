@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where date types annotations were not correctly translated in Python.
 - Fixed a bug where lookup of reference ids failed for AllOf more than one level up.
 - Fixed a bug where a CLI client would not set the content types for requests. (Shell)
 - Fixed linting errors by re-ordering methods and properties in Python.
