@@ -127,12 +127,22 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         bool classNames = true,
         bool enumNames = true)
     {
-        if (current is CodeClass currentClass &&
-            classNames &&
-            refineName(currentClass.Name) is string refinedClassName &&
-            !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal))
+        if (current is CodeClass currentClass && classNames)
         {
-            currentClass.Name = refinedClassName;
+            if (refineName(currentClass.Name) is string refinedClassName &&
+                !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal))
+                currentClass.Name = refinedClassName;
+
+            if (currentClass.StartBlock.Inherits != null)
+            {
+                FixTypeName(currentClass.StartBlock.Inherits, refineName);
+                if (currentClass.StartBlock.Inherits.TypeDefinition != null)
+                    CorrectNames(currentClass.StartBlock.Inherits.TypeDefinition, refineName);
+            }
+            foreach (var i in currentClass.StartBlock.Implements)
+            {
+                FixTypeName(i, refineName);
+            }
         }
         else if (current is CodeIndexer currentIndexer && classNames)
         {

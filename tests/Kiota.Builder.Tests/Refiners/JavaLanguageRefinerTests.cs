@@ -94,6 +94,7 @@ public class JavaLanguageRefinerTests
         Assert.Contains(model.Properties, x => x.Name.Equals("otherProp"));
         Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));
         Assert.Contains(model.Usings, x => x.Name.Equals("otherNs"));
+        Assert.Equal("ApiException", model.StartBlock.Inherits.Name);
     }
     [Fact]
     public async Task AddsUsingsForErrorTypesForRequestExecutor()
@@ -418,6 +419,38 @@ public class JavaLanguageRefinerTests
         method.AddParameter(cancellationParam);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.Equal("FooBar", method.Parameters.First().Type.Name);
+    }
+    [Fact]
+    public async Task NormalizeInheritedClassesNames()
+    {
+        var parentModel = root.AddClass(new CodeClass
+        {
+            Name = "parent_Model",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var implementsModel = root.AddClass(new CodeClass
+        {
+            Name = "implements_Model",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass
+        {
+            Name = "childModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        childModel.StartBlock.Inherits = new CodeType
+        {
+            Name = "parent_Model",
+            TypeDefinition = parentModel,
+        };
+        childModel.StartBlock.AddImplements(new CodeType
+        {
+            Name = "implements_Model",
+            TypeDefinition = implementsModel,
+        });
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        Assert.Equal("ParentModel", childModel.StartBlock.Inherits.Name);
+        Assert.Equal("ImplementsModel", childModel.StartBlock.Implements.First().Name);
     }
     #endregion
     #region JavaLanguageRefinerTests
