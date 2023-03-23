@@ -39,6 +39,14 @@ public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumen
             throw new ArgumentOutOfRangeException(nameof(properties));
         return AddRange(properties);
     }
+    public void RemovePropertiesOfKind(params CodePropertyKind[] kind)
+    {
+        if (kind == null || !kind.Any())
+            throw new ArgumentNullException(nameof(kind));
+        var propertiesToRemove = Properties.Where(x => x.IsOfKind(kind)).ToList();
+        foreach (var property in propertiesToRemove)
+            RemoveChildElement(property);
+    }
 #nullable disable
     public T Kind
     {

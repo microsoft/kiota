@@ -104,7 +104,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     {
         if (codeElement.IsOfKind(CodeMethodKind.Setter)) return;
 
-        foreach (var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name))
+        foreach (var parameter in codeElement.Parameters
+                                        .Where(static x => !x.Optional && !x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters))
+                                        .OrderBy(static x => x.Name))
         {
             var parameterName = parameter.Name.ToFirstCharacterLowerCase();
             writer.WriteLine($"if(!{parameterName}) throw new Error(\"{parameterName} cannot be undefined\");");
@@ -117,7 +119,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             codeElement.OriginalIndexer != null)
         {
             localConventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"this.{pathParametersProperty.Name}",
-                (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, "id"));
+                parameters: (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, "id"));
         }
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
     }
@@ -189,10 +191,21 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
         if (inherits || parentClass.IsErrorDefinition)
-            writer.WriteLine("super();");
+            if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
+                    currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter &&
+                    parentClass.Properties.OfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty &&
+                    !string.IsNullOrEmpty(urlTemplateProperty.DefaultValue))
+            {
+                var pathParametersValue = "{}";
+                if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
+                    pathParametersValue = pathParametersParameter.Name.ToFirstCharacterLowerCase();
+                writer.WriteLine($"super({pathParametersValue}, {requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue});");
+            }
+            else
+                writer.WriteLine("super();");
 
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(DirectAccessProperties)
-                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate))
                                         .OrderByDescending(static x => x.Kind)
                                         .ThenBy(static x => x.Name))
         {
@@ -200,7 +213,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         }
 
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(SetterAccessProperties)
-                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate))
                                         // do not apply the default value if the type is composed as the default value may not necessarily which type to use
                                         .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                                         .OrderByDescending(static x => x.Kind)
@@ -208,33 +221,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         {
             writer.WriteLine($"this.{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
         }
-        if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
+        if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
+            currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+                currentMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam &&
+                parentClass.Properties.OfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
         {
-            if (currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
-                currentMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam)
-            {
-                localConventions?.AddParametersAssignment(writer,
-                                                    pathParametersParam.Type.AllTypes.OfType<CodeType>().First(),
-                                                    pathParametersParam.Name.ToFirstCharacterLowerCase(),
-                                                    currentMethod.Parameters
-                                                                .Where(x => x.IsOfKind(CodeParameterKind.Path))
-                                                                .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
-                                                                .ToArray());
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
-            }
-            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
-        }
-    }
-    private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string? variableName = default)
-    {
-        var property = parentClass.GetPropertyOfKind(propertyKind);
-        if (property != null)
-        {
-            var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
-            if (!string.IsNullOrEmpty(variableName))
-                writer.WriteLine($"this.{property.Name.ToFirstCharacterLowerCase()} = {variableName};");
-            else if (parameter != null)
-                writer.WriteLine($"this.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
+            localConventions?.AddParametersAssignment(writer,
+                                                pathParametersParam.Type.AllTypes.OfType<CodeType>().First(),
+                                                pathParametersParam.Name.ToFirstCharacterLowerCase(),
+                                                $"this.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}",
+                                                currentMethod.Parameters
+                                                            .Where(static x => x.IsOfKind(CodeParameterKind.Path))
+                                                            .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
+                                                            .ToArray());
         }
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)

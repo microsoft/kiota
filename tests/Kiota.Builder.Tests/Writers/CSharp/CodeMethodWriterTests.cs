@@ -798,9 +798,9 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("var requestConfig = new RequestConfig()", result);
         Assert.Contains("config.Invoke(requestConfig)", result);
         Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
-        Assert.Contains("requestInfo.AddHeaders(requestConfig.H)", result);
-        Assert.Contains("requestInfo.AddQueryParameters(requestConfig.Q)", result);
-        Assert.Contains("requestInfo.AddRequestOptions(requestConfig.O)", result);
+        Assert.Contains("requestInfo.AddHeaders(requestConfig.Headers)", result);
+        Assert.Contains("requestInfo.AddQueryParameters(requestConfig.QueryParameters)", result);
+        Assert.Contains("requestInfo.AddRequestOptions(requestConfig.Options)", result);
         Assert.Contains("SetContentFromScalar", result);
         Assert.Contains("return requestInfo;", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
@@ -824,9 +824,9 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("var requestConfig = new RequestConfig()", result);
         Assert.Contains("config.Invoke(requestConfig)", result);
         Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
-        Assert.Contains("requestInfo.AddHeaders(requestConfig.H)", result);
-        Assert.Contains("requestInfo.AddQueryParameters(requestConfig.Q)", result);
-        Assert.Contains("requestInfo.AddRequestOptions(requestConfig.O)", result);
+        Assert.Contains("requestInfo.AddHeaders(requestConfig.Headers)", result);
+        Assert.Contains("requestInfo.AddQueryParameters(requestConfig.QueryParameters)", result);
+        Assert.Contains("requestInfo.AddRequestOptions(requestConfig.Options)", result);
         Assert.Contains("SetContentFromScalar", result);
         Assert.Contains("return requestInfo;", result);
         Assert.Contains("async Task<double?>", result);//verify we only have one nullable marker
@@ -851,9 +851,9 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("var requestConfig = new RequestConfig()", result);
         Assert.Contains("config.Invoke(requestConfig)", result);
         Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
-        Assert.Contains("requestInfo.AddHeaders(requestConfig.H)", result);
-        Assert.Contains("requestInfo.AddQueryParameters(requestConfig.Q)", result);
-        Assert.Contains("requestInfo.AddRequestOptions(requestConfig.O)", result);
+        Assert.Contains("requestInfo.AddHeaders(requestConfig.Headers)", result);
+        Assert.Contains("requestInfo.AddQueryParameters(requestConfig.QueryParameters)", result);
+        Assert.Contains("requestInfo.AddRequestOptions(requestConfig.Options)", result);
         Assert.Contains("SetContentFromParsable", result);
         Assert.Contains("return requestInfo;", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
@@ -1229,7 +1229,7 @@ public class CodeMethodWriterTests : IDisposable
         {
             Name = propName,
             DefaultValue = defaultValue,
-            Kind = CodePropertyKind.UrlTemplate,
+            Kind = CodePropertyKind.Custom,
             Type = new CodeType
             {
                 Name = "string"
@@ -1427,7 +1427,7 @@ public class CodeMethodWriterTests : IDisposable
         method.AddParameter(new CodeParameter
         {
             Name = "ra",
-            Kind = CodeParameterKind.RequestAdapter,
+            Kind = CodeParameterKind.Custom,
             Type = new CodeType
             {
                 Name = "RequestAdapter",
@@ -1472,7 +1472,7 @@ public class CodeMethodWriterTests : IDisposable
         method.AddParameter(new CodeParameter
         {
             Name = "ra",
-            Kind = CodeParameterKind.RequestAdapter,
+            Kind = CodeParameterKind.Custom,
             Type = new CodeType
             {
                 Name = "RequestAdapter",

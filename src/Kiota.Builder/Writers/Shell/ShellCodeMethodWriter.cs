@@ -37,7 +37,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     private const string JsonNoIndentParamName = "jsonNoIndent";
     private const string InvocationContextParamName = "invocationContext";
 
-    public ShellCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
+    public ShellCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService, true)
     {
     }
 

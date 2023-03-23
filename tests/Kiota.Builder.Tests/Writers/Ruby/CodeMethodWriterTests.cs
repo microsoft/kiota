@@ -745,7 +745,7 @@ public class CodeMethodWriterTests : IDisposable
         {
             Name = propName,
             DefaultValue = defaultValue,
-            Kind = CodePropertyKind.UrlTemplate,
+            Kind = CodePropertyKind.Custom,
             Type = new CodeType
             {
                 Name = "string"
