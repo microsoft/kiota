@@ -1,78 +1,38 @@
-# microsoft-kiota README
+# Microsoft Kiota
 
-This is the README for your extension "microsoft-kiota". After writing up a brief description, we recommend including the following sections.
+OpenAPI based client generator for REST APIs.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Using kiota you can:
 
-For example if there is an image subfolder under your extension project workspace:
+1. Search for API descriptions.
+1. Select the API endpoints you need.
+1. Generate models and a chained method API surface in the language of your choice.
+1. Call the API with the new client.
 
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+All that in a matter of seconds.
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+None.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+None.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+Only tested for Visual Studio Code locally. (no remote experience, no containers, no web experience)
+
+Checkout the [list of open issues](https://github.com/microsoft/kiota/issues) to get a list of the known issues.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+Checkout the [release notes](https://github.com/microsoft/kiota/releases) to get more information about each release.
 
 ## Debugging the extension
 
-1. in `src/kiota` run `dotnet watch build`
-1. in `vscode/microsoft-kiota` run `code . && npm i && npm run watch`
-1. edit `kiotaInterop` and replace `C:\\sources\\github\\kiota\\src\\kiota\\bin\\Debug\\net7.0\\kiota.exe` by the correct file path 
+1. in `src/kiota` run `dotnet watch publish -p:PublishSingleFile=true -p:PublishReadyToRun=true -c Release -r <win-x64|linux-x64|osx-x64> -o <pathToThisFolder>\.kiotabin\<versionInPackage.json>\<rid>\`
+1. in `vscode/microsoft-kiota` run `code . && npm i`
 1. in the code instance that was opened at step 2, just press f5
-
-**Enjoy!**

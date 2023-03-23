@@ -33,7 +33,7 @@ export async function activate(
   const statusBarCommandId = `${extensionId}.status`;
   const treeViewId = `${extensionId}.openApiExplorer`;
   const dependenciesInfo = `${extensionId}.dependenciesInfo`;
-  const openApiTreeProvider = new OpenApiTreeProvider();
+  const openApiTreeProvider = new OpenApiTreeProvider(context);
   const dependenciesInfoProvider = new DependenciesViewProvider(
     context.extensionUri
   );
@@ -98,7 +98,7 @@ export async function activate(
           );
           return;
         }
-        let languagesInformation = await getLanguageInformation();
+        let languagesInformation = await getLanguageInformation(context);
         const config = await generateSteps(
           {
             clientClassName: openApiTreeProvider.clientClassName,
@@ -119,6 +119,7 @@ export async function activate(
             ? parseGenerationLanguage(config.language)
             : KiotaGenerationLanguage.CSharp;
         const result = await generateClient(
+          context,
           openApiTreeProvider.descriptionUrl,
           typeof config.outputPath === "string"
             ? config.outputPath
@@ -152,6 +153,7 @@ export async function activate(
           });
         }
         languagesInformation = await getLanguageInformation(
+          context,
           language,
           openApiTreeProvider.descriptionUrl
         );
@@ -163,7 +165,7 @@ export async function activate(
     vscode.commands.registerCommand(
       `${extensionId}.searchApiDescription`,
       async () => {
-        const config = await searchSteps(searchDescription);
+        const config = await searchSteps(x => searchDescription(context, x));
         if (config.descriptionPath) {
           openApiTreeProvider.descriptionUrl = config.descriptionPath;
           vscode.commands.executeCommand(`${treeViewId}.focus`);
@@ -194,7 +196,7 @@ export async function activate(
   context.subscriptions.push(kiotaStatusBarItem);
 
   // update status bar item once at start
-  await updateStatusBarItem();
+  await updateStatusBarItem(context);
   let disposable = vscode.commands.registerCommand(
     "kiota.updateClients",
     async () => {
@@ -207,7 +209,7 @@ export async function activate(
         );
         return;
       }
-      await updateStatusBarItem();
+      await updateStatusBarItem(context);
       try {
         kiotaOutputChannel.clear();
         kiotaOutputChannel.show();
@@ -216,7 +218,7 @@ export async function activate(
             path: vscode.workspace.workspaceFolders[0].uri.fsPath,
           })
         );
-        await connectToKiota(async (connection) => {
+        await connectToKiota(context, async (connection) => {
           const request = new rpc.RequestType<string, KiotaLogEntry[], void>(
             "Update"
           );
@@ -261,9 +263,9 @@ export async function activate(
   context.subscriptions.push(disposable);
 }
 
-async function updateStatusBarItem(): Promise<void> {
+async function updateStatusBarItem(context: vscode.ExtensionContext): Promise<void> {
   try {
-    const version = await getKiotaVersion(kiotaOutputChannel);
+    const version = await getKiotaVersion(context, kiotaOutputChannel);
     if (!version) {
       throw new Error("kiota not found");
     }

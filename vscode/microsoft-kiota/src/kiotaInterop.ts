@@ -1,9 +1,12 @@
 import * as vscode from "vscode";
 import * as cp from 'child_process';
 import * as rpc from 'vscode-jsonrpc/node';
+import { ensureKiotaIsPresent, getKiotaPath } from './kitoaInstall';
 
-export async function connectToKiota<T>(callback:(connection: rpc.MessageConnection) => Promise<T | undefined>): Promise<T | undefined> {
-  const childProcess = cp.spawn("C:\\sources\\github\\kiota\\src\\kiota\\bin\\Debug\\net7.0\\kiota.exe", ["rpc"],{
+export async function connectToKiota<T>(context: vscode.ExtensionContext, callback:(connection: rpc.MessageConnection) => Promise<T | undefined>): Promise<T | undefined> {
+  const kiotaPath = getKiotaPath(context);
+  await ensureKiotaIsPresent(context);
+  const childProcess = cp.spawn(kiotaPath, ["rpc"],{
     cwd: vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined
   });
   let connection = rpc.createMessageConnection(
