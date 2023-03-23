@@ -105,7 +105,7 @@ public class PythonConventionService : CommonLanguageConventionService
             "void" => "None",
             "DateTimeOffset" => "datetime",
             "boolean" => "bool",
-            "Object" or "object" or "float" or "bytes" or "datetime" or "timespan" => type.Name,
+            "Object" or "object" or "float" or "bytes" or "datetime" or "timedelta" or "date" or "time" => type.Name,
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
     }
@@ -126,7 +126,7 @@ public class PythonConventionService : CommonLanguageConventionService
             "void" => "None",
             "DateTimeOffset" => "datetime",
             "boolean" => "bool",
-            "Object" or "object" or "float" or "bytes" or "datetime" or "timespan" => type.Name,
+            "Object" or "object" or "float" or "bytes" or "datetime" or "timedelta" or "date" or "time" => type.Name,
             _ => $"{type.Name.ToSnakeCase()}.{type.Name.ToFirstCharacterUpperCase()}" ?? "object",
         };
     }
