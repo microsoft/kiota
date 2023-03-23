@@ -19,6 +19,7 @@ export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
             if (await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
                 unzipFile(zipFilePath, installPath.substring(0, installPath.length - currentPlatform.length)); // the unzipping already uses file name
             } else {
+                //TODO: log error
                 fs.rmdirSync(installPath, { recursive: true });
             }
         }
@@ -66,6 +67,7 @@ async function doesFileHashMatch(destinationPath: string, hashValue: string) : P
 }
 
 function downloadFileFromUrl(url: string, destinationPath: string) {
+    //TODO check if internet is available
     return new Promise((resolve, reject) => {
         https.get(url, (response) => {
             if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
