@@ -6,7 +6,6 @@ import * as admZip from 'adm-zip';
 import * as vscode from "vscode";
 import isOnline from 'is-online';
 
-
 export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
     const runtimeDependencies = getRuntimeDependenciesPackages(context);
     const currentPlatform = getCurrentPlatform();
@@ -32,7 +31,7 @@ export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
                 }
                 fs.mkdirSync(installPath, { recursive: true });
                 const zipFilePath = `${installPath}.zip`;
-                await downloadFileFromUrl(packageToInstall.url, zipFilePath);
+                await downloadFileFromUrl(getDownloadUrl(context, currentPlatform), zipFilePath);
                 if (await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
                     unzipFile(zipFilePath, installPath.substring(0, installPath.length - currentPlatform.length)); // the unzipping already uses file name
                     const kiotaPath = getKiotaPathInternal(context);
@@ -117,6 +116,10 @@ function downloadFileFromUrl(url: string, destinationPath: string) {
         });
     });
 }
+const baseDownloadUrl = "https://github.com/microsoft/kiota/releases/download";
+function getDownloadUrl(context: vscode.ExtensionContext, platform: string): string {
+    return `${baseDownloadUrl}/v${context.extension.packageJSON.version}/${platform}.zip`;
+}
 
 function getRuntimeDependenciesPackages(context: vscode.ExtensionContext): Package[] {
     const packageJSON = context.extension.packageJSON;
@@ -127,9 +130,6 @@ function getRuntimeDependenciesPackages(context: vscode.ExtensionContext): Packa
 }
 
 export interface Package {
-    id: string;
-    description: string;
-    url: string;
     platformId: string;
     sha256: string;
 }
