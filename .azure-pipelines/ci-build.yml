@@ -405,7 +405,7 @@ stages:
             inputs:
               targetFolder: $(Build.ArtifactStagingDirectory)/VSCode
               sourceFolder: $(Build.SourcesDirectory)/vscode/microsoft-kiota
-              content: "*.vsix"
+              contents: "*.vsix"
           - task: PublishBuildArtifacts@1
             displayName: "Publish Artifact: VSCode"
             inputs:
