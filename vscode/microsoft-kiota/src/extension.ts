@@ -118,22 +118,28 @@ export async function activate(
           typeof config.language === "string"
             ? parseGenerationLanguage(config.language)
             : KiotaGenerationLanguage.CSharp;
-        const result = await generateClient(
-          context,
-          openApiTreeProvider.descriptionUrl,
-          typeof config.outputPath === "string"
-            ? config.outputPath
-            : "./output",
-          language,
-          selectedPaths,
-          [],
-          typeof config.clientClassName === "string"
-            ? config.clientClassName
-            : "ApiClient",
-          typeof config.clientNamespaceName === "string"
-            ? config.clientNamespaceName
-            : "ApiSdk"
-        );
+        const result = await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          cancellable: false,
+          title: vscode.l10n.t("Generating client...")
+        }, (progress, _) => {
+          return generateClient(
+            context,
+            openApiTreeProvider.descriptionUrl,
+            typeof config.outputPath === "string"
+              ? config.outputPath
+              : "./output",
+            language,
+            selectedPaths,
+            [],
+            typeof config.clientClassName === "string"
+              ? config.clientClassName
+              : "ApiClient",
+            typeof config.clientNamespaceName === "string"
+              ? config.clientNamespaceName
+              : "ApiSdk"
+          );
+        });
 
         const informationMessages = result
           ? getLogEntriesForLevel(result, LogLevel.information)
