@@ -1,6 +1,7 @@
 {
   "name": "kiota",
   "displayName": "Microsoft Kiota",
+  "publisher": "microsoft",
   "description": "REST API client generator based on OpenAPI",
   "version": "1.0.1",
   "engines": {
