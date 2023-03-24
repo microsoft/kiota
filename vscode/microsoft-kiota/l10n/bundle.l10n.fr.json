@@ -21,5 +21,8 @@
   "Choose a name for the client class": "Choisissez un nom pour la classe client",
   "Choose a name for the client class namespace": "Choisissez un nom pour l'espace de nom client",
   "Enter an output path relative to the root of the project": "Entrez un chemin relatif à la racine du projet",
-  "Pick a language": "Sélectionnez un langage"
+  "Pick a language": "Sélectionnez un langage",
+  "Downloading kiota requires an internet connection. Please check your connection and try again.": "Télécharger Kiota nécessite une connexion Internet. Vérifiez votre connexion et réessayez.",
+  "Kiota download failed. Check the extension host logs for more information.": "Échec du téléchargement de Kiota. Vérifiez les journaux de l'hôte d'extension pour plus d'informations.",
+  "Downloading kiota...": "Téléchargement de Kiota..."
 }

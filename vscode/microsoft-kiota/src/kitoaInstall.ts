@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import {createHash} from 'crypto';
 import * as admZip from 'adm-zip';
 import * as vscode from "vscode";
+import isOnline from 'is-online';
 
 
 export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
@@ -13,19 +14,38 @@ export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
     if (packageToInstall) {
         const installPath = context.asAbsolutePath(packageToInstall.installPath);
         if (!fs.existsSync(installPath)) {
-            fs.mkdirSync(installPath, { recursive: true });
-            const zipFilePath = `${installPath}.zip`;
-            await downloadFileFromUrl(packageToInstall.url, zipFilePath);
-            if (await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
-                unzipFile(zipFilePath, installPath.substring(0, installPath.length - currentPlatform.length)); // the unzipping already uses file name
-                const kiotaPath = getKiotaPathInternal(context);
-                if ((currentPlatform.startsWith(linuxPlatform) || currentPlatform.startsWith(osxPlatform)) && kiotaPath) {
-                  makeExecutable(kiotaPath);
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                cancellable: false,
+                title: vscode.l10n.t("Downloading kiota...")
+            }, async (progress, _) => {
+              const online = await isOnline();
+              if (!online) {
+                vscode.window.showErrorMessage(
+                  vscode.l10n.t("Downloading kiota requires an internet connection. Please check your connection and try again.")
+                );
+                return;
+              }
+              try {
+                fs.mkdirSync(installPath, { recursive: true });
+                const zipFilePath = `${installPath}.zip`;
+                await downloadFileFromUrl(packageToInstall.url, zipFilePath);
+                if (await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
+                    unzipFile(zipFilePath, installPath.substring(0, installPath.length - currentPlatform.length)); // the unzipping already uses file name
+                    const kiotaPath = getKiotaPathInternal(context);
+                    if ((currentPlatform.startsWith(linuxPlatform) || currentPlatform.startsWith(osxPlatform)) && kiotaPath) {
+                      makeExecutable(kiotaPath);
+                    }
+                } else {
+                  throw new Error("Hash mismatch");
                 }
-            } else {
-                //TODO: log error
+              } catch(error) {
+                vscode.window.showErrorMessage(
+                  vscode.l10n.t("Kiota download failed. Check the extension host logs for more information.")
+                );
                 fs.rmdirSync(installPath, { recursive: true });
-            }
+              }
+            });
         }
     }
 }
@@ -74,7 +94,6 @@ async function doesFileHashMatch(destinationPath: string, hashValue: string) : P
 }
 
 function downloadFileFromUrl(url: string, destinationPath: string) {
-    //TODO check if internet is available
     return new Promise((resolve, reject) => {
         https.get(url, (response) => {
             if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {

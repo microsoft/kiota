@@ -214,6 +214,7 @@
   "dependencies": {
     "@vscode/l10n": "^0.0.11",
     "adm-zip": "^0.5.10",
+    "is-online": "^10.0.0",
     "original-fs": "^1.2.0",
     "vscode-jsonrpc": "^8.1.0"
   },
