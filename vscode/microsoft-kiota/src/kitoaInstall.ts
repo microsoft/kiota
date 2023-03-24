@@ -18,6 +18,10 @@ export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
             await downloadFileFromUrl(packageToInstall.url, zipFilePath);
             if (await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
                 unzipFile(zipFilePath, installPath.substring(0, installPath.length - currentPlatform.length)); // the unzipping already uses file name
+                const kiotaPath = getKiotaPathInternal(context);
+                if ((currentPlatform.startsWith(linuxPlatform) || currentPlatform.startsWith(osxPlatform)) && kiotaPath) {
+                  makeExecutable(kiotaPath);
+                }
             } else {
                 //TODO: log error
                 fs.rmdirSync(installPath, { recursive: true });
@@ -36,6 +40,9 @@ export function getKiotaPath(context: vscode.ExtensionContext): string {
         }
     }
     return kiotaPath;
+}
+function makeExecutable(path: string) {
+    fs.chmodSync(path, 0o755);
 }
 
 function getKiotaPathInternal(context: vscode.ExtensionContext): string | undefined {
@@ -101,7 +108,10 @@ export interface Package {
     sha256: string;
 }
 
+const windowsPlatform = 'win';
+const osxPlatform = 'osx';
+const linuxPlatform = 'linux';
 export function getCurrentPlatform(): string {
-    const binPathSegmentOS = process.platform === 'win32' ? 'win' : process.platform === 'darwin' ? 'osx' : 'linux';
+    const binPathSegmentOS = process.platform === 'win32' ? windowsPlatform : process.platform === 'darwin' ? osxPlatform : linuxPlatform;
     return `${binPathSegmentOS}-${process.arch}`;
 }
