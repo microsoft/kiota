@@ -24,7 +24,7 @@
         {
           "id": "kiota-openapi-explorer",
           "title": "%kiota-openapi-explorer.activitybar.title%",
-          "icon": "media/openapi.svg"
+          "icon": "media/logo.svg"
         }
       ],
       "panel": [
@@ -40,7 +40,7 @@
         {
           "id": "kiota.openApiExplorer",
           "name": "%kiota.openApiExplorer.name%",
-          "icon": "media/openapi.svg",
+          "icon": "media/logo.svg",
           "contextualTitle": "%kiota.openApiExplorer.contextualTitle%"
         }
       ],
