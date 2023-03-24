@@ -10,9 +10,8 @@ import isOnline from 'is-online';
 export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
     const runtimeDependencies = getRuntimeDependenciesPackages(context);
     const currentPlatform = getCurrentPlatform();
-    const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
-    if (packageToInstall) {
-        const installPath = context.asAbsolutePath(packageToInstall.installPath);
+    const installPath = getKiotaPathInternal(context, false);
+    if (installPath) {
         if (!fs.existsSync(installPath)) {
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
@@ -27,6 +26,10 @@ export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
                 return;
               }
               try {
+                const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
+                if (!packageToInstall) {
+                  throw new Error("Could not find package to install");
+                }
                 fs.mkdirSync(installPath, { recursive: true });
                 const zipFilePath = `${installPath}.zip`;
                 await downloadFileFromUrl(packageToInstall.url, zipFilePath);
@@ -65,14 +68,19 @@ function makeExecutable(path: string) {
     fs.chmodSync(path, 0o755);
 }
 
-function getKiotaPathInternal(context: vscode.ExtensionContext): string | undefined {
+const binariesRootDirectory = '.kiotabin';
+function getKiotaPathInternal(context: vscode.ExtensionContext, withFileName = true): string | undefined {
     const fileName = process.platform === 'win32' ? 'kiota.exe' : 'kiota';
     const runtimeDependencies = getRuntimeDependenciesPackages(context);
     const currentPlatform = getCurrentPlatform();
     const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
     if (packageToInstall) {
-        const installPath = context.asAbsolutePath(packageToInstall.installPath);
-        return path.join(installPath, fileName);
+        const installPath = context.asAbsolutePath(binariesRootDirectory);
+        const directoryPath = path.join(installPath, context.extension.packageJSON.version, currentPlatform);
+        if (withFileName) {
+            return path.join(directoryPath, fileName);
+        }
+        return directoryPath;
     }
     return undefined;
 }
@@ -122,7 +130,6 @@ export interface Package {
     id: string;
     description: string;
     url: string;
-    installPath: string;
     platformId: string;
     sha256: string;
 }
