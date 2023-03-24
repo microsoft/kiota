@@ -217,20 +217,6 @@ stages:
                 ]
               SessionTimeout: 20
 
-          - task: PowerShell@2
-            displayName: "Get Kiota's version-number from .csproj"
-            inputs:
-              targetType: "inline"
-              script: |
-                $xml = [Xml] (Get-Content .\src\kiota\kiota.csproj)
-                $version = $xml.Project.PropertyGroup.Version
-                echo $version
-                echo "##vso[task.setvariable variable=kiotaversion]$version"
-
-          # publish kiota as an .exe
-          - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime win-x64 /p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/kiota-v$(kiotaversion)
-            displayName: publish kiota as executable
-
           - task: CopyFiles@2
             displayName: Prepare staging folder for upload
             inputs:
@@ -244,16 +230,240 @@ stages:
               ArtifactName: Nugets
               PathtoPublish: "$(Build.ArtifactStagingDirectory)/Nugets"
 
-          - task: PublishBuildArtifacts@1
-            displayName: "Publish Artifact: Kiota"
+
+      - job: build_binaries
+        dependsOn: []
+        strategy:
+          matrix:
+            win-x86:
+              architecture: 'win-x86'
+            win-x64:
+              architecture: 'win-x64'
+            linux-x64:
+              architecture: 'linux-x64'
+            osx-x64:
+              architecture: 'osx-x64'
+            osx-arm64:
+              architecture: 'osx-arm64'
+        steps:
+          - checkout: self
+            clean: true
+            submodules: true
+          - task: UseDotNet@2
+            displayName: "Use .NET 2" # needed for ESRP signing
             inputs:
-              ArtifactName: Kiota-v$(kiotaversion)
-              PathtoPublish: "$(Build.ArtifactStagingDirectory)/Kiota-v$(kiotaversion)"
+              version: 2.x
+          - task: UseDotNet@2
+            displayName: "Use .NET 7"
+            inputs:
+              version: 7.x
+          - pwsh: dotnet workload install ios macos maccatalyst
+            condition: eq(variables['architecture'], 'osx-arm64')
+          - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture)
+            displayName: publish kiota as executable
+          - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
+            inputs:
+              ConnectedServiceName: "microsoftgraph ESRP CodeSign DLL and NuGet (AKV)"
+              FolderPath: $(Build.ArtifactStagingDirectory)/binaries/$(architecture)
+              signConfigType: inlineSignParams
+              inlineOperation: |
+                [
+                    {
+                        "keyCode": "CP-230012",
+                        "operationSetCode": "SigntoolSign",
+                        "parameters": [
+                        {
+                            "parameterName": "OpusName",
+                            "parameterValue": "Microsoft"
+                        },
+                        {
+                            "parameterName": "OpusInfo",
+                            "parameterValue": "http://www.microsoft.com"
+                        },
+                        {
+                            "parameterName": "FileDigest",
+                            "parameterValue": "/fd \"SHA256\""
+                        },
+                        {
+                            "parameterName": "PageHash",
+                            "parameterValue": "/NPH"
+                        },
+                        {
+                            "parameterName": "TimeStamp",
+                            "parameterValue": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                        }
+                        ],
+                        "toolName": "sign",
+                        "toolVersion": "1.0"
+                    },
+                    {
+                        "keyCode": "CP-230012",
+                        "operationSetCode": "SigntoolVerify",
+                        "parameters": [ ],
+                        "toolName": "sign",
+                        "toolVersion": "1.0"
+                    }
+                ]
+              SessionTimeout: 20
+          - task: ArchiveFiles@2
+            displayName: Archive binaries
+            inputs:
+              rootFolderOrFile: $(Build.ArtifactStagingDirectory)/binaries/$(architecture)
+              includeRootFolder: false
+              archiveType: zip
+              archiveFile: $(Build.ArtifactStagingDirectory)/binaries/$(architecture).zip
+              replaceExistingArchive: true
+          - task: PublishBuildArtifacts@1
+            displayName: "Publish Artifact: binaries"
+            inputs:
+              ArtifactName: Binaries
+              PathtoPublish: "$(Build.ArtifactStagingDirectory)/binaries/$(architecture).zip"
+
+
+      - job: build_vscode_extension
+        dependsOn: [build_binaries]
+        steps:
+          - checkout: self
+            clean: true
+            submodules: true
+          - task: UseDotNet@2
+            displayName: "Use .NET 2" # needed for ESRP signing
+            inputs:
+              version: 2.x
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "18.x"
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              artifact: Binaries
+              source: current
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              artifact: Nugets
+              source: current
+          - task: PowerShell@2
+            displayName: "Get Kiota's version-number from .csproj"
+            inputs:
+              targetType: "inline"
+              script: |
+                $xml = [Xml] (Get-Content $(Build.SourcesDirectory)/src/kiota/kiota.csproj)
+                $version = $xml.Project.PropertyGroup.Version
+                echo $version
+                echo "##vso[task.setvariable variable=artifactVersion]$version"
+          - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $artifactVersion -filePath $(Build.SourcesDirectory)/src/vscode/microsoft-kiota/package.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
+          - pwsh: npm i -g @vscode/vsce
+          - pwsh: npm ci
+            workingDirectory: $(Build.SourcesDirectory)/src/vscode/microsoft-kiota
+          - pwsh: vsce package
+            workingDirectory: $(Build.SourcesDirectory)/src/vscode/microsoft-kiota
+          - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
+            inputs:
+              ConnectedServiceName: "microsoftgraph ESRP CodeSign DLL and NuGet (AKV)"
+              FolderPath: $(Build.SourcesDirectory)/src/vscode/microsoft-kiota/
+              Pattern: "*.vsix"
+              UseMinimatch: true
+              signConfigType: inlineSignParams
+              inlineOperation: |
+                [
+                    {
+                        "keyCode": "CP-230012",
+                        "operationSetCode": "SigntoolSign",
+                        "parameters": [
+                        {
+                            "parameterName": "OpusName",
+                            "parameterValue": "Microsoft"
+                        },
+                        {
+                            "parameterName": "OpusInfo",
+                            "parameterValue": "http://www.microsoft.com"
+                        },
+                        {
+                            "parameterName": "FileDigest",
+                            "parameterValue": "/fd \"SHA256\""
+                        },
+                        {
+                            "parameterName": "PageHash",
+                            "parameterValue": "/NPH"
+                        },
+                        {
+                            "parameterName": "TimeStamp",
+                            "parameterValue": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                        }
+                        ],
+                        "toolName": "sign",
+                        "toolVersion": "1.0"
+                    },
+                    {
+                        "keyCode": "CP-230012",
+                        "operationSetCode": "SigntoolVerify",
+                        "parameters": [ ],
+                        "toolName": "sign",
+                        "toolVersion": "1.0"
+                    }
+                ]
+              SessionTimeout: 20
+          - task: CopyFiles@2
+            displayName: Prepare staging folder for upload
+            inputs:
+              targetFolder: $(Build.ArtifactStagingDirectory)/VSCode
+              sourceFolder: $(Build.SourcesDirectory)/src/vscode/microsoft-kiota
+              content: "*.vsix"
+          - task: PublishBuildArtifacts@1
+            displayName: "Publish Artifact: VSCode"
+            inputs:
+              ArtifactName: VSCode
+              PathtoPublish: "$(Build.ArtifactStagingDirectory)/VSCode"
 
   - stage: deploy
     condition: and(contains(variables['build.sourceBranch'], 'refs/tags/v'), succeeded())
     dependsOn: build
     jobs:
+      - deployment: github_release
+        dependsOn: []
+        environment: kiota-github-releases
+        strategy:
+          runOnce:
+            deploy:
+              pool:
+                vmImage: ubuntu-latest
+              steps:
+                - checkout: self
+                  clean: true
+                  submodules: true
+                - task: DownloadPipelineArtifact@2
+                  inputs:
+                    artifact: Binaries
+                    source: current
+                - task: DownloadPipelineArtifact@2
+                  inputs:
+                    artifact: VSCode
+                    source: current
+                - task: DownloadPipelineArtifact@2
+                  inputs:
+                    artifact: Nugets
+                    source: current
+                - task: PowerShell@2
+                  displayName: "Get Kiota's version-number from .csproj"
+                  inputs:
+                    targetType: "inline"
+                    script: |
+                      $xml = [Xml] (Get-Content $(Build.SourcesDirectory)/src/kiota/kiota.csproj)
+                      $version = $xml.Project.PropertyGroup.Version
+                      echo $version
+                      echo "##vso[task.setvariable variable=artifactVersion]$version"
+                - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion) -filePath $(Build.SourcesDirectory)/CHANGELOG.md
+                - task: GitHubRelease@1
+                  inputs:
+                    gitHubConnection: 'microsoftkiota'
+                    tagSource: userSpecifiedTag
+                    tag: '$(artifactVersion)'
+                    title: '$(artifactVersion)'
+                    releaseNotesSource: inline
+                    releaseNotesInline: $(releaseNotes)
+                    assets: '$(Pipeline.Workspace)\**\*.zip;$(Pipeline.Workspace)\**\*.vsix'
+                    addChangeLog: false
+
       - deployment: deploy_kiota
         dependsOn: []
         environment: nuget-org
@@ -276,16 +486,6 @@ stages:
                     rm "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg" -Verbose
                     rm "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
                   displayName: remove other nupkgs to avoid duplication
-                # - pwsh: |
-                #     $artifactName = Get-ChildItem -Path $(Pipeline.Workspace)\Nugets -Filter Microsoft.OpenApi.Kiota.*.nupkg -recurse | select -First 1
-                #     $artifactVersion= $artifactName.Name -replace "Microsoft.OpenApi.Kiota.", "" -replace ".nupkg", ""
-                #     #Set Variable $artifactName and $artifactVersion
-                #     Write-Host "##vso[task.setvariable variable=artifactVersion; isSecret=false; isOutput=true]$artifactVersion"
-                #     Write-Host "##vso[task.setvariable variable=artifactName; isSecret=false; isOutput=true]$artifactName.FullName"
-                #     echo "$artifactName"
-                #     echo "$artifactVersion"
-                #   displayName: 'Fetch Artifact Name'
-
                 - task: NuGetCommand@2
                   displayName: "NuGet push"
                   inputs:
@@ -293,16 +493,6 @@ stages:
                     packagesToPush: "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.*.nupkg"
                     nuGetFeedType: external
                     publishFeedCredentials: "OpenAPI Nuget Connection"
-              # - task: GitHubRelease@1
-              #   displayName: 'GitHub release (create)'
-              #   inputs:
-              #     gitHubConnection: 'Github-MaggieKimani1'
-              #     tagSource: userSpecifiedTag
-              #     tag: '$(artifactVersion)'
-              #     title: '$(artifactVersion)'
-              #     releaseNotesSource: inline
-              #     assets: '$(Pipeline.Workspace)\**\*.exe'
-              #     changeLogType: issueBased
 
       - deployment: deploy_targets
         dependsOn: []
