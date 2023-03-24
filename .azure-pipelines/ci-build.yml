@@ -338,10 +338,7 @@ stages:
             inputs:
               artifact: Binaries
               source: current
-          - task: DownloadPipelineArtifact@2
-            inputs:
-              artifact: Nugets
-              source: current
+              targetPath: $(Build.ArtifactStagingDirectory)/Binaries
           - task: PowerShell@2
             displayName: "Get Kiota's version-number from .csproj"
             inputs:
@@ -350,17 +347,17 @@ stages:
                 $xml = [Xml] (Get-Content $(Build.SourcesDirectory)/src/kiota/kiota.csproj)
                 $version = $xml.Project.PropertyGroup.Version
                 echo $version
-                echo "##vso[task.setvariable variable=artifactVersion]$version"
-          - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $artifactVersion -filePath $(Build.SourcesDirectory)/src/vscode/microsoft-kiota/package.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
+                Write-Host "##vso[task.setvariable variable=artifactVersion]$version"
+          - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion) -filePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
           - pwsh: npm i -g @vscode/vsce
           - pwsh: npm ci
-            workingDirectory: $(Build.SourcesDirectory)/src/vscode/microsoft-kiota
+            workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
           - pwsh: vsce package
-            workingDirectory: $(Build.SourcesDirectory)/src/vscode/microsoft-kiota
+            workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
           - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
             inputs:
               ConnectedServiceName: "microsoftgraph ESRP CodeSign DLL and NuGet (AKV)"
-              FolderPath: $(Build.SourcesDirectory)/src/vscode/microsoft-kiota/
+              FolderPath: $(Build.SourcesDirectory)/vscode/microsoft-kiota/
               Pattern: "*.vsix"
               UseMinimatch: true
               signConfigType: inlineSignParams
@@ -407,7 +404,7 @@ stages:
             displayName: Prepare staging folder for upload
             inputs:
               targetFolder: $(Build.ArtifactStagingDirectory)/VSCode
-              sourceFolder: $(Build.SourcesDirectory)/src/vscode/microsoft-kiota
+              sourceFolder: $(Build.SourcesDirectory)/vscode/microsoft-kiota
               content: "*.vsix"
           - task: PublishBuildArtifacts@1
             displayName: "Publish Artifact: VSCode"
@@ -451,7 +448,7 @@ stages:
                       $xml = [Xml] (Get-Content $(Build.SourcesDirectory)/src/kiota/kiota.csproj)
                       $version = $xml.Project.PropertyGroup.Version
                       echo $version
-                      echo "##vso[task.setvariable variable=artifactVersion]$version"
+                      Write-Host "##vso[task.setvariable variable=artifactVersion]$version"
                 - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion) -filePath $(Build.SourcesDirectory)/CHANGELOG.md
                 - task: GitHubRelease@1
                   inputs:
