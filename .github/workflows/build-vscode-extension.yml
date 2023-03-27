@@ -31,6 +31,7 @@ jobs:
         with:
           node-version: 18.x
       - run: |
+          git switch -
           $artifactVersion = git describe --tags --abbrev=0
           . ./scripts/update-vscode-releases.ps1 -version $artifactVersion -filePath ./vscode/microsoft-kiota/package.json -online
         shell: pwsh
