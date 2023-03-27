@@ -17,6 +17,7 @@ import { searchDescription } from "./searchDescription";
 import { generateClient } from "./generateClient";
 import { getLanguageInformation } from "./getLanguageInformation";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
+import { updateClients } from "./updateClients";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -141,22 +142,9 @@ export async function activate(
           );
         });
 
-        const informationMessages = result
-          ? getLogEntriesForLevel(result, LogLevel.information)
-          : [];
-        const errorMessages = result
-          ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error)
-          : [];
-        if (errorMessages.length > 0) {
-          errorMessages.forEach((element) => {
-            kiotaOutputChannel.error(element.message);
-            vscode.window.showErrorMessage(element.message);
-          });
-        } else {
-          informationMessages.forEach((element) => {
-            kiotaOutputChannel.info(element.message);
-            vscode.window.showInformationMessage(element.message);
-          });
+        if (result)
+        {
+          displayLogs(result);
         }
         languagesInformation = await getLanguageInformation(
           context,
@@ -204,7 +192,7 @@ export async function activate(
   // update status bar item once at start
   await updateStatusBarItem(context);
   let disposable = vscode.commands.registerCommand(
-    "kiota.updateClients",
+    `${extensionId}.updateClients`,
     async () => {
       if (
         !vscode.workspace.workspaceFolders ||
@@ -224,35 +212,16 @@ export async function activate(
             path: vscode.workspace.workspaceFolders[0].uri.fsPath,
           })
         );
-        await connectToKiota(context, async (connection) => {
-          const request = new rpc.RequestType<string, KiotaLogEntry[], void>(
-            "Update"
-          );
-          const result = await connection.sendRequest(
-            request,
-            vscode.workspace.workspaceFolders![0].uri.fsPath
-          );
-          const informationMessages = getLogEntriesForLevel(
-            result,
-            LogLevel.information
-          );
-          const errorMessages = getLogEntriesForLevel(
-            result,
-            LogLevel.critical,
-            LogLevel.error
-          );
-          if (errorMessages.length > 0) {
-            errorMessages.forEach((element) => {
-              kiotaOutputChannel.error(element.message);
-              vscode.window.showErrorMessage(element.message);
-            });
-          } else {
-            informationMessages.forEach((element) => {
-              kiotaOutputChannel.info(element.message);
-              vscode.window.showInformationMessage(element.message);
-            });
-          }
+        const res = await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          cancellable: false,
+          title: vscode.l10n.t("Generating client...")
+        }, (progress, _) => {
+          return updateClients(context);
         });
+        if (res) {
+          displayLogs(res);
+        }
       } catch (error) {
         kiotaOutputChannel.error(
           vscode.l10n.t("error updating the clients {error}"),
@@ -267,6 +236,49 @@ export async function activate(
   );
 
   context.subscriptions.push(disposable);
+}
+
+function displayLogs(result: KiotaLogEntry[]) : void {
+  const informationMessages = result
+    ? getLogEntriesForLevel(result, LogLevel.information)
+    : [];
+  const errorMessages = result
+    ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error)
+    : [];
+
+  result.forEach((element) => {
+    logFromLogLevel(element);
+  });
+  if (errorMessages.length > 0) {
+    errorMessages.forEach((element) => {
+      vscode.window.showErrorMessage(element.message);
+    });
+  } else {
+    informationMessages.forEach((element) => {
+      vscode.window.showInformationMessage(element.message);
+    });
+  }
+}
+
+function logFromLogLevel(entry: KiotaLogEntry): void {
+  switch (entry.level) {
+    case LogLevel.critical:
+    case LogLevel.error:
+      kiotaOutputChannel.error(entry.message);
+      break;
+    case LogLevel.warning:
+      kiotaOutputChannel.warn(entry.message);
+      break;
+    case LogLevel.debug:
+      kiotaOutputChannel.debug(entry.message);
+      break;
+    case LogLevel.trace:
+      kiotaOutputChannel.trace(entry.message);
+      break;
+    default:
+      kiotaOutputChannel.info(entry.message);
+      break;
+  }
 }
 
 async function updateStatusBarItem(context: vscode.ExtensionContext): Promise<void> {

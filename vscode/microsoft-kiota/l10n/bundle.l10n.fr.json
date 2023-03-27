@@ -25,5 +25,6 @@
   "Downloading kiota requires an internet connection. Please check your connection and try again.": "Télécharger Kiota nécessite une connexion Internet. Vérifiez votre connexion et réessayez.",
   "Kiota download failed. Check the extension host logs for more information.": "Échec du téléchargement de Kiota. Vérifiez les journaux de l'hôte d'extension pour plus d'informations.",
   "Downloading kiota...": "Téléchargement de Kiota...",
-  "Generating client...": "Génération du client..."
+  "Generating client...": "Génération du client...",
+  "Updating clients...": "Mise à jour des clients..."
 }
