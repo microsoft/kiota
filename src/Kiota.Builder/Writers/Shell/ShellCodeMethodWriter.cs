@@ -125,19 +125,19 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             {
                 // Add output filter param
                 parameters.Add((OutputFilterParamType, OutputFilterParamName, null));
-                availableOptions.Add($"{InvocationContextParamName}.BindingContext.GetRequiredService<{OutputFilterParamType}>()");
+                availableOptions.Add($"({OutputFilterParamType}){InvocationContextParamName}.BindingContext.GetService(typeof({OutputFilterParamType}))");
             }
 
             // Add output formatter factory param
             parameters.Add((OutputFormatterFactoryParamType, OutputFormatterFactoryParamName, null));
-            availableOptions.Add($"{InvocationContextParamName}.BindingContext.GetRequiredService<{OutputFormatterFactoryParamType}>()");
+            availableOptions.Add($"({OutputFormatterFactoryParamType}){InvocationContextParamName}.BindingContext.GetService(typeof({OutputFormatterFactoryParamType}))");
         }
 
         if (originalMethod.PagingInformation != null)
         {
             // Add paging service param
             parameters.Add((PagingServiceParamType, PagingServiceParamName, null));
-            availableOptions.Add($"{InvocationContextParamName}.BindingContext.GetRequiredService<{PagingServiceParamType}>()");
+            availableOptions.Add($"({PagingServiceParamType}){InvocationContextParamName}.BindingContext.GetService(typeof({PagingServiceParamType}))");
         }
 
         // Add CancellationToken param
@@ -154,7 +154,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         {
             var (paramType, paramName, _) = parameters[i];
             var op = availableOptions[i];
-            var isRequiredService = op.Contains($"GetRequiredService<{paramType}>");
+            var isRequiredService = op.Contains($"({paramType}){InvocationContextParamName}.BindingContext.GetService(typeof({paramType}))");
             var typeName = isRequiredService ? paramType : "var";
             writer.WriteLine($"{typeName} {paramName.ToFirstCharacterLowerCase()} = {availableOptions[i]};");
         }
