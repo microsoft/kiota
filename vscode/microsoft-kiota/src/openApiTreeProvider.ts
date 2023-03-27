@@ -112,14 +112,8 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     private getPathSegments(path: string): string[] {
         return path.replace('/', '').split('\\').filter(x => x !== ''); // the root node is always /
     }
-    private readonly selectedSet: IconSet = {
-        light: path.join(__filename, '..', '..', 'media', 'light', 'ic_fluent_checkbox_checked_24_filled.svg'),
-        dark: path.join(__filename, '..', '..', 'media', 'dark', 'ic_fluent_checkbox_checked_24_filled.svg')
-    };
-    private readonly unselectedSet: IconSet = {
-        light: path.join(__filename, '..', '..', 'media', 'light', 'ic_fluent_checkbox_unchecked_24_filled.svg'),
-        dark: path.join(__filename, '..', '..', 'media', 'dark', 'ic_fluent_checkbox_unchecked_24_filled.svg')
-    };
+    private readonly selectedSet: IconSet = new vscode.ThemeIcon('check');
+    private readonly unselectedSet: IconSet = new vscode.ThemeIcon('circle-slash');
     private getIconSet(selected: boolean): IconSet {
         return selected ? this.selectedSet : this.unselectedSet;
     }
@@ -176,8 +170,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         return [];
     }
 }
-type IconSet = { light: string | vscode.Uri; dark: string | vscode.Uri };
-
+type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string | vscode.Uri } | vscode.ThemeIcon;
 export class OpenApiTreeNode extends vscode.TreeItem {
     constructor(
         public readonly path: string,

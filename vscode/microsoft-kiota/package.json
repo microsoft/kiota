@@ -68,22 +68,22 @@
         {
           "command": "kiota.openApiExplorer.openDescription",
           "when": "view == kiota.openApiExplorer",
-          "group": "navigation"
+          "group": "navigation@2"
         },
         {
           "command": "kiota.searchApiDescription",
           "when": "view == kiota.openApiExplorer",
-          "group": "navigation"
+          "group": "navigation@1"
         },
         {
           "command": "kiota.openApiExplorer.generateClient",
           "when": "view == kiota.openApiExplorer",
-          "group": "navigation"
+          "group": "navigation@3"
         },
         {
           "command": "kiota.openApiExplorer.closeDescription",
           "when": "view == kiota.openApiExplorer",
-          "group": "navigation"
+          "group": "navigation@4"
         }
       ],
       "view/item/context": [
