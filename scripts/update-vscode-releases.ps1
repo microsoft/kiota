@@ -24,7 +24,7 @@ $runtimeDependencies = $packageJson.runtimeDependencies
 
 if ($online) {
     Write-Warning "Downloading binaries from GitHub."
-    $binaryFolderPath = Join-Path $Env:TEMP "kiota-vscode-$version"
+    $binaryFolderPath = Join-Path ($Env:TEMP ?? $PWD) ".kiota-vscode-$version" # $Env:TEMP is not available on GitHub Actions
     New-Item -ItemType Directory -Force -Path $binaryFolderPath
     foreach ($runtimeDependency in $runtimeDependencies) {
         try {
