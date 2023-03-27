@@ -461,10 +461,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             codeType.Name = ReturnFinalInterfaceName(codeInterface.Name);
             codeInterface.Name = ReturnFinalInterfaceName(codeInterface.Name);
         }
-        else if (codeUsing.Declaration?.TypeDefinition is CodeClass codeClass && codeClass.Kind == CodeClassKind.Model)
-        {
-            parentClass?.RemoveUsingsByDeclarationName(codeUsing.Declaration.Name);
-        }
     }
     private static void RenameCodeInterfaceParamsInSerializers(CodeFunction codeFunction)
     {
