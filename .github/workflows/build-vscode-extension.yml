@@ -31,11 +31,12 @@ jobs:
         with:
           node-version: 18.x
       - id: last_release
-        uses: InsonusK/get-latest-release@v1.0.1
+        uses: pozetroninc/github-action-get-latest-release@v0.7.0
         with:
-          myToken: ${{ github.token }}
-          view_top: 1
-      - run: scripts/update-vscode-releases.ps1 -version ${{ steps.last_release.outputs.tag_name }} -filePath ./vscode/microsoft-kiota/package.json -online
+          owner: microsoft
+          repo: kiota
+          excludes: prerelease, draft
+      - run: scripts/update-vscode-releases.ps1 -version "${{ steps.last_release.outputs.release }}" -filePath "./vscode/microsoft-kiota/package.json" -online
         shell: pwsh
       - name: Install dependencies
         run: npm ci
