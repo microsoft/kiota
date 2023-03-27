@@ -416,6 +416,7 @@ stages:
                     assets: |
                       $(Pipeline.Workspace)\**\*.zip
                       $(Pipeline.Workspace)\**\*.vsix
+                      $(Pipeline.Workspace)\**\*.nupkg
                     addChangeLog: false
 
       - deployment: deploy_kiota
