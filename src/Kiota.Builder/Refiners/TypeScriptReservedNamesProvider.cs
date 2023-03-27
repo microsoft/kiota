@@ -42,6 +42,7 @@ public class TypeScriptReservedNamesProvider : IReservedNamesProvider
         "void",
         "while",
         "with",
+        "BaseRequestBuilder",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }

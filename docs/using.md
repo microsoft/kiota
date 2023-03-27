@@ -500,6 +500,8 @@ kiota <command name> --exclude-path **/users/** --exclude-path **/groups/**
 
 > Note: exclude pattern can be used in combination with the include pattern argument. A path item is included when (no include pattern is included OR it matches an include pattern) AND (no exclude pattern is included OR it doesn't match an exclude pattern).
 
+> Note: you can also filter specific operations by appending `#OPERATION` to the pattern. e.g. `**/users/**#GET`.
+
 ### `--include-path (-i)`
 
 A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything.
@@ -509,6 +511,8 @@ kiota <command name> --include-path **/users/** --include-path **/groups/**
 ```
 
 > Note: include pattern can be used in combination with the exclude pattern argument. A path item is included when (no include pattern is included OR it matches an include pattern) AND (no exclude pattern is included OR it doesn't match an exclude pattern).
+
+> Note: you can also filter specific operations by appending `#OPERATION` to the pattern. e.g. `**/users/**#GET`.
 
 ### `--openapi (-d)`
 

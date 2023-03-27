@@ -179,24 +179,29 @@ public class GoConventionService : CommonLanguageConventionService
         if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is not CodeProperty requestAdapterProp) return;
         var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) &&
                                 parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProp ?
-                                    $"m.{urlTemplateParamsProp.Name}" :
+                                    $"m.BaseRequestBuilder.{urlTemplateParamsProp.Name.ToFirstCharacterUpperCase()}" :
                                     (urlTemplateVarName ?? string.Empty);
         var splatImport = returnType.Split('.');
         var constructorName = splatImport.Last().TrimCollectionAndPointerSymbols().ToFirstCharacterUpperCase();
         var moduleName = splatImport.Length > 1 ? $"{splatImport.First().TrimStart('*')}." : string.Empty;
         pathParameters ??= Enumerable.Empty<CodeParameter>();
         var pathParametersSuffix = pathParameters.Any() ? $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}" : string.Empty;
-        writer.WriteLines($"return {moduleName}New{constructorName}Internal({urlTemplateParams}, m.{requestAdapterProp.Name}{pathParametersSuffix})");
+        writer.WriteLines($"return {moduleName}New{constructorName}Internal({urlTemplateParams}, m.BaseRequestBuilder.{requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix})");
     }
     public override string TempDictionaryVarName => "urlTplParams";
-    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase? pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters)
+    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase? pathParametersType, string pathParametersReference, string pathParametersTarget, bool copyMap, params (CodeTypeBase, string, string)[] parameters)
     {
         if (pathParametersType == null) return;
         var mapTypeName = pathParametersType.Name;
-        writer.WriteLine($"{TempDictionaryVarName} := make({mapTypeName})");
-        writer.StartBlock($"for idx, item := range {pathParametersReference} {{");
-        writer.WriteLine($"{TempDictionaryVarName}[idx] = item");
-        writer.CloseBlock();
+        var isTempTarget = string.IsNullOrEmpty(pathParametersTarget);
+        if (isTempTarget)
+            writer.WriteLine($"{TempDictionaryVarName} := make({mapTypeName})");
+        if (copyMap)
+        {
+            writer.StartBlock($"for idx, item := range {pathParametersReference} {{");
+            writer.WriteLine($"{(isTempTarget ? TempDictionaryVarName : pathParametersTarget)}[idx] = item");
+            writer.CloseBlock();
+        }
         foreach (var p in parameters)
         {
             var isStringStruct = !p.Item1.IsNullable && p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase);

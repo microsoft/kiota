@@ -45,6 +45,10 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     public bool ReadOnly { get; set; } = false;
     public AccessModifier Access { get; set; } = AccessModifier.Public;
     public bool ExistsInBaseType => OriginalPropertyFromBaseType != null;
+    public bool ExistsInExternalBaseType
+    {
+        get; set;
+    }
     public CodeMethod? Getter
     {
         get; set;

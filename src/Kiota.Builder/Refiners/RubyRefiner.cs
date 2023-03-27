@@ -18,6 +18,17 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceIndexersByMethodsWithParameter(generatedCode, false, "_by_id");
+            MoveRequestBuilderPropertiesToBaseType(generatedCode,
+                new CodeUsing
+                {
+                    Name = "MicrosoftKiotaAbstractions::BaseRequestBuilder",
+                    Declaration = new CodeType
+                    {
+                        Name = "MicrosoftKiotaAbstractions",
+                        IsExternal = true
+                    }
+                });
+            RemoveRequestConfigurationClasses(generatedCode);
             var classesToDisambiguate = new HashSet<CodeClass>();
             var suffix = "Model";
             DisambiguateClassesWithNamespaceNames(generatedCode, classesToDisambiguate, suffix);

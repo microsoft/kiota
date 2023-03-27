@@ -80,11 +80,6 @@ public class KiotaBuilder
             return (0, null, false);
         StopLogAndReset(sw, $"step {++stepId} - reading the stream - took");
 
-        // Create patterns
-        sw.Start();
-        var pathPatterns = BuildGlobPatterns();
-        StopLogAndReset(sw, $"step {++stepId} - parsing URI patterns - took");
-
         // Parse OpenAPI
         sw.Start();
         if (originalDocument == null)
@@ -112,7 +107,7 @@ public class KiotaBuilder
 
             // filter paths
             sw.Start();
-            FilterPathsByPatterns(openApiDocument, pathPatterns.Item1, pathPatterns.Item2);
+            FilterPathsByPatterns(openApiDocument);
             StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
 
             SetApiRootUrl();
@@ -227,30 +222,56 @@ public class KiotaBuilder
         };
         await lockManagementService.WriteLockFileAsync(config.OutputPath, configurationLock, cancellationToken);
     }
-    public (List<Glob>, List<Glob>) BuildGlobPatterns()
+    private static readonly GlobComparer globComparer = new();
+    private static Dictionary<Glob, HashSet<OperationType>> GetFilterPatternsFromConfiguration(HashSet<string> configPatterns)
     {
-        var includePatterns = new List<Glob>();
-        var excludePatterns = new List<Glob>();
-        if (config.IncludePatterns?.Any() ?? false)
+        return configPatterns.Select(static x =>
         {
-            includePatterns.AddRange(config.IncludePatterns.Select(static x => Glob.Parse(x)));
-        }
-        if (config.ExcludePatterns?.Any() ?? false)
-        {
-            excludePatterns.AddRange(config.ExcludePatterns.Select(static x => Glob.Parse(x)));
-        }
-        return (includePatterns, excludePatterns);
+            var splat = x.Split('#', StringSplitOptions.RemoveEmptyEntries);
+            var glob = Glob.Parse(splat[0]);
+            var operationTypes = splat.Length > 1 ?
+                                    splat[1].Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                        .Select(static y => Enum.TryParse<OperationType>(y.Trim(), true, out var op) ? op : default(OperationType?)) :
+                                    Enumerable.Empty<OperationType?>();
+            return (glob, operationTypes);
+        }).GroupBy(static x => x.glob, globComparer)
+        .ToDictionary(static x => x.Key,
+                    static x => new HashSet<OperationType>(x.SelectMany(static y => y.operationTypes)
+                                                            .Where(static y => y != null && y.HasValue)
+                                                            .Select(static y => y!.Value)),
+                    globComparer);
     }
-    public static void FilterPathsByPatterns(OpenApiDocument doc, List<Glob> includePatterns, List<Glob> excludePatterns)
+    internal void FilterPathsByPatterns(OpenApiDocument doc)
     {
+        var includePatterns = GetFilterPatternsFromConfiguration(config.IncludePatterns);
+        var excludePatterns = GetFilterPatternsFromConfiguration(config.ExcludePatterns);
         if (!includePatterns.Any() && !excludePatterns.Any()) return;
 
-        doc.Paths.Keys.Except(
-            doc.Paths.Keys.Where(x => (!includePatterns.Any() || includePatterns.Any(y => y.IsMatch(x))) &&
-                                (!excludePatterns.Any() || !excludePatterns.Any(y => y.IsMatch(x))))
-        )
-        .ToList()
-        .ForEach(x => doc.Paths.Remove(x));
+        var nonOperationIncludePatterns = includePatterns.Where(static x => !x.Value.Any()).Select(static x => x.Key).ToList();
+        var nonOperationExcludePatterns = excludePatterns.Where(static x => !x.Value.Any()).Select(static x => x.Key).ToList();
+
+        if (nonOperationIncludePatterns.Any() || nonOperationExcludePatterns.Any())
+            doc.Paths.Keys.Where(x => (nonOperationIncludePatterns.Any() && !nonOperationIncludePatterns.Any(y => y.IsMatch(x))) ||
+                                (nonOperationExcludePatterns.Any() && nonOperationExcludePatterns.Any(y => y.IsMatch(x))))
+            .ToList()
+            .ForEach(x => doc.Paths.Remove(x));
+
+        var operationIncludePatterns = includePatterns.Where(static x => x.Value.Any()).ToList();
+        var operationExcludePatterns = excludePatterns.Where(static x => x.Value.Any()).ToList();
+
+        if (operationIncludePatterns.Any() || operationExcludePatterns.Any())
+        {
+            foreach (var path in doc.Paths)
+            {
+                var pathString = path.Key;
+                path.Value.Operations.Keys.Where(x => (operationIncludePatterns.Any() && !operationIncludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x))) ||
+                                        (operationExcludePatterns.Any() && operationExcludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x))))
+                .ToList()
+                .ForEach(x => path.Value.Operations.Remove(x));
+            }
+            foreach (var path in doc.Paths.Where(static x => !x.Value.Operations.Any()).ToList())
+                doc.Paths.Remove(path.Key);
+        }
     }
     internal void SetApiRootUrl()
     {
@@ -290,7 +311,7 @@ public class KiotaBuilder
         inputPath = inputPath.Trim();
 
         Stream input;
-        if (inputPath.StartsWith("http"))
+        if (inputPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             try
             {
                 var cachingProvider = new DocumentCachingProvider(httpClient, logger)
@@ -879,7 +900,7 @@ public class KiotaBuilder
             typeNames.AddRange(typeSchema.AnyOf.Select(x => x.Type)); // double is sometimes an anyof string, number and enum
         if (typeSchema?.OneOf?.Any() ?? false)
             typeNames.AddRange(typeSchema.OneOf.Select(x => x.Type)); // double is sometimes an oneof string, number and enum
-        // first value that's not null, and not "object" for primitive collections, the items type matters
+                                                                      // first value that's not null, and not "object" for primitive collections, the items type matters
         var typeName = typeNames.FirstOrDefault(static x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
 
         var isExternal = false;
@@ -945,11 +966,14 @@ public class KiotaBuilder
                 {
                     codeClass.IsErrorDefinition = true;
                 }
-                executorMethod.AddErrorMapping(errorCode, errorType);
+                if (errorType is null)
+                    logger.LogWarning("Could not create error type for {error} in {operation}", errorCode, operation.OperationId);
+                else
+                    executorMethod.AddErrorMapping(errorCode, errorType);
             }
         }
     }
-    private CodeTypeBase GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, OpenApiSchema? schema, OpenApiOperation operation, CodeClass parentClass)
+    private CodeTypeBase? GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, OpenApiSchema? schema, OpenApiOperation operation, CodeClass parentClass)
     {
         if (schema != null)
         {
@@ -969,102 +993,109 @@ public class KiotaBuilder
     }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
-        var parameterClass = CreateOperationParameterClass(currentNode, operationType, operation, parentClass);
-        var requestConfigClass = parentClass.AddInnerClass(new CodeClass
+        try
         {
-            Name = $"{parentClass.Name}{operationType}RequestConfiguration",
-            Kind = CodeClassKind.RequestConfiguration,
-            Documentation = new()
+            var parameterClass = CreateOperationParameterClass(currentNode, operationType, operation, parentClass);
+            var requestConfigClass = parentClass.AddInnerClass(new CodeClass
             {
-                Description = "Configuration for the request such as headers, query parameters, and middleware options.",
-            },
-        }).First();
+                Name = $"{parentClass.Name}{operationType}RequestConfiguration",
+                Kind = CodeClassKind.RequestConfiguration,
+                Documentation = new()
+                {
+                    Description = "Configuration for the request such as headers, query parameters, and middleware options.",
+                },
+            }).First();
 
-        var schema = operation.GetResponseSchema(config.StructuredMimeTypes);
-        var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
-        var executorMethod = new CodeMethod
-        {
-            Name = operationType.ToString(),
-            Kind = CodeMethodKind.RequestExecutor,
-            HttpMethod = method,
-            Parent = parentClass,
-            Documentation = new()
+            var schema = operation.GetResponseSchema(config.StructuredMimeTypes);
+            var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
+            var executorMethod = new CodeMethod
             {
-                DocumentationLink = operation.ExternalDocs?.Url,
-                DocumentationLabel = operation.ExternalDocs?.Description ?? string.Empty,
-                Description = (operation.Description is string description && !string.IsNullOrEmpty(description) ?
-                                description :
-                                operation.Summary)
-                                .CleanupDescription(),
-            },
-            ReturnType = GetExecutorMethodReturnType(currentNode, schema, operation, parentClass),
-        };
-
-        if (operation.Extensions.TryGetValue(OpenApiPagingExtension.Name, out var extension) && extension is OpenApiPagingExtension pagingExtension)
-        {
-            executorMethod.PagingInformation = new PagingInformation
-            {
-                ItemName = pagingExtension.ItemName,
-                NextLinkName = pagingExtension.NextLinkName,
-                OperationName = pagingExtension.OperationName,
+                Name = operationType.ToString(),
+                Kind = CodeMethodKind.RequestExecutor,
+                HttpMethod = method,
+                Parent = parentClass,
+                Documentation = new()
+                {
+                    DocumentationLink = operation.ExternalDocs?.Url,
+                    DocumentationLabel = operation.ExternalDocs?.Description ?? string.Empty,
+                    Description = (operation.Description is string description && !string.IsNullOrEmpty(description) ?
+                                    description :
+                                    operation.Summary)
+                                    .CleanupDescription(),
+                },
+                ReturnType = GetExecutorMethodReturnType(currentNode, schema, operation, parentClass) ?? throw new InvalidSchemaException(),
             };
+
+            if (operation.Extensions.TryGetValue(OpenApiPagingExtension.Name, out var extension) && extension is OpenApiPagingExtension pagingExtension)
+            {
+                executorMethod.PagingInformation = new PagingInformation
+                {
+                    ItemName = pagingExtension.ItemName,
+                    NextLinkName = pagingExtension.NextLinkName,
+                    OperationName = pagingExtension.OperationName,
+                };
+            }
+
+            AddErrorMappingsForExecutorMethod(currentNode, operation, executorMethod);
+            AddRequestConfigurationProperties(parameterClass, requestConfigClass);
+            AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, executorMethod);
+            parentClass.AddMethod(executorMethod);
+
+            var handlerParam = new CodeParameter
+            {
+                Name = "responseHandler",
+                Optional = true,
+                Kind = CodeParameterKind.ResponseHandler,
+                Documentation = new()
+                {
+                    Description = "Response handler to use in place of the default response handling provided by the core service",
+                },
+                Type = new CodeType { Name = "IResponseHandler", IsExternal = true },
+            };
+            executorMethod.AddParameter(handlerParam);// Add response handler parameter
+
+            var cancellationParam = new CodeParameter
+            {
+                Name = "cancellationToken",
+                Optional = true,
+                Kind = CodeParameterKind.Cancellation,
+                Documentation = new()
+                {
+                    Description = "Cancellation token to use when cancelling requests",
+                },
+                Type = new CodeType { Name = "CancellationToken", IsExternal = true },
+            };
+            executorMethod.AddParameter(cancellationParam);// Add cancellation token parameter
+            logger.LogTrace("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
+
+            var generatorMethod = new CodeMethod
+            {
+                Name = $"To{operationType.ToString().ToFirstCharacterUpperCase()}RequestInformation",
+                Kind = CodeMethodKind.RequestGenerator,
+                IsAsync = false,
+                HttpMethod = method,
+                Documentation = new()
+                {
+                    Description = (operation.Description ?? operation.Summary).CleanupDescription(),
+                },
+                ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true },
+                Parent = parentClass,
+            };
+            if (schema != null)
+            {
+                var mediaType = operation.Responses.Values.SelectMany(static x => x.Content).First(x => x.Value.Schema == schema).Key;
+                generatorMethod.AcceptedResponseTypes.Add(mediaType);
+            }
+            if (config.Language == GenerationLanguage.Shell)
+                SetPathAndQueryParameters(generatorMethod, currentNode, operation);
+            AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, generatorMethod);
+            parentClass.AddMethod(generatorMethod);
+            logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
         }
-
-        AddErrorMappingsForExecutorMethod(currentNode, operation, executorMethod);
-        AddRequestConfigurationProperties(parameterClass, requestConfigClass);
-        AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, executorMethod);
-        parentClass.AddMethod(executorMethod);
-
-        var handlerParam = new CodeParameter
+        catch (InvalidSchemaException ex)
         {
-            Name = "responseHandler",
-            Optional = true,
-            Kind = CodeParameterKind.ResponseHandler,
-            Documentation = new()
-            {
-                Description = "Response handler to use in place of the default response handling provided by the core service",
-            },
-            Type = new CodeType { Name = "IResponseHandler", IsExternal = true },
-        };
-        executorMethod.AddParameter(handlerParam);// Add response handler parameter
-
-        var cancellationParam = new CodeParameter
-        {
-            Name = "cancellationToken",
-            Optional = true,
-            Kind = CodeParameterKind.Cancellation,
-            Documentation = new()
-            {
-                Description = "Cancellation token to use when cancelling requests",
-            },
-            Type = new CodeType { Name = "CancellationToken", IsExternal = true },
-        };
-        executorMethod.AddParameter(cancellationParam);// Add cancellation token parameter
-        logger.LogTrace("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
-
-        var generatorMethod = new CodeMethod
-        {
-            Name = $"To{operationType.ToString().ToFirstCharacterUpperCase()}RequestInformation",
-            Kind = CodeMethodKind.RequestGenerator,
-            IsAsync = false,
-            HttpMethod = method,
-            Documentation = new()
-            {
-                Description = (operation.Description ?? operation.Summary).CleanupDescription(),
-            },
-            ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true },
-            Parent = parentClass,
-        };
-        if (schema != null)
-        {
-            var mediaType = operation.Responses.Values.SelectMany(static x => x.Content).First(x => x.Value.Schema == schema).Key;
-            generatorMethod.AcceptedResponseTypes.Add(mediaType);
+            logger.LogWarning(ex, "Could not create method for {operation} in {path} because the schema was invalid", operation.OperationId, currentNode.Path);
         }
-        if (config.Language == GenerationLanguage.Shell)
-            SetPathAndQueryParameters(generatorMethod, currentNode, operation);
-        AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, generatorMethod);
-        parentClass.AddMethod(generatorMethod);
-        logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
     }
     private static readonly Func<OpenApiParameter, CodeParameter> GetCodeParameterFromApiParameter = x =>
     {
@@ -1145,7 +1176,8 @@ public class KiotaBuilder
     {
         if (operation.GetRequestSchema(config.StructuredMimeTypes) is OpenApiSchema requestBodySchema)
         {
-            var requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, $"{operationType}RequestBody", isRequestBody: true);
+            var requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, $"{operationType}RequestBody", isRequestBody: true) ??
+                throw new InvalidSchemaException();
             method.AddParameter(new CodeParameter
             {
                 Name = "body",
@@ -1253,16 +1285,7 @@ public class KiotaBuilder
         if (string.IsNullOrEmpty(title)) return string.Empty;
         if (parentSchema.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Reference.Id;
         if (parentSchema.Items?.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Items.Reference.Id;
-        return (parentSchema.
-                        AllOf
-                        .FirstOrDefault(x => x.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) ??
-                parentSchema.
-                        AnyOf
-                        .FirstOrDefault(x => x.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) ??
-                parentSchema.
-                        OneOf
-                        .FirstOrDefault(x => x.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false))
-            ?.Reference?.Id;
+        return parentSchema.GetSchemaReferenceIds().FirstOrDefault(refId => refId.EndsWith(title, StringComparison.OrdinalIgnoreCase));
     }
     private CodeTypeBase CreateComposedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string suffixForInlineSchema, CodeNamespace codeNamespace, bool isRequestBody)
     {
@@ -1330,7 +1353,7 @@ public class KiotaBuilder
         }
         return unionType;
     }
-    private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false)
+    private CodeTypeBase? CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false)
     {
         var (codeNamespace, responseValue, suffix) = schema.IsReferencedSchema() switch
         {
@@ -1365,11 +1388,11 @@ public class KiotaBuilder
             return GetPrimitiveType(schema, string.Empty);
         if (schema.AnyOf.Any() || schema.OneOf.Any() || schema.AllOf.Any()) // we have an empty node because of some local override for schema properties and need to unwrap it.
             return CreateModelDeclarations(currentNode, (schema.AnyOf.FirstOrDefault() ?? schema.OneOf.FirstOrDefault() ?? schema.AllOf.FirstOrDefault())!, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
-        throw new InvalidSchemaException("unhandled case, might be object type or array type");
+        return null;
     }
-    private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
+    private CodeTypeBase? CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
     {
-        CodeTypeBase type = GetPrimitiveType(schema.Items, string.Empty);
+        CodeTypeBase? type = GetPrimitiveType(schema.Items, string.Empty);
         bool isEnumOrComposedCollectionType = schema.Items.IsEnum() //the collection could be an enum type so override with strong type instead of string type.
                                     || (schema.Items.IsComposedEnum() && string.IsNullOrEmpty(schema.Items.Format));//the collection could be a composed type with an enum type so override with strong type instead of string type.
         if ((string.IsNullOrEmpty(type.Name)
@@ -1379,6 +1402,7 @@ public class KiotaBuilder
             var targetNamespace = GetShortestNamespace(codeNamespace, schema.Items);
             type = CreateModelDeclarations(currentNode, schema.Items, operation, targetNamespace, string.Empty, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody);
         }
+        if (type is null) return null;
         type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
         return type;
     }
@@ -1563,17 +1587,16 @@ public class KiotaBuilder
                                     var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
                                     var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
                                                         (rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns);
-#if RELEASE
-                                    try {
-#endif
                                     var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
-                                    return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
-#if RELEASE
-                                    } catch (InvalidSchemaException ex) {
-                                        throw new InvalidOperationException($"Error creating property {x.Key} for model {model.Name} in API path {currentNode.Path}, the schema is invalid.", ex);
+                                    if (definition == null)
+                                    {
+                                        logger.LogWarning("Omitted property {propertyName} for model {modelName} in API path {apiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
+                                        return null;
                                     }
-#endif
+                                    return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
                                 })
+                                .Where(static x => x != null)
+                                .Select(static x => x!)
                                 .ToArray());
         }
         else if (schema?.AllOf?.Any(x => x.IsObject()) ?? false)

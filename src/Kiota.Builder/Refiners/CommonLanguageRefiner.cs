@@ -127,12 +127,22 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         bool classNames = true,
         bool enumNames = true)
     {
-        if (current is CodeClass currentClass &&
-            classNames &&
-            refineName(currentClass.Name) is string refinedClassName &&
-            !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal))
+        if (current is CodeClass currentClass && classNames)
         {
-            currentClass.Name = refinedClassName;
+            if (refineName(currentClass.Name) is string refinedClassName &&
+                !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal))
+                currentClass.Name = refinedClassName;
+
+            if (currentClass.StartBlock.Inherits != null)
+            {
+                FixTypeName(currentClass.StartBlock.Inherits, refineName);
+                if (currentClass.StartBlock.Inherits.TypeDefinition != null)
+                    CorrectNames(currentClass.StartBlock.Inherits.TypeDefinition, refineName);
+            }
+            foreach (var i in currentClass.StartBlock.Implements)
+            {
+                FixTypeName(i, refineName);
+            }
         }
         else if (current is CodeIndexer currentIndexer && classNames)
         {
@@ -336,7 +346,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             // in the CodeNamespace if-block so we also need to update the using references
             if (!codeElementExceptions?.Contains(typeof(CodeNamespace)) ?? true)
                 ReplaceReservedCodeUsingNamespaceSegmentNames(currentDeclaration, provider, replacement);
-            if (currentDeclaration.Inherits?.Name is string inheritName && provider.ReservedNames.Contains(inheritName))
+            if (currentDeclaration.Inherits?.Name is string inheritName && provider.ReservedNames.Contains(inheritName) && (currentDeclaration.Inherits is not CodeType inheritType || !inheritType.IsExternal))
                 currentDeclaration.Inherits.Name = replacement(currentDeclaration.Inherits.Name);
             if (currentClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Value.Name).Any(provider.ReservedNames.Contains))
                 ReplaceMappingNames(currentClass.DiscriminatorInformation.DiscriminatorMappings, provider, replacement);
@@ -488,7 +498,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void AddDefaultImports(CodeElement current, IEnumerable<AdditionalUsingEvaluator> evaluators)
     {
         var usingsToAdd = evaluators.Where(x => x.CodeElementEvaluator.Invoke(current))
-                        .SelectMany(x => usingSelector(x))
+                        .SelectMany(usingSelector)
                         .ToArray();
         if (usingsToAdd.Any())
         {
@@ -1014,7 +1024,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace, addNamespaceToInheritDeclaration));
     }
-    protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true)
+    protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true, bool includeParentNamespace = false)
     {
         if (currentElement is CodeMethod currentMethod &&
             currentMethod.Parent is CodeClass parentClass &&
@@ -1024,7 +1034,21 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 (parentClass.DiscriminatorInformation?.HasBasicDiscriminatorInformation ?? false) &&
                 parentClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentClassNamespace)
             {
-                if (addUsings)
+                if (addUsings && includeParentNamespace)
+                    declaration.AddUsings(parentClass.DiscriminatorInformation.DiscriminatorMappings
+                        .Select(static x => x.Value)
+                        .OfType<CodeType>()
+                        .Where(static x => x.TypeDefinition != null)
+                        .Select(x => new CodeUsing
+                        {
+                            Name = x.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name,
+                            Declaration = new CodeType
+                            {
+                                Name = x.TypeDefinition.Name,
+                                TypeDefinition = x.TypeDefinition,
+                            },
+                        }).ToArray());
+                else if (addUsings && !includeParentNamespace)
                     declaration.AddUsings(parentClass.DiscriminatorInformation.DiscriminatorMappings
                         .Select(static x => x.Value)
                         .OfType<CodeType>()
@@ -1059,7 +1083,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 });
             }
         }
-        CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, parseNodeInterfaceName, addFactoryMethodImport, addUsings));
+        CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, parseNodeInterfaceName, addFactoryMethodImport, addUsings, includeParentNamespace));
     }
     protected static void ReplaceLocalMethodsByGlobalFunctions(CodeElement currentElement, Func<CodeMethod, string> nameUpdateCallback, Func<CodeMethod, CodeUsing[]>? usingsCallback, params CodeMethodKind[] kindsToReplace)
     {
@@ -1426,5 +1450,79 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
 
         CrawlTree(currentElement, RemoveHandlerFromRequestBuilder);
+    }
+    protected static void MoveRequestBuilderPropertiesToBaseType(CodeElement currentElement, CodeUsing baseTypeUsing, AccessModifier? accessModifier = null)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+        {
+            if (currentClass.StartBlock.Inherits == null)
+            {
+                currentClass.StartBlock.Inherits = new CodeType
+                {
+                    Name = baseTypeUsing.Name,
+                    IsExternal = true,
+                };
+                currentClass.AddUsing(baseTypeUsing);
+            }
+
+            var properties = currentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.PathParameters, CodePropertyKind.UrlTemplate, CodePropertyKind.RequestAdapter));
+            foreach (var property in properties)
+            {
+                property.ExistsInExternalBaseType = true;
+                if (accessModifier.HasValue)
+                    property.Access = accessModifier.Value;
+            }
+        }
+
+        CrawlTree(currentElement, x => MoveRequestBuilderPropertiesToBaseType(x, baseTypeUsing, accessModifier));
+    }
+    protected static void RemoveRequestConfigurationClassesCommonProperties(CodeElement currentElement, CodeUsing baseTypeUsing)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestConfiguration))
+        {
+            if (currentClass.StartBlock.Inherits == null)
+            {
+                currentClass.StartBlock.Inherits = new CodeType
+                {
+                    Name = baseTypeUsing.Name,
+                    IsExternal = true,
+                };
+                currentClass.AddUsing(baseTypeUsing);
+            }
+            currentClass.RemovePropertiesOfKind(CodePropertyKind.Headers, CodePropertyKind.Options);
+        }
+
+        CrawlTree(currentElement, x => RemoveRequestConfigurationClassesCommonProperties(x, baseTypeUsing));
+    }
+    protected static void RemoveRequestConfigurationClasses(CodeElement currentElement, CodeUsing? configurationParameterTypeUsing = null, CodeType? defaultValueForGenericTypeParam = null)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestConfiguration) &&
+            currentClass.Parent is CodeClass parentClass)
+        {
+            parentClass.RemoveChildElement(currentClass);
+            var configurationParameters = parentClass.Methods
+                                                    .SelectMany(static x => x.Parameters)
+                                                    .Where(x => x.IsOfKind(CodeParameterKind.RequestConfiguration) && x.Type is CodeType type && type.TypeDefinition == currentClass)
+                                                    .ToArray();
+            var genericTypeParamValue = currentClass.Properties.OfKind(CodePropertyKind.QueryParameters)?.Type as CodeType ?? defaultValueForGenericTypeParam;
+            if (configurationParameterTypeUsing != null && genericTypeParamValue != null && configurationParameters.Any())
+            {
+                parentClass.AddUsing(configurationParameterTypeUsing);
+                var configurationParameterType = new CodeType
+                {
+                    Name = configurationParameterTypeUsing.Name,
+                    IsExternal = true,
+                };
+                foreach (var configurationParameter in configurationParameters)
+                {
+                    var newType = (CodeType)configurationParameterType.Clone();
+                    newType.ActionOf = configurationParameter.Type.ActionOf;
+                    newType.GenericTypeParameterValues.Add(genericTypeParamValue);
+                    configurationParameter.Type = newType;
+                }
+            }
+        }
+
+        CrawlTree(currentElement, x => RemoveRequestConfigurationClasses(x, configurationParameterTypeUsing, defaultValueForGenericTypeParam));
     }
 }

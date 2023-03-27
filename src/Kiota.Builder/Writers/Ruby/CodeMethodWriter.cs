@@ -98,7 +98,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     {
         if (!codeElement.IsOverload)
             foreach (var parameter in codeElement.Parameters
-                                                .Where(static x => !x.Optional)
+                                                .Where(static x => !x.Optional && !x.IsOfKind(CodeParameterKind.PathParameters, CodeParameterKind.RequestAdapter))
                                                 .Select(static x => x.Name.ToSnakeCase())
                                                 .OrderBy(static x => x))
                 writer.WriteLine($"raise StandardError, '{parameter} cannot be null' if {parameter}.nil?");
@@ -133,8 +133,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var requestAdapterPropertyName = $"{requestAdapterProperty?.NamePrefix}{requestAdapterProperty?.Name.ToSnakeCase()}";
         WriteSerializationRegistration(parentClass, method.SerializerModules, writer, "register_default_serializer");
         WriteSerializationRegistration(parentClass, method.DeserializerModules, writer, "register_default_deserializer");
-        if (method.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestAdapter)) is CodeParameter requestAdapterParameter)
-            writer.WriteLine($"@{requestAdapterPropertyName} = {requestAdapterParameter.Name.ToSnakeCase()}");
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
             writer.StartBlock($"if @{requestAdapterPropertyName}.get_base_url.nil? || @{requestAdapterPropertyName}.get_base_url.empty?");
@@ -158,11 +156,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
         if (inherits)
-            writer.WriteLine("super");
+            if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
+                currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter &&
+                parentClass.Properties.OfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty &&
+                !string.IsNullOrEmpty(urlTemplateProperty.DefaultValue))
+                if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
+                    writer.WriteLine($"super({pathParametersParameter.Name.ToSnakeCase()}, {requestAdapterParameter.Name.ToSnakeCase()}, {urlTemplateProperty.DefaultValue})");
+                else
+                    writer.WriteLine($"super(Hash.new, {requestAdapterParameter.Name.ToSnakeCase()}, {urlTemplateProperty.DefaultValue})");
+            else
+                writer.WriteLine("super");
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
-                                                                        CodePropertyKind.RequestBuilder,
-                                                                        CodePropertyKind.UrlTemplate,
-                                                                        CodePropertyKind.PathParameters)
+                                                                        CodePropertyKind.RequestBuilder)
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderBy(static x => x.Name))
         {
@@ -176,22 +181,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                         .OrderBy(static x => x.Name))
         {
             writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
-        }
-        if (currentMethod.IsOfKind(CodeMethodKind.Constructor))
-        {
-            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
-            var pathParametersParamName = currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters)?.Name.ToSnakeCase();
-            if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
-                writer.WriteLine($"{pathParametersParamName} = {{ \"request-raw-url\" => {pathParametersParamName} }} if {pathParametersParamName}.is_a? String");
-            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, $" if {pathParametersParamName}.is_a? Hash");
-        }
-    }
-    private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string? controlSuffix = default)
-    {
-        if (parentClass.GetPropertyOfKind(propertyKind) is CodeProperty property &&
-             currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind)) is CodeParameter parameter)
-        {
-            writer.WriteLine($"@{property.NamePrefix}{property.Name.ToSnakeCase()} = {parameter.Name.ToSnakeCase()}{controlSuffix}");
         }
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer)
@@ -356,8 +345,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.WriteLine(conventions.DocCommentStart);
             if (isDescriptionPresent)
                 writer.WriteLine($"{conventions.DocCommentPrefix}{RubyConventionService.RemoveInvalidDescriptionCharacters(code.Documentation.Description)}");
-            foreach (var paramWithDescription in parametersWithDescription.OrderBy(static x => x.Name))
-                writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name} {RubyConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.Description)}");
+            foreach (var paramWithDescription in parametersWithDescription.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
+                writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name.ToSnakeCase()} {RubyConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.Description)}");
 
             if (code.IsAsync)
                 writer.WriteLine($"{conventions.DocCommentPrefix}@return a Fiber of {code.ReturnType.Name.ToSnakeCase()}");

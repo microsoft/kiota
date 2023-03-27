@@ -17,7 +17,7 @@ Major releases include new features, new public API surface area, and bug fixes.
 
 ### Minor releases
 
-Minor releases also include new features, public API surface area, and bug fixes. The difference between these and major releases is that minor releases will not contain breaking changes to the tooling experience or the generated API surface area of GA maturity languages. Minor releases can install side by side with previous minor releases. Minor releases are targeted to publish on the first Tuesday of every month.
+Minor releases also include new features, public API surface area, and bug fixes. The difference between these and major releases is that minor releases will not contain breaking changes to the tooling experience or the generated API surface area of stable maturity languages. Minor releases can install side by side with previous minor releases. Minor releases are targeted to publish on the first Tuesday of every month.
 
 ### Patches
 
@@ -33,7 +33,7 @@ The following criteria is used to determine the maturity levels.
 - **Preview**: Kiota is at or near the level of table but hasn't been used to generate production API clients.
 - **Experimental**: Kiota provides some functionality for the language but is still in early stages. Some features may not work correctly or at all.
 
-Breaking changes to languages that are stable will result in major version change for Kiota tooling.
+Breaking changes to languages that are stable will result in major version change for Kiota tooling. Code generation changes to a stable maturity language are not considered breaking when they rely on additions in the corresponding abstractions library as these changes will only require to update the abstractions library the the latest minor/patch version under the same major version.
 
 The current status of language support can be queried by using the following command.
 

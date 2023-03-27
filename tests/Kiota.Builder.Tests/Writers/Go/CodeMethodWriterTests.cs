@@ -54,6 +54,10 @@ public class CodeMethodWriterTests : IDisposable
     }
     private void AddRequestProperties()
     {
+        parentClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "BaseRequestBuilder"
+        };
         parentClass.AddProperty(new CodeProperty
         {
             Name = "requestAdapter",
@@ -625,8 +629,8 @@ public class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.RequestBuilderBackwardCompatibility;
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("m.pathParameters", result);
-        Assert.Contains("m.requestAdapter", result);
+        Assert.Contains("m.BaseRequestBuilder.PathParameters", result);
+        Assert.Contains("m.BaseRequestBuilder.RequestAdapter", result);
         Assert.Contains("return", result);
         Assert.Contains("func (m", result);
         Assert.Contains("New", result);
@@ -684,7 +688,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("\"5XX\": CreateError5XXFromDiscriminatorValue", result);
         Assert.Contains("\"403\": CreateError403FromDiscriminatorValue", result);
         Assert.Contains("ctx context.Context,", result);
-        Assert.Contains("m.requestAdapter.Send(ctx,", result);
+        Assert.Contains("m.BaseRequestBuilder.RequestAdapter.Send(ctx,", result);
         Assert.Contains("return res.(", result);
         Assert.Contains("err != nil", result);
         Assert.Contains("return nil, err", result);
@@ -708,8 +712,8 @@ public class CodeMethodWriterTests : IDisposable
         };
         writer.Write(method);
         var result = tw.ToString();
-        Assert.DoesNotContain("m.requestAdapter.Send(", result);
-        Assert.Contains("m.requestAdapter.SendEnum", result);
+        Assert.DoesNotContain("m.BaseRequestBuilder.RequestAdapter.Send(", result);
+        Assert.Contains("m.BaseRequestBuilder.RequestAdapter.SendEnum", result);
         Assert.Contains("ParseSomeEnum", result);
         Assert.Contains("return nil, err", result);
         Assert.Contains("if res == nil", result);
@@ -736,7 +740,7 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.DoesNotContain("m.requestAdapter.Send(", result);
         Assert.DoesNotContain("m.requestAdapter.SendEnum(", result);
-        Assert.Contains("m.requestAdapter.SendEnumCollection", result);
+        Assert.Contains("m.BaseRequestBuilder.RequestAdapter.SendEnumCollection", result);
         Assert.Contains("ParseSomeEnum", result);
         Assert.DoesNotContain("val[i] = *(v.(*SomeEnum))", result);
         Assert.Contains("val[i] = v.(SomeEnum)", result);
@@ -1095,7 +1099,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
-        Assert.Contains("requestInfo.SetContentFromScalar(ctx, m.requestAdapter", result);
+        Assert.Contains("requestInfo.SetContentFromScalar(ctx, m.BaseRequestBuilder.RequestAdapter", result);
         Assert.Contains("return requestInfo, nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
@@ -1134,7 +1138,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
-        Assert.Contains("requestInfo.SetContentFromScalarCollection(ctx, m.requestAdapter", result);
+        Assert.Contains("requestInfo.SetContentFromScalarCollection(ctx, m.BaseRequestBuilder.RequestAdapter", result);
         Assert.Contains("return requestInfo, nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
@@ -1171,7 +1175,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
-        Assert.Contains("requestInfo.SetContentFromParsable(ctx, m.requestAdapter", result);
+        Assert.Contains("requestInfo.SetContentFromParsable(ctx, m.BaseRequestBuilder.RequestAdapter", result);
         Assert.Contains("return requestInfo, nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
@@ -1210,7 +1214,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
-        Assert.Contains("requestInfo.SetContentFromParsableCollection(ctx, m.requestAdapter", result);
+        Assert.Contains("requestInfo.SetContentFromParsableCollection(ctx, m.BaseRequestBuilder.RequestAdapter", result);
         Assert.Contains("return requestInfo, nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
@@ -1530,11 +1534,11 @@ public class CodeMethodWriterTests : IDisposable
         var methodForTest = parentClass.AddMethod(CodeMethod.FromIndexer(parentClass.Indexer, string.Empty, false)).First();
         writer.Write(methodForTest);
         var result = tw.ToString();
-        Assert.Contains("m.requestAdapter", result);
-        Assert.Contains("m.pathParameters", result);
+        Assert.Contains("m.BaseRequestBuilder.RequestAdapter", result);
+        Assert.Contains("m.BaseRequestBuilder.PathParameters", result);
         Assert.Contains("[\"id\"] = id", result);
         Assert.Contains("return", result);
-        Assert.Contains("NewSomecustomtypeInternal(urlTplParams, m.requestAdapter)", result); // checking the parameter is passed to the constructor
+        Assert.Contains("NewSomecustomtypeInternal(urlTplParams, m.BaseRequestBuilder.RequestAdapter)", result); // checking the parameter is passed to the constructor
     }
     [Fact]
     public void WritesPathParameterRequestBuilder()
@@ -1552,8 +1556,8 @@ public class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("m.requestAdapter", result);
-        Assert.Contains("m.pathParameters", result);
+        Assert.Contains("m.BaseRequestBuilder.RequestAdapter", result);
+        Assert.Contains("m.BaseRequestBuilder.PathParameters", result);
         Assert.Contains("pathParam", result);
         Assert.Contains("return New", result);
     }
@@ -1645,7 +1649,7 @@ public class CodeMethodWriterTests : IDisposable
         {
             Name = propName,
             DefaultValue = defaultValue,
-            Kind = CodePropertyKind.UrlTemplate,
+            Kind = CodePropertyKind.Custom,
             Type = new CodeType
             {
                 Name = "string",
@@ -1664,9 +1668,8 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
-        Assert.Contains($"m.{propName} = {defaultValue}", result);
-        Assert.Contains("m.pathParameters = urlTplParams", result);
-        Assert.Contains("make(map[string]string)", result);
+        Assert.Contains($"m.Set{propName.ToFirstCharacterUpperCase()}({defaultValue})", result);
+        Assert.Contains("NewBaseRequestBuilder", result);
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
@@ -1807,7 +1810,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains("RegisterDefaultSerializer", result);
         Assert.Contains("RegisterDefaultDeserializer", result);
-        Assert.Contains($"[\"baseurl\"] = m.core.GetBaseUrl", result);
+        Assert.Contains($"[\"baseurl\"] = m.BaseRequestBuilder.Core.GetBaseUrl", result);
         Assert.Contains($"SetBaseUrl(\"{method.BaseUrl}\")", result);
     }
     [Fact]

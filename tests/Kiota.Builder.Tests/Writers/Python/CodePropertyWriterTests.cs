@@ -15,6 +15,7 @@ public class CodePropertyWriterTests : IDisposable
     private readonly LanguageWriter writer;
     private readonly CodeProperty property;
     private readonly CodeClass parentClass;
+    private readonly CodeNamespace ns;
     private const string PropertyName = "propertyName";
     private const string TypeName = "Somecustomtype";
     public CodePropertyWriterTests()
@@ -23,11 +24,12 @@ public class CodePropertyWriterTests : IDisposable
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
+        ns = root.AddNamespace("graphtests.models");
         parentClass = new CodeClass
         {
             Name = "parentClass"
         };
-        root.AddClass(parentClass);
+        ns.AddClass(parentClass);
         property = new CodeProperty
         {
             Name = PropertyName,
@@ -36,6 +38,22 @@ public class CodePropertyWriterTests : IDisposable
                 Name = TypeName
             }
         };
+        var subNS = ns.AddNamespace($"{ns.Name}.somecustomtype");
+        var somecustomtypeClassDef = new CodeClass
+        {
+            Name = "Somecustomtype",
+        };
+        subNS.AddClass(somecustomtypeClassDef);
+        var nUsing = new CodeUsing
+        {
+            Name = somecustomtypeClassDef.Name,
+            Declaration = new()
+            {
+                Name = somecustomtypeClassDef.Name,
+                TypeDefinition = somecustomtypeClassDef,
+            }
+        };
+        parentClass.StartBlock.AddUsings(nUsing);
         parentClass.AddProperty(property, new()
         {
             Name = "pathParameters",
@@ -67,8 +85,9 @@ public class CodePropertyWriterTests : IDisposable
         writer.Write(property);
         var result = tw.ToString();
         Assert.Contains("@property", result);
-        Assert.Contains("def property_name(", result);
+        Assert.Contains("def property_name(self) -> somecustomtype.Somecustomtype:", result);
         Assert.Contains("This is a request builder", result);
+        Assert.Contains("from .somecustomtype import somecustomtype", result);
         Assert.Contains($"return {TypeName.ToLower()}.{TypeName}(", result);
         Assert.Contains("self.request_adapter", result);
         Assert.Contains("self.path_parameters", result);

@@ -30,7 +30,8 @@ public class GoReservedNamesProvider : IReservedNamesProvider
         "switch",
         "type",
         "var",
-        "vendor" // cannot be used as a package name
+        "vendor", // cannot be used as a package name
+        "BaseRequestBuilder"
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }
