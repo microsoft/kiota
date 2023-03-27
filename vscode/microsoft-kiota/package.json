@@ -90,20 +90,22 @@
         {
           "command": "kiota.openApiExplorer.addToSelectedEndpoints",
           "when": "view == kiota.openApiExplorer",
-          "group": "inline"
+          "group": "inline@1"
         },
         {
           "command": "kiota.openApiExplorer.addAllToSelectedEndpoints",
-          "when": "view == kiota.openApiExplorer"
+          "when": "view == kiota.openApiExplorer",
+          "group": "inline@3"
         },
         {
           "command": "kiota.openApiExplorer.removeFromSelectedEndpoints",
           "when": "view == kiota.openApiExplorer",
-          "group": "inline"
+          "group": "inline@2"
         },
         {
           "command": "kiota.openApiExplorer.removeAllFromSelectedEndpoints",
-          "when": "view == kiota.openApiExplorer"
+          "when": "view == kiota.openApiExplorer",
+          "group": "inline@4"
         }
       ],
       "commandPalette": [
@@ -162,7 +164,8 @@
       {
         "command": "kiota.openApiExplorer.addAllToSelectedEndpoints",
         "category": "Kiota",
-        "title": "%kiota.openApiExplorer.addAllToSelectedEndpoints.title%"
+        "title": "%kiota.openApiExplorer.addAllToSelectedEndpoints.title%",
+        "icon": "$(expand-all)"
       },
       {
         "command": "kiota.openApiExplorer.removeFromSelectedEndpoints",
@@ -173,7 +176,8 @@
       {
         "command": "kiota.openApiExplorer.removeAllFromSelectedEndpoints",
         "category": "Kiota",
-        "title": "%kiota.openApiExplorer.removeAllFromSelectedEndpoints.title%"
+        "title": "%kiota.openApiExplorer.removeAllFromSelectedEndpoints.title%",
+        "icon": "$(collapse-all)"
       },
       {
         "command": "kiota.openApiExplorer.closeDescription",
