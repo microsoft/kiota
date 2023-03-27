@@ -215,7 +215,7 @@ export async function activate(
         const res = await vscode.window.withProgress({
           location: vscode.ProgressLocation.Notification,
           cancellable: false,
-          title: vscode.l10n.t("Generating client...")
+          title: vscode.l10n.t("Updating clients...")
         }, (progress, _) => {
           return updateClients(context);
         });

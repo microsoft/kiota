@@ -1,11 +1,10 @@
 {
   "No description found, select a description first": "Description non trouvée, ouvrez une description d'API d'abord",
   "No endpoints selected, select endpoints first": "Aucune API sélectionnée, sélectionnez des APIs d'abord",
-  "NoWorkspaceError": "Aucun environment de travail sélectionné, ouvrez un environment de travail d'abord",
-  "No workspace folder found, open a folder first": "Ouvrir les instructions d'installation pour Kiota?",
+  "No workspace folder found, open a folder first": "Aucun environment de travail sélectionné, ouvrez un environment de travail d'abord",
   "Yes": "Oui",
   "No": "Non",
-  "NotFound": "non trouvé",
+  "not found": "non trouvé",
   "error updating the clients {error}": "erreur lors de la mise à jour des clients {error}",
   "updating client with path {path}": "mise à jour du client {path}",
   "Kiota Dependencies Information": "Informations sur les dépendances Kiota",
