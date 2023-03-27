@@ -305,6 +305,7 @@ stages:
                     }
                 ]
               SessionTimeout: 20
+          - pwsh: rm $(Build.ArtifactStagingDirectory)/binaries/$(architecture)/*.md -Verbose -Force -ErrorAction SilentlyContinue
           - task: ArchiveFiles@2
             displayName: Archive binaries
             inputs:
