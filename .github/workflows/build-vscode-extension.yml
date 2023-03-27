@@ -26,14 +26,16 @@ jobs:
   build_extension:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: |
-          git switch -
-          $artifactVersion = git describe --tags --abbrev=0
-          . ./scripts/update-vscode-releases.ps1 -version $artifactVersion -filePath ./vscode/microsoft-kiota/package.json -online
+      - id: last_release
+        uses: InsonusK/get-latest-release@v1.0.1
+        with:
+          myToken: ${{ github.token }}
+          view_top: 1
+      - run: scripts/update-vscode-releases.ps1 -version ${{ steps.last_release.outputs.tag_name }} -filePath ./vscode/microsoft-kiota/package.json -online
         shell: pwsh
       - name: Install dependencies
         run: npm ci
@@ -44,7 +46,7 @@ jobs:
       - run: vsce package
         working-directory: vscode/microsoft-kiota
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: vscode-extension
           path: vscode/microsoft-kiota/*.vsix
