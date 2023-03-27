@@ -454,11 +454,13 @@ stages:
                   inputs:
                     gitHubConnection: 'microsoftkiota'
                     tagSource: userSpecifiedTag
-                    tag: '$(artifactVersion)'
-                    title: '$(artifactVersion)'
+                    tag: 'v$(artifactVersion)'
+                    title: 'v$(artifactVersion)'
                     releaseNotesSource: inline
                     releaseNotesInline: $(releaseNotes)
-                    assets: '$(Pipeline.Workspace)\**\*.zip;$(Pipeline.Workspace)\**\*.vsix'
+                    assets: |
+                      $(Pipeline.Workspace)\**\*.zip
+                      $(Pipeline.Workspace)\**\*.vsix
                     addChangeLog: false
 
       - deployment: deploy_kiota
