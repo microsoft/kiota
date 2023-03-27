@@ -1,0 +1,46 @@
+name: Build VSCode extension
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+    [
+      "abstractions/**",
+      "authentication/**",
+      "serialization/**",
+      "http/**",
+      "**.md",
+      ".vscode/**",
+      "**.svg",
+    ]
+  pull_request:
+    paths-ignore:
+    [
+      "abstractions/**",
+      "authentication/**",
+      "serialization/**",
+      "http/**",
+      "**.md",
+      ".vscode/**",
+      "**.svg",
+    ]
+
+jobs:
+  build_extension:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 18.x
+    - name: Install dependencies
+      run: npm ci
+      working-directory: vscode/microsoft-kiota
+    - run: npm run package
+      working-directory: vscode/microsoft-kiota
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: vscode-extension
+        path: vscode/microsoft-kiota/*.vsix
