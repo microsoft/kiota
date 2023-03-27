@@ -66,6 +66,11 @@
       ],
       "view/title": [
         {
+          "command": "kiota.openApiExplorer.openDescription",
+          "when": "view == kiota.openApiExplorer",
+          "group": "navigation"
+        },
+        {
           "command": "kiota.searchApiDescription",
           "when": "view == kiota.openApiExplorer",
           "group": "navigation"
