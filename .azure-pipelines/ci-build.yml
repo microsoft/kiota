@@ -327,11 +327,6 @@ stages:
           - checkout: self
             clean: true
             submodules: true
-          - task: UseDotNet@2
-            displayName: "Use .NET 2" # needed for ESRP signing
-            inputs:
-              version: 2.x
-
           - task: NodeTool@0
             inputs:
               versionSpec: "18.x"
