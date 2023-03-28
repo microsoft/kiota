@@ -323,7 +323,7 @@ stages:
             condition: and(succeeded(), startsWith(variables['architecture'], 'osx'))
             inputs:
               ConnectedServiceName: "microsoftgraph ESRP CodeSign DLL and NuGet (AKV)"
-              FolderPath: $(Build.ArtifactStagingDirectory)/binaries/$(architecture)
+              FolderPath: $(Build.ArtifactStagingDirectory)/binaries
               signConfigType: inlineSignParams
               UseMinimatch: true
               inlineOperation: |
@@ -340,12 +340,12 @@ stages:
                 ]
               SessionTimeout: 20
               Pattern: |
-                **/*/zip
+                **/*.zip
           - task: EsrpCodeSigning@2
             condition: and(succeeded(), startsWith(variables['architecture'], 'osx'))
             inputs:
               ConnectedServiceName: "microsoftgraph ESRP CodeSign DLL and NuGet (AKV)"
-              FolderPath: $(Build.ArtifactStagingDirectory)/binaries/$(architecture)
+              FolderPath: $(Build.ArtifactStagingDirectory)/binaries
               signConfigType: inlineSignParams
               UseMinimatch: true
               inlineOperation: |
@@ -362,7 +362,7 @@ stages:
                 ]
               SessionTimeout: 20
               Pattern: |
-                **/*/zip
+                **/*.zip
           - task: PublishBuildArtifacts@1
             displayName: "Publish Artifact: binaries"
             inputs:
