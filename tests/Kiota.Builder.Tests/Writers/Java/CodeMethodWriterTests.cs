@@ -55,6 +55,10 @@ public class CodeMethodWriterTests : IDisposable
     }
     private void AddRequestProperties()
     {
+        parentClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "BaseRequestBuilder"
+        };
         parentClass.AddProperty(new CodeProperty
         {
             Name = "requestAdapter",
@@ -1641,14 +1645,14 @@ public class CodeMethodWriterTests : IDisposable
     public void WritesConstructor()
     {
         method.Kind = CodeMethodKind.Constructor;
-        var defaultValue = "someVal";
+        var defaultValue = "\"someVal\"";
         var propName = "propWithDefaultValue";
         parentClass.Kind = CodeClassKind.RequestBuilder;
         parentClass.AddProperty(new CodeProperty
         {
             Name = propName,
             DefaultValue = defaultValue,
-            Kind = CodePropertyKind.UrlTemplate,
+            Kind = CodePropertyKind.Custom,
             Type = new CodeType
             {
                 Name = "string"
@@ -1667,8 +1671,8 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
-        Assert.Contains($"this.{propName} = {defaultValue}", result);
-        Assert.Contains("new Map<String, String>(pathParameters)", result);
+        Assert.Contains($"this.set{propName.ToFirstCharacterUpperCase()}({defaultValue})", result);
+        Assert.Contains("super", result);
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
@@ -1716,14 +1720,14 @@ public class CodeMethodWriterTests : IDisposable
     public void WritesRawUrlConstructor()
     {
         method.Kind = CodeMethodKind.RawUrlConstructor;
-        var defaultValue = "someVal";
+        var defaultValue = "\"someVal\"";
         var propName = "propWithDefaultValue";
         parentClass.Kind = CodeClassKind.RequestBuilder;
         parentClass.AddProperty(new CodeProperty
         {
             Name = propName,
             DefaultValue = defaultValue,
-            Kind = CodePropertyKind.UrlTemplate,
+            Kind = CodePropertyKind.Custom,
             Type = new CodeType
             {
                 Name = "string"
@@ -1742,8 +1746,8 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
-        Assert.Contains($"this.{propName} = {defaultValue}", result);
-        Assert.Contains("urlTplParams.put(\"request-raw-url\", rawUrl);", result);
+        Assert.Contains($"this.set{propName.ToFirstCharacterUpperCase()}({defaultValue})", result);
+        Assert.Contains("super", result);
     }
     [Fact]
     public void WritesApiConstructor()

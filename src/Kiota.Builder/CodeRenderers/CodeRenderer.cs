@@ -15,11 +15,11 @@ namespace Kiota.Builder.CodeRenderers;
 /// </summary>
 public class CodeRenderer
 {
-    public CodeRenderer(GenerationConfiguration configuration)
+    public CodeRenderer(GenerationConfiguration configuration, CodeElementOrderComparer? elementComparer = null)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         _configuration = configuration;
-        _rendererElementComparer = configuration.ShouldRenderMethodsOutsideOfClasses ? new CodeElementOrderComparerWithExternalMethods() : new CodeElementOrderComparer();
+        _rendererElementComparer = elementComparer ?? (configuration.ShouldRenderMethodsOutsideOfClasses ? new CodeElementOrderComparerWithExternalMethods() : new CodeElementOrderComparer());
     }
     public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile, CancellationToken cancellationToken)
     {
@@ -91,6 +91,7 @@ public class CodeRenderer
         config.Language switch
         {
             GenerationLanguage.TypeScript => new TypeScriptCodeRenderer(config),
+            GenerationLanguage.Python => new PythonCodeRenderer(config),
             _ => new CodeRenderer(config),
         };
 

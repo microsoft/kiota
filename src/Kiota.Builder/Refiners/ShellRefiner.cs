@@ -20,6 +20,31 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            MoveRequestBuilderPropertiesToBaseType(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseCliRequestBuilder",
+                    Declaration = new CodeType
+                    {
+                        Name = "Microsoft.Kiota.Cli.Commons",
+                        IsExternal = true
+                    }
+                });
+            RemoveRequestConfigurationClasses(generatedCode,
+                new CodeUsing
+                {
+                    Name = "RequestConfiguration",
+                    Declaration = new CodeType
+                    {
+                        Name = "Microsoft.Kiota.Abstractions",
+                        IsExternal = true
+                    }
+                },
+                new CodeType
+                {
+                    Name = "DefaultQueryParameters",
+                    IsExternal = true,
+                });
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddDefaultImports(generatedCode, additionalUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
@@ -43,6 +68,11 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
                 generatedCode,
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
                 new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum) }
+            );
+            ReplaceReservedNames(
+                generatedCode,
+                new CSharpReservedClassNamesProvider(),
+                x => $"{x.ToFirstCharacterUpperCase()}Escaped"
             );
             // Replace the reserved types
             ReplaceReservedModelTypes(generatedCode, new CSharpReservedTypesProvider(), x => $"{x}Object");
@@ -164,7 +194,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         {
             var method = new CodeMethod
             {
-                Name = $"BuildCommand",
+                Name = "BuildCommand",
                 IsAsync = false,
                 Kind = CodeMethodKind.CommandBuilder,
                 OriginalIndexer = indexer,
@@ -214,10 +244,6 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             "System.CommandLine",  "Command", "RootCommand", "IConsole"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
             "Microsoft.Kiota.Cli.Commons.IO", "IOutputFormatter", "IOutputFormatterFactory", "FormatterType", "PageLinkData", "IPagingService"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-            "Microsoft.Extensions.Hosting", "IHost"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-            "Microsoft.Extensions.DependencyInjection", "IHost"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
             "System.Text",  "Encoding"),
         new (x => {

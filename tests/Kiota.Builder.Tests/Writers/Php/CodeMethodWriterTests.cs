@@ -1357,7 +1357,7 @@ public class CodeMethodWriterTests : IDisposable
         var result = stringWriter.ToString();
         Assert.Contains("$this->requestAdapter = $requestAdapter", result);
         Assert.Contains("public function __construct(RequestAdapter $requestAdapter)", result);
-        Assert.Contains($"$this->pathParameters['baseUrl'] = $this->requestAdapter->getBaseUrl();", result);
+        Assert.Contains($"$this->pathParameters['baseurl'] = $this->requestAdapter->getBaseUrl();", result);
     }
 
     [Fact]

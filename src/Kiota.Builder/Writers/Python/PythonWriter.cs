@@ -7,11 +7,11 @@ public class PythonWriter : LanguageWriter
     {
         PathSegmenter = new PythonPathSegmenter(rootPath, clientNamespaceName);
         var conventionService = new PythonConventionService();
-        AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
+        AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
         AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
-        AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService, usesBackingStore));
-        AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
+        AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService, clientNamespaceName, usesBackingStore));
+        AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService, clientNamespaceName));
         AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeNameSpaceWriter(conventionService));
     }

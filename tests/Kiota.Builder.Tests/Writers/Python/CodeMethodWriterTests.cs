@@ -17,7 +17,9 @@ public class CodeMethodWriterTests : IDisposable
     private readonly LanguageWriter writer;
     private readonly CodeMethod method;
     private readonly CodeClass parentClass;
+    private readonly CodeClass childClass;
     private readonly CodeNamespace root;
+    private const string ClientNamespaceName = "graph";
     private const string MethodName = "method_name";
     private const string ReturnTypeName = "Somecustomtype";
     private const string MethodDescription = "some description";
@@ -34,6 +36,26 @@ public class CodeMethodWriterTests : IDisposable
             Name = "parentClass"
         };
         root.AddClass(parentClass);
+        childClass = new CodeClass
+        {
+            Name = "childClass"
+        };
+        root.AddClass(childClass);
+        var returnTypeClassDef = new CodeClass
+        {
+            Name = ReturnTypeName,
+        };
+        root.AddClass(returnTypeClassDef);
+        var nUsing = new CodeUsing
+        {
+            Name = returnTypeClassDef.Name,
+            Declaration = new()
+            {
+                Name = returnTypeClassDef.Name,
+                TypeDefinition = returnTypeClassDef,
+            }
+        };
+        parentClass.StartBlock.AddUsings(nUsing);
         method = new CodeMethod
         {
             Name = MethodName,
@@ -124,6 +146,46 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
+            Name = "dummyTimespan",
+            Type = new CodeType
+            {
+                Name = "timedelta"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "dummyDateTime",
+            Type = new CodeType
+            {
+                Name = "datetime"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "dummyTime",
+            Type = new CodeType
+            {
+                Name = "time"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "dummyDate",
+            Type = new CodeType
+            {
+                Name = "date"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "dummyGuid",
+            Type = new CodeType
+            {
+                Name = "uuid"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "dummyClass",
             Type = new CodeType
             {
@@ -195,6 +257,20 @@ public class CodeMethodWriterTests : IDisposable
         {
             Name = "someParentClass"
         };
+    }
+
+    private void AddCodeUsings()
+    {
+        var nUsing = new CodeUsing
+        {
+            Name = childClass.Name,
+            Declaration = new()
+            {
+                Name = childClass.Name,
+                TypeDefinition = childClass,
+            }
+        };
+        parentClass.StartBlock.AddUsings(nUsing);
     }
     private void AddRequestBodyParameters(bool useComplexTypeForBody = false)
     {
@@ -280,26 +356,59 @@ public class CodeMethodWriterTests : IDisposable
         var error4XX = root.AddClass(new CodeClass
         {
             Name = "Error4XX",
+            IsErrorDefinition = true
+
         }).First();
         var error5XX = root.AddClass(new CodeClass
         {
             Name = "Error5XX",
+            IsErrorDefinition = true
         }).First();
         var error401 = root.AddClass(new CodeClass
         {
             Name = "Error401",
+            IsErrorDefinition = true
         }).First();
+        parentClass.StartBlock.AddUsings(new()
+        {
+            Name = error401.Name,
+            Declaration = new()
+            {
+                Name = error401.Name,
+                TypeDefinition = error401,
+            }
+        },
+        new()
+        {
+            Name = error5XX.Name,
+            Declaration = new()
+            {
+                Name = error5XX.Name,
+                TypeDefinition = error5XX,
+            }
+        },
+        new()
+        {
+            Name = error4XX.Name,
+            Declaration = new()
+            {
+                Name = error4XX.Name,
+                TypeDefinition = error4XX,
+            }
+        });
         method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
         method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
-        method.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error401 });
+        method.AddErrorMapping("401", new CodeType { Name = "Error401", TypeDefinition = error401 });
         AddRequestBodyParameters();
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("request_info", result);
+        Assert.Contains("from . import error401, error4_x_x, error5_x_x", result);
         Assert.Contains("error_mapping: Dict[str, ParsableFactory] =", result);
         Assert.Contains("\"4XX\": error4_x_x.Error4XX", result);
         Assert.Contains("\"5XX\": error5_x_x.Error5XX", result);
-        Assert.Contains("\"403\": error403.Error403", result);
+        Assert.Contains("\"401\": error401.Error401", result);
+        Assert.Contains("from . import somecustomtype", result);
         Assert.Contains("send_async", result);
         Assert.Contains("raise Exception", result);
     }
@@ -323,6 +432,7 @@ public class CodeMethodWriterTests : IDisposable
         AddRequestBodyParameters();
         writer.Write(method);
         var result = tw.ToString();
+        Assert.Contains("from . import somecustomtype", result);
         Assert.Contains("send_collection_async", result);
     }
     [Fact]
@@ -381,6 +491,7 @@ public class CodeMethodWriterTests : IDisposable
         AddInheritanceClass();
         writer.Write(method);
         var result = tw.ToString();
+        Assert.Contains("from . import somecustomtype", result);
         Assert.Contains("super_fields = super()", result);
         Assert.Contains("fields.update(super_fields)", result);
         Assert.Contains("return fields", result);
@@ -393,11 +504,18 @@ public class CodeMethodWriterTests : IDisposable
         AddSerializationProperties();
         writer.Write(method);
         var result = tw.ToString();
+        Assert.Contains("from . import somecustomtype", result);
+        Assert.Contains("fields: Dict[str, Callable[[Any], None]] =", result);
         Assert.Contains("get_str_value", result);
         Assert.Contains("get_int_value", result);
         Assert.Contains("get_float_value", result);
         Assert.Contains("get_bool_value", result);
         Assert.Contains("get_bytes_value", result);
+        Assert.Contains("get_date_value", result);
+        Assert.Contains("get_time_value", result);
+        Assert.Contains("get_timedelta_value", result);
+        Assert.Contains("get_datetime_value", result);
+        Assert.Contains("get_uuid_value", result);
         Assert.Contains("get_object_value", result);
         Assert.Contains("get_collection_of_primitive_values", result);
         Assert.Contains("get_collection_of_object_values", result);
@@ -424,6 +542,11 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("write_str_value", result);
+        Assert.Contains("write_datetime_value", result);
+        Assert.Contains("write_timedelta_value", result);
+        Assert.Contains("write_date_value", result);
+        Assert.Contains("write_time_value", result);
+        Assert.Contains("write_uuid_value", result);
         Assert.Contains("write_collection_of_primitive_values", result);
         Assert.Contains("write_collection_of_object_values", result);
         Assert.Contains("write_enum_value", result);
@@ -489,7 +612,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void Defensive()
     {
-        var codeMethodWriter = new CodeMethodWriter(new PythonConventionService(), false);
+        var codeMethodWriter = new CodeMethodWriter(new PythonConventionService(), ClientNamespaceName, false);
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
         var originalParent = method.Parent;
@@ -538,11 +661,181 @@ public class CodeMethodWriterTests : IDisposable
     public void WritesFactoryMethods()
     {
         method.Kind = CodeMethodKind.Factory;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("@staticmethod", result);
         Assert.DoesNotContain("self", result);
 
+    }
+    [Fact]
+    public void WritesModelFactoryBody()
+    {
+        parentClass.Kind = CodeClassKind.Model;
+        childClass.Kind = CodeClassKind.Model;
+        childClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "parentClass",
+            TypeDefinition = parentClass,
+        };
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType
+        {
+            Name = "parentClass",
+            TypeDefinition = parentClass,
+        };
+        method.IsStatic = true;
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ns.childclass", new CodeType
+        {
+            Name = "childClass",
+            TypeDefinition = childClass,
+        });
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        AddCodeUsings();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
+        Assert.Contains("if mapping_value_node:", result);
+        Assert.Contains("mapping_value = mapping_value_node.get_str_value()", result);
+        Assert.Contains("if mapping_value == \"ns.childclass\"", result);
+        Assert.Contains("from . import child_class", result);
+        Assert.Contains("return child_class.ChildClass()", result);
+        Assert.Contains("return ParentClass()", result);
+    }
+    [Fact]
+    public void DoesntWriteFactoryConditionalsOnMissingParameter()
+    {
+        parentClass.Kind = CodeClassKind.Model;
+        childClass.Kind = CodeClassKind.Model;
+        childClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "parentClass",
+            TypeDefinition = parentClass,
+        };
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType
+        {
+            Name = "parentClass",
+            TypeDefinition = parentClass,
+        };
+        method.IsStatic = true;
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ns.childclass", new CodeType
+        {
+            Name = "childClass",
+            TypeDefinition = childClass,
+        });
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+    }
+    [Fact]
+    public void DoesntWriteFactoryConditionalsOnEmptyPropertyName()
+    {
+        parentClass.Kind = CodeClassKind.Model;
+        childClass.Kind = CodeClassKind.Model;
+        childClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "parentClass",
+            TypeDefinition = parentClass,
+        };
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType
+        {
+            Name = "parentClass",
+            TypeDefinition = parentClass,
+        };
+        method.IsStatic = true;
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ns.childclass", new CodeType
+        {
+            Name = "childClass",
+            TypeDefinition = childClass,
+        });
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = string.Empty;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
+        Assert.DoesNotContain("if mapping_value_node:", result);
+        Assert.DoesNotContain("mapping_value = mapping_value_node.get_str_value", result);
+        Assert.DoesNotContain("if mapping_value == \"ns.childclass\"", result);
+        Assert.Contains("return ParentClass()", result);
+    }
+    [Fact]
+    public void DoesntWriteFactorySwitchOnEmptyMappings()
+    {
+        parentClass.Kind = CodeClassKind.Model;
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType
+        {
+            Name = "parentClass",
+            TypeDefinition = parentClass,
+        };
+        method.IsStatic = true;
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        method.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
+        Assert.DoesNotContain("if mapping_value_node:", result);
+        Assert.DoesNotContain("mapping_value = mapping_value_node.get_str_value", result);
+        Assert.DoesNotContain("if mapping_value == \"ns.childclass\"", result);
+        Assert.Contains("return ParentClass()", result);
     }
     [Fact]
     public void WritesPublicMethodByDefault()
@@ -578,6 +871,7 @@ public class CodeMethodWriterTests : IDisposable
                 Name = "string",
             }
         };
+
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("self.request_adapter", result);
@@ -601,6 +895,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
+        Assert.Contains("from . import somecustomtype", result);
         Assert.Contains("self.request_adapter", result);
         Assert.Contains("self.path_parameters", result);
         Assert.Contains("path_param", result);

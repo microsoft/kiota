@@ -9,6 +9,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, GoConventionSe
     public CodePropertyWriter(GoConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
+        if (codeElement.ExistsInExternalBaseType)
+            return;
         var propertyName = codeElement.Access == AccessModifier.Public ? codeElement.Name.ToFirstCharacterUpperCase() : codeElement.Name.ToFirstCharacterLowerCase();
         var suffix = string.Empty;
         switch (codeElement.Kind)

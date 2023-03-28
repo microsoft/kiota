@@ -661,7 +661,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl}');");
             writer.CloseBlock();
             if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
-                writer.WriteLine($"{GetPropertyCall(pathParametersProperty, string.Empty)}['baseUrl'] = {GetPropertyCall(requestAdapterProperty, string.Empty)}->getBaseUrl();");
+                writer.WriteLine($"{GetPropertyCall(pathParametersProperty, string.Empty)}['baseurl'] = {GetPropertyCall(requestAdapterProperty, string.Empty)}->getBaseUrl();");
         }
         if (codeMethod.Parameters.OfKind(CodeParameterKind.BackingStore) is CodeParameter backingStoreParam)
             writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->enableBackingStore(${backingStoreParam.Name} ?? BackingStoreFactorySingleton::getInstance());");

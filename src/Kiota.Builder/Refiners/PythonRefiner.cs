@@ -90,6 +90,12 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddQueryParameterMapperMethod(
                 generatedCode
             );
+            AddDiscriminatorMappingsUsingsToParentClasses(
+                generatedCode,
+                "ParseNode",
+                addUsings: true,
+                includeParentNamespace: true
+            );
             RemoveHandlerFromRequestBuilder(generatedCode);
         }, cancellationToken);
     }
@@ -97,8 +103,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     private const string AbstractionsPackageName = "kiota_abstractions";
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeClass, "__future__", "annotations"),
-        new (static x => x is CodeClass, "typing", "Any, Callable, Dict, List, Optional, Union"),
-        new (static x => x is CodeClass, $"{AbstractionsPackageName}.utils", "lazy_import"),
+        new (static x => x is CodeClass, "typing", "Any, Callable, Dict, List, Optional, TYPE_CHECKING, Union"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             $"{AbstractionsPackageName}.request_adapter", "RequestAdapter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -214,6 +219,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
 
     private const string DateTimePackageName = "datetime";
+    private const string UUIDPackageName = "uuid";
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase) {
     {"DateTimeOffset", ("datetime", new CodeUsing {
                                     Name = "datetime",
@@ -243,5 +249,12 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                                 IsExternal = true,
                             },
                         })},
+    {"Guid", ("uuid", new CodeUsing {
+                        Name = "UUID",
+                        Declaration = new CodeType {
+                            Name = UUIDPackageName,
+                            IsExternal = true,
+                        },
+                    })},
     };
 }

@@ -37,11 +37,14 @@ jobs:
         with:
           dotnet-version: 7.0.x
       - name: Restore workloads
-        run: dotnet workload restore
+        run: |
+          dotnet workload restore
+          dotnet workload install wasm-tools
       - name: Restore dependencies
         run: dotnet restore kiota.sln
       - name: Check formatting
         run: dotnet format --verify-no-changes
+        continue-on-error: true # locking until https://github.com/dotnet/sdk/issues/30742
       - name: Build
         run: dotnet build kiota.sln --no-restore
       - name: Install PlayWright browsers
@@ -72,7 +75,9 @@ jobs:
         with:
           dotnet-version: 7.0.x
       - name: Restore workloads
-        run: dotnet workload restore
+        run: |
+          dotnet workload restore
+          dotnet workload install wasm-tools
       - name: Restore dependencies
         run: dotnet restore kiota.sln
       - name: Publish ${{ matrix.os }}

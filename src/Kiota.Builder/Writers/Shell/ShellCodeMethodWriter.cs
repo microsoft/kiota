@@ -38,7 +38,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     private const string InvocationContextParamName = "invocationContext";
     private const string CommandVariableName = "command";
 
-    public ShellCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
+    public ShellCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService, true)
     {
     }
 
@@ -127,19 +127,19 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             {
                 // Add output filter param
                 parameters.Add((OutputFilterParamType, OutputFilterParamName, null));
-                availableOptions.Add($"{InvocationContextParamName}.BindingContext.GetRequiredService<{OutputFilterParamType}>()");
+                availableOptions.Add($"{InvocationContextParamName}.BindingContext.GetService(typeof({OutputFilterParamType})) as {OutputFilterParamType} ?? throw new ArgumentNullException(\"{OutputFilterParamName}\")");
             }
 
             // Add output formatter factory param
             parameters.Add((OutputFormatterFactoryParamType, OutputFormatterFactoryParamName, null));
-            availableOptions.Add($"{InvocationContextParamName}.BindingContext.GetRequiredService<{OutputFormatterFactoryParamType}>()");
+            availableOptions.Add($"{InvocationContextParamName}.BindingContext.GetService(typeof({OutputFormatterFactoryParamType})) as {OutputFormatterFactoryParamType} ?? throw new ArgumentNullException(\"{OutputFormatterFactoryParamName}\")");
         }
 
         if (originalMethod.PagingInformation != null)
         {
             // Add paging service param
             parameters.Add((PagingServiceParamType, PagingServiceParamName, null));
-            availableOptions.Add($"{InvocationContextParamName}.BindingContext.GetRequiredService<{PagingServiceParamType}>()");
+            availableOptions.Add($"{InvocationContextParamName}.BindingContext.GetService(typeof({PagingServiceParamType})) as {PagingServiceParamType} ?? throw new ArgumentNullException(\"{PagingServiceParamName}\")");
         }
 
         // Add CancellationToken param
@@ -156,7 +156,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         {
             var (paramType, paramName, _) = parameters[i];
             var op = availableOptions[i];
-            var isRequiredService = op.Contains($"GetRequiredService<{paramType}>");
+            var isRequiredService = op.Contains($"GetService(typeof({paramType})) as {paramType} ?? throw new ArgumentNullException(\"{paramName}\")");
             var typeName = isRequiredService ? paramType : "var";
             writer.WriteLine($"{typeName} {paramName.ToFirstCharacterLowerCase()} = {availableOptions[i]};");
         }

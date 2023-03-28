@@ -8,8 +8,10 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Python;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionService>
 {
-    public CodeMethodWriter(PythonConventionService conventionService, bool usesBackingStore) : base(conventionService)
+    private readonly CodeUsingWriter _codeUsingWriter;
+    public CodeMethodWriter(PythonConventionService conventionService, string clientNamespaceName, bool usesBackingStore) : base(conventionService)
     {
+        _codeUsingWriter = new(clientNamespaceName);
         _usesBackingStore = usesBackingStore;
     }
     private readonly bool _usesBackingStore;
@@ -73,6 +75,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             case CodeMethodKind.QueryParametersMapper:
                 WriteQueryParametersMapper(codeElement, parentClass, writer);
                 break;
+            case CodeMethodKind.Factory:
+                WriteFactoryMethodBody(codeElement, parentClass, writer);
+                break;
             case CodeMethodKind.RawUrlConstructor:
                 throw new InvalidOperationException("RawUrlConstructor is not supported in python");
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
@@ -83,8 +88,32 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         writer.CloseBlock(string.Empty);
     }
+    private const string DiscriminatorMappingVarName = "mapping_value";
+    private const string NodeVarName = "mapping_value_node";
+    private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
+        var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
+        var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
+        if (writeDiscriminatorValueRead)
+        {
+            writer.WriteLine($"{NodeVarName} = {parseNodeParameter.Name.ToSnakeCase()}.get_child_node(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")");
+            writer.StartBlock($"if {NodeVarName}:");
+            writer.WriteLine($"{DiscriminatorMappingVarName} = {NodeVarName}.get_str_value()");
+            foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings.OrderBy(static x => x.Key))
+            {
+                writer.StartBlock($"if {DiscriminatorMappingVarName} == \"{mappedType.Key}\":");
+                var mappedTypeName = mappedType.Value.AllTypes.First().Name;
+                _codeUsingWriter.WriteDeferredImport(parentClass, mappedTypeName, writer);
+                writer.WriteLine($"return {mappedTypeName.ToSnakeCase()}.{mappedTypeName.ToFirstCharacterUpperCase()}()");
+                writer.DecreaseIndent();
+            }
+            writer.DecreaseIndent();
+        }
+        writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}()");
+    }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer)
     {
+        _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.ReturnType.Name, writer);
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
             codeElement.OriginalIndexer != null)
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"self.{pathParametersProperty.Name}",
@@ -93,6 +122,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     }
     private void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer)
     {
+        _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.ReturnType.Name, writer);
         var codePathParameters = codeElement.Parameters
                                                     .Where(x => x.IsOfKind(CodeParameterKind.Path));
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, pathParameters: codePathParameters);
@@ -281,7 +311,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     }
     private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits)
     {
-        writer.WriteLine("fields = {");
+        _codeUsingWriter.WriteInternalImports(parentClass, writer);
+        writer.WriteLine("fields: Dict[str, Callable[[Any], None]] = {");
         writer.IncreaseIndent();
         foreach (var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType))
         {
@@ -322,6 +353,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var errorMappingVarName = "None";
         if (codeElement.ErrorMappings.Any())
         {
+            _codeUsingWriter.WriteInternalErrorMappingImports(parentClass, writer);
             errorMappingVarName = "error_mapping";
             writer.WriteLine($"{errorMappingVarName}: Dict[str, ParsableFactory] = {{");
             writer.IncreaseIndent();
@@ -335,6 +367,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         writer.IncreaseIndent();
         writer.WriteLine("raise Exception(\"Http core is null\") ");
         writer.DecreaseIndent();
+        _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.ReturnType.Name, writer);
         writer.WriteLine($"return await self.request_adapter.{genericTypeForSendMethod}(request_info,{newFactoryParameter} {errorMappingVarName})");
     }
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName)
@@ -454,7 +487,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         return propertyType switch
         {
-            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"get_{propertyType.ToSnakeCase()}_value()",
+            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"get_{propertyType.ToLowerInvariant()}_value()",
             "bytes" => "get_bytes_value()",
             _ => $"get_object_value({propertyType.ToCamelCase()})",
         };
@@ -475,7 +508,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         return propertyType switch
         {
-            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"write_{propertyType.ToSnakeCase()}_value",
+            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"write_{propertyType.ToLowerInvariant()}_value",
             _ => "write_object_value",
         };
     }
