@@ -54,7 +54,7 @@ $mockServerPath = Join-Path -Path $scriptPath -ChildPath "mockserver"
 
 function Kill-MockServer {
     Push-Location $mockServerPath
-        mvn mockserver:stopForked
+        mvn --batch-mode mockserver:stopForked
     Pop-Location
 }
 
@@ -73,7 +73,7 @@ Kill-MockServer
 # Start MockServer if needed
 if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
     Push-Location $mockServerPath
-        mvn mockserver:runForked
+        mvn  --batch-mode mockserver:runForked
     Pop-Location
 
     # Provision Mock server with the right spec
@@ -135,10 +135,28 @@ elseif ($language -eq "java") {
     }
 }
 elseif ($language -eq "go") {
-    Invoke-Call -ScriptBlock {
-        go install
-        go build
-    } -ErrorAction Stop
+    if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
+        $itTestPath = Join-Path -Path $testPath -ChildPath $mockSeverITFolder
+        Push-Location $itTestPath
+
+        $itTestPathSources = Join-Path -Path $testPath -ChildPath "client"
+        $itTestPathDest = Join-Path -Path $itTestPath -ChildPath "client"
+        if (Test-Path $itTestPathDest) {
+            Remove-Item $itTestPathDest -Force -Recurse
+        }
+        Copy-Item -Path $itTestPathSources -Destination $itTestPathDest -Recurse
+
+        Invoke-Call -ScriptBlock {
+            go test
+        } -ErrorAction Stop
+
+        Pop-Location
+    } else {
+        Invoke-Call -ScriptBlock {
+            go install
+            go build
+        } -ErrorAction Stop
+    }
 }
 elseif ($language -eq "typescript") {
     Invoke-Call -ScriptBlock {
