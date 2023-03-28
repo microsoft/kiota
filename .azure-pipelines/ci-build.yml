@@ -355,35 +355,6 @@ stages:
             workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
           - pwsh: vsce package
             workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
-          - task: EsrpCodeSigning@1 # source https://github.com/microsoft/DevSkim/blob/b982fe9a1698d9f8852f183ba4edf4689cd08887/Pipelines/vscode/devskim-vscode-release.yml#L174
-            displayName: Code Sign VSCode Plugin
-            inputs:
-              ConnectedServiceName: "microsoftgraph ESRP CodeSign DLL and NuGet (AKV)"
-              FolderPath: $(Build.SourcesDirectory)/vscode/microsoft-kiota
-              Pattern: '*.vsix'
-              signConfigType: 'inlineSignParams'
-              inlineOperation: |
-                [
-                        {
-                            "KeyCode" : "CP-233016",
-                            "OperationCode" : "OpcSign",
-                            "Parameters" : {
-                                "FileDigest" : "/fd SHA256"
-                            },
-                            "ToolName" : "sign",
-                            "ToolVersion" : "1.0"
-                        },
-                        {
-                            "KeyCode" : "CP-233016",
-                            "OperationCode" : "OpcVerify",
-                            "Parameters" : {},
-                            "ToolName" : "sign",
-                            "ToolVersion" : "1.0"
-                        }
-                    ]
-              SessionTimeout: '60'
-              MaxConcurrency: '50'
-              MaxRetryAttempts: '5'
           - task: CopyFiles@2
             displayName: Prepare staging folder for upload
             inputs:
@@ -400,6 +371,26 @@ stages:
     condition: and(contains(variables['build.sourceBranch'], 'refs/tags/v'), succeeded())
     dependsOn: build
     jobs:
+      - job: vs_marketplace
+        variables:
+          - group: kiota-vscode-extension-publish
+        dependsOn: []
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              artifact: VSCode
+              source: current
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "18.x"
+          - pwsh: npm i -g @vscode/vsce
+          - pwsh: |
+              Get-ChildItem -Path $(Pipeline.Workspace) -Filter *.vsix -Recurse | ForEach-Object {
+                Write-Host "Publishing $_.FullName"
+                vsce publish --pat "$(vs-marketplace-token)" --packagePath $_.FullName
+              }
       - deployment: github_release
         dependsOn: []
         environment: kiota-github-releases
