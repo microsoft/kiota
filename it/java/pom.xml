@@ -16,7 +16,6 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <kiota-java.version>0.3.0</kiota-java.version>
-        <mockserver.version>5.14.0</mockserver.version>
     </properties>
 
     <dependencies>

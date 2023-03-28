@@ -28,16 +28,34 @@ function Invoke-Call {
     }
 }
 
+function Retry([Action]$action)
+{
+    $attempts=10
+    $sleepInSeconds=1
+    do
+    {
+        try
+        {
+            $action.Invoke();
+            break;
+        }
+        catch [Exception]
+        {
+            Write-Host $_.Exception.Message
+        }            
+        $attempts--
+        if ($attempts -gt 0) { sleep $sleepInSeconds }
+    } while ($attempts -gt 0)
+}
+
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $testPath = Join-Path -Path $scriptPath -ChildPath $language
+$mockServerPath = Join-Path -Path $scriptPath -ChildPath "mockserver"
 
 function Kill-MockServer {
-    $mockServerPIDFile = Join-Path -Path $scriptPath -ChildPath "mockserver.pid"
-    if (Test-Path $mockServerPIDFile -PathType Leaf) {
-        $mockServerPID = Get-Content -Path $mockServerPIDFile
-        Stop-Process -Force -Id $mockServerPID
-        Remove-Item $mockServerPIDFile
-    }
+    Push-Location $mockServerPath
+        mvn mockserver:stopForked
+    Pop-Location
 }
 
 $mockSeverITFolder = $null
@@ -54,8 +72,19 @@ if ($null -ne $descriptionValue) {
 Kill-MockServer
 # Start MockServer if needed
 if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
-    $startMockserverScript = Join-Path -Path $scriptPath -ChildPath "start-mockserver.ps1"
-    Invoke-Expression "$startMockserverScript -descriptionUrl $descriptionUrl"
+    Push-Location $mockServerPath
+        mvn mockserver:runForked
+    Pop-Location
+
+    # Provision Mock server with the right spec
+    $openapiUrl = $descriptionUrl
+    if ($openapiUrl.StartsWith("./")) {
+        $rootPath = Split-Path -parent $scriptPath
+        $openapiUrl = $openapiUrl.replace("./", "file:$rootPath/", 1)
+    }
+    
+    # provision MockServer to mock the specific openapi description https://www.mock-server.com/mock_server/using_openapi.html#button_open_api_filepath
+    Retry({Invoke-WebRequest -Method PUT -Body "{ `"specUrlOrPayload`": `"$openapiUrl`" }" -Uri http://localhost:1080/mockserver/openapi -ContentType application/json})
 }
 
 Push-Location $testPath

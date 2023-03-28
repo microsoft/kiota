@@ -447,5 +447,3 @@ reports/
 *.prefs
 
 samples/
-/it/mockserver.jar
-/it/mockserver.pid
