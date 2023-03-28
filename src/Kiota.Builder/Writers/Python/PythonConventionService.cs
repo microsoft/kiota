@@ -96,16 +96,17 @@ public class PythonConventionService : CommonLanguageConventionService
     }
     private static string TranslateExternalType(CodeType type)
     {
-        return type.Name switch
+        return type.Name.ToLowerInvariant() switch
         {
-            "String" or "string" => "str",
-            "integer" or "int32" or "int64" or "byte" or "sbyte" => "int",
+            "string" => "str",
+            "integer" or "int32" or "int64" or "long" or "byte" or "sbyte" => "int",
             "decimal" or "double" => "float",
-            "Binary" or "binary" or "base64" or "base64url" => "bytes",
+            "binary" or "base64" or "base64url" => "bytes",
             "void" => "None",
-            "DateTimeOffset" => "datetime",
+            "datetimeoffset" => "datetime",
             "boolean" => "bool",
-            "Object" or "object" or "float" or "bytes" or "datetime" or "timedelta" or "date" or "time" => type.Name,
+            "guid" or "uuid" => "UUID",
+            "object" or "float" or "bytes" or "datetime" or "timedelta" or "date" or "time" => type.Name.ToLowerInvariant(),
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
     }
@@ -117,16 +118,17 @@ public class PythonConventionService : CommonLanguageConventionService
             return type.Name;
         if (type.Name.Contains("APIError"))
             return type.Name;
-        return type.Name switch
+        return type.Name.ToLowerInvariant() switch
         {
-            "String" or "string" => "str",
-            "integer" or "int32" or "int64" or "byte" or "sbyte" => "int",
+            "string" => "str",
+            "integer" or "int32" or "int64" or "long" or "byte" or "sbyte" => "int",
             "decimal" or "double" => "float",
-            "Binary" or "binary" or "base64" or "base64url" => "bytes",
+            "binary" or "base64" or "base64url" => "bytes",
             "void" => "None",
-            "DateTimeOffset" => "datetime",
+            "datetimeoffset" => "datetime",
             "boolean" => "bool",
-            "Object" or "object" or "float" or "bytes" or "datetime" or "timedelta" or "date" or "time" => type.Name,
+            "guid" or "uuid" => "UUID",
+            "object" or "float" or "bytes" or "datetime" or "timedelta" or "date" or "time" => type.Name.ToLowerInvariant(),
             _ => $"{type.Name.ToSnakeCase()}.{type.Name.ToFirstCharacterUpperCase()}" ?? "object",
         };
     }
