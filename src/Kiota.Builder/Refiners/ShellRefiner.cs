@@ -23,10 +23,10 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
-                    Name = "BaseRequestBuilder",
+                    Name = "BaseCliRequestBuilder",
                     Declaration = new CodeType
                     {
-                        Name = "Microsoft.Kiota.Abstractions",
+                        Name = "Microsoft.Kiota.Cli.Commons",
                         IsExternal = true
                     }
                 });
@@ -227,10 +227,6 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             "System.CommandLine",  "Command", "RootCommand", "IConsole"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
             "Microsoft.Kiota.Cli.Commons.IO", "IOutputFormatter", "IOutputFormatterFactory", "FormatterType", "PageLinkData", "IPagingService"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-            "Microsoft.Extensions.Hosting", "IHost"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-            "Microsoft.Extensions.DependencyInjection", "IHost"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
             "System.Text",  "Encoding"),
         new (x => {
