@@ -707,7 +707,7 @@ public class CodeMethodWriterTests : IDisposable
         {
             Name = propName,
             DefaultValue = defaultValue,
-            Kind = CodePropertyKind.UrlTemplate,
+            Kind = CodePropertyKind.Custom,
             Type = new CodeType
             {
                 Name = "string",
@@ -726,7 +726,6 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"this.{propName} = {defaultValue}", result);
-        Assert.Contains("getPathParameters", result);
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()

@@ -8,6 +8,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
     public CodePropertyWriter(CSharpConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
+        if (codeElement.ExistsInExternalBaseType) return;
         var propertyType = conventions.GetTypeString(codeElement.Type, codeElement);
         var isNullableReferenceType = !propertyType.EndsWith("?", StringComparison.OrdinalIgnoreCase)
                                       && codeElement.IsOfKind(

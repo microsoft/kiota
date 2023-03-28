@@ -16,6 +16,16 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            MoveRequestBuilderPropertiesToBaseType(generatedCode,
+            new CodeUsing
+            {
+                Name = "BaseRequestBuilder",
+                Declaration = new CodeType
+                {
+                    Name = "@microsoft/kiota-abstractions",
+                    IsExternal = true
+                }
+            });
             ReplaceIndexersByMethodsWithParameter(generatedCode, false, "ById");
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
@@ -184,7 +194,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsPackageName, "SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             AbstractionsPackageName, "ParseNode"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.IndexerBackwardCompatibility),
+        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility),
             AbstractionsPackageName, "getPathParameters"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             AbstractionsPackageName, "Parsable", "ParsableFactory"),
@@ -222,7 +232,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.IsNullable = false;
             currentProperty.Type.Name = "Record<string, unknown>";
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
-                currentProperty.DefaultValue = "{}";
+                currentProperty.DefaultValue = string.Empty;
         }
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }

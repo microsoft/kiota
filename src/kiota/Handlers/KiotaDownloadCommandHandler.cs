@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Caching;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders;
 using Microsoft.Extensions.Logging;
 
@@ -81,9 +82,12 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         else if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm))
         {
             var (path, statusCode) = await SaveResultAsync(results.First(), logger, cancellationToken);
-            DisplaySuccess($"File successfully downloaded to {path}");
-            DisplayShowHint(searchTerm, version, path);
-            DisplayGenerateHint(path, Enumerable.Empty<string>(), Enumerable.Empty<string>());
+            if (statusCode == 0)
+            {
+                DisplaySuccess($"File successfully downloaded to {path}");
+                DisplayShowHint(searchTerm, version, path);
+                DisplayGenerateHint(path, Enumerable.Empty<string>(), Enumerable.Empty<string>());
+            }
             return statusCode;
         }
         else
@@ -94,8 +98,21 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
     private async Task<(string, int)> SaveResultAsync(KeyValuePair<string, SearchResult> result, ILogger logger, CancellationToken cancellationToken)
     {
         string path;
+        if (result.Value.DescriptionUrl is null)
+        {
+            logger.LogCritical("The description could not be found");
+            return (string.Empty, 1);
+        }
         try
         {
+            Console.WriteLine($"output path: {Configuration.Download.OutputPath}");
+            var defaultOutputPath = new DownloadConfiguration().OutputPath.Replace('/', Path.DirectorySeparatorChar);
+            var defaultExtension = Path.GetExtension(defaultOutputPath)[1..];
+            var fileExtension = Path.GetExtension(result.Value.DescriptionUrl.ToString())[1..];
+            if (Configuration.Download.OutputPath.Equals(defaultOutputPath, StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrEmpty(fileExtension) &&
+                !fileExtension.Equals(defaultExtension, StringComparison.OrdinalIgnoreCase))
+                Configuration.Download.OutputPath = Configuration.Download.OutputPath[..^defaultExtension.Length] + fileExtension;
             if (Path.IsPathFullyQualified(Configuration.Download.OutputPath))
                 path = Configuration.Download.OutputPath;
             else
@@ -128,11 +145,6 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
         {
             ClearCache = true,
         };
-        if (result.Value.DescriptionUrl is null)
-        {
-            logger.LogCritical("The description could not be found");
-            return (path, 1);
-        }
         await using var document = await cacheProvider.GetDocumentAsync(result.Value.DescriptionUrl, "download", Path.GetFileName(path), cancellationToken: cancellationToken);
         await using var fileStream = File.Create(path);
         await document.CopyToAsync(fileStream, cancellationToken);

@@ -9,12 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added Visual Studio Code preview extension. [#2333](https://github.com/microsoft/kiota/issues/2333)
 - Added support for searching in forks for API descriptions in GitHub. [#2429](https://github.com/microsoft/kiota/issues/2429)
 - Added the ability to filter on operations. [#2431](https://github.com/microsoft/kiota/issues/2431)
 
 ### Changed
 
-- Fixed a bug where date types annotations were not correctly translated in Python.
+- Fixed a bug where date types annotations were not correctly translated in Python
+- Fixed the extension of downloaded files when using the default path. [#2316](https://github.com/microsoft/kiota/issues/2316)
 - Fixed a bug where lookup of reference ids failed for AllOf more than one level up.
 - Fixed a bug where a CLI client would not set the content types for requests. (Shell)
 - Fixed linting errors by re-ordering methods and properties in Python.
@@ -30,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where go refiner would emit incorrect code when inlining error parents
 - Fixed a bug in PHP where the base URL path parameter key didn't match the URI template.
 - Changed invalid schema behavior, invalid properties are now ignored with a warning instead of failed. [#2089](https://github.com/microsoft/kiota/issues/2089)
+- Fixed a bug where java refiner would not normalize inherited class names and interface types.
+- Fixed a bug where search based commands would not match exact matches when additional results are available.
 
 ## [1.0.1] - 2023-03-11
 

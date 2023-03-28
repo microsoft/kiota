@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Kiota.Builder.CodeDOM;
 public class CodeType : CodeTypeBase, ICloneable
@@ -18,7 +19,9 @@ public class CodeType : CodeTypeBase, ICloneable
         return new CodeType
         {
             TypeDefinition = TypeDefinition, // not cloning the type definition as it's a code element that lives in the tree and we don't want to fork the tree
-            IsExternal = IsExternal
+            IsExternal = IsExternal,
+            GenericTypeParameterValues = new(GenericTypeParameterValues),
         }.BaseClone<CodeType>(this);
     }
+    public List<CodeType> GenericTypeParameterValues { get; set; } = new();
 }

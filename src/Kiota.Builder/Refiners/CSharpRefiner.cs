@@ -16,6 +16,32 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            MoveRequestBuilderPropertiesToBaseType(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseRequestBuilder",
+                    Declaration = new CodeType
+                    {
+                        Name = "Microsoft.Kiota.Abstractions",
+                        IsExternal = true
+                    }
+                });
+            //TODO uncomment on the next major version
+            // RemoveRequestConfigurationClasses(generatedCode,
+            //     new CodeUsing
+            //     {
+            //         Name = "RequestConfiguration",
+            //         Declaration = new CodeType
+            //         {
+            //             Name = "Microsoft.Kiota.Abstractions",
+            //             IsExternal = true
+            //         }
+            //     },
+            //     new CodeType
+            //     {
+            //         Name = "DefaultQueryParameters",
+            //         IsExternal = true,
+            //     });
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
@@ -39,6 +65,11 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
                 new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum) }
+            );
+            ReplaceReservedNames(
+                generatedCode,
+                new CSharpReservedClassNamesProvider(),
+                x => $"{x.ToFirstCharacterUpperCase()}Escaped"
             );
             ReplaceReservedExceptionPropertyNames(
                 generatedCode,
