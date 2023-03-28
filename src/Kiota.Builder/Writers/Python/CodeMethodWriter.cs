@@ -487,7 +487,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         return propertyType switch
         {
-            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"get_{propertyType.ToSnakeCase()}_value()",
+            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"get_{propertyType.ToLowerInvariant()}_value()",
             "bytes" => "get_bytes_value()",
             _ => $"get_object_value({propertyType.ToCamelCase()})",
         };
@@ -508,7 +508,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         return propertyType switch
         {
-            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"write_{propertyType.ToSnakeCase()}_value",
+            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"write_{propertyType.ToLowerInvariant()}_value",
             _ => "write_object_value",
         };
     }
