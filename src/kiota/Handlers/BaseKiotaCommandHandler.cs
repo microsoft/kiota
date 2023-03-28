@@ -223,9 +223,9 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         {
             var example = path switch
             {
-                _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path} --include-path **/foo",
-                _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm} --include-path **/foo",
-                _ => $"Example: kiota show -k {searchTerm} -v {version} --include-path **/foo",
+                _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path} --include-path \"**/foo\"",
+                _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm} --include-path \"**/foo\"",
+                _ => $"Example: kiota show -k {searchTerm} -v {version} --include-path \"**/foo\"",
             };
             DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths displayed.", example);
         }
@@ -246,8 +246,8 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     }
     protected void DisplayGenerateHint(string path, IEnumerable<string> includedPaths, IEnumerable<string> excludedPaths)
     {
-        var includedPathsSuffix = (includedPaths.Any() ? " -i " : string.Empty) + string.Join(" -i ", includedPaths);
-        var excludedPathsSuffix = (excludedPaths.Any() ? " -e " : string.Empty) + string.Join(" -e ", excludedPaths);
+        var includedPathsSuffix = (includedPaths.Any() ? " -i " : string.Empty) + string.Join(" -i ", includedPaths.Select(static x => $"\"{x}\""));
+        var excludedPathsSuffix = (excludedPaths.Any() ? " -e " : string.Empty) + string.Join(" -e ", excludedPaths.Select(static x => $"\"{x}\""));
         var example = $"Example: kiota generate -l <language> -o <output path> -d {path}{includedPathsSuffix}{excludedPathsSuffix}";
         DisplayHint("Hint: use kiota generate to generate a client for the OpenAPI description.", example);
     }
@@ -256,7 +256,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         if (!includePaths.Any() && !excludePaths.Any())
         {
             DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths generated.",
-                        $"Example: kiota generate --include-path **/foo -d {path}");
+                        $"Example: kiota generate --include-path \"**/foo\" -d {path}");
         }
     }
     protected void DisplayInfoHint(GenerationLanguage language, string path)
