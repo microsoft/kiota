@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
+- Added Visual Studio Code preview extension. [#2333](https://github.com/microsoft/kiota/issues/2333)
 - Added support for searching in forks for API descriptions in GitHub. [#2429](https://github.com/microsoft/kiota/issues/2429)
 - Added the ability to filter on operations. [#2431](https://github.com/microsoft/kiota/issues/2431)
 

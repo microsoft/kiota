@@ -1,11 +1,10 @@
 {
   "No description found, select a description first": "Description non trouvée, ouvrez une description d'API d'abord",
   "No endpoints selected, select endpoints first": "Aucune API sélectionnée, sélectionnez des APIs d'abord",
-  "NoWorkspaceError": "Aucun environment de travail sélectionné, ouvrez un environment de travail d'abord",
-  "No workspace folder found, open a folder first": "Ouvrir les instructions d'installation pour Kiota?",
+  "No workspace folder found, open a folder first": "Aucun environment de travail sélectionné, ouvrez un environment de travail d'abord",
   "Yes": "Oui",
   "No": "Non",
-  "NotFound": "non trouvé",
+  "not found": "non trouvé",
   "error updating the clients {error}": "erreur lors de la mise à jour des clients {error}",
   "updating client with path {path}": "mise à jour du client {path}",
   "Kiota Dependencies Information": "Informations sur les dépendances Kiota",
@@ -21,5 +20,10 @@
   "Choose a name for the client class": "Choisissez un nom pour la classe client",
   "Choose a name for the client class namespace": "Choisissez un nom pour l'espace de nom client",
   "Enter an output path relative to the root of the project": "Entrez un chemin relatif à la racine du projet",
-  "Pick a language": "Sélectionnez un langage"
+  "Pick a language": "Sélectionnez un langage",
+  "Downloading kiota requires an internet connection. Please check your connection and try again.": "Télécharger Kiota nécessite une connexion Internet. Vérifiez votre connexion et réessayez.",
+  "Kiota download failed. Check the extension host logs for more information.": "Échec du téléchargement de Kiota. Vérifiez les journaux de l'hôte d'extension pour plus d'informations.",
+  "Downloading kiota...": "Téléchargement de Kiota...",
+  "Generating client...": "Génération du client...",
+  "Updating clients...": "Mise à jour des clients..."
 }
