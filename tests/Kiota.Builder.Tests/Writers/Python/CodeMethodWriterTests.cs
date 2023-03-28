@@ -178,6 +178,14 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
+            Name = "dummyGuid",
+            Type = new CodeType
+            {
+                Name = "uuid"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "dummyClass",
             Type = new CodeType
             {
@@ -507,6 +515,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("get_time_value", result);
         Assert.Contains("get_timedelta_value", result);
         Assert.Contains("get_datetime_value", result);
+        Assert.Contains("get_uuid_value", result);
         Assert.Contains("get_object_value", result);
         Assert.Contains("get_collection_of_primitive_values", result);
         Assert.Contains("get_collection_of_object_values", result);
@@ -537,6 +546,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("write_timedelta_value", result);
         Assert.Contains("write_date_value", result);
         Assert.Contains("write_time_value", result);
+        Assert.Contains("write_uuid_value", result);
         Assert.Contains("write_collection_of_primitive_values", result);
         Assert.Contains("write_collection_of_object_values", result);
         Assert.Contains("write_enum_value", result);
