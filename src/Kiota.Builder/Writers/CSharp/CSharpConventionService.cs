@@ -213,14 +213,14 @@ public class CSharpConventionService : CommonLanguageConventionService
         {
             var targetClass = targetElement.GetImmediateParentOfType<CodeClass>();
             var importedNamespaces = targetClass.StartBlock.Usings
-                .Where(codeUsing => !codeUsing.IsExternal                                                                      // 1. Are defined during generation(not external) 
-                                    && codeUsing.Declaration != null
-                                    && codeUsing.Declaration.TypeDefinition != null
+                .Where(codeUsing => !codeUsing.IsExternal // 1. Are defined during generation(not external) 
+                                    && codeUsing.Declaration?.TypeDefinition != null 
                                     && !codeUsing.Name.Equals(currentTypeNamespace.Name, StringComparison.OrdinalIgnoreCase))  // 2. Do not match the namespace of the current type
                 .Select(static codeUsing => codeUsing.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>())
                 .DistinctBy(static declaredNamespace => declaredNamespace.Name);
 
-            return importedNamespaces.Any(importedNamespace => importedNamespace.FindChildByName<CodeClass>(codeClass.Name, false) != null);
+            return importedNamespaces.Any(importedNamespace => (importedNamespace.FindChildByName<CodeClass>(codeClass.Name, false) != null) 
+                                                               || (importedNamespace.FindChildByName<CodeEnum>(codeClass.Name, false) != null));
         }
         return false;
     }

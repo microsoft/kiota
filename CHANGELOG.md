@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed invalid schema behavior, invalid properties are now ignored with a warning instead of failed. [#2089](https://github.com/microsoft/kiota/issues/2089)
 - Fixed a bug where java refiner would not normalize inherited class names and interface types.
 - Fixed a bug where search based commands would not match exact matches when additional results are available.
+- Fixed a bug where imported classes and enums would not be disambiguated when they have the same name in dotnet.
 
 ## [1.0.1] - 2023-03-11
 
