@@ -23,10 +23,10 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
-                    Name = "BaseRequestBuilder",
+                    Name = "BaseCliRequestBuilder",
                     Declaration = new CodeType
                     {
-                        Name = "Microsoft.Kiota.Abstractions",
+                        Name = "Microsoft.Kiota.Cli.Commons",
                         IsExternal = true
                     }
                 });

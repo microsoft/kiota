@@ -541,9 +541,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     {
         if (isConstructor && inherits)
         {
-            if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
-                currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter &&
-                parentClass.Properties.OfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty &&
+            if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) && parentClass.Properties.OfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty &&
                 !string.IsNullOrEmpty(urlTemplateProperty.DefaultValue))
             {
                 var thirdParameterName = string.Empty;
@@ -553,7 +551,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                     thirdParameterName = $", {rawUrlParameter.Name}";
                 else if (parentClass.Properties.OfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty && !string.IsNullOrEmpty(pathParametersProperty.DefaultValue))
                     thirdParameterName = $", {pathParametersProperty.DefaultValue}";
-                return $" : base({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue}{thirdParameterName})";
+                if (currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter)
+                {
+                    return $" : base({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue}{thirdParameterName})";
+                }
+                else if (parentClass.StartBlock?.Inherits?.Name?.Contains("Cli") == true)
+                {
+                    // CLI uses a different base class.
+                    return $" : base({urlTemplateProperty.DefaultValue}{thirdParameterName})";
+                }
             }
             return " : base()";
         }

@@ -1461,6 +1461,34 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
+    public void ConstructorCallsCliBaseClass()
+    {
+        method.ReturnType = new CodeType
+        {
+            Name = "void",
+            IsExternal = true
+        };
+        method.Kind = CodeMethodKind.Constructor;
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        parentClass.StartBlock.Inherits = new CodeType{
+            Name = "BaseCliRequestBuilder",
+            IsExternal = true
+        };
+        parentClass.AddProperty(new CodeProperty {
+            Type = new CodeType {
+                Name = "string",
+                IsExternal = true
+            },
+            Kind = CodePropertyKind.UrlTemplate,
+            DefaultValue = "\"test\"",
+            Name = "urlTpl"
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(": base(\"test\")", result);
+    }
+
+    [Fact]
     public void WritesMethodWithEmptyStringAsDefaultValueIfNotNullableAndOptional()
     {
         method.ReturnType = new CodeType
