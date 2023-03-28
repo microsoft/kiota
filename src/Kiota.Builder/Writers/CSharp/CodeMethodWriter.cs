@@ -555,7 +555,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 {
                     return $" : base({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue}{thirdParameterName})";
                 }
-                else if (parentClass.StartBlock?.Inherits?.Name?.Contains("Cli") == true)
+                else if (parentClass.StartBlock?.Inherits?.Name?.Contains("CliRequestBuilder", StringComparison.Ordinal) == true)
                 {
                     // CLI uses a different base class.
                     return $" : base({urlTemplateProperty.DefaultValue}{thirdParameterName})";
