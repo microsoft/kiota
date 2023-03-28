@@ -394,11 +394,11 @@ stages:
       - deployment: github_release
         dependsOn: []
         environment: kiota-github-releases
+        pool:
+          vmImage: ubuntu-latest
         strategy:
           runOnce:
             deploy:
-              pool:
-                vmImage: ubuntu-latest
               steps:
                 - checkout: self
                   clean: true
@@ -442,11 +442,11 @@ stages:
       - deployment: deploy_kiota
         dependsOn: []
         environment: nuget-org
+        pool:
+          vmImage: ubuntu-latest
         strategy:
           runOnce:
             deploy:
-              pool:
-                vmImage: ubuntu-latest
               steps:
                 - task: DownloadPipelineArtifact@2
                   displayName: Download nupkg from artifacts
@@ -472,11 +472,11 @@ stages:
       - deployment: deploy_targets
         dependsOn: []
         environment: nuget-org
+        pool:
+          vmImage: ubuntu-latest
         strategy:
           runOnce:
             deploy:
-              pool:
-                vmImage: ubuntu-latest
               steps:
                 - task: DownloadPipelineArtifact@2
                   displayName: Download nupkg from artifacts
@@ -497,11 +497,11 @@ stages:
       - deployment: deploy_builder
         dependsOn: []
         environment: nuget-org
+        pool:
+          vmImage: ubuntu-latest
         strategy:
           runOnce:
             deploy:
-              pool:
-                vmImage: ubuntu-latest
               steps:
                 - task: DownloadPipelineArtifact@2
                   displayName: Download nupkg from artifacts
