@@ -124,7 +124,6 @@ public class TypeScriptLanguageRefinerTests
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-
         var otherModel = root.AddClass(new CodeClass
         {
             Name = "otherModel",
@@ -136,6 +135,28 @@ public class TypeScriptLanguageRefinerTests
         {
             Name = "otherProp",
             Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+
+        otherModel.AddMethod(
+        new CodeMethod
+        {
+            Name = "serializer",
+            Kind = CodeMethodKind.Serializer,
+            ReturnType = new CodeType
+            {
+                Name = "void"
+            }
+        });
+
+        otherModel.AddMethod(
+        new CodeMethod
+        {
+            Name = "deserializer",
+            Kind = CodeMethodKind.Deserializer,
+            ReturnType = new CodeType
             {
                 Name = "string"
             }

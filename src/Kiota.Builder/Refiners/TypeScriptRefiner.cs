@@ -448,7 +448,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 foreach (var codeUsing in currentClass.Usings)
                 {
-                    RenameModelInterfacesAndRemoveClassesInUsing(codeUsing, currentClass);
+                    RenameModelInterfacesAndRemoveClassesInUsing(codeUsing);
                 }
             }
         }
@@ -464,7 +464,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, x => RenameModelInterfacesAndRemoveClasses(x));
     }
 
-    private static void RenameModelInterfacesAndRemoveClassesInUsing(CodeUsing codeUsing, CodeClass parentClass)
+    private static void RenameModelInterfacesAndRemoveClassesInUsing(CodeUsing codeUsing)
     {
         if (codeUsing.Declaration is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface)
         {
