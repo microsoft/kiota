@@ -8,6 +8,7 @@ public class CSharpReservedClassNamesProvider : IReservedNamesProvider
     private readonly Lazy<HashSet<string>> _reservedNames = new(static () => new(StringComparer.OrdinalIgnoreCase)
     {
         "BaseRequestBuilder",
+        "BaseCliRequestBuilder"
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }
