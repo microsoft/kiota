@@ -1,7 +1,6 @@
 ﻿using App.Client;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 using Microsoft.Kiota.Abstractions.Authentication;
-using Xunit;
 using App.Client.Models;
 
 namespace Kiota.IT.MockServerTests;
