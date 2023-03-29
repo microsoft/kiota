@@ -653,6 +653,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         if (parentClass
                     .Methods
                     .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod) is not CodeMethod generatorMethod) return;
+        bool isStream = false;
         if (requestParams.requestBody is CodeParameter requestBodyParam)
         {
             var requestBodyParamType = requestBodyParam.Type as CodeType;
@@ -680,6 +681,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             }
             else if (conventions.StreamTypeName.Equals(requestBodyParamType?.Name, StringComparison.OrdinalIgnoreCase))
             {
+                isStream = true;
                 var pName = requestBodyParam.Name;
                 requestBodyParam.Name = "stream";
                 // Check for file existence
@@ -692,7 +694,8 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         var parametersList = string.Join(", ", new[] { requestParams.requestBody, requestParams.requestConfiguration }
                             .Select(static x => x?.Name).Where(static x => x != null));
         var separator = string.IsNullOrWhiteSpace(parametersList) ? "" : ", ";
-        WriteRequestInformation(writer, generatorMethod, parametersList, separator);
+
+        WriteRequestInformation(writer, generatorMethod, parametersList, separator, isStream);
 
         var errorMappingVarName = "default";
         if (codeElement.ErrorMappings.Any())
@@ -728,7 +731,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         }
     }
 
-    private static void WriteRequestInformation(LanguageWriter writer, CodeMethod generatorMethod, string parametersList, string separator)
+    private static void WriteRequestInformation(LanguageWriter writer, CodeMethod generatorMethod, string parametersList, string separator, bool isStream)
     {
         writer.WriteLine($"var requestInfo = {generatorMethod?.Name}({parametersList}{separator}q => {{");
         if (generatorMethod?.PathQueryAndHeaderParameters != null)
@@ -766,10 +769,19 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 writer.WriteLine($"if ({paramIdent} is not null) requestInfo.Headers.Add(\"{paramName}\", {paramIdent});");
             }
 
-            // Set the content type header. Will not add the code if the method has no RequestBodyContentType or if there's no body parameter.
-            if (generatorMethod.Parameters.Any(p => p.IsOfKind(CodeParameterKind.RequestBody)) && !string.IsNullOrWhiteSpace(generatorMethod.RequestBodyContentType))
+            // Set the content type header. Will not add the code if the method is a stream, has no RequestBodyContentType or if there's no body parameter.
+            if (!isStream && generatorMethod.Parameters.Any(p => p.IsOfKind(CodeParameterKind.RequestBody)))
             {
-                writer.WriteLine($"requestInfo.SetContentFromParsable({RequestAdapterParamName}, \"{generatorMethod.RequestBodyContentType}\", model);");
+                if (!string.IsNullOrWhiteSpace(generatorMethod.RequestBodyContentType))
+                {
+                    writer.WriteLine($"requestInfo.SetContentFromParsable({RequestAdapterParamName}, \"{generatorMethod.RequestBodyContentType}\", model);");
+                }
+                else
+                {
+                    // Being here implies a new case to handle.
+                    var url = generatorMethod.Parent is CodeClass c ? c.Properties.OfKind(CodePropertyKind.UrlTemplate)?.Name : null ?? "N/A";
+                    throw new InvalidOperationException($"Content for request '{generatorMethod.HttpMethod}: {url}' was not set");
+                }
             }
         }
         else
