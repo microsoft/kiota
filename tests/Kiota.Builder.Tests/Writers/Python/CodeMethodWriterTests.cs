@@ -1237,15 +1237,6 @@ public class CodeMethodWriterTests : IDisposable
             {
                 Name = "string",
             },
-        },
-        new CodeProperty
-        {
-            Name = "startDateTime",
-            Kind = CodePropertyKind.QueryParameter,
-            Type = new CodeType
-            {
-                Name = "datetime",
-            },
         });
 
         method.AddParameter(new CodeParameter
@@ -1268,6 +1259,35 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("return \"select%2Dfrom\"", result);
         Assert.Contains("if original_name == \"filter\":", result);
         Assert.Contains("return \"%24filter\"", result);
+        Assert.Contains("return original_name", result);
+    }
+    [Fact]
+    public void WritesNameMapperMethodWithUnescapedProperties()
+    {
+        method.Kind = CodeMethodKind.QueryParametersMapper;
+        method.IsAsync = false;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "startDateTime",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "datetime",
+            },
+        });
+
+        method.AddParameter(new CodeParameter
+        {
+            Kind = CodeParameterKind.QueryParametersMapperParameter,
+            Name = "originalName",
+            Type = new CodeType
+            {
+                Name = "string",
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("if original_name is None:", result);
         Assert.Contains("if original_name == \"start_date_time\":", result);
         Assert.Contains("return \"startDateTime\"", result);
         Assert.Contains("return original_name", result);

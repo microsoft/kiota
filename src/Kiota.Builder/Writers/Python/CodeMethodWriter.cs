@@ -160,11 +160,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.WriteLine($"return \"{escapedProperty.SerializationName}\"");
             writer.DecreaseIndent();
         }
-        foreach (var unescapedProperty in unescapedProperties)
+        foreach (var unescapedProperty in unescapedProperties.Select(x => x.Name))
         {
-            writer.WriteLine($"if {parameterName} == \"{unescapedProperty.Name.ToSnakeCase()}\":");
+            writer.WriteLine($"if {parameterName} == \"{unescapedProperty.ToSnakeCase()}\":");
             writer.IncreaseIndent();
-            writer.WriteLine($"return \"{unescapedProperty.Name}\"");
+            writer.WriteLine($"return \"{unescapedProperty}\"");
             writer.DecreaseIndent();
         }
         writer.WriteLine($"return {parameterName}");
