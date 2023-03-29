@@ -296,7 +296,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name})");
                 else if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
-                    writer.WriteLine($"request_info.set_content_from_parsable(self.{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
+                    writer.WriteLine($"request_info.set_content_from_parsable(@{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
             }
         }
         writer.WriteLine("return request_info");
