@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where lookup of reference ids failed for AllOf more than one level up.
 - Fixed a bug where a CLI client would not set the content types for requests. (Shell)
 - Fixed linting errors by re-ordering methods and properties in Python.
+- Fixed a bug where requests with bodies would fail in Ruby. [#2473](https://github.com/microsoft/kiota/issues/2473)
 - Changed python import mechanism to facilitate code completion. [#2380](https://github.com/microsoft/kiota/issues/2380)
 - Fixed a bug where discriminator methods were missing possible types in Python [#2381](https://github.com/microsoft/kiota/issues/2381)
 - Fixed a bug where boolean or number enums would be mapped to enums instead of primitive types. [#2367](https://github.com/microsoft/kiota/issues/2367)
