@@ -1,10 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import * as rpc from "vscode-jsonrpc/node";
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import {
-  connectToKiota,
   getLogEntriesForLevel,
   KiotaGenerationLanguage,
   KiotaLogEntry,
@@ -42,7 +40,11 @@ export async function activate(
     vscode.commands.registerCommand(
       `${extensionId}.selectLock`,
       async (node: { fsPath: string }) => {
-        await openApiTreeProvider.loadLockFile(node.fsPath);
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          cancellable: false,
+          title: vscode.l10n.t("Loading...")
+        }, (progress, _) => openApiTreeProvider.loadLockFile(node.fsPath));
         if (openApiTreeProvider.descriptionUrl) {
           vscode.commands.executeCommand(`${treeViewId}.focus`);
         }
