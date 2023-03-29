@@ -152,11 +152,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (parameter == null) throw new InvalidOperationException("QueryParametersMapper should have a parameter of type QueryParametersMapper");
         var parameterName = parameter.Name.ToSnakeCase();
         var escapedProperties = parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.QueryParameter) && x.IsNameEscaped);
+        var unescapedProperties = parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.QueryParameter) && !x.IsNameEscaped);
         foreach (var escapedProperty in escapedProperties)
         {
             writer.WriteLine($"if {parameterName} == \"{escapedProperty.Name.ToSnakeCase()}\":");
             writer.IncreaseIndent();
             writer.WriteLine($"return \"{escapedProperty.SerializationName}\"");
+            writer.DecreaseIndent();
+        }
+        foreach (var unescapedProperty in unescapedProperties.Select(x => x.Name))
+        {
+            writer.StartBlock($"if {parameterName} == \"{unescapedProperty.ToSnakeCase()}\":");
+            writer.WriteLine($"return \"{unescapedProperty}\"");
             writer.DecreaseIndent();
         }
         writer.WriteLine($"return {parameterName}");

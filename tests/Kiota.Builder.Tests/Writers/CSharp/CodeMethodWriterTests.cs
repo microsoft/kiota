@@ -606,7 +606,7 @@ public class CodeMethodWriterTests : IDisposable
                         TypeDefinition = modelWithConflictingDiscriminatorTypes
                     }
                 }
-                
+
             }).First();
         levelOneNameSpace.AddClass(conflictingModelInOtherNamespace);
         // Adding an enum in another namespace that conflicts
@@ -644,11 +644,11 @@ public class CodeMethodWriterTests : IDisposable
             Name = "type",
             DiscriminatorPropertyName = "@odata.type"
         };
-        modelWithConflictingDiscriminatorTypes.DiscriminatorInformation.AddDiscriminatorMapping(levelOneNameSpace.Name+".ConflictingModel",new CodeType()
+        modelWithConflictingDiscriminatorTypes.DiscriminatorInformation.AddDiscriminatorMapping(levelOneNameSpace.Name + ".ConflictingModel", new CodeType()
         {
             Name = conflictingModelInOtherNamespace.Name,
             TypeDefinition = conflictingModelInOtherNamespace
-        } );
+        });
 
         var factoryMethod = modelWithConflictingDiscriminatorTypes.AddMethod(new CodeMethod
         {
@@ -661,7 +661,7 @@ public class CodeMethodWriterTests : IDisposable
             },
             IsStatic = true,
         }).First();
-        
+
         factoryMethod.AddParameter(new CodeParameter
         {
             Name = "parseNode",
@@ -673,10 +673,10 @@ public class CodeMethodWriterTests : IDisposable
             },
             Optional = false,
         });
-        
+
         writer.Write(factoryMethod);
         var result = tw.ToString();
-        
+
         Assert.Contains("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
         Assert.Contains("return mappingValue switch {", result);
         Assert.Contains("\"namespaceLevelOne.ConflictingModel\" => new namespaceLevelOne.ConflictingModel(),", result); //Assert the disambiguation happens due to the enum imported
@@ -1572,12 +1572,15 @@ public class CodeMethodWriterTests : IDisposable
         };
         method.Kind = CodeMethodKind.Constructor;
         parentClass.Kind = CodeClassKind.RequestBuilder;
-        parentClass.StartBlock.Inherits = new CodeType{
+        parentClass.StartBlock.Inherits = new CodeType
+        {
             Name = "BaseCliRequestBuilder",
             IsExternal = true
         };
-        parentClass.AddProperty(new CodeProperty {
-            Type = new CodeType {
+        parentClass.AddProperty(new CodeProperty
+        {
+            Type = new CodeType
+            {
                 Name = "string",
                 IsExternal = true
             },
