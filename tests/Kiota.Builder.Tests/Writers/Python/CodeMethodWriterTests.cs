@@ -1237,6 +1237,15 @@ public class CodeMethodWriterTests : IDisposable
             {
                 Name = "string",
             },
+        },
+        new CodeProperty
+        {
+            Name = "startDateTime",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "datetime",
+            },
         });
 
         method.AddParameter(new CodeParameter
@@ -1259,6 +1268,8 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("return \"select%2Dfrom\"", result);
         Assert.Contains("if original_name == \"filter\":", result);
         Assert.Contains("return \"%24filter\"", result);
+        Assert.Contains("if original_name == \"start_date_time\":", result);
+        Assert.Contains("return \"startDateTime\"", result);
         Assert.Contains("return original_name", result);
     }
     [Fact]
