@@ -162,8 +162,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         foreach (var unescapedProperty in unescapedProperties.Select(x => x.Name))
         {
-            writer.WriteLine($"if {parameterName} == \"{unescapedProperty.ToSnakeCase()}\":");
-            writer.IncreaseIndent();
+            writer.StartBlock($"if {parameterName} == \"{unescapedProperty.ToSnakeCase()}\":");
             writer.WriteLine($"return \"{unescapedProperty}\"");
             writer.DecreaseIndent();
         }
