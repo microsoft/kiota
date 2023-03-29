@@ -15,5 +15,5 @@ VOLUME /app/openapi.yml
 ENV KIOTA_CONTAINER=true DOTNET_TieredPGO=1 DOTNET_TC_QuickJitForLoops=1
 ENTRYPOINT ["dotnet", "kiota.dll"]
 LABEL description="# Welcome to Kiota Generator \
-To start generating SDKs checkout [the getting started documentation](https://microsoft.github.io/kiota/get-started/#run-in-docker)  \
+To start generating SDKs checkout [the getting started documentation](https://learn.microsoft.com/openapi/kiota/install#run-in-docker)  \
 [Source dockerfile](https://github.com/microsoft/kiota/blob/main/Dockerfile)"
