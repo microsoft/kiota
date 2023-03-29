@@ -27,7 +27,7 @@ dynamic = ["version", "description"]
 [project.urls]
 homepage = "https://github.com/microsoft/kiota#readme"
 repository = "https://github.com/microsoft/kiota"
-documentation = "https://microsoft.github.io/kiota/"
+documentation = "https://learn.microsoft.com/openapi/kiota"
 
 [tool.flit.module]
 name = "integration_test"
