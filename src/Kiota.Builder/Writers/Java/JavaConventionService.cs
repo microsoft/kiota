@@ -124,14 +124,18 @@ public class JavaConventionService : CommonLanguageConventionService
         writer.WriteLines($"return new {returnType}({urlTemplateParams}, {requestAdapterProp?.Name}{pathParametersSuffix});");
     }
     public override string TempDictionaryVarName => "urlTplParams";
-    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters)
+    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, string varName = "", params (CodeTypeBase, string, string)[] parameters)
     {
         if (pathParametersType == null) return;
         var mapTypeName = pathParametersType.Name;
-        writer.WriteLine($"final {mapTypeName} {TempDictionaryVarName} = new {mapTypeName}({pathParametersReference});");
+        if (string.IsNullOrEmpty(varName))
+        {
+            varName = TempDictionaryVarName;
+            writer.WriteLine($"final {mapTypeName} {varName} = new {mapTypeName}({pathParametersReference});");
+        }
         if (parameters.Any())
             writer.WriteLines(parameters.Select(p =>
-                $"{TempDictionaryVarName}.put(\"{p.Item2}\", {p.Item3});"
+                $"{varName}.put(\"{p.Item2}\", {p.Item3});"
             ).ToArray());
     }
 #pragma warning restore CA1822 // Method should be static

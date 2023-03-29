@@ -152,11 +152,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (parameter == null) throw new InvalidOperationException("QueryParametersMapper should have a parameter of type QueryParametersMapper");
         var parameterName = parameter.Name.ToSnakeCase();
         var escapedProperties = parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.QueryParameter) && x.IsNameEscaped);
+        var unescapedProperties = parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.QueryParameter) && !x.IsNameEscaped);
         foreach (var escapedProperty in escapedProperties)
         {
             writer.WriteLine($"if {parameterName} == \"{escapedProperty.Name.ToSnakeCase()}\":");
             writer.IncreaseIndent();
             writer.WriteLine($"return \"{escapedProperty.SerializationName}\"");
+            writer.DecreaseIndent();
+        }
+        foreach (var unescapedProperty in unescapedProperties.Select(x => x.Name))
+        {
+            writer.StartBlock($"if {parameterName} == \"{unescapedProperty.ToSnakeCase()}\":");
+            writer.WriteLine($"return \"{unescapedProperty}\"");
             writer.DecreaseIndent();
         }
         writer.WriteLine($"return {parameterName}");
@@ -487,7 +494,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         return propertyType switch
         {
-            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"get_{propertyType.ToSnakeCase()}_value()",
+            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"get_{propertyType.ToLowerInvariant()}_value()",
             "bytes" => "get_bytes_value()",
             _ => $"get_object_value({propertyType.ToCamelCase()})",
         };
@@ -508,7 +515,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         return propertyType switch
         {
-            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"write_{propertyType.ToSnakeCase()}_value",
+            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"write_{propertyType.ToLowerInvariant()}_value",
             _ => "write_object_value",
         };
     }

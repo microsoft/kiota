@@ -146,6 +146,46 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddProperty(new CodeProperty
         {
+            Name = "dummyTimespan",
+            Type = new CodeType
+            {
+                Name = "timedelta"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "dummyDateTime",
+            Type = new CodeType
+            {
+                Name = "datetime"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "dummyTime",
+            Type = new CodeType
+            {
+                Name = "time"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "dummyDate",
+            Type = new CodeType
+            {
+                Name = "date"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "dummyGuid",
+            Type = new CodeType
+            {
+                Name = "uuid"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
             Name = "dummyClass",
             Type = new CodeType
             {
@@ -471,6 +511,11 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("get_float_value", result);
         Assert.Contains("get_bool_value", result);
         Assert.Contains("get_bytes_value", result);
+        Assert.Contains("get_date_value", result);
+        Assert.Contains("get_time_value", result);
+        Assert.Contains("get_timedelta_value", result);
+        Assert.Contains("get_datetime_value", result);
+        Assert.Contains("get_uuid_value", result);
         Assert.Contains("get_object_value", result);
         Assert.Contains("get_collection_of_primitive_values", result);
         Assert.Contains("get_collection_of_object_values", result);
@@ -497,6 +542,11 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("write_str_value", result);
+        Assert.Contains("write_datetime_value", result);
+        Assert.Contains("write_timedelta_value", result);
+        Assert.Contains("write_date_value", result);
+        Assert.Contains("write_time_value", result);
+        Assert.Contains("write_uuid_value", result);
         Assert.Contains("write_collection_of_primitive_values", result);
         Assert.Contains("write_collection_of_object_values", result);
         Assert.Contains("write_enum_value", result);
@@ -1209,6 +1259,37 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("return \"select%2Dfrom\"", result);
         Assert.Contains("if original_name == \"filter\":", result);
         Assert.Contains("return \"%24filter\"", result);
+        Assert.Contains("return original_name", result);
+    }
+    [Fact]
+    public void WritesNameMapperMethodWithUnescapedProperties()
+    {
+        method.Kind = CodeMethodKind.QueryParametersMapper;
+        method.IsAsync = false;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "startDateTime",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "datetime",
+            },
+        });
+
+        method.AddParameter(new CodeParameter
+        {
+            Kind = CodeParameterKind.QueryParametersMapperParameter,
+            Name = "originalName",
+            Type = new CodeType
+            {
+                Name = "string",
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("if original_name is None:", result);
+        Assert.Contains("if original_name == \"start_date_time\":", result);
+        Assert.Contains("return \"startDateTime\"", result);
         Assert.Contains("return original_name", result);
     }
     [Fact]

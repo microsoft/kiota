@@ -18,6 +18,17 @@ public class GoRefiner : CommonLanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            MoveRequestBuilderPropertiesToBaseType(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseRequestBuilder",
+                    Declaration = new CodeType
+                    {
+                        Name = "github.com/microsoft/kiota-abstractions-go",
+                        IsExternal = true
+                    }
+                },
+                accessModifier: AccessModifier.Public);
             ReplaceIndexersByMethodsWithParameter(
                 generatedCode,
                 false,
@@ -29,8 +40,8 @@ public class GoRefiner : CommonLanguageRefiner
                 generatedCode,
                 true,
                 string.Empty,
-            false,
-            MergeOverLappedStrings);
+                false,
+                MergeOverLappedStrings);
             RenameCancellationParameter(generatedCode);
             RemoveDiscriminatorMappingsTargetingSubNamespaces(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();

@@ -35,13 +35,17 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         }
     }
     public override string TempDictionaryVarName => "urlTplParams";
-    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters)
+    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, string varName = "", params (CodeTypeBase, string, string)[] parameters)
     {
         if (pathParametersType == null) return;
-        writer.WriteLine($"const {TempDictionaryVarName} = getPathParameters({pathParametersReference});");
+        if (string.IsNullOrEmpty(varName))
+        {
+            varName = TempDictionaryVarName;
+            writer.WriteLine($"const {varName} = getPathParameters({pathParametersReference});");
+        }
         if (parameters.Any())
             writer.WriteLines(parameters.Select(p =>
-                $"{TempDictionaryVarName}[\"{p.Item2}\"] = {p.Item3}"
+                $"{varName}[\"{p.Item2}\"] = {p.Item3}"
             ).ToArray());
     }
 #pragma warning restore CA1822 // Method should be static

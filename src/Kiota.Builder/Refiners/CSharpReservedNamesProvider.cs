@@ -109,7 +109,7 @@ public class CSharpReservedNamesProvider : IReservedNamesProvider
         "when",
         "while",
         "with",
-        "yield"
+        "yield",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }

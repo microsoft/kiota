@@ -219,6 +219,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
 
     private const string DateTimePackageName = "datetime";
+    private const string UUIDPackageName = "uuid";
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase) {
     {"DateTimeOffset", ("datetime", new CodeUsing {
                                     Name = "datetime",
@@ -248,5 +249,12 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                                 IsExternal = true,
                             },
                         })},
+    {"Guid", ("uuid", new CodeUsing {
+                        Name = "UUID",
+                        Declaration = new CodeType {
+                            Name = UUIDPackageName,
+                            IsExternal = true,
+                        },
+                    })},
     };
 }

@@ -71,10 +71,14 @@ public class CSharpConventionService : CommonLanguageConventionService
         }
     }
     public override string TempDictionaryVarName => "urlTplParams";
-    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters)
+    internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, string varName = "", params (CodeTypeBase, string, string)[] parameters)
     {
         if (pathParametersType == null) return;
-        writer.WriteLine($"var {TempDictionaryVarName} = new {pathParametersType.Name}({pathParametersReference});");
+        if (string.IsNullOrEmpty(varName))
+        {
+            varName = TempDictionaryVarName;
+            writer.WriteLine($"var {varName} = new {pathParametersType.Name}({pathParametersReference});");
+        }
         if (parameters.Any())
         {
             writer.WriteLines(parameters.Select(p =>
@@ -88,7 +92,7 @@ public class CSharpConventionService : CommonLanguageConventionService
                     else
                         nullCheck = $"if ({identName} is not null) ";
                 }
-                return $"{nullCheck}{TempDictionaryVarName}.Add(\"{name}\", {identName});";
+                return $"{nullCheck}{varName}.Add(\"{name}\", {identName});";
             }).ToArray());
         }
     }
@@ -129,7 +133,7 @@ public class CSharpConventionService : CommonLanguageConventionService
     {
         return GetTypeString(code, targetElement, includeCollectionInformation, true);
     }
-    public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool includeNullableInformation)
+    public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool includeNullableInformation, bool includeActionInformation = true)
     {
         if (code is CodeComposedTypeBase)
             throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
@@ -144,9 +148,12 @@ public class CSharpConventionService : CommonLanguageConventionService
                 CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
                 _ => string.Empty,
             };
-            if (currentType.ActionOf)
-                return $"Action<{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}>";
-            return $"{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}";
+            var genericParameters = currentType.GenericTypeParameterValues.Any() ?
+                $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
+                string.Empty;
+            if (currentType.ActionOf && includeActionInformation)
+                return $"Action<{collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix}>";
+            return $"{collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix}";
         }
 
         throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
@@ -206,14 +213,14 @@ public class CSharpConventionService : CommonLanguageConventionService
         {
             var targetClass = targetElement.GetImmediateParentOfType<CodeClass>();
             var importedNamespaces = targetClass.StartBlock.Usings
-                .Where(codeUsing => !codeUsing.IsExternal                                                                      // 1. Are defined during generation(not external) 
-                                    && codeUsing.Declaration != null
-                                    && codeUsing.Declaration.TypeDefinition != null
+                .Where(codeUsing => !codeUsing.IsExternal // 1. Are defined during generation(not external) 
+                                    && codeUsing.Declaration?.TypeDefinition != null
                                     && !codeUsing.Name.Equals(currentTypeNamespace.Name, StringComparison.OrdinalIgnoreCase))  // 2. Do not match the namespace of the current type
                 .Select(static codeUsing => codeUsing.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>())
                 .DistinctBy(static declaredNamespace => declaredNamespace.Name);
 
-            return importedNamespaces.Any(importedNamespace => importedNamespace.FindChildByName<CodeClass>(codeClass.Name, false) != null);
+            return importedNamespaces.Any(importedNamespace => (importedNamespace.FindChildByName<CodeClass>(codeClass.Name, false) != null)
+                                                               || (importedNamespace.FindChildByName<CodeEnum>(codeClass.Name, false) != null));
         }
         return false;
     }
