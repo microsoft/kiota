@@ -1,0 +1,18 @@
+{
+  "kiota.dependenciesInfo.name": "Информация о зависимостях Kiota",
+  "kiota.dependenciesInfo.contextualTitle": "Информация о зависимостях",
+  "kiota.openApiExplorer.name": "OpenAPI исследователь для Kiota",
+  "kiota.openApiExplorer.contextualTitle": "OpenAPI исследователь",
+  "kiota-dependencies-info.panel.title": "Информация о зависимостях Kiota",
+  "kiota-openapi-explorer.activitybar.title": "OpenAPI исследователь для Kiota",
+  "kiota.selectLock.title": "Выберите файл блокировки для просмотра API-исследователя",
+  "kiota.updateClients.title": "Обновите API-клиенты в текущем рабочем пространстве",
+  "kiota.openApiExplorer.generateClient.title": "Создать клиент API",
+  "kiota.searchApiDescription.title": "Искать описание API",
+  "kiota.openApiExplorer.addToSelectedEndpoints.title": "Добавить",
+  "kiota.openApiExplorer.removeFromSelectedEndpoints.title": "Удалить",
+  "kiota.openApiExplorer.addAllToSelectedEndpoints.title": "Добавить всё",
+  "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Удалить всё",
+  "kiota.openApiExplorer.closeDescription.title": "Закрыть описание API",
+  "kiota.openApiExplorer.openDescription.title": "Открыть описание API"
+}
