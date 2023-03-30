@@ -213,7 +213,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         if (string.IsNullOrWhiteSpace(codeElement.SimpleName)) return null;
         // Assumption is that there can only be 1 indexer per code class. This code will throw if
         // multiple indexers exist.
-        var indexer = parent.GetChildElements(true).OfType<CodeMethod>()
+        var indexer = parent.Methods
                 .SingleOrDefault(static m => m.OriginalIndexer != null)?.OriginalIndexer;
 
         if (indexer is null) return null;
