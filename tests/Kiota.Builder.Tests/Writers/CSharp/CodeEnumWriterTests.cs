@@ -46,6 +46,29 @@ public class CodeEnumWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
         Assert.Contains(Option.Name, result);
     }
+    
+    [Fact]
+    public void NamesDiffer_WritesEnumMember()
+    {
+        currentEnum.Flags = true;
+        currentEnum.AddOption(Option);
+        currentEnum.AddOption(new CodeEnumOption { Name = "InvalidName", SerializationName = "Invalid:Name"});
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains($"[EnumMember(Value = \"Invalid:Name\")]", result);
+    }
+    
+    [Fact]
+    public void NamesDontDiffer_DoesntWriteEnumMember()
+    {
+        currentEnum.Flags = true;
+        currentEnum.AddOption(Option);
+        currentEnum.AddOption(new CodeEnumOption { Name = "ValidName"});
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.DoesNotContain($"\"ValidName\"", result);
+    }
+    
     [Fact]
     public void WritesFlagsEnum()
     {
