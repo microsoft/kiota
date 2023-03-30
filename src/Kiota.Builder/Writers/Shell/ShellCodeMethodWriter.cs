@@ -544,39 +544,25 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
 
     private void WriteNavCommand(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, string name)
     {
-        InitializeSharedCommand(codeElement, parent, writer, name);
-
-        if ((codeElement.AccessedProperty?.Type) is CodeType codeReturnType)
+        if (((codeElement.AccessedProperty?.Type) is CodeType codeReturnType) && (codeReturnType.TypeDefinition is CodeClass typeDef))
         {
             var targetClass = conventions.GetTypeString(codeReturnType, codeElement);
 
-            var builderMethods = codeReturnType.TypeDefinition?.GetChildElements(true).OfType<CodeMethod>()
+            var builderMethods = typeDef.Methods // Already ordered by name
                 .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder))
-                .OrderBy(static m => m.Name)
-                .ThenBy(static m => m.ReturnType.IsCollection) ??
+                .OrderBy(static m => m.ReturnType.IsCollection)
+                .GroupBy(m => m.SimpleName, StringComparer.OrdinalIgnoreCase)
+                .Select(static m => m.Count() > 1 ? m.Where(m1 => m1.AccessedProperty is null) : m)
+                .SelectMany(x => x) ??
                 Enumerable.Empty<CodeMethod>();
+            if (!builderMethods.Any()) return;
+            InitializeSharedCommand(codeElement, parent, writer, name);
             AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
-
-            var duplicates = builderMethods.Select(m => m.SimpleName).Aggregate(new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase), (d, n) =>
-            {
-                if (string.IsNullOrWhiteSpace(n)) return d;
-                if (d.ContainsKey(n))
-                {
-                    d[n] += 1;
-                }
-                else
-                {
-                    d[n] = 1;
-                }
-
-                return d;
-            });
 
             foreach (var method in builderMethods)
             {
                 // If the nav property has more than 1 match, then it means it
                 // has been initialized by another command builder. Skip it.
-                if (method.AccessedProperty is not null && duplicates.TryGetValue(method.SimpleName, out var count) && count > 1) continue;
                 if (method.ReturnType.IsCollection)
                 {
                     writer.WriteLine($"foreach (var cmd in {BuilderInstanceName}.{method.Name}())");
