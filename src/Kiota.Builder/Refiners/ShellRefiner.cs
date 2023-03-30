@@ -103,26 +103,24 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             // Remove request executor
             RemoveUnusedParameters(currentClass);
 
-            var children = currentClass.GetChildElements();
-            var indexers = children.OfType<CodeIndexer>();
-            var classHasIndexers = indexers.Any();
-
             // Clone executors & convert to build command
-            var requestExecutors = children.OfType<CodeMethod>()
-                .Where(e => e.IsOfKind(CodeMethodKind.RequestExecutor));
-            CreateCommandBuildersFromRequestExecutors(currentClass, classHasIndexers, requestExecutors);
+            var requestExecutors = currentClass.Methods
+                .Where(static e => e.IsOfKind(CodeMethodKind.RequestExecutor));
+            CreateCommandBuildersFromRequestExecutors(currentClass, currentClass.Indexer != null, requestExecutors);
 
             // Replace Nav Properties with BuildXXXCommand methods
-            var navProperties = children.OfType<CodeProperty>()
-                .Where(e => e.IsOfKind(CodePropertyKind.RequestBuilder));
+            var navProperties = currentClass.Properties
+                .Where(static e => e.IsOfKind(CodePropertyKind.RequestBuilder));
             CreateCommandBuildersFromNavProps(currentClass, navProperties);
 
             // Add build command for indexers. If an indexer's type has methods with the same name, they will be skipped.
             // Deduplication is managed in method writer.
-            CreateCommandBuildersFromIndexers(currentClass, indexers);
+            if (currentClass.Indexer is CodeIndexer idx) {
+                CreateCommandBuildersFromIndexer(currentClass, idx);
+            }
 
             // Build root command
-            var clientConstructor = children.OfType<CodeMethod>().FirstOrDefault(m => m.IsOfKind(CodeMethodKind.ClientConstructor));
+            var clientConstructor = currentClass.Methods.FirstOrDefault(static m => m.IsOfKind(CodeMethodKind.ClientConstructor));
             if (clientConstructor != null)
             {
                 var rootMethod = new CodeMethod
@@ -188,26 +186,23 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         };
     }
 
-    private static void CreateCommandBuildersFromIndexers(CodeClass currentClass, IEnumerable<CodeIndexer> indexers)
+    private static void CreateCommandBuildersFromIndexer(CodeClass currentClass, CodeIndexer indexer)
     {
-        foreach (var indexer in indexers)
+        var method = new CodeMethod
         {
-            var method = new CodeMethod
-            {
-                Name = "BuildCommand",
-                IsAsync = false,
-                Kind = CodeMethodKind.CommandBuilder,
-                OriginalIndexer = indexer,
-                Documentation = (CodeDocumentation)indexer.Documentation.Clone(),
-                // ReturnType setter assigns the parent
-                ReturnType = CreateCommandType(),
-                SimpleName = indexer.Name.CleanupSymbolName()
-            };
-            method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+            Name = "BuildCommand",
+            IsAsync = false,
+            Kind = CodeMethodKind.CommandBuilder,
+            OriginalIndexer = indexer,
+            Documentation = (CodeDocumentation)indexer.Documentation.Clone(),
+            // ReturnType setter assigns the parent
+            ReturnType = CreateCommandType(),
+            SimpleName = indexer.Name.CleanupSymbolName()
+        };
+        method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
 
-            currentClass.AddMethod(method);
-            currentClass.RemoveChildElement(indexer);
-        }
+        currentClass.AddMethod(method);
+        currentClass.RemoveChildElement(indexer);
     }
 
     private static void CreateCommandBuildersFromNavProps(CodeClass currentClass, IEnumerable<CodeProperty> navProperties)
