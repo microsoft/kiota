@@ -1,5 +1,5 @@
 {
-  "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.yaml": {
+  "oas::petstore": {
     "ExcludePatterns": [
       {
         "Pattern": "/gists",
@@ -90,7 +90,7 @@
       }
     ]
   },
-  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/notion.com/1.0.0/openapi.yaml": {
+  "apisguru::notion.com": {
     "ExcludePatterns": [
       {
         "Pattern": "/v1/databases/**",
@@ -164,7 +164,7 @@
       }
     ]
   },
-  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twilio.com/api/1.39.2/openapi.yaml": {
+  "apisguru::twilio.com:api": {
     "ExcludePatterns": [
       {
         "Pattern": "/2010-04-01/Accounts/*/Addresses/*/DependentPhoneNumbers.json",
@@ -234,7 +234,7 @@
       }
     ]
   },
-  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/stripe.com/2022-11-15/openapi.yaml": {
+  "apisguru::stripe.com": {
     "Suppressions": [
       {
         "Language": "all",
@@ -242,7 +242,7 @@
       }
     ]
   },
-  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/meraki.com/v1.31.0/openapi.yaml": {
+  "apisguru::meraki.com": {
     "Suppressions": [
       {
         "Language": "all",
@@ -250,7 +250,7 @@
       }
     ]
   },
-  "https://api.apis.guru/v2/specs/docusign.net/v2.1/openapi.yaml": {
+  "apisguru::docusign.net": {
     "Suppressions": [
       {
         "Language": "csharp",
@@ -266,7 +266,7 @@
       }
     ]
   },
-  "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twitter.com/current/2.61/openapi.yaml": {
+  "apisguru::twitter.com:current": {
     "Suppressions": [
       {
         "Language": "typescript",

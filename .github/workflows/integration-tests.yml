@@ -3,28 +3,29 @@ name: integration-tests
 on:
   workflow_dispatch:
   push:
-    branches: [main]
-    paths-ignore:
-      [
-        "abstractions/**",
-        "authentication/**",
-        "serialization/**",
-        "http/**",
-        "**.md",
-        ".vscode/**",
-        "**.svg",
-      ]
-  pull_request:
-    paths-ignore:
-      [
-        "abstractions/**",
-        "authentication/**",
-        "serialization/**",
-        "http/**",
-        "**.md",
-        ".vscode/**",
-        "**.svg",
-      ]
+  # TEST IN CI
+  #   branches: [main]
+  #   paths-ignore:
+  #     [
+  #       "abstractions/**",
+  #       "authentication/**",
+  #       "serialization/**",
+  #       "http/**",
+  #       "**.md",
+  #       ".vscode/**",
+  #       "**.svg",
+  #     ]
+  # pull_request:
+  #   paths-ignore:
+  #     [
+  #       "abstractions/**",
+  #       "authentication/**",
+  #       "serialization/**",
+  #       "http/**",
+  #       "**.md",
+  #       ".vscode/**",
+  #       "**.svg",
+  #     ]
 
 concurrency:
   # Only run once for latest commit per ref and cancel other (previous) runs.
@@ -70,15 +71,15 @@ jobs:
         description:
           - "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml"
-          - "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.yaml"
-          - "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twitter.com/current/2.61/openapi.yaml"
-          - "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/notion.com/1.0.0/openapi.yaml"
-          - "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/stripe.com/2022-11-15/openapi.yaml"
+          - "oas::petstore"
+          - "apisguru::twitter.com:current"
+          - "apisguru::notion.com"
+          - "apisguru::stripe.com"
           - "https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml"
-          - "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/meraki.com/v1.31.0/openapi.yaml"
+          - "apisguru::meraki.com"
           - "https://developers.pipedrive.com/docs/api/v1/openapi.yaml"
-          - "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twilio.com/api/1.39.2/openapi.yaml"
-          - "https://api.apis.guru/v2/specs/docusign.net/v2.1/openapi.yaml"
+          - "apisguru::twilio.com:api"
+          - "apisguru::docusign.net"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3

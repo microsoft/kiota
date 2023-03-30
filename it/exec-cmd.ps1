@@ -77,11 +77,7 @@ if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
     Pop-Location
 
     # Provision Mock server with the right spec
-    $openapiUrl = $descriptionUrl
-    if ($openapiUrl.StartsWith("./")) {
-        $rootPath = Split-Path -parent $scriptPath
-        $openapiUrl = $openapiUrl.replace("./", "file:$rootPath/", 1)
-    }
+    $openapiUrl = Join-Path -Path $scriptPath -ChildPath "openapi.yaml"
     
     # provision MockServer to mock the specific openapi description https://www.mock-server.com/mock_server/using_openapi.html#button_open_api_filepath
     Retry({Invoke-WebRequest -Method PUT -Body "{ `"specUrlOrPayload`": `"$openapiUrl`" }" -Uri http://localhost:1080/mockserver/openapi -ContentType application/json})
