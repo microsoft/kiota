@@ -75,6 +75,10 @@
       {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2351"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
       }
     ]
   },
@@ -117,6 +121,10 @@
       {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
       }
     ]
   },
@@ -139,6 +147,10 @@
       {
         "Language": "python",
         "Rationale": "https://github.com/microsoft/kiota/issues/2381"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
       }
     ]
   },
@@ -231,6 +243,10 @@
       {
         "Language": "python",
         "Rationale": "https://github.com/microsoft/kiota/issues/2381"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
       }
     ]
   },
@@ -263,6 +279,10 @@
       {
         "Language": "python",
         "Rationale": "https://github.com/microsoft/kiota/issues/2381"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
       }
     ]
   },
@@ -283,6 +303,10 @@
       {
         "Language": "python",
         "Rationale": "https://github.com/microsoft/kiota/issues/2381"
+      },
+      {
+        "Language": "go",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2491"
       }
     ]
   }
