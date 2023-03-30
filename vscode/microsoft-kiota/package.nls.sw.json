@@ -1,0 +1,18 @@
+{
+  "kiota.dependenciesInfo.name": "Taarifa za Mategemeo za Kiota",
+  "kiota.dependenciesInfo.contextualTitle": "Taarifa za Mategemeo",
+  "kiota.openApiExplorer.name": "Mchunguzi wa OpenAPI Kiota",
+  "kiota.openApiExplorer.contextualTitle": "Mchunguzi wa OpenAPI",
+  "kiota-dependencies-info.panel.title": "Taarifa za Mategemeo za Kiota",
+  "kiota-openapi-explorer.activitybar.title": "Mchunguzi wa OpenAPI Kiota",
+  "kiota.selectLock.title": "Chagua faili ya kufunga ili uone kichunguzi cha API",
+  "kiota.updateClients.title": "Sasisha wateja wa API katika nafasi ya kazi",
+  "kiota.openApiExplorer.generateClient.title": "Tengeneza mteja wa API",
+  "kiota.searchApiDescription.title": "Tafuta maelezo ya API",
+  "kiota.openApiExplorer.addToSelectedEndpoints.title": "Ongeza",
+  "kiota.openApiExplorer.removeFromSelectedEndpoints.title": "Ondoa",
+  "kiota.openApiExplorer.addAllToSelectedEndpoints.title": "Ongeza yote",
+  "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Ondoa yote",
+  "kiota.openApiExplorer.closeDescription.title": "Funga maelezo ya API",
+  "kiota.openApiExplorer.openDescription.title": "Fungua maelezo ya API"
+}

@@ -1,9 +1,10 @@
 {
   "name": "kiota",
   "displayName": "Microsoft Kiota",
-  "publisher": "microsoft",
+  "publisher": "ms-graph",
   "description": "REST API client generator based on OpenAPI",
   "version": "1.0.1",
+  "icon": "images/logo.png",
   "engines": {
     "vscode": "^1.75.0"
   },

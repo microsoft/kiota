@@ -1,0 +1,18 @@
+{
+  "kiota.dependenciesInfo.name": "Informação de dependências do Kiota",
+  "kiota.dependenciesInfo.contextualTitle": "Informações de dependências",
+  "kiota.openApiExplorer.name": "Explorador de OpenAPI do Kiota",
+  "kiota.openApiExplorer.contextualTitle": "Explorador de OpenAPI",
+  "kiota-dependencies-info.panel.title": "Informação de dependências do Kiota",
+  "kiota-openapi-explorer.activitybar.title": "Explorador de OpenAPI do Kiota",
+  "kiota.selectLock.title": "Selecione o arquivo 'lock' para visualizar o explorador de API",
+  "kiota.updateClients.title": "Atualizar os clientes de APIs no espaço de trabalho atual",
+  "kiota.openApiExplorer.generateClient.title": "Gerar cliente da API",
+  "kiota.searchApiDescription.title": "Procurar por uma descrição de API",
+  "kiota.openApiExplorer.addToSelectedEndpoints.title": "Adicionar",
+  "kiota.openApiExplorer.removeFromSelectedEndpoints.title": "Remover",
+  "kiota.openApiExplorer.addAllToSelectedEndpoints.title": "Adicionar todos",
+  "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Remover todos",
+  "kiota.openApiExplorer.closeDescription.title": "Fechar a descrição da API",
+  "kiota.openApiExplorer.openDescription.title": "Abrir a descrição da API"
+}
