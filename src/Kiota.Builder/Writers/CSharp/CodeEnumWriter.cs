@@ -27,6 +27,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
         foreach (var option in codeElement.Options)
         {
             conventions.WriteShortDescription(option.Documentation.Description, writer);
+            
+            if (option.IsNameEscaped)
+            {
+                writer.WriteLine($"[EnumMember(Value = \"{option.SerializationName}\")]");
+            }
             writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
             idx++;
         }

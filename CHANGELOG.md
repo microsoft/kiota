@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where java refiner would not normalize inherited class names and interface types.
 - Fixed a bug where search based commands would not match exact matches when additional results are available.
 - Fixed a bug where imported classes and enums would not be disambiguated when they have the same name in dotnet.
+- Fixed a bug where escaping enum names resulted in a loss of the original enum name. [#2488](https://github.com/microsoft/kiota/issues/2488)
 
 ## [1.0.1] - 2023-03-11
 
