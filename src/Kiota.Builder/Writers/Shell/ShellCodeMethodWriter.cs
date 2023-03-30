@@ -551,9 +551,9 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             var builderMethods = typeDef.Methods // Already ordered by name
                 .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                 .OrderBy(static m => m.ReturnType.IsCollection)
-                .GroupBy(m => m.SimpleName, StringComparer.OrdinalIgnoreCase)
-                .Select(static m => m.Count() > 1 ? m.Where(m1 => m1.AccessedProperty is null) : m)
-                .SelectMany(x => x) ??
+                .GroupBy(static m => m.SimpleName, StringComparer.OrdinalIgnoreCase)
+                .Select(static m => m.Count() > 1 ? m.Where(static m1 => m1.AccessedProperty is null) : m)
+                .SelectMany(static x => x) ??
                 Enumerable.Empty<CodeMethod>();
             if (!builderMethods.Any()) return;
             InitializeSharedCommand(codeElement, parent, writer, name);
