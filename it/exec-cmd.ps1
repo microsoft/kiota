@@ -68,10 +68,10 @@ if ($null -ne $descriptionValue) {
     }
 }
 
-# Kill any leftover MockServer
-Kill-MockServer
 # Start MockServer if needed
 if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
+    # Kill any leftover MockServer
+    Kill-MockServer
     Push-Location $mockServerPath
         mvn  --batch-mode mockserver:runForked
     Pop-Location
@@ -190,4 +190,7 @@ elseif ($language -eq "python") {
     } -ErrorAction Stop
 }
 Pop-Location
-Kill-MockServer
+
+if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
+    Kill-MockServer
+}
