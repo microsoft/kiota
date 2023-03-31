@@ -552,6 +552,9 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                 .OrderBy(static m => m.ReturnType.IsCollection)
                 .GroupBy(static m => m.SimpleName, StringComparer.OrdinalIgnoreCase)
+                
+                // If the nav property has more than 1 match, then it means it
+                // has been initialized by another command builder. Filter it out.
                 .Select(static m => m.Count() > 1 ? m.Where(static m1 => m1.AccessedProperty is null) : m)
                 .SelectMany(static x => x) ??
                 Enumerable.Empty<CodeMethod>();
@@ -561,8 +564,6 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
 
             foreach (var method in builderMethods)
             {
-                // If the nav property has more than 1 match, then it means it
-                // has been initialized by another command builder. Skip it.
                 if (method.ReturnType.IsCollection)
                 {
                     writer.WriteLine($"foreach (var cmd in {BuilderInstanceName}.{method.Name}())");
@@ -581,9 +582,9 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         writer.WriteLine($"return {CommandVariableName};");
     }
 
-    private static void WriteRootBuildCommand(CodeMethod codeElement, LanguageWriter writer, IEnumerable<CodeMethod> classMethods)
+    private static void WriteRootBuildCommand(CodeMethod codeElement, LanguageWriter writer, IEnumerable<CodeMethod> orderedClassMethods)
     {
-        var commandBuilderMethods = classMethods.Where(m => m.Kind == CodeMethodKind.CommandBuilder && m != codeElement).OrderBy(m => m.Name);
+        var commandBuilderMethods = orderedClassMethods.Where(m => m.Kind == CodeMethodKind.CommandBuilder && m != codeElement);
         writer.WriteLine($"var {CommandVariableName} = new RootCommand();");
         WriteCommandDescription(codeElement, writer);
         foreach (var method in commandBuilderMethods)
@@ -598,24 +599,25 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     {
         var targetClass = conventions.GetTypeString(indexer.ReturnType, codeElement);
 
+        if (indexer.ReturnType.AllTypes.First().TypeDefinition is not CodeClass td) return;
+
         AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         writer.WriteLine("var commands = new List<Command>();");
 
-        if (indexer.ReturnType.AllTypes.First().TypeDefinition is not CodeClass td) return;
-
-        var builderMethods = td.Methods
-            .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder))
-            .OrderBy(static m => m.Name) ??
-            Enumerable.Empty<CodeMethod>();
         var parentMethodNames = parent.Methods
             .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && !string.IsNullOrWhiteSpace(m.SimpleName))
             .Select(m => m.SimpleName)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            
+        var builderMethods = td.Methods
+            // If a method with the same name exists in the indexer's parent class, filter it.
+            .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && !parentMethodNames.Contains(m.SimpleName))
+            // Show executable commands first
+            .OrderBy(static m => m.OriginalMethod?.HttpMethod is null) ??
+            Enumerable.Empty<CodeMethod>();
 
         foreach (var method in builderMethods)
         {
-            // If a method with the same name exists in the indexer's parent class, skip it.
-            if (parentMethodNames.Contains(method.SimpleName)) continue;
             if (method.ReturnType.IsCollection)
             {
                 writer.WriteLine($"commands.AddRange({BuilderInstanceName}.{method.Name}());");
