@@ -14,6 +14,36 @@ public class CSharpLanguageRefinerTests
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLanguageRefinerTests
     [Fact]
+    public async Task EnumHasEscapedOption_UsesEnumMemberAttribute()
+    {
+        var model = root.AddEnum(new CodeEnum
+        {
+            Name = "someenum"
+        }).First();
+        var option = new CodeEnumOption { Name = "kiotaCsharpName", SerializationName = "Kiota:CSharp:Enum" };
+        model.AddOption(option);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+
+        var declaration = model.StartBlock;
+
+        Assert.Contains("EnumMemberAttribute", declaration.Usings.Select(x => x.Name));
+    }
+    [Fact]
+    public async Task EnumDoesntHaveEscapedOption_DoesntUseEnumMemberAttribute()
+    {
+        var model = root.AddEnum(new CodeEnum
+        {
+            Name = "someenum"
+        }).First();
+        var option = new CodeEnumOption { Name = "item1" };
+        model.AddOption(option);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+
+        var declaration = model.StartBlock;
+
+        Assert.DoesNotContain("EnumMemberAttribute", declaration.Usings.Select(x => x.Name));
+    }
+    [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()
     {
         var model = root.AddClass(new CodeClass
