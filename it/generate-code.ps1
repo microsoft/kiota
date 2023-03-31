@@ -38,4 +38,14 @@ switch ($dev)
         break
     }
 }
-Start-Process "$kiotaExec" -ArgumentList "generate --clean-output --language ${language} --openapi ${descriptionUrl}${additionalArguments}" -Wait -NoNewWindow
+
+$targetOpenapiPath = Join-Path -Path $scriptPath -ChildPath "openapi.yaml"
+if ($descriptionUrl.StartsWith("./")) {
+    Copy-Item -Path $descriptionUrl -Destination $targetOpenapiPath
+} elseif ($descriptionUrl.StartsWith("http")) {
+    Invoke-WebRequest -Uri $descriptionUrl -OutFile $targetOpenapiPath
+} else {
+    Start-Process "$kiotaExec" -ArgumentList "download ${descriptionUrl} --clean-output --output $targetOpenapiPath" -Wait -NoNewWindow    
+}
+
+Start-Process "$kiotaExec" -ArgumentList "generate --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments}" -Wait -NoNewWindow
