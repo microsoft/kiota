@@ -17,7 +17,19 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
 
         var codeNamespace = codeElement.Parent as CodeNamespace;
         if (codeNamespace != null)
+        {
+            codeElement.Usings
+                .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
+                .Select(static x => x.Declaration?.IsExternal ?? false ?
+                    $"using {x.Declaration.Name.NormalizeNameSpaceName(".")};" :
+                    $"using {x.Name.NormalizeNameSpaceName(".")};")
+                .Distinct()
+                .OrderBy(static x => x)
+                .ToList()
+                .ForEach(x => writer.WriteLine(x));
             writer.StartBlock($"namespace {codeNamespace.Name} {{");
+        }
+        
         if (codeElement.Flags)
             writer.WriteLine("[Flags]");
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
