@@ -223,7 +223,7 @@
     "webpack-cli": "^5.0.1"
   },
   "dependencies": {
-    "@vscode/l10n": "^0.0.11",
+    "@vscode/l10n": "^0.0.13",
     "adm-zip": "^0.5.10",
     "is-online": "^10.0.0",
     "original-fs": "^1.2.0",
