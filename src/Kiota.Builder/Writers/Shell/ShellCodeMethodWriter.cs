@@ -172,7 +172,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         writer.WriteLine($"return {CommandVariableName};");
     }
 
-    private void InitializeSharedCommand(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string name, out IEnumerable<CodeMethod>? includedSubCommands, out string? builderVarName)
+    private void InitializeSharedCommand(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string name, out IEnumerable<CodeMethod> includedSubCommands, out string? builderVarName)
     {
         builderVarName = null;
         // If there's a matching command with the same name as this
@@ -262,22 +262,22 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 });
     }
 
-    private IEnumerable<CodeMethod>? AddMatchingIndexerCommandsAsSubCommands(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, string builderName, CodeMethod? exclude = null)
+    private IEnumerable<CodeMethod> AddMatchingIndexerCommandsAsSubCommands(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, string builderName, CodeMethod? exclude = null)
     {
         // We match based on SimpleName which should contain at least one valid identifier character.
-        if (string.IsNullOrWhiteSpace(codeElement.SimpleName)) return null;
+        if (string.IsNullOrWhiteSpace(codeElement.SimpleName)) return Enumerable.Empty<CodeMethod>();
 
         // A code class should only have 1 indexer. If there's more than 1 indexer, this code will fail.
         var indexer = parent.Methods
                 .SingleOrDefault(m => m.OriginalIndexer != null)?.OriginalIndexer;
-        if (indexer is null) return null;
-        if (indexer.ReturnType.AllTypes.First().TypeDefinition is not CodeClass td) return null;
+        if (indexer is null) return Enumerable.Empty<CodeMethod>();
+        if (indexer.ReturnType.AllTypes.First().TypeDefinition is not CodeClass td) return Enumerable.Empty<CodeMethod>();
 
         var matches = td.Methods
                 .Where(m => m != exclude && m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase))
                     ?? Enumerable.Empty<CodeMethod>();
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
-        if (!matches.Any()) return null;
+        if (!matches.Any()) return Enumerable.Empty<CodeMethod>();
 
         var targetClass = conventions.GetTypeString(indexer.ReturnType, codeElement);
         if (exclude is null)
@@ -794,13 +794,13 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         }
     }
 
-    private static void AddCommands(LanguageWriter writer, IEnumerable<CodeMethod> builderMethods, IEnumerable<CodeMethod>? includedSubCommands, string? builderName)
+    private static void AddCommands(LanguageWriter writer, IEnumerable<CodeMethod> builderMethods, IEnumerable<CodeMethod> includedSubCommands, string? builderName)
     {
         bool hasExecutable = false;
         bool hasNonExecutable = false;
         var methods = new List<CodeMethod>();
         methods.AddRange(builderMethods);
-        if (includedSubCommands is not null) methods.AddRange(includedSubCommands);
+        methods.AddRange(includedSubCommands);
         if (!methods.Any()) return;
         var executablesCount = methods.Count(static m => m.OriginalMethod?.HttpMethod is not null);
 
