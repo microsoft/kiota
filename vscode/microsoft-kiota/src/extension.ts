@@ -29,6 +29,7 @@ export async function activate(
     log: true,
   });
   const extensionId = "kiota";
+  const focusCommandId = ".focus";
   const statusBarCommandId = `${extensionId}.status`;
   const treeViewId = `${extensionId}.openApiExplorer`;
   const dependenciesInfo = `${extensionId}.dependenciesInfo`;
@@ -46,7 +47,7 @@ export async function activate(
           title: vscode.l10n.t("Loading...")
         }, (progress, _) => openApiTreeProvider.loadLockFile(node.fsPath));
         if (openApiTreeProvider.descriptionUrl) {
-          vscode.commands.executeCommand(`${treeViewId}.focus`);
+          vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
         }
       }
     ),
@@ -146,7 +147,7 @@ export async function activate(
 
         if (result)
         {
-          displayLogs(result);
+          exportLogsAndShowErrors(result);
         }
         languagesInformation = await getLanguageInformation(
           context,
@@ -155,6 +156,7 @@ export async function activate(
         );
         if (languagesInformation) {
           dependenciesInfoProvider.update(languagesInformation, language);
+          vscode.commands.executeCommand(`${dependenciesInfo}${focusCommandId}`);
         }
       }
     ),
@@ -164,7 +166,7 @@ export async function activate(
         const config = await searchSteps(x => searchDescription(context, x));
         if (config.descriptionPath) {
           openApiTreeProvider.descriptionUrl = config.descriptionPath;
-          vscode.commands.executeCommand(`${treeViewId}.focus`);
+          vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
         }
       }
     ),
@@ -177,7 +179,7 @@ export async function activate(
         const openState = await openSteps();
         if (openState.descriptionPath) {
           openApiTreeProvider.descriptionUrl = openState.descriptionPath;
-          vscode.commands.executeCommand(`${treeViewId}.focus`);
+          vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
         }
       }
     )
@@ -222,7 +224,7 @@ export async function activate(
           return updateClients(context);
         });
         if (res) {
-          displayLogs(res);
+          exportLogsAndShowErrors(res);
         }
       } catch (error) {
         kiotaOutputChannel.error(
@@ -240,7 +242,7 @@ export async function activate(
   context.subscriptions.push(disposable);
 }
 
-function displayLogs(result: KiotaLogEntry[]) : void {
+function exportLogsAndShowErrors(result: KiotaLogEntry[]) : void {
   const informationMessages = result
     ? getLogEntriesForLevel(result, LogLevel.information)
     : [];
