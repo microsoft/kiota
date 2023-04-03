@@ -803,11 +803,12 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         }
 
         bool sortMethods = false;
+        const string indexerReturn = "Tuple";
         
         // Start with the current class' commands then the indexer commands in the item builder.
-        foreach (var method in methods.OrderBy(static m => string.Equals(m.ReturnType.Name, "Tuple", StringComparison.Ordinal)))
+        foreach (var method in methods.OrderBy(static m => string.Equals(m.ReturnType.Name, indexerReturn, StringComparison.Ordinal)))
         {
-            if (string.Equals(method.ReturnType.Name, "Tuple", StringComparison.Ordinal))
+            if (string.Equals(method.ReturnType.Name, indexerReturn, StringComparison.Ordinal))
             {
                 // If we have any indexer sub-command, we must provide the name of the indexer
                 writer.WriteLine($"var cmds = {builderName ?? BuilderInstanceName}.{method.Name}();");
