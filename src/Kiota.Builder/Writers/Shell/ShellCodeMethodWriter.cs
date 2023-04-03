@@ -596,45 +596,32 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             writer.WriteLine($"return new(new(0), new(0));");
             return;
         }
-        bool hasExecutable = false;
-        bool hasNonExecutable = false;
-        var sb = new StringBuilder();
+        bool hasExecutable = builderMethods.Any(static m => m.HttpMethod is not null);
+        bool hasNonExecutable = builderMethods.Any(static m => m.HttpMethod is null);
+
+        if (hasExecutable) {
+            writer.WriteLine("var executables = new List<Command>();");
+        }
+
+        if (hasNonExecutable) {
+            writer.WriteLine("var commands = new List<Command>();");
+        }
 
         AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
 
         foreach (var method in builderMethods)
         {
-            string variableName;
-            if (method.HttpMethod is not null)
-            {
-                variableName = "executables";
-                if (!hasExecutable)
-                {
-                    hasExecutable = true;
-                    sb.Insert(0, $"{writer.GetIndent()}var {variableName} = new List<Command>();\n");
-                }
-            }
-            else
-            {
-                variableName = "commands";
-
-                if (!hasNonExecutable)
-                {
-                    hasNonExecutable = true;
-                    sb.Insert(0, $"{writer.GetIndent()}var {variableName} = new List<Command>();\n");
-                }
-            }
+            string variableName = method.HttpMethod is not null ? "executables" : "commands";
             if (method.ReturnType.IsCollection)
             {
-                sb.AppendLine($"{writer.GetIndent()}{variableName}.AddRange({BuilderInstanceName}.{method.Name}());");
+                writer.WriteLine($"{variableName}.AddRange({BuilderInstanceName}.{method.Name}());");
             }
             else
             {
-                sb.AppendLine($"{writer.GetIndent()}{variableName}.Add({BuilderInstanceName}.{method.Name}());");
+                writer.WriteLine($"{variableName}.Add({BuilderInstanceName}.{method.Name}());");
             }
         }
 
-        writer.WriteLine(sb.ToString(), false);
         var item1 = hasExecutable ? "executables" : "new(0)";
         var item2 = hasNonExecutable ? "commands" : "new(0)";
         writer.WriteLine($"return new({item1}, {item2});");

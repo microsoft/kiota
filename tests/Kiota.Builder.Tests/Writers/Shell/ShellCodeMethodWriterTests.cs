@@ -334,7 +334,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Equal(0, lines.Count(l => l.Contains("var execCommands = new List<Command>()")));
         Assert.Equal(1, lines.Count(l => l.Contains("var nonExecCommands = new List<Command>()")));
         Assert.Equal(0, lines.Count(l => l.Contains("foreach (var cmd in execCommands)")));
-        Assert.Equal(1, lines.Count(l => l.Contains("foreach (var cmd in nonExecCommands.OrderBy(static c => c.Name))")));
+        Assert.Equal(1, lines.Count(l => l.Contains("foreach (var cmd in nonExecCommands.OrderBy(static c => c.Name, StringComparer.Ordinal))")));
     }
 
     [Fact]
@@ -422,7 +422,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Equal(0, lines.Count(l => l.Contains("var execCommands = new List<Command>()")));
         Assert.Equal(1, lines.Count(l => l.Contains("var nonExecCommands = new List<Command>()")));
         Assert.Equal(0, lines.Count(l => l.Contains("foreach (var cmd in execCommands)")));
-        Assert.Equal(1, lines.Count(l => l.Contains("foreach (var cmd in nonExecCommands.OrderBy(static c => c.Name))")));
+        Assert.Equal(1, lines.Count(l => l.Contains("foreach (var cmd in nonExecCommands.OrderBy(static c => c.Name, StringComparer.Ordinal))")));
     }
 
     [Fact]
