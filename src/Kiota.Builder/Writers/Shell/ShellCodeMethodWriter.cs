@@ -862,7 +862,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             var suffix = string.Empty;
             if (sortMethods)
             {
-                suffix = ".OrderBy(static c => c.Name)";
+                suffix = ".OrderBy(static c => c.Name, StringComparer.Ordinal)";
             }
             writer.WriteLine($"foreach (var cmd in {NonExecCommandsVariableName}{suffix})");
             writer.StartBlock();
