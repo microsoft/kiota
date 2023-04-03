@@ -188,6 +188,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 
     private static void CreateCommandBuildersFromIndexer(CodeClass currentClass, CodeIndexer indexer)
     {
+        var collectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
         var method = new CodeMethod
         {
             Name = "BuildCommand",
@@ -196,10 +197,16 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             OriginalIndexer = indexer,
             Documentation = (CodeDocumentation)indexer.Documentation.Clone(),
             // ReturnType setter assigns the parent
-            ReturnType = CreateCommandType(),
+            ReturnType = new CodeType {
+                Name = "Tuple",
+                IsExternal = true,
+                GenericTypeParameterValues = new List<CodeType> {
+                    CreateCommandType(collectionKind),
+                    CreateCommandType(collectionKind),
+                }
+            },
             SimpleName = indexer.Name.CleanupSymbolName()
         };
-        method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
 
         currentClass.AddMethod(method);
         currentClass.RemoveChildElement(indexer);
@@ -225,12 +232,13 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         }
     }
 
-    private static CodeType CreateCommandType()
+    private static CodeType CreateCommandType(CodeTypeBase.CodeTypeCollectionKind collectionKind = CodeTypeBase.CodeTypeCollectionKind.None)
     {
         return new CodeType
         {
             Name = "Command",
             IsExternal = true,
+            CollectionKind = collectionKind,
         };
     }
 

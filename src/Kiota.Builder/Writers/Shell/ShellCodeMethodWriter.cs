@@ -37,6 +37,8 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     private const string JsonNoIndentParamName = "jsonNoIndent";
     private const string InvocationContextParamName = "invocationContext";
     private const string CommandVariableName = "command";
+    private const string ExecCommandsVariableName = "execCommands";
+    private const string NonExecCommandsVariableName = "nonExecCommands";
 
     public ShellCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService, true)
     {
@@ -82,8 +84,9 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             parametersList.Add(bodyParam);
         }
 
-        InitializeSharedCommand(codeElement, parentClass, writer, name);
-        writer.WriteLine("// Create options for all the parameters");
+        InitializeSharedCommand(codeElement, parentClass, writer, name, out var includedSubCommands, out var builderVarName);
+        AddCommands(writer, Enumerable.Empty<CodeMethod>(), includedSubCommands, builderVarName);
+
         // investigate exploding query params
         // Check the possible formatting options for headers in a cli.
         // -h A=b -h
@@ -169,8 +172,9 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         writer.WriteLine($"return {CommandVariableName};");
     }
 
-    private void InitializeSharedCommand(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string name)
+    private void InitializeSharedCommand(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string name, out IEnumerable<CodeMethod>? includedSubCommands, out string? builderVarName)
     {
+        builderVarName = null;
         // If there's a matching command with the same name as this
         // command, use its command builder instead of creating a new command.
         // This reduces the probability of duplicate subcommand names
@@ -186,6 +190,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         {
             var (builderName, method) = commandInfo.Value;
             initializer = $"{builderName}.{NormalizeToIdentifier(method.Name)}()";
+            builderVarName = NormalizeToIdentifier(builderName);
         }
         else
         {
@@ -204,7 +209,8 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         }
         writer.WriteLine($"var {CommandVariableName} = {initializer};");
         WriteCommandDescription(codeElement, writer);
-        AddMatchingIndexerCommandsAsSubCommands(codeElement, writer, parentClass, commandInfo?.method);
+
+        includedSubCommands = AddMatchingIndexerCommandsAsSubCommands(codeElement, writer, parentClass, builderVarName ?? BuilderInstanceName, commandInfo?.method);
     }
 
     private (string builderName, CodeMethod method)? GetCommandBuilderFromIndexer(CodeMethod codeElement, LanguageWriter writer, CodeClass parent)
@@ -223,13 +229,14 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         // The actual command names will not be the same as the SimpleName.
         // There shouldn't be more than 1 match that is a non-list command.
         var match = td.Methods
-                .Where(static m => !m.ReturnType.IsCollection && m.HttpMethod == null) // Guard against pulling in executable commands.
+                .Where(static m => !string.Equals(m.ReturnType.Name, "Tuple", StringComparison.Ordinal) && m.HttpMethod == null) // Guard against pulling in executable commands.
                 .SingleOrDefault(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase));
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
         if (match is null) return null;
 
         var targetClass = conventions.GetTypeString(indexer.ReturnType, codeElement);
         var builderName = NormalizeToIdentifier(indexer.Name).ToFirstCharacterLowerCase();
+
         AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {builderName} = ", pathParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
 
         return (builderName, match);
@@ -255,43 +262,30 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 });
     }
 
-    private void AddMatchingIndexerCommandsAsSubCommands(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, CodeMethod? exclude = null)
+    private IEnumerable<CodeMethod>? AddMatchingIndexerCommandsAsSubCommands(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, string builderName, CodeMethod? exclude = null)
     {
         // We match based on SimpleName which should contain at least one valid identifier character.
-        if (string.IsNullOrWhiteSpace(codeElement.SimpleName)) return;
+        if (string.IsNullOrWhiteSpace(codeElement.SimpleName)) return null;
 
         // A code class should only have 1 indexer. If there's more than 1 indexer, this code will fail.
         var indexer = parent.Methods
                 .SingleOrDefault(m => m.OriginalIndexer != null)?.OriginalIndexer;
-        if (indexer is null) return;
-        if (indexer.ReturnType.AllTypes.First().TypeDefinition is not CodeClass td) return;
+        if (indexer is null) return null;
+        if (indexer.ReturnType.AllTypes.First().TypeDefinition is not CodeClass td) return null;
 
         var matches = td.Methods
                 .Where(m => m != exclude && m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase))
                     ?? Enumerable.Empty<CodeMethod>();
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
-        if (!matches.Any()) return;
+        if (!matches.Any()) return null;
 
         var targetClass = conventions.GetTypeString(indexer.ReturnType, codeElement);
-        var builderName = NormalizeToIdentifier(indexer.Name);
         if (exclude is null)
         {
             AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {builderName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
-        foreach (var method in matches)
-        {
-            if (method.ReturnType.IsCollection)
-            {
-                writer.WriteLine($"foreach (var {builderName}Cmd in {builderName}.{method.Name}())");
-                writer.StartBlock();
-                writer.WriteLine($"{CommandVariableName}.AddCommand({builderName}Cmd);");
-                writer.CloseBlock();
-            }
-            else
-            {
-                writer.WriteLine($"{CommandVariableName}.AddCommand({builderName}.{method.Name}());");
-            }
-        }
+
+        return matches;
     }
 
     private void AddCustomCommandOptions(LanguageWriter writer, ref List<string> availableOptions, ref List<(string, string, CodeParameter?)> parameters, string returnType, bool isHandlerVoid, bool isPageable)
@@ -550,33 +544,19 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
 
             var builderMethods = typeDef.Methods // Already ordered by name
                 .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder))
-                .OrderBy(static m => m.ReturnType.IsCollection)
                 .GroupBy(static m => m.SimpleName, StringComparer.OrdinalIgnoreCase)
-                
+
                 // If the nav property has more than 1 match, then it means it
                 // has been initialized by another command builder. Filter it out.
                 .Select(static m => m.Count() > 1 ? m.Where(static m1 => m1.AccessedProperty is null) : m)
                 .SelectMany(static x => x) ??
                 Enumerable.Empty<CodeMethod>();
             if (!builderMethods.Any()) return;
-            InitializeSharedCommand(codeElement, parent, writer, name);
+
+            InitializeSharedCommand(codeElement, parent, writer, name, out var includedSubCommands, out var matchingIndexerIdName);
             AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
-            foreach (var method in builderMethods)
-            {
-                if (method.ReturnType.IsCollection)
-                {
-                    writer.WriteLine($"foreach (var cmd in {BuilderInstanceName}.{method.Name}())");
-                    writer.StartBlock();
-                    writer.WriteLine($"{CommandVariableName}.AddCommand(cmd);");
-                    writer.CloseBlock();
-                }
-                else
-                {
-                    writer.WriteLine($"{CommandVariableName}.AddCommand({BuilderInstanceName}.{method.Name}());");
-                }
-            }
-            // SubCommands
+            AddCommands(writer, builderMethods, includedSubCommands, matchingIndexerIdName);
         }
 
         writer.WriteLine($"return {CommandVariableName};");
@@ -601,34 +581,62 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
 
         if (indexer.ReturnType.AllTypes.First().TypeDefinition is not CodeClass td) return;
 
-        AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
-        writer.WriteLine("var commands = new List<Command>();");
-
         var parentMethodNames = parent.Methods
             .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && !string.IsNullOrWhiteSpace(m.SimpleName))
             .Select(m => m.SimpleName)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            
+
         var builderMethods = td.Methods
             // If a method with the same name exists in the indexer's parent class, filter it.
-            .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && !parentMethodNames.Contains(m.SimpleName))
-            // Show executable commands first
-            .OrderBy(static m => m.OriginalMethod?.HttpMethod is null) ??
+            .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && !parentMethodNames.Contains(m.SimpleName)) ??
             Enumerable.Empty<CodeMethod>();
+        if (!builderMethods.Any())
+        {
+            writer.WriteLine($"return new(new(0), new(0));");
+            return;
+        }
+        bool hasExecutable = false;
+        bool hasNonExecutable = false;
+        var sb = new StringBuilder();
+
+        AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {BuilderInstanceName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
         foreach (var method in builderMethods)
         {
-            if (method.ReturnType.IsCollection)
+            string variableName;
+            if (method.HttpMethod is not null)
             {
-                writer.WriteLine($"commands.AddRange({BuilderInstanceName}.{method.Name}());");
+                variableName = "executables";
+                if (!hasExecutable)
+                {
+                    hasExecutable = true;
+                    sb.Insert(0, $"{writer.GetIndent()}var {variableName} = new List<Command>();\n");
+                }
             }
             else
             {
-                writer.WriteLine($"commands.Add({BuilderInstanceName}.{method.Name}());");
+                variableName = "commands";
+
+                if (!hasNonExecutable)
+                {
+                    hasNonExecutable = true;
+                    sb.Insert(0, $"{writer.GetIndent()}var {variableName} = new List<Command>();\n");
+                }
+            }
+            if (method.ReturnType.IsCollection)
+            {
+                sb.AppendLine($"{writer.GetIndent()}{variableName}.AddRange({BuilderInstanceName}.{method.Name}());");
+            }
+            else
+            {
+                sb.AppendLine($"{writer.GetIndent()}{variableName}.Add({BuilderInstanceName}.{method.Name}());");
             }
         }
 
-        writer.WriteLine("return commands;");
+        writer.WriteLine(sb.ToString(), false);
+        var item1 = hasExecutable ? "executables" : "new(0)";
+        var item2 = hasNonExecutable ? "commands" : "new(0)";
+        writer.WriteLine($"return new({item1}, {item2});");
     }
 
     private static void AddCommandBuilderContainerInitialization(CodeClass parentClass, string returnType, LanguageWriter writer, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default)
@@ -783,6 +791,77 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         else
         {
             writer.WriteLine("});");
+        }
+    }
+
+    private static void AddCommands(LanguageWriter writer, IEnumerable<CodeMethod> builderMethods, IEnumerable<CodeMethod>? includedSubCommands, string? builderName)
+    {
+        bool hasExecutable = false;
+        bool hasNonExecutable = false;
+        var methods = new List<CodeMethod>();
+        methods.AddRange(builderMethods);
+        if (includedSubCommands is not null) methods.AddRange(includedSubCommands);
+        if (!methods.Any()) return;
+        var executablesCount = methods.Count(static m => m.OriginalMethod?.HttpMethod is not null);
+
+        if (executablesCount > 0) {
+            writer.WriteLine($"var {ExecCommandsVariableName} = new List<Command>();");
+            hasExecutable = true;
+        }
+        
+        if ((methods.Count - executablesCount) > 0) {
+            writer.WriteLine($"var {NonExecCommandsVariableName} = new List<Command>();");
+            hasNonExecutable = true;
+        }
+        
+        // Start with the current class' commands then the indexer commands in the item builder.
+        foreach (var method in methods.OrderBy(static m => string.Equals(m.ReturnType.Name, "Tuple", StringComparison.Ordinal)))
+        {
+            if (string.Equals(method.ReturnType.Name, "Tuple", StringComparison.Ordinal))
+            {
+                // If we have any indexer sub-command, we must provide the name of the indexer
+                writer.WriteLine($"var cmds = {builderName ?? BuilderInstanceName}.{method.Name}();");
+                if (hasExecutable)
+                {
+                    writer.WriteLine($"{ExecCommandsVariableName}.AddRange(cmds.Item1);");
+                }
+
+                if (hasNonExecutable)
+                {
+                    writer.WriteLine($"{NonExecCommandsVariableName}.AddRange(cmds.Item2);");
+                }
+            }
+            else
+            {
+                string variableName;
+                if (method.OriginalMethod?.HttpMethod is not null)
+                {
+                    variableName = ExecCommandsVariableName;
+                    hasExecutable = true;
+                }
+                else
+                {
+                    variableName = NonExecCommandsVariableName;
+                    hasNonExecutable = true;
+                }
+                writer.WriteLine($"{variableName}.Add({BuilderInstanceName}.{method.Name}());");
+            }
+        }
+        if (hasExecutable)
+        {
+            writer.WriteLine($"foreach (var cmd in {ExecCommandsVariableName})");
+            writer.StartBlock();
+            writer.WriteLine($"{CommandVariableName}.AddCommand(cmd);");
+            writer.CloseBlock();
+        }
+
+        if (hasNonExecutable)
+        {
+            var suffix = string.IsNullOrWhiteSpace(builderName) ? string.Empty : ".OrderBy(static c => c.Name)";
+            writer.WriteLine($"foreach (var cmd in {NonExecCommandsVariableName}{suffix})");
+            writer.StartBlock();
+            writer.WriteLine($"{CommandVariableName}.AddCommand(cmd);");
+            writer.CloseBlock();
         }
     }
 
