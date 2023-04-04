@@ -40,8 +40,12 @@ switch ($dev)
 }
 
 $targetOpenapiPath = Join-Path -Path $scriptPath -ChildPath "openapi.yaml"
+if (Test-Path $targetOpenapiPath) {
+    Remove-Item $targetOpenapiPath
+}
+
 if ($descriptionUrl.StartsWith("./")) {
-    Copy-Item -Path $descriptionUrl -Destination $targetOpenapiPath
+    Copy-Item -Path $descriptionUrl -Destination $targetOpenapiPath -Force
 } elseif ($descriptionUrl.StartsWith("http")) {
     Invoke-WebRequest -Uri $descriptionUrl -OutFile $targetOpenapiPath
 } else {
