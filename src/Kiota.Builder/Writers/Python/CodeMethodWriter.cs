@@ -488,7 +488,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 return $"get_{(currentEnum.Flags || isCollection ? "collection_of_enum_values" : "enum_value")}({propertyType.ToCamelCase()})";
             if (isCollection)
                 if (currentType.TypeDefinition == null)
-                    return $"get_collection_of_primitive_values({propertyType.ToSnakeCase()})";
+                    return $"get_collection_of_primitive_values({propertyType})";
                 else
                     return $"get_collection_of_object_values({propertyType.ToCamelCase()})";
         }
