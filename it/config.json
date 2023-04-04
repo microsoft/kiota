@@ -48,10 +48,6 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/1812"
       },
       {
-        "Language": "go",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2353"
-      },
-      {
         "Language": "python",
         "Rationale": "https://github.com/microsoft/kiota/issues/1813"
       },
