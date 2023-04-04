@@ -39,6 +39,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     private const string CommandVariableName = "command";
     private const string ExecCommandsVariableName = "execCommands";
     private const string NonExecCommandsVariableName = "nonExecCommands";
+    private const string indexerReturn = "Tuple";
 
     public ShellCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService, true)
     {
@@ -167,8 +168,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         WriteCommandHandlerBody(originalMethod, parentClass, requestParams, isHandlerVoid, returnType, writer);
         // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
         WriteCommandHandlerBodyOutput(writer, originalMethod, isHandlerVoid);
-        writer.DecreaseIndent();
-        writer.WriteLine("});");
+        writer.CloseBlock("});");
         writer.WriteLine($"return {CommandVariableName};");
     }
 
@@ -230,7 +230,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         // The actual command names will not be the same as the SimpleName.
         // There shouldn't be more than 1 match that is a non-list command.
         var match = td.UnorderedMethods
-                .Where(static m => !string.Equals(m.ReturnType.Name, "Tuple", StringComparison.Ordinal) && m.HttpMethod == null) // Guard against pulling in executable commands.
+                .Where(static m => !string.Equals(m.ReturnType.Name, indexerReturn, StringComparison.Ordinal) && m.HttpMethod == null) // Guard against pulling in executable commands.
                 .SingleOrDefault(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase));
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
         if (match is null) return null;
@@ -280,9 +280,9 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
         if (!matches.Any()) return Enumerable.Empty<CodeMethod>();
 
-        var targetClass = conventions.GetTypeString(indexer.ReturnType, codeElement);
         if (exclude is null)
         {
+            var targetClass = conventions.GetTypeString(indexer.ReturnType, codeElement);
             AddCommandBuilderContainerInitialization(parent, targetClass, writer, prefix: $"var {builderName} = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
 
@@ -803,7 +803,6 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         }
 
         bool sortMethods = false;
-        const string indexerReturn = "Tuple";
         
         // Start with the current class' commands then the indexer commands in the item builder.
         foreach (var method in methods.OrderBy(static m => string.Equals(m.ReturnType.Name, indexerReturn, StringComparison.Ordinal)))
