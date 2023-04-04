@@ -254,6 +254,26 @@
       }
     ]
   },
+  "apisguru::meraki.com": {
+    "Suppressions": [
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
+      },
+      {
+        "Language": "go",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2491"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2381"
+      }
+    ]
+  },
   "apisguru::docusign.net": {
     "Suppressions": [
       {
