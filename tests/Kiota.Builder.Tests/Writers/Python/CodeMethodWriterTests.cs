@@ -205,7 +205,7 @@ public class CodeMethodWriterTests : IDisposable
             Name = "dummyColl",
             Type = new CodeType
             {
-                Name = "string",
+                Name = "guid",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
             },
         });
@@ -506,20 +506,20 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("from . import somecustomtype", result);
         Assert.Contains("fields: Dict[str, Callable[[Any], None]] =", result);
-        Assert.Contains("get_str_value", result);
-        Assert.Contains("get_int_value", result);
-        Assert.Contains("get_float_value", result);
-        Assert.Contains("get_bool_value", result);
-        Assert.Contains("get_bytes_value", result);
-        Assert.Contains("get_date_value", result);
-        Assert.Contains("get_time_value", result);
-        Assert.Contains("get_timedelta_value", result);
-        Assert.Contains("get_datetime_value", result);
-        Assert.Contains("get_uuid_value", result);
-        Assert.Contains("get_object_value", result);
-        Assert.Contains("get_collection_of_primitive_values", result);
-        Assert.Contains("get_collection_of_object_values", result);
-        Assert.Contains("get_enum_value", result);
+        Assert.Contains("get_str_value()", result);
+        Assert.Contains("get_int_value()", result);
+        Assert.Contains("get_float_value()", result);
+        Assert.Contains("get_bool_value()", result);
+        Assert.Contains("get_bytes_value()", result);
+        Assert.Contains("get_date_value()", result);
+        Assert.Contains("get_time_value()", result);
+        Assert.Contains("get_timedelta_value()", result);
+        Assert.Contains("get_datetime_value()", result);
+        Assert.Contains("get_uuid_value()", result);
+        Assert.Contains("get_object_value(dummy_class.DummyClass)", result);
+        Assert.Contains("get_collection_of_primitive_values(UUID)", result);
+        Assert.Contains("get_collection_of_object_values(complex.Complex)", result);
+        Assert.Contains("get_enum_value(some_enum.SomeEnum)", result);
         Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
