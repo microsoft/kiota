@@ -54,7 +54,7 @@ public class UnsupportedInheritanceSemantics : ValidationRule<OpenApiDocument>
         foreach (var prop in allProperties)
         {
             if (allProperties
-                .Where(x => x.Item1.Equals(prop.Item1))
+                .Where(x => x.Item1.Equals(prop.Item1, StringComparison.Ordinal))
                 .GroupBy(static x => x, propertySchemaComparer)
                 .Count() > 1)
             {
