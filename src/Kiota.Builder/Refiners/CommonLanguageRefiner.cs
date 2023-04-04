@@ -386,7 +386,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         // 1. In the list of reserved names
         // 2. If it is a reserved name, make sure that the CodeElement type is worth replacing(not on the blocklist)
         // 3. There's not a very specific condition preventing from replacement
-        if (provider.ReservedNames.Contains(current.Name, StringComparer.OrdinalIgnoreCase) &&
+        if (provider.ReservedNames.Contains(current.Name) &&
             isNotInExceptions &&
             shouldReplace)
         {
