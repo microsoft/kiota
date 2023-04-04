@@ -62,7 +62,7 @@ public class ShellRefinerTests
         // Add indexer
         requestBuilder.Indexer = new CodeIndexer
         {
-            Name = "Users",
+            Name = "Users-idx",
             ReturnType = new CodeType
             {
                 Name = "Address"
@@ -128,11 +128,19 @@ public class ShellRefinerTests
         var methodNames = methods.Select(m => m.Name);
 
         Assert.Contains("BuildCommand", methodNames);
-        Assert.Contains("BuildUserCommand", methodNames);
+        Assert.Contains("BuildUserNavCommand", methodNames);
         Assert.Contains("BuildCreateCommand", methodNames);
         Assert.Contains("BuildListCommand", methodNames);
-        Assert.Contains("BuildPutTestCommand", methodNames);
+        Assert.Contains("BuildPutCommand", methodNames);
         Assert.Contains("BuildRootCommand", methodNames);
+
+        Assert.Contains("Put", methods.Single(m => m.OriginalMethod != null && m.OriginalMethod.Name == "PutTest").SimpleName);
+        Assert.Contains("Create", methods.Single(m => m.OriginalMethod != null && m.OriginalMethod.Name == "PostExecutor").SimpleName);
+        Assert.Contains("List", methods.Single(m => m.OriginalMethod != null && m.OriginalMethod.Name == "GetExecutor").SimpleName);
+        Assert.Contains("UsersIdx", methods.Single(m => m.OriginalIndexer != null && m.OriginalIndexer.Name == "Users-idx").SimpleName);
+        Assert.Contains("User", methods.Single(m => m.AccessedProperty != null && m.AccessedProperty.Name == "User").SimpleName);
+        Assert.Contains(string.Empty, methods.Single(m => m.OriginalMethod != null && m.OriginalMethod.Kind == CodeMethodKind.ClientConstructor).SimpleName);
+        Assert.Contains(string.Empty, methods.Single(m => m.Kind == CodeMethodKind.ClientConstructor).SimpleName);
     }
 
     [Fact]
