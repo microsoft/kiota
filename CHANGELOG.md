@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where java writer would emit incorrect serialization values for escaped enums
 - Fixed a bug where java writer would emit incorrect type names in case of compound types
 - Fixed a bug where go refiner would emit incorrect code when inlining error parents
+- Fixed a bug where inline type names would not be sanitized. [#2368](https://github.com/microsoft/kiota/issues/2368)
 - Fixed a bug in PHP where the base URL path parameter key didn't match the URI template.
 - Changed invalid schema behavior, invalid properties are now ignored with a warning instead of failed. [#2089](https://github.com/microsoft/kiota/issues/2089)
 - Fixed a bug where java refiner would not normalize inherited class names and interface types.

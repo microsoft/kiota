@@ -1583,7 +1583,7 @@ public class KiotaBuilder
                                     var propertySchema = x.Value;
                                     var className = propertySchema.GetSchemaName().CleanupSymbolName();
                                     if (string.IsNullOrEmpty(className))
-                                        className = $"{model.Name}_{x.Key}";
+                                        className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
                                     var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
                                     var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
                                                         (rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns);
