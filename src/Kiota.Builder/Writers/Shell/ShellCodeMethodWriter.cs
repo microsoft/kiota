@@ -75,7 +75,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     private void WriteExecutableCommand(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, LanguageWriter writer, string name)
     {
         if (parentClass
-            .Methods
+            .UnorderedMethods
             .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod) is not CodeMethod generatorMethod ||
             codeElement.OriginalMethod is not CodeMethod originalMethod) return;
         var parametersList = generatorMethod.PathQueryAndHeaderParameters.Where(static p => !string.IsNullOrWhiteSpace(p.Name)).ToList() ?? new List<CodeParameter>();
@@ -220,7 +220,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         if (string.IsNullOrWhiteSpace(codeElement.SimpleName)) return null;
         // Assumption is that there can only be 1 indexer per code class. This code will throw if
         // multiple indexers exist.
-        var indexer = parent.Methods
+        var indexer = parent.UnorderedMethods
                 .SingleOrDefault(static m => m.OriginalIndexer != null)?.OriginalIndexer;
 
         if (indexer is null) return null;
@@ -229,7 +229,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         // Find the first non-list indexer command that matches by the name
         // The actual command names will not be the same as the SimpleName.
         // There shouldn't be more than 1 match that is a non-list command.
-        var match = td.Methods
+        var match = td.UnorderedMethods
                 .Where(static m => !string.Equals(m.ReturnType.Name, "Tuple", StringComparison.Ordinal) && m.HttpMethod == null) // Guard against pulling in executable commands.
                 .SingleOrDefault(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase));
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
@@ -253,13 +253,13 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         // Assumption is that there can only be 1 nav property with a specific
         // name per code class. This code will throw if multiple nav properties
         // exist with the same name.
-        return parent.GetChildElements(true).OfType<CodeMethod>()
+        return parent.UnorderedMethods
                 .SingleOrDefault(m =>
                 {
-                    var isCommandBuilder = m.IsOfKind(CodeMethodKind.CommandBuilder);
-                    var isNav = m.AccessedProperty != null;
-                    var nameMatch = string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase);
-                    return m != codeElement && isCommandBuilder && isNav && nameMatch;
+                    return m != codeElement
+                        && m.IsOfKind(CodeMethodKind.CommandBuilder)
+                        && m.AccessedProperty != null
+                        && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase);
                 });
     }
 
@@ -269,7 +269,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         if (string.IsNullOrWhiteSpace(codeElement.SimpleName)) return Enumerable.Empty<CodeMethod>();
 
         // A code class should only have 1 indexer. If there's more than 1 indexer, this code will fail.
-        var indexer = parent.Methods
+        var indexer = parent.UnorderedMethods
                 .SingleOrDefault(m => m.OriginalIndexer != null)?.OriginalIndexer;
         if (indexer is null) return Enumerable.Empty<CodeMethod>();
         if (indexer.ReturnType.AllTypes.First().TypeDefinition is not CodeClass td) return Enumerable.Empty<CodeMethod>();
@@ -582,7 +582,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
 
         if (indexer.ReturnType.AllTypes.First().TypeDefinition is not CodeClass td) return;
 
-        var parentMethodNames = parent.Methods
+        var parentMethodNames = parent.UnorderedMethods
             .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder) && !string.IsNullOrWhiteSpace(m.SimpleName))
             .Select(static m => m.SimpleName)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -639,7 +639,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     protected virtual void WriteCommandHandlerBody(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
     {
         if (parentClass
-                    .Methods
+                    .UnorderedMethods
                     .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod) is not CodeMethod generatorMethod) return;
         bool isStream = false;
         if (requestParams.requestBody is CodeParameter requestBodyParam)

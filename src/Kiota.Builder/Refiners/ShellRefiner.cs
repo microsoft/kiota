@@ -104,7 +104,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             RemoveUnusedParameters(currentClass);
 
             // Clone executors & convert to build command
-            var requestExecutors = currentClass.Methods
+            var requestExecutors = currentClass.UnorderedMethods
                 .Where(static e => e.IsOfKind(CodeMethodKind.RequestExecutor));
             CreateCommandBuildersFromRequestExecutors(currentClass, currentClass.Indexer != null, requestExecutors);
 
@@ -120,7 +120,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             }
 
             // Build root command
-            var clientConstructor = currentClass.Methods.FirstOrDefault(static m => m.IsOfKind(CodeMethodKind.ClientConstructor));
+            var clientConstructor = currentClass.UnorderedMethods.FirstOrDefault(static m => m.IsOfKind(CodeMethodKind.ClientConstructor));
             if (clientConstructor != null)
             {
                 var rootMethod = new CodeMethod
@@ -142,13 +142,13 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
     {
         var requestAdapters = currentClass.Properties.Where(static p => p.IsOfKind(UnusedPropKinds));
         currentClass.RemoveChildElement(requestAdapters.ToArray());
-        var constructorsWithAdapter = currentClass.Methods.Where(static m => m.IsOfKind(ConstructorKinds) && m.Parameters.Any(static p => p.IsOfKind(UnusedParamKinds)));
+        var constructorsWithAdapter = currentClass.UnorderedMethods.Where(static m => m.IsOfKind(ConstructorKinds) && m.Parameters.Any(static p => p.IsOfKind(UnusedParamKinds)));
         foreach (var method in constructorsWithAdapter)
         {
             method.RemoveParametersByKind(UnusedParamKinds);
         }
 
-        var unwantedMethods = currentClass.Methods.Where(static m => m.IsOfKind(UnusedMethodKinds));
+        var unwantedMethods = currentClass.UnorderedMethods.Where(static m => m.IsOfKind(UnusedMethodKinds));
         currentClass.RemoveChildElement(unwantedMethods.ToArray());
     }
 
