@@ -254,14 +254,6 @@
       }
     ]
   },
-  "apisguru::meraki.com": {
-    "Suppressions": [
-      {
-        "Language": "all",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2368"
-      }
-    ]
-  },
   "apisguru::docusign.net": {
     "Suppressions": [
       {
