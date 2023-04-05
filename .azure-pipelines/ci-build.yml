@@ -481,8 +481,8 @@ stages:
                     tagSource: userSpecifiedTag
                     tag: 'v$(artifactVersion)'
                     title: 'v$(artifactVersion)'
-                    releaseNotesSource: inline
-                    releaseNotesInline: $(releaseNotes)
+                    releaseNotesSource: filePath
+                    releaseNotesFilePath: $(Build.SourcesDirectory)/release-notes.txt
                     assets: |
                       $(Pipeline.Workspace)/*.zip
                       $(Pipeline.Workspace)/*.vsix
