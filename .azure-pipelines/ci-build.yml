@@ -530,14 +530,14 @@ stages:
                     artifact: Nugets
                     source: current
                 - powershell: |
-                    Remove-Item "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg" -Verbose
-                    Remove-Item "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
+                    Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg" -Verbose
+                    Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
                   displayName: remove other nupkgs to avoid duplication
                 - task: NuGetCommand@2
                   displayName: "NuGet push"
                   inputs:
                     command: push
-                    packagesToPush: "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.*.nupkg"
+                    packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg"
                     nuGetFeedType: external
                     publishFeedCredentials: "OpenAPI Nuget Connection"
 
@@ -557,13 +557,13 @@ stages:
                     artifact: Nugets
                     source: current
                 - powershell: |
-                    Remove-Item "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.ApiDescription.*"
+                    Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.ApiDescription.*"
                   displayName: remove other nupkgs to avoid duplication
                 - task: NuGetCommand@2
                   displayName: "NuGet push"
                   inputs:
                     command: push
-                    packagesToPush: "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg"
+                    packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg"
                     nuGetFeedType: external
                     publishFeedCredentials: "OpenAPI Nuget Connection"
 
@@ -583,12 +583,12 @@ stages:
                     artifact: Nugets
                     source: current
                 - powershell: |
-                    Remove-Item "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.Builder.*"
+                    Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.Builder.*"
                   displayName: remove other nupkgs to avoid duplication
                 - task: NuGetCommand@2
                   displayName: "NuGet push"
                   inputs:
                     command: push
-                    packagesToPush: "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.Builder.*.nupkg"
+                    packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg"
                     nuGetFeedType: external
                     publishFeedCredentials: "OpenAPI Nuget Connection"
