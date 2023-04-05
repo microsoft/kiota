@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.1.1] - 2023-04-05
+
+### Changed
+
+- Fixed a bug where kiota installation would fail because of zip structure change.
+
 ## [1.1.0] - 2023-04-05
 
 ### Added
