@@ -5336,4 +5336,43 @@ paths:
         Assert.NotNull(getMethod);
         Assert.Equal("double", getMethod.ReturnType.Name);
     }
+    [InlineData("MV22X/MV72X", "MV22XMV72X")]
+    [Theory]
+    public async Task CleansInlineTypeNames(string raw, string expected)
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://localhost:443
+paths:
+  /enumeration:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  {raw}:
+                    type: object
+                    properties:
+                      foo:
+                        type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = "https://localhost:443" }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var inlineType = rootNS.FindChildByName<CodeClass>($"enumerationResponse_{expected}", true);
+        Assert.NotNull(inlineType);
+    }
 }
