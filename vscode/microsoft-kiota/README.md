@@ -1,6 +1,6 @@
 # Microsoft Kiota
 
-Kiota is a client generator for HTTP REST APIs described by OpenAPI. The experience is available as [a command-line tool](https://www.nuget.org/packages/Microsoft.OpenApi.Kiota) and as [a Visual Studio Code extension](extension link once published).
+Kiota is a client generator for HTTP REST APIs described by OpenAPI. The experience is available as [a command-line tool](https://www.nuget.org/packages/Microsoft.OpenApi.Kiota) and as [a Visual Studio Code extension](https://aka.ms/kiota/extension).
 Kiota helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you’re interested in, thanks to a filtering capability.
 
 ## Features
@@ -16,7 +16,7 @@ All that in a matter of seconds.
 
 ## Microsoft Kiota extension for Visual Studio Code 
 
-This [Visual Studio Code] (https://code.visualstudio.com/) (VS Code) extension adds a rich UX support for the Kiota experience. The features include all of Kiota capabilities such as search for API descriptions, filtering and generating API clients and more! 
+This [Visual Studio Code](https://code.visualstudio.com/) (VS Code) extension adds a rich UI for the Kiota experience. The features include all of Kiota capabilities such as search for API descriptions, filtering and generating API clients and more! 
 
  * Once the extension is installed, you will be able to see the commands available to you. 
 
