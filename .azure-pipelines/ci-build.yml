@@ -449,6 +449,7 @@ stages:
           runOnce:
             deploy:
               steps:
+                - download: none
                 - checkout: self
                   clean: true
                   submodules: true
@@ -483,9 +484,10 @@ stages:
                     releaseNotesSource: inline
                     releaseNotesInline: $(releaseNotes)
                     assets: |
-                      $(Pipeline.Workspace)\**\*.zip
-                      $(Pipeline.Workspace)\**\*.vsix
-                      $(Pipeline.Workspace)\**\*.nupkg
+                      $(Pipeline.Workspace)/*.zip
+                      $(Pipeline.Workspace)/*.vsix
+                      $(Pipeline.Workspace)/*.nupkg
+                      $(Pipeline.Workspace)/*.snupkg
                     addChangeLog: false
 
       - deployment: deploy_kiota
