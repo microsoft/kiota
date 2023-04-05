@@ -20,6 +20,26 @@ public class PhpRefiner : CommonLanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ReplaceIndexersByMethodsWithParameter(generatedCode, false, "ById");
+            RemoveCancellationParameter(generatedCode);
+            ConvertUnionTypesToWrapper(generatedCode,
+                _configuration.UsesBackingStore,
+                false);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
+            ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true, _configuration.UsesBackingStore);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            cancellationToken.ThrowIfCancellationRequested();
+            AddGetterAndSetterMethods(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.BackingStore
+                },
+                static s => s.ToCamelCase(UnderscoreArray),
+                _configuration.UsesBackingStore,
+                true,
+                "get",
+                "set");
             // Imports should be done before adding getters and setters since AddGetterAndSetterMethods can remove properties from classes when backing store is enabled
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
             AddParentClassToErrorClasses(
@@ -27,17 +47,11 @@ public class PhpRefiner : CommonLanguageRefiner
                 "ApiException",
                 "Microsoft\\Kiota\\Abstractions"
             );
-            ReplaceReservedExceptionPropertyNames(generatedCode, new PhpExceptionsReservedNamesProvider(), static x => $"escaped{x.ToFirstCharacterUpperCase()}");
             AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
-            RemoveCancellationParameter(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode,
-                _configuration.UsesBackingStore,
-                false);
             cancellationToken.ThrowIfCancellationRequested();
             CorrectParameterType(generatedCode);
             MakeModelPropertiesNullable(generatedCode);
-            ReplaceIndexersByMethodsWithParameter(generatedCode, false, "ById");
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             AddDiscriminatorMappingsUsingsToParentClasses(
@@ -60,35 +74,23 @@ public class PhpRefiner : CommonLanguageRefiner
             );
             cancellationToken.ThrowIfCancellationRequested();
             AddSerializationModulesImport(generatedCode, new[] { "Microsoft\\Kiota\\Abstractions\\ApiClientBuilder" }, null, '\\');
-            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             AddInnerClasses(generatedCode,
                 true,
                 string.Empty,
                 true);
-            AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            AddGetterAndSetterMethods(generatedCode,
-                new() {
-                    CodePropertyKind.Custom,
-                    CodePropertyKind.AdditionalData,
-                    CodePropertyKind.BackingStore
-                },
-                static s => s.ToCamelCase(UnderscoreArray),
-                _configuration.UsesBackingStore,
-                true,
-                "get",
-                "set");
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-            ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true, _configuration.UsesBackingStore);
-            CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton::getInstance()->createBackingStore()");
             CorrectBackingStoreSetterParam(generatedCode);
-            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             AliasUsingWithSameSymbol(generatedCode);
+            CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton::getInstance()->createBackingStore()");
+            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             RemoveHandlerFromRequestBuilder(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             // Because constructors are not added to Query parameter classes by default
             AddRequestConfigurationConstructors(generatedCode);
             AddQueryParameterFactoryMethod(generatedCode);
+            ReplaceReservedExceptionPropertyNames(generatedCode, new PhpExceptionsReservedNamesProvider(),
+                static x => $"escaped{x.ToFirstCharacterUpperCase()}");
         }, cancellationToken);
     }
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
@@ -178,7 +180,7 @@ public class PhpRefiner : CommonLanguageRefiner
             currentProperty.Type.Name = "RequestAdapter";
             currentProperty.Type.IsNullable = false;
         }
-        else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+        else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore) && currentProperty.Type.Name.StartsWith(('I')))
             currentProperty.Type.Name = currentProperty.Type.Name[1..];
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
