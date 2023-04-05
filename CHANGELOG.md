@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Fixed a bug where unescaped query parameters are not correctly matched to the original name due to python convention of snake casing parameter names.
+- Fixed a bug where UUID type is not correctly passed to deserialization method due to snake casing of primitive type names. 
+- Fixed a bug where unescaped query parameters are not correctly matched to the original name due to python convention of snake casing parameter names. 
 - Fixed a bug where date types annotations and guid's were not correctly translated in Python
 - Fixed the extension of downloaded files when using the default path. [#2316](https://github.com/microsoft/kiota/issues/2316)
 - Fixed a bug where lookup of reference ids failed for AllOf more than one level up.
