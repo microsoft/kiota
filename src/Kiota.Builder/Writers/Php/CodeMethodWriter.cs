@@ -463,32 +463,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             var headers = requestParams.Headers;
             var options = requestParams.Options;
             var requestConfigParamName = conventions.GetParameterName(requestParams.requestConfiguration);
-            writer.WriteLine($"if ({requestConfigParamName} !== null) {{");
-            writer.IncreaseIndent();
-            if (headers != null)
-            {
-                var headersName = $"{requestConfigParamName}->{headers.Name.ToFirstCharacterLowerCase()}";
-                writer.WriteLine($"if ({headersName} !== null) {{");
-                writer.IncreaseIndent();
-                writer.WriteLine($"{RequestInfoVarName}->addHeaders({headersName});");
-                writer.CloseBlock();
-            }
+            writer.StartBlock($"if ({requestConfigParamName} !== null) {{");
+            var headersName = $"{requestConfigParamName}->{headers?.Name.ToFirstCharacterLowerCase() ?? "headers"}";
+            writer.WriteLine($"{RequestInfoVarName}->addHeaders({headersName});"); 
             if (queryString != null)
             {
                 var queryStringName = $"{requestConfigParamName}->{queryString.Name.ToFirstCharacterLowerCase()}";
-                writer.WriteLine($"if ({queryStringName} !== null) {{");
-                writer.IncreaseIndent();
+                writer.StartBlock($"if ({queryStringName} !== null) {{");
                 writer.WriteLine($"{RequestInfoVarName}->setQueryParameters({queryStringName});");
                 writer.CloseBlock();
             }
-            if (options != null)
-            {
-                var optionsName = $"{requestConfigParamName}->{options.Name.ToFirstCharacterLowerCase()}";
-                writer.WriteLine($"if ({optionsName} !== null) {{");
-                writer.IncreaseIndent();
-                writer.WriteLine($"{RequestInfoVarName}->addRequestOptions(...{optionsName});");
-                writer.CloseBlock();
-            }
+            var optionsName = $"{requestConfigParamName}->{(options?.Name.ToFirstCharacterLowerCase() ?? "options")}";
+            writer.WriteLine($"{RequestInfoVarName}->addRequestOptions(...{optionsName});");
             writer.CloseBlock();
         }
     }
