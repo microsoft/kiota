@@ -26,6 +26,11 @@ public class PhpRefiner : CommonLanguageRefiner
                 _configuration.UsesBackingStore,
                 false);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
+            AddParsableImplementsForModelClasses(generatedCode, "Parsable");
+            AddInnerClasses(generatedCode,
+                true,
+                string.Empty,
+                true);
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true, _configuration.UsesBackingStore);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             cancellationToken.ThrowIfCancellationRequested();
@@ -75,15 +80,11 @@ public class PhpRefiner : CommonLanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             AddSerializationModulesImport(generatedCode, new[] { "Microsoft\\Kiota\\Abstractions\\ApiClientBuilder" }, null, '\\');
             cancellationToken.ThrowIfCancellationRequested();
-            AddInnerClasses(generatedCode,
-                true,
-                string.Empty,
-                true);
-            AddParsableImplementsForModelClasses(generatedCode, "Parsable");
+            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectBackingStoreSetterParam(generatedCode);
             AliasUsingWithSameSymbol(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton::getInstance()->createBackingStore()");
-            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             RemoveHandlerFromRequestBuilder(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             // Because constructors are not added to Query parameter classes by default
@@ -145,16 +146,12 @@ public class PhpRefiner : CommonLanguageRefiner
             "Microsoft\\Kiota\\Abstractions", "RequestAdapter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             "Microsoft\\Kiota\\Abstractions", "HttpMethod", "RequestInformation"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "Microsoft\\Kiota\\Abstractions", "ResponseHandler"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(static y => y.IsOfKind(CodePropertyKind.AdditionalData)),
             "Microsoft\\Kiota\\Abstractions\\Serialization", "AdditionalDataHolder"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             "Microsoft\\Kiota\\Abstractions\\Serialization", "SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "Microsoft\\Kiota\\Abstractions\\Serialization", "ParseNode"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "Microsoft\\Kiota\\Abstractions\\Serialization", "Parsable", "ParsableFactory"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             "Microsoft\\Kiota\\Abstractions\\Serialization", "Parsable"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
