@@ -112,4 +112,26 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     {
         get; set;
     }
+
+    public object Clone()
+    {
+        var property = new CodeProperty
+        {
+            Name = Name,
+            Kind = Kind,
+            Parent = Parent,
+            ReadOnly = ReadOnly,
+            Access = Access,
+            ExistsInExternalBaseType = ExistsInExternalBaseType,
+            Getter = Getter?.Clone() as CodeMethod,
+            Setter = Setter?.Clone() as CodeMethod,
+            Type = (CodeTypeBase)Type.Clone(),
+            DefaultValue = DefaultValue,
+            Documentation = (CodeDocumentation)Documentation.Clone(),
+            SerializationName = SerializationName,
+            NamePrefix = NamePrefix,
+            OriginalPropertyFromBaseType = OriginalPropertyFromBaseType?.Clone() as CodeProperty
+        };
+        return property;
+    }
 }

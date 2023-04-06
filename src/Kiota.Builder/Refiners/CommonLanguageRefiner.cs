@@ -941,8 +941,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         !currentClass.ContainsMember(pp.Name) &&
                         !currentClass.Properties.Any(cp => cp.Name.Equals(pp.Name, StringComparison.OrdinalIgnoreCase))))
                 {
-                    p.Parent = currentClass;
-                    currentClass.AddProperty(p);
+                    var newP = (CodeProperty)p.Clone();
+                    newP.Parent = currentClass;
+                    currentClass.AddProperty(newP);
                 }
 
                 foreach (var m in currentParent
