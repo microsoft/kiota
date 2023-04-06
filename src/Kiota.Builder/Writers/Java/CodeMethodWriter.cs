@@ -339,7 +339,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 conventions.AddParametersAssignment(writer,
                                                     pathParametersParam.Type,
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
-                                                    $"this.{pathParametersProp.Name.ToFirstCharacterLowerCase()}.",
+                                                    $"this.{pathParametersProp.Name.ToFirstCharacterLowerCase()}",
                                                     pathParameters
                                                                 .Select(static x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
                                                                 .ToArray());
