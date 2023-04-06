@@ -86,9 +86,9 @@ stages:
           # removing kiota web files before signing as they don't need to be signed
           # removing triggers to credscan
           - pwsh: |
-              rm -r src\Kiota.Web\bin -ErrorAction SilentlyContinue -Verbose
-              rm tests\Kiota.Web.Tests\bin\Release\net7.0\.playwright\package\ThirdPartyNotices.txt -ErrorAction SilentlyContinue -Verbose
-              rm src\Kiota.Web\README.md -ErrorAction SilentlyContinue -Verbose
+              Remove-Item -r src\Kiota.Web\bin -ErrorAction SilentlyContinue -Verbose
+              Remove-Item tests\Kiota.Web.Tests\bin\Release\net7.0\.playwright\package\ThirdPartyNotices.txt -ErrorAction SilentlyContinue -Verbose
+              Remove-Item src\Kiota.Web\README.md -ErrorAction SilentlyContinue -Verbose
             workingDirectory: $(Build.SourcesDirectory)
 
           # CredScan
@@ -315,7 +315,7 @@ stages:
               Pattern: |
                 **\*.exe
                 **\*.dll
-          - pwsh: rm $(Build.ArtifactStagingDirectory)/binaries/$(architecture)/*.md -Verbose -Force -ErrorAction SilentlyContinue
+          - pwsh: Remove-Item $(Build.ArtifactStagingDirectory)/binaries/$(architecture)/*.md -Verbose -Force -ErrorAction SilentlyContinue
           - task: ArchiveFiles@2
             displayName: Archive binaries
             inputs:
@@ -449,6 +449,7 @@ stages:
           runOnce:
             deploy:
               steps:
+                - download: none
                 - checkout: self
                   clean: true
                   submodules: true
@@ -480,12 +481,13 @@ stages:
                     tagSource: userSpecifiedTag
                     tag: 'v$(artifactVersion)'
                     title: 'v$(artifactVersion)'
-                    releaseNotesSource: inline
-                    releaseNotesInline: $(releaseNotes)
+                    releaseNotesSource: filePath
+                    releaseNotesFilePath: $(Build.SourcesDirectory)/release-notes.txt
                     assets: |
-                      $(Pipeline.Workspace)\**\*.zip
-                      $(Pipeline.Workspace)\**\*.vsix
-                      $(Pipeline.Workspace)\**\*.nupkg
+                      $(Pipeline.Workspace)/*.zip
+                      $(Pipeline.Workspace)/*.vsix
+                      $(Pipeline.Workspace)/*.nupkg
+                      $(Pipeline.Workspace)/*.snupkg
                     addChangeLog: false
 
       - deployment: deploy_kiota
@@ -497,24 +499,21 @@ stages:
           runOnce:
             deploy:
               steps:
+                - download: none
                 - task: DownloadPipelineArtifact@2
                   displayName: Download nupkg from artifacts
                   inputs:
                     artifact: Nugets
                     source: current
-                - task: DownloadPipelineArtifact@2
-                  displayName: Download kiota executable from artifacts
-                  inputs:
-                    source: current
                 - powershell: |
-                    rm "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg" -Verbose
-                    rm "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
+                    Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg" -Verbose
+                    Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
                   displayName: remove other nupkgs to avoid duplication
                 - task: NuGetCommand@2
                   displayName: "NuGet push"
                   inputs:
                     command: push
-                    packagesToPush: "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.*.nupkg"
+                    packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg"
                     nuGetFeedType: external
                     publishFeedCredentials: "OpenAPI Nuget Connection"
 
@@ -527,19 +526,20 @@ stages:
           runOnce:
             deploy:
               steps:
+                - download: none
                 - task: DownloadPipelineArtifact@2
                   displayName: Download nupkg from artifacts
                   inputs:
                     artifact: Nugets
                     source: current
                 - powershell: |
-                    rm "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.ApiDescription.*"
+                    Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.ApiDescription.*"
                   displayName: remove other nupkgs to avoid duplication
                 - task: NuGetCommand@2
                   displayName: "NuGet push"
                   inputs:
                     command: push
-                    packagesToPush: "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg"
+                    packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg"
                     nuGetFeedType: external
                     publishFeedCredentials: "OpenAPI Nuget Connection"
 
@@ -552,18 +552,19 @@ stages:
           runOnce:
             deploy:
               steps:
+                - download: none
                 - task: DownloadPipelineArtifact@2
                   displayName: Download nupkg from artifacts
                   inputs:
                     artifact: Nugets
                     source: current
                 - powershell: |
-                    rm "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.Builder.*"
+                    Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.Builder.*"
                   displayName: remove other nupkgs to avoid duplication
                 - task: NuGetCommand@2
                   displayName: "NuGet push"
                   inputs:
                     command: push
-                    packagesToPush: "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.Builder.*.nupkg"
+                    packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg"
                     nuGetFeedType: external
                     publishFeedCredentials: "OpenAPI Nuget Connection"
