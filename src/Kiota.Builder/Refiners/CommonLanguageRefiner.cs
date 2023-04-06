@@ -396,7 +396,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             {
                 currentProperty.SerializationName = currentProperty.Name;
             }
-            current.Name = replacement.Invoke(current.Name);
+            var replacementName = replacement.Invoke(current.Name);
+            if (current.Parent is CodeClass parent
+                && parent.GetChildElements().Select(x => x.Name.Equals(current.Name)).FirstOrDefault())
+                parent.RenameChildElement(current.Name, replacementName);
+            current.Name = replacementName;
         }
 
         CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
