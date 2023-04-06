@@ -51,7 +51,10 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
             RemoveClassNamePrefixFromNestedClasses(generatedCode);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
-            ReplaceIndexersByMethodsWithParameter(generatedCode, true);
+            ReplaceIndexersByMethodsWithParameter(generatedCode,
+                true,
+                static x => $"With{x.ToFirstCharacterUpperCase()}",
+                static x => x.ToFirstCharacterLowerCase());
             cancellationToken.ThrowIfCancellationRequested();
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,

@@ -1531,7 +1531,7 @@ public class CodeMethodWriterTests : IDisposable
         };
         if (parentClass.Indexer is null)
             throw new InvalidOperationException("Indexer is null");
-        var methodForTest = parentClass.AddMethod(CodeMethod.FromIndexer(parentClass.Indexer, string.Empty, false)).First();
+        var methodForTest = parentClass.AddMethod(CodeMethod.FromIndexer(parentClass.Indexer, static x => $"With{x.ToFirstCharacterUpperCase()}", static x => x.ToFirstCharacterLowerCase(), false)).First();
         writer.Write(methodForTest);
         var result = tw.ToString();
         Assert.Contains("m.BaseRequestBuilder.RequestAdapter", result);

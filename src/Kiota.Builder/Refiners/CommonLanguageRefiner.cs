@@ -657,7 +657,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, MoveClassesWithNamespaceNamesUnderNamespace);
     }
-    protected static void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, bool parameterNullable, string? methodNameSuffix = default)
+    protected static void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, bool parameterNullable, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback)
     {
         if (currentElement is CodeIndexer currentIndexer &&
             currentElement.Parent is CodeClass indexerParentClass &&
@@ -666,14 +666,15 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             indexerParentClass.RemoveChildElement(currentElement);
             AddIndexerMethod(indexerParentClass,
-                            methodNameSuffix,
+                            methodNameCallback,
+                            parameterNameCallback,
                             parameterNullable,
                             currentIndexer,
                             lookupNamespace);
         }
-        CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, parameterNullable, methodNameSuffix));
+        CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, parameterNullable, methodNameCallback, parameterNameCallback));
     }
-    private static void AddIndexerMethod(CodeClass indexerParentClass, string? methodNameSuffix, bool parameterNullable, CodeIndexer currentIndexer, CodeNamespace lookupNamespace)
+    private static void AddIndexerMethod(CodeClass indexerParentClass, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback, bool parameterNullable, CodeIndexer currentIndexer, CodeNamespace lookupNamespace)
     {
         if (lookupNamespace.Classes
                             .Where(static x => x.IsOfKind(CodeClassKind.RequestBuilder))
@@ -685,7 +686,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                             .OfType<CodeClass>()
                             .FirstOrDefault() is CodeClass parentClassForProperty)
         {
-            parentClassForProperty.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameSuffix, parameterNullable));
+            parentClassForProperty.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable));
         }
         else if (lookupNamespace.Classes
                             .Where(static x => x.IsOfKind(CodeClassKind.RequestBuilder))
@@ -697,7 +698,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                             .OfType<CodeClass>()
                             .FirstOrDefault() is CodeClass parentClassForMethod)
         {
-            parentClassForMethod.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameSuffix, parameterNullable));
+            parentClassForMethod.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable));
         }
         else if (lookupNamespace.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
             parentNamespace.Classes
@@ -708,7 +709,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 xMethodType.TypeDefinition == indexerParentClass)
                             is not null)
         {
-            indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameSuffix, parameterNullable)); //we already went one up with the previous indexer
+            indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable)); //we already went one up with the previous indexer
         }
     }
     internal void DisableActionOf(CodeElement current, params CodeParameterKind[] kinds)
