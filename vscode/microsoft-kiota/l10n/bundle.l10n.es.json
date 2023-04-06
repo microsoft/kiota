@@ -25,5 +25,6 @@
   "Kiota download failed. Check the extension host logs for more information.": "Descarga de Kiota fallida. Revise la bitácora del host de la extensión para más información.",
   "Downloading kiota...": "Descargando Kiota...",
   "Generating client...": "Generando cliente...",
-  "Updating clients...": "Actualizando clientes..."
+  "Updating clients...": "Actualizando clientes...",
+  "Loading...": "Cargando..."
 }

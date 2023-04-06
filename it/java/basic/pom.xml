@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<project
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+    xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.kiota</groupId>
+    <artifactId>kiota-basic-test</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <kiota-java.version>0.4.1</kiota-java.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-abstractions</artifactId>
+            <version>${kiota-java.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-serialization-json</artifactId>
+            <version>${kiota-java.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-serialization-text</artifactId>
+            <version>${kiota-java.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-serialization-form</artifactId>
+            <version>${kiota-java.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-http-okHttp</artifactId>
+            <version>${kiota-java.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.9.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M9</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>

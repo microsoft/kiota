@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary = "integration tests project"
   spec.description = "integration tests project"
-  spec.homepage = "https://microsoft.github.io/kiota"
+  spec.homepage = "https://learn.microsoft.com/openapi/kiota"
   spec.required_ruby_version = ">= 3.0.0"
 
   spec.metadata["homepage_uri"] = spec.homepage

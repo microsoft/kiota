@@ -223,7 +223,7 @@ public class GitHubSearchProvider : ISearchProvider
         }
         return new Tuple<string, string?>(originalUrl, null);
     }
-    private static async Task<List<RepoSearchResultItem>> GetAllReposForTerm(GitHubClient.GitHubClient gitHubClient, string term, string topic, CancellationToken cancellationToken)
+    private async Task<List<RepoSearchResultItem>> GetAllReposForTerm(GitHubClient.GitHubClient gitHubClient, string term, string topic, CancellationToken cancellationToken)
     {
         var results = new List<RepoSearchResultItem>();
         var shouldContinue = false;
@@ -234,6 +234,8 @@ public class GitHubSearchProvider : ISearchProvider
             {
                 x.QueryParameters.Q = $"{term} topic:{topic} fork:true";
                 x.QueryParameters.Page = pageNumber;
+                _logger.LogTrace("Page {pageNumber}", x.QueryParameters.Page); // using the property is intentional to avoid trimming
+                _logger.LogTrace("Query: {query}", x.QueryParameters.Q);
             }, cancellationToken).ConfigureAwait(false);
             if (reposPage == null)
                 break;

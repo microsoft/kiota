@@ -1,0 +1,18 @@
+{
+  "kiota.dependenciesInfo.name": "معلومات حول تبعيات Kiota",
+  "kiota.dependenciesInfo.contextualTitle": "معلومات حول التبعيات ",
+  "kiota.openApiExplorer.name": "مستكشف Kiota OpenAPI",
+  "kiota.openApiExplorer.contextualTitle": "مستكشف OpenAPI",
+  "kiota-dependencies-info.panel.title": "معلومات حول تبعيات Kiota",
+  "kiota-openapi-explorer.activitybar.title": "مستكشف Kiota OpenAPI",
+  "kiota.selectLock.title": "اختر ملف القفل لمستكشف الAPI",
+  "kiota.updateClients.title": "حدث عملاء الAPI في مساحة العمل الحالية",
+  "kiota.openApiExplorer.generateClient.title": "انشاء عميل الAPI",
+  "kiota.searchApiDescription.title": "ابحث عن وصف API",
+  "kiota.openApiExplorer.addToSelectedEndpoints.title": "اضف",
+  "kiota.openApiExplorer.removeFromSelectedEndpoints.title": "احذف",
+  "kiota.openApiExplorer.addAllToSelectedEndpoints.title": "اضف الكل",
+  "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "احذف الكل",
+  "kiota.openApiExplorer.closeDescription.title": "اغلق وصف API",
+  "kiota.openApiExplorer.openDescription.title": "افتح وصف API"
+}

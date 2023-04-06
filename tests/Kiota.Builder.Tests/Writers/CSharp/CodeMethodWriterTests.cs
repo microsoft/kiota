@@ -582,6 +582,108 @@ public class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesModelFactoryBodyAndDisambiguateAmbiguousImportedTypes()
+    {
+        // Arrange : Adding a model with conflicting discriminator
+        var modelsNamespace = root.AddNamespace("models");
+        var modelWithConflictingDiscriminatorTypes = modelsNamespace.AddClass(
+            new CodeClass
+            {
+                Name = "ConflictingModelBaseClass"
+            }).First();
+        modelsNamespace.AddClass(modelWithConflictingDiscriminatorTypes);
+        // Adding a model in another namespace discriminator
+        var levelOneNameSpace = modelsNamespace.AddNamespace("namespaceLevelOne");
+        var conflictingModelInOtherNamespace = levelOneNameSpace.AddClass(
+            new CodeClass
+            {
+                Name = "ConflictingModel",
+                StartBlock = new ClassDeclaration()
+                {
+                    Inherits = new CodeType()
+                    {
+                        Name = modelWithConflictingDiscriminatorTypes.Name,
+                        TypeDefinition = modelWithConflictingDiscriminatorTypes
+                    }
+                }
+
+            }).First();
+        levelOneNameSpace.AddClass(conflictingModelInOtherNamespace);
+        // Adding an enum in another namespace that conflicts
+        var levelTwoNameSpace = modelsNamespace.AddNamespace("namespaceLevelTwo");
+        var conflictingEnumInOtherNamespace = levelTwoNameSpace.AddEnum(
+            new CodeEnum()
+            {
+                Name = "ConflictingModel"
+            }).First();
+        modelsNamespace.AddEnum(conflictingEnumInOtherNamespace);// add enum to root models with same name
+
+        // setup the usings
+        modelWithConflictingDiscriminatorTypes.AddUsing(
+            new CodeUsing()
+            {
+                Name = levelOneNameSpace.Name,
+                Declaration = new CodeType()
+                {
+                    Name = conflictingModelInOtherNamespace.Name,
+                    TypeDefinition = conflictingModelInOtherNamespace
+                },
+            });
+        modelWithConflictingDiscriminatorTypes.AddUsing(
+            new CodeUsing()
+            {
+                Name = levelTwoNameSpace.Name,
+                Declaration = new CodeType()
+                {
+                    Name = conflictingEnumInOtherNamespace.Name,
+                    TypeDefinition = conflictingEnumInOtherNamespace
+                },
+            });
+        modelWithConflictingDiscriminatorTypes.DiscriminatorInformation = new DiscriminatorInformation()
+        {
+            Name = "type",
+            DiscriminatorPropertyName = "@odata.type"
+        };
+        modelWithConflictingDiscriminatorTypes.DiscriminatorInformation.AddDiscriminatorMapping(levelOneNameSpace.Name + ".ConflictingModel", new CodeType()
+        {
+            Name = conflictingModelInOtherNamespace.Name,
+            TypeDefinition = conflictingModelInOtherNamespace
+        });
+
+        var factoryMethod = modelWithConflictingDiscriminatorTypes.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "parentModel",
+                TypeDefinition = modelWithConflictingDiscriminatorTypes,
+            },
+            IsStatic = true,
+        }).First();
+
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+
+        Assert.Contains("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
+        Assert.Contains("return mappingValue switch {", result);
+        Assert.Contains("\"namespaceLevelOne.ConflictingModel\" => new namespaceLevelOne.ConflictingModel(),", result); //Assert the disambiguation happens due to the enum imported
+        Assert.Contains("_ => new ConflictingModelBaseClass()", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesModelFactoryBodyForInheritedModels()
     {
         var parentModel = root.AddClass(new CodeClass
@@ -1458,6 +1560,37 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("#nullable enable", result);
         Assert.DoesNotContain("#nullable restore", result);
         Assert.Contains("_ = ra ?? throw new ArgumentNullException(nameof(ra));", result);
+    }
+
+    [Fact]
+    public void ConstructorCallsCliBaseClass()
+    {
+        method.ReturnType = new CodeType
+        {
+            Name = "void",
+            IsExternal = true
+        };
+        method.Kind = CodeMethodKind.Constructor;
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        parentClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "BaseCliRequestBuilder",
+            IsExternal = true
+        };
+        parentClass.AddProperty(new CodeProperty
+        {
+            Type = new CodeType
+            {
+                Name = "string",
+                IsExternal = true
+            },
+            Kind = CodePropertyKind.UrlTemplate,
+            DefaultValue = "\"test\"",
+            Name = "urlTpl"
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(": base(\"test\")", result);
     }
 
     [Fact]

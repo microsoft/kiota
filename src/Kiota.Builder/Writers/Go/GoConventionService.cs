@@ -192,14 +192,15 @@ public class GoConventionService : CommonLanguageConventionService
     internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase? pathParametersType, string pathParametersReference, string pathParametersTarget, bool copyMap, params (CodeTypeBase, string, string)[] parameters)
     {
         if (pathParametersType == null) return;
-        var mapTypeName = pathParametersType.Name;
-        var isTempTarget = string.IsNullOrEmpty(pathParametersTarget);
-        if (isTempTarget)
-            writer.WriteLine($"{TempDictionaryVarName} := make({mapTypeName})");
+        if (string.IsNullOrEmpty(pathParametersTarget))
+        {
+            pathParametersTarget = TempDictionaryVarName;
+            writer.WriteLine($"{pathParametersTarget} := make({pathParametersType.Name})");
+        }
         if (copyMap)
         {
             writer.StartBlock($"for idx, item := range {pathParametersReference} {{");
-            writer.WriteLine($"{(isTempTarget ? TempDictionaryVarName : pathParametersTarget)}[idx] = item");
+            writer.WriteLine($"{pathParametersTarget}[idx] = item");
             writer.CloseBlock();
         }
         foreach (var p in parameters)
@@ -208,7 +209,7 @@ public class GoConventionService : CommonLanguageConventionService
             var defaultValue = isStringStruct ? "\"\"" : "nil";
             var pointerDereference = isStringStruct ? string.Empty : "*";
             writer.StartBlock($"if {p.Item3} != {defaultValue} {{");
-            writer.WriteLine($"{TempDictionaryVarName}[\"{p.Item2}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference + p.Item3)}");
+            writer.WriteLine($"{pathParametersTarget}[\"{p.Item2}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference + p.Item3)}");
             writer.CloseBlock();
         }
     }

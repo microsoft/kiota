@@ -169,6 +169,8 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             "Microsoft.Kiota.Abstractions.Serialization", "ParseNodeHelper"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             "Microsoft.Kiota.Abstractions", "RequestHeaders"),
+        new (static x => x is CodeEnum prop && prop.Options.Any(x => x.IsNameEscaped),
+            "System.Runtime.Serialization", "EnumMemberAttribute")
     };
     protected static void CapitalizeNamespacesFirstLetters(CodeElement current)
     {

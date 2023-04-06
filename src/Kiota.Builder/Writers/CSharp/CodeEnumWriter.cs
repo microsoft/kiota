@@ -17,7 +17,15 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
 
         var codeNamespace = codeElement.Parent as CodeNamespace;
         if (codeNamespace != null)
+        {
+            foreach (var x in codeElement.Usings
+                    .Where(static x => x.Declaration?.IsExternal ?? true)
+                    .Select(static x => $"using {(x.Declaration?.Name ?? x.Name).NormalizeNameSpaceName(".")};")
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(static x => x, StringComparer.Ordinal))
+                writer.WriteLine(x);
             writer.StartBlock($"namespace {codeNamespace.Name} {{");
+        }
         if (codeElement.Flags)
             writer.WriteLine("[Flags]");
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
@@ -27,6 +35,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
         foreach (var option in codeElement.Options)
         {
             conventions.WriteShortDescription(option.Documentation.Description, writer);
+
+            if (option.IsNameEscaped)
+            {
+                writer.WriteLine($"[EnumMember(Value = \"{option.SerializationName}\")]");
+            }
             writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
             idx++;
         }

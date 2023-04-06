@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <LangVersion>Latest</LangVersion>
@@ -14,7 +14,7 @@
     <Title>Microsoft.OpenApi.Kiota.Builder</Title>
     <PackageId>Microsoft.OpenApi.Kiota.Builder</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <Version>1.0.1</Version>
+    <Version>1.1.1</Version>
     <PackageReleaseNotes>
       https://github.com/microsoft/kiota/releases
     </PackageReleaseNotes>
@@ -33,7 +33,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.1.0" />
     <PackageReference Include="Microsoft.Kiota.Http.HttpClientLibrary" Version="1.0.1" />
-    <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.0.3" />
+    <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.0.5" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Text" Version="1.0.1" />
     <PackageReference Include="Microsoft.OpenApi" Version="1.6.3" />
     <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.3" />

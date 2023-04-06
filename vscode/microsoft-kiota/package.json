@@ -1,11 +1,12 @@
 {
   "name": "kiota",
   "displayName": "Microsoft Kiota",
-  "publisher": "microsoft",
-  "description": "REST API client generator based on OpenAPI",
+  "publisher": "ms-graph",
+  "description": "Client generator for HTTP REST APIs described by OpenAPI which helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you're interested in, thanks to a filtering capability.",
   "version": "1.0.1",
+  "icon": "images/logo.png",
   "engines": {
-    "vscode": "^1.75.0"
+    "vscode": "^1.77.0"
   },
   "categories": [
     "Other"
@@ -209,20 +210,20 @@
     "@types/glob": "^8.0.1",
     "@types/mocha": "^10.0.1",
     "@types/node": "18.x",
-    "@types/vscode": "^1.75.0",
-    "@typescript-eslint/eslint-plugin": "^5.57.0",
-    "@typescript-eslint/parser": "^5.57.0",
+    "@types/vscode": "^1.77.0",
+    "@typescript-eslint/eslint-plugin": "^5.57.1",
+    "@typescript-eslint/parser": "^5.57.1",
     "@vscode/test-electron": "^2.2.2",
-    "eslint": "^8.33.0",
-    "glob": "^9.3.2",
+    "eslint": "^8.37.0",
+    "glob": "^9.3.4",
     "mocha": "^10.1.0",
     "ts-loader": "^9.4.2",
-    "typescript": "^5.0.2",
-    "webpack": "^5.76.0",
+    "typescript": "^5.0.3",
+    "webpack": "^5.77.0",
     "webpack-cli": "^5.0.1"
   },
   "dependencies": {
-    "@vscode/l10n": "^0.0.11",
+    "@vscode/l10n": "^0.0.13",
     "adm-zip": "^0.5.10",
     "is-online": "^10.0.0",
     "original-fs": "^1.2.0",

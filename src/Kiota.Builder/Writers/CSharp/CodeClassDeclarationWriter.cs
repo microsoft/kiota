@@ -20,8 +20,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
                     .Select(static x => x.Declaration?.IsExternal ?? false ?
                                     $"using {x.Declaration.Name.NormalizeNameSpaceName(".")};" :
                                     $"using {x.Name.NormalizeNameSpaceName(".")};")
-                    .Distinct()
-                    .OrderBy(static x => x)
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(static x => x, StringComparer.Ordinal)
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
             writer.StartBlock($"namespace {codeElement.Parent.Parent.Name} {{");

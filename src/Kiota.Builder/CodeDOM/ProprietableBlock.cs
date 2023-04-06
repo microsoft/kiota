@@ -65,6 +65,7 @@ public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumen
 
     public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>().OrderBy(static x => x.Name);
     public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>().OrderBy(static x => x.Name);
+    public IEnumerable<CodeMethod> UnorderedMethods => InnerChildElements.Values.OfType<CodeMethod>();
     public IEnumerable<CodeClass> InnerClasses => InnerChildElements.Values.OfType<CodeClass>().OrderBy(static x => x.Name);
     public bool ContainsMember(string name)
     {
@@ -117,5 +118,3 @@ public class ProprietableBlockDeclaration : BlockDeclaration
     }
     public IEnumerable<CodeType> Implements => implements.Values.OrderBy(x => x.Name);
 }
-
-

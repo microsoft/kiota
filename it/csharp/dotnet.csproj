@@ -14,8 +14,10 @@
     <PackageReference Include="Microsoft.Kiota.Authentication.Azure" Version="1.0.2" />
     <PackageReference Include="Microsoft.Kiota.Http.HttpClientLibrary" Version="1.0.1" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Form" Version="1.0.1" />
-    <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.0.3" />
+    <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.0.5" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Text" Version="1.0.1" />
+
+    <Compile Remove="basic\**" />
   </ItemGroup>
 
 </Project>

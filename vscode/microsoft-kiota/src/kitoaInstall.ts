@@ -33,7 +33,7 @@ export async function ensureKiotaIsPresent(context: vscode.ExtensionContext) {
                 const zipFilePath = `${installPath}.zip`;
                 await downloadFileFromUrl(getDownloadUrl(context, currentPlatform), zipFilePath);
                 if (await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
-                    unzipFile(zipFilePath, installPath.substring(0, installPath.length - currentPlatform.length)); // the unzipping already uses file name
+                    unzipFile(zipFilePath, installPath);
                     const kiotaPath = getKiotaPathInternal(context);
                     if ((currentPlatform.startsWith(linuxPlatform) || currentPlatform.startsWith(osxPlatform)) && kiotaPath) {
                       makeExecutable(kiotaPath);

@@ -70,6 +70,12 @@ type QuickSearchPickItem = QuickPickItem & SearchItem;
 
 export async function generateSteps(existingConfiguration: Partial<GenerateState>, languagesInformation?: LanguagesInformation) {
     const state = {...existingConfiguration} as Partial<GenerateState>;
+    if (existingConfiguration.clientClassName && existingConfiguration.clientNamespaceName && existingConfiguration.outputPath && existingConfiguration.language &&
+        typeof existingConfiguration.clientNamespaceName === 'string' && typeof existingConfiguration.outputPath === 'string' && typeof existingConfiguration.language === 'string' &&
+        existingConfiguration.clientClassName.length > 0 && existingConfiguration.clientNamespaceName.length > 0 && existingConfiguration.outputPath.length > 0 && existingConfiguration.language.length > 0) {
+        return state;
+    }
+
     if(typeof state.outputPath === 'string') {
         state.outputPath = workspace.asRelativePath(state.outputPath);
     }

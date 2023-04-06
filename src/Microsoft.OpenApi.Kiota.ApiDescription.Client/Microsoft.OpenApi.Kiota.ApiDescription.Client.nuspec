@@ -7,7 +7,7 @@
     <developmentDependency>true</developmentDependency>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
-    <projectUrl>https://microsoft.github.io/kiota</projectUrl>
+    <projectUrl>https://learn.microsoft.com/openapi/kiota</projectUrl>
     <description>Kiota: An OpenAPI SDK generator</description>
     <copyright>© Microsoft Corporation. All rights reserved.</copyright>
     <tags>OpenAPI Swagger AspNetCore CodeGen TypeScript WebApi AspNet</tags>
