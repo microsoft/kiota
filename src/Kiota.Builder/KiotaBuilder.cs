@@ -858,6 +858,7 @@ public class KiotaBuilder
             ReturnType = new CodeType { Name = childType },
             SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
             PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.').Last(),
+            IndexParameterName = currentNode.Segment.CleanupSymbolName(),
         };
     }
 

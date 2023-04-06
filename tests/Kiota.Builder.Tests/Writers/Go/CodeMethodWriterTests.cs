@@ -1528,6 +1528,7 @@ public class CodeMethodWriterTests : IDisposable
             {
                 Name = "Somecustomtype",
             },
+            IndexParameterName = "id",
         };
         if (parentClass.Indexer is null)
             throw new InvalidOperationException("Indexer is null");

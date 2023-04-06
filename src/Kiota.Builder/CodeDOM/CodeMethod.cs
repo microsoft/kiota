@@ -78,14 +78,13 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public static CodeMethod FromIndexer(CodeIndexer originalIndexer, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback, bool parameterNullable)
     {
         ArgumentNullException.ThrowIfNull(originalIndexer);
-        var parameterSymbolName = originalIndexer.SerializationName.CleanupSymbolName();
         var method = new CodeMethod
         {
             IsAsync = false,
             IsStatic = false,
             Access = AccessModifier.Public,
             Kind = CodeMethodKind.IndexerBackwardCompatibility,
-            Name = methodNameCallback(parameterSymbolName),
+            Name = methodNameCallback(originalIndexer.IndexParameterName),
             Documentation = new()
             {
                 Description = originalIndexer.Documentation.Description,
@@ -97,7 +96,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             method.ReturnType.IsNullable = false;
         var parameter = new CodeParameter
         {
-            Name = parameterNameCallback(parameterSymbolName),
+            Name = parameterNameCallback(originalIndexer.IndexParameterName),
             Optional = false,
             Kind = ParameterKindForConvertedIndexers,
             Documentation = new()

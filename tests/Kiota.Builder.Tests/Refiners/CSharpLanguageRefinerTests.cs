@@ -227,7 +227,8 @@ public class CSharpLanguageRefinerTests
             {
                 Name = "string",
             },
-            ReturnType = indexerCodeType
+            ReturnType = indexerCodeType,
+            IndexParameterName = "id",
         };
         requestBuilder.Indexer = indexer;
 
@@ -296,7 +297,8 @@ public class CSharpLanguageRefinerTests
             IndexType = new CodeType
             {
                 Name = "string"
-            }
+            },
+            IndexParameterName = "id",
         };
         model.Indexer = indexer;
         method.AddParameter(parameter);

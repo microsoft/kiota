@@ -377,7 +377,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     {
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty && codeElement.OriginalIndexer != null)
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"this.{pathParametersProperty.Name}",
-                parameters: (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, "id"));
+                parameters: (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, codeElement.OriginalIndexer.IndexParameterName.ToFirstCharacterLowerCase()));
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
     }
     private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits)
