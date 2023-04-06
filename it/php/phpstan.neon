@@ -2,6 +2,7 @@ parameters:
   level: 9
   polluteScopeWithAlwaysIterableForeach: false
   polluteScopeWithLoopInitialAssignments: false
+  reportUnmatchedIgnoredErrors: false
   paths:
     - src
   ignoreErrors:
