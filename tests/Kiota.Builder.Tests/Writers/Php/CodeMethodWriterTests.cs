@@ -1506,7 +1506,7 @@ public class CodeMethodWriterTests : IDisposable
         {
             Name = "binaryContent",
             Kind = CodePropertyKind.Custom,
-            Type = new CodeType { Name = "binary", IsNullable = false }
+            Type = new CodeType { Name = "binary" }
         };
         parentClass.AddProperty(binaryProperty);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);

@@ -81,7 +81,6 @@ public class PhpRefiner : CommonLanguageRefiner
             AddSerializationModulesImport(generatedCode, new[] { "Microsoft\\Kiota\\Abstractions\\ApiClientBuilder" }, null, '\\');
             cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectBackingStoreSetterParam(generatedCode);
             AliasUsingWithSameSymbol(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton::getInstance()->createBackingStore()");
