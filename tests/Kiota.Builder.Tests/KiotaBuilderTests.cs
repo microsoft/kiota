@@ -639,10 +639,9 @@ paths:
                 }
             }
         };
-        var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new CountLogger<KiotaBuilder>();
         var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
-        builder.CreateUriSpace(document);//needed so the component index exists
+        var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var userClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("user");
         Assert.NotNull(userClass);
@@ -685,10 +684,9 @@ paths:
                 },
             },
         };
-        var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
-        builder.CreateUriSpace(document);//needed so the component index exists
+        var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderClass = codeModel.FindChildByName<CodeClass>("CountRequestBuilder");
         Assert.NotNull(requestBuilderClass);
@@ -800,10 +798,9 @@ paths:
                 }
             }
         };
-        var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
-        builder.CreateUriSpace(document);//needed so the component index exists
+        var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var deviceManagementNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement");
         Assert.NotNull(deviceManagementNS);
@@ -951,10 +948,9 @@ paths:
                 }
             }
         };
-        var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = GenerationLanguage.Shell }, _httpClient);
-        builder.CreateUriSpace(document);//needed so the component index exists
+        var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var deviceManagementNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement");
         Assert.NotNull(deviceManagementNS);
@@ -1045,10 +1041,9 @@ paths:
                 },
             },
         };
-        var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = GenerationLanguage.Shell }, _httpClient);
-        builder.CreateUriSpace(document);//needed so the component index exists
+        var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var resultsNS = codeModel.FindNamespaceByName("ApiSdk.test.item.results");
         Assert.NotNull(resultsNS);
@@ -1144,10 +1139,9 @@ paths:
                 }
             }
         };
-        var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
-        builder.CreateUriSpace(document);//needed so the component index exists
+        var node = builder.CreateUriSpace(document);
         builder.SetOpenApiDocument(document);
         var codeModel = builder.CreateSourceModel(node);
         var resourceClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("resource");
@@ -1560,10 +1554,10 @@ paths:
                 }
             },
         };
-        var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var executorMethod = codeModel.FindChildByName<CodeMethod>("get");
         Assert.NotNull(executorMethod);
@@ -1656,10 +1650,10 @@ paths:
                 }
             },
         };
-        var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var weatherType = codeModel.FindChildByName<CodeClass>("WeatherForecast");
         Assert.NotNull(weatherType);
@@ -1734,10 +1728,10 @@ paths:
                 },
             },
         };
-        var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var responseClass = codeModel.FindChildByName<CodeClass>("CreateUploadSessionResponse");
         Assert.Null(responseClass);
@@ -1820,10 +1814,10 @@ paths:
                 },
             },
         };
-        var node = OpenApiUrlTreeNode.Create(document, "default");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var responseClass = codeModel.FindChildByName<CodeClass>("CreateUploadSessionResponse");
         Assert.Null(responseClass);
@@ -5448,5 +5442,96 @@ paths:
         Assert.NotNull(rootNS);
         var inlineType = rootNS.FindChildByName<CodeClass>($"enumerationResponse_{expected}", true);
         Assert.NotNull(inlineType);
+    }
+    [Fact]
+    public void SinglePathParametersAreDeduplicated()
+    {
+        var userSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                },
+                {
+                    "displayName", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "#/components/schemas/microsoft.graph.user"
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["users/{id}/careerAdvisor"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = userSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                ["users/{user-id}/manager"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = userSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "microsoft.graph.user", userSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new CountLogger<KiotaBuilder>();
+        var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var managerRB = codeModel.FindNamespaceByName("ApiSdk.users.item.manager").FindChildByName<CodeClass>("ManagerRequestBuilder", false);
+        Assert.NotNull(managerRB);
+        var managerUrlTemplate = managerRB.FindChildByName<CodeProperty>("UrlTemplate", false);
+        Assert.NotNull(managerUrlTemplate);
+        Assert.Equal("{+baseurl}/users/{id}/manager", managerUrlTemplate.DefaultValue.Trim('"'));
+        var careerAdvisorRB = codeModel.FindNamespaceByName("ApiSdk.users.item.careerAdvisor").FindChildByName<CodeClass>("CareerAdvisorRequestBuilder", false);
+        Assert.NotNull(careerAdvisorRB);
+        var careerAdvisorUrlTemplate = careerAdvisorRB.FindChildByName<CodeProperty>("UrlTemplate", false);
+        Assert.NotNull(careerAdvisorUrlTemplate);
+        Assert.Equal("{+baseurl}/users/{id}/careerAdvisor", careerAdvisorUrlTemplate.DefaultValue.Trim('"'));
     }
 }
