@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
+import * as path from 'path';
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import {
   getLogEntriesForLevel,
@@ -47,7 +48,7 @@ export async function activate(
           title: vscode.l10n.t("Loading...")
         }, (progress, _) => openApiTreeProvider.loadLockFile(node.fsPath));
         if (openApiTreeProvider.descriptionUrl) {
-          vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
+          await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
         }
       }
     ),
@@ -156,7 +157,10 @@ export async function activate(
         );
         if (languagesInformation) {
           dependenciesInfoProvider.update(languagesInformation, language);
-          vscode.commands.executeCommand(`${dependenciesInfo}${focusCommandId}`);
+          await vscode.commands.executeCommand(`${dependenciesInfo}${focusCommandId}`);
+        }
+        if (typeof config.outputPath === "string" && vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+          await openApiTreeProvider.loadLockFile(path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, config.outputPath, "kiota-lock.json"));
         }
       }
     ),
@@ -167,7 +171,7 @@ export async function activate(
         if (config.descriptionPath) {
           openApiTreeProvider.closeDescription();
           openApiTreeProvider.descriptionUrl = config.descriptionPath;
-          vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
+          await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
         }
       }
     ),
@@ -180,7 +184,7 @@ export async function activate(
         const openState = await openSteps();
         if (openState.descriptionPath) {
           openApiTreeProvider.descriptionUrl = openState.descriptionPath;
-          vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
+          await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
         }
       }
     )

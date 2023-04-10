@@ -9,11 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added automatic loading of the lock file for the extension so quick edits of clients are supported.
+
 ### Changed
 
 - Fixed a bug where java path parameters wouldn't build.
 - Fixed a bug where extension would not reset generation information on new search. [#2540](https://github.com/microsoft/kiota/issues/2540)
 - Fixed a bug where the extension would not select nodes when loading from lock file with no filters. [#2542](https://github.com/microsoft/kiota/issues/2542)
+- Fixed a bug where the extension would fail to generate for the root path. [#2536](https://github.com/microsoft/kiota/issues/2536)
 
 ## [1.1.1] - 2023-04-05
 

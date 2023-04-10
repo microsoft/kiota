@@ -108,7 +108,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (!this.rawRootNode) {
             return [];
         }
-        return this.findSelectedPaths(this.rawRootNode);
+        return this.findSelectedPaths(this.rawRootNode).map(x => x === '' ? '/' : x); // root node trailing slash is /
     }
     private findSelectedPaths(currentNode: KiotaOpenApiNode): string[] {
         const result: string[] = [];
