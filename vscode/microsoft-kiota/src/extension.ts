@@ -60,7 +60,7 @@ export async function activate(
         vscode.l10n.t("No")
       );
       if (response === yesAnswer) {
-        vscode.env.openExternal(vscode.Uri.parse("https://aka.ms/get/kiota"));
+        await vscode.env.openExternal(vscode.Uri.parse("https://aka.ms/get/kiota"));
       }
     }),
     vscode.window.registerWebviewViewProvider(
@@ -89,7 +89,7 @@ export async function activate(
       async () => {
         const selectedPaths = openApiTreeProvider.getSelectedPaths();
         if (selectedPaths.length === 0) {
-          vscode.window.showErrorMessage(
+          await vscode.window.showErrorMessage(
             vscode.l10n.t("No endpoints selected, select endpoints first")
           );
           return;
@@ -98,7 +98,7 @@ export async function activate(
           !vscode.workspace.workspaceFolders ||
           vscode.workspace.workspaceFolders.length === 0
         ) {
-          vscode.window.showErrorMessage(
+          await vscode.window.showErrorMessage(
             vscode.l10n.t("No workspace folder found, open a folder first")
           );
           return;
@@ -114,7 +114,7 @@ export async function activate(
           languagesInformation
         );
         if (!openApiTreeProvider.descriptionUrl) {
-          vscode.window.showErrorMessage(
+          await vscode.window.showErrorMessage(
             vscode.l10n.t("No description found, select a description first")
           );
           return;
@@ -145,11 +145,7 @@ export async function activate(
               : "ApiSdk"
           );
         });
-
-        if (result)
-        {
-          exportLogsAndShowErrors(result);
-        }
+        
         languagesInformation = await getLanguageInformation(
           context,
           language,
@@ -161,6 +157,10 @@ export async function activate(
         }
         if (typeof config.outputPath === "string" && vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
           await openApiTreeProvider.loadLockFile(path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, config.outputPath, "kiota-lock.json"));
+        }
+        if (result)
+        {
+          await exportLogsAndShowErrors(result);
         }
       }
     ),
@@ -207,7 +207,7 @@ export async function activate(
         !vscode.workspace.workspaceFolders ||
         vscode.workspace.workspaceFolders.length === 0
       ) {
-        vscode.window.showErrorMessage(
+        await vscode.window.showErrorMessage(
           vscode.l10n.t("No workspace folder found, open a folder first")
         );
         return;
@@ -229,14 +229,14 @@ export async function activate(
           return updateClients(context);
         });
         if (res) {
-          exportLogsAndShowErrors(res);
+          await exportLogsAndShowErrors(res);
         }
       } catch (error) {
         kiotaOutputChannel.error(
           vscode.l10n.t("error updating the clients {error}"),
           error
         );
-        vscode.window.showErrorMessage(
+        await vscode.window.showErrorMessage(
           vscode.l10n.t("error updating the clients {error}"),
           error as string
         );
@@ -247,7 +247,7 @@ export async function activate(
   context.subscriptions.push(disposable);
 }
 
-function exportLogsAndShowErrors(result: KiotaLogEntry[]) : void {
+async function exportLogsAndShowErrors(result: KiotaLogEntry[]) : Promise<void> {
   const informationMessages = result
     ? getLogEntriesForLevel(result, LogLevel.information)
     : [];
@@ -259,13 +259,13 @@ function exportLogsAndShowErrors(result: KiotaLogEntry[]) : void {
     logFromLogLevel(element);
   });
   if (errorMessages.length > 0) {
-    errorMessages.forEach((element) => {
-      vscode.window.showErrorMessage(element.message);
-    });
+    await Promise.all(errorMessages.map((element) => {
+      return vscode.window.showErrorMessage(element.message);
+    }));
   } else {
-    informationMessages.forEach((element) => {
-      vscode.window.showInformationMessage(element.message);
-    });
+    await Promise.all(informationMessages.map((element) => {
+      return vscode.window.showInformationMessage(element.message);
+    }));
   }
 }
 
