@@ -24,15 +24,23 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         this.rawRootNode = undefined;
         await this.getChildren();
         if (this.rawRootNode) {
-            this._lockFile.includePatterns.forEach(ip => {
-                const currentNode = this.findApiNode(ip.split('/').filter(x => x !== ''), this.rawRootNode!);
-                if(currentNode) {
-                    currentNode.selected = true;
-                }
-            });
+            if (this._lockFile.includePatterns.length === 0) {
+                this.setAllSelected(this.rawRootNode, true);
+            } else {
+                this._lockFile.includePatterns.forEach(ip => {
+                    const currentNode = this.findApiNode(ip.split('/').filter(x => x !== ''), this.rawRootNode!);
+                    if(currentNode) {
+                        currentNode.selected = true;
+                    }
+                });
+            }
             this.refresh();
         }
       }
+    }
+    private setAllSelected(node: KiotaOpenApiNode, selected: boolean) {
+        node.selected = selected;
+        node.children.forEach(x => this.setAllSelected(x, selected));
     }
     public get outputPath(): string {
       return this._lockFilePath ? path.parse(this._lockFilePath).dir : '';
