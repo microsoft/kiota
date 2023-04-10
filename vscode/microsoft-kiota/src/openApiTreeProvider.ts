@@ -49,6 +49,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     public closeDescription() {
         this.descriptionUrl = '';
         this.rawRootNode = undefined;
+        this._lockFile = undefined;
         this.refresh();
     }
     public set descriptionUrl(descriptionUrl: string) {

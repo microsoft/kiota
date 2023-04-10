@@ -165,6 +165,7 @@ export async function activate(
       async () => {
         const config = await searchSteps(x => searchDescription(context, x));
         if (config.descriptionPath) {
+          openApiTreeProvider.closeDescription();
           openApiTreeProvider.descriptionUrl = config.descriptionPath;
           vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
         }

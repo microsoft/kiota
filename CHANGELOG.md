@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where java path parameters wouldn't build.
+- Fixed a bug where extension would not reset generation information on new search. [#2540](https://github.com/microsoft/kiota/issues/2540)
 
 ## [1.1.1] - 2023-04-05
 
