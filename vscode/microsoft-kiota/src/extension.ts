@@ -155,7 +155,9 @@ export async function activate(
           dependenciesInfoProvider.update(languagesInformation, language);
           await vscode.commands.executeCommand(`${dependenciesInfo}${focusCommandId}`);
         }
-        if (typeof config.outputPath === "string" && vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+        if (typeof config.outputPath === "string" && !openApiTreeProvider.isLockFileLoaded && 
+            vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 &&
+            result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
           await openApiTreeProvider.loadLockFile(path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, config.outputPath, "kiota-lock.json"));
         }
         if (result)
@@ -169,7 +171,6 @@ export async function activate(
       async () => {
         const config = await searchSteps(x => searchDescription(context, x));
         if (config.descriptionPath) {
-          openApiTreeProvider.closeDescription();
           openApiTreeProvider.descriptionUrl = config.descriptionPath;
           await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
         }

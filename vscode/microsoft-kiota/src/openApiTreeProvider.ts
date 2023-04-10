@@ -15,13 +15,16 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     private _lockFilePath?: string;
     private _lockFile?: LockFile;
+    public get isLockFileLoaded(): boolean {
+        return !!this._lockFile;
+    }
     public async loadLockFile(path: string): Promise<void> {
+      this.closeDescription(false);
       this._lockFilePath = path;
       const lockFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
       this._lockFile = JSON.parse(lockFileData.toString()) as LockFile;
       if (this._lockFile?.descriptionLocation) {
-        this.descriptionUrl = this._lockFile.descriptionLocation;
-        this.rawRootNode = undefined;
+        this._descriptionUrl = this._lockFile.descriptionLocation;
         await this.getChildren();
         if (this.rawRootNode) {
             if (this._lockFile.includePatterns.length === 0) {
@@ -54,15 +57,18 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     public get language(): string {
         return this._lockFile?.language || '';
     }
-    public closeDescription() {
-        this.descriptionUrl = '';
+    public closeDescription(shouldRefresh = true) {
+        this._descriptionUrl = '';
         this.rawRootNode = undefined;
         this._lockFile = undefined;
-        this.refresh();
+        this._lockFilePath = undefined;
+        if (shouldRefresh) {
+            this.refresh();
+        }
     }
     public set descriptionUrl(descriptionUrl: string) {
+        this.closeDescription(false);
         this._descriptionUrl = descriptionUrl;
-        this.rawRootNode = undefined;
         this.refresh();
     }
     public get descriptionUrl(): string {
