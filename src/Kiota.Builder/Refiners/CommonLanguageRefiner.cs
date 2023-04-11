@@ -398,7 +398,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
             var replacementName = replacement.Invoke(current.Name);
             if (current.Parent is CodeClass parent
-                && parent.GetChildElements().Select(x => x.Name.Equals(current.Name)).FirstOrDefault())
+                && parent.GetChildElements().FirstOrDefault(x => x.Name.Equals(current.Name, StringComparison.Ordinal)) is not null)
                 parent.RenameChildElement(current.Name, replacementName);
             current.Name = replacementName;
         }
