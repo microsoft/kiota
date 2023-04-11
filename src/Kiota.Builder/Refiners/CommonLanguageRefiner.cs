@@ -396,7 +396,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             {
                 currentProperty.SerializationName = currentProperty.Name;
             }
-            current.Name = replacement.Invoke(current.Name);
+            var replacementName = replacement.Invoke(current.Name);
+            if (current.Parent is CodeClass parent
+                && parent.GetChildElements().FirstOrDefault(x => x.Name.Equals(current.Name, StringComparison.Ordinal)) is not null)
+                parent.RenameChildElement(current.Name, replacementName);
+            current.Name = replacementName;
         }
 
         CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
@@ -897,8 +901,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         !currentClass.ContainsMember(pp.Name) &&
                         !currentClass.Properties.Any(cp => cp.Name.Equals(pp.Name, StringComparison.OrdinalIgnoreCase))))
                 {
-                    p.Parent = currentClass;
-                    currentClass.AddProperty(p);
+                    var newP = (CodeProperty)p.Clone();
+                    newP.Parent = currentClass;
+                    currentClass.AddProperty(newP);
                 }
 
                 foreach (var m in currentParent
