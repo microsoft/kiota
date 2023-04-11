@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using kiota.Authentication.GitHub.DeviceCode;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Logging;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -17,7 +18,7 @@ using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace kiota.Handlers;
 
-internal abstract class BaseKiotaCommandHandler : ICommandHandler
+internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
 {
     protected TempFolderCachingAccessTokenProvider GetGitHubDeviceStorageService(ILogger logger) => new()
     {
@@ -96,20 +97,24 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
         throw new InvalidOperationException("This command handler is async only");
     }
     public abstract Task<int> InvokeAsync(InvocationContext context);
-    protected (ILoggerFactory, ILogger<T>) GetLoggerAndFactory<T>(InvocationContext context)
+    private readonly List<IDisposable> disposables = new();
+    protected (ILoggerFactory, ILogger<T>) GetLoggerAndFactory<T>(InvocationContext context, string logFileRootPath = "")
     {
         LogLevel logLevel = context.ParseResult.GetValueForOption(LogLevelOption);
 #if DEBUG
         logLevel = logLevel > LogLevel.Debug ? LogLevel.Debug : logLevel;
 #endif
-
         var loggerFactory = LoggerFactory.Create(builder =>
         {
+            var logFileAbsoluteRootPath = GetAbsolutePath(logFileRootPath);
+            var fileLogger = new FileLogLoggerProvider(logFileAbsoluteRootPath, logLevel);
+            disposables.Add(fileLogger);
             builder
                 .AddConsole()
 #if DEBUG
                 .AddDebug()
 #endif
+                .AddProvider(fileLogger)
                 .SetMinimumLevel(logLevel);
         });
         var logger = loggerFactory.CreateLogger<T>();
@@ -301,5 +306,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler
     protected void DisplayGitHubDeviceCodeLoginMessage(Uri uri, string code)
     {
         DisplayInfo($"Please go to {uri} and enter the code {code} to authenticate.");
+    }
+    public void Dispose()
+    {
+        foreach (var disposable in disposables)
+            disposable.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
