@@ -609,7 +609,8 @@ public class CodeMethodWriterTests : IDisposable
             ReturnType = new CodeType
             {
                 Name = "string",
-            }
+            },
+            IndexParameterName = "id",
         };
         writer.Write(method);
         var result = tw.ToString();

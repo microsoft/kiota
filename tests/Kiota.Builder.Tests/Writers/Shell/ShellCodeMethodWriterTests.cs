@@ -234,7 +234,9 @@ public class ShellCodeMethodWriterTests : IDisposable
             IndexType = new CodeType
             {
                 Name = "string",
-            }
+            },
+            SerializationName = "test",
+            IndexParameterName = "id",
         };
 
         AddRequestProperties();
@@ -278,7 +280,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         codeClass.AddMethod(generatorMethod);
 
         var type = new CodeClass { Name = "TestItemRequestBuilder", Kind = CodeClassKind.RequestBuilder };
-        var tupleReturn = new CodeType {
+        var tupleReturn = new CodeType
+        {
             Name = "Tuple",
             IsExternal = true,
             GenericTypeParameterValues = new List<CodeType> {
@@ -312,7 +315,8 @@ public class ShellCodeMethodWriterTests : IDisposable
                 IndexType = new CodeType
                 {
                     Name = "string",
-                }
+                },
+                IndexParameterName = "id",
             }
         };
 
@@ -365,8 +369,9 @@ public class ShellCodeMethodWriterTests : IDisposable
         navTd.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod11", SimpleName = "Test", ReturnType = new CodeType() });
 
         var type = new CodeClass { Name = "TestIndexItemRequestBuilder", Kind = CodeClassKind.RequestBuilder };
-        
-        var tupleReturn = new CodeType {
+
+        var tupleReturn = new CodeType
+        {
             Name = "Tuple",
             IsExternal = true,
             GenericTypeParameterValues = new List<CodeType> {
@@ -400,7 +405,8 @@ public class ShellCodeMethodWriterTests : IDisposable
                 IndexType = new CodeType
                 {
                     Name = "string",
-                }
+                },
+                IndexParameterName = "id",
             }
         };
 

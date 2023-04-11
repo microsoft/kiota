@@ -657,59 +657,15 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, MoveClassesWithNamespaceNamesUnderNamespace);
     }
-    protected static void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, bool parameterNullable, string? methodNameSuffix = default)
+    protected static void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, bool parameterNullable, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback)
     {
         if (currentElement is CodeIndexer currentIndexer &&
-            currentElement.Parent is CodeClass indexerParentClass &&
-            indexerParentClass.Parent is CodeNamespace indexerNamespace &&
-            indexerNamespace.Parent is CodeNamespace lookupNamespace)
+            currentElement.Parent is CodeClass indexerParentClass)
         {
             indexerParentClass.RemoveChildElement(currentElement);
-            AddIndexerMethod(indexerParentClass,
-                            methodNameSuffix,
-                            parameterNullable,
-                            currentIndexer,
-                            lookupNamespace);
+            indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable));
         }
-        CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, parameterNullable, methodNameSuffix));
-    }
-    private static void AddIndexerMethod(CodeClass indexerParentClass, string? methodNameSuffix, bool parameterNullable, CodeIndexer currentIndexer, CodeNamespace lookupNamespace)
-    {
-        if (lookupNamespace.Classes
-                            .Where(static x => x.IsOfKind(CodeClassKind.RequestBuilder))
-                            .SelectMany(static x => x.Properties)
-                            .Where(x => x.IsOfKind(CodePropertyKind.RequestBuilder) &&
-                                    x.Type is CodeType xType &&
-                                    xType.TypeDefinition == indexerParentClass)
-                            .Select(static x => x.Parent)
-                            .OfType<CodeClass>()
-                            .FirstOrDefault() is CodeClass parentClassForProperty)
-        {
-            parentClassForProperty.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameSuffix, parameterNullable));
-        }
-        else if (lookupNamespace.Classes
-                            .Where(static x => x.IsOfKind(CodeClassKind.RequestBuilder))
-                            .SelectMany(static x => x.Methods)
-                            .Where(x => x.IsOfKind(CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.RequestBuilderBackwardCompatibility) &&
-                                        x.ReturnType is CodeType xMethodType &&
-                                        xMethodType.TypeDefinition == indexerParentClass)
-                            .Select(static x => x.Parent)
-                            .OfType<CodeClass>()
-                            .FirstOrDefault() is CodeClass parentClassForMethod)
-        {
-            parentClassForMethod.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameSuffix, parameterNullable));
-        }
-        else if (lookupNamespace.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
-            parentNamespace.Classes
-                            .Where(static x => x.IsOfKind(CodeClassKind.RequestBuilder))
-                            .SelectMany(static x => x.Methods)
-                            .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) &&
-                                x.ReturnType is CodeType xMethodType &&
-                                xMethodType.TypeDefinition == indexerParentClass)
-                            is not null)
-        {
-            indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameSuffix, parameterNullable)); //we already went one up with the previous indexer
-        }
+        CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, parameterNullable, methodNameCallback, parameterNameCallback));
     }
     internal void DisableActionOf(CodeElement current, params CodeParameterKind[] kinds)
     {
