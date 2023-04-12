@@ -20,7 +20,10 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             DisableActionOf(generatedCode,
             CodeParameterKind.RequestConfiguration);
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceIndexersByMethodsWithParameter(generatedCode, false, "_by_id");
+            ReplaceIndexersByMethodsWithParameter(generatedCode,
+                false,
+                static x => $"_with_{x.ToSnakeCase()}",
+                static x => x.ToSnakeCase());
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();

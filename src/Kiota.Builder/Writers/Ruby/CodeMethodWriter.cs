@@ -200,7 +200,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
             codeElement.OriginalIndexer != null)
             writer.WriteLines($"{conventions.TempDictionaryVarName} = @{pathParametersProperty.NamePrefix}{pathParametersProperty.Name.ToSnakeCase()}.clone",
-                            $"{conventions.TempDictionaryVarName}[\"{codeElement.OriginalIndexer.SerializationName}\"] = id");
+                            $"{conventions.TempDictionaryVarName}[\"{codeElement.OriginalIndexer.SerializationName}\"] = {codeElement.OriginalIndexer.IndexParameterName.ToSnakeCase()}");
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, $"return {prefix}");
     }
     private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer)

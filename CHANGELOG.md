@@ -10,7 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
+- Added automatic loading of the lock file for the extension so quick edits of clients are supported.
+
 ### Changed
+
+- Fixed a bug where java path parameters wouldn't build.
+- Fixed a bug where extension would not reset generation information on new search. [#2540](https://github.com/microsoft/kiota/issues/2540)
+- Fixed a bug where the extension would not select nodes when loading from lock file with no filters. [#2542](https://github.com/microsoft/kiota/issues/2542)
+- Fixed a bug where the extension would fail to generate for the root path. [#2536](https://github.com/microsoft/kiota/issues/2536)
+- Fixed a bug where properties copied from parent to child classes would not be cloned.
+- Fixed a bug where replacing reserved names would not propagate the rename to the inner child elements map of the parent class.
+- Fixed a bug where descriptions with multiple server URLs would use the HTTP one instead of HTTPs. [#2336](https://github.com/microsoft/kiota/issues/2336)
 
 ## [1.1.1] - 2023-04-05
 

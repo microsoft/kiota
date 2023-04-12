@@ -15,24 +15,35 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     private _lockFilePath?: string;
     private _lockFile?: LockFile;
+    public get isLockFileLoaded(): boolean {
+        return !!this._lockFile;
+    }
     public async loadLockFile(path: string): Promise<void> {
+      this.closeDescription(false);
       this._lockFilePath = path;
       const lockFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
       this._lockFile = JSON.parse(lockFileData.toString()) as LockFile;
       if (this._lockFile?.descriptionLocation) {
-        this.descriptionUrl = this._lockFile.descriptionLocation;
-        this.rawRootNode = undefined;
+        this._descriptionUrl = this._lockFile.descriptionLocation;
         await this.getChildren();
         if (this.rawRootNode) {
-            this._lockFile.includePatterns.forEach(ip => {
-                const currentNode = this.findApiNode(ip.split('/').filter(x => x !== ''), this.rawRootNode!);
-                if(currentNode) {
-                    currentNode.selected = true;
-                }
-            });
+            if (this._lockFile.includePatterns.length === 0) {
+                this.setAllSelected(this.rawRootNode, true);
+            } else {
+                this._lockFile.includePatterns.forEach(ip => {
+                    const currentNode = this.findApiNode(ip.split('/').filter(x => x !== ''), this.rawRootNode!);
+                    if(currentNode) {
+                        currentNode.selected = true;
+                    }
+                });
+            }
             this.refresh();
         }
       }
+    }
+    private setAllSelected(node: KiotaOpenApiNode, selected: boolean) {
+        node.selected = selected;
+        node.children.forEach(x => this.setAllSelected(x, selected));
     }
     public get outputPath(): string {
       return this._lockFilePath ? path.parse(this._lockFilePath).dir : '';
@@ -46,14 +57,18 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     public get language(): string {
         return this._lockFile?.language || '';
     }
-    public closeDescription() {
-        this.descriptionUrl = '';
+    public closeDescription(shouldRefresh = true) {
+        this._descriptionUrl = '';
         this.rawRootNode = undefined;
-        this.refresh();
+        this._lockFile = undefined;
+        this._lockFilePath = undefined;
+        if (shouldRefresh) {
+            this.refresh();
+        }
     }
     public set descriptionUrl(descriptionUrl: string) {
+        this.closeDescription(false);
         this._descriptionUrl = descriptionUrl;
-        this.rawRootNode = undefined;
         this.refresh();
     }
     public get descriptionUrl(): string {
@@ -99,7 +114,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (!this.rawRootNode) {
             return [];
         }
-        return this.findSelectedPaths(this.rawRootNode);
+        return this.findSelectedPaths(this.rawRootNode).map(x => x === '' ? '/' : x); // root node trailing slash is /
     }
     private findSelectedPaths(currentNode: KiotaOpenApiNode): string[] {
         const result: string[] = [];

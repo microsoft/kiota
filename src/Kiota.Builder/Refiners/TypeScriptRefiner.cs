@@ -26,7 +26,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     IsExternal = true
                 }
             });
-            ReplaceIndexersByMethodsWithParameter(generatedCode, false, "ById");
+            ReplaceIndexersByMethodsWithParameter(generatedCode,
+                false,
+                static x => $"with{x.ToFirstCharacterUpperCase()}",
+                static x => x.ToFirstCharacterLowerCase());
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
