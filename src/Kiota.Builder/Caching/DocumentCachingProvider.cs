@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -6,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NeoSmart.AsyncLock;
 
 namespace Kiota.Builder.Caching;
 
@@ -37,30 +39,35 @@ public class DocumentCachingProvider
     {
         var hashedUrl = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(documentUri.ToString()))).Replace("-", string.Empty);
         var target = Path.Combine(Path.GetTempPath(), "kiota", "cache", intermediateFolderName, hashedUrl, fileName);
-        if (!File.Exists(target) || couldNotDelete)
-            return await DownloadDocumentFromSourceAsync(documentUri, target, accept, token);
+        var currentLock = _locks.GetOrAdd(target, _ => new AsyncLock());
+        using (await currentLock.LockAsync(token))
+        {// if multiple clients are being updated for the same description, we'll have concurrent download of the file without the lock
+            if (!File.Exists(target) || couldNotDelete)
+                return await DownloadDocumentFromSourceAsync(documentUri, target, accept, token);
 
-        var lastModificationDate = File.GetLastWriteTime(target);
-        if (lastModificationDate.Add(Duration) > DateTime.Now && !ClearCache)
-        {
-            Logger.LogDebug("cache file {cacheFile} is up to date and clearCache is {clearCache}, using it", target, ClearCache);
-            return File.OpenRead(target);
-        }
-        else
-        {
-            Logger.LogDebug("cache file {cacheFile} is out of date, downloading from {url}", target, documentUri);
-            try
+            var lastModificationDate = File.GetLastWriteTime(target);
+            if (lastModificationDate.Add(Duration) > DateTime.Now && !ClearCache)
             {
-                File.Delete(target);
+                Logger.LogDebug("cache file {cacheFile} is up to date and clearCache is {clearCache}, using it", target, ClearCache);
+                return File.OpenRead(target);
             }
-            catch (IOException ex)
+            else
             {
-                couldNotDelete = true;
-                Logger.LogWarning("could not delete cache file {cacheFile}, reason: {reason}", target, ex.Message);
+                Logger.LogDebug("cache file {cacheFile} is out of date, downloading from {url}", target, documentUri);
+                try
+                {
+                    File.Delete(target);
+                }
+                catch (IOException ex)
+                {
+                    couldNotDelete = true;
+                    Logger.LogWarning("could not delete cache file {cacheFile}, reason: {reason}", target, ex.Message);
+                }
             }
+            return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, accept, token);
         }
-        return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, accept, token);
     }
+    private static readonly ConcurrentDictionary<string, AsyncLock> _locks = new(StringComparer.OrdinalIgnoreCase);
     private async Task<Stream> DownloadDocumentFromSourceAsync(Uri documentUri, string target, string? accept, CancellationToken token)
     {
         Logger.LogDebug("cache file {cacheFile} not found, downloading from {url}", target, documentUri);
