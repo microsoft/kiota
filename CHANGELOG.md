@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where the extension would fail to generate for the root path. [#2536](https://github.com/microsoft/kiota/issues/2536)
 - Fixed a bug where properties copied from parent to child classes would not be cloned.
 - Fixed a bug where replacing reserved names would not propagate the rename to the inner child elements map of the parent class.
+- Fixed a bug where descriptions with multiple server URLs would use the HTTP one instead of HTTPs. [#2336](https://github.com/microsoft/kiota/issues/2336)
 
 ## [1.1.1] - 2023-04-05
 
