@@ -111,7 +111,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
         foreach (var otherProp in codeInterface.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom) && !x.ExistsInBaseType && !x.ReadOnly))
         {
-            WritePropertySerializer(codeInterface.Name.ToFirstCharacterLowerCase(), otherProp, writer);
+            WritePropertySerializer(codeInterface.Name.ToFirstCharacterLowerCase(), otherProp, writer, codeElement);
         }
 
         if (codeInterface.GetPropertyOfKind(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
@@ -124,7 +124,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         return property.Type is CodeType cType && cType.IsCollection && cType.TypeDefinition is CodeEnum;
     }
 
-    private void WritePropertySerializer(string modelParamName, CodeProperty codeProperty, LanguageWriter writer)
+    private void WritePropertySerializer(string modelParamName, CodeProperty codeProperty, LanguageWriter writer, CodeFunction codeFunction)
     {
         var isCollectionOfEnum = IsCodePropertyCollectionOfEnum(codeProperty);
         var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
@@ -135,7 +135,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
         if (customSerializationWriters.Contains(serializationName) && codeProperty.Type is CodeType propType && propType.TypeDefinition is not null)
         {
-            writer.WriteLine($"writer.{serializationName}<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}, serialize{propTypeName});");
+            var serializeName = getSerializerAlias(propType, codeFunction, $"serialize{propType.TypeDefinition.Name}");
+            writer.WriteLine($"writer.{serializationName}<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}, {serializeName});");
         }
         else
         {
@@ -242,5 +243,15 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             }
         }
         throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
+    }
+
+    private string? getSerializerAlias(CodeType propType, CodeFunction codeFunction, string propertySerializerName)
+    {
+        if (propType.TypeDefinition?.Parent is not CodeNamespace parentNameSpace) return string.Empty;
+        var serializationFunction = parentNameSpace.FindChildByName<CodeFunction>(propertySerializerName);
+        return localConventions?.GetTypeString(new CodeType
+        {
+            TypeDefinition = serializationFunction
+        }, codeFunction, false);
     }
 }
