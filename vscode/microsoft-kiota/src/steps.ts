@@ -1,5 +1,6 @@
-import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n } from 'vscode';
+import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n, Uri } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
+import { kiotaLockFile } from './extension';
 
 
 export async function openSteps() {
@@ -21,6 +22,33 @@ export async function openSteps() {
     await MultiStepInput.run(input => inputPathOrUrl(input, state), () => step-=2);
     return state;
 };
+
+export async function searchLockSteps() {
+    const state = {} as Partial<SearchLockState>;
+    let step = 1;
+    let totalSteps = 1;
+    const title = l10n.t('Open a lock file');
+    async function pickSearchResult(input: MultiStepInput, state: Partial<SearchLockState>) {
+        const searchResults = await workspace.findFiles(`**/${kiotaLockFile}`);
+        const items = searchResults.map(x => 
+        { 
+            return {
+                label: x.path.replace(workspace.getWorkspaceFolder(x)?.uri.path || '', ''),
+            } as QuickPickItem;
+        });
+        const pick = await input.showQuickPick({
+            title,
+            step: step++,
+            totalSteps: totalSteps,
+            placeholder: l10n.t('Pick a lock file'),
+            items: items,
+            shouldResume: shouldResume
+        });
+        state.lockFilePath = searchResults.find(x => x.path.replace(workspace.getWorkspaceFolder(x)?.uri.path || '', '') === pick?.label);
+    }
+    await MultiStepInput.run(input => pickSearchResult(input, state), () => step-=2);
+    return state;
+}
 
 export async function searchSteps(searchCallBack: (searchQuery: string) => Promise<Record<string, KiotaSearchResultItem> | undefined>) {
     const state = {} as Partial<SearchState>;
@@ -173,6 +201,9 @@ interface OpenState extends BaseStepsState {
     descriptionPath: string;
 }
 
+interface SearchLockState extends BaseStepsState {
+    lockFilePath: Uri;
+}
 
 interface GenerateState extends BaseStepsState {
     clientClassName: string;

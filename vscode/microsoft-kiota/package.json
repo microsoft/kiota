@@ -21,6 +21,12 @@
   "main": "./dist/extension.js",
   "l10n": "./l10n",
   "contributes": {
+    "viewsWelcome":[
+      {
+        "view": "kiota.openApiExplorer",
+        "contents": "%kiota.openApiExplorer.welcome%"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -137,6 +143,12 @@
         "command": "kiota.selectLock",
         "category": "Kiota",
         "title": "%kiota.selectLock.title%",
+        "icon": "$(file-symlink-file)"
+      },
+      {
+        "command": "kiota.searchLock",
+        "category": "Kiota",
+        "title": "%kiota.searchLock.title%",
         "icon": "$(file-symlink-file)"
       },
       {
