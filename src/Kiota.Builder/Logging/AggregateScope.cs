@@ -2,7 +2,7 @@ using System;
 
 namespace Kiota.Builder.Logging;
 
-internal class AggregateScope : IDisposable
+internal sealed class AggregateScope : IDisposable
 {
     private readonly IDisposable[] _scopes;
     public AggregateScope(params IDisposable[] scopes)

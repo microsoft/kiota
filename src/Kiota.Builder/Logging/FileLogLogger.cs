@@ -34,11 +34,17 @@ public class FileLogLogger : ILogger, IDisposable
     }
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposing)
+            return;
         _logStream.Flush();
         _logStream.Dispose();
         if (!wroteAnything && !string.IsNullOrEmpty(_logFileAbsolutePath) && File.Exists(_logFileAbsolutePath))
             File.Delete(_logFileAbsolutePath);
-        GC.SuppressFinalize(this);
     }
     public bool IsEnabled(LogLevel logLevel)
     {

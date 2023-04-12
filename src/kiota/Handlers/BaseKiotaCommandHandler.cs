@@ -309,8 +309,14 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     }
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposing)
+            return;
         foreach (var disposable in disposables)
             disposable.Dispose();
-        GC.SuppressFinalize(this);
     }
 }
