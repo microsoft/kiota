@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where steps count would be increasing on nav back in the extension. [#2553](https://github.com/microsoft/kiota/issues/2553)
 - Fixed a bug where java path parameters wouldn't build.
 - Fixed a bug where extension would not reset generation information on new search. [#2540](https://github.com/microsoft/kiota/issues/2540)
 - Fixed a bug where the extension would not select nodes when loading from lock file with no filters. [#2542](https://github.com/microsoft/kiota/issues/2542)
