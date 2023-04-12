@@ -10,7 +10,6 @@ public sealed class FileLogLoggerProvider : ILoggerProvider
     private readonly string _logFileDirectoryAbsolutePath;
     public FileLogLoggerProvider(string logFileDirectoryAbsolutePath, LogLevel logLevel)
     {
-        ArgumentException.ThrowIfNullOrEmpty(logFileDirectoryAbsolutePath);
         _logLevel = logLevel;
         _logFileDirectoryAbsolutePath = logFileDirectoryAbsolutePath;
     }

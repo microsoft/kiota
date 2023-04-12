@@ -15,11 +15,10 @@ public class FileLogLogger : ILogger, IDisposable
     {
         _logLevel = logLevel;
         _categoryName = categoryName.Split(new char[] { '.', ' ' }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? string.Empty;
-        if (_logLevel == LogLevel.None)
+        if (_logLevel == LogLevel.None || string.IsNullOrEmpty(logFileDirectoryAbsolutePath))
             _logStream = new StreamWriter(Stream.Null);
         else
         {
-            ArgumentException.ThrowIfNullOrEmpty(logFileDirectoryAbsolutePath);
             var logFileAbsolutePath = Path.Combine(logFileDirectoryAbsolutePath, LogFileName);
             if (File.Exists(logFileAbsolutePath))
                 File.Delete(logFileAbsolutePath);
