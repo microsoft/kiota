@@ -50,7 +50,7 @@ export async function searchLockSteps() {
     return state;
 }
 
-export async function filterSteps(filterCallback: (searchQuery: string) => void) {
+export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
     const state = {} as Partial<BaseStepsState>;
     const title = l10n.t('Search for an API description');
     let step = 1;
@@ -60,10 +60,11 @@ export async function filterSteps(filterCallback: (searchQuery: string) => void)
             title,
             step: step++,
             totalSteps: totalSteps,
-            value: '',
+            value: existingFilter,
             prompt: l10n.t('Enter a search query'),
             validate: x => {
-                filterCallback(x);
+                filterCallback(x.length === 0 && existingFilter.length > 0 ? existingFilter : x);
+                existingFilter = '';
                 return Promise.resolve(undefined);
             },
             shouldResume: shouldResume

@@ -63,6 +63,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         this._lockFile = undefined;
         this._lockFilePath = undefined;
         this.tokenizedFilter = [];
+        this._filterText = '';
         if (shouldRefresh) {
             this.refreshView();
         }
@@ -131,12 +132,17 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     private rawRootNode: KiotaOpenApiNode | undefined;
     private tokenizedFilter: string[] = [];
-    public filterNodes(filterText: string): void {
+    private _filterText: string = '';
+    public set filter(filterText: string) {
+        this._filterText = filterText;
         if (!this.rawRootNode) {
             return;
         }
         this.tokenizedFilter = filterText.length === 0 ? [] : filterText.split(' ').filter(x => x !== '').map(x => x.trim().toLowerCase());
         this.refreshView();
+    }
+    public get filter(): string {
+        return this._filterText;
     }
     private async loadNodes(): Promise<void> {
         if (!this.descriptionUrl || this.descriptionUrl.length === 0) {
