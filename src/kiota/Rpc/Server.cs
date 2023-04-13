@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
+using Kiota.Builder.Logging;
 using Kiota.Generated;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -66,8 +67,7 @@ internal class Server : IServer
                 return config;
             }).ToArray();
             _ = await Task.WhenAll(configurations
-                                    .Select(x => new KiotaBuilder(logger, x, httpClient)
-                                                .GenerateClientAsync(cancellationToken)));
+                                    .Select(x => GenerateClientAsync(x, logger, cancellationToken)));
             foreach (var (lockInfo, lockDirectoryPath) in locks)
                 logger.LogInformation("Update of {clientClassName} client for {language} at {lockDirectoryPath} completed", lockInfo?.ClientClassName, lockInfo?.Language, lockDirectoryPath);
             logger.LogInformation("Update of {length} clients completed successfully", locks.Length);
@@ -77,6 +77,12 @@ internal class Server : IServer
             logger.LogCritical("error updating the client: {exceptionMessage}", ex.Message);
         }
         return logger.LogEntries;
+    }
+    private static async Task<bool> GenerateClientAsync(GenerationConfiguration config, ILogger<KiotaBuilder> globalLogger, CancellationToken cancellationToken)
+    {
+        using var fileLogger = new FileLogLogger<KiotaBuilder>(config.OutputPath, LogLevel.Warning);
+        var logger = new AggregateLogger<KiotaBuilder>(globalLogger, fileLogger);
+        return await new KiotaBuilder(logger, config, httpClient).GenerateClientAsync(cancellationToken);
     }
     public async Task<SearchOperationResult> SearchAsync(string searchTerm, CancellationToken cancellationToken)
     {
@@ -112,7 +118,7 @@ internal class Server : IServer
             configuration.ClientNamespaceName = clientNamespaceName;
         try
         {
-            var result = await new KiotaBuilder(logger, configuration, httpClient).GenerateClientAsync(cancellationToken);
+            var result = await GenerateClientAsync(configuration, logger, cancellationToken);
             if (result)
                 logger.LogInformation("Generation of {clientClassName} client for {language} at {outputPath} completed", configuration.ClientClassName, configuration.Language, configuration.OutputPath);
             else

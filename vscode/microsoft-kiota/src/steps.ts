@@ -18,7 +18,7 @@ export async function openSteps() {
             shouldResume: shouldResume
         });
     }
-    await MultiStepInput.run(input => inputPathOrUrl(input, state));
+    await MultiStepInput.run(input => inputPathOrUrl(input, state), () => step-=2);
     return state;
 };
 
@@ -59,7 +59,7 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Promi
         });
         state.descriptionPath = items.find(x => x.label === pick?.label)?.descriptionUrl || '';
     }
-    await MultiStepInput.run(input => inputSearchQuery(input, state));
+    await MultiStepInput.run(input => inputSearchQuery(input, state), () => step-=2);
     return state;
 }
 
@@ -142,7 +142,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 		});
 		state.language = pick.label.split('-')[0].trim();
 	}
-    await MultiStepInput.run(input => inputClientClassName(input, state));
+    await MultiStepInput.run(input => inputClientClassName(input, state), () => step-=2);
     return state;
 }
 
@@ -214,15 +214,15 @@ interface InputBoxParameters {
 
 class MultiStepInput {
 
-	static async run<T>(start: InputStep) {
+	static async run<T>(start: InputStep, onNavBack?: () => void) {
 		const input = new MultiStepInput();
-		return input.stepThrough(start);
+		return input.stepThrough(start, onNavBack);
 	}
 
 	private current?: QuickInput;
 	private steps: InputStep[] = [];
 
-	private async stepThrough<T>(start: InputStep) {
+	private async stepThrough<T>(start: InputStep, onNavBack?: () => void) {
 		let step: InputStep | void = start;
 		while (step) {
 			this.steps.push(step);
@@ -234,6 +234,9 @@ class MultiStepInput {
 				step = await step(this);
 			} catch (err) {
 				if (err === InputFlowAction.back) {
+                    if (onNavBack) {
+                        onNavBack();
+                    }
 					this.steps.pop();
 					step = this.steps.pop();
 				} else if (err === InputFlowAction.resume) {

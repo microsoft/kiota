@@ -71,6 +71,7 @@ public class KiotaBuilder
     }
     private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
     {
+        logger.LogDebug("kiota version {version}", Kiota.Generated.KiotaVersion.Current());
         var stepId = 0;
         sw.Start();
         await using var input = await (originalDocument == null ?
