@@ -150,6 +150,9 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             this.rawRootNode = result.rootNode;
         }
     }
+    getParent(element: OpenApiTreeNode): OpenApiTreeNode | undefined {
+        return element.parent;
+    }
     getChildren(element?: OpenApiTreeNode): OpenApiTreeNode[] {
         if (!this.rawRootNode) {
             return [];
@@ -161,6 +164,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                                                         x.selected,
                                                         this.getIconSet(x.selected),
                                                         x.children.length > 0 ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None,
+                                                        element
                                                     ));
         } else {
             return [new OpenApiTreeNode(this.rawRootNode.path, 
@@ -193,7 +197,7 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         public selected: boolean,
         iconSet: IconSet,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-        public readonly command?: vscode.Command
+        public readonly parent?: OpenApiTreeNode
     ) {
         super(label, collapsibleState);
         this.iconPath = iconSet;
