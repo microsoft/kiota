@@ -74,9 +74,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     private const string RawUrlParameterKey = "request-raw-url";
     private static readonly Dictionary<CodeParameterKind, CodePropertyKind> propertiesToAssign = new Dictionary<CodeParameterKind, CodePropertyKind>()
     {
-        { CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter },
-        { CodeParameterKind.Headers, CodePropertyKind.Headers },
-        { CodeParameterKind.Options, CodePropertyKind.Options },
         { CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameters }, // Handles query parameter object as a constructor param in request config classes
     };
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
@@ -88,7 +85,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.WriteLine($"$this->{backingStoreProperty.Name.ToFirstCharacterLowerCase()} = {backingStoreProperty.DefaultValue};");
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(
                 CodePropertyKind.RequestBuilder,
-                CodePropertyKind.UrlTemplate,
                 CodePropertyKind.PathParameters)
             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
             .OrderByDescending(x => x.Kind)

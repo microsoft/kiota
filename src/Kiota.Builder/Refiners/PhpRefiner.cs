@@ -19,6 +19,20 @@ public class PhpRefiner : CommonLanguageRefiner
     {
         return Task.Run(() =>
         {
+            AddInnerClasses(generatedCode,
+                true,
+                string.Empty,
+                true);
+            MoveRequestBuilderPropertiesToBaseType(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseRequestBuilder",
+                    Declaration = new CodeType
+                    {
+                        Name = "Microsoft\\Kiota\\Abstractions",
+                        IsExternal = true
+                    }
+                }, AccessModifier.Public);
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceIndexersByMethodsWithParameter(generatedCode, false, "ById");
             RemoveCancellationParameter(generatedCode);
@@ -28,13 +42,8 @@ public class PhpRefiner : CommonLanguageRefiner
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-            AddInnerClasses(generatedCode,
-                true,
-                string.Empty,
-                true);
             AddRequestConfigurationConstructors(generatedCode);
             AddQueryParameterFactoryMethod(generatedCode);
-            ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true, _configuration.UsesBackingStore);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             cancellationToken.ThrowIfCancellationRequested();
             AddGetterAndSetterMethods(generatedCode,
@@ -66,6 +75,7 @@ public class PhpRefiner : CommonLanguageRefiner
                 "ParseNode",
                 addUsings: true
             );
+            ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true, _configuration.UsesBackingStore);
             var defaultConfiguration = new GenerationConfiguration();
             ReplaceDefaultSerializationModules(generatedCode,
                 defaultConfiguration.Serializers,
@@ -92,16 +102,6 @@ public class PhpRefiner : CommonLanguageRefiner
                 new CodeUsing
                 {
                     Name = "BaseRequestConfiguration",
-                    Declaration = new CodeType
-                    {
-                        Name = "Microsoft\\Kiota\\Abstractions",
-                        IsExternal = true
-                    }
-                });
-            MoveRequestBuilderPropertiesToBaseType(generatedCode,
-                new CodeUsing
-                {
-                    Name = "BaseRequestBuilder",
                     Declaration = new CodeType
                     {
                         Name = "Microsoft\\Kiota\\Abstractions",
