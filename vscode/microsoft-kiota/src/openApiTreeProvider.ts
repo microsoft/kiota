@@ -61,10 +61,9 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     public closeDescription(shouldRefresh = true) {
         this._descriptionUrl = '';
         this.rawRootNode = undefined;
-        this.filteredRootNode = undefined;
         this._lockFile = undefined;
         this._lockFilePath = undefined;
-        this.isFiltered = false;
+        this.tokenizedFilter = [];
         if (shouldRefresh) {
             this.refreshView();
         }
@@ -137,36 +136,13 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         return selected ? this.selectedSet : this.unselectedSet;
     }
     private rawRootNode: KiotaOpenApiNode | undefined;
-    private filteredRootNode: KiotaOpenApiNode | undefined;
-    private isFiltered = false;
+    private tokenizedFilter: string[] = [];
     public filterNodes(filterText: string): void {
         if (!this.rawRootNode) {
             return;
         }
-        if (filterText.length === 0) {
-            this.isFiltered = false;
-            this.filteredRootNode = this.rawRootNode;
-            return;
-        }
-        this.isFiltered = true;
-        this.filteredRootNode = this.copyNodeAndSetParent(this.rawRootNode, filterText.split(' ').filter(x => x !== '').map(x => x.trim().toLowerCase()));
+        this.tokenizedFilter = filterText.length === 0 ? [] : filterText.split(' ').filter(x => x !== '').map(x => x.trim().toLowerCase());
         this.refreshView();
-    }
-    private isNodeVisible(node: KiotaOpenApiNode, tokenizedFilter: string[]): boolean {
-        if (node.children.length === 0) {
-            const lowerCaseSegment = node.segment.toLowerCase();
-            return tokenizedFilter.some(x => lowerCaseSegment.includes(x.toLowerCase()));
-        }
-        return node.children.some(x => this.isNodeVisible(x, tokenizedFilter));
-    }
-    private copyNodeAndSetParent(node: KiotaOpenApiNode, tokenizedFilter: string[], parent?: KiotaOpenApiNode): KiotaOpenApiNode {
-        return {
-            segment: node.segment,
-            path: node.path,
-            selected: node.selected,
-            children: node.children.filter(x => this.isNodeVisible(x, tokenizedFilter)).map(x => this.copyNodeAndSetParent(x, tokenizedFilter, node)),
-            parent: parent
-        };
     }
     private async loadNodes(): Promise<void> {
         if (!this.descriptionUrl || this.descriptionUrl.length === 0) {
@@ -182,63 +158,58 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         });
         if(result && result.rootNode) {
             this.rawRootNode = result.rootNode;
-            this.filteredRootNode = this.rawRootNode;
         }
     }
     getParent(element: OpenApiTreeNode): OpenApiTreeNode | undefined {
         return element.parent;
     }
+    getTreeNodeFromKiotaNode(node: KiotaOpenApiNode, parent?: OpenApiTreeNode): OpenApiTreeNode {
+        const result = new OpenApiTreeNode(node.path, 
+            node.segment, 
+            node.selected,
+            this.getIconSet(node.selected),
+            node.children.length > 0 ? 
+                (this.tokenizedFilter.length > 0 ?
+                    vscode.TreeItemCollapsibleState.Expanded :
+                    vscode.TreeItemCollapsibleState.Collapsed) : 
+                vscode.TreeItemCollapsibleState.None,
+            parent
+        );
+        result.children = node.children.map(x => this.getTreeNodeFromKiotaNode(x, result));
+        return result;
+    }
     getChildren(element?: OpenApiTreeNode): OpenApiTreeNode[] {
-        if (!this.filteredRootNode) {
+        if (!this.rawRootNode) {
             return [];
         }
         if (element) {
-            return this.findChildren(this.getPathSegments(element.path), this.filteredRootNode)
-                        .map(x => new OpenApiTreeNode(x.path, 
-                                                        x.segment, 
-                                                        x.selected,
-                                                        this.getIconSet(x.selected),
-                                                        x.children.length > 0 ? 
-                                                            (this.isFiltered ?
-                                                                vscode.TreeItemCollapsibleState.Expanded :
-                                                                vscode.TreeItemCollapsibleState.Collapsed) : 
-                                                            vscode.TreeItemCollapsibleState.None,
-                                                        element
-                                                    ));
+            return element.children.filter(x => x.isNodeVisible(this.tokenizedFilter));
         } else {
-            return [new OpenApiTreeNode(this.filteredRootNode.path, 
-                                        this.filteredRootNode.segment,
-                                        this.filteredRootNode.selected,
-                                        this.getIconSet(this.filteredRootNode.selected),
-                                        vscode.TreeItemCollapsibleState.Expanded)];
+            const result = this.getTreeNodeFromKiotaNode(this.rawRootNode);
+            result.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+            return [result];
         }
-    }
-    private findChildren(segments: string[], currentNode: KiotaOpenApiNode): KiotaOpenApiNode[] {
-        if(segments.length === 0) {
-            return currentNode.children;
-        } else {
-            const segment = segments.shift();
-            if(segment) {
-                const child = currentNode.children.find(x => x.segment === segment);
-                if(child) {
-                    return this.findChildren(segments, child);
-                }
-            }
-        }
-        return [];
     }
 }
 type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string | vscode.Uri } | vscode.ThemeIcon;
 export class OpenApiTreeNode extends vscode.TreeItem {
+    public children: OpenApiTreeNode[] = [];
     constructor(
         public readonly path: string,
         public readonly label: string,
         public selected: boolean,
         iconSet: string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+        public collapsibleState: vscode.TreeItemCollapsibleState,
         public readonly parent?: OpenApiTreeNode
     ) {
         super(label, collapsibleState);
         this.iconPath = iconSet;
+    }
+    public isNodeVisible(tokenizedFilter: string[]): boolean {
+        if (this.children.length === 0) {
+            const lowerCaseSegment = this.label.toLowerCase();
+            return tokenizedFilter.some(x => lowerCaseSegment.includes(x.toLowerCase()));
+        }
+        return this.children.some(x => x.isNodeVisible(tokenizedFilter));
     }
 }
