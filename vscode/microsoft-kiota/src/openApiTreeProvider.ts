@@ -25,7 +25,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
       this._lockFile = JSON.parse(lockFileData.toString()) as LockFile;
       if (this._lockFile?.descriptionLocation) {
         this._descriptionUrl = this._lockFile.descriptionLocation;
-        await this.getChildren();
+        await this.loadNodes();
         if (this.rawRootNode) {
             if (this._lockFile.includePatterns.length === 0) {
                 this.setAllSelected(this.rawRootNode, true);
@@ -37,7 +37,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                     }
                 });
             }
-            this.refresh();
+            this.refreshView();
         }
       }
     }
@@ -63,13 +63,14 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         this._lockFile = undefined;
         this._lockFilePath = undefined;
         if (shouldRefresh) {
-            this.refresh();
+            this.refreshView();
         }
     }
-    public set descriptionUrl(descriptionUrl: string) {
+    public async setDescriptionUrl(descriptionUrl: string): Promise<void> {
         this.closeDescription(false);
         this._descriptionUrl = descriptionUrl;
-        this.refresh();
+        await this.loadNodes();
+        this.refreshView();
     }
     public get descriptionUrl(): string {
         return this._descriptionUrl || '';
@@ -81,7 +82,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         const apiNode = this.findApiNode(this.getPathSegments(item.path), this.rawRootNode);
         if(apiNode) {
             this.selectInternal(apiNode, selected, recursive);
-            this.refresh();
+            this.refreshView();
         }
     }
     private selectInternal(apiNode: KiotaOpenApiNode, selected: boolean, recursive: boolean) {
@@ -104,7 +105,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         return undefined;
     }
 
-    refresh(): void {
+    refreshView(): void {
         this._onDidChangeTreeData.fire();
     }
     getTreeItem(element: OpenApiTreeNode): vscode.TreeItem {
@@ -133,27 +134,26 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         return selected ? this.selectedSet : this.unselectedSet;
     }
     private rawRootNode: KiotaOpenApiNode | undefined;
-    async getChildren(element?: OpenApiTreeNode): Promise<OpenApiTreeNode[]> {
+    private async loadNodes(): Promise<void> {
         if (!this.descriptionUrl || this.descriptionUrl.length === 0) {
+            return;
+        }
+        const result = await connectToKiota(this.context, async (connection) => {
+            const request = new rpc.RequestType<KiotaShowConfiguration, KiotaShowResult, void>('Show');
+            return await connection.sendRequest(request, {
+                includeFilters: this.includeFilters,
+                excludeFilters: this.excludeFilters,
+                descriptionPath: this.descriptionUrl
+            });
+        });
+        if(result && result.rootNode) {
+            this.rawRootNode = result.rootNode;
+        }
+    }
+    getChildren(element?: OpenApiTreeNode): OpenApiTreeNode[] {
+        if (!this.rawRootNode) {
             return [];
         }
-        if (!this.rawRootNode) {
-            const result = await connectToKiota(this.context, async (connection) => {
-                const request = new rpc.RequestType<KiotaShowConfiguration, KiotaShowResult, void>('Show');
-                return await connection.sendRequest(request, {
-                    includeFilters: this.includeFilters,
-                    excludeFilters: this.excludeFilters,
-                    descriptionPath: this.descriptionUrl
-                });
-            });
-            if(result && result.rootNode) {
-                this.rawRootNode = result.rootNode;
-            }
-            else {
-                return [];
-            }
-        }
-        
         if (element) {
             return this.findChildren(this.getPathSegments(element.path), this.rawRootNode)
                         .map(x => new OpenApiTreeNode(x.path, 

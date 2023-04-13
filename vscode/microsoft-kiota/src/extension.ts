@@ -171,7 +171,7 @@ export async function activate(
       async () => {
         const config = await searchSteps(x => searchDescription(context, x));
         if (config.descriptionPath) {
-          openApiTreeProvider.descriptionUrl = config.descriptionPath;
+          await openApiTreeProvider.setDescriptionUrl(config.descriptionPath);
           await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
         }
       }
@@ -184,7 +184,7 @@ export async function activate(
       async () => {
         const openState = await openSteps();
         if (openState.descriptionPath) {
-          openApiTreeProvider.descriptionUrl = openState.descriptionPath;
+          await openApiTreeProvider.setDescriptionUrl(openState.descriptionPath);
           await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
         }
       }
