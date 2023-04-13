@@ -130,11 +130,6 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     private getPathSegments(path: string): string[] {
         return path.replace('/', '').split('\\').filter(x => x !== ''); // the root node is always /
     }
-    private readonly selectedSet: IconSet = new vscode.ThemeIcon('check');
-    private readonly unselectedSet: IconSet = new vscode.ThemeIcon('circle-slash');
-    private getIconSet(selected: boolean): IconSet {
-        return selected ? this.selectedSet : this.unselectedSet;
-    }
     private rawRootNode: KiotaOpenApiNode | undefined;
     private tokenizedFilter: string[] = [];
     public filterNodes(filterText: string): void {
@@ -167,7 +162,6 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         const result = new OpenApiTreeNode(node.path, 
             node.segment, 
             node.selected,
-            this.getIconSet(node.selected),
             node.children.length > 0 ? 
                 (this.tokenizedFilter.length > 0 ?
                     vscode.TreeItemCollapsibleState.Expanded :
@@ -193,17 +187,18 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
 }
 type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string | vscode.Uri } | vscode.ThemeIcon;
 export class OpenApiTreeNode extends vscode.TreeItem {
+    private static readonly selectedSet: IconSet = new vscode.ThemeIcon('check');
+    private static readonly unselectedSet: IconSet = new vscode.ThemeIcon('circle-slash');
     public children: OpenApiTreeNode[] = [];
     constructor(
         public readonly path: string,
         public readonly label: string,
-        public selected: boolean,
-        iconSet: string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon,
-        public collapsibleState: vscode.TreeItemCollapsibleState,
+        selected: boolean,
+        collapsibleState: vscode.TreeItemCollapsibleState,
         public readonly parent?: OpenApiTreeNode
     ) {
         super(label, collapsibleState);
-        this.iconPath = iconSet;
+        this.iconPath = selected ? OpenApiTreeNode.selectedSet : OpenApiTreeNode.unselectedSet;
     }
     public isNodeVisible(tokenizedFilter: string[]): boolean {
         if (this.children.length === 0) {
