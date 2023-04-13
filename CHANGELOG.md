@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Move the common properties to a base class and remove properties(RequestAdapter, UrlTemplate and PathParameters) for the request builders and options and headers for RequestConfig classes PHP.[2439](https://github.com/microsoft/kiota/issues/2439)
+- Fix bugs with imports for PHP Generation.
 
 ## [1.1.1] - 2023-04-05
 
