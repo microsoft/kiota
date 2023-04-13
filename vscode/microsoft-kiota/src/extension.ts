@@ -179,9 +179,6 @@ export async function activate(
     vscode.commands.registerCommand(`${treeViewId}.closeDescription`, () =>
       openApiTreeProvider.closeDescription()
     ),
-    vscode.commands.registerCommand(`${treeViewId}.clearFilter`, () =>
-      openApiTreeProvider.filterNodes('')
-    ),
     vscode.commands.registerCommand(`${treeViewId}.filterDescription`,
       async () => {
         await filterSteps(x => openApiTreeProvider.filterNodes(x));

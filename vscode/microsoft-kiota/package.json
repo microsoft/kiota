@@ -88,11 +88,6 @@
           "group": "navigation@3"
         },
         {
-          "command": "kiota.openApiExplorer.clearFilter",
-          "when": "view == kiota.openApiExplorer",
-          "group": "navigation@4"
-        },
-        {
           "command": "kiota.openApiExplorer.generateClient",
           "when": "view == kiota.openApiExplorer",
           "group": "navigation@4"
@@ -177,12 +172,6 @@
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.filterDescription.title%",
         "icon": "$(filter)"
-      },
-      {
-        "command": "kiota.openApiExplorer.clearFilter",
-        "category": "Kiota",
-        "title": "%kiota.openApiExplorer.clearFilter.title%",
-        "icon": "$(filter-filled)"
       },
       {
         "command": "kiota.searchApiDescription",
