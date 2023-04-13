@@ -50,6 +50,29 @@ export async function searchLockSteps() {
     return state;
 }
 
+export async function filterSteps(filterCallback: (searchQuery: string) => void) {
+    const state = {} as Partial<BaseStepsState>;
+    const title = l10n.t('Search for an API description');
+    let step = 1;
+    let totalSteps = 1;
+    async function inputFilterQuery(input: MultiStepInput, state: Partial<BaseStepsState>) {
+        await input.showInputBox({
+            title,
+            step: step++,
+            totalSteps: totalSteps,
+            value: '',
+            prompt: l10n.t('Enter a search query'),
+            validate: x => {
+                filterCallback(x);
+                return Promise.resolve(undefined);
+            },
+            shouldResume: shouldResume
+        });
+    }
+    await MultiStepInput.run(input => inputFilterQuery(input, state), () => step-=2);
+    return state;
+}
+
 export async function searchSteps(searchCallBack: (searchQuery: string) => Promise<Record<string, KiotaSearchResultItem> | undefined>) {
     const state = {} as Partial<SearchState>;
     const title = l10n.t('Search for an API description');

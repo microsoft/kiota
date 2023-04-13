@@ -10,7 +10,7 @@ import {
   LogLevel,
   parseGenerationLanguage,
 } from "./kiotaInterop";
-import { generateSteps, openSteps, searchLockSteps, searchSteps } from "./steps";
+import { filterSteps, generateSteps, openSteps, searchLockSteps, searchSteps } from "./steps";
 import { getKiotaVersion } from "./getKiotaVersion";
 import { searchDescription } from "./searchDescription";
 import { generateClient } from "./generateClient";
@@ -172,13 +172,20 @@ export async function activate(
         const config = await searchSteps(x => searchDescription(context, x));
         if (config.descriptionPath) {
           await openApiTreeProvider.setDescriptionUrl(config.descriptionPath);
-          openApiTreeProvider.filterNodes("pulls");
           await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
         }
       }
     ),
     vscode.commands.registerCommand(`${treeViewId}.closeDescription`, () =>
       openApiTreeProvider.closeDescription()
+    ),
+    vscode.commands.registerCommand(`${treeViewId}.clearFilter`, () =>
+      openApiTreeProvider.filterNodes('')
+    ),
+    vscode.commands.registerCommand(`${treeViewId}.filterDescription`,
+      async () => {
+        await filterSteps(x => openApiTreeProvider.filterNodes(x));
+      }
     ),
     vscode.commands.registerCommand(
       `${treeViewId}.openDescription`,

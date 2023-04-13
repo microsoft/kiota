@@ -2,7 +2,6 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
 import { connectToKiota, KiotaOpenApiNode, KiotaShowConfiguration, KiotaShowResult, LockFile } from './kiotaInterop';
-import { ThemeIcon, Uri } from 'vscode';
 
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<OpenApiTreeNode | undefined | null | void> = new vscode.EventEmitter<OpenApiTreeNode | undefined | null | void>();
@@ -155,19 +154,19 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             this.rawRootNode = result.rootNode;
         }
     }
-    getParent(element: OpenApiTreeNode): OpenApiTreeNode | undefined {
-        return element.parent;
+    getCollapsedState(hasChildren: boolean): vscode.TreeItemCollapsibleState {
+        return !hasChildren ?
+                vscode.TreeItemCollapsibleState.None :
+                (this.tokenizedFilter.length === 0 ?
+                    vscode.TreeItemCollapsibleState.Collapsed : 
+                    vscode.TreeItemCollapsibleState.Expanded);
     }
     getTreeNodeFromKiotaNode(node: KiotaOpenApiNode, parent?: OpenApiTreeNode): OpenApiTreeNode {
-        const result = new OpenApiTreeNode(node.path, 
+        const result = new OpenApiTreeNode(
+            node.path, 
             node.segment, 
             node.selected,
-            node.children.length > 0 ? 
-                (this.tokenizedFilter.length > 0 ?
-                    vscode.TreeItemCollapsibleState.Expanded :
-                    vscode.TreeItemCollapsibleState.Collapsed) : 
-                vscode.TreeItemCollapsibleState.None,
-            parent
+            this.getCollapsedState(node.children.length > 0)
         );
         result.children = node.children.map(x => this.getTreeNodeFromKiotaNode(x, result));
         return result;
@@ -189,18 +188,26 @@ type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string 
 export class OpenApiTreeNode extends vscode.TreeItem {
     private static readonly selectedSet: IconSet = new vscode.ThemeIcon('check');
     private static readonly unselectedSet: IconSet = new vscode.ThemeIcon('circle-slash');
-    public children: OpenApiTreeNode[] = [];
+    public children: OpenApiTreeNode[];
     constructor(
         public readonly path: string,
         public readonly label: string,
-        selected: boolean,
-        collapsibleState: vscode.TreeItemCollapsibleState,
-        public readonly parent?: OpenApiTreeNode
+        public readonly selected: boolean,
+        public collapsibleState: vscode.TreeItemCollapsibleState,
+        _children?: OpenApiTreeNode[]
     ) {
         super(label, collapsibleState);
         this.iconPath = selected ? OpenApiTreeNode.selectedSet : OpenApiTreeNode.unselectedSet;
+        if (_children) {
+            this.children = _children;
+        } else {
+            this.children = [];
+        }
     }
     public isNodeVisible(tokenizedFilter: string[]): boolean {
+        if (tokenizedFilter.length === 0) {
+            return true;
+        }
         if (this.children.length === 0) {
             const lowerCaseSegment = this.label.toLowerCase();
             return tokenizedFilter.some(x => lowerCaseSegment.includes(x.toLowerCase()));
