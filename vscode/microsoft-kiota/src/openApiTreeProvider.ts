@@ -121,7 +121,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     private findSelectedPaths(currentNode: KiotaOpenApiNode): string[] {
         const result: string[] = [];
-        if(currentNode.selected) {
+        if(currentNode.selected || false) {
             result.push(currentNode.path.replace(/\\/g, '/'));
         }
         currentNode.children.forEach(x => result.push(...this.findSelectedPaths(x)));
@@ -167,14 +167,14 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                     vscode.TreeItemCollapsibleState.Collapsed : 
                     vscode.TreeItemCollapsibleState.Expanded);
     }
-    getTreeNodeFromKiotaNode(node: KiotaOpenApiNode, parent?: OpenApiTreeNode): OpenApiTreeNode {
+    getTreeNodeFromKiotaNode(node: KiotaOpenApiNode): OpenApiTreeNode {
         const result = new OpenApiTreeNode(
             node.path, 
-            node.segment, 
-            node.selected,
+            node.segment,
+            node.selected || false,
             this.getCollapsedState(node.children.length > 0)
         );
-        result.children = node.children.map(x => this.getTreeNodeFromKiotaNode(x, result));
+        result.children = node.children.map(x => this.getTreeNodeFromKiotaNode(x));
         return result;
     }
     getChildren(element?: OpenApiTreeNode): OpenApiTreeNode[] {
@@ -198,7 +198,7 @@ export class OpenApiTreeNode extends vscode.TreeItem {
     constructor(
         public readonly path: string,
         public readonly label: string,
-        public readonly selected: boolean,
+        selected: boolean,
         public collapsibleState: vscode.TreeItemCollapsibleState,
         _children?: OpenApiTreeNode[]
     ) {
@@ -214,9 +214,9 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         if (tokenizedFilter.length === 0) {
             return true;
         }
-        if (this.children.length === 0) {
-            const lowerCaseSegment = this.label.toLowerCase();
-            return tokenizedFilter.some(x => lowerCaseSegment.includes(x.toLowerCase()));
+        const lowerCaseSegment = this.label.toLowerCase();
+        if (tokenizedFilter.some(x => lowerCaseSegment.includes(x.toLowerCase()))) {
+            return true;
         }
         return this.children.some(x => x.isNodeVisible(tokenizedFilter));
     }
