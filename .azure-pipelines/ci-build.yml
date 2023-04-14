@@ -19,10 +19,6 @@ trigger:
     include:
       - v*
 
-pool:
-  name: Azure Pipelines
-  vmImage: windows-latest
-
 variables:
   buildPlatform: "Any CPU"
   buildConfiguration: "Release"
@@ -32,6 +28,8 @@ stages:
   - stage: build
     jobs:
       - job: build
+        pool:
+          vmImage: windows-latest # needed for compliance tasks
         steps:
           - task: UseDotNet@2
             displayName: "Use .NET 6" # needed for ESRP signing
@@ -238,6 +236,8 @@ stages:
 
       - job: build_binaries
         dependsOn: []
+        pool:
+          vmImage: 'ubuntu-latest'
         strategy:
           matrix:
             win-x86:
@@ -274,7 +274,7 @@ stages:
               SecretsFilter: "graph-cli-apple-developer-certificate,graph-cli-apple-developer-certificate-password"
             condition: and(succeeded(), startsWith(variables['architecture'], 'osx'))
           
-          - script: |
+          - bash: |
               set -e
               security create-keychain -p pwd $(agent.tempdirectory)/buildagent.keychain
               security default-keychain -s $(agent.tempdirectory)/buildagent.keychain
@@ -402,6 +402,8 @@ stages:
 
       - job: build_vscode_extension
         dependsOn: [build_binaries]
+        pool:
+          vmImage: ubuntu-latest
         steps:
           - checkout: self
             clean: true
