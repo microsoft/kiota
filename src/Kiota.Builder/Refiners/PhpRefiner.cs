@@ -39,7 +39,7 @@ public class PhpRefiner : CommonLanguageRefiner
             MakeModelPropertiesNullable(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
-                static x => $"With{x.ToFirstCharacterUpperCase()}",
+                static x => $"By{x.ToFirstCharacterUpperCase()}",
                 static x => x.ToFirstCharacterLowerCase());
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);

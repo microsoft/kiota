@@ -22,7 +22,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
-                static x => $"_with_{x.ToSnakeCase()}",
+                static x => $"by_{x.ToSnakeCase()}",
                 static x => x.ToSnakeCase());
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);

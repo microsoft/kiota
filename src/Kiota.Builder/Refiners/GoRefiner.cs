@@ -32,7 +32,7 @@ public class GoRefiner : CommonLanguageRefiner
             ReplaceIndexersByMethodsWithParameter(
                 generatedCode,
                 false,
-                static x => $"With{x.ToFirstCharacterUpperCase()}",
+                static x => $"By{x.ToFirstCharacterUpperCase()}",
                 static x => x.ToFirstCharacterLowerCase());
             FlattenNestedHierarchy(generatedCode);
             FlattenGoParamsFileNames(generatedCode);
