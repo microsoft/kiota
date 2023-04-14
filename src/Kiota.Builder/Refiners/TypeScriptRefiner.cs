@@ -28,7 +28,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
-                static x => $"with{x.ToFirstCharacterUpperCase()}",
+                static x => $"by{x.ToFirstCharacterUpperCase()}",
                 static x => x.ToFirstCharacterLowerCase());
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
