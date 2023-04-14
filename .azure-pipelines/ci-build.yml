@@ -237,19 +237,24 @@ stages:
       - job: build_binaries
         dependsOn: []
         pool:
-          vmImage: 'ubuntu-latest'
+          vmImage: $(vmImage)
         strategy:
           matrix:
             win-x86:
               architecture: 'win-x86'
+              vmImage: 'ubuntu-latest'
             win-x64:
               architecture: 'win-x64'
+              vmImage: 'ubuntu-latest'
             linux-x64:
               architecture: 'linux-x64'
+              vmImage: 'ubuntu-latest'
             osx-x64:
               architecture: 'osx-x64'
+              vmImage: 'macOS-latest'
             osx-arm64:
               architecture: 'osx-arm64'
+              vmImage: 'macOS-latest'
         steps:
           - checkout: self
             clean: true
