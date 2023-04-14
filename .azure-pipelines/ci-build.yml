@@ -267,8 +267,6 @@ stages:
             displayName: "Use .NET 7"
             inputs:
               version: 7.x
-          # - pwsh: dotnet workload install ios macos maccatalyst
-          #   condition: startsWith(variables['architecture'], 'osx')
           - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture)
             displayName: publish kiota as executable
           - task: AzureKeyVault@2
@@ -291,11 +289,6 @@ stages:
             displayName: Set Hardened Entitlements
             condition: and(succeeded(), startsWith(variables['architecture'], 'osx'))
 
-          # - script: |
-          #     set -e
-          #     pushd $(EXECUTABLE_PATH) && zip -r -X $(EXECUTABLE_PATH)/$(ZIP_NAME) * && rm $(EXECUTABLE_NAME) && popd
-          #   displayName: Archive build for submission
-          #   condition: and(succeeded(), startsWith(variables['architecture'], 'osx'))
           - task: EsrpCodeSigning@2
             condition: and(succeeded(), startsWith(variables['architecture'], 'win'))
             inputs:
