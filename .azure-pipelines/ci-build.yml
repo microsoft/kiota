@@ -263,9 +263,34 @@ stages:
             inputs:
               version: 7.x
           - pwsh: dotnet workload install ios macos maccatalyst
-            condition: eq(variables['architecture'], 'osx-arm64')
+            condition: startsWith(variables['architecture'], 'osx')
           - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture)
             displayName: publish kiota as executable
+          - task: AzureKeyVault@2
+            displayName: "Azure Key Vault: Get Secrets"
+            inputs:
+              azureSubscription: "MicrosofGraphKeyVault connection"
+              KeyVaultName: MicrosofGraphKeyVault
+              SecretsFilter: "graph-cli-apple-developer-certificate,graph-cli-apple-developer-certificate-password"
+            condition: and(succeeded(), startsWith(variables['architecture'], 'osx'))
+          
+          - script: |
+              set -e
+              security create-keychain -p pwd $(agent.tempdirectory)/buildagent.keychain
+              security default-keychain -s $(agent.tempdirectory)/buildagent.keychain
+              security unlock-keychain -p pwd $(agent.tempdirectory)/buildagent.keychain
+              echo "$(graph-cli-apple-developer-certificate)" | base64 -D > $(agent.tempdirectory)/cert.p12
+              security import $(agent.tempdirectory)/cert.p12 -k $(agent.tempdirectory)/buildagent.keychain -P "$(graph-cli-apple-developer-certificate-password)" -T /usr/bin/codesign
+              security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k pwd $(agent.tempdirectory)/buildagent.keychain
+              codesign -s 26745KVN9Q --deep --force --options runtime --entitlements scripts/entitlements.plist $(Build.ArtifactStagingDirectory)/binaries/$(architecture)/kiota
+            displayName: Set Hardened Entitlements
+            condition: and(succeeded(), startsWith(variables['architecture'], 'osx'))
+
+          # - script: |
+          #     set -e
+          #     pushd $(EXECUTABLE_PATH) && zip -r -X $(EXECUTABLE_PATH)/$(ZIP_NAME) * && rm $(EXECUTABLE_NAME) && popd
+          #   displayName: Archive build for submission
+          #   condition: and(succeeded(), startsWith(variables['architecture'], 'osx'))
           - task: EsrpCodeSigning@2
             condition: and(succeeded(), startsWith(variables['architecture'], 'win'))
             inputs:
