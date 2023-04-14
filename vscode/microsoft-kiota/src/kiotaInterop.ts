@@ -33,7 +33,7 @@ export interface KiotaOpenApiNode {
     segment: string,
     path: string,
     children: KiotaOpenApiNode[],
-    selected: boolean,
+    selected?: boolean,
 }
 
 export interface KiotaShowConfiguration {
