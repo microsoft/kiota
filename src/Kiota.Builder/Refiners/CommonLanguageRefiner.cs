@@ -406,17 +406,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
     }
 
-    private static void UpdateReservedNameReplacementInParent(CodeElement codeElement, string newDeclarationName)
-    {
-        if (codeElement.Parent is CodeNamespace codeNamespace)
-        {
-            codeNamespace.RenameChildElement(codeElement.Name, newDeclarationName);
-        }
-        else if (codeElement.Parent is CodeClass codeClass)
-        {
-            codeClass.RenameChildElement(codeElement.Name, newDeclarationName);
-        }
-    }
     private static void ReplaceReservedEnumNames(CodeEnum currentEnum, IReservedNamesProvider provider, Func<string, string> replacement)
     {
         currentEnum.Options
