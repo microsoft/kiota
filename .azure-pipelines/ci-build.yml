@@ -276,7 +276,6 @@ stages:
               KeyVaultName: MicrosofGraphKeyVault
               SecretsFilter: "graph-cli-apple-developer-certificate,graph-cli-apple-developer-certificate-password"
             condition: and(succeeded(), startsWith(variables['architecture'], 'osx'))
-          
           - bash: |
               set -e
               security create-keychain -p pwd $(agent.tempdirectory)/buildagent.keychain
