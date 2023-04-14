@@ -10,7 +10,7 @@ import {
   LogLevel,
   parseGenerationLanguage,
 } from "./kiotaInterop";
-import { generateSteps, openSteps, searchSteps } from "./steps";
+import { filterSteps, generateSteps, openSteps, searchLockSteps, searchSteps } from "./steps";
 import { getKiotaVersion } from "./getKiotaVersion";
 import { searchDescription } from "./searchDescription";
 import { generateClient } from "./generateClient";
@@ -20,6 +20,12 @@ import { updateClients } from "./updateClients";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
+const extensionId = "kiota";
+const focusCommandId = ".focus";
+const statusBarCommandId = `${extensionId}.status`;
+const treeViewId = `${extensionId}.openApiExplorer`;
+const dependenciesInfo = `${extensionId}.dependenciesInfo`;
+export const kiotaLockFile = "kiota-lock.json";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -29,28 +35,22 @@ export async function activate(
   kiotaOutputChannel = vscode.window.createOutputChannel("Kiota", {
     log: true,
   });
-  const extensionId = "kiota";
-  const focusCommandId = ".focus";
-  const statusBarCommandId = `${extensionId}.status`;
-  const treeViewId = `${extensionId}.openApiExplorer`;
-  const dependenciesInfo = `${extensionId}.dependenciesInfo`;
   const openApiTreeProvider = new OpenApiTreeProvider(context);
   const dependenciesInfoProvider = new DependenciesViewProvider(
     context.extensionUri
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      `${extensionId}.selectLock`,
-      async (node: { fsPath: string }) => {
-        await vscode.window.withProgress({
-          location: vscode.ProgressLocation.Notification,
-          cancellable: false,
-          title: vscode.l10n.t("Loading...")
-        }, (progress, _) => openApiTreeProvider.loadLockFile(node.fsPath));
-        if (openApiTreeProvider.descriptionUrl) {
-          await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
+      `${extensionId}.searchLock`,
+      async () => {
+        const lockFilePath = await searchLockSteps();
+        if (lockFilePath && lockFilePath.lockFilePath) {
+          await loadLockFile(lockFilePath.lockFilePath, openApiTreeProvider);
         }
-      }
+      }),
+    vscode.commands.registerCommand(
+      `${extensionId}.selectLock`,
+      (x) => loadLockFile(x, openApiTreeProvider)
     ),
     vscode.commands.registerCommand(statusBarCommandId, async () => {
       const yesAnswer = vscode.l10n.t("Yes");
@@ -158,7 +158,7 @@ export async function activate(
         if (typeof config.outputPath === "string" && !openApiTreeProvider.isLockFileLoaded && 
             vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 &&
             result && getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length === 0) {
-          await openApiTreeProvider.loadLockFile(path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, config.outputPath, "kiota-lock.json"));
+          await openApiTreeProvider.loadLockFile(path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, config.outputPath, kiotaLockFile));
         }
         if (result)
         {
@@ -171,7 +171,7 @@ export async function activate(
       async () => {
         const config = await searchSteps(x => searchDescription(context, x));
         if (config.descriptionPath) {
-          openApiTreeProvider.descriptionUrl = config.descriptionPath;
+          await openApiTreeProvider.setDescriptionUrl(config.descriptionPath);
           await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
         }
       }
@@ -179,12 +179,17 @@ export async function activate(
     vscode.commands.registerCommand(`${treeViewId}.closeDescription`, () =>
       openApiTreeProvider.closeDescription()
     ),
+    vscode.commands.registerCommand(`${treeViewId}.filterDescription`,
+      async () => {
+        await filterSteps(openApiTreeProvider.filter, x => openApiTreeProvider.filter = x);
+      }
+    ),
     vscode.commands.registerCommand(
       `${treeViewId}.openDescription`,
       async () => {
         const openState = await openSteps();
         if (openState.descriptionPath) {
-          openApiTreeProvider.descriptionUrl = openState.descriptionPath;
+          await openApiTreeProvider.setDescriptionUrl(openState.descriptionPath);
           await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
         }
       }
@@ -246,6 +251,17 @@ export async function activate(
   );
 
   context.subscriptions.push(disposable);
+}
+
+async function loadLockFile(node: { fsPath: string }, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
+  await vscode.window.withProgress({
+    location: vscode.ProgressLocation.Notification,
+    cancellable: false,
+    title: vscode.l10n.t("Loading...")
+  }, (progress, _) => openApiTreeProvider.loadLockFile(node.fsPath));
+  if (openApiTreeProvider.descriptionUrl) {
+    await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
+  }
 }
 
 async function exportLogsAndShowErrors(result: KiotaLogEntry[]) : Promise<void> {
