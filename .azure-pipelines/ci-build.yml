@@ -289,11 +289,6 @@ stages:
             displayName: Set Hardened Entitlements
             condition: and(succeeded(), startsWith(variables['architecture'], 'osx'))
 
-          # - script: |
-          #     set -e
-          #     pushd $(EXECUTABLE_PATH) && zip -r -X $(EXECUTABLE_PATH)/$(ZIP_NAME) * && rm $(EXECUTABLE_NAME) && popd
-          #   displayName: Archive build for submission
-          #   condition: and(succeeded(), startsWith(variables['architecture'], 'osx'))
           - task: EsrpCodeSigning@2
             condition: and(succeeded(), startsWith(variables['architecture'], 'win'))
             inputs:
