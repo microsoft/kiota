@@ -549,6 +549,8 @@ public class KiotaBuilder
             stopwatch.Start();
             MapTypeDefinitions(codeNamespace);
             StopLogAndReset(stopwatch, $"{nameof(MapTypeDefinitions)}");
+            TrimInheritedModels();
+            StopLogAndReset(stopwatch, $"{nameof(TrimInheritedModels)}");
 
             logger.LogTrace("{timestamp}ms: Created source model with {count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.GetChildElements(true).Count());
         }
@@ -861,7 +863,7 @@ public class KiotaBuilder
         var unmappedTypesWithName = unmappedTypes.Except(unmappedTypesWithNoName);
 
         var unmappedRequestBuilderTypes = unmappedTypesWithName
-                                .Where(x =>
+                                .Where(static x =>
                                 x.Parent is CodeProperty property && property.IsOfKind(CodePropertyKind.RequestBuilder) ||
                                 x.Parent is CodeIndexer ||
                                 x.Parent is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestBuilderWithParameters))
@@ -876,7 +878,7 @@ public class KiotaBuilder
             {
                 parentNS = parentNS?.Parent as CodeNamespace;
                 x.TypeDefinition = (parentNS
-                    ?.FindNamespaceByName($"{parentNS?.Name}.{x.Name.Substring(0, x.Name.Length - requestBuilderSuffix.Length).ToFirstCharacterLowerCase()}".TrimEnd(nsNameSeparator))
+                    ?.FindNamespaceByName($"{parentNS?.Name}.{x.Name[..^requestBuilderSuffix.Length].ToFirstCharacterLowerCase()}".TrimEnd(nsNameSeparator))
                     ?.FindChildrenByName<CodeClass>(x.Name))?.MinBy(shortestNamespaceOrder);
                 // in case of the .item namespace, going to the parent and then down to the target by convention
                 // this avoid getting the wrong request builder in case we have multiple request builders with the same name in the parent branch
@@ -884,7 +886,7 @@ public class KiotaBuilder
             }
         });
 
-        Parallel.ForEach(unmappedTypesWithName.Where(x => x.TypeDefinition == null).GroupBy(x => x.Name), x =>
+        Parallel.ForEach(unmappedTypesWithName.Where(static x => x.TypeDefinition == null).GroupBy(static x => x.Name), x =>
         {
             if (rootNamespace?.FindChildByName<ITypeDefinition>(x.First().Name) is CodeElement definition)
                 foreach (var type in x)
@@ -900,10 +902,10 @@ public class KiotaBuilder
             .Union(source
                     .OfType<CodeComposedTypeBase>()
                     .SelectMany(x => x.Types))
-            .Where(x => !x.IsExternal && x.TypeDefinition == null);
+            .Where(static x => !x.IsExternal && x.TypeDefinition == null);
     private IEnumerable<CodeType> GetUnmappedTypeDefinitions(CodeElement codeElement)
     {
-        var childElementsUnmappedTypes = codeElement.GetChildElements(true).SelectMany(x => GetUnmappedTypeDefinitions(x));
+        var childElementsUnmappedTypes = codeElement.GetChildElements(true).SelectMany(GetUnmappedTypeDefinitions);
         return codeElement switch
         {
             CodeMethod method => filterUnmappedTypeDefinitions(method.Parameters.Select(static x => x.Type).Union(new[] { method.ReturnType })).Union(childElementsUnmappedTypes),
@@ -1509,7 +1511,6 @@ public class KiotaBuilder
 
             return AddModelClass(currentNode, schema, declarationName, currentNamespace, inheritsFrom);
         }
-
         return existingDeclaration;
     }
     private static void SetEnumOptions(OpenApiSchema schema, CodeEnum target)
@@ -1583,6 +1584,76 @@ public class KiotaBuilder
                 .Where(static x => x.Value != null)
                 .Select(static x => KeyValuePair.Create(x.Key, x.Value!));
     }
+    private static IEnumerable<CodeElement> GetAllModels(CodeNamespace currentNamespace)
+    {
+        return currentNamespace.Classes
+                            .Where(static x => x.IsOfKind(CodeClassKind.Model))
+                            .OfType<CodeElement>()
+                            .Union(currentNamespace.Enums)
+                            .Union(currentNamespace.Namespaces.SelectMany(static x => GetAllModels(x)));
+    }
+    private void TrimInheritedModels()
+    {
+        if (modelsNamespace is null || rootNamespace is null) return;
+        var models = GetAllModels(modelsNamespace);
+        var allModelsInUse = GetTypeDefinitionsInNamespace(rootNamespace).ToHashSet();
+        var allRelatedModels = allModelsInUse.SelectMany(x => GetRelatedClasses(x)).ToHashSet(); // so base classes and properties definitions are also included
+        Parallel.ForEach(models, x =>
+        {
+            if (allRelatedModels.Contains(x) || allModelsInUse.Contains(x)) return;
+            if (x is CodeClass currentClass)
+            {
+                var baseClass = currentClass.GetParentClass();
+                if (baseClass != null && allModelsInUse.Contains(baseClass))
+                    return;
+                if (baseClass != null)
+                    do
+                    {
+                        baseClass.DiscriminatorInformation.RemoveDiscriminatorMapping(currentClass);
+                    } while ((baseClass = baseClass.GetParentClass()) != null); // discriminator might also be in grand parent types
+            }
+            x.GetImmediateParentOfType<CodeNamespace>().RemoveChildElement(x);
+        });
+    }
+    private IEnumerable<CodeElement> GetRelatedClasses(CodeElement currentElement, HashSet<CodeElement>? visited = null)
+    {
+        if (currentElement is not CodeClass currentClass)
+            return Enumerable.Empty<CodeElement>();
+        visited ??= new();
+        var propertiesDefinitions = currentClass.Properties
+                            .SelectMany(static x => x.Type.AllTypes)
+                            .Select(static x => x.TypeDefinition)
+                            .Where(static x => x is CodeClass || x is CodeEnum)
+                            .Select(static x => x!)
+                            .Except(visited)
+                            .ToArray();
+        visited = visited.Union(propertiesDefinitions).ToHashSet();
+        if (currentClass.GetParentClass() is CodeClass parentClass)
+        {
+            return propertiesDefinitions.Union(propertiesDefinitions.SelectMany(x => GetRelatedClasses(x, visited))).Union(new[] { parentClass }).Union(GetRelatedClasses(parentClass, visited));
+        }
+        return propertiesDefinitions.Union(propertiesDefinitions.SelectMany(x => GetRelatedClasses(x, visited)));
+    }
+    private IEnumerable<CodeElement> GetTypeDefinitionsInNamespace(CodeNamespace currentNamespace)
+    {
+        var requestBuilderClasses = currentNamespace
+                            .Classes
+                            .Where(static x => x.IsOfKind(CodeClassKind.RequestBuilder));
+        var requestExecutors = requestBuilderClasses
+                                .SelectMany(static x => x.Methods)
+                                .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+
+        return requestExecutors.SelectMany(static x => x.ReturnType.AllTypes)
+                        .Union(requestExecutors
+                                .SelectMany(static x => x.Parameters)
+                                .Where(static x => x.IsOfKind(CodeParameterKind.RequestBody))
+                                .SelectMany(static x => x.Type.AllTypes))
+                        .Union(requestExecutors.SelectMany(static x => x.ErrorMappings.SelectMany(static y => y.Value.AllTypes)))
+                        .Where(static x => x.TypeDefinition != null)
+                        .Select(static x => x.TypeDefinition!)
+                        .Where(static x => x is CodeClass || x is CodeEnum)
+                        .Union(currentNamespace.Namespaces.Where(x => x != modelsNamespace).SelectMany(GetTypeDefinitionsInNamespace));
+    }
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex = new();
     private void InitializeInheritanceIndex()
     {
@@ -1621,7 +1692,7 @@ public class KiotaBuilder
     }
     private CodeTypeBase? GetCodeTypeForMapping(OpenApiUrlTreeNode currentNode, string referenceId, CodeNamespace currentNamespace, CodeClass? baseClass, OpenApiSchema currentSchema)
     {
-        var componentKey = referenceId?.Replace("#/components/schemas/", string.Empty);
+        var componentKey = referenceId?.Replace("#/components/schemas/", string.Empty, StringComparison.OrdinalIgnoreCase);
         if (openApiDocument == null || !openApiDocument.Components.Schemas.TryGetValue(componentKey, out var discriminatorSchema))
         {
             logger.LogWarning("Discriminator {componentKey} not found in the OpenAPI document.", componentKey);
