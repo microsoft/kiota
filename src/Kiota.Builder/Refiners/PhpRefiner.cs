@@ -19,19 +19,31 @@ public class PhpRefiner : CommonLanguageRefiner
     {
         return Task.Run(() =>
         {
+            AddInnerClasses(generatedCode,
+                true,
+                string.Empty,
+                true);
+            MoveRequestBuilderPropertiesToBaseType(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseRequestBuilder",
+                    Declaration = new CodeType
+                    {
+                        Name = "Microsoft\\Kiota\\Abstractions",
+                        IsExternal = true
+                    }
+                }, AccessModifier.Public);
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceIndexersByMethodsWithParameter(generatedCode, false, "ById");
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
                 false);
+            ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-            AddInnerClasses(generatedCode,
-                true,
-                string.Empty,
-                true);
-            ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true, _configuration.UsesBackingStore);
+            AddRequestConfigurationConstructors(generatedCode);
+            AddQueryParameterFactoryMethod(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             cancellationToken.ThrowIfCancellationRequested();
             AddGetterAndSetterMethods(generatedCode,
@@ -46,24 +58,24 @@ public class PhpRefiner : CommonLanguageRefiner
                 "get",
                 "set");
             // Imports should be done before adding getters and setters since AddGetterAndSetterMethods can remove properties from classes when backing store is enabled
-            ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
             AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiException",
                 "Microsoft\\Kiota\\Abstractions"
             );
+            MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, true);
             cancellationToken.ThrowIfCancellationRequested();
             cancellationToken.ThrowIfCancellationRequested();
             CorrectParameterType(generatedCode);
             MakeModelPropertiesNullable(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
-            MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",
                 addUsings: true
             );
+            ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true, _configuration.UsesBackingStore);
             var defaultConfiguration = new GenerationConfiguration();
             ReplaceDefaultSerializationModules(generatedCode,
                 defaultConfiguration.Serializers,
@@ -82,13 +94,22 @@ public class PhpRefiner : CommonLanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             CorrectBackingStoreSetterParam(generatedCode);
-            AliasUsingWithSameSymbol(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton::getInstance()->createBackingStore()");
             RemoveHandlerFromRequestBuilder(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
+            AliasUsingWithSameSymbol(generatedCode);
+            RemoveRequestConfigurationClassesCommonProperties(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseRequestConfiguration",
+                    Declaration = new CodeType
+                    {
+                        Name = "Microsoft\\Kiota\\Abstractions",
+                        IsExternal = true
+                    }
+                });
+            cancellationToken.ThrowIfCancellationRequested();
             // Because constructors are not added to Query parameter classes by default
-            AddRequestConfigurationConstructors(generatedCode);
-            AddQueryParameterFactoryMethod(generatedCode);
             ReplaceReservedExceptionPropertyNames(generatedCode, new PhpExceptionsReservedNamesProvider(),
                 static x => $"escaped{x.ToFirstCharacterUpperCase()}");
         }, cancellationToken);
@@ -193,9 +214,8 @@ public class PhpRefiner : CommonLanguageRefiner
         {
             currentProperty.Type.IsNullable = false;
             currentProperty.Type.Name = "array";
-            currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
-            if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
-                currentProperty.DefaultValue = "[]";
+            currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex; 
+            currentProperty.DefaultValue = "[]";
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))
         {
