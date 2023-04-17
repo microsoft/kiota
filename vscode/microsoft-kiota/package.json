@@ -3,7 +3,7 @@
   "displayName": "Microsoft Kiota",
   "publisher": "ms-graph",
   "description": "Client generator for HTTP REST APIs described by OpenAPI which helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you're interested in, thanks to a filtering capability.",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "icon": "images/logo.png",
   "engines": {
     "vscode": "^1.77.0"
@@ -21,6 +21,12 @@
   "main": "./dist/extension.js",
   "l10n": "./l10n",
   "contributes": {
+    "viewsWelcome":[
+      {
+        "view": "kiota.openApiExplorer",
+        "contents": "%kiota.openApiExplorer.welcome%"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -77,14 +83,19 @@
           "group": "navigation@1"
         },
         {
-          "command": "kiota.openApiExplorer.generateClient",
+          "command": "kiota.openApiExplorer.filterDescription",
           "when": "view == kiota.openApiExplorer",
           "group": "navigation@3"
         },
         {
-          "command": "kiota.openApiExplorer.closeDescription",
+          "command": "kiota.openApiExplorer.generateClient",
           "when": "view == kiota.openApiExplorer",
           "group": "navigation@4"
+        },
+        {
+          "command": "kiota.openApiExplorer.closeDescription",
+          "when": "view == kiota.openApiExplorer",
+          "group": "navigation@5"
         }
       ],
       "view/item/context": [
@@ -140,6 +151,12 @@
         "icon": "$(file-symlink-file)"
       },
       {
+        "command": "kiota.searchLock",
+        "category": "Kiota",
+        "title": "%kiota.searchLock.title%",
+        "icon": "$(file-symlink-file)"
+      },
+      {
         "command": "kiota.updateClients",
         "category": "Kiota",
         "title": "%kiota.updateClients.title%"
@@ -149,6 +166,12 @@
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.generateClient.title%",
         "icon": "$(play)"
+      },
+      {
+        "command": "kiota.openApiExplorer.filterDescription",
+        "category": "Kiota",
+        "title": "%kiota.openApiExplorer.filterDescription.title%",
+        "icon": "$(filter)"
       },
       {
         "command": "kiota.searchApiDescription",
@@ -211,15 +234,15 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "18.x",
     "@types/vscode": "^1.77.0",
-    "@typescript-eslint/eslint-plugin": "^5.57.1",
-    "@typescript-eslint/parser": "^5.57.1",
+    "@typescript-eslint/eslint-plugin": "^5.58.0",
+    "@typescript-eslint/parser": "^5.58.0",
     "@vscode/test-electron": "^2.2.2",
-    "eslint": "^8.37.0",
-    "glob": "^9.3.4",
+    "eslint": "^8.38.0",
+    "glob": "^10.1.0",
     "mocha": "^10.1.0",
     "ts-loader": "^9.4.2",
-    "typescript": "^5.0.3",
-    "webpack": "^5.77.0",
+    "typescript": "^5.0.4",
+    "webpack": "^5.79.0",
     "webpack-cli": "^5.0.1"
   },
   "dependencies": {
@@ -233,23 +256,23 @@
   "runtimeDependencies": [
     {
       "platformId": "win-x64",
-      "sha256": "D67CD1EB9DDC17D37D413315BA79B40D36D8AD1B6E4956CD4F14AD1FF59917E4"
+      "sha256": "FD865B0DD989B1BD7E213FF071AD59D3372F6602C80183CA146B7606634300AF"
     },
     {
       "platformId": "win-x86",
-      "sha256": "6D75F6D333D3732895A6BAE0B30A0F6BE6794E1BE3431E09EDEFAE387E157195"
+      "sha256": "035E105D0DF4B54E080F7A595962539FD32B0BD292D092610468364D6AF6167D"
     },
     {
       "platformId": "linux-x64",
-      "sha256": "CCBF4D848FE3B4EA9EFC60C8B3A9E7B213B9311EE051931143990D3459F449C7"
+      "sha256": "AADAC74A510F870A972C8B86DD21A6C6125B412A0F2D0DE07B3313F2F22C9BF5"
     },
     {
       "platformId": "osx-x64",
-      "sha256": "BC234A6D634450ED443A3ACBE931D8DB6FB7271ABCB0C2772EBE70300A87196E"
+      "sha256": "4E8D5B7D71F1D0CD32D4BCF28FD07AE51FA1703A3F81BAB2E7111B49B4C3094F"
     },
     {
       "platformId": "osx-arm64",
-      "sha256": "BC234A6D634450ED443A3ACBE931D8DB6FB7271ABCB0C2772EBE70300A87196E"
+      "sha256": "120633423ACDD14EFA46D2D345A5062F65C9C71F4631BB09B3F0825AB166DF24"
     }
   ]
 }

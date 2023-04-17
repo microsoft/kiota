@@ -58,8 +58,7 @@
         "-o",
         "${workspaceFolder}/samples/msgraph-mail/dotnet",
         "-n",
-        "Graphdotnetv4",
-        "--clear-cache"
+        "Graphdotnetv4"
       ],
       "cwd": "${workspaceFolder}/src/kiota",
       "console": "internalConsole",

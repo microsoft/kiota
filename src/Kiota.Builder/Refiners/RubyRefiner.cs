@@ -17,7 +17,10 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceIndexersByMethodsWithParameter(generatedCode, false, "_by_id");
+            ReplaceIndexersByMethodsWithParameter(generatedCode,
+                false,
+                static x => $"by_{x.ToSnakeCase()}",
+                static x => x.ToSnakeCase());
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -34,7 +34,10 @@ public class PhpRefiner : CommonLanguageRefiner
                     }
                 }, AccessModifier.Public);
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceIndexersByMethodsWithParameter(generatedCode, false, "ById");
+            ReplaceIndexersByMethodsWithParameter(generatedCode,
+                false,
+                static x => $"By{x.ToFirstCharacterUpperCase()}",
+                static x => x.ToFirstCharacterLowerCase());
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,

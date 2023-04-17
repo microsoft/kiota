@@ -615,7 +615,8 @@ public class CodeMethodWriterTests : IDisposable
                 ReturnType = new CodeType
                 {
                     Name = "MessageRequestBuilder"
-                }
+                },
+                IndexParameterName = "id",
             },
             OriginalMethod = new CodeMethod
             {
