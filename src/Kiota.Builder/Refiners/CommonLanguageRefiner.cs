@@ -904,6 +904,16 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     var newP = (CodeProperty)p.Clone();
                     newP.Parent = currentClass;
                     currentClass.AddProperty(newP);
+                    if (newP.Setter != null)
+                    {
+                        newP.Setter.AccessedProperty = newP;
+                        currentClass.AddMethod(newP.Setter);
+                    }
+                    if (newP.Getter != null)
+                    {
+                        newP.Getter.AccessedProperty = newP;
+                        currentClass.AddMethod(newP.Getter);
+                    }
                 }
 
                 foreach (var m in currentParent
