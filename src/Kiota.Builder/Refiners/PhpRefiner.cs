@@ -214,9 +214,8 @@ public class PhpRefiner : CommonLanguageRefiner
         {
             currentProperty.Type.IsNullable = false;
             currentProperty.Type.Name = "array";
-            currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
-            if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
-                currentProperty.DefaultValue = "[]";
+            currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex; 
+            currentProperty.DefaultValue = "[]";
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))
         {
