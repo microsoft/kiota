@@ -26,5 +26,9 @@
   "Downloading kiota...": "Téléchargement de Kiota...",
   "Generating client...": "Génération du client...",
   "Updating clients...": "Mise à jour des clients...",
-  "Loading...": "Chargement..."
+  "Loading...": "Chargement...",
+  "Pick a lock file": "Sélectionnez un fichier verrou",
+  "Open a lock file": "Ouvrir un fichier verrou",
+  "Filter the API description": "Filtrer la description d'API",
+  "Enter a filter": "Entrez un filtre"
 }

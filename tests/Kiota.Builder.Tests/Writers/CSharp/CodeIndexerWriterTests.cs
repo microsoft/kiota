@@ -37,7 +37,8 @@ public class CodeIndexerWriterTests : IDisposable
             ReturnType = new CodeType
             {
                 Name = "SomeRequestBuilder"
-            }
+            },
+            IndexParameterName = "position"
         };
         parentClass.Indexer = indexer;
         parentClass.AddProperty(new()

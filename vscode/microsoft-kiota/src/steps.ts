@@ -1,5 +1,6 @@
-import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n } from 'vscode';
+import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, workspace, l10n, Uri } from 'vscode';
 import { allGenerationLanguages, generationLanguageToString, KiotaSearchResultItem, LanguagesInformation, maturityLevelToString } from './kiotaInterop';
+import { kiotaLockFile } from './extension';
 
 
 export async function openSteps() {
@@ -18,9 +19,60 @@ export async function openSteps() {
             shouldResume: shouldResume
         });
     }
-    await MultiStepInput.run(input => inputPathOrUrl(input, state));
+    await MultiStepInput.run(input => inputPathOrUrl(input, state), () => step-=2);
     return state;
 };
+
+export async function searchLockSteps() {
+    const state = {} as Partial<SearchLockState>;
+    let step = 1;
+    let totalSteps = 1;
+    const title = l10n.t('Open a lock file');
+    async function pickSearchResult(input: MultiStepInput, state: Partial<SearchLockState>) {
+        const searchResults = await workspace.findFiles(`**/${kiotaLockFile}`);
+        const items = searchResults.map(x => 
+        { 
+            return {
+                label: x.path.replace(workspace.getWorkspaceFolder(x)?.uri.path || '', ''),
+            } as QuickPickItem;
+        });
+        const pick = await input.showQuickPick({
+            title,
+            step: step++,
+            totalSteps: totalSteps,
+            placeholder: l10n.t('Pick a lock file'),
+            items: items,
+            shouldResume: shouldResume
+        });
+        state.lockFilePath = searchResults.find(x => x.path.replace(workspace.getWorkspaceFolder(x)?.uri.path || '', '') === pick?.label);
+    }
+    await MultiStepInput.run(input => pickSearchResult(input, state), () => step-=2);
+    return state;
+}
+
+export async function filterSteps(existingFilter: string, filterCallback: (searchQuery: string) => void) {
+    const state = {} as Partial<BaseStepsState>;
+    const title = l10n.t('Filter the API description');
+    let step = 1;
+    let totalSteps = 1;
+    async function inputFilterQuery(input: MultiStepInput, state: Partial<BaseStepsState>) {
+        await input.showInputBox({
+            title,
+            step: step++,
+            totalSteps: totalSteps,
+            value: existingFilter,
+            prompt: l10n.t('Enter a filter'),
+            validate: x => {
+                filterCallback(x.length === 0 && existingFilter.length > 0 ? existingFilter : x);
+                existingFilter = '';
+                return Promise.resolve(undefined);
+            },
+            shouldResume: shouldResume
+        });
+    }
+    await MultiStepInput.run(input => inputFilterQuery(input, state), () => step-=2);
+    return state;
+}
 
 export async function searchSteps(searchCallBack: (searchQuery: string) => Promise<Record<string, KiotaSearchResultItem> | undefined>) {
     const state = {} as Partial<SearchState>;
@@ -59,7 +111,7 @@ export async function searchSteps(searchCallBack: (searchQuery: string) => Promi
         });
         state.descriptionPath = items.find(x => x.label === pick?.label)?.descriptionUrl || '';
     }
-    await MultiStepInput.run(input => inputSearchQuery(input, state));
+    await MultiStepInput.run(input => inputSearchQuery(input, state), () => step-=2);
     return state;
 }
 
@@ -142,7 +194,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 		});
 		state.language = pick.label.split('-')[0].trim();
 	}
-    await MultiStepInput.run(input => inputClientClassName(input, state));
+    await MultiStepInput.run(input => inputClientClassName(input, state), () => step-=2);
     return state;
 }
 
@@ -173,6 +225,9 @@ interface OpenState extends BaseStepsState {
     descriptionPath: string;
 }
 
+interface SearchLockState extends BaseStepsState {
+    lockFilePath: Uri;
+}
 
 interface GenerateState extends BaseStepsState {
     clientClassName: string;
@@ -214,15 +269,15 @@ interface InputBoxParameters {
 
 class MultiStepInput {
 
-	static async run<T>(start: InputStep) {
+	static async run<T>(start: InputStep, onNavBack?: () => void) {
 		const input = new MultiStepInput();
-		return input.stepThrough(start);
+		return input.stepThrough(start, onNavBack);
 	}
 
 	private current?: QuickInput;
 	private steps: InputStep[] = [];
 
-	private async stepThrough<T>(start: InputStep) {
+	private async stepThrough<T>(start: InputStep, onNavBack?: () => void) {
 		let step: InputStep | void = start;
 		while (step) {
 			this.steps.push(step);
@@ -234,6 +289,9 @@ class MultiStepInput {
 				step = await step(this);
 			} catch (err) {
 				if (err === InputFlowAction.back) {
+                    if (onNavBack) {
+                        onNavBack();
+                    }
 					this.steps.pop();
 					step = this.steps.pop();
 				} else if (err === InputFlowAction.resume) {

@@ -37,7 +37,10 @@ public class PhpRefiner : CommonLanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             CorrectParameterType(generatedCode);
             MakeModelPropertiesNullable(generatedCode);
-            ReplaceIndexersByMethodsWithParameter(generatedCode, false, "ById");
+            ReplaceIndexersByMethodsWithParameter(generatedCode,
+                false,
+                static x => $"By{x.ToFirstCharacterUpperCase()}",
+                static x => x.ToFirstCharacterLowerCase());
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             AddDiscriminatorMappingsUsingsToParentClasses(

@@ -71,6 +71,7 @@ public class KiotaBuilder
     }
     private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
     {
+        logger.LogDebug("kiota version {version}", Kiota.Generated.KiotaVersion.Current());
         var stepId = 0;
         sw.Start();
         await using var input = await (originalDocument == null ?
@@ -275,7 +276,13 @@ public class KiotaBuilder
     }
     internal void SetApiRootUrl()
     {
-        var candidateUrl = openApiDocument?.Servers.FirstOrDefault()?.Url;
+        if (openApiDocument == null) return;
+        var candidateUrl = openApiDocument.Servers
+                                        .GroupBy(static x => x, new OpenApiServerComparer()) //group by protocol relative urls
+                                        .FirstOrDefault()
+                                        ?.OrderByDescending(static x => x?.Url, StringComparer.OrdinalIgnoreCase) // prefer https over http
+                                        ?.FirstOrDefault()
+                                        ?.Url;
         if (string.IsNullOrEmpty(candidateUrl))
         {
             logger.LogWarning("No server url found in the OpenAPI document. The base url will need to be set when using the client.");
@@ -858,6 +865,7 @@ public class KiotaBuilder
             ReturnType = new CodeType { Name = childType },
             SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
             PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.').Last(),
+            IndexParameterName = currentNode.Segment.CleanupSymbolName(),
         };
     }
 
