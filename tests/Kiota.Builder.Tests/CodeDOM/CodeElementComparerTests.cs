@@ -51,7 +51,8 @@ public class CodeElementComparerTests
                 },
                 IndexType = new CodeType {
                     Name = "string"
-                }
+                },
+                IndexParameterName = "param"
             }, new CodeProperty() {
                 Name = "prop",
                 Type = new CodeType {
@@ -115,7 +116,8 @@ public class CodeElementComparerTests
                 },
                 IndexType = new CodeType {
                     Name = "string"
-                }
+                },
+                IndexParameterName = "param"
             }, new CodeProperty() {
                 Name = "prop",
                 Type = new CodeType {

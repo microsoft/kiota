@@ -51,7 +51,8 @@ public class CodeElementComparerPythonTests
                 },
                 IndexType = new CodeType {
                     Name = "string"
-                }
+                },
+                IndexParameterName = "param"
             }, new CodeProperty() {
                 Name = "prop",
                 Type = new CodeType {

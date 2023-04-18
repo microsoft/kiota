@@ -21,6 +21,12 @@
   "main": "./dist/extension.js",
   "l10n": "./l10n",
   "contributes": {
+    "viewsWelcome":[
+      {
+        "view": "kiota.openApiExplorer",
+        "contents": "%kiota.openApiExplorer.welcome%"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -77,14 +83,19 @@
           "group": "navigation@1"
         },
         {
-          "command": "kiota.openApiExplorer.generateClient",
+          "command": "kiota.openApiExplorer.filterDescription",
           "when": "view == kiota.openApiExplorer",
           "group": "navigation@3"
         },
         {
-          "command": "kiota.openApiExplorer.closeDescription",
+          "command": "kiota.openApiExplorer.generateClient",
           "when": "view == kiota.openApiExplorer",
           "group": "navigation@4"
+        },
+        {
+          "command": "kiota.openApiExplorer.closeDescription",
+          "when": "view == kiota.openApiExplorer",
+          "group": "navigation@5"
         }
       ],
       "view/item/context": [
@@ -140,6 +151,12 @@
         "icon": "$(file-symlink-file)"
       },
       {
+        "command": "kiota.searchLock",
+        "category": "Kiota",
+        "title": "%kiota.searchLock.title%",
+        "icon": "$(file-symlink-file)"
+      },
+      {
         "command": "kiota.updateClients",
         "category": "Kiota",
         "title": "%kiota.updateClients.title%"
@@ -149,6 +166,12 @@
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.generateClient.title%",
         "icon": "$(play)"
+      },
+      {
+        "command": "kiota.openApiExplorer.filterDescription",
+        "category": "Kiota",
+        "title": "%kiota.openApiExplorer.filterDescription.title%",
+        "icon": "$(filter)"
       },
       {
         "command": "kiota.searchApiDescription",
@@ -211,15 +234,15 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "18.x",
     "@types/vscode": "^1.77.0",
-    "@typescript-eslint/eslint-plugin": "^5.57.1",
-    "@typescript-eslint/parser": "^5.57.1",
+    "@typescript-eslint/eslint-plugin": "^5.59.0",
+    "@typescript-eslint/parser": "^5.59.0",
     "@vscode/test-electron": "^2.2.2",
-    "eslint": "^8.37.0",
-    "glob": "^9.3.4",
+    "eslint": "^8.38.0",
+    "glob": "^10.2.1",
     "mocha": "^10.1.0",
     "ts-loader": "^9.4.2",
-    "typescript": "^5.0.3",
-    "webpack": "^5.77.0",
+    "typescript": "^5.0.4",
+    "webpack": "^5.79.0",
     "webpack-cli": "^5.0.1"
   },
   "dependencies": {

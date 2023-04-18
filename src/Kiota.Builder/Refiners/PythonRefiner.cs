@@ -20,7 +20,10 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             DisableActionOf(generatedCode,
             CodeParameterKind.RequestConfiguration);
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceIndexersByMethodsWithParameter(generatedCode, false, "_by_id");
+            ReplaceIndexersByMethodsWithParameter(generatedCode,
+                false,
+                static x => $"by_{x.ToSnakeCase()}",
+                static x => x.ToSnakeCase());
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
@@ -46,6 +49,11 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.Custom,
                 },
                 static s => s.ToSnakeCase());
+            AddParentClassToErrorClasses(
+                generatedCode,
+                "APIError",
+                $"{AbstractionsPackageName}.api_error"
+            );
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
@@ -82,11 +90,6 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             new[] { $"{AbstractionsPackageName}.api_client_builder.register_default_deserializer",
                     $"{AbstractionsPackageName}.serialization.ParseNodeFactoryRegistry" });
             cancellationToken.ThrowIfCancellationRequested();
-            AddParentClassToErrorClasses(
-                    generatedCode,
-                    "APIError",
-                    $"{AbstractionsPackageName}.api_error"
-            );
             AddQueryParameterMapperMethod(
                 generatedCode
             );

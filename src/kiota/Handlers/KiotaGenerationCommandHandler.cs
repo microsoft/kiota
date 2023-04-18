@@ -112,7 +112,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         Configuration.Generation.CleanOutput = cleanOutput;
         Configuration.Generation.ClearCache = clearCache;
 
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {
             logger.AppendInternalTracing();

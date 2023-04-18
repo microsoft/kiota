@@ -71,6 +71,7 @@ public class KiotaBuilder
     }
     private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
     {
+        logger.LogDebug("kiota version {version}", Kiota.Generated.KiotaVersion.Current());
         var stepId = 0;
         sw.Start();
         await using var input = await (originalDocument == null ?
@@ -275,7 +276,13 @@ public class KiotaBuilder
     }
     internal void SetApiRootUrl()
     {
-        var candidateUrl = openApiDocument?.Servers.FirstOrDefault()?.Url;
+        if (openApiDocument == null) return;
+        var candidateUrl = openApiDocument.Servers
+                                        .GroupBy(static x => x, new OpenApiServerComparer()) //group by protocol relative urls
+                                        .FirstOrDefault()
+                                        ?.OrderByDescending(static x => x?.Url, StringComparer.OrdinalIgnoreCase) // prefer https over http
+                                        ?.FirstOrDefault()
+                                        ?.Url;
         if (string.IsNullOrEmpty(candidateUrl))
         {
             logger.LogWarning("No server url found in the OpenAPI document. The base url will need to be set when using the client.");
@@ -451,9 +458,70 @@ public class KiotaBuilder
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var node = OpenApiUrlTreeNode.Create(doc, Constants.DefaultOpenApiLabel);
+        MergeIndexNodesAtSameLevel(node);
         stopwatch.Stop();
         logger.LogTrace("{timestamp}ms: Created UriSpace tree", stopwatch.ElapsedMilliseconds);
         return node;
+    }
+    private void MergeIndexNodesAtSameLevel(OpenApiUrlTreeNode node)
+    {
+        var indexNodes = node.Children.Where(static x => x.Value.IsPathSegmentWithSingleSimpleParameter());
+        if (indexNodes.Count() > 1)
+        {
+            var indexNode = indexNodes.OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase).First();
+            foreach (var child in indexNodes.Except(new[] { indexNode }))
+            {
+                node.Children.Remove(child.Key);
+                CopyNodeIntoOtherNode(child.Value, indexNode.Value, child.Key, indexNode.Key);
+            }
+        }
+
+        foreach (var child in node.Children.Values)
+            MergeIndexNodesAtSameLevel(child);
+    }
+    private void CopyNodeIntoOtherNode(OpenApiUrlTreeNode source, OpenApiUrlTreeNode destination, string pathParameterNameToReplace, string pathParameterNameReplacement)
+    {
+        foreach (var child in source.Children)
+        {
+            child.Value.Path = child.Value.Path.Replace(pathParameterNameToReplace, pathParameterNameReplacement, StringComparison.OrdinalIgnoreCase);
+            if (!destination.Children.TryAdd(child.Key, child.Value))
+                CopyNodeIntoOtherNode(child.Value, destination.Children[child.Key], pathParameterNameToReplace, pathParameterNameReplacement);
+        }
+        pathParameterNameToReplace = pathParameterNameToReplace.TrimStart('{').TrimEnd('}');
+        pathParameterNameReplacement = pathParameterNameReplacement.TrimStart('{').TrimEnd('}');
+        foreach (var pathItem in source.PathItems)
+        {
+            foreach (var pathParameter in pathItem
+                                        .Value
+                                        .Parameters
+                                        .Where(x => x.In == ParameterLocation.Path && pathParameterNameToReplace.Equals(x.Name, StringComparison.Ordinal))
+                                        .Union(
+                                            pathItem
+                                                .Value
+                                                .Operations
+                                                .SelectMany(static x => x.Value.Parameters)
+                                                .Where(x => x.In == ParameterLocation.Path && pathParameterNameToReplace.Equals(x.Name, StringComparison.Ordinal))
+                                        ))
+            {
+                pathParameter.Name = pathParameterNameReplacement;
+            }
+            if (!destination.PathItems.TryAdd(pathItem.Key, pathItem.Value))
+            {
+                var destinationPathItem = destination.PathItems[pathItem.Key];
+                foreach (var operation in pathItem.Value.Operations)
+                    if (!destinationPathItem.Operations.TryAdd(operation.Key, operation.Value))
+                    {
+                        logger.LogWarning("Duplicate operation {operation} in path {path}", operation.Key, pathItem.Key);
+                    }
+                foreach (var pathParameter in pathItem.Value.Parameters)
+                    destinationPathItem.Parameters.Add(pathParameter);
+                foreach (var extension in pathItem.Value.Extensions)
+                    if (!destinationPathItem.Extensions.TryAdd(extension.Key, extension.Value))
+                    {
+                        logger.LogWarning("Duplicate extension {extension} in path {path}", extension.Key, pathItem.Key);
+                    }
+            }
+        }
     }
     private CodeNamespace? rootNamespace;
     private CodeNamespace? modelsNamespace;
@@ -858,6 +926,7 @@ public class KiotaBuilder
             ReturnType = new CodeType { Name = childType },
             SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
             PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.').Last(),
+            IndexParameterName = currentNode.Segment.CleanupSymbolName(),
         };
     }
 
