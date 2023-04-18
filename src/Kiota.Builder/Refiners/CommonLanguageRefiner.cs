@@ -231,7 +231,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 {
                     Description = $"Gets the {propertyOriginalName} property value. {currentProperty.Documentation.Description}",
                 },
-                AccessedProperty = currentProperty,
+                AccessedProperty =  currentProperty,
             }).First();
             currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
             var setter = parentClass.AddMethod(new CodeMethod
@@ -328,7 +328,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             provider,
             replacement,
             null,
-            static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && x.Parent is CodeClass parent && parent.IsOfKind(CodeClassKind.Model) && parent.IsErrorDefinition
+            static x => ((x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom)) || x is CodeMethod) && x.Parent is CodeClass parent && parent.IsOfKind(CodeClassKind.Model) && parent.IsErrorDefinition
         );
     }
     protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type>? codeElementExceptions = null, Func<CodeElement, bool>? shouldReplaceCallback = null)

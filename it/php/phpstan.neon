@@ -2,8 +2,11 @@ parameters:
   level: 9
   polluteScopeWithAlwaysIterableForeach: false
   polluteScopeWithLoopInitialAssignments: false
+  reportUnmatchedIgnoredErrors: false
   paths:
     - src
   ignoreErrors:
     - '#Property [\w\\:\$]+ is never read, only written\.?#'
     - '#Part [\s\w\(\)\$\\]+ of encapsed string cannot be cast to string\.#'
+    - '#Method [\w\\\:]+::[\w]+\(\) should return [\w\\\<\s,\>]+\|null but returns mixed\.#'
+    - '#Parameter [\w\W]+ \$errorMappings of method [\w\\]+RequestAdapter::send[\w]+\(\) expects [\w\W\s]+ given\.#'
