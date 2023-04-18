@@ -50,6 +50,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}Escaped");
             ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), x => $"{x}Escaped");
+            AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiError",
+                "@microsoft/kiota-abstractions"
+            );
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
@@ -88,11 +93,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new[] { $"{AbstractionsPackageName}.registerDefaultDeserializer",
                         $"{AbstractionsPackageName}.ParseNodeFactoryRegistry" });
             cancellationToken.ThrowIfCancellationRequested();
-            AddParentClassToErrorClasses(
-                    generatedCode,
-                    "ApiError",
-                    "@microsoft/kiota-abstractions"
-            );
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",
