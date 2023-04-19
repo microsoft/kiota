@@ -1622,9 +1622,8 @@ public class KiotaBuilder
         visited ??= new();
         var propertiesDefinitions = currentClass.Properties
                             .SelectMany(static x => x.Type.AllTypes)
-                            .Select(static x => x.TypeDefinition)
+                            .Select(static x => x.TypeDefinition!)
                             .Where(static x => x is CodeClass || x is CodeEnum)
-                            .Select(static x => x!)
                             .Except(visited)
                             .ToArray();
         visited = visited.Union(propertiesDefinitions).ToHashSet();
