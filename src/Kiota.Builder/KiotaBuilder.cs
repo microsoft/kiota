@@ -1601,18 +1601,19 @@ public class KiotaBuilder
     }
     private void TrimInheritedModels()
     {
-        if (modelsNamespace is null || rootNamespace is null) return;
+        if (modelsNamespace is null || rootNamespace is null || modelsNamespace.Parent is not CodeNamespace clientNamespace) return;
         var models = GetAllModels(modelsNamespace);
         var modelsDirectlyInUse = GetTypeDefinitionsInNamespace(rootNamespace).ToHashSet();
-        var directDescendantsOfModelsInUse = GetDirectDescendants(models, modelsDirectlyInUse).ToHashSet();
-        var allRelatedModels = modelsDirectlyInUse.Union(directDescendantsOfModelsInUse).SelectMany(static x => GetRelatedClasses(x)).Union(directDescendantsOfModelsInUse).ToHashSet(); // so base classes and properties definitions are also included
+        var derivedOfModelsInUse = GetDerivedDefinitions(GetAllModels(clientNamespace).OfType<CodeClass>(), modelsDirectlyInUse).ToHashSet();
+        var classesInUse = derivedOfModelsInUse.Union(modelsDirectlyInUse).OfType<CodeClass>().ToHashSet();
+        var allRelatedModels = classesInUse.SelectMany(static x => GetRelatedDefinitions(x)).Union(derivedOfModelsInUse).ToHashSet(); // so base classes and properties definitions are also included
         Parallel.ForEach(models, x =>
         {
             if (allRelatedModels.Contains(x) || modelsDirectlyInUse.Contains(x)) return;
             if (x is CodeClass currentClass)
             {
                 var parents = currentClass.GetInheritanceTree(false, false);
-                if (parents.Any(y => modelsDirectlyInUse.Contains(y))) return; // to support the inheritance recursive downcast
+                if (parents.Any(y => classesInUse.Contains(y))) return; // to support the inheritance recursive downcast
                 foreach (var baseClass in parents) // discriminator might also be in grand parent types
                     baseClass.DiscriminatorInformation.RemoveDiscriminatorMapping(currentClass);
             }
@@ -1636,13 +1637,13 @@ public class KiotaBuilder
             parentNamespace.RemoveChildElement(currentNamespace);
         RemoveEmptyNamespaces(parentNamespace, stopAtNamespace);
     }
-    private static IEnumerable<CodeClass> GetDirectDescendants(IEnumerable<CodeElement> models, IEnumerable<CodeElement> modelsInUse)
+    private static IEnumerable<CodeClass> GetDerivedDefinitions(IEnumerable<CodeClass> models, IEnumerable<CodeElement> modelsInUse)
     {
         var modelsInUseClasses = modelsInUse.OfType<CodeClass>().ToHashSet();
-        return models.OfType<CodeClass>()
-                    .Where(x => x.GetParentClass() is CodeClass parentClass && modelsInUseClasses.Contains(parentClass));
+        var currentDerived = models.Where(x => x.GetParentClass() is CodeClass parentClass && modelsInUseClasses.Contains(parentClass)).ToHashSet();
+        return currentDerived.Union(currentDerived.SelectMany(x => GetDerivedDefinitions(models, new[] { x })));
     }
-    private static IEnumerable<CodeElement> GetRelatedClasses(CodeElement currentElement, HashSet<CodeElement>? visited = null)
+    private static IEnumerable<CodeElement> GetRelatedDefinitions(CodeElement currentElement, HashSet<CodeElement>? visited = null)
     {
         if (currentElement is not CodeClass currentClass)
             return Enumerable.Empty<CodeElement>();
@@ -1656,9 +1657,9 @@ public class KiotaBuilder
         visited = visited.Union(propertiesDefinitions).ToHashSet();
         if (currentClass.GetParentClass() is CodeClass parentClass)
         {
-            return propertiesDefinitions.Union(propertiesDefinitions.SelectMany(x => GetRelatedClasses(x, visited))).Union(new[] { parentClass }).Union(GetRelatedClasses(parentClass, visited));
+            return propertiesDefinitions.Union(propertiesDefinitions.SelectMany(x => GetRelatedDefinitions(x, visited))).Union(new[] { parentClass }).Union(GetRelatedDefinitions(parentClass, visited));
         }
-        return propertiesDefinitions.Union(propertiesDefinitions.SelectMany(x => GetRelatedClasses(x, visited)));
+        return propertiesDefinitions.Union(propertiesDefinitions.SelectMany(x => GetRelatedDefinitions(x, visited)));
     }
     private IEnumerable<CodeElement> GetTypeDefinitionsInNamespace(CodeNamespace currentNamespace)
     {
