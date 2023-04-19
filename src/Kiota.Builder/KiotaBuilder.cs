@@ -1609,15 +1609,13 @@ public class KiotaBuilder
         Parallel.ForEach(models, x =>
         {
             if (allRelatedModels.Contains(x) || modelsDirectlyInUse.Contains(x)) return;
-            if (x is CodeClass currentClass && currentClass.GetParentClass() is CodeClass baseClass)
-                while (true) // discriminator might also be in grand parent types
-                {
+            if (x is CodeClass currentClass)
+            {
+                var parents = currentClass.GetInheritanceTree(false, false);
+                if (parents.Any(y => modelsDirectlyInUse.Contains(y))) return; // to support the inheritance recursive downcast
+                foreach (var baseClass in parents) // discriminator might also be in grand parent types
                     baseClass.DiscriminatorInformation.RemoveDiscriminatorMapping(currentClass);
-                    if (baseClass.GetParentClass() is CodeClass newBaseClass)
-                        baseClass = newBaseClass;
-                    else
-                        break;
-                }
+            }
             x.GetImmediateParentOfType<CodeNamespace>().RemoveChildElement(x);
         });
         foreach (var leafNamespace in FindLeafNamespaces(modelsNamespace))

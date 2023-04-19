@@ -251,7 +251,6 @@ components:
       properties:
         id:
           type: string
-          description: The unique idenfier for an entity. Read-only.
         '@odata.type':
           type: string
       discriminator:
@@ -291,7 +290,6 @@ components:
             deletedDateTime:
               pattern: '^[0-9]{4,}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]{1,12})?(Z|[+-][0-9][0-9]:[0-9][0-9])$'
               type: string
-              description: Date and time when this object was deleted. Always null when the object hasn't been deleted.
               format: date-time
               nullable: true
             '@odata.type':
@@ -311,7 +309,6 @@ components:
           properties:
             accountEnabled:
               type: boolean
-              description: 'true if the account is enabled; otherwise, false. This property is required when a user is created. Returned only on $select. Supports $filter (eq, ne, not, and in).'
               nullable: true
             '@odata.type':
               type: string
@@ -353,12 +350,12 @@ components:
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models.microsoft.graph");
         Assert.NotNull(modelsNS);
-        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("Entity", false));
-        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("DirectoryObject", false));
-        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("User", false));
-        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("MailboxSettings", false));
-        Assert.Null(modelsNS.FindChildByName<CodeClass>("EducationUser", false));
-        Assert.Null(modelsNS.FindChildByName<CodeClass>("AuditEvent", false));
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("Entity", false)); //parent type
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("DirectoryObject", false)); //type in use
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("User", false)); //derived type
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("MailboxSettings", false)); //property of a derived type
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("EducationUser", false)); // recursive downcast
+        Assert.Null(modelsNS.FindChildByName<CodeClass>("AuditEvent", false)); //unused type
     }
     [Fact]
     public async Task TrimsInheritanceUnusedModelsWithUnion()
