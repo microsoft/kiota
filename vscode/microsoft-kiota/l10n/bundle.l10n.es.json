@@ -26,5 +26,9 @@
   "Downloading kiota...": "Descargando Kiota...",
   "Generating client...": "Generando cliente...",
   "Updating clients...": "Actualizando clientes...",
-  "Loading...": "Cargando..."
+  "Loading...": "Cargando...",
+  "Pick a lock file": "Seleccionar un archivo lock",
+  "Open a lock file": "Abrir un archivo lock",
+  "Filter the API description": "Filtrar descripción de API",
+  "Enter a filter": "Ingresar un filtro"
 }
