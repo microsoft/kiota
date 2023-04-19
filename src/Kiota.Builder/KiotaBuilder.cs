@@ -1615,7 +1615,7 @@ public class KiotaBuilder
             x.GetImmediateParentOfType<CodeNamespace>().RemoveChildElement(x);
         });
     }
-    private IEnumerable<CodeElement> GetRelatedClasses(CodeElement currentElement, HashSet<CodeElement>? visited = null)
+    private static IEnumerable<CodeElement> GetRelatedClasses(CodeElement currentElement, HashSet<CodeElement>? visited = null)
     {
         if (currentElement is not CodeClass currentClass)
             return Enumerable.Empty<CodeElement>();
