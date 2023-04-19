@@ -26,6 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where replacing reserved names would not propagate the rename to the inner child elements map of the parent class.
 - Fixed a bug where descriptions with multiple server URLs would use the HTTP one instead of HTTPs. [#2336](https://github.com/microsoft/kiota/issues/2336)
 
+## [1.1.3] - 2023-04-18
+
+### Changed
+
+- Fixed a bug where certain configuration sections would not load properly.
+
 ## [1.1.2] - 2023-04-17
 
 ### Changed
