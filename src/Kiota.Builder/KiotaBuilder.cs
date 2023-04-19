@@ -1597,7 +1597,7 @@ public class KiotaBuilder
         if (modelsNamespace is null || rootNamespace is null) return;
         var models = GetAllModels(modelsNamespace);
         var allModelsInUse = GetTypeDefinitionsInNamespace(rootNamespace).ToHashSet();
-        var allRelatedModels = allModelsInUse.SelectMany(x => GetRelatedClasses(x)).ToHashSet(); // so base classes and properties definitions are also included
+        var allRelatedModels = allModelsInUse.SelectMany(static x => GetRelatedClasses(x)).ToHashSet(); // so base classes and properties definitions are also included
         Parallel.ForEach(models, x =>
         {
             if (allRelatedModels.Contains(x) || allModelsInUse.Contains(x)) return;
