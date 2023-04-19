@@ -91,7 +91,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         return StartBlock.Inherits?.TypeDefinition as CodeClass;
     }
-    public bool DerivesFrom(CodeClass codeClass, bool recurse = true)
+    public bool DerivesFrom(CodeClass codeClass)
     {
         ArgumentNullException.ThrowIfNull(codeClass);
         var parent = GetParentClass();
@@ -99,9 +99,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             return false;
         if (parent == codeClass)
             return true;
-        if (recurse)
-            return parent.DerivesFrom(codeClass);
-        return false;
+        return parent.DerivesFrom(codeClass);
     }
     public List<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false)
     {
