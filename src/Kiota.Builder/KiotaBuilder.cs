@@ -1552,7 +1552,7 @@ public class KiotaBuilder
             var parentClassNamespace = GetShortestNamespace(currentNamespace, parentSchema);
             inheritsFrom = (CodeClass)AddModelDeclarationIfDoesntExist(currentNode, parentSchema, parentSchema.GetSchemaName().CleanupSymbolName(), parentClassNamespace);
         }
-        var newClass = currentNamespace.AddClass(new CodeClass
+        var newClassStub = new CodeClass
         {
             Name = declarationName,
             Kind = CodeClassKind.Model,
@@ -1562,9 +1562,14 @@ public class KiotaBuilder
                 DocumentationLink = schema.ExternalDocs?.Url,
                 Description = schema.Description.CleanupDescription(),
             },
-        }).First();
+        };
         if (inheritsFrom != null)
-            newClass.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
+            newClassStub.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
+        
+        var includeAdditionalDataProperties = config.IncludeAdditionalData && schema.AdditionalPropertiesAllowed;
+        AddSerializationMembers(newClassStub, includeAdditionalDataProperties, config.UsesBackingStore);
+
+        var newClass = currentNamespace.AddClass(newClassStub).First();
         CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass); // order matters since we might be recursively generating ancestors for discriminator mappings and duplicating additional data/backing store properties
 
         var mappings = GetDiscriminatorMappings(currentNode, schema, currentNamespace, newClass)
@@ -1638,11 +1643,6 @@ public class KiotaBuilder
     }
     private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace ns, CodeClass model)
     {
-
-        var includeAdditionalDataProperties = config.IncludeAdditionalData &&
-            (schema?.AdditionalPropertiesAllowed ?? false);
-
-        AddSerializationMembers(model, includeAdditionalDataProperties, config.UsesBackingStore);
         if (schema?.Properties?.Any() ?? false)
         {
             model.AddProperty(schema
