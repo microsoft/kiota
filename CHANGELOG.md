@@ -10,11 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added automatic loading of the lock file for the extension so quick edits of clients are supported.
+- Added trimming of derived types that are not being used by the client. [#2543](https://github.com/microsoft/kiota/issues/2543)
 
 ### Changed
+
 - Move the common properties to a base class and remove properties(RequestAdapter, UrlTemplate and PathParameters) for the request builders and options and headers for RequestConfig classes PHP.[2439](https://github.com/microsoft/kiota/issues/2439)
 - Fix bugs with imports for PHP Generation.
-
 - Indexers replacement are now at the same level as the original indexer. e.g `client.userById("id").messagesById("id")...` is now `client.users.withId("id").messages.withId("id")...`.
 - Fixed a bug where multiple single path parameters at the same level would produce invalid url templates.
 - Fixed a bug where steps count would be increasing on nav back in the extension. [#2553](https://github.com/microsoft/kiota/issues/2553)

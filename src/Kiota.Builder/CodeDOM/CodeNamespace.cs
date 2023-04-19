@@ -67,6 +67,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     }
     public IEnumerable<CodeNamespace> Namespaces => InnerChildElements.Values.OfType<CodeNamespace>();
     public IEnumerable<CodeClass> Classes => InnerChildElements.Values.OfType<CodeClass>();
+    public IEnumerable<CodeEnum> Enums => InnerChildElements.Values.OfType<CodeEnum>();
     public CodeNamespace? FindNamespaceByName(string nsName)
     {
         ArgumentException.ThrowIfNullOrEmpty(nsName);

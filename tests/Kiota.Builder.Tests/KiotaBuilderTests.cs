@@ -221,6 +221,266 @@ components:
         Assert.Equal("StandardLocalRedundancy", thirdOption.Name);
         Assert.NotEmpty(thirdOption.Documentation.Description);
     }
+    [Fact]
+    public async Task TrimsInheritanceUnusedModels()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /directoryObject:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.directoryObject'
+components:
+  schemas:
+    microsoft.graph.entity:
+      title: entity
+      required:
+        - '@odata.type'
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique idenfier for an entity. Read-only.
+        '@odata.type':
+          type: string
+      discriminator:
+        propertyName: '@odata.type'
+        mapping:
+          '#microsoft.graph.auditEvent': '#/components/schemas/microsoft.graph.auditEvent'
+          '#microsoft.graph.directoryObject': '#/components/schemas/microsoft.graph.directoryObject'
+      x-ms-discriminator-value: '#microsoft.graph.entity'
+    microsoft.graph.auditEvent:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.entity'
+        - title: auditEvent
+          required:
+            - '@odata.type'
+          type: object
+          properties:
+            eventDateTime:
+              pattern: '^[0-9]{4,}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]{1,12})?(Z|[+-][0-9][0-9]:[0-9][0-9])$'
+              type: string
+              format: date-time
+              nullable: true
+            '@odata.type':
+              type: string
+          discriminator:
+            propertyName: '@odata.type'
+            mapping:
+              '#microsoft.graph.user': '#/components/schemas/microsoft.graph.user'
+      x-ms-discriminator-value: '#microsoft.graph.auditEvent'
+    microsoft.graph.directoryObject:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.entity'
+        - title: directoryObject
+          required:
+            - '@odata.type'
+          type: object
+          properties:
+            deletedDateTime:
+              pattern: '^[0-9]{4,}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]{1,12})?(Z|[+-][0-9][0-9]:[0-9][0-9])$'
+              type: string
+              description: Date and time when this object was deleted. Always null when the object hasn't been deleted.
+              format: date-time
+              nullable: true
+            '@odata.type':
+              type: string
+          discriminator:
+            propertyName: '@odata.type'
+            mapping:
+              '#microsoft.graph.user': '#/components/schemas/microsoft.graph.user'
+      x-ms-discriminator-value: '#microsoft.graph.directoryObject'
+    microsoft.graph.user:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.directoryObject'
+        - title: user
+          required:
+            - '@odata.type'
+          type: object
+          properties:
+            accountEnabled:
+              type: boolean
+              description: 'true if the account is enabled; otherwise, false. This property is required when a user is created. Returned only on $select. Supports $filter (eq, ne, not, and in).'
+              nullable: true
+            '@odata.type':
+              type: string
+              default: '#microsoft.graph.user'
+          discriminator:
+            propertyName: '@odata.type'
+            mapping:
+              '#microsoft.graph.educationUser': '#/components/schemas/microsoft.graph.educationUser'
+      x-ms-discriminator-value: '#microsoft.graph.user'
+    microsoft.graph.educationUser:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.user'
+        - title: user
+          required:
+            - '@odata.type'
+          type: object
+          properties:
+            pupilEnrolled:
+              type: boolean
+              description: 'true if the account is enabled; otherwise, false. This property is required when a user is created. Returned only on $select. Supports $filter (eq, ne, not, and in).'
+              nullable: true
+            '@odata.type':
+              type: string
+              default: '#microsoft.graph.educationUser'
+      x-ms-discriminator-value: '#microsoft.graph.educationUser'");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models.microsoft.graph");
+        Assert.NotNull(modelsNS);
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("Entity", false));
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("DirectoryObject", false));
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("User", false));
+        Assert.Null(modelsNS.FindChildByName<CodeClass>("EducationUser", false));
+        Assert.Null(modelsNS.FindChildByName<CodeClass>("AuditEvent", false));
+    }
+    [Fact]
+    public async Task TrimsInheritanceUnusedModelsWithUnion()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /directoryObject:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/microsoft.graph.user'
+                  - $ref: '#/components/schemas/microsoft.graph.educationUser'
+components:
+  schemas:
+    microsoft.graph.entity:
+      title: entity
+      required:
+        - '@odata.type'
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique idenfier for an entity. Read-only.
+        '@odata.type':
+          type: string
+      discriminator:
+        propertyName: '@odata.type'
+        mapping:
+          '#microsoft.graph.auditEvent': '#/components/schemas/microsoft.graph.auditEvent'
+          '#microsoft.graph.directoryObject': '#/components/schemas/microsoft.graph.directoryObject'
+      x-ms-discriminator-value: '#microsoft.graph.entity'
+    microsoft.graph.auditEvent:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.entity'
+        - title: auditEvent
+          required:
+            - '@odata.type'
+          type: object
+          properties:
+            eventDateTime:
+              pattern: '^[0-9]{4,}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]{1,12})?(Z|[+-][0-9][0-9]:[0-9][0-9])$'
+              type: string
+              format: date-time
+              nullable: true
+            '@odata.type':
+              type: string
+          discriminator:
+            propertyName: '@odata.type'
+            mapping:
+              '#microsoft.graph.user': '#/components/schemas/microsoft.graph.user'
+      x-ms-discriminator-value: '#microsoft.graph.auditEvent'
+    microsoft.graph.directoryObject:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.entity'
+        - title: directoryObject
+          required:
+            - '@odata.type'
+          type: object
+          properties:
+            deletedDateTime:
+              pattern: '^[0-9]{4,}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]{1,12})?(Z|[+-][0-9][0-9]:[0-9][0-9])$'
+              type: string
+              description: Date and time when this object was deleted. Always null when the object hasn't been deleted.
+              format: date-time
+              nullable: true
+            '@odata.type':
+              type: string
+          discriminator:
+            propertyName: '@odata.type'
+            mapping:
+              '#microsoft.graph.user': '#/components/schemas/microsoft.graph.user'
+      x-ms-discriminator-value: '#microsoft.graph.directoryObject'
+    microsoft.graph.user:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.directoryObject'
+        - title: user
+          required:
+            - '@odata.type'
+          type: object
+          properties:
+            accountEnabled:
+              type: boolean
+              description: 'true if the account is enabled; otherwise, false. This property is required when a user is created. Returned only on $select. Supports $filter (eq, ne, not, and in).'
+              nullable: true
+            '@odata.type':
+              type: string
+              default: '#microsoft.graph.user'
+          discriminator:
+            propertyName: '@odata.type'
+            mapping:
+              '#microsoft.graph.educationUser': '#/components/schemas/microsoft.graph.educationUser'
+      x-ms-discriminator-value: '#microsoft.graph.user'
+    microsoft.graph.educationUser:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.user'
+        - title: user
+          required:
+            - '@odata.type'
+          type: object
+          properties:
+            pupilEnrolled:
+              type: boolean
+              description: 'true if the account is enabled; otherwise, false. This property is required when a user is created. Returned only on $select. Supports $filter (eq, ne, not, and in).'
+              nullable: true
+            '@odata.type':
+              type: string
+              default: '#microsoft.graph.educationUser'
+      x-ms-discriminator-value: '#microsoft.graph.educationUser'");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models.microsoft.graph");
+        Assert.NotNull(modelsNS);
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("Entity", false));
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("DirectoryObject", false));
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("User", false));
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("EducationUser", false));
+        Assert.Null(modelsNS.FindChildByName<CodeClass>("AuditEvent", false));
+    }
     private static async Task<Stream> GetDocumentStream(string document)
     {
         var ms = new MemoryStream();
