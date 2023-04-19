@@ -316,11 +316,20 @@ components:
             '@odata.type':
               type: string
               default: '#microsoft.graph.user'
+            mailboxSettings:
+              $ref: '#/components/schemas/microsoft.graph.mailboxSettings'
           discriminator:
             propertyName: '@odata.type'
             mapping:
               '#microsoft.graph.educationUser': '#/components/schemas/microsoft.graph.educationUser'
       x-ms-discriminator-value: '#microsoft.graph.user'
+    microsoft.graph.mailboxSettings:
+      title: mailboxSettings
+      type: object
+      properties:
+        antiSpamEnabled:
+          type: boolean
+          nullable: true
     microsoft.graph.educationUser:
       allOf:
         - $ref: '#/components/schemas/microsoft.graph.user'
@@ -347,6 +356,7 @@ components:
         Assert.NotNull(modelsNS.FindChildByName<CodeClass>("Entity", false));
         Assert.NotNull(modelsNS.FindChildByName<CodeClass>("DirectoryObject", false));
         Assert.NotNull(modelsNS.FindChildByName<CodeClass>("User", false));
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("MailboxSettings", false));
         Assert.Null(modelsNS.FindChildByName<CodeClass>("EducationUser", false));
         Assert.Null(modelsNS.FindChildByName<CodeClass>("AuditEvent", false));
     }

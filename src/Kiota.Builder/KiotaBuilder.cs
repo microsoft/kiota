@@ -1603,24 +1603,46 @@ public class KiotaBuilder
     {
         if (modelsNamespace is null || rootNamespace is null) return;
         var models = GetAllModels(modelsNamespace);
-        var allModelsInUse = GetTypeDefinitionsInNamespace(rootNamespace).ToHashSet();
-        var allRelatedModels = allModelsInUse.SelectMany(static x => GetRelatedClasses(x)).ToHashSet(); // so base classes and properties definitions are also included
+        var modelsDirectlyInUse = GetTypeDefinitionsInNamespace(rootNamespace).ToHashSet();
+        var directDescendantsOfModelsInUse = GetDirectDescendants(models, modelsDirectlyInUse).ToHashSet();
+        var allRelatedModels = modelsDirectlyInUse.Union(directDescendantsOfModelsInUse).SelectMany(static x => GetRelatedClasses(x)).Union(directDescendantsOfModelsInUse).ToHashSet(); // so base classes and properties definitions are also included
         Parallel.ForEach(models, x =>
         {
-            if (allRelatedModels.Contains(x) || allModelsInUse.Contains(x)) return;
-            if (x is CodeClass currentClass)
-            {
-                var baseClass = currentClass.GetParentClass();
-                if (baseClass != null && allModelsInUse.Contains(baseClass))
-                    return;
-                if (baseClass != null)
-                    do
-                    {
-                        baseClass.DiscriminatorInformation.RemoveDiscriminatorMapping(currentClass);
-                    } while ((baseClass = baseClass.GetParentClass()) != null); // discriminator might also be in grand parent types
-            }
+            if (allRelatedModels.Contains(x) || modelsDirectlyInUse.Contains(x)) return;
+            if (x is CodeClass currentClass && currentClass.GetParentClass() is CodeClass baseClass)
+                while (true) // discriminator might also be in grand parent types
+                {
+                    baseClass.DiscriminatorInformation.RemoveDiscriminatorMapping(currentClass);
+                    if (baseClass.GetParentClass() is CodeClass newBaseClass)
+                        baseClass = newBaseClass;
+                    else
+                        break;
+                }
             x.GetImmediateParentOfType<CodeNamespace>().RemoveChildElement(x);
         });
+        foreach (var leafNamespace in FindLeafNamespaces(modelsNamespace))
+            RemoveEmptyNamespaces(leafNamespace, modelsNamespace);
+    }
+    private static IEnumerable<CodeNamespace> FindLeafNamespaces(CodeNamespace currentNamespace)
+    {
+        if (!currentNamespace.Namespaces.Any()) return new[] { currentNamespace };
+        return currentNamespace.Namespaces.SelectMany(FindLeafNamespaces);
+    }
+    private static void RemoveEmptyNamespaces(CodeNamespace currentNamespace, CodeNamespace stopAtNamespace)
+    {
+        if (currentNamespace == stopAtNamespace) return;
+        if (currentNamespace.Parent is not CodeNamespace parentNamespace) return;
+        if (!currentNamespace.Classes.Any() &&
+            !currentNamespace.Enums.Any() &&
+            !currentNamespace.Namespaces.Any())
+            parentNamespace.RemoveChildElement(currentNamespace);
+        RemoveEmptyNamespaces(parentNamespace, stopAtNamespace);
+    }
+    private static IEnumerable<CodeClass> GetDirectDescendants(IEnumerable<CodeElement> models, IEnumerable<CodeElement> modelsInUse)
+    {
+        var modelsInUseClasses = modelsInUse.OfType<CodeClass>().ToHashSet();
+        return models.OfType<CodeClass>()
+                    .Where(x => x.GetParentClass() is CodeClass parentClass && modelsInUseClasses.Contains(parentClass));
     }
     private static IEnumerable<CodeElement> GetRelatedClasses(CodeElement currentElement, HashSet<CodeElement>? visited = null)
     {
