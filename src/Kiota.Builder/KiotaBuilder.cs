@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1566,6 +1566,8 @@ public class KiotaBuilder
         if (inheritsFrom != null)
             newClassStub.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
         
+        // Add the class to the namespace after the serialization members
+        // as other threads looking for the existence of the class may find the class but the additional data/backing store properties may not be fully populated causing duplication
         var includeAdditionalDataProperties = config.IncludeAdditionalData && schema.AdditionalPropertiesAllowed;
         AddSerializationMembers(newClassStub, includeAdditionalDataProperties, config.UsesBackingStore);
 
