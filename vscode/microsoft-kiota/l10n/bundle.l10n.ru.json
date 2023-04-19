@@ -26,5 +26,9 @@
   "Downloading kiota...": "Идет загрузка Kiota...",
   "Generating client...": "Генерирование клиента...",
   "Updating clients...": "Обновление клиентов...",
-  "Loading...": "Загрузка..."
+  "Loading...": "Загрузка...",
+  "Pick a lock file": "Выбрать файл блокировки",
+  "Open a lock file": "Открыть файл блокировки",
+  "Filter the API description": "Отфильтровать описание API",
+  "Enter a filter": "Ввести фильтр"
 }
