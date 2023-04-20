@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1566,7 +1566,7 @@ public class KiotaBuilder
         };
         if (inheritsFrom != null)
             newClassStub.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
-        
+
         // Add the class to the namespace after the serialization members
         // as other threads looking for the existence of the class may find the class but the additional data/backing store properties may not be fully populated causing duplication
         var includeAdditionalDataProperties = config.IncludeAdditionalData && schema.AdditionalPropertiesAllowed;
@@ -1608,7 +1608,7 @@ public class KiotaBuilder
         var derivedClassesInUse = GetDerivedDefinitions(GetAllModels(clientNamespace).OfType<CodeClass>(), classesDirectlyInUse);
         var baseOfModelsInUse = classesDirectlyInUse.SelectMany(x => x.GetInheritanceTree(false, false));
         var classesInUse = derivedClassesInUse.Union(classesDirectlyInUse).Union(baseOfModelsInUse).ToHashSet();
-        var relatedModels = classesInUse.SelectMany(static x => GetRelatedDefinitions(x)).Union(modelsDirectlyInUse).ToHashSet();// re-including models directly in use for enums
+        var relatedModels = classesInUse.SelectMany(static x => GetRelatedDefinitions(x)).Union(modelsDirectlyInUse.OfType<CodeEnum>()).ToHashSet();// re-including models directly in use for enums
         Parallel.ForEach(models, x =>
         {
             if (relatedModels.Contains(x) || classesInUse.Contains(x)) return;
@@ -1658,15 +1658,18 @@ public class KiotaBuilder
         visited = visited.Union(propertiesDefinitions).ToHashSet();
         return propertiesDefinitions.Union(propertiesDefinitions.SelectMany(x => GetRelatedDefinitions(x, visited)));
     }
+    private IEnumerable<CodeNamespace> GetAllNamespaces(CodeNamespace currentNamespace)
+    {
+        if (currentNamespace == modelsNamespace) return Enumerable.Empty<CodeNamespace>();
+        return new[] { currentNamespace }.Union(currentNamespace.Namespaces.SelectMany(GetAllNamespaces));
+    }
     private IEnumerable<CodeElement> GetTypeDefinitionsInNamespace(CodeNamespace currentNamespace)
     {
-        var requestBuilderClasses = currentNamespace
-                            .Classes
-                            .Where(static x => x.IsOfKind(CodeClassKind.RequestBuilder));
-        var requestExecutors = requestBuilderClasses
-                                .SelectMany(static x => x.Methods)
-                                .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor));
-
+        var requestExecutors = GetAllNamespaces(currentNamespace)
+                            .SelectMany(static x => x.Classes)
+                            .Where(static x => x.IsOfKind(CodeClassKind.RequestBuilder))
+                            .SelectMany(static x => x.Methods)
+                            .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         return requestExecutors.SelectMany(static x => x.ReturnType.AllTypes)
                         .Union(requestExecutors
                                 .SelectMany(static x => x.Parameters)
@@ -1675,8 +1678,7 @@ public class KiotaBuilder
                         .Union(requestExecutors.SelectMany(static x => x.ErrorMappings.SelectMany(static y => y.Value.AllTypes)))
                         .Where(static x => x.TypeDefinition != null)
                         .Select(static x => x.TypeDefinition!)
-                        .Where(static x => x is CodeClass || x is CodeEnum)
-                        .Union(currentNamespace.Namespaces.Where(x => x != modelsNamespace).SelectMany(GetTypeDefinitionsInNamespace));
+                        .Where(static x => x is CodeClass || x is CodeEnum);
     }
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex = new();
     private void InitializeInheritanceIndex()
