@@ -336,6 +336,15 @@ components:
             antiSpamEnabled:
               type: boolean
               nullable: true
+    microsoft.graph.mailboxSecuritySettings:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.mailboxSettings'
+        - title: mailboxSettings
+          type: object
+          properties:
+            encryptionAtRestEnabled:
+              type: boolean
+              nullable: true
     microsoft.graph.educationUser:
       allOf:
         - $ref: '#/components/schemas/microsoft.graph.user'
@@ -363,6 +372,7 @@ components:
         Assert.NotNull(modelsNS.FindChildByName<CodeClass>("DirectoryObject", false)); //type in use
         Assert.NotNull(modelsNS.FindChildByName<CodeClass>("User", false)); //derived type
         Assert.NotNull(modelsNS.FindChildByName<CodeClass>("MailboxSettingsBase", false)); //base of a property of a derived type
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("MailboxSecuritySettings", false)); //derived type of a property
         Assert.NotNull(modelsNS.FindChildByName<CodeClass>("MailboxSettings", false)); //property of a derived type
         Assert.NotNull(modelsNS.FindChildByName<CodeClass>("EducationUser", false)); // recursive downcast
         Assert.Null(modelsNS.FindChildByName<CodeClass>("AuditEvent", false)); //unused type
