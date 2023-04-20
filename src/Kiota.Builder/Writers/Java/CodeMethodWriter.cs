@@ -152,7 +152,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.StartBlock($"switch ({varName}) {{");
         foreach (var mappedType in discriminatorMappings)
         {
-            writer.WriteLine($"case \"{mappedType.Key}\": return new {mappedType.Value.AllTypes.First().TypeDefinition?.Name.ToFirstCharacterUpperCase().Replace("_", string.Empty)}();");
+            writer.WriteLine($"case \"{mappedType.Key}\": return new {mappedType.Value.AllTypes.First().TypeDefinition?.Name.ToFirstCharacterUpperCase()}();");
         }
         writer.CloseBlock();
     }
