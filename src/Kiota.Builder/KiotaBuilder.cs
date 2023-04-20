@@ -1653,6 +1653,7 @@ public class KiotaBuilder
                             .SelectMany(static x => x.Type.AllTypes)
                             .Select(static x => x.TypeDefinition!)
                             .Where(static x => x is CodeClass || x is CodeEnum)
+                            .SelectMany(static x => x is CodeClass classDefinition ? classDefinition.GetInheritanceTree(false).OfType<CodeElement>() : new[] { x })
                             .Except(visited)
                             .ToArray();
         visited = visited.Union(propertiesDefinitions).ToHashSet();
