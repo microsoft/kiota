@@ -26,5 +26,9 @@
   "Downloading kiota...": "جاري تنزيل Kiota...",
   "Generating client...": "انشاء العميل...",
   "Loading...": "جاري التحميل...",
-  "Updating clients...": "تحديث العملاء..."
+  "Updating clients...": "تحديث العملاء...",
+  "Pick a lock file": "اختر ملف قفل",
+  "Open a lock file": "افتح ملف قفل",
+  "Filter the API description": "قم بتصفية وصف API",
+  "Enter a filter": "أدخل عامل التصفية"
 }
