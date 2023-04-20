@@ -21,7 +21,8 @@ public class SwiftRefiner : CommonLanguageRefiner
             ReplaceIndexersByMethodsWithParameter(
                 generatedCode,
                 false,
-                "ById");
+                static x => $"By{x.ToFirstCharacterUpperCase()}",
+                static x => x.ToFirstCharacterUpperCase());
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceReservedNames(
                 generatedCode,

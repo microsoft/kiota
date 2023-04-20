@@ -71,6 +71,7 @@ public class ShellRefinerTests
             {
                 Name = "string"
             },
+            IndexParameterName = "id",
         };
 
         // Add request executor

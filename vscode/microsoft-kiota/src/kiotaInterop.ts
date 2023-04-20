@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as cp from 'child_process';
 import * as rpc from 'vscode-jsonrpc/node';
-import { ensureKiotaIsPresent, getKiotaPath } from './kitoaInstall';
+import { ensureKiotaIsPresent, getKiotaPath } from './kiotaInstall';
 
 export async function connectToKiota<T>(context: vscode.ExtensionContext, callback:(connection: rpc.MessageConnection) => Promise<T | undefined>): Promise<T | undefined> {
   const kiotaPath = getKiotaPath(context);
@@ -33,7 +33,7 @@ export interface KiotaOpenApiNode {
     segment: string,
     path: string,
     children: KiotaOpenApiNode[],
-    selected: boolean,
+    selected?: boolean,
 }
 
 export interface KiotaShowConfiguration {
@@ -53,22 +53,36 @@ export interface KiotaSearchResult extends KiotaLoggedResult {
     results: Record<string, KiotaSearchResultItem>;
 }
 export interface KiotaSearchResultItem {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   Title: string;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   Description: string;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   ServiceUrl?: string;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   DescriptionUrl?: string;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   VersionLabels?: string[];
 }
 
 export enum KiotaGenerationLanguage {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     CSharp = 0,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     Java = 1,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     TypeScript = 2,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     PHP = 3,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     Python = 4,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     Go = 5,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     Swift = 6,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     Ruby = 7,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     Shell = 8,
 }
 export function generationLanguageToString(language: KiotaGenerationLanguage): string {
@@ -152,15 +166,23 @@ export interface LanguagesInformation {
     [key: string]: LanguageInformation;
 }
 export interface LanguageInformation {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     MaturityLevel: MaturityLevel;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     Dependencies: LanguageDependency[];
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     DependencyInstallCommand: string;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     ClientNamespaceName: string;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     ClientClassName: string;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     StructuredMimeTypes: string[];
 }
 export interface LanguageDependency {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     Name: string;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     Version: string;
 }
 export enum MaturityLevel {

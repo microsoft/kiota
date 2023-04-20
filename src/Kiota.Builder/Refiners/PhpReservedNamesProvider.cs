@@ -67,7 +67,8 @@ namespace Kiota.Builder.Refiners
             "while",
             "xor",
             "yield",
-            "yield from"
+            "yield from",
+            "BaseRequestBuilder"
         });
 
         public HashSet<string> ReservedNames => _reservedNames.Value;
