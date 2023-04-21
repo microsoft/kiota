@@ -1593,11 +1593,16 @@ public class KiotaBuilder
     }
     private static IEnumerable<CodeElement> GetAllModels(CodeNamespace currentNamespace)
     {
-        return currentNamespace.Classes
+        var classes = currentNamespace.Classes.ToArray();
+        return classes.Union(classes.SelectMany(GetAllInnerClasses))
                             .Where(static x => x.IsOfKind(CodeClassKind.Model))
                             .OfType<CodeElement>()
                             .Union(currentNamespace.Enums)
                             .Union(currentNamespace.Namespaces.SelectMany(static x => GetAllModels(x)));
+    }
+    private static IEnumerable<CodeClass> GetAllInnerClasses(CodeClass currentClass)
+    {
+        return currentClass.InnerClasses.Union(currentClass.InnerClasses.SelectMany(static x => GetAllInnerClasses(x)));
     }
     private void TrimInheritedModels()
     {
@@ -1610,7 +1615,7 @@ public class KiotaBuilder
         var baseOfModelsInUse = classesDirectlyInUse.SelectMany(x => x.GetInheritanceTree(false, false));
         var classesInUse = derivedClassesInUse.Union(classesDirectlyInUse).Union(baseOfModelsInUse).ToHashSet();
         var reusableClassesDerivationIndex = GetDerivationIndex(reusableModels.OfType<CodeClass>());
-        var reusableClassesInheritanceIndex = GetInheritanceIndex(reusableClassesDerivationIndex);
+        var reusableClassesInheritanceIndex = GetInheritanceIndex(allModelClassesIndex);
         var relatedModels = classesInUse.AsParallel().SelectMany(x => GetRelatedDefinitions(x, reusableClassesDerivationIndex, reusableClassesInheritanceIndex)).Union(modelsDirectlyInUse.Where(x => x is CodeEnum).AsParallel()).ToHashSet();// re-including models directly in use for enums
         Parallel.ForEach(reusableModels, x =>
         {
