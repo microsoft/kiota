@@ -1602,14 +1602,15 @@ public class KiotaBuilder
     private void TrimInheritedModels()
     {
         if (modelsNamespace is null || rootNamespace is null || modelsNamespace.Parent is not CodeNamespace clientNamespace) return;
-        var models = GetAllModels(modelsNamespace);
+        var reusableModels = GetAllModels(modelsNamespace);
         var modelsDirectlyInUse = GetTypeDefinitionsInNamespace(rootNamespace);
         var classesDirectlyInUse = modelsDirectlyInUse.OfType<CodeClass>().ToHashSet();
-        var derivedClassesInUse = GetDerivedDefinitions(GetAllModels(clientNamespace).OfType<CodeClass>(), classesDirectlyInUse);
+        var allModelClasses = GetAllModels(clientNamespace).OfType<CodeClass>().ToArray();
+        var derivedClassesInUse = GetDerivedDefinitions(allModelClasses, classesDirectlyInUse);
         var baseOfModelsInUse = classesDirectlyInUse.SelectMany(x => x.GetInheritanceTree(false, false));
         var classesInUse = derivedClassesInUse.Union(classesDirectlyInUse).Union(baseOfModelsInUse).ToHashSet();
-        var relatedModels = classesInUse.SelectMany(x => GetRelatedDefinitions(x, models.OfType<CodeClass>())).Union(modelsDirectlyInUse.OfType<CodeEnum>()).ToHashSet();// re-including models directly in use for enums
-        Parallel.ForEach(models, x =>
+        var relatedModels = classesInUse.SelectMany(x => GetRelatedDefinitions(x, reusableModels.OfType<CodeClass>())).Union(modelsDirectlyInUse.OfType<CodeEnum>()).ToHashSet();// re-including models directly in use for enums
+        Parallel.ForEach(reusableModels, x =>
         {
             if (relatedModels.Contains(x) || classesInUse.Contains(x)) return;
             if (x is CodeClass currentClass)
