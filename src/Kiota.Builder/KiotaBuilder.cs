@@ -1630,25 +1630,24 @@ public class KiotaBuilder
     }
     private static ConcurrentDictionary<CodeClass, List<CodeClass>> GetDerivationIndex(IEnumerable<CodeClass> models)
     {
-        var derivedIndex = new ConcurrentDictionary<CodeClass, List<CodeClass>>();
+        var result = new ConcurrentDictionary<CodeClass, List<CodeClass>>();
         Parallel.ForEach(models, x =>
         {
-            if (x.GetParentClass() is CodeClass parentClass)
-                if (!derivedIndex.TryAdd(parentClass, new() { x }))
-                    derivedIndex[parentClass].Add(x);
+            if (x.GetParentClass() is CodeClass parentClass && !result.TryAdd(parentClass, new() { x }))
+                result[parentClass].Add(x);
         });
-        return derivedIndex;
+        return result;
     }
     private static ConcurrentDictionary<CodeClass, List<CodeClass>> GetInheritanceIndex(ConcurrentDictionary<CodeClass, List<CodeClass>> derivedIndex)
     {
-        var inheritanceIndex = new ConcurrentDictionary<CodeClass, List<CodeClass>>();
+        var result = new ConcurrentDictionary<CodeClass, List<CodeClass>>();
         Parallel.ForEach(derivedIndex, entry =>
         {
             foreach (var derivedClass in entry.Value)
-                if (!inheritanceIndex.TryAdd(derivedClass, new() { entry.Key }))
-                    inheritanceIndex[derivedClass].Add(entry.Key);
+                if (!result.TryAdd(derivedClass, new() { entry.Key }))
+                    result[derivedClass].Add(entry.Key);
         });
-        return inheritanceIndex;
+        return result;
     }
     private static IEnumerable<CodeNamespace> FindLeafNamespaces(CodeNamespace currentNamespace)
     {
