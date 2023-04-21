@@ -969,7 +969,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("if (mappingValueNode != null) {", result);
         Assert.DoesNotContain("final String mappingValue = mappingValueNode.getStringValue()", result);
         Assert.Contains("switch (value) {", result);
-        Assert.Contains("case \"#microsoft.graph.Foo535\": return new Foo535();", result);
+        Assert.Contains("case \"#microsoft.graph.Foo535\": return new ChildModel();", result);
         Assert.DoesNotContain("final ParentModel factory_1_result = factory_1(mappingValue);", result);
         Assert.DoesNotContain("if (factory_1_result != null) {", result);
         Assert.DoesNotContain("return new ParentModel()", result);
