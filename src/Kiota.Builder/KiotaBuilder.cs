@@ -1622,6 +1622,7 @@ public class KiotaBuilder
                 foreach (var baseClass in parents) // discriminator might also be in grand parent types
                     baseClass.DiscriminatorInformation.RemoveDiscriminatorMapping(currentClass);
             }
+            logger.LogInformation("Removing unused model {ModelName} as it is not referenced by the client API surface", x.Name);
             x.GetImmediateParentOfType<CodeNamespace>().RemoveChildElement(x);
         });
         foreach (var leafNamespace in FindLeafNamespaces(modelsNamespace))
