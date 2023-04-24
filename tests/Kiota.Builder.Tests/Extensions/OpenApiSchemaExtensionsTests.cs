@@ -45,6 +45,7 @@ public class OpenApiSchemaExtensionsTests
         Assert.False(OpenApiSchemaExtensions.IsArray(null));
         Assert.False(OpenApiSchemaExtensions.IsObject(null));
         Assert.False(OpenApiSchemaExtensions.IsReferencedSchema(null));
+        Assert.Null(OpenApiSchemaExtensions.MergeIntersectionSchemaEntries(null));
 
         Assert.False(new OpenApiSchema { Reference = null }.IsReferencedSchema());
         Assert.False(new OpenApiSchema { Type = null }.IsArray());
@@ -53,6 +54,8 @@ public class OpenApiSchemaExtensionsTests
         Assert.False(new OpenApiSchema { AllOf = null }.IsInherited());
         Assert.False(new OpenApiSchema { AllOf = null }.IsIntersection());
         Assert.False(new OpenApiSchema { OneOf = null }.IsExclusiveUnion());
+        var original = new OpenApiSchema { AllOf = null };
+        Assert.Equal(original, original.MergeIntersectionSchemaEntries());
 
     }
     [Fact]
@@ -413,5 +416,41 @@ public class OpenApiSchemaExtensionsTests
         };
         Assert.False(schema.IsInherited());
         Assert.False(schema.IsIntersection());
+    }
+    [Fact]
+    public void MergesIntersection()
+    {
+        var schema = new OpenApiSchema
+        {
+            Description = "description",
+            Deprecated = true,
+            AllOf = new List<OpenApiSchema> {
+                new() {
+                    Type = "object",
+                    Reference = new() {
+                        Id = "microsoft.graph.entity"
+                    },
+                    Properties = new Dictionary<string, OpenApiSchema>() {
+                        ["id"] = new OpenApiSchema()
+                    }
+                },
+                new() {
+                    Type = "object",
+                    Reference = new() {
+                        Id = "microsoft.graph.user"
+                    },
+                    Properties = new Dictionary<string, OpenApiSchema>() {
+                        ["firstName"] = new OpenApiSchema()
+                    }
+                }
+            }
+        };
+        var result = schema.MergeIntersectionSchemaEntries();
+        Assert.False(schema.IsInherited());
+        Assert.Equal(2, result.Properties.Count);
+        Assert.Contains("id", result.Properties.Keys);
+        Assert.Contains("firstName", result.Properties.Keys);
+        Assert.Equal("description", result.Description);
+        Assert.True(result.Deprecated);
     }
 }
