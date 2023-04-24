@@ -473,7 +473,8 @@ public class OpenApiSchemaExtensionsTests
                         new () {
                             Type = "object",
                             Properties = new Dictionary<string, OpenApiSchema>() {
-                                ["firstName"] = new OpenApiSchema()
+                                ["firstName"] = new OpenApiSchema(),
+                                ["lastName"] = new OpenApiSchema()
                             }
                         },
                         new () {
