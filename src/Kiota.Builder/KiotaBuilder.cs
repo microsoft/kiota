@@ -1362,13 +1362,14 @@ public class KiotaBuilder
     {
         var typeName = currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: suffixForInlineSchema, schema: schema, requestBody: isRequestBody).CleanupSymbolName();
         var typesCount = schema.AnyOf?.Count ?? schema.OneOf?.Count ?? 0;
-        if ((typesCount == 1 && schema.Nullable && schema.IsAnyOf()) || // nullable on the root schema outside of anyOf
+        if ((typesCount == 1 && schema.Nullable && schema.IsInclusiveUnion()) || // nullable on the root schema outside of anyOf
             typesCount == 2 && (schema.AnyOf?.Any(static x => // nullable on a schema in the anyOf
                                                         x.Nullable &&
                                                         !x.Properties.Any() &&
-                                                        !x.IsOneOf() &&
-                                                        !x.IsAnyOf() &&
-                                                        !x.IsAllOf() &&
+                                                        !x.IsExclusiveUnion() &&
+                                                        !x.IsInclusiveUnion() &&
+                                                        !x.IsInherited() &&
+                                                        !x.IsIntersection() &&
                                                         !x.IsArray() &&
                                                         !x.IsReferencedSchema()) ?? false))
         { // once openAPI 3.1 is supported, there will be a third case oneOf with Ref and type null.
@@ -1384,7 +1385,7 @@ public class KiotaBuilder
                 };// so we don't create unnecessary union types when anyOf was used only for nullable.
             }
         }
-        var (unionType, schemas) = (schema.IsOneOf(), schema.IsAnyOf()) switch
+        var (unionType, schemas) = (schema.IsExclusiveUnion(), schema.IsInclusiveUnion()) switch
         {
             (true, false) => (new CodeUnionType
             {
@@ -1432,12 +1433,12 @@ public class KiotaBuilder
             false => (parentElement.GetImmediateParentOfType<CodeNamespace>(), null, suffixForInlineSchema), // Inline schema, i.e. specific to the Operation
         };
 
-        if (schema.IsAllOf())
+        if (schema.IsInherited())
         {
             return CreateInheritedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody);
         }
 
-        if ((schema.IsAnyOf() || schema.IsOneOf()) && string.IsNullOrEmpty(schema.Format)
+        if ((schema.IsInclusiveUnion() || schema.IsExclusiveUnion()) && string.IsNullOrEmpty(schema.Format)
             && !schema.IsODataPrimitiveType())
         { // OData types are oneOf string, type + format, enum
             return CreateComposedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody);
