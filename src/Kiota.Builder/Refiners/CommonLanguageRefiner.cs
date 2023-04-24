@@ -935,6 +935,13 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     newU.Parent = currentClass;
                     currentClass.AddUsing(newU);
                 }
+                foreach (var implement in currentParent
+                             .StartBlock
+                             .Implements
+                             .Where(pi => !currentClass.Usings.Any(ci => ci.Name.Equals(pi.Name, StringComparison.OrdinalIgnoreCase))))
+                {
+                    currentClass.StartBlock.AddImplements((CodeType)implement.Clone());
+                }
             }
         }
     }
