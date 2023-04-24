@@ -935,7 +935,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     newU.Parent = currentClass;
                     currentClass.AddUsing(newU);
                 }
-                
                 currentClass.StartBlock.AddImplements(parentClass.StartBlock.Implements.ToArray());
             }
         }
