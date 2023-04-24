@@ -1438,6 +1438,12 @@ public class KiotaBuilder
             return CreateInheritedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody);
         }
 
+        if (schema.IsIntersection() && schema.MergeIntersectionSchemaEntries() is OpenApiSchema mergedSchema)
+        {
+            // multiple allOf entries that do not translate to inheritance
+            return CreateModelDeclarationAndType(currentNode, mergedSchema, operation, codeNamespace, suffix, response: responseValue, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody);
+        }
+
         if ((schema.IsInclusiveUnion() || schema.IsExclusiveUnion()) && string.IsNullOrEmpty(schema.Format)
             && !schema.IsODataPrimitiveType())
         { // OData types are oneOf string, type + format, enum
