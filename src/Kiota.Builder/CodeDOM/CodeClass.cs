@@ -101,11 +101,14 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             return true;
         return parent.DerivesFrom(codeClass);
     }
-    public List<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false)
+    public List<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false, bool includeCurrentClass = true)
     {
         var parentClass = GetParentClass();
         if (parentClass == null || (currentNamespaceOnly && parentClass.GetImmediateParentOfType<CodeNamespace>() != GetImmediateParentOfType<CodeNamespace>()))
-            return new List<CodeClass>() { this };
+            if (includeCurrentClass)
+                return new() { this };
+            else
+                return new();
         var result = parentClass.GetInheritanceTree(currentNamespaceOnly);
         result.Add(this);
         return result;

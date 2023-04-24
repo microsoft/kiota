@@ -19,7 +19,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
-                static x => $"_with_{x.ToSnakeCase()}",
+                static x => $"by_{x.ToSnakeCase()}",
                 static x => x.ToSnakeCase());
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
@@ -63,6 +63,12 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.Custom,
                 },
                 static s => s.ToSnakeCase());
+            AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiError",
+                "MicrosoftKiotaAbstractions",
+                true
+            );
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
@@ -102,12 +108,6 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                                         new[] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
             AddQueryParameterMapperMethod(
                 generatedCode
-            );
-            AddParentClassToErrorClasses(
-                    generatedCode,
-                    "ApiError",
-                    "MicrosoftKiotaAbstractions",
-                    true
             );
             cancellationToken.ThrowIfCancellationRequested();
             RemoveDiscriminatorMappingsThatDependOnSubNameSpace(generatedCode);

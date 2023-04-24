@@ -20,17 +20,14 @@ internal static class KiotaConfigurationExtensions
     {
         ArgumentNullException.ThrowIfNull(configObject);
         ArgumentNullException.ThrowIfNull(configuration);
-        var downloadSection = configuration.GetSection(nameof(configObject.Download));
-        configObject.Download.CleanOutput = bool.TryParse(downloadSection[nameof(DownloadConfiguration.CleanOutput)], out var downloadCleanOutput) && downloadCleanOutput;
-        configObject.Download.ClearCache = bool.TryParse(downloadSection[nameof(DownloadConfiguration.ClearCache)], out var downloadClearCache) && downloadClearCache;
-        configObject.Download.OutputPath = downloadSection[nameof(DownloadConfiguration.OutputPath)] is string value && !string.IsNullOrEmpty(value) ? value : configObject.Download.OutputPath;
-        var searchSection = configuration.GetSection(nameof(configObject.Search));
-        configObject.Search.ClearCache = bool.TryParse(searchSection[nameof(SearchConfiguration.ClearCache)], out var searchClearCache) && searchClearCache;
-        var gitHubSubSection = searchSection.GetSection(nameof(configObject.Search.GitHub));
-        configObject.Search.GitHub.ApiBaseUrl = Uri.TryCreate(gitHubSubSection[nameof(GitHubConfiguration.ApiBaseUrl)], new UriCreationOptions(), out var apiBaseUrl) ? apiBaseUrl : configObject.Search.GitHub.ApiBaseUrl;
-        configObject.Search.GitHub.AppId = gitHubSubSection[nameof(GitHubConfiguration.AppId)] is string appId && !string.IsNullOrEmpty(appId) ? appId : configObject.Search.GitHub.AppId;
-        configObject.Search.GitHub.AppManagement = Uri.TryCreate(gitHubSubSection[nameof(GitHubConfiguration.AppManagement)], new UriCreationOptions(), out var appManagement) ? appManagement : configObject.Search.GitHub.AppManagement;
-        configObject.Search.GitHub.BlockListUrl = Uri.TryCreate(gitHubSubSection[nameof(GitHubConfiguration.BlockListUrl)], new UriCreationOptions(), out var blockListUrl) ? blockListUrl : configObject.Search.GitHub.BlockListUrl;
+        configObject.Download.CleanOutput = bool.TryParse(configuration[$"{nameof(configObject.Download)}:{nameof(DownloadConfiguration.CleanOutput)}"], out var downloadCleanOutput) && downloadCleanOutput;
+        configObject.Download.ClearCache = bool.TryParse(configuration[$"{nameof(configObject.Download)}:{nameof(DownloadConfiguration.ClearCache)}"], out var downloadClearCache) && downloadClearCache;
+        configObject.Download.OutputPath = configuration[$"{nameof(configObject.Download)}:{nameof(DownloadConfiguration.OutputPath)}"] is string value && !string.IsNullOrEmpty(value) ? value : configObject.Download.OutputPath;
+        configObject.Search.ClearCache = bool.TryParse(configuration[$"{nameof(configObject.Search)}:{nameof(SearchConfiguration.ClearCache)}"], out var searchClearCache) && searchClearCache;
+        configObject.Search.GitHub.ApiBaseUrl = Uri.TryCreate(configuration[$"{nameof(configObject.Search)}:{nameof(SearchConfiguration.GitHub)}:{nameof(GitHubConfiguration.ApiBaseUrl)}"], new UriCreationOptions(), out var apiBaseUrl) ? apiBaseUrl : configObject.Search.GitHub.ApiBaseUrl;
+        configObject.Search.GitHub.AppId = configuration[$"{nameof(configObject.Search)}:{nameof(SearchConfiguration.GitHub)}:{nameof(GitHubConfiguration.AppId)}"] is string appId && !string.IsNullOrEmpty(appId) ? appId : configObject.Search.GitHub.AppId;
+        configObject.Search.GitHub.AppManagement = Uri.TryCreate(configuration[$"{nameof(configObject.Search)}:{nameof(SearchConfiguration.GitHub)}:{nameof(GitHubConfiguration.AppManagement)}"], new UriCreationOptions(), out var appManagement) ? appManagement : configObject.Search.GitHub.AppManagement;
+        configObject.Search.GitHub.BlockListUrl = Uri.TryCreate(configuration[$"{nameof(configObject.Search)}:{nameof(SearchConfiguration.GitHub)}:{nameof(GitHubConfiguration.BlockListUrl)}"], new UriCreationOptions(), out var blockListUrl) ? blockListUrl : configObject.Search.GitHub.BlockListUrl;
 
         var languagesSection = configuration.GetSection(nameof(configObject.Languages));
         foreach (var section in languagesSection.GetChildren())
@@ -54,22 +51,21 @@ internal static class KiotaConfigurationExtensions
             }
             configObject.Languages.Add(section.Key, lngInfo);
         }
-        var generationSection = configuration.GetSection(nameof(configObject.Generation));
-        configObject.Generation.Language = Enum.TryParse<GenerationLanguage>(generationSection[nameof(GenerationConfiguration.Language)], true, out var language) ? language : GenerationLanguage.CSharp;
-        configObject.Generation.OpenAPIFilePath = generationSection[nameof(GenerationConfiguration.OpenAPIFilePath)] is string openApiFilePath && !string.IsNullOrEmpty(openApiFilePath) ? openApiFilePath : configObject.Generation.OpenAPIFilePath;
-        configObject.Generation.OutputPath = generationSection[nameof(GenerationConfiguration.OutputPath)] is string outputPath && !string.IsNullOrEmpty(outputPath) ? outputPath : configObject.Generation.OutputPath;
-        configObject.Generation.ClientClassName = generationSection[nameof(GenerationConfiguration.ClientClassName)] is string clientClassName && !string.IsNullOrEmpty(clientClassName) ? clientClassName : configObject.Generation.ClientClassName;
-        configObject.Generation.ClientNamespaceName = generationSection[nameof(GenerationConfiguration.ClientNamespaceName)] is string clientNamespaceName && !string.IsNullOrEmpty(clientNamespaceName) ? clientNamespaceName : configObject.Generation.ClientNamespaceName;
-        configObject.Generation.UsesBackingStore = bool.TryParse(generationSection[nameof(GenerationConfiguration.UsesBackingStore)], out var usesBackingStore) && usesBackingStore;
-        configObject.Generation.IncludeAdditionalData = bool.TryParse(generationSection[nameof(GenerationConfiguration.IncludeAdditionalData)], out var includeAdditionalData) && includeAdditionalData;
-        configObject.Generation.CleanOutput = bool.TryParse(generationSection[nameof(GenerationConfiguration.CleanOutput)], out var cleanOutput) && cleanOutput;
-        configObject.Generation.ClearCache = bool.TryParse(generationSection[nameof(GenerationConfiguration.ClearCache)], out var clearCache) && clearCache;
-        generationSection.GetSection(nameof(GenerationConfiguration.StructuredMimeTypes)).LoadHashSet(configObject.Generation.StructuredMimeTypes);
-        generationSection.GetSection(nameof(GenerationConfiguration.Serializers)).LoadHashSet(configObject.Generation.Serializers);
-        generationSection.GetSection(nameof(GenerationConfiguration.Deserializers)).LoadHashSet(configObject.Generation.Deserializers);
-        generationSection.GetSection(nameof(GenerationConfiguration.IncludePatterns)).LoadHashSet(configObject.Generation.IncludePatterns);
-        generationSection.GetSection(nameof(GenerationConfiguration.ExcludePatterns)).LoadHashSet(configObject.Generation.ExcludePatterns);
-        generationSection.GetSection(nameof(GenerationConfiguration.DisabledValidationRules)).LoadHashSet(configObject.Generation.DisabledValidationRules);
+        configObject.Generation.Language = Enum.TryParse<GenerationLanguage>(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.Language)}"], true, out var language) ? language : GenerationLanguage.CSharp;
+        configObject.Generation.OpenAPIFilePath = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.OpenAPIFilePath)}"] is string openApiFilePath && !string.IsNullOrEmpty(openApiFilePath) ? openApiFilePath : configObject.Generation.OpenAPIFilePath;
+        configObject.Generation.OutputPath = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.OutputPath)}"] is string outputPath && !string.IsNullOrEmpty(outputPath) ? outputPath : configObject.Generation.OutputPath;
+        configObject.Generation.ClientClassName = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ClientClassName)}"] is string clientClassName && !string.IsNullOrEmpty(clientClassName) ? clientClassName : configObject.Generation.ClientClassName;
+        configObject.Generation.ClientNamespaceName = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ClientNamespaceName)}"] is string clientNamespaceName && !string.IsNullOrEmpty(clientNamespaceName) ? clientNamespaceName : configObject.Generation.ClientNamespaceName;
+        configObject.Generation.UsesBackingStore = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.UsesBackingStore)}"], out var usesBackingStore) && usesBackingStore;
+        configObject.Generation.IncludeAdditionalData = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.IncludeAdditionalData)}"], out var includeAdditionalData) && includeAdditionalData;
+        configObject.Generation.CleanOutput = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.CleanOutput)}"], out var cleanOutput) && cleanOutput;
+        configObject.Generation.ClearCache = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ClearCache)}"], out var clearCache) && clearCache;
+        configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.StructuredMimeTypes)}").LoadHashSet(configObject.Generation.StructuredMimeTypes);
+        configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.Serializers)}").LoadHashSet(configObject.Generation.Serializers);
+        configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.Deserializers)}").LoadHashSet(configObject.Generation.Deserializers);
+        configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.IncludePatterns)}").LoadHashSet(configObject.Generation.IncludePatterns);
+        configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ExcludePatterns)}").LoadHashSet(configObject.Generation.ExcludePatterns);
+        configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.DisabledValidationRules)}").LoadHashSet(configObject.Generation.DisabledValidationRules);
     }
     private static void LoadHashSet(this IConfigurationSection section, HashSet<string> hashSet)
     {
@@ -79,7 +75,8 @@ internal static class KiotaConfigurationExtensions
         if (children.Any() && hashSet.Any()) hashSet.Clear();
         foreach (var item in children)
         {
-            hashSet.Add(item.Key);
+            if (section[item.Key] is string value && !string.IsNullOrEmpty(value))
+                hashSet.Add(value);
         }
     }
 }

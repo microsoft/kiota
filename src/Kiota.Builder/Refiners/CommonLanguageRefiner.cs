@@ -231,7 +231,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 {
                     Description = $"Gets the {propertyOriginalName} property value. {currentProperty.Documentation.Description}",
                 },
-                AccessedProperty = currentProperty,
+                AccessedProperty =  currentProperty,
             }).First();
             currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
             var setter = parentClass.AddMethod(new CodeMethod
@@ -328,7 +328,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             provider,
             replacement,
             null,
-            static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && x.Parent is CodeClass parent && parent.IsOfKind(CodeClassKind.Model) && parent.IsErrorDefinition
+            static x => ((x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom)) || x is CodeMethod) && x.Parent is CodeClass parent && parent.IsOfKind(CodeClassKind.Model) && parent.IsErrorDefinition
         );
     }
     protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type>? codeElementExceptions = null, Func<CodeElement, bool>? shouldReplaceCallback = null)
@@ -905,6 +905,16 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     var newP = (CodeProperty)p.Clone();
                     newP.Parent = currentClass;
                     currentClass.AddProperty(newP);
+                    if (newP.Setter != null)
+                    {
+                        newP.Setter.AccessedProperty = newP;
+                        currentClass.AddMethod(newP.Setter);
+                    }
+                    if (newP.Getter != null)
+                    {
+                        newP.Getter.AccessedProperty = newP;
+                        currentClass.AddMethod(newP.Getter);
+                    }
                 }
 
                 foreach (var m in currentParent
@@ -925,6 +935,13 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     var newU = (CodeUsing)u.Clone();
                     newU.Parent = currentClass;
                     currentClass.AddUsing(newU);
+                }
+                foreach (var implement in currentParent
+                             .StartBlock
+                             .Implements
+                             .Where(pi => !currentClass.Usings.Any(ci => ci.Name.Equals(pi.Name, StringComparison.OrdinalIgnoreCase))))
+                {
+                    currentClass.StartBlock.AddImplements((CodeType)implement.Clone());
                 }
             }
         }

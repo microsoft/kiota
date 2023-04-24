@@ -3,7 +3,7 @@
   "displayName": "Microsoft Kiota",
   "publisher": "ms-graph",
   "description": "Client generator for HTTP REST APIs described by OpenAPI which helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you're interested in, thanks to a filtering capability.",
-  "version": "1.1.1",
+  "version": "1.1.3",
   "icon": "images/logo.png",
   "engines": {
     "vscode": "^1.77.0"
@@ -234,16 +234,16 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "18.x",
     "@types/vscode": "^1.77.0",
-    "@typescript-eslint/eslint-plugin": "^5.58.0",
-    "@typescript-eslint/parser": "^5.58.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.0",
+    "@typescript-eslint/parser": "^5.59.0",
     "@vscode/test-electron": "^2.2.2",
-    "eslint": "^8.38.0",
-    "glob": "^10.0.0",
+    "eslint": "^8.39.0",
+    "glob": "^10.2.2",
     "mocha": "^10.1.0",
     "ts-loader": "^9.4.2",
     "typescript": "^5.0.4",
-    "webpack": "^5.79.0",
-    "webpack-cli": "^5.0.1"
+    "webpack": "^5.80.0",
+    "webpack-cli": "^5.0.2"
   },
   "dependencies": {
     "@vscode/l10n": "^0.0.13",
@@ -256,23 +256,23 @@
   "runtimeDependencies": [
     {
       "platformId": "win-x64",
-      "sha256": "FD865B0DD989B1BD7E213FF071AD59D3372F6602C80183CA146B7606634300AF"
+      "sha256": "46FD2CFA88340AF8A9DED5BD2643DA7A4E28FEDC5C4FFC9A2414041027DB288B"
     },
     {
       "platformId": "win-x86",
-      "sha256": "035E105D0DF4B54E080F7A595962539FD32B0BD292D092610468364D6AF6167D"
+      "sha256": "FCE85F9310967728431461C0DDD6864041EA262081930494F8D4B8A3B7C180C9"
     },
     {
       "platformId": "linux-x64",
-      "sha256": "AADAC74A510F870A972C8B86DD21A6C6125B412A0F2D0DE07B3313F2F22C9BF5"
+      "sha256": "6E6763B7D855F43B8C6F4659C13C4D3E9EB085B60A0806E9B6B18BEE828CF2CC"
     },
     {
       "platformId": "osx-x64",
-      "sha256": "4E8D5B7D71F1D0CD32D4BCF28FD07AE51FA1703A3F81BAB2E7111B49B4C3094F"
+      "sha256": "6266A2E02247461EB8C4B7FF0EA45E34DDC6AF05490D5CA26F838DE73D984ACA"
     },
     {
       "platformId": "osx-arm64",
-      "sha256": "120633423ACDD14EFA46D2D345A5062F65C9C71F4631BB09B3F0825AB166DF24"
+      "sha256": "909D2888AD236EE4D7B7A30D09C73C30C0B9957643FB71CC3C77DB66E9B7C11C"
     }
   ]
 }
