@@ -75,4 +75,25 @@ public class CodeIndexerWriterTests : IDisposable
         Assert.Contains("public SomeRequestBuilder this[string position]", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+
+    [Theory]
+    [InlineData("for some reason", "for some reason")]
+    public void Should_add_Obsolete_attribute_when_indexer_is_deprecated_with_a_reason(string inputReason, string expectedReason)
+    {
+        indexer.DeprecationInformation = new() { Reason = inputReason };
+
+        writer.Write(indexer);
+        var result = tw.ToString();
+        Assert.Contains($"""[System.Obsolete("{expectedReason}")]""", result);
+    }
+
+    [Fact]
+    public void Should_add_Obsolete_attribute_when_indexer_is_deprecated_without_a_reason()
+    {
+        indexer.DeprecationInformation = new();
+
+        writer.Write(indexer);
+        var result = tw.ToString();
+        Assert.Contains("[System.Obsolete]", result);
+    }
 }
