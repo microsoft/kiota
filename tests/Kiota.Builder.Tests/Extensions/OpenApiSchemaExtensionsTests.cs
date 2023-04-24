@@ -453,4 +453,46 @@ public class OpenApiSchemaExtensionsTests
         Assert.Equal("description", result.Description);
         Assert.True(result.Deprecated);
     }
+    [Fact]
+    public void MergesIntersectionRecursively()
+    {
+        var schema = new OpenApiSchema
+        {
+            Description = "description",
+            Deprecated = true,
+            AllOf = new List<OpenApiSchema> {
+                new() {
+                    Type = "object",
+                    Properties = new Dictionary<string, OpenApiSchema>() {
+                        ["id"] = new OpenApiSchema()
+                    }
+                },
+                new() {
+                    Type = "object",
+                    AllOf = new List<OpenApiSchema>() {
+                        new () {
+                            Type = "object",
+                            Properties = new Dictionary<string, OpenApiSchema>() {
+                                ["firstName"] = new OpenApiSchema()
+                            }
+                        },
+                        new () {
+                            Type = "object",
+                            Properties = new Dictionary<string, OpenApiSchema>() {
+                                ["lastName"] = new OpenApiSchema()
+                            }
+                        },
+                    }
+                }
+            }
+        };
+        var result = schema.MergeIntersectionSchemaEntries();
+        Assert.False(schema.IsInherited());
+        Assert.Equal(3, result.Properties.Count);
+        Assert.Contains("id", result.Properties.Keys);
+        Assert.Contains("firstName", result.Properties.Keys);
+        Assert.Contains("lastName", result.Properties.Keys);
+        Assert.Equal("description", result.Description);
+        Assert.True(result.Deprecated);
+    }
 }

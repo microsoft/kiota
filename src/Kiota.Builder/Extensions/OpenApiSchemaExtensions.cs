@@ -77,7 +77,7 @@ public static class OpenApiSchemaExtensions
         if (!schema.IsIntersection()) return schema;
         var result = new OpenApiSchema(schema);
         result.AllOf.Clear();
-        var meaningfulSchemas = schema.AllOf.Where(IsSemanticallyMeaningful);
+        var meaningfulSchemas = schema.AllOf.Where(IsSemanticallyMeaningful).Select(MergeIntersectionSchemaEntries).Where(x => x is not null).OfType<OpenApiSchema>();
         meaningfulSchemas.SelectMany(static x => x.Properties).ToList().ForEach(x => result.Properties.Add(x.Key, x.Value));
         return result;
     }
