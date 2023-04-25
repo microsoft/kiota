@@ -496,4 +496,23 @@ public class OpenApiSchemaExtensionsTests
         Assert.Equal("description", result.Description);
         Assert.True(result.Deprecated);
     }
+    [Fact]
+    public void IsArrayFalseOnEmptyItems()
+    {
+        var schema = new OpenApiSchema
+        {
+            Type = "array",
+            Items = new OpenApiSchema(),
+        };
+        Assert.False(schema.IsArray());
+    }
+    [Fact]
+    public void IsArrayFalseOnNullItems()
+    {
+        var schema = new OpenApiSchema
+        {
+            Type = "array",
+        };
+        Assert.False(schema.IsArray());
+    }
 }

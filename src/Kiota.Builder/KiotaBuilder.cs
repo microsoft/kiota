@@ -646,6 +646,11 @@ public class KiotaBuilder
             {
                 var description = child.Value.GetPathItemDescription(Constants.DefaultOpenApiLabel).CleanupDescription();
                 var prop = CreateProperty(propIdentifier, propType, kind: CodePropertyKind.RequestBuilder); // we should add the type definition here but we can't as it might not have been generated yet
+                if (prop is null)
+                {
+                    logger.LogWarning("Property {prop} was not created as its type couldn't be determined", propIdentifier);
+                    continue;
+                }
                 if (!string.IsNullOrWhiteSpace(description))
                 {
                     prop.Documentation.Description = description;
@@ -675,7 +680,7 @@ public class KiotaBuilder
                 }
             });
     }
-    private static void CreateMethod(string propIdentifier, string propType, CodeClass codeClass, OpenApiUrlTreeNode currentNode)
+    private void CreateMethod(string propIdentifier, string propType, CodeClass codeClass, OpenApiUrlTreeNode currentNode)
     {
         var methodToAdd = new CodeMethod
         {
@@ -701,11 +706,18 @@ public class KiotaBuilder
         AddPathParametersToMethod(currentNode, methodToAdd, false);
         codeClass.AddMethod(methodToAdd);
     }
-    private static void AddPathParametersToMethod(OpenApiUrlTreeNode currentNode, CodeMethod methodToAdd, bool asOptional)
+    private void AddPathParametersToMethod(OpenApiUrlTreeNode currentNode, CodeMethod methodToAdd, bool asOptional)
     {
         foreach (var parameter in currentNode.GetPathParametersForCurrentSegment())
         {
             var codeName = parameter.Name.SanitizeParameterNameForCodeSymbols();
+            var parameterType = GetPrimitiveType(parameter.Schema ?? parameter.Content.Values.FirstOrDefault()?.Schema) ??
+            new CodeType
+            {
+                Name = "string",
+                IsExternal = true,
+            };
+            parameterType.CollectionKind = parameter.Schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
             var mParameter = new CodeParameter
             {
                 Name = codeName,
@@ -716,9 +728,8 @@ public class KiotaBuilder
                 },
                 Kind = CodeParameterKind.Path,
                 SerializationName = parameter.Name.Equals(codeName) ? string.Empty : parameter.Name.SanitizeParameterNameForUrlTemplate(),
-                Type = GetPrimitiveType(parameter.Schema ?? parameter.Content.Values.FirstOrDefault()?.Schema)
+                Type = parameterType
             };
-            mParameter.Type.CollectionKind = parameter.Schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
             // not using the content schema as RFC6570 will serialize arrays as CSVs and content expects a JSON array, we failsafe to opaque string, it could be improved by involving the serialization layers.
             methodToAdd.AddParameter(mParameter);
         }
@@ -932,9 +943,11 @@ public class KiotaBuilder
         };
     }
 
-    private CodeProperty CreateProperty(string childIdentifier, string childType, OpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
+    private CodeProperty? CreateProperty(string childIdentifier, string childType, OpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
     {
         var propertyName = childIdentifier.CleanupSymbolName();
+        var resultType = existingType ?? GetPrimitiveType(propertySchema, childType);
+        if (resultType == null) return null;
         var prop = new CodeProperty
         {
             Name = propertyName,
@@ -946,7 +959,7 @@ public class KiotaBuilder
                     $"The {propertyName} property",
             },
             ReadOnly = propertySchema?.ReadOnly ?? false,
-            Type = existingType ?? GetPrimitiveType(propertySchema, childType),
+            Type = resultType,
         };
         if (prop.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
             !propertyName.Equals(childIdentifier, StringComparison.Ordinal))
@@ -964,7 +977,7 @@ public class KiotaBuilder
         return prop;
     }
     private static readonly HashSet<string> typeNamesToSkip = new(StringComparer.OrdinalIgnoreCase) { "object", "array" };
-    private static CodeType GetPrimitiveType(OpenApiSchema? typeSchema, string? childType = default)
+    private static CodeType? GetPrimitiveType(OpenApiSchema? typeSchema, string? childType = default)
     {
         var typeNames = new List<string?> { typeSchema?.Items?.Type, childType, typeSchema?.Type };
         if (typeSchema?.AnyOf?.Any() ?? false)
@@ -1008,9 +1021,11 @@ public class KiotaBuilder
                 isExternal = true;
             }
         }
+        if (string.IsNullOrEmpty(typeName))
+            return null;
         return new CodeType
         {
-            Name = typeName ?? string.Empty,
+            Name = typeName,
             IsExternal = isExternal,
         };
     }
@@ -1473,7 +1488,7 @@ public class KiotaBuilder
         CodeTypeBase? type = GetPrimitiveType(schema.Items, string.Empty);
         bool isEnumOrComposedCollectionType = schema.Items.IsEnum() //the collection could be an enum type so override with strong type instead of string type.
                                     || (schema.Items.IsComposedEnum() && string.IsNullOrEmpty(schema.Items.Format));//the collection could be a composed type with an enum type so override with strong type instead of string type.
-        if ((string.IsNullOrEmpty(type.Name)
+        if ((string.IsNullOrEmpty(type?.Name)
                || isEnumOrComposedCollectionType)
                && schema.Items != null)
         {
@@ -1797,8 +1812,7 @@ public class KiotaBuilder
                                     }
                                     return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
                                 })
-                                .Where(static x => x != null)
-                                .Select(static x => x!)
+                                .OfType<CodeProperty>()
                                 .ToArray());
         }
         else if (schema?.AllOf?.Any(x => x.IsObject()) ?? false)
@@ -1941,15 +1955,23 @@ public class KiotaBuilder
                 },
             }).First();
             foreach (var parameter in parameters)
-                AddPropertyForParameter(parameter, parameterClass);
+                AddPropertyForQueryParameter(parameter, parameterClass);
 
             return parameterClass;
         }
 
         return null;
     }
-    private void AddPropertyForParameter(OpenApiParameter parameter, CodeClass parameterClass)
+    private void AddPropertyForQueryParameter(OpenApiParameter parameter, CodeClass parameterClass)
     {
+        var resultType = GetPrimitiveType(parameter.Schema) ?? new CodeType()
+        {
+            // since its a query parameter default to string if there is no schema
+            // it also be an object type, but we'd need to create the model in that case and there's no standard on how to serialize those as query parameters
+            Name = "string",
+            IsExternal = true,
+        };
+        resultType.CollectionKind = parameter.Schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
         var prop = new CodeProperty
         {
             Name = parameter.Name.SanitizeParameterNameForCodeSymbols(),
@@ -1958,16 +1980,8 @@ public class KiotaBuilder
                 Description = parameter.Description.CleanupDescription(),
             },
             Kind = CodePropertyKind.QueryParameter,
-            Type = GetPrimitiveType(parameter.Schema),
+            Type = resultType,
         };
-        prop.Type.CollectionKind = parameter.Schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
-        if (string.IsNullOrEmpty(prop.Type.Name) && prop.Type is CodeType parameterType)
-        {
-            // since its a query parameter default to string if there is no schema
-            // it also be an object type, but we'd need to create the model in that case and there's no standard on how to serialize those as query parameters
-            parameterType.Name = "string";
-            parameterType.IsExternal = true;
-        }
 
         if (!parameter.Name.Equals(prop.Name))
         {

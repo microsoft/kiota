@@ -3872,9 +3872,9 @@ paths:
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
         Assert.NotNull(modelsNS);
-        var responseClass = modelsNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model) && x.Name.Equals("myobject", StringComparison.OrdinalIgnoreCase));
+        var responseClass = modelsNS.Classes.FirstOrDefault(static x => x.IsOfKind(CodeClassKind.Model) && x.Name.Equals("myobject", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(responseClass);
-        var property = responseClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("signInRiskLevels", StringComparison.OrdinalIgnoreCase));
+        var property = responseClass.Properties.FirstOrDefault(static x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("signInRiskLevels", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(property);
         Assert.NotEmpty(property.Type.Name);
         var codeType = property.Type as CodeType;
@@ -5878,5 +5878,47 @@ components:
         var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectResponse");
         Assert.NotNull(resultClass);
         Assert.Equal(4, resultClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom)).Count());
+    }
+    [Fact]
+    public async Task SkipsInvalidItemsProperties()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /directoryObject:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  datasets:
+                    type: array
+                    items: true
+                  datakeys:
+                    type: array
+                    items: {}
+                  datainfo:
+                    type: array
+                  id:
+                    type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectResponse");
+        Assert.NotNull(resultClass);
+        var keysToCheck = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "datasets", "datakeys", "datainfo" };
+        Assert.Empty(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && keysToCheck.Contains(x.Name)));
+        Assert.Single(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
     }
 }
