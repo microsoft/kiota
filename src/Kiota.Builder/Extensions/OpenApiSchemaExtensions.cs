@@ -60,17 +60,35 @@ public static class OpenApiSchemaExtensions
     {
         return schema?.Type?.Equals("object", StringComparison.OrdinalIgnoreCase) ?? false;
     }
-    public static bool IsAnyOf(this OpenApiSchema? schema)
+    public static bool IsInclusiveUnion(this OpenApiSchema? schema)
     {
         return schema?.AnyOf?.Count(IsSemanticallyMeaningful) > 1;
     }
 
-    public static bool IsAllOf(this OpenApiSchema? schema)
+    public static bool IsInherited(this OpenApiSchema? schema)
     {
-        return schema?.AllOf?.Count(IsSemanticallyMeaningful) > 1;
+        var meaningfulSchemas = schema?.AllOf?.Where(IsSemanticallyMeaningful);
+        return meaningfulSchemas?.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) == 1 && meaningfulSchemas.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) == 1;
     }
 
-    public static bool IsOneOf(this OpenApiSchema? schema)
+    internal static OpenApiSchema? MergeIntersectionSchemaEntries(this OpenApiSchema? schema)
+    {
+        if (schema is null) return null;
+        if (!schema.IsIntersection()) return schema;
+        var result = new OpenApiSchema(schema);
+        result.AllOf.Clear();
+        var meaningfulSchemas = schema.AllOf.Where(IsSemanticallyMeaningful).Select(MergeIntersectionSchemaEntries).Where(x => x is not null).OfType<OpenApiSchema>();
+        meaningfulSchemas.SelectMany(static x => x.Properties).ToList().ForEach(x => result.Properties.TryAdd(x.Key, x.Value));
+        return result;
+    }
+
+    public static bool IsIntersection(this OpenApiSchema? schema)
+    {
+        var meaningfulSchemas = schema?.AllOf?.Where(IsSemanticallyMeaningful);
+        return meaningfulSchemas?.Count() > 3 || meaningfulSchemas?.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) > 1 || meaningfulSchemas?.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) > 1;
+    }
+
+    public static bool IsExclusiveUnion(this OpenApiSchema? schema)
     {
         return schema?.OneOf?.Count(IsSemanticallyMeaningful) > 1;
     }
@@ -80,13 +98,13 @@ public static class OpenApiSchemaExtensions
     };
     public static bool IsODataPrimitiveType(this OpenApiSchema schema)
     {
-        return schema.IsOneOf() &&
+        return schema.IsExclusiveUnion() &&
                 schema.OneOf.Count == 3 &&
                 schema.OneOf.Count(static x => x.Enum?.Any() ?? false) == 1 &&
                 schema.OneOf.Count(static x => oDataTypes.Contains(x.Type)) == 1 &&
                 schema.OneOf.Count(static x => "string".Equals(x.Type, StringComparison.OrdinalIgnoreCase)) == 1
                 ||
-            schema.IsAnyOf() &&
+            schema.IsInclusiveUnion() &&
                 schema.AnyOf.Count == 3 &&
                 schema.AnyOf.Count(static x => x.Enum?.Any() ?? false) == 1 &&
                 schema.AnyOf.Count(static x => oDataTypes.Contains(x.Type)) == 1 &&
@@ -98,7 +116,7 @@ public static class OpenApiSchemaExtensions
     }
     public static bool IsComposedEnum(this OpenApiSchema schema)
     {
-        return (schema.IsAnyOf() && schema.AnyOf.Any(x => x.IsEnum())) || (schema.IsOneOf() && schema.OneOf.Any(x => x.IsEnum()));
+        return (schema.IsInclusiveUnion() && schema.AnyOf.Any(x => x.IsEnum())) || (schema.IsExclusiveUnion() && schema.OneOf.Any(x => x.IsEnum()));
     }
     private static bool IsSemanticallyMeaningful(this OpenApiSchema schema)
     {

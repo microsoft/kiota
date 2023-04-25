@@ -38,19 +38,24 @@ public class OpenApiSchemaExtensionsTests
         };
         Assert.Null(schema.Properties);
         Assert.Empty(schema.GetSchemaReferenceIds());
-        Assert.False(OpenApiSchemaExtensions.IsAllOf(null));
-        Assert.False(OpenApiSchemaExtensions.IsAnyOf(null));
-        Assert.False(OpenApiSchemaExtensions.IsOneOf(null));
+        Assert.False(OpenApiSchemaExtensions.IsInherited(null));
+        Assert.False(OpenApiSchemaExtensions.IsIntersection(null));
+        Assert.False(OpenApiSchemaExtensions.IsInclusiveUnion(null));
+        Assert.False(OpenApiSchemaExtensions.IsExclusiveUnion(null));
         Assert.False(OpenApiSchemaExtensions.IsArray(null));
         Assert.False(OpenApiSchemaExtensions.IsObject(null));
         Assert.False(OpenApiSchemaExtensions.IsReferencedSchema(null));
+        Assert.Null(OpenApiSchemaExtensions.MergeIntersectionSchemaEntries(null));
 
         Assert.False(new OpenApiSchema { Reference = null }.IsReferencedSchema());
         Assert.False(new OpenApiSchema { Type = null }.IsArray());
         Assert.False(new OpenApiSchema { Type = null }.IsObject());
-        Assert.False(new OpenApiSchema { AnyOf = null }.IsAnyOf());
-        Assert.False(new OpenApiSchema { AllOf = null }.IsAllOf());
-        Assert.False(new OpenApiSchema { OneOf = null }.IsOneOf());
+        Assert.False(new OpenApiSchema { AnyOf = null }.IsInclusiveUnion());
+        Assert.False(new OpenApiSchema { AllOf = null }.IsInherited());
+        Assert.False(new OpenApiSchema { AllOf = null }.IsIntersection());
+        Assert.False(new OpenApiSchema { OneOf = null }.IsExclusiveUnion());
+        var original = new OpenApiSchema { AllOf = null };
+        Assert.Equal(original, original.MergeIntersectionSchemaEntries());
 
     }
     [Fact]
@@ -322,5 +327,173 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema();
         var names = schema.GetSchemaReferenceIds();
         Assert.Empty(names);
+    }
+    [Fact]
+    public void IsInherited()
+    {
+        var schema = new OpenApiSchema
+        {
+            AllOf = new List<OpenApiSchema> {
+                new() {
+                    Type = "object",
+                    Reference = new() {
+                        Id = "microsoft.graph.entity"
+                    },
+                    Properties = new Dictionary<string, OpenApiSchema>() {
+                        ["id"] = new OpenApiSchema()
+                    }
+                },
+                new() {
+                    Type = "object",
+                    Properties = new Dictionary<string, OpenApiSchema>() {
+                        ["firstName"] = new OpenApiSchema()
+                    }
+                }
+            }
+        };
+        Assert.True(schema.IsInherited());
+        Assert.False(schema.IsIntersection());
+    }
+    [Fact]
+    public void IsIntersection()
+    {
+        var schema = new OpenApiSchema
+        {
+            AllOf = new List<OpenApiSchema> {
+                new() {
+                    Type = "object",
+                    Reference = new() {
+                        Id = "microsoft.graph.entity"
+                    },
+                    Properties = new Dictionary<string, OpenApiSchema>() {
+                        ["id"] = new OpenApiSchema()
+                    }
+                },
+                new() {
+                    Type = "object",
+                    Reference = new() {
+                        Id = "microsoft.graph.user"
+                    },
+                    Properties = new Dictionary<string, OpenApiSchema>() {
+                        ["firstName"] = new OpenApiSchema()
+                    }
+                }
+            }
+        };
+        Assert.False(schema.IsInherited());
+        Assert.True(schema.IsIntersection());
+
+        schema = new OpenApiSchema
+        {
+            AllOf = new List<OpenApiSchema> {
+                new() {
+                    Type = "object",
+                    Properties = new Dictionary<string, OpenApiSchema>() {
+                        ["id"] = new OpenApiSchema()
+                    }
+                },
+                new() {
+                    Type = "object",
+                    Properties = new Dictionary<string, OpenApiSchema>() {
+                        ["firstName"] = new OpenApiSchema()
+                    }
+                }
+            }
+        };
+        Assert.False(schema.IsInherited());
+        Assert.True(schema.IsIntersection());
+
+        schema = new OpenApiSchema
+        {
+            AllOf = new List<OpenApiSchema> {
+                new() {
+                    Type = "object",
+                    Properties = new Dictionary<string, OpenApiSchema>() {
+                        ["id"] = new OpenApiSchema()
+                    }
+                }
+            }
+        };
+        Assert.False(schema.IsInherited());
+        Assert.False(schema.IsIntersection());
+    }
+    [Fact]
+    public void MergesIntersection()
+    {
+        var schema = new OpenApiSchema
+        {
+            Description = "description",
+            Deprecated = true,
+            AllOf = new List<OpenApiSchema> {
+                new() {
+                    Type = "object",
+                    Reference = new() {
+                        Id = "microsoft.graph.entity"
+                    },
+                    Properties = new Dictionary<string, OpenApiSchema>() {
+                        ["id"] = new OpenApiSchema()
+                    }
+                },
+                new() {
+                    Type = "object",
+                    Reference = new() {
+                        Id = "microsoft.graph.user"
+                    },
+                    Properties = new Dictionary<string, OpenApiSchema>() {
+                        ["firstName"] = new OpenApiSchema()
+                    }
+                }
+            }
+        };
+        var result = schema.MergeIntersectionSchemaEntries();
+        Assert.False(schema.IsInherited());
+        Assert.Equal(2, result.Properties.Count);
+        Assert.Contains("id", result.Properties.Keys);
+        Assert.Contains("firstName", result.Properties.Keys);
+        Assert.Equal("description", result.Description);
+        Assert.True(result.Deprecated);
+    }
+    [Fact]
+    public void MergesIntersectionRecursively()
+    {
+        var schema = new OpenApiSchema
+        {
+            Description = "description",
+            Deprecated = true,
+            AllOf = new List<OpenApiSchema> {
+                new() {
+                    Type = "object",
+                    Properties = new Dictionary<string, OpenApiSchema>() {
+                        ["id"] = new OpenApiSchema()
+                    }
+                },
+                new() {
+                    Type = "object",
+                    AllOf = new List<OpenApiSchema>() {
+                        new () {
+                            Type = "object",
+                            Properties = new Dictionary<string, OpenApiSchema>() {
+                                ["firstName"] = new OpenApiSchema(),
+                                ["lastName"] = new OpenApiSchema()
+                            }
+                        },
+                        new () {
+                            Type = "object",
+                            Properties = new Dictionary<string, OpenApiSchema>() {
+                                ["lastName"] = new OpenApiSchema()
+                            }
+                        },
+                    }
+                }
+            }
+        };
+        var result = schema.MergeIntersectionSchemaEntries();
+        Assert.False(schema.IsInherited());
+        Assert.Equal(3, result.Properties.Count);
+        Assert.Contains("id", result.Properties.Keys);
+        Assert.Contains("firstName", result.Properties.Keys);
+        Assert.Contains("lastName", result.Properties.Keys);
+        Assert.Equal("description", result.Description);
+        Assert.True(result.Deprecated);
     }
 }

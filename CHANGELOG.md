@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
 - Added automatic loading of the lock file for the extension so quick edits of clients are supported.
 - Added trimming of derived types that are not being used by the client. [#2543](https://github.com/microsoft/kiota/issues/2543)
+- Added support for merging schemas of AllOf > 2. [#2438](https://github.com/microsoft/kiota/issues/2438)
 
 ### Changed
 
