@@ -680,7 +680,7 @@ public class KiotaBuilder
                 }
             });
     }
-    private void CreateMethod(string propIdentifier, string propType, CodeClass codeClass, OpenApiUrlTreeNode currentNode)
+    private static void CreateMethod(string propIdentifier, string propType, CodeClass codeClass, OpenApiUrlTreeNode currentNode)
     {
         var methodToAdd = new CodeMethod
         {
