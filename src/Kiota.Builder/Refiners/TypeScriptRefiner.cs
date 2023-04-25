@@ -48,8 +48,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", string.Empty, isNullable: true);
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}Escaped");
-            ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), x => $"{x}Escaped");
+            ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), static x => $"{x}Escaped");
+            ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
             AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiError",
@@ -329,7 +329,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             var usings = codeClass.Usings.ToArray();
             codeInterface.AddUsing(usings);
         }
-        CrawlTree(currentElement, x => ReplaceRequestConfigurationsQueryParamsWithInterfaces(x));
+        CrawlTree(currentElement, static x => ReplaceRequestConfigurationsQueryParamsWithInterfaces(x));
     }
     private const string TemporaryInterfaceNameSuffix = "Interface";
     private const string ModelSerializerPrefix = "serialize";
@@ -355,7 +355,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             CreateSerializationFunctions(codeClass);
         }
-        CrawlTree(codeElement, x => CreateSeparateSerializers(x));
+        CrawlTree(codeElement, static x => CreateSeparateSerializers(x));
     }
 
     private static void CreateSerializationFunctions(CodeClass modelClass)
@@ -422,7 +422,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         GenerateModelInterfaces(
            generatedCode,
-           x => $"{x.Name.ToFirstCharacterUpperCase()}Interface".ToFirstCharacterUpperCase()
+           static x => $"{x.Name.ToFirstCharacterUpperCase()}Interface".ToFirstCharacterUpperCase()
        );
 
         RenameModelInterfacesAndRemoveClasses(generatedCode);
@@ -464,7 +464,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             RenameCodeInterfaceParamsInSerializers(codeFunction);
         }
 
-        CrawlTree(currentElement, x => RenameModelInterfacesAndRemoveClasses(x));
+        CrawlTree(currentElement, static x => RenameModelInterfacesAndRemoveClasses(x));
     }
 
     private static void RenameModelInterfacesAndRemoveClassesInUsing(CodeUsing codeUsing)

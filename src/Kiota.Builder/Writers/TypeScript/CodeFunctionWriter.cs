@@ -14,7 +14,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     {
         _codeUsingWriter = new(clientNamespaceName);
     }
-    private TypeScriptConventionService? localConventions;
     private readonly CodeUsingWriter _codeUsingWriter;
     private static readonly HashSet<string> customSerializationWriters = new(StringComparer.OrdinalIgnoreCase) { "writeObjectValue", "writeCollectionOfObjectValues" };
 
@@ -32,7 +31,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
         writer.IncreaseIndent();
 
-        localConventions = new TypeScriptConventionService(writer);
         switch (codeMethod.Kind)
         {
             case CodeMethodKind.Deserializer:
@@ -129,7 +127,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         var isCollectionOfEnum = IsCodePropertyCollectionOfEnum(codeProperty);
         var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
-        var propTypeName = localConventions?.GetTypeString(codeProperty.Type, codeProperty.Parent!, false);
+        var propTypeName = conventions.GetTypeString(codeProperty.Type, codeProperty.Parent!, false);
 
         var serializationName = GetSerializationMethodName(codeProperty.Type);
 
@@ -150,7 +148,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private string GetSerializationMethodName(CodeTypeBase propType)
     {
-        var propertyType = localConventions?.TranslateType(propType);
+        var propertyType = conventions.TranslateType(propType);
         if (!string.IsNullOrEmpty(propertyType) && propType is CodeType currentType && GetSerializationMethodNameForCodeType(currentType, propertyType) is string result && !String.IsNullOrWhiteSpace(result))
         {
             return result;
@@ -171,7 +169,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             if (propType.TypeDefinition == null)
                 return $"writeCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
             else
-                return $"writeCollectionOfObjectValues";
+                return "writeCollectionOfObjectValues";
         }
         return null;
     }
@@ -203,7 +201,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeFunction codeFunction)
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-        var propertyType = localConventions?.GetTypeString(propType, codeFunction, false);
+        var propertyType = conventions.GetTypeString(propType, codeFunction, false);
         if (!string.IsNullOrEmpty(propertyType) && propType is CodeType currentType)
         {
             if (currentType.TypeDefinition is CodeEnum currentEnum)
@@ -225,20 +223,16 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeMethod currentElement)
     {
-        if (localConventions?.TranslateType(targetClassType) is string targetClassName)
+        if (conventions.TranslateType(targetClassType) is string targetClassName)
         {
             var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
-            if (localConventions?.GetTypeString(targetClassType, currentElement, false) is string returnType && targetClassName.EqualsIgnoreCase(returnType)) return resultName;
+            if (conventions.GetTypeString(targetClassType, currentElement, false) is string returnType && targetClassName.EqualsIgnoreCase(returnType)) return resultName;
             if (targetClassType is CodeType currentType &&
                 currentType.TypeDefinition is CodeInterface definitionClass &&
                 definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
                 parentNamespace.FindChildByName<CodeFunction>(resultName) is CodeFunction factoryMethod)
             {
-                var methodName = localConventions?.GetTypeString(new CodeType
-                {
-                    Name = resultName,
-                    TypeDefinition = factoryMethod
-                }, currentElement, false);
+                var methodName = conventions.GetTypeString(new CodeType { Name = resultName, TypeDefinition = factoryMethod }, currentElement, false);
                 return methodName.ToFirstCharacterUpperCase();// static function is aliased
             }
         }
@@ -249,9 +243,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     {
         if (propType.TypeDefinition?.Parent is not CodeNamespace parentNameSpace) return string.Empty;
         var serializationFunction = parentNameSpace.FindChildByName<CodeFunction>(propertySerializerName);
-        return localConventions?.GetTypeString(new CodeType
-        {
-            TypeDefinition = serializationFunction
-        }, codeFunction, false);
+        return conventions.GetTypeString(new CodeType { TypeDefinition = serializationFunction }, codeFunction, false);
     }
 }

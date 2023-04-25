@@ -126,9 +126,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     private static string GetCodeTypeName(CodeType codeType)
     {
-        if (codeType.TypeDefinition is CodeFunction)
+        if (codeType.TypeDefinition is CodeFunction codeFunction)
         {
-            return !string.IsNullOrEmpty(codeType.TypeDefinition?.Name) ? codeType.TypeDefinition.Name : string.Empty;
+            return !string.IsNullOrEmpty(codeFunction?.Name) ? codeFunction.Name : string.Empty;
         }
 
         return (!string.IsNullOrEmpty(codeType.TypeDefinition?.Name) ? codeType.TypeDefinition.Name : codeType.Name).ToFirstCharacterUpperCase();
