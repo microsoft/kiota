@@ -150,10 +150,18 @@ internal class Server : IServer
         if (result is not null) return result;
         return Configuration.Languages;
     }
-
     private static PathItem ConvertOpenApiUrlTreeNodeToPathItem(OpenApiUrlTreeNode node)
     {
-        return new PathItem(node.Path, node.Segment, node.Children.Select(x => ConvertOpenApiUrlTreeNodeToPathItem(x.Value)).ToArray());
+        return new PathItem(node.Path, node.Segment, node.Children
+                                                        .Select(static x => ConvertOpenApiUrlTreeNodeToPathItem(x.Value))
+                                                        .Union(node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var openApiPathItems) ?
+                                                                    openApiPathItems.Operations.Select(x => new PathItem(
+                                                                        $"{node.Path}#{x.Key.ToString().ToUpperInvariant()}",
+                                                                        x.Key.ToString().ToUpperInvariant(),
+                                                                        Array.Empty<PathItem>(),
+                                                                        true)) :
+                                                                    Enumerable.Empty<PathItem>())
+                                                        .ToArray());
     }
     protected static string GetAbsolutePath(string source)
     {

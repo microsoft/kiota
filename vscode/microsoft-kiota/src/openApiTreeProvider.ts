@@ -81,7 +81,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (!this.rawRootNode) {
             return;
         }
-        const apiNode = this.findApiNode(this.getPathSegments(item.path), this.rawRootNode);
+        const apiNode = this.findApiNode(getPathSegments(item.path), this.rawRootNode);
         if(apiNode) {
             this.selectInternal(apiNode, selected, recursive);
             this.refreshView();
@@ -91,6 +91,8 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         apiNode.selected = selected;
         if(recursive) {
             apiNode.children.forEach(x => this.selectInternal(x, selected, recursive));
+        } else if (!(apiNode.isOperation || false)) {
+            apiNode.children.filter(x => x.isOperation || false).forEach(x => this.selectInternal(x, selected, false));
         }
     }
     private findApiNode(segments: string[], currentNode: KiotaOpenApiNode): KiotaOpenApiNode | undefined {
@@ -122,13 +124,17 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     private findSelectedPaths(currentNode: KiotaOpenApiNode): string[] {
         const result: string[] = [];
         if(currentNode.selected || false) {
-            result.push(currentNode.path.replace(/\\/g, '/'));
+            if ((currentNode.isOperation || false) && this.rawRootNode) {
+                const parent = this.findApiNode(getPathSegments(currentNode.path.split('#')[0]), this.rawRootNode);
+                if (parent && !parent.selected) {
+                    result.push(currentNode.path.replace(/\\/g, '/'));
+                }
+            } else {
+                result.push(currentNode.path.replace(/\\/g, '/'));
+            }
         }
         currentNode.children.forEach(x => result.push(...this.findSelectedPaths(x)));
         return result;
-    }
-    private getPathSegments(path: string): string[] {
-        return path.replace('/', '').split('\\').filter(x => x !== ''); // the root node is always /
     }
     private rawRootNode: KiotaOpenApiNode | undefined;
     private tokenizedFilter: string[] = [];
@@ -172,7 +178,8 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             node.path, 
             node.segment,
             node.selected || false,
-            this.getCollapsedState(node.children.length > 0)
+            this.getCollapsedState(node.children.length > 0),
+            node.isOperation || false,
         );
         result.children = node.children.map(x => this.getTreeNodeFromKiotaNode(x));
         return result;
@@ -190,6 +197,9 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
     }
 }
+function getPathSegments(path: string): string[] {
+    return path.replace('/', '').split('\\').map(x => x.split('#')).flat(1).filter(x => x !== ''); // the root node is always /
+}
 type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string | vscode.Uri } | vscode.ThemeIcon;
 export class OpenApiTreeNode extends vscode.TreeItem {
     private static readonly selectedSet: IconSet = new vscode.ThemeIcon('check');
@@ -200,6 +210,7 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         public readonly label: string,
         selected: boolean,
         public collapsibleState: vscode.TreeItemCollapsibleState,
+        private readonly isOperation: boolean,
         _children?: OpenApiTreeNode[]
     ) {
         super(label, collapsibleState);
@@ -210,13 +221,27 @@ export class OpenApiTreeNode extends vscode.TreeItem {
             this.children = [];
         }
     }
+    private static readonly operationsNames = new Set<string>(['get', 'put', 'post', 'patch', 'delete', 'head', 'options', 'trace']);
     public isNodeVisible(tokenizedFilter: string[]): boolean {
         if (tokenizedFilter.length === 0) {
             return true;
         }
         const lowerCaseSegment = this.label.toLowerCase();
+        const splatPath = this.path.split('#')[0];
         if (tokenizedFilter.some(x => lowerCaseSegment.includes(x.toLowerCase()))) {
+            if (this.isOperation &&tokenizedFilter.some(x => OpenApiTreeNode.operationsNames.has(x)) && !tokenizedFilter.some(x => splatPath.includes(x))) {
+                return false;
+            }
             return true;
+        }
+        
+        if (this.isOperation) {
+            const segments = getPathSegments(splatPath);
+            if (segments.length === 0) {
+                return false;
+            }
+            const parentSegment = segments[segments.length - 1];
+            return tokenizedFilter.some(x => parentSegment.includes(x));
         }
         return this.children.some(x => x.isNodeVisible(tokenizedFilter));
     }

@@ -34,6 +34,7 @@ export interface KiotaOpenApiNode {
     path: string,
     children: KiotaOpenApiNode[],
     selected?: boolean,
+    isOperation?: boolean;
 }
 
 export interface KiotaShowConfiguration {
