@@ -244,7 +244,7 @@ public class PhpConventionService : CommonLanguageConventionService
         if (parameters.Any())
             writer.WriteLines(parameters.Select(p =>
                 $"${TempDictionaryVarName}['{p.Item2}'] = {p.Item3};"
-            ).ToArray());
+            ));
     }
 
     private static bool IsSymbolDuplicated(string symbol, CodeElement targetElement)

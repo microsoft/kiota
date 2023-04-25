@@ -70,7 +70,15 @@ public abstract class LanguageWriter
     {
         writer?.WriteLine(includeIndent ? GetIndent() + line : line);
     }
+    internal void WriteLines(IEnumerable<string> lines)
+    {
+        WriteLinesInternal(lines);
+    }
     internal void WriteLines(params string[] lines)
+    {
+        WriteLinesInternal(lines);
+    }
+    private void WriteLinesInternal(IEnumerable<string> lines)
     {
         foreach (var line in lines)
         {

@@ -4,6 +4,8 @@ public enum CodeInterfaceKind
 {
     Custom,
     Model,
+    QueryParameters,
+    RequestConfiguration
 }
 
 public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDeclaration>, ITypeDefinition

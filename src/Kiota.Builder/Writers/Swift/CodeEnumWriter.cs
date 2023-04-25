@@ -19,8 +19,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, SwiftConventionService
         writer.StartBlock($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} : String {{"); //TODO docs
         writer.WriteLines(codeElement.Options
                         .Select(static x => x.Name.ToFirstCharacterUpperCase())
-                        .Select(static (x, idx) => $"case {x}")
-                        .ToArray());
+                        .Select(static (x, idx) => $"case {x}"));
         //TODO static parse function?
         //enum and ns are closed by the code block end writer
     }

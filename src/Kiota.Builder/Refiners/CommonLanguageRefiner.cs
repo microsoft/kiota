@@ -405,6 +405,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
     }
+
     private static void ReplaceReservedEnumNames(CodeEnum currentEnum, IReservedNamesProvider provider, Func<string, string> replacement)
     {
         currentEnum.Options
