@@ -706,7 +706,7 @@ public class KiotaBuilder
         AddPathParametersToMethod(currentNode, methodToAdd, false);
         codeClass.AddMethod(methodToAdd);
     }
-    private void AddPathParametersToMethod(OpenApiUrlTreeNode currentNode, CodeMethod methodToAdd, bool asOptional)
+    private static void AddPathParametersToMethod(OpenApiUrlTreeNode currentNode, CodeMethod methodToAdd, bool asOptional)
     {
         foreach (var parameter in currentNode.GetPathParametersForCurrentSegment())
         {
