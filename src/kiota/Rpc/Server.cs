@@ -159,7 +159,8 @@ internal class Server : IServer
                                                                         $"{node.Path}#{x.Key.ToString().ToUpperInvariant()}",
                                                                         x.Key.ToString().ToUpperInvariant(),
                                                                         Array.Empty<PathItem>(),
-                                                                        true)) :
+                                                                        true,
+                                                                        x.Value.ExternalDocs?.Url)) :
                                                                     Enumerable.Empty<PathItem>())
                                                         .ToArray());
     }

@@ -69,6 +69,10 @@ export async function activate(
     ),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
     vscode.commands.registerCommand(
+      `${treeViewId}.openDocumentationPage`,
+      (x: OpenApiTreeNode) => x.documentationUrl && vscode.env.openExternal(vscode.Uri.parse(x.documentationUrl))
+    ),
+    vscode.commands.registerCommand(
       `${treeViewId}.addToSelectedEndpoints`,
       (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, false)
     ),

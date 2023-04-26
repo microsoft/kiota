@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for merging schemas of AllOf > 2. [#2438](https://github.com/microsoft/kiota/issues/2438)
 - Added operation selection in the vscode extension. [#2556](https://github.com/microsoft/kiota/issues/2556)
 - Added Chinese translations to vscode extension.
+- Added an action to open documentation in the vscode extension. [#2562](https://github.com/microsoft/kiota/issues/2562)
 
 ### Changed
 

@@ -183,7 +183,8 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             node.selected || false,
             this.getCollapsedState(node.children.length > 0),
             node.isOperation || false,
-            node.children.map(x => this.getTreeNodeFromKiotaNode(x))
+            node.children.map(x => this.getTreeNodeFromKiotaNode(x)),
+            node.documentationUrl
         );
     }
     getChildren(element?: OpenApiTreeNode): OpenApiTreeNode[] {
@@ -213,8 +214,10 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         public collapsibleState: vscode.TreeItemCollapsibleState,
         private readonly isOperation: boolean,
         public readonly children: OpenApiTreeNode[] = [],
+        public readonly documentationUrl?: string,
     ) {
         super(label, collapsibleState);
+        this.contextValue = documentationUrl;
         this.iconPath = selected ? OpenApiTreeNode.selectedSet : OpenApiTreeNode.unselectedSet;
     }
     private static readonly operationsNames = new Set<string>(['get', 'put', 'post', 'patch', 'delete', 'head', 'options', 'trace']);
