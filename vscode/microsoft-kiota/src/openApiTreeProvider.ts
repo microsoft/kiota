@@ -177,15 +177,14 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                     vscode.TreeItemCollapsibleState.Expanded);
     }
     getTreeNodeFromKiotaNode(node: KiotaOpenApiNode): OpenApiTreeNode {
-        const result = new OpenApiTreeNode(
+        return new OpenApiTreeNode(
             node.path, 
             node.segment,
             node.selected || false,
             this.getCollapsedState(node.children.length > 0),
             node.isOperation || false,
+            node.children.map(x => this.getTreeNodeFromKiotaNode(x))
         );
-        result.children = node.children.map(x => this.getTreeNodeFromKiotaNode(x));
-        return result;
     }
     getChildren(element?: OpenApiTreeNode): OpenApiTreeNode[] {
         if (!this.rawRootNode) {
@@ -207,22 +206,16 @@ type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string 
 export class OpenApiTreeNode extends vscode.TreeItem {
     private static readonly selectedSet: IconSet = new vscode.ThemeIcon('check');
     private static readonly unselectedSet: IconSet = new vscode.ThemeIcon('circle-slash');
-    public children: OpenApiTreeNode[];
     constructor(
         public readonly path: string,
         public readonly label: string,
         selected: boolean,
         public collapsibleState: vscode.TreeItemCollapsibleState,
         private readonly isOperation: boolean,
-        _children?: OpenApiTreeNode[]
+        public readonly children: OpenApiTreeNode[] = [],
     ) {
         super(label, collapsibleState);
         this.iconPath = selected ? OpenApiTreeNode.selectedSet : OpenApiTreeNode.unselectedSet;
-        if (_children) {
-            this.children = _children;
-        } else {
-            this.children = [];
-        }
     }
     private static readonly operationsNames = new Set<string>(['get', 'put', 'post', 'patch', 'delete', 'head', 'options', 'trace']);
     public isNodeVisible(tokenizedFilter: string[]): boolean {
