@@ -53,12 +53,16 @@ public static class OpenApiSchemaExtensions
 
     public static bool IsArray(this OpenApiSchema? schema)
     {
-        return (schema?.Type?.Equals("array", StringComparison.OrdinalIgnoreCase) ?? false) && schema?.Items != null;
+        return "array".Equals(schema?.Type, StringComparison.OrdinalIgnoreCase) && schema.Items != null &&
+            (schema.Items.IsComposedEnum() ||
+            schema.Items.IsEnum() ||
+            IsSemanticallyMeaningful(schema.Items) ||
+            FlattenEmptyEntries(new OpenApiSchema[] { schema.Items }, static x => x.AnyOf.Union(x.AllOf).Union(x.OneOf).ToList(), 1).FirstOrDefault() is OpenApiSchema flat && IsSemanticallyMeaningful(flat));
     }
 
     public static bool IsObject(this OpenApiSchema? schema)
     {
-        return schema?.Type?.Equals("object", StringComparison.OrdinalIgnoreCase) ?? false;
+        return "object".Equals(schema?.Type, StringComparison.OrdinalIgnoreCase);
     }
     public static bool IsInclusiveUnion(this OpenApiSchema? schema)
     {
@@ -116,7 +120,7 @@ public static class OpenApiSchemaExtensions
     }
     public static bool IsComposedEnum(this OpenApiSchema schema)
     {
-        return (schema.IsInclusiveUnion() && schema.AnyOf.Any(x => x.IsEnum())) || (schema.IsExclusiveUnion() && schema.OneOf.Any(x => x.IsEnum()));
+        return (schema.IsInclusiveUnion() && schema.AnyOf.Any(static x => x.IsEnum())) || (schema.IsExclusiveUnion() && schema.OneOf.Any(static x => x.IsEnum()));
     }
     private static bool IsSemanticallyMeaningful(this OpenApiSchema schema)
     {
