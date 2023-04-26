@@ -31,9 +31,12 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                 this.setAllSelected(this.rawRootNode, true);
             } else {
                 this._lockFile.includePatterns.forEach(ip => {
-                    const currentNode = this.findApiNode(ip.split('/').filter(x => x !== ''), this.rawRootNode!);
+                    const currentNode = this.findApiNode(ip.split('/').filter(x => x !== '').map(x => x.split('#')).flat(1), this.rawRootNode!);
                     if(currentNode) {
                         currentNode.selected = true;
+                        if (!(currentNode.isOperation || false)) {
+                            currentNode.children.filter(x => x.isOperation || false).forEach(x => x.selected = true);
+                        }
                     }
                 });
             }
