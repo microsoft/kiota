@@ -13,12 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added automatic loading of the lock file for the extension so quick edits of clients are supported.
 - Added trimming of derived types that are not being used by the client. [#2543](https://github.com/microsoft/kiota/issues/2543)
 - Added support for merging schemas of AllOf > 2. [#2438](https://github.com/microsoft/kiota/issues/2438)
+- Added operation selection in the vscode extension. [#2556](https://github.com/microsoft/kiota/issues/2556)
+- Added Chinese translations to vscode extension.
 
 ### Changed
 
-- Fix issue where implements for error classes were not copied when inlining classes.
-- Move the common properties to a base class and remove properties(RequestAdapter, UrlTemplate and PathParameters) for the request builders and options and headers for RequestConfig classes PHP.[2439](https://github.com/microsoft/kiota/issues/2439)
-- Fix bugs with imports for PHP Generation.
+- Fixed issue where implements for error classes were not copied when inlining classes.
+- Moved the common properties to a base class and remove properties(RequestAdapter, UrlTemplate and PathParameters) for the request builders and options and headers for RequestConfig classes PHP.[2439](https://github.com/microsoft/kiota/issues/2439)
+- Fixed bugs with imports for PHP Generation.
 - Indexers replacement are now at the same level as the original indexer. e.g `client.userById("id").messagesById("id")...` is now `client.users.withId("id").messages.withId("id")...`.
 - Fixed a bug where arrays with empty items definitions would still project properties. [#2502](https://github.com/microsoft/kiota/issues/2502)
 - Fixed a bug where multiple single path parameters at the same level would produce invalid url templates.
@@ -29,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where the extension would fail to generate for the root path. [#2536](https://github.com/microsoft/kiota/issues/2536)
 - Fixed a bug where properties copied from parent to child classes would not be cloned.
 - Fixed a bug where Java discriminator mapping would use the mapping name instead of the type name.
+- Fixed a bug where filters for nodes with same-level single path parameters with different names would not work anymore.
 - Fixed a bug where replacing reserved names would not propagate the rename to the inner child elements map of the parent class.
 - Fixed a bug where descriptions with multiple server URLs would use the HTTP one instead of HTTPs. [#2336](https://github.com/microsoft/kiota/issues/2336)
 - Fixed a bug where backing store properties would be sometimes duplicated in derived classes.
