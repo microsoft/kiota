@@ -48,8 +48,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", string.Empty, isNullable: true);
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), static x => $"{x}Escaped");
-            ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
             AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiError",
@@ -134,6 +132,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode
             );
             IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
+            ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), static x => $"{x}Escaped");
+            ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
             AliasUsingsWithSameSymbol(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
