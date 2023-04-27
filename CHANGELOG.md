@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where replacing reserved names would not propagate the rename to the inner child elements map of the parent class.
 - Fixed a bug where descriptions with multiple server URLs would use the HTTP one instead of HTTPs. [#2336](https://github.com/microsoft/kiota/issues/2336)
 - Fixed a bug where backing store properties would be sometimes duplicated in derived classes.
+- Write PHP URL templates in request builders using single quoted strings to prevent need to escape $-prefixed names e.g. $count, $ref, $value.
 
 ## [1.1.3] - 2023-04-18
 
