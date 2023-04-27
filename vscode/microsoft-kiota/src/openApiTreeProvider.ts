@@ -31,7 +31,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                 this.setAllSelected(this.rawRootNode, true);
             } else {
                 this._lockFile.includePatterns.forEach(ip => {
-                    const currentNode = this.findApiNode(ip.split('/').filter(x => x !== '').map(x => x.split('#')).flat(1), this.rawRootNode!);
+                    const currentNode = this.findApiNode(ip.split(pathSeparator).filter(x => x !== '').map(x => x.split(operationSeparator)).flat(1), this.rawRootNode!);
                     if(currentNode) {
                         currentNode.selected = true;
                         if (!(currentNode.isOperation || false)) {
@@ -122,18 +122,18 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (!this.rawRootNode) {
             return [];
         }
-        return this.findSelectedPaths(this.rawRootNode).map(x => x === '' ? '/' : x); // root node trailing slash is /
+        return this.findSelectedPaths(this.rawRootNode).map(x => x === '' ? pathSeparator : x); // root node trailing slash is /
     }
     private findSelectedPaths(currentNode: KiotaOpenApiNode): string[] {
         const result: string[] = [];
         if(currentNode.selected || false) {
             if ((currentNode.isOperation || false) && this.rawRootNode) {
-                const parent = this.findApiNode(getPathSegments(currentNode.path.split('#')[0]), this.rawRootNode);
+                const parent = this.findApiNode(getPathSegments(trimOperation(currentNode.path)), this.rawRootNode);
                 if (parent && !parent.selected) {
-                    result.push(currentNode.path.replace(/\\/g, '/'));
+                    result.push(currentNode.path.replace(/\\/g, pathSeparator));
                 }
             } else {
-                result.push(currentNode.path.replace(/\\/g, '/'));
+                result.push(currentNode.path.replace(/\\/g, pathSeparator));
             }
         }
         currentNode.children.forEach(x => result.push(...this.findSelectedPaths(x)));
@@ -200,8 +200,14 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
     }
 }
+const operationSeparator = '#';
+const pathSeparator = '/';
+const operationsNames = new Set<string>(['get', 'put', 'post', 'patch', 'delete', 'head', 'options', 'trace']);
 function getPathSegments(path: string): string[] {
-    return path.replace('/', '').split('\\').map(x => x.split('#')).flat(1).filter(x => x !== ''); // the root node is always /
+    return path.replace(pathSeparator, '').split('\\').map(x => x.split(operationSeparator)).flat(1).filter(x => x !== ''); // the root node is always /
+}
+function trimOperation(path: string): string {
+    return path.split(operationSeparator)[0];
 }
 type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string | vscode.Uri } | vscode.ThemeIcon;
 export class OpenApiTreeNode extends vscode.TreeItem {
@@ -220,15 +226,14 @@ export class OpenApiTreeNode extends vscode.TreeItem {
         this.contextValue = documentationUrl;
         this.iconPath = selected ? OpenApiTreeNode.selectedSet : OpenApiTreeNode.unselectedSet;
     }
-    private static readonly operationsNames = new Set<string>(['get', 'put', 'post', 'patch', 'delete', 'head', 'options', 'trace']);
     public isNodeVisible(tokenizedFilter: string[]): boolean {
         if (tokenizedFilter.length === 0) {
             return true;
         }
         const lowerCaseSegment = this.label.toLowerCase();
-        const splatPath = this.path.split('#')[0];
+        const splatPath = trimOperation(this.path);
         if (tokenizedFilter.some(x => lowerCaseSegment.includes(x.toLowerCase()))) {
-            if (this.isOperation &&tokenizedFilter.some(x => OpenApiTreeNode.operationsNames.has(x)) && !tokenizedFilter.some(x => splatPath.includes(x))) {
+            if (this.isOperation &&tokenizedFilter.some(x => operationsNames.has(x)) && !tokenizedFilter.some(x => splatPath.includes(x))) {
                 return false;
             }
             return true;

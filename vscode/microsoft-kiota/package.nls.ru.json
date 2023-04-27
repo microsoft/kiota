@@ -15,7 +15,7 @@
   "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Удалить всё",
   "kiota.openApiExplorer.closeDescription.title": "Закрыть описание API",
   "kiota.openApiExplorer.openDescription.title": "Открыть описание API",
-  "kiota.openApiExplorer.welcome": "Не выбрано описание API.\n[Search](command:kiota.searchApiDescription)\n[Open](command:kiota.openApiExplorer.openDescription)\n[Select lock file](command:kiota.searchLock)",
+  "kiota.openApiExplorer.welcome": "Не выбрано описание API.\n[поиск](command:kiota.searchApiDescription)\n[Открыть](command:kiota.openApiExplorer.openDescription)\n[выделить](command:kiota.searchLock)",
   "kiota.searchLock.title": "Искать файл блокировки",
   "kiota.openApiExplorer.filterDescription.title": "Отфильтровать описание API",
   "kiota.openApiExplorer.openDocumentationPage.title": "Открыть страницу документации"
