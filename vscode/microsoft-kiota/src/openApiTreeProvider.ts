@@ -92,10 +92,16 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     private selectInternal(apiNode: KiotaOpenApiNode, selected: boolean, recursive: boolean) {
         apiNode.selected = selected;
+        const isOperationNode = apiNode.isOperation || false;
         if(recursive) {
             apiNode.children.forEach(x => this.selectInternal(x, selected, recursive));
-        } else if (!(apiNode.isOperation || false)) {
+        } else if (!isOperationNode) {
             apiNode.children.filter(x => x.isOperation || false).forEach(x => this.selectInternal(x, selected, false));
+        } else if (isOperationNode && !selected && this.rawRootNode) {
+            const parent = this.findApiNode(getPathSegments(trimOperation(apiNode.path)), this.rawRootNode);
+            if (parent) {
+                parent.selected = selected;
+            }
         }
     }
     private findApiNode(segments: string[], currentNode: KiotaOpenApiNode): KiotaOpenApiNode | undefined {
