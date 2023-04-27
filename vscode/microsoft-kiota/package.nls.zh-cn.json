@@ -15,7 +15,8 @@
   "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "删除所有",
   "kiota.openApiExplorer.closeDescription.title": "关闭API描述文档",
   "kiota.openApiExplorer.openDescription.title": "打开API描述文档",
-  "kiota.openApiExplorer.welcome": "无API描述文档选择.\n[Search](command:kiota.searchApiDescription)\n[Open](command:kiota.openApiExplorer.openDescription)\n[Select lock file](command:kiota.searchLock)",
+  "kiota.openApiExplorer.welcome": "无API描述文档选择.\n[搜索](command:kiota.searchApiDescription)\n[打开](command:kiota.openApiExplorer.openDescription)\n[选择锁定文件](command:kiota.searchLock)",
   "kiota.searchLock.title": "搜索锁定文件",
-  "kiota.openApiExplorer.filterDescription.title": "筛选API描述"
+  "kiota.openApiExplorer.filterDescription.title": "筛选API描述",
+  "kiota.openApiExplorer.openDocumentationPage.title": "打开文档页"
 }

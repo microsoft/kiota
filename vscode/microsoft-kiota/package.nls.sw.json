@@ -17,5 +17,6 @@
   "kiota.openApiExplorer.openDescription.title": "Fungua maelezo ya API",
   "kiota.openApiExplorer.welcome": "Hakuna maelezo ya API yaliyochaguliwa.\n[Tafuta](command:kiota.searchApiDescription)\n[Fungua](command:kiota.openApiExplorer.openDescription)\n[Chagua faili ya kufunga](command:kiota.searchLock)",
   "kiota.searchLock.title": "Tafuta faili ya kufunga",
-  "kiota.openApiExplorer.filterDescription.title": "Chuja maelezo ya API"
+  "kiota.openApiExplorer.filterDescription.title": "Chuja maelezo ya API",
+  "kiota.openApiExplorer.openDocumentationPage.title": "Fungua ukurasa wa nyaraka"
 }
