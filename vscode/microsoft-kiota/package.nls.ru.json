@@ -17,5 +17,6 @@
   "kiota.openApiExplorer.openDescription.title": "Открыть описание API",
   "kiota.openApiExplorer.welcome": "Не выбрано описание API.\n[Search](command:kiota.searchApiDescription)\n[Open](command:kiota.openApiExplorer.openDescription)\n[Select lock file](command:kiota.searchLock)",
   "kiota.searchLock.title": "Искать файл блокировки",
+  "kiota.openApiExplorer.filterDescription.title": "Отфильтровать описание API",
   "kiota.openApiExplorer.openDocumentationPage.title": "Открыть страницу документации"
 }
