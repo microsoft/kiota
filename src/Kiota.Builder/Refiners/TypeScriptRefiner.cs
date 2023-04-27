@@ -134,9 +134,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode
             );
             IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
-
-
-
             AliasUsingsWithSameSymbol(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
