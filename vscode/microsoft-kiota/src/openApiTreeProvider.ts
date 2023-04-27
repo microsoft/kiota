@@ -250,7 +250,7 @@ export class OpenApiTreeNode extends vscode.TreeItem {
             if (segments.length === 0) {
                 return false;
             }
-            const parentSegment = segments[segments.length - 1];
+            const parentSegment = segments[segments.length - 1].toLowerCase();
             return tokenizedFilter.some(x => parentSegment.includes(x));
         }
         return this.children.some(x => x.isNodeVisible(tokenizedFilter));
