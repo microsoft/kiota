@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 import * as path from 'path';
+import * as fs from 'fs';
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import {
   getLogEntriesForLevel,
@@ -113,6 +114,10 @@ export async function activate(
           },
           languagesInformation
         );
+        const outputPath = typeof config.outputPath === "string"
+              ? config.outputPath
+              : "./output";
+        await showUpgradeWarningMessage(outputPath, context);
         if (!openApiTreeProvider.descriptionUrl) {
           await vscode.window.showErrorMessage(
             vscode.l10n.t("No description found, select a description first")
@@ -131,9 +136,7 @@ export async function activate(
           return generateClient(
             context,
             openApiTreeProvider.descriptionUrl,
-            typeof config.outputPath === "string"
-              ? config.outputPath
-              : "./output",
+            outputPath,
             language,
             selectedPaths,
             [],
@@ -218,6 +221,10 @@ export async function activate(
         );
         return;
       }
+      const existingLockFileUris = await vscode.workspace.findFiles(`**/${kiotaLockFile}`);
+      if (existingLockFileUris.length > 0) {
+        await Promise.all(existingLockFileUris.map(x => path.dirname(x.fsPath)).map(x => showUpgradeWarningMessage(x, context)));
+      }
       await updateStatusBarItem(context);
       try {
         kiotaOutputChannel.clear();
@@ -251,6 +258,20 @@ export async function activate(
   );
 
   context.subscriptions.push(disposable);
+}
+
+async function showUpgradeWarningMessage(clientPath: string, context: vscode.ExtensionContext): Promise<void> {
+  const kiotaVersion = context.extension.packageJSON.version.toLocaleLowerCase();
+  const lockFilePath = path.join(clientPath, kiotaLockFile);
+  if(!fs.existsSync(lockFilePath)) {
+    return;
+  }
+  const lockFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(lockFilePath));
+  const lockFile = JSON.parse(lockFileData.toString()) as {kiotaVersion: string};
+  const clientVersion = lockFile.kiotaVersion.toLocaleLowerCase();
+  if (clientVersion.toLocaleLowerCase() !== kiotaVersion) {
+    await vscode.window.showWarningMessage(vscode.l10n.t("Client will be upgraded from version {0} to {1}, upgrade your dependencies", clientVersion, kiotaVersion));
+  }
 }
 
 async function loadLockFile(node: { fsPath: string }, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
