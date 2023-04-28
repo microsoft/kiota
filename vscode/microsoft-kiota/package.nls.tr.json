@@ -1,0 +1,22 @@
+{
+  "kiota.dependenciesInfo.name": "Kiota Bağımlılıkları Bilgisi",
+  "kiota.dependenciesInfo.contextualTitle": "Bağımlılıklar Bilgisi",
+  "kiota.openApiExplorer.name": "Kiota OpenAPI Gezgini",
+  "kiota.openApiExplorer.contextualTitle": "OpenAPI Gezgini",
+  "kiota-dependencies-info.panel.title": "Kiota Bağımlılıkları Bilgisi",
+  "kiota-openapi-explorer.activitybar.title": "Kiota OpenAPI Gezgini",
+  "kiota.selectLock.title": "API gezgini görünümü için kilit dosyasını seçin",
+  "kiota.updateClients.title": "Mevcut çalışma alanındaki API istecilerini güncelle",
+  "kiota.openApiExplorer.generateClient.title": "API istemcisi oluştur",
+  "kiota.searchApiDescription.title": "API açıklaması ara",
+  "kiota.openApiExplorer.addToSelectedEndpoints.title": "Ekle",
+  "kiota.openApiExplorer.removeFromSelectedEndpoints.title": "Kaldır",
+  "kiota.openApiExplorer.addAllToSelectedEndpoints.title": "Tümünü ekle",
+  "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Tümünü kaldır",
+  "kiota.openApiExplorer.closeDescription.title": "API açıklamasını kapat",
+  "kiota.openApiExplorer.openDescription.title": "API açıklamasını aç",
+  "kiota.openApiExplorer.welcome": "Seçili bir API açıklaması yok.\n[Ara](command:kiota.searchApiDescription)\n[Aç](command:kiota.openApiExplorer.openDescription)\n[Kilit dosyasını seç](command:kiota.searchLock)",
+  "kiota.searchLock.title": "Kilit dosyası arayın",
+  "kiota.openApiExplorer.filterDescription.title": "API açıklaması filtrele",
+  "kiota.openApiExplorer.openDocumentationPage.title": "API belgelerini aç"
+}
