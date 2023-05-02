@@ -17,5 +17,6 @@
   "kiota.openApiExplorer.openDescription.title": "Abrir descripción del API",
   "kiota.openApiExplorer.welcome": "No ha seleccionado una descripción de API.\n[Buscar](command:kiota.searchApiDescription)\n[Abrir](command:kiota.openApiExplorer.openDescription)\n[Seleccionar archivo lock](command:kiota.searchLock)",
   "kiota.searchLock.title": "Buscar un archivo lock",
-  "kiota.openApiExplorer.filterDescription.title": "Filtrar descripción de API"
+  "kiota.openApiExplorer.filterDescription.title": "Filtrar descripción de API",
+  "kiota.openApiExplorer.openDocumentationPage.title": "Abrir documentación"
 }

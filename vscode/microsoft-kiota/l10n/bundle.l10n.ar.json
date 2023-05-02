@@ -1,4 +1,5 @@
 {
+  "Client will be upgraded from version {0} to {1}, upgrade your dependencies": "ستتم ترقية العميل من الإصدار {0} إلى {1} ، قم بترقية تبعياتك",
   "No description found, select a description first": "لم يتم العثور على وصف API، حدد وصفا أولا",
   "No endpoints selected, select endpoints first": "لم يتم اختيار API ,اختر API أولا",
   "No workspace folder found, open a folder first": "لم يتم العثور على مساحة عمل ، افتح مساحة عمل أولا",

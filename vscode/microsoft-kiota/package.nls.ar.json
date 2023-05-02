@@ -17,5 +17,6 @@
   "kiota.openApiExplorer.openDescription.title": "افتح وصف API",
   "kiota.openApiExplorer.welcome": "لم يتم اختيار وصف API\n[ابحث](command:kiota.searchApiDescription)\n[افتح](command:kiota.openApiExplorer.openDescription)\n[اختر ملف](command:kiota.searchLock)",
   "kiota.searchLock.title": "ابحث عن ملف قفل",
-  "kiota.openApiExplorer.filterDescription.title": "قم بتصفية وصف API"
+  "kiota.openApiExplorer.filterDescription.title": "قم بتصفية وصف API",
+  "kiota.openApiExplorer.openDocumentationPage.title": "افتح صفحة الوثائق"
 }

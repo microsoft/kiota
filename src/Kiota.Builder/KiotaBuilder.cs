@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Security;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNet.Globbing;
@@ -31,7 +32,7 @@ using HttpMethod = Kiota.Builder.CodeDOM.HttpMethod;
 
 namespace Kiota.Builder;
 
-public class KiotaBuilder
+public partial class KiotaBuilder
 {
     private readonly ILogger<KiotaBuilder> logger;
     private readonly GenerationConfiguration config;
@@ -47,7 +48,7 @@ public class KiotaBuilder
         ArgumentNullException.ThrowIfNull(client);
         this.logger = logger;
         this.config = config;
-        this.httpClient = client;
+        httpClient = client;
     }
     private async Task CleanOutputDirectory(CancellationToken cancellationToken)
     {
@@ -65,13 +66,13 @@ public class KiotaBuilder
     public async Task<OpenApiUrlTreeNode?> GetUrlTreeNodeAsync(CancellationToken cancellationToken)
     {
         var sw = new Stopwatch();
-        string inputPath = config.OpenAPIFilePath;
+        var inputPath = config.OpenAPIFilePath;
         var (_, openApiTree, _) = await GetTreeNodeInternal(inputPath, false, sw, cancellationToken);
         return openApiTree;
     }
     private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
     {
-        logger.LogDebug("kiota version {version}", Kiota.Generated.KiotaVersion.Current());
+        logger.LogDebug("kiota version {version}", Generated.KiotaVersion.Current());
         var stepId = 0;
         sw.Start();
         await using var input = await (originalDocument == null ?
@@ -228,12 +229,16 @@ public class KiotaBuilder
         await lockManagementService.WriteLockFileAsync(config.OutputPath, configurationLock, cancellationToken);
     }
     private static readonly GlobComparer globComparer = new();
+    [GeneratedRegex(@"([\/\\])\{[\w\d-]+\}([\/\\])", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, 2000)]
+    private static partial Regex MultiIndexSameLevelCleanupRegexTemplate();
+    private static readonly Regex MultiIndexSameLevelCleanupRegex = MultiIndexSameLevelCleanupRegexTemplate();
+    private static string ReplaceAllIndexesWithWildcard(string path, uint depth = 10) => depth == 0 ? path : ReplaceAllIndexesWithWildcard(MultiIndexSameLevelCleanupRegex.Replace(path, "$1{*}$2"), depth - 1); // the bound needs to be greedy to avoid replacing anything else than single path parameters
     private static Dictionary<Glob, HashSet<OperationType>> GetFilterPatternsFromConfiguration(HashSet<string> configPatterns)
     {
         return configPatterns.Select(static x =>
         {
             var splat = x.Split('#', StringSplitOptions.RemoveEmptyEntries);
-            var glob = Glob.Parse(splat[0]);
+            var glob = Glob.Parse(ReplaceAllIndexesWithWildcard(splat[0]));
             var operationTypes = splat.Length > 1 ?
                                     splat[1].Split(',', StringSplitOptions.RemoveEmptyEntries)
                                         .Select(static y => Enum.TryParse<OperationType>(y.Trim(), true, out var op) ? op : default(OperationType?)) :
@@ -256,8 +261,8 @@ public class KiotaBuilder
         var nonOperationExcludePatterns = excludePatterns.Where(static x => !x.Value.Any()).Select(static x => x.Key).ToList();
 
         if (nonOperationIncludePatterns.Any() || nonOperationExcludePatterns.Any())
-            doc.Paths.Keys.Where(x => (nonOperationIncludePatterns.Any() && !nonOperationIncludePatterns.Any(y => y.IsMatch(x))) ||
-                                (nonOperationExcludePatterns.Any() && nonOperationExcludePatterns.Any(y => y.IsMatch(x))))
+            doc.Paths.Keys.Where(x => nonOperationIncludePatterns.Any() && !nonOperationIncludePatterns.Any(y => y.IsMatch(x)) ||
+                                nonOperationExcludePatterns.Any() && nonOperationExcludePatterns.Any(y => y.IsMatch(x)))
             .ToList()
             .ForEach(x => doc.Paths.Remove(x));
 
@@ -269,8 +274,8 @@ public class KiotaBuilder
             foreach (var path in doc.Paths)
             {
                 var pathString = path.Key;
-                path.Value.Operations.Keys.Where(x => (operationIncludePatterns.Any() && !operationIncludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x))) ||
-                                        (operationExcludePatterns.Any() && operationExcludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x))))
+                path.Value.Operations.Keys.Where(x => operationIncludePatterns.Any() && !operationIncludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)) ||
+                                        operationExcludePatterns.Any() && operationExcludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)))
                 .ToList()
                 .ForEach(x => path.Value.Operations.Remove(x));
             }
@@ -1381,7 +1386,7 @@ public class KiotaBuilder
     {
         var typeName = currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: suffixForInlineSchema, schema: schema, requestBody: isRequestBody).CleanupSymbolName();
         var typesCount = schema.AnyOf?.Count ?? schema.OneOf?.Count ?? 0;
-        if ((typesCount == 1 && schema.Nullable && schema.IsInclusiveUnion()) || // nullable on the root schema outside of anyOf
+        if (typesCount == 1 && schema.Nullable && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf
             typesCount == 2 && (schema.AnyOf?.Any(static x => // nullable on a schema in the anyOf
                                                         x.Nullable &&
                                                         !x.Properties.Any() &&
@@ -1490,8 +1495,8 @@ public class KiotaBuilder
     private CodeTypeBase? CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
     {
         CodeTypeBase? type = GetPrimitiveType(schema.Items, string.Empty);
-        bool isEnumOrComposedCollectionType = schema.Items.IsEnum() //the collection could be an enum type so override with strong type instead of string type.
-                                    || (schema.Items.IsComposedEnum() && string.IsNullOrEmpty(schema.Items.Format));//the collection could be a composed type with an enum type so override with strong type instead of string type.
+        var isEnumOrComposedCollectionType = schema.Items.IsEnum() //the collection could be an enum type so override with strong type instead of string type.
+                                    || schema.Items.IsComposedEnum() && string.IsNullOrEmpty(schema.Items.Format);//the collection could be a composed type with an enum type so override with strong type instead of string type.
         if ((string.IsNullOrEmpty(type?.Name)
                || isEnumOrComposedCollectionType)
                && schema.Items != null)
@@ -1807,7 +1812,7 @@ public class KiotaBuilder
                                         className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
                                     var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
                                     var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
-                                                        (rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns);
+                                                        rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
                                     var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
                                     if (definition == null)
                                     {

@@ -31,9 +31,12 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                 this.setAllSelected(this.rawRootNode, true);
             } else {
                 this._lockFile.includePatterns.forEach(ip => {
-                    const currentNode = this.findApiNode(ip.split('/').filter(x => x !== ''), this.rawRootNode!);
+                    const currentNode = this.findApiNode(ip.split(pathSeparator).filter(x => x !== '').map(x => x.split(operationSeparator)).flat(1), this.rawRootNode!);
                     if(currentNode) {
                         currentNode.selected = true;
+                        if (!(currentNode.isOperation || false)) {
+                            currentNode.children.filter(x => x.isOperation || false).forEach(x => x.selected = true);
+                        }
                     }
                 });
             }
@@ -81,7 +84,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (!this.rawRootNode) {
             return;
         }
-        const apiNode = this.findApiNode(this.getPathSegments(item.path), this.rawRootNode);
+        const apiNode = this.findApiNode(getPathSegments(item.path), this.rawRootNode);
         if(apiNode) {
             this.selectInternal(apiNode, selected, recursive);
             this.refreshView();
@@ -89,8 +92,16 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     }
     private selectInternal(apiNode: KiotaOpenApiNode, selected: boolean, recursive: boolean) {
         apiNode.selected = selected;
+        const isOperationNode = apiNode.isOperation || false;
         if(recursive) {
             apiNode.children.forEach(x => this.selectInternal(x, selected, recursive));
+        } else if (!isOperationNode) {
+            apiNode.children.filter(x => x.isOperation || false).forEach(x => this.selectInternal(x, selected, false));
+        } else if (isOperationNode && !selected && this.rawRootNode) {
+            const parent = this.findApiNode(getPathSegments(trimOperation(apiNode.path)), this.rawRootNode);
+            if (parent) {
+                parent.selected = selected;
+            }
         }
     }
     private findApiNode(segments: string[], currentNode: KiotaOpenApiNode): KiotaOpenApiNode | undefined {
@@ -117,18 +128,22 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         if (!this.rawRootNode) {
             return [];
         }
-        return this.findSelectedPaths(this.rawRootNode).map(x => x === '' ? '/' : x); // root node trailing slash is /
+        return this.findSelectedPaths(this.rawRootNode).map(x => x === '' ? pathSeparator : x); // root node trailing slash is /
     }
     private findSelectedPaths(currentNode: KiotaOpenApiNode): string[] {
         const result: string[] = [];
         if(currentNode.selected || false) {
-            result.push(currentNode.path.replace(/\\/g, '/'));
+            if ((currentNode.isOperation || false) && this.rawRootNode) {
+                const parent = this.findApiNode(getPathSegments(trimOperation(currentNode.path)), this.rawRootNode);
+                if (parent && !parent.selected) {
+                    result.push(currentNode.path.replace(/\\/g, pathSeparator));
+                }
+            } else {
+                result.push(currentNode.path.replace(/\\/g, pathSeparator));
+            }
         }
         currentNode.children.forEach(x => result.push(...this.findSelectedPaths(x)));
         return result;
-    }
-    private getPathSegments(path: string): string[] {
-        return path.replace('/', '').split('\\').filter(x => x !== ''); // the root node is always /
     }
     private rawRootNode: KiotaOpenApiNode | undefined;
     private tokenizedFilter: string[] = [];
@@ -168,14 +183,15 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                     vscode.TreeItemCollapsibleState.Expanded);
     }
     getTreeNodeFromKiotaNode(node: KiotaOpenApiNode): OpenApiTreeNode {
-        const result = new OpenApiTreeNode(
+        return new OpenApiTreeNode(
             node.path, 
             node.segment,
             node.selected || false,
-            this.getCollapsedState(node.children.length > 0)
+            this.getCollapsedState(node.children.length > 0),
+            node.isOperation || false,
+            node.children.map(x => this.getTreeNodeFromKiotaNode(x)),
+            node.documentationUrl
         );
-        result.children = node.children.map(x => this.getTreeNodeFromKiotaNode(x));
-        return result;
     }
     getChildren(element?: OpenApiTreeNode): OpenApiTreeNode[] {
         if (!this.rawRootNode) {
@@ -190,33 +206,52 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
     }
 }
+const operationSeparator = '#';
+const pathSeparator = '/';
+const operationsNames = new Set<string>(['get', 'put', 'post', 'patch', 'delete', 'head', 'options', 'trace']);
+function getPathSegments(path: string): string[] {
+    return path.replace(pathSeparator, '').split('\\').map(x => x.split(operationSeparator)).flat(1).filter(x => x !== ''); // the root node is always /
+}
+function trimOperation(path: string): string {
+    return path.split(operationSeparator)[0];
+}
 type IconSet = string | vscode.Uri | { light: string | vscode.Uri; dark: string | vscode.Uri } | vscode.ThemeIcon;
 export class OpenApiTreeNode extends vscode.TreeItem {
     private static readonly selectedSet: IconSet = new vscode.ThemeIcon('check');
     private static readonly unselectedSet: IconSet = new vscode.ThemeIcon('circle-slash');
-    public children: OpenApiTreeNode[];
     constructor(
         public readonly path: string,
         public readonly label: string,
         selected: boolean,
         public collapsibleState: vscode.TreeItemCollapsibleState,
-        _children?: OpenApiTreeNode[]
+        private readonly isOperation: boolean,
+        public readonly children: OpenApiTreeNode[] = [],
+        public readonly documentationUrl?: string,
     ) {
         super(label, collapsibleState);
+        this.contextValue = documentationUrl;
         this.iconPath = selected ? OpenApiTreeNode.selectedSet : OpenApiTreeNode.unselectedSet;
-        if (_children) {
-            this.children = _children;
-        } else {
-            this.children = [];
-        }
     }
     public isNodeVisible(tokenizedFilter: string[]): boolean {
         if (tokenizedFilter.length === 0) {
             return true;
         }
         const lowerCaseSegment = this.label.toLowerCase();
+        const splatPath = trimOperation(this.path);
         if (tokenizedFilter.some(x => lowerCaseSegment.includes(x.toLowerCase()))) {
+            if (this.isOperation &&tokenizedFilter.some(x => operationsNames.has(x)) && !tokenizedFilter.some(x => splatPath.includes(x))) {
+                return false;
+            }
             return true;
+        }
+        
+        if (this.isOperation) {
+            const segments = getPathSegments(splatPath);
+            if (segments.length === 0) {
+                return false;
+            }
+            const parentSegment = segments[segments.length - 1].toLowerCase();
+            return tokenizedFilter.some(x => parentSegment.includes(x));
         }
         return this.children.some(x => x.isNodeVisible(tokenizedFilter));
     }
