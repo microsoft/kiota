@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
 - Added automatic loading of the lock file for the extension so quick edits of clients are supported.
+- Added a warning message when clients get upgraded from one kiota version to another. [#2598](https://github.com/microsoft/kiota/issues/2598)
 - Added trimming of derived types that are not being used by the client. [#2543](https://github.com/microsoft/kiota/issues/2543)
 - Added support for merging schemas of AllOf > 2. [#2438](https://github.com/microsoft/kiota/issues/2438)
 - Added operation selection in the vscode extension. [#2556](https://github.com/microsoft/kiota/issues/2556)
@@ -36,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where replacing reserved names would not propagate the rename to the inner child elements map of the parent class.
 - Fixed a bug where descriptions with multiple server URLs would use the HTTP one instead of HTTPs. [#2336](https://github.com/microsoft/kiota/issues/2336)
 - Fixed a bug where backing store properties would be sometimes duplicated in derived classes.
+- Write PHP URL templates in request builders using single quoted strings to prevent need to escape $-prefixed names e.g. $count, $ref, $value.
 
 ## [1.1.3] - 2023-04-18
 

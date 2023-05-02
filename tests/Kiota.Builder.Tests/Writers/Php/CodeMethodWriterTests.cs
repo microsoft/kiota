@@ -1068,16 +1068,16 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public void WriteRequestBuilderConstructor()
+    public async void WriteRequestBuilderConstructor()
     {
         method.Kind = CodeMethodKind.Constructor;
-        var defaultValue = "[]";
+        var defaultUrlTemplate = "{+baseurl}/chats/$count{?%24search,%24filter";
         var propName = "propWithDefaultValue";
         parentClass.Kind = CodeClassKind.RequestBuilder;
         parentClass.AddProperty(new CodeProperty
         {
             Name = propName,
-            DefaultValue = defaultValue,
+            DefaultValue = $"\"{defaultUrlTemplate}\"",
             Kind = CodePropertyKind.UrlTemplate,
             Type = new CodeType
             {
@@ -1101,15 +1101,6 @@ public class CodeMethodWriterTests : IDisposable
             {
                 Name = "string",
             }
-        });
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = "urlTemplate",
-            Kind = CodePropertyKind.UrlTemplate,
-            Type = new CodeType
-            {
-                Name = "string",
-            },
         });
         method.AddParameter(new CodeParameter
         {
@@ -1143,9 +1134,11 @@ public class CodeMethodWriterTests : IDisposable
             }
         });
 
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
         languageWriter.Write(method);
         var result = stringWriter.ToString();
         Assert.Contains("__construct", result);
+        Assert.Contains($"parent::__construct($requestAdapter, [], '{defaultUrlTemplate}');", result);
         Assert.Contains("if (is_array($pathParametersOrRawUrl)) {", result);
         Assert.Contains("$this->pathParameters = ['request-raw-url' => $pathParametersOrRawUrl];", result);
         Assert.Contains("$this->pathParameters = $urlTplParams;", result);

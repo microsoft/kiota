@@ -87,7 +87,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
 
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
-            writer.WriteLine($"parent::__construct(${(requestAdapterParameter?.Name ?? "requestAdapter")}, {(pathParametersProperty?.DefaultValue ?? "[]")}, {(urlTemplateProperty?.DefaultValue ?? "")});");
+            writer.WriteLine($"parent::__construct(${(requestAdapterParameter?.Name ?? "requestAdapter")}, {(pathParametersProperty?.DefaultValue ?? "[]")}, {(urlTemplateProperty?.DefaultValue.ReplaceDoubleQuoteWithSingleQuote() ?? "")});");
         } else if (parentClass.IsOfKind(CodeClassKind.RequestConfiguration))
             writer.WriteLine($"parent::__construct(${(requestHeadersParameter?.Name ?? "headers")} ?? [], ${(requestOptionParameter?.Name ?? "options")} ?? []);");
         else
