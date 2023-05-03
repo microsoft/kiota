@@ -51,6 +51,14 @@ public class DiscriminatorInformation : CodeElement, ICloneable
             discriminatorMappings.TryRemove(key, out var _);
     }
 
+    public void RemoveDiscriminatorMapping(CodeClass classToRemove)
+    {
+        ArgumentNullException.ThrowIfNull(classToRemove);
+        var keyToRemove = discriminatorMappings.FirstOrDefault(x => x.Value is CodeType currentType && currentType.TypeDefinition == classToRemove).Key;
+        if (!string.IsNullOrEmpty(keyToRemove))
+            discriminatorMappings.TryRemove(keyToRemove, out var _);
+    }
+
     public object Clone()
     {
         return new DiscriminatorInformation

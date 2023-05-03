@@ -29,6 +29,7 @@ public class TypeScriptReservedNamesProvider : IReservedNamesProvider
         "instanceOf",
         "new",
         "null",
+        "package",
         "return",
         "super",
         "switch",

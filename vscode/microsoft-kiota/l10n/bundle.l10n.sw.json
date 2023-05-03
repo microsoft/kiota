@@ -1,4 +1,5 @@
 {
+  "Client will be upgraded from version {0} to {1}, upgrade your dependencies": "Mteja atasasishwa kutoka toleo la {0} hadi {1}, hakikisha mategemezi yamesasishwa pia.",
   "No description found, select a description first": "Hakuna maelezo yaliyopatikana, chagua maelezo kwanza",
   "No endpoints selected, select endpoints first": "Hakuna njia au URL iliyochaguliwa, chagua njia au URL kwanza",
   "No workspace folder found, open a folder first": "Hakuna folda ya kazi iliyopatikana, fungua folda kwanza",
@@ -26,5 +27,9 @@
   "Downloading kiota...": "Inapakua Kiota...",
   "Generating client...": "Inatengeneza mteja...",
   "Updating clients...": "Inasasisha wateja...",
-  "Loading...": "Inapakia..."
+  "Loading...": "Inapakia...",
+  "Pick a lock file": "Chagua faili ya kufunga",
+  "Open a lock file": "Fungua faili ya kufunga",
+  "Filter the API description": "Chuja maelezo ya API",
+  "Enter a filter": "Ingiza kichujio"
 }

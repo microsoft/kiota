@@ -27,6 +27,13 @@ public class CodeIndexer : CodeTerminal, IDocumentedElement
             returnType = value;
         }
     }
+    /// <summary>
+    /// The name of the parameter to use for the indexer.
+    /// </summary>
+    public required string IndexParameterName
+    {
+        get; set;
+    }
     public string SerializationName { get; set; } = string.Empty;
     public CodeDocumentation Documentation { get; set; } = new();
     /// <summary>

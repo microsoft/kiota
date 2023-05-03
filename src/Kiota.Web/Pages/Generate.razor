@@ -1,6 +1,7 @@
 ﻿@page "/generate"
 @using Kiota.Builder
 @using Kiota.Builder.Configuration
+@using Kiota.Builder.Logging
 @using System.Linq
 @using System.IO
 @using System.IO.Compression
@@ -223,8 +224,11 @@
             StructuredMimeTypes = StructuredMimeTypes,
         };
         var logBuilder = new StringBuilder();
-        var builderLogger = new StringBuilderLogger<KiotaBuilder>(LoggerFactory.CreateLogger<KiotaBuilder>(), logBuilder, LogLevel.Warning);
-        var builder = new KiotaBuilder(builderLogger, generationConfiguration, Http);
+        var consoleLogger = LoggerFactory.CreateLogger<KiotaBuilder>();
+        using var fileLogger = new FileLogLogger<KiotaBuilder>(generationConfiguration.OutputPath, LogLevel.Warning);
+        var stringLogger = new StringBuilderLogger<KiotaBuilder>(logBuilder, LogLevel.Warning);
+        var aggregrateLogger = new AggregateLogger<KiotaBuilder>(consoleLogger, fileLogger, stringLogger);
+        var builder = new KiotaBuilder(aggregrateLogger, generationConfiguration, Http);
         try {
             await builder.GenerateClientAsync(ComponentDetached).ConfigureAwait(false);
             var zipFilePath = Path.Combine(Path.GetTempPath(), "kiota", "clients", hashedUrl, "client.zip");

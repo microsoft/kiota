@@ -74,22 +74,37 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     private const string RawUrlParameterKey = "request-raw-url";
     private static readonly Dictionary<CodeParameterKind, CodePropertyKind> propertiesToAssign = new Dictionary<CodeParameterKind, CodePropertyKind>()
     {
-        { CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter },
-        { CodeParameterKind.Headers, CodePropertyKind.Headers },
-        { CodeParameterKind.Options, CodePropertyKind.Options },
         { CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameters }, // Handles query parameter object as a constructor param in request config classes
     };
+
+    private static void WriteConstructorParentCall(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
+    {
+        var requestAdapterParameter = currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter);
+        var requestOptionParameter = currentMethod.Parameters.OfKind(CodeParameterKind.Options);
+        var requestHeadersParameter = currentMethod.Parameters.OfKind(CodeParameterKind.Headers);
+        var pathParametersProperty = parentClass.Properties.OfKind(CodePropertyKind.PathParameters);
+        var urlTemplateProperty = parentClass.Properties.OfKind(CodePropertyKind.UrlTemplate);
+
+        if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
+        {
+            writer.WriteLine($"parent::__construct(${(requestAdapterParameter?.Name ?? "requestAdapter")}, {(pathParametersProperty?.DefaultValue ?? "[]")}, {(urlTemplateProperty?.DefaultValue.ReplaceDoubleQuoteWithSingleQuote() ?? "")});");
+        } else if (parentClass.IsOfKind(CodeClassKind.RequestConfiguration))
+            writer.WriteLine($"parent::__construct(${(requestHeadersParameter?.Name ?? "headers")} ?? [], ${(requestOptionParameter?.Name ?? "options")} ?? []);");
+        else
+            writer.WriteLine("parent::__construct();");
+
+    }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
         if (inherits)
-            writer.WriteLine("parent::__construct();");
+        {
+            WriteConstructorParentCall(parentClass, currentMethod, writer);
+        }
         var backingStoreProperty = parentClass.GetPropertyOfKind(CodePropertyKind.BackingStore);
         if (backingStoreProperty != null && !string.IsNullOrEmpty(backingStoreProperty.DefaultValue))
             writer.WriteLine($"$this->{backingStoreProperty.Name.ToFirstCharacterLowerCase()} = {backingStoreProperty.DefaultValue};");
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(
-                CodePropertyKind.RequestBuilder,
-                CodePropertyKind.UrlTemplate,
-                CodePropertyKind.PathParameters)
+                CodePropertyKind.RequestBuilder)
             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
             .OrderByDescending(x => x.Kind)
             .ThenBy(x => x.Name))
@@ -463,32 +478,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             var headers = requestParams.Headers;
             var options = requestParams.Options;
             var requestConfigParamName = conventions.GetParameterName(requestParams.requestConfiguration);
-            writer.WriteLine($"if ({requestConfigParamName} !== null) {{");
-            writer.IncreaseIndent();
-            if (headers != null)
-            {
-                var headersName = $"{requestConfigParamName}->{headers.Name.ToFirstCharacterLowerCase()}";
-                writer.WriteLine($"if ({headersName} !== null) {{");
-                writer.IncreaseIndent();
-                writer.WriteLine($"{RequestInfoVarName}->addHeaders({headersName});");
-                writer.CloseBlock();
-            }
+            writer.StartBlock($"if ({requestConfigParamName} !== null) {{");
+            var headersName = $"{requestConfigParamName}->{headers?.Name.ToFirstCharacterLowerCase() ?? "headers"}";
+            writer.WriteLine($"{RequestInfoVarName}->addHeaders({headersName});"); 
             if (queryString != null)
             {
                 var queryStringName = $"{requestConfigParamName}->{queryString.Name.ToFirstCharacterLowerCase()}";
-                writer.WriteLine($"if ({queryStringName} !== null) {{");
-                writer.IncreaseIndent();
+                writer.StartBlock($"if ({queryStringName} !== null) {{");
                 writer.WriteLine($"{RequestInfoVarName}->setQueryParameters({queryStringName});");
                 writer.CloseBlock();
             }
-            if (options != null)
-            {
-                var optionsName = $"{requestConfigParamName}->{options.Name.ToFirstCharacterLowerCase()}";
-                writer.WriteLine($"if ({optionsName} !== null) {{");
-                writer.IncreaseIndent();
-                writer.WriteLine($"{RequestInfoVarName}->addRequestOptions(...{optionsName});");
-                writer.CloseBlock();
-            }
+            var optionsName = $"{requestConfigParamName}->{(options?.Name.ToFirstCharacterLowerCase() ?? "options")}";
+            writer.WriteLine($"{RequestInfoVarName}->addRequestOptions(...{optionsName});");
             writer.CloseBlock();
         }
     }
@@ -583,7 +584,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
             codeElement.OriginalIndexer != null)
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"$this->{pathParametersProperty.Name}",
-                (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, "$id"));
+                (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, $"${codeElement.OriginalIndexer.IndexParameterName.ToFirstCharacterLowerCase()}"));
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, pathParameters);
     }
 

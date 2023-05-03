@@ -339,6 +339,7 @@ public class JavaLanguageRefinerTests
             {
                 Name = "string",
             },
+            IndexParameterName = "id",
         };
         var collectionRequestBuilder = collectionNS.AddClass(new CodeClass
         {
@@ -358,7 +359,7 @@ public class JavaLanguageRefinerTests
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.Single(requestBuilder.Properties);
         Assert.Empty(requestBuilder.GetChildElements(true).OfType<CodeIndexer>());
-        Assert.Single(collectionRequestBuilder.Methods.Where(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)));
+        Assert.Single(requestBuilder.Methods.Where(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)));
         Assert.Single(collectionRequestBuilder.Properties);
     }
     [Fact]

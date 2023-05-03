@@ -1,0 +1,22 @@
+{
+  "kiota.dependenciesInfo.name": "Kiota依赖项信息",
+  "kiota.dependenciesInfo.contextualTitle": "依赖项信息",
+  "kiota.openApiExplorer.name": "Kiota OpenAPI 资源浏览器",
+  "kiota.openApiExplorer.contextualTitle": "OpenAPI 资源浏览器",
+  "kiota-dependencies-info.panel.title": "Kiota依赖项信息",
+  "kiota-openapi-explorer.activitybar.title": "Kiota OpenAPI 资源浏览器",
+  "kiota.selectLock.title": "选择API资源浏览器的锁定文件",
+  "kiota.updateClients.title": "更新当前工作区API客户端",
+  "kiota.openApiExplorer.generateClient.title": "建立API客户端",
+  "kiota.searchApiDescription.title": "搜索API描述",
+  "kiota.openApiExplorer.addToSelectedEndpoints.title": "添加",
+  "kiota.openApiExplorer.removeFromSelectedEndpoints.title": "删除",
+  "kiota.openApiExplorer.addAllToSelectedEndpoints.title": "添加所有",
+  "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "删除所有",
+  "kiota.openApiExplorer.closeDescription.title": "关闭API描述文档",
+  "kiota.openApiExplorer.openDescription.title": "打开API描述文档",
+  "kiota.openApiExplorer.welcome": "无API描述文档选择.\n[搜索](command:kiota.searchApiDescription)\n[打开](command:kiota.openApiExplorer.openDescription)\n[选择锁定文件](command:kiota.searchLock)",
+  "kiota.searchLock.title": "搜索锁定文件",
+  "kiota.openApiExplorer.filterDescription.title": "筛选API描述",
+  "kiota.openApiExplorer.openDocumentationPage.title": "打开文档页"
+}

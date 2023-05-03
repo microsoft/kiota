@@ -39,7 +39,7 @@
                 <FluentButton Appearance="Appearance.Neutral" @onclick="@(e => GoToShow(context.Key))">@Loc["GoToShow"]</FluentButton>
             </TemplateColumn>
         </FluentDataGrid>
-        <FluentPaginator Value="@pagination" />
+        <FluentPaginator Value="@pagination" State="@pagination" />
         @if(ShowVersionSelector) {
             <FluentDialog @ondialogdismiss=OnDialogDismiss>
                 <div class="dialog-content">

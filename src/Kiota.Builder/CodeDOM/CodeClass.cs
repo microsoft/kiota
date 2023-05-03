@@ -53,9 +53,9 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
                 if (Indexer is CodeIndexer existingIndexer)
                 {
                     RemoveChildElement(existingIndexer);
-                    AddRange(CodeMethod.FromIndexer(existingIndexer, $"By{existingIndexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", true));
+                    AddRange(CodeMethod.FromIndexer(existingIndexer, static x => $"With{x.ToFirstCharacterUpperCase()}", static x => x.ToFirstCharacterUpperCase(), true));
                 }
-                AddRange(CodeMethod.FromIndexer(value, $"By{value.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", false));
+                AddRange(CodeMethod.FromIndexer(value, static x => $"With{x.ToFirstCharacterUpperCase()}", static x => x.ToFirstCharacterUpperCase(), false));
             }
             else
                 AddRange(value);
@@ -101,11 +101,14 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             return true;
         return parent.DerivesFrom(codeClass);
     }
-    public List<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false)
+    public List<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false, bool includeCurrentClass = true)
     {
         var parentClass = GetParentClass();
         if (parentClass == null || (currentNamespaceOnly && parentClass.GetImmediateParentOfType<CodeNamespace>() != GetImmediateParentOfType<CodeNamespace>()))
-            return new List<CodeClass>() { this };
+            if (includeCurrentClass)
+                return new() { this };
+            else
+                return new();
         var result = parentClass.GetInheritanceTree(currentNamespaceOnly);
         result.Add(this);
         return result;

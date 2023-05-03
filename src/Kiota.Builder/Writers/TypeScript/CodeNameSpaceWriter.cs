@@ -1,4 +1,6 @@
-﻿using Kiota.Builder.CodeDOM;
+﻿using System;
+using System.Linq;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript;
@@ -14,6 +16,12 @@ public class CodeNameSpaceWriter : BaseElementWriter<CodeNamespace, TypeScriptCo
     /// <param name="writer"></param>
     public override void WriteCodeElement(CodeNamespace codeElement, LanguageWriter writer)
     {
-        NamespaceClassNamesProvider.WriteClassesInOrderOfInheritance(codeElement, x => writer.WriteLine($"export * from './{x.Name.ToFirstCharacterLowerCase()}'"));
+        writer.WriteLines(codeElement.Enums
+                                    .Concat<CodeElement>(codeElement.Functions)
+                                    .Concat(codeElement.Interfaces)
+                                    .OrderBy(static x => x is CodeEnum ? 0 : 1)
+                                    .ThenBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                    .Select(static x => x.Name.ToFirstCharacterLowerCase())
+                                    .Select(static x => $"export * from './{x}'"));
     }
 }

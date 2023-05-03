@@ -1,4 +1,5 @@
 {
+  "Client will be upgraded from version {0} to {1}, upgrade your dependencies": "El cliente será actualizado de la versión {0} a la versión {1}, por favor, actualice sus dependencias",
   "No description found, select a description first": "No se pudo encontrar una descripción, seleccione una descripción antes de continuar",
   "No endpoints selected, select endpoints first": "No ha seleccionado un endpoint, seleccione un endpoint antes de continuar",
   "No workspace folder found, open a folder first": "No se pudo encontrar un folder de espacio de trabajo, abra un folder antes de continuar",
@@ -26,5 +27,9 @@
   "Downloading kiota...": "Descargando Kiota...",
   "Generating client...": "Generando cliente...",
   "Updating clients...": "Actualizando clientes...",
-  "Loading...": "Cargando..."
+  "Loading...": "Cargando...",
+  "Pick a lock file": "Seleccionar un archivo lock",
+  "Open a lock file": "Abrir un archivo lock",
+  "Filter the API description": "Filtrar descripción de API",
+  "Enter a filter": "Ingresar un filtro"
 }

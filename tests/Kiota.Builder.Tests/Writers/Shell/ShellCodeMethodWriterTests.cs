@@ -265,7 +265,9 @@ public class ShellCodeMethodWriterTests : IDisposable
             IndexType = new CodeType
             {
                 Name = "string",
-            }
+            },
+            SerializationName = "test",
+            IndexParameterName = "id",
         };
 
         AddRequestProperties();
@@ -344,7 +346,8 @@ public class ShellCodeMethodWriterTests : IDisposable
                 IndexType = new CodeType
                 {
                     Name = "string",
-                }
+                },
+                IndexParameterName = "id",
             }
         };
 
@@ -433,7 +436,8 @@ public class ShellCodeMethodWriterTests : IDisposable
                 IndexType = new CodeType
                 {
                     Name = "string",
-                }
+                },
+                IndexParameterName = "id",
             }
         };
 

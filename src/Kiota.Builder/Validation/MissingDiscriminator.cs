@@ -33,7 +33,7 @@ public class MissingDiscriminator : ValidationRule<OpenApiDocument>
     }
     private static void ValidateSchema(OpenApiSchema schema, IValidationContext context, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> idx, string address)
     {
-        if (!schema.IsAnyOf() && !schema.IsOneOf())
+        if (!schema.IsInclusiveUnion() && !schema.IsExclusiveUnion())
             return;
         if (schema.AnyOf.All(static x => !x.IsObject()) && schema.OneOf.All(static x => !x.IsObject()))
             return;

@@ -36,7 +36,7 @@ public class PythonConventionService : CommonLanguageConventionService
         if (parameters.Any())
             writer.WriteLines(parameters.Select(p =>
                 $"{TempDictionaryVarName}[\"{p.Item2}\"] = {p.Item3}"
-            ).ToArray());
+            ));
     }
 
     public override string GetAccessModifier(AccessModifier access)

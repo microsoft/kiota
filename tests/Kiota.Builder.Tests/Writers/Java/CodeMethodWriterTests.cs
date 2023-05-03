@@ -942,7 +942,7 @@ public class CodeMethodWriterTests : IDisposable
             Optional = false,
         });
         parentModel.AddMethod(factoryOverloadMethod);
-        Enumerable.Range(0, 1500).ToList().ForEach(x => parentModel.DiscriminatorInformation.AddDiscriminatorMapping($"#microsoft.graph.{x}", new CodeType
+        Enumerable.Range(0, 1500).Select(static x => $"Foo{x}").ToList().ForEach(x => parentModel.DiscriminatorInformation.AddDiscriminatorMapping($"#microsoft.graph.{x}", new CodeType
         {
             Name = $"microsoft.graph.{x}",
             TypeDefinition = childModel,
@@ -969,7 +969,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("if (mappingValueNode != null) {", result);
         Assert.DoesNotContain("final String mappingValue = mappingValueNode.getStringValue()", result);
         Assert.Contains("switch (value) {", result);
-        Assert.Contains("case \"#microsoft.graph.535\": return new Microsoft.graph.535();", result);
+        Assert.Contains("case \"#microsoft.graph.Foo535\": return new ChildModel();", result);
         Assert.DoesNotContain("final ParentModel factory_1_result = factory_1(mappingValue);", result);
         Assert.DoesNotContain("if (factory_1_result != null) {", result);
         Assert.DoesNotContain("return new ParentModel()", result);
@@ -1554,7 +1554,8 @@ public class CodeMethodWriterTests : IDisposable
             ReturnType = new CodeType
             {
                 Name = "string"
-            }
+            },
+            IndexParameterName = "id"
         };
         writer.Write(method);
         var result = tw.ToString();

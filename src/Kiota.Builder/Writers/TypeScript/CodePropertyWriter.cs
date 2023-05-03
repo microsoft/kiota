@@ -11,7 +11,26 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
             return;
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
         var isFlagEnum = codeElement.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum currentEnum && currentEnum.Flags;
+
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+        switch (codeElement.Parent)
+        {
+            case CodeInterface:
+                WriteCodePropertyForInterface(codeElement, writer, returnType, isFlagEnum);
+                break;
+            default:
+                WriteCodePropertyForClass(codeElement, writer, returnType, isFlagEnum);
+                break;
+        }
+    }
+
+    private static void WriteCodePropertyForInterface(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)
+    {
+        writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}?: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)};");
+    }
+
+    private void WriteCodePropertyForClass(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)
+    {
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:

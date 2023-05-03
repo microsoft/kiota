@@ -476,7 +476,6 @@ public class CodeMethodWriterTests : IDisposable
             "public function createPostRequestInformation(Message $body, ?RequestConfig $requestConfiguration = null): RequestInformation",
             result);
         Assert.Contains("if ($requestConfiguration !== null", result);
-        Assert.Contains("if ($requestConfiguration->h !== null)", result);
         Assert.Contains("$requestInfo->addHeaders($requestConfiguration->h);", result);
         Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
         Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
@@ -503,7 +502,6 @@ public class CodeMethodWriterTests : IDisposable
             "public function createPostRequestInformation(array $body, ?RequestConfig $requestConfiguration = null): RequestInformation",
             result);
         Assert.Contains("if ($requestConfiguration !== null", result);
-        Assert.Contains("if ($requestConfiguration->h !== null)", result);
         Assert.Contains("$requestInfo->addHeaders($requestConfiguration->h);", result);
         Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
         Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
@@ -529,7 +527,6 @@ public class CodeMethodWriterTests : IDisposable
             "public function createPostRequestInformation(string $body, ?RequestConfig $requestConfiguration = null): RequestInformation",
             result);
         Assert.Contains("if ($requestConfiguration !== null", result);
-        Assert.Contains("if ($requestConfiguration->h !== null)", result);
         Assert.Contains("$requestInfo->addHeaders($requestConfiguration->h);", result);
         Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
         Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
@@ -561,7 +558,6 @@ public class CodeMethodWriterTests : IDisposable
             "public function createPostRequestInformation(array $body, ?RequestConfig $requestConfiguration = null): RequestInformation",
             result);
         Assert.Contains("if ($requestConfiguration !== null", result);
-        Assert.Contains("if ($requestConfiguration->h !== null)", result);
         Assert.Contains("$requestInfo->addHeaders($requestConfiguration->h);", result);
         Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
         Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
@@ -619,7 +615,8 @@ public class CodeMethodWriterTests : IDisposable
                 ReturnType = new CodeType
                 {
                     Name = "MessageRequestBuilder"
-                }
+                },
+                IndexParameterName = "id",
             },
             OriginalMethod = new CodeMethod
             {
@@ -1071,16 +1068,16 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public void WriteRequestBuilderConstructor()
+    public async void WriteRequestBuilderConstructor()
     {
         method.Kind = CodeMethodKind.Constructor;
-        var defaultValue = "[]";
+        var defaultUrlTemplate = "{+baseurl}/chats/$count{?%24search,%24filter";
         var propName = "propWithDefaultValue";
         parentClass.Kind = CodeClassKind.RequestBuilder;
         parentClass.AddProperty(new CodeProperty
         {
             Name = propName,
-            DefaultValue = defaultValue,
+            DefaultValue = $"\"{defaultUrlTemplate}\"",
             Kind = CodePropertyKind.UrlTemplate,
             Type = new CodeType
             {
@@ -1104,15 +1101,6 @@ public class CodeMethodWriterTests : IDisposable
             {
                 Name = "string",
             }
-        });
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = "urlTemplate",
-            Kind = CodePropertyKind.UrlTemplate,
-            Type = new CodeType
-            {
-                Name = "string",
-            },
         });
         method.AddParameter(new CodeParameter
         {
@@ -1146,10 +1134,11 @@ public class CodeMethodWriterTests : IDisposable
             }
         });
 
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
         languageWriter.Write(method);
         var result = stringWriter.ToString();
         Assert.Contains("__construct", result);
-        Assert.Contains($"$this->{propName} = {defaultValue};", result);
+        Assert.Contains($"parent::__construct($requestAdapter, [], '{defaultUrlTemplate}');", result);
         Assert.Contains("if (is_array($pathParametersOrRawUrl)) {", result);
         Assert.Contains("$this->pathParameters = ['request-raw-url' => $pathParametersOrRawUrl];", result);
         Assert.Contains("$this->pathParameters = $urlTplParams;", result);
@@ -1355,7 +1344,6 @@ public class CodeMethodWriterTests : IDisposable
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, parentClass.Parent as CodeNamespace);
         languageWriter.Write(codeMethod);
         var result = stringWriter.ToString();
-        Assert.Contains("$this->requestAdapter = $requestAdapter", result);
         Assert.Contains("public function __construct(RequestAdapter $requestAdapter)", result);
         Assert.Contains($"$this->pathParameters['baseurl'] = $this->requestAdapter->getBaseUrl();", result);
     }
@@ -1506,7 +1494,7 @@ public class CodeMethodWriterTests : IDisposable
         {
             Name = "binaryContent",
             Kind = CodePropertyKind.Custom,
-            Type = new CodeType { Name = "binary", IsNullable = false }
+            Type = new CodeType { Name = "binary" }
         };
         parentClass.AddProperty(binaryProperty);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
@@ -2003,8 +1991,6 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("@param array<RequestOption>|null $options", result);
         Assert.Contains("@param TestRequestQueryParameter|null $queryParameters", result);
         Assert.Contains("public function __construct(?array $headers = null, ?array $options = null, ?TestRequestQueryParameter $queryParameters = null)", result);
-        Assert.Contains("$this->headers = $headers;", result);
-        Assert.Contains("$this->options = $options;", result);
         Assert.Contains("$this->queryParameters = $queryParameters;", result);
     }
 

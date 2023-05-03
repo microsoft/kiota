@@ -14,5 +14,9 @@
   "kiota.openApiExplorer.addAllToSelectedEndpoints.title": "Tout ajouter",
   "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Tout supprimer",
   "kiota.openApiExplorer.closeDescription.title": "Fermer la description d'API",
-  "kiota.openApiExplorer.openDescription.title": "Ouvrir une description d'API"
+  "kiota.openApiExplorer.openDescription.title": "Ouvrir une description d'API",
+  "kiota.openApiExplorer.welcome": "Aucune description sélectionnée.\n[Rechercher](command:kiota.searchApiDescription)\n[Ouvrir](command:kiota.openApiExplorer.openDescription)\n[Sélectionner un fichier verrou](command:kiota.searchLock)",
+  "kiota.searchLock.title": "Rechercher un fichier verrou",
+  "kiota.openApiExplorer.filterDescription.title": "Filtrer la description",
+  "kiota.openApiExplorer.openDocumentationPage.title": "Ouvrir la page de documentation"
 }

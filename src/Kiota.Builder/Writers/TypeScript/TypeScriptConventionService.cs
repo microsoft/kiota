@@ -61,8 +61,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
-        var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
-        return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {GetTypeString(parameter.Type, targetElement)}{(parameter.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValueSuffix}";
+        var paramType = GetTypeString(parameter.Type, targetElement);
+        var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue} as {paramType}";
+        return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {paramType}{(parameter.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValueSuffix}";
     }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
     {
@@ -119,8 +120,18 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             "integer" or "int64" or "float" or "double" or "byte" or "sbyte" or "decimal" => "number",
             "binary" or "base64" or "base64url" or "Guid" => "string",
             "String" or "Object" or "Boolean" or "Void" or "string" or "object" or "boolean" or "void" => type.Name.ToFirstCharacterLowerCase(), // little casing hack
-            _ => (type.TypeDefinition?.Name is string dName && !string.IsNullOrEmpty(dName) ? dName : type.Name).ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
+            _ => GetCodeTypeName(type) is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
+    }
+
+    private static string GetCodeTypeName(CodeType codeType)
+    {
+        if (codeType.TypeDefinition is CodeFunction codeFunction)
+        {
+            return !string.IsNullOrEmpty(codeFunction?.Name) ? codeFunction.Name : string.Empty;
+        }
+
+        return (!string.IsNullOrEmpty(codeType.TypeDefinition?.Name) ? codeType.TypeDefinition.Name : codeType.Name).ToFirstCharacterUpperCase();
     }
 #pragma warning disable CA1822 // Method should be static
     public bool IsPrimitiveType(string typeName)
