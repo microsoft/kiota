@@ -162,6 +162,37 @@ public class ShellCodeMethodWriterTests : IDisposable
         });
     }
 
+    static CodeClass GenerateNavClassWithExecutableChild()
+    {
+        var navClass = new CodeClass
+        {
+            Name = "GraphOrgContactRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        };
+
+        var methodGet = new CodeMethod
+        {
+            Name = "BuildGetCommand",
+            SimpleName = "Get",
+            Kind = CodeMethodKind.CommandBuilder,
+            ReturnType = new CodeType
+            {
+                Name = "test"
+            },
+            OriginalMethod = new CodeMethod
+            {
+                HttpMethod = HttpMethod.Get,
+                Name = "Get",
+                ReturnType = new CodeType
+                {
+                    Name = "string"
+                }
+            }
+        };
+        navClass.AddMethod(methodGet);
+        return navClass;
+    }
+
     [Fact]
     public void WritesRootCommand()
     {
@@ -278,7 +309,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         codeClass.AddMethod(generatorMethod);
 
         var type = new CodeClass { Name = "TestItemRequestBuilder", Kind = CodeClassKind.RequestBuilder };
-        var tupleReturn = new CodeType {
+        var tupleReturn = new CodeType
+        {
             Name = "Tuple",
             IsExternal = true,
             GenericTypeParameterValues = new List<CodeType> {
@@ -365,8 +397,9 @@ public class ShellCodeMethodWriterTests : IDisposable
         navTd.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod11", SimpleName = "Test", ReturnType = new CodeType() });
 
         var type = new CodeClass { Name = "TestIndexItemRequestBuilder", Kind = CodeClassKind.RequestBuilder };
-        
-        var tupleReturn = new CodeType {
+
+        var tupleReturn = new CodeType
+        {
             Name = "Tuple",
             IsExternal = true,
             GenericTypeParameterValues = new List<CodeType> {
@@ -546,6 +579,96 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var command = new Command(\"user\");", result);
         Assert.Contains("var builder = new TestNavRequestBuilder();", result);
         Assert.Contains("execCommands.Add(builder.BuildExecutableTestMethod());", result);
+        Assert.Contains("return command;", result);
+        Assert.DoesNotContain("BuildNavTestMethod", result);
+        var lines = result.Split('\n');
+        Assert.Equal(1, lines.Count(l => l.Contains("var execCommands = new List<Command>()")));
+        Assert.Equal(0, lines.Count(l => l.Contains("var nonExecCommands = new List<Command>()")));
+        Assert.Equal(1, lines.Count(l => l.Contains("foreach (var cmd in execCommands)")));
+        Assert.Equal(0, lines.Count(l => l.Contains("foreach (var cmd in nonExecCommands)")));
+    }
+
+    [Fact]
+    public void WritesNewNavCommandIfExecutableCommandsConflictWithIndexers()
+    {
+        // GET /users/{user-id}/directReports/graph.orgContact:get
+        // GET /users/{user-id}/directReports/{directoryObject-id}/graph.orgContact:get
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.SimpleName = "Test";
+
+        var ns1 = root.AddNamespace("Test.Name"); // NavA namespace
+        var ns2 = root.AddNamespace("Test.Name.Sub1"); // NavB namespace
+
+        var navTdA1 = GenerateNavClassWithExecutableChild();
+        ns1.AddClass(navTdA1);
+        method.AccessedProperty = new CodeProperty
+        {
+            Type = new CodeType
+            {
+                Name = navTdA1.Name,
+                TypeDefinition = navTdA1
+            }
+        };
+
+        var methodIdxA = new CodeMethod
+        {
+            Name = "BuildCommand",
+            SimpleName = "IdxCommand",
+            Kind = CodeMethodKind.CommandBuilder,
+            ReturnType = new CodeType
+            {
+                Name = "Command"
+            }
+        };
+        parentClass.AddMethod(methodIdxA);
+
+        var idxReqBuilder = new CodeClass
+        {
+            Name = "TestNavItemRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        };
+        ns1.AddClass(idxReqBuilder);
+        methodIdxA.OriginalIndexer = new CodeIndexer
+        {
+            Name = "indexerClass",
+            IndexType = new CodeType
+            {
+                Name = "string",
+            },
+            ReturnType = new CodeType
+            {
+                Name = idxReqBuilder.Name,
+                TypeDefinition = idxReqBuilder
+            }
+        };
+
+        var matchingNav = GenerateNavClassWithExecutableChild();
+        idxReqBuilder.AddMethod(new CodeMethod
+        {
+            Name = "BuildGraphOrgContactNavCommand",
+            SimpleName = "Test",
+            Kind = CodeMethodKind.CommandBuilder,
+            AccessedProperty = new CodeProperty
+            {
+                Type = new CodeType
+                {
+                    Name = "matchingNav",
+                    TypeDefinition = matchingNav
+                }
+            },
+            ReturnType = new CodeType
+            {
+                Name = "Command"
+            }
+        });
+        ns2.AddClass(matchingNav);
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"test\");", result);
+        Assert.Contains("var builder = new GraphOrgContactRequestBuilder();", result);
+        Assert.Contains("execCommands.Add(builder.BuildGetCommand());", result);
         Assert.Contains("return command;", result);
         Assert.DoesNotContain("BuildNavTestMethod", result);
         var lines = result.Split('\n');

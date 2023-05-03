@@ -195,7 +195,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         else
         {
             // Try reusing nav commands too. e.g. GET /tests and GET /tests/list/
-            // Should resolve to mgc tests lists and mgc tests list get respectively.
+            // Should resolve to mgc tests list and mgc tests list get respectively.
             var navCmd = GetCommandBuilderFromNavProperties(codeElement, parentClass);
 
             if (navCmd is not null)
@@ -234,6 +234,8 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 .SingleOrDefault(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase));
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
         if (match is null) return null;
+
+        if (MatchingNavPropertyHasConflictingChildExecutableMethods(codeElement, match)) return null;
 
         var targetClass = conventions.GetTypeString(indexer.ReturnType, codeElement);
         var builderName = NormalizeToIdentifier(indexer.Name).ToFirstCharacterLowerCase();
@@ -277,6 +279,13 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         var matches = td.Methods
                 .Where(m => m != exclude && m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase))
                     ?? Enumerable.Empty<CodeMethod>();
+
+        if (ExtractNavPropertyChildExecutableMethods(codeElement) is ISet<string> executablesNav)
+        {
+            matches = matches
+                .Where(m => !NavPropertyChildExecutableMethodsInSet(m, executablesNav));
+        }
+
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
         if (!matches.Any()) return Enumerable.Empty<CodeMethod>();
 
@@ -599,11 +608,13 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         bool hasExecutable = builderMethods.Any(static m => m.HttpMethod is not null);
         bool hasNonExecutable = builderMethods.Any(static m => m.HttpMethod is null);
 
-        if (hasExecutable) {
+        if (hasExecutable)
+        {
             writer.WriteLine("var executables = new List<Command>();");
         }
 
-        if (hasNonExecutable) {
+        if (hasNonExecutable)
+        {
             writer.WriteLine("var commands = new List<Command>();");
         }
 
@@ -792,18 +803,20 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         if (!methods.Any()) return;
         var executablesCount = methods.Count(static m => m.OriginalMethod?.HttpMethod is not null);
 
-        if (executablesCount > 0) {
+        if (executablesCount > 0)
+        {
             writer.WriteLine($"var {ExecCommandsVariableName} = new List<Command>();");
             hasExecutable = true;
         }
-        
-        if ((methods.Count - executablesCount) > 0) {
+
+        if ((methods.Count - executablesCount) > 0)
+        {
             writer.WriteLine($"var {NonExecCommandsVariableName} = new List<Command>();");
             hasNonExecutable = true;
         }
 
         bool sortMethods = false;
-        
+
         // Start with the current class' commands then the indexer commands in the item builder.
         foreach (var method in methods.OrderBy(static m => string.Equals(m.ReturnType.Name, indexerReturn, StringComparison.Ordinal)))
         {
@@ -856,6 +869,46 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             writer.WriteLine($"{CommandVariableName}.AddCommand(cmd);");
             writer.CloseBlock();
         }
+    }
+
+    private static ISet<string>? ExtractNavPropertyChildExecutableMethods(CodeMethod method)
+    {
+        if (method.AccessedProperty?.Type.AllTypes.First().TypeDefinition is CodeClass navType)
+        {
+            return navType.UnorderedMethods
+                .Where(static m => m.OriginalMethod is not null && m.OriginalMethod.HttpMethod is not null)
+                .Select(static m => m.SimpleName)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+
+        return null;
+    }
+
+    private static bool NavPropertyChildExecutableMethodsInSet(CodeMethod navMethod, ISet<string> executables)
+    {
+        if (navMethod.AccessedProperty?.Type.AllTypes.First().TypeDefinition is CodeClass methodPropType)
+        {
+            return methodPropType.UnorderedMethods
+                .Where(static m => m.OriginalMethod is not null && m.OriginalMethod.HttpMethod is not null)
+                .Any(m => executables.Contains(m.SimpleName));
+        }
+
+        return false;
+    }
+
+    private static bool MatchingNavPropertyHasConflictingChildExecutableMethods(CodeMethod currentMethod, CodeMethod matchingIndexerNav)
+    {
+        // Careful of situations like:
+        // GET /users/{user-id}/directReports/graph.orgContact
+        // GET /users/{user-id}/directReports/{directoryObject-id}/graph.orgContact
+        // They would conflict because command would be:
+        // mgc users direct-reports graph-org-contact get*
+        if (ExtractNavPropertyChildExecutableMethods(currentMethod) is ISet<string> executablesNav)
+        {
+            return NavPropertyChildExecutableMethodsInSet(matchingIndexerNav, executablesNav);
+        }
+
+        return false;
     }
 
     /// <summary>
