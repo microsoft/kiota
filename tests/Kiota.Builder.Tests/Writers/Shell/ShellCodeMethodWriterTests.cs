@@ -635,6 +635,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         methodIdxA.OriginalIndexer = new CodeIndexer
         {
             Name = "indexerClass",
+            IndexParameterName = "test",
             IndexType = new CodeType
             {
                 Name = "string",
