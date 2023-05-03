@@ -889,7 +889,8 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         if (navMethod.AccessedProperty?.Type.AllTypes.First().TypeDefinition is CodeClass methodPropType)
         {
             return methodPropType.UnorderedMethods
-                .Where(static m => m.OriginalMethod is not null && m.OriginalMethod.HttpMethod is not null)
+                .Where(static m => m.OriginalMethod?.HttpMethod != null)
+
                 .Any(m => executables.Contains(m.SimpleName));
         }
 
