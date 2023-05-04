@@ -162,37 +162,6 @@ public class ShellCodeMethodWriterTests : IDisposable
         });
     }
 
-    static CodeClass GenerateNavClassWithExecutableChild()
-    {
-        var navClass = new CodeClass
-        {
-            Name = "GraphOrgContactRequestBuilder",
-            Kind = CodeClassKind.RequestBuilder
-        };
-
-        var methodGet = new CodeMethod
-        {
-            Name = "BuildGetCommand",
-            SimpleName = "Get",
-            Kind = CodeMethodKind.CommandBuilder,
-            ReturnType = new CodeType
-            {
-                Name = "test"
-            },
-            OriginalMethod = new CodeMethod
-            {
-                HttpMethod = HttpMethod.Get,
-                Name = "Get",
-                ReturnType = new CodeType
-                {
-                    Name = "string"
-                }
-            }
-        };
-        navClass.AddMethod(methodGet);
-        return navClass;
-    }
-
     [Fact]
     public void WritesRootCommand()
     {
@@ -583,97 +552,6 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var command = new Command(\"user\");", result);
         Assert.Contains("var builder = new TestNavRequestBuilder();", result);
         Assert.Contains("execCommands.Add(builder.BuildExecutableTestMethod());", result);
-        Assert.Contains("return command;", result);
-        Assert.DoesNotContain("BuildNavTestMethod", result);
-        var lines = result.Split('\n');
-        Assert.Equal(1, lines.Count(l => l.Contains("var execCommands = new List<Command>()")));
-        Assert.Equal(0, lines.Count(l => l.Contains("var nonExecCommands = new List<Command>()")));
-        Assert.Equal(1, lines.Count(l => l.Contains("foreach (var cmd in execCommands)")));
-        Assert.Equal(0, lines.Count(l => l.Contains("foreach (var cmd in nonExecCommands)")));
-    }
-
-    [Fact]
-    public void WritesNewNavCommandIfExecutableCommandsConflictWithIndexers()
-    {
-        // GET /users/{user-id}/directReports/graph.orgContact:get
-        // GET /users/{user-id}/directReports/{directoryObject-id}/graph.orgContact:get
-        method.Kind = CodeMethodKind.CommandBuilder;
-        method.SimpleName = "Test";
-
-        var ns1 = root.AddNamespace("Test.Name"); // NavA namespace
-        var ns2 = root.AddNamespace("Test.Name.Sub1"); // NavB namespace
-
-        var navTdA1 = GenerateNavClassWithExecutableChild();
-        ns1.AddClass(navTdA1);
-        method.AccessedProperty = new CodeProperty
-        {
-            Type = new CodeType
-            {
-                Name = navTdA1.Name,
-                TypeDefinition = navTdA1
-            }
-        };
-
-        var methodIdxA = new CodeMethod
-        {
-            Name = "BuildCommand",
-            SimpleName = "IdxCommand",
-            Kind = CodeMethodKind.CommandBuilder,
-            ReturnType = new CodeType
-            {
-                Name = "Command"
-            }
-        };
-        parentClass.AddMethod(methodIdxA);
-
-        var idxReqBuilder = new CodeClass
-        {
-            Name = "TestNavItemRequestBuilder",
-            Kind = CodeClassKind.RequestBuilder
-        };
-        ns1.AddClass(idxReqBuilder);
-        methodIdxA.OriginalIndexer = new CodeIndexer
-        {
-            Name = "indexerClass",
-            IndexParameterName = "test",
-            IndexType = new CodeType
-            {
-                Name = "string",
-            },
-            ReturnType = new CodeType
-            {
-                Name = idxReqBuilder.Name,
-                TypeDefinition = idxReqBuilder
-            }
-        };
-
-        var matchingNav = GenerateNavClassWithExecutableChild();
-        idxReqBuilder.AddMethod(new CodeMethod
-        {
-            Name = "BuildGraphOrgContactNavCommand",
-            SimpleName = "Test",
-            Kind = CodeMethodKind.CommandBuilder,
-            AccessedProperty = new CodeProperty
-            {
-                Type = new CodeType
-                {
-                    Name = "matchingNav",
-                    TypeDefinition = matchingNav
-                }
-            },
-            ReturnType = new CodeType
-            {
-                Name = "Command"
-            }
-        });
-        ns2.AddClass(matchingNav);
-
-        writer.Write(method);
-        var result = tw.ToString();
-
-        Assert.Contains("var command = new Command(\"test\");", result);
-        Assert.Contains("var builder = new GraphOrgContactRequestBuilder();", result);
-        Assert.Contains("execCommands.Add(builder.BuildGetCommand());", result);
         Assert.Contains("return command;", result);
         Assert.DoesNotContain("BuildNavTestMethod", result);
         var lines = result.Split('\n');
@@ -1294,12 +1172,12 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("var fileOption = new Option<FileInfo>(\"--file\")", result);
-        Assert.Contains("fileOption.IsRequired = true;", result);
-        Assert.Contains("command.AddOption(fileOption);", result);
-        Assert.Contains("var file = invocationContext.ParseResult.GetValueForOption(fileOption);", result);
-        Assert.Contains("if (file is null || !file.Exists) return;", result);
-        Assert.Contains("using var stream = file.OpenRead();", result);
+        Assert.Contains("var inputFileOption = new Option<FileInfo>(\"--input-file\")", result);
+        Assert.Contains("inputFileOption.IsRequired = true;", result);
+        Assert.Contains("command.AddOption(inputFileOption);", result);
+        Assert.Contains("var inputFile = invocationContext.ParseResult.GetValueForOption(inputFileOption);", result);
+        Assert.Contains("if (inputFile is null || !inputFile.Exists) return;", result);
+        Assert.Contains("using var stream = inputFile.OpenRead();", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
@@ -1394,14 +1272,15 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("var fileOption = new Option<FileInfo>(\"--file\");", result);
-        Assert.Contains("command.AddOption(fileOption);", result);
+        Assert.Contains("var outputFileOption = new Option<FileInfo>(\"--output-file\");", result);
+        Assert.Contains("command.AddOption(outputFileOption);", result);
         Assert.Contains("command.SetHandler(async (invocationContext) => {", result);
         Assert.Contains("var q = invocationContext.ParseResult.GetValueForOption(qOption);", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
         Assert.Contains("var response = await reqAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken) ?? Stream.Null;", result);
+        Assert.Contains("using var writeStream = outputFile.OpenWrite();", result);
         Assert.Contains("});", result);
         Assert.Contains("return command;", result);
     }

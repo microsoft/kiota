@@ -19,7 +19,8 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     private const string CancellationTokenParamType = "CancellationToken";
     private const string CancellationTokenParamName = "cancellationToken";
     private const string FileParamType = "FileInfo";
-    private const string FileParamName = "file";
+    private const string InputFileParamName = "inputFile";
+    private const string OutputFileParamName = "outputFile";
     private const string OutputFilterParamType = "IOutputFilter";
     private const string OutputFilterParamName = "outputFilter";
     private const string OutputFilterQueryParamType = "string";
@@ -113,7 +114,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 if (conventions.StreamTypeName.Equals(p.Type?.Name, StringComparison.OrdinalIgnoreCase))
                 {
                     type = FileParamType;
-                    p.Name = FileParamName;
+                    p.Name = InputFileParamName;
                 }
             }
             return (type, NormalizeToIdentifier(p.Name), p);
@@ -235,8 +236,6 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
         if (match is null) return null;
 
-        if (MatchingNavPropertyHasConflictingChildExecutableMethods(codeElement, match)) return null;
-
         var targetClass = conventions.GetTypeString(indexer.ReturnType, codeElement);
         var builderName = NormalizeToIdentifier(indexer.Name).ToFirstCharacterLowerCase();
 
@@ -280,12 +279,6 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 .Where(m => m != exclude && m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase))
                     ?? Enumerable.Empty<CodeMethod>();
 
-        if (ExtractNavPropertyChildExecutableMethods(codeElement) is ISet<string> executablesNav)
-        {
-            matches = matches
-                .Where(m => !NavPropertyChildExecutableMethodsInSet(m, executablesNav));
-        }
-
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
         if (!matches.Any()) return Enumerable.Empty<CodeMethod>();
 
@@ -302,10 +295,10 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     {
         if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
         {
-            var fileOptionName = "fileOption";
-            writer.WriteLine($"var {fileOptionName} = new Option<{FileParamType}>(\"--{FileParamName}\");");
+            var fileOptionName = $"{NormalizeToIdentifier(OutputFileParamName)}Option";
+            writer.WriteLine($"var {fileOptionName} = new Option<{FileParamType}>(\"--{NormalizeToOption(OutputFileParamName)}\");");
             writer.WriteLine($"{CommandVariableName}.AddOption({fileOptionName});");
-            parameters.Add((FileParamType, FileParamName, null));
+            parameters.Add((FileParamType, OutputFileParamName, null));
             availableOptions.Add($"{InvocationContextParamName}.ParseResult.GetValueForOption({fileOptionName})");
         }
         else if (!isHandlerVoid && !conventions.IsPrimitiveType(returnType))
@@ -415,7 +408,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             }
             else
             {
-                writer.WriteLine($"if ({FileParamName} == null) {{");
+                writer.WriteLine($"if ({OutputFileParamName} == null) {{");
                 writer.IncreaseIndent();
                 writer.WriteLine("using var reader = new StreamReader(response);");
                 writer.WriteLine("var strContent = reader.ReadToEnd();");
@@ -423,9 +416,9 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 writer.CloseBlock();
                 writer.WriteLine("else {");
                 writer.IncreaseIndent();
-                writer.WriteLine($"using var writeStream = {FileParamName}.OpenWrite();");
+                writer.WriteLine($"using var writeStream = {OutputFileParamName}.OpenWrite();");
                 writer.WriteLine("await response.CopyToAsync(writeStream);");
-                writer.WriteLine($"Console.WriteLine($\"Content written to {{{FileParamName}.FullName}}.\");");
+                writer.WriteLine($"Console.WriteLine($\"Content written to {{{OutputFileParamName}.FullName}}.\");");
                 writer.CloseBlock();
             }
         }
@@ -869,47 +862,6 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             writer.WriteLine($"{CommandVariableName}.AddCommand(cmd);");
             writer.CloseBlock();
         }
-    }
-
-    private static ISet<string>? ExtractNavPropertyChildExecutableMethods(CodeMethod method)
-    {
-        if (method.AccessedProperty?.Type.AllTypes.First().TypeDefinition is CodeClass navType)
-        {
-            return navType.UnorderedMethods
-                .Where(static m => m.OriginalMethod is not null && m.OriginalMethod.HttpMethod is not null)
-                .Select(static m => m.SimpleName)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        }
-
-        return null;
-    }
-
-    private static bool NavPropertyChildExecutableMethodsInSet(CodeMethod navMethod, ISet<string> executables)
-    {
-        if (navMethod.AccessedProperty?.Type.AllTypes.First().TypeDefinition is CodeClass methodPropType)
-        {
-            return methodPropType.UnorderedMethods
-                .Where(static m => m.OriginalMethod?.HttpMethod != null)
-
-                .Any(m => executables.Contains(m.SimpleName));
-        }
-
-        return false;
-    }
-
-    private static bool MatchingNavPropertyHasConflictingChildExecutableMethods(CodeMethod currentMethod, CodeMethod matchingIndexerNav)
-    {
-        // Careful of situations like:
-        // GET /users/{user-id}/directReports/graph.orgContact
-        // GET /users/{user-id}/directReports/{directoryObject-id}/graph.orgContact
-        // They would conflict because command would be:
-        // mgc users direct-reports graph-org-contact get*
-        if (ExtractNavPropertyChildExecutableMethods(currentMethod) is ISet<string> executablesNav)
-        {
-            return NavPropertyChildExecutableMethodsInSet(matchingIndexerNav, executablesNav);
-        }
-
-        return false;
     }
 
     /// <summary>
