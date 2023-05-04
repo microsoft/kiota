@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- 📢📢📢 Go is now a stable language!
 - Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
 - Added automatic loading of the lock file for the extension so quick edits of clients are supported.
 - Added a warning message when clients get upgraded from one kiota version to another. [#2598](https://github.com/microsoft/kiota/issues/2598)
@@ -66,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2023-04-05
 
 ### Added
-
+ 
 - Added Visual Studio Code preview extension. [#2333](https://github.com/microsoft/kiota/issues/2333)
 - Added support for searching in forks for API descriptions in GitHub. [#2429](https://github.com/microsoft/kiota/issues/2429)
 - Added the ability to filter on operations. [#2431](https://github.com/microsoft/kiota/issues/2431)
