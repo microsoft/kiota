@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.2.0] - 2023-05-04
+
+### Added
+
 - Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
 - Added automatic loading of the lock file for the extension so quick edits of clients are supported.
 - Added a warning message when clients get upgraded from one kiota version to another. [#2598](https://github.com/microsoft/kiota/issues/2598)
