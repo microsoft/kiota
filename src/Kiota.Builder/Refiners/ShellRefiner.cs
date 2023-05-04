@@ -99,7 +99,11 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 
     private static void RenameDuplicateIndexerNavProperties(CodeElement currentElement)
     {
-        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder) && currentClass.Indexer is CodeIndexer indexer)
+        if (currentElement is CodeClass currentClass
+            && currentClass.IsOfKind(CodeClassKind.RequestBuilder)
+            && currentClass.Indexer is CodeIndexer indexer
+            && indexer.ReturnType.AllTypes.First().TypeDefinition is CodeClass idxReturn
+            && idxReturn.UnorderedProperties.Any())
         {
             // Handles possible conflicts when executable URLs like:
             // GET /users/{user-id}/directReports/graph.orgContact
@@ -112,33 +116,29 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             // mgc users direct-reports graph-org-contact-by-id get*
 
             // Find matching nav properties between currentClass' nav & indexer return's nav.
-            if (indexer.ReturnType.AllTypes.First().TypeDefinition is CodeClass idxReturn
-                && idxReturn.UnorderedProperties.Any())
+            var propsInClass = currentClass.UnorderedProperties
+                .Where(static m => m.IsOfKind(CodePropertyKind.RequestBuilder))
+                .ToDictionary(static m => m.Name.CleanupSymbolName(), StringComparer.OrdinalIgnoreCase);
+            var matchesInIndexer = idxReturn.UnorderedProperties
+                .Where(p => p.IsOfKind(CodePropertyKind.RequestBuilder) && propsInClass.ContainsKey(p.Name.CleanupSymbolName()));
+
+            foreach (var matchInIdx in matchesInIndexer)
             {
-                var propsInClass = currentClass.UnorderedProperties
-                    .Where(static m => m.IsOfKind(CodePropertyKind.RequestBuilder))
-                    .ToDictionary(static m => m.Name.CleanupSymbolName(), StringComparer.OrdinalIgnoreCase);
-                var matchesInIndexer = idxReturn.UnorderedProperties
-                    .Where(p => p.IsOfKind(CodePropertyKind.RequestBuilder) && propsInClass.ContainsKey(p.Name.CleanupSymbolName()));
-
-                foreach (var matchInIdx in matchesInIndexer)
+                if (matchInIdx.Type.AllTypes.First().TypeDefinition is CodeClass ccIdx
+                    && propsInClass[matchInIdx.Name].Type.AllTypes.First().TypeDefinition is CodeClass ccClass)
                 {
-                    if (matchInIdx.Type.AllTypes.First().TypeDefinition is CodeClass ccIdx
-                        && propsInClass[matchInIdx.Name].Type.AllTypes.First().TypeDefinition is CodeClass ccClass)
-                    {
-                        // Check for execuable command matches
-                        // This list is usually small. Upto a max of ~9 for each HTTP method
-                        // In reality, most instances would have 1 - 3 methods
-                        var lookup = ccClass.UnorderedMethods
-                            .Where(static m => m.IsOfKind(CodeMethodKind.RequestExecutor))
-                            .Select(static m => m.Name.CleanupSymbolName())
-                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    // Check for execuable command matches
+                    // This list is usually small. Upto a max of ~9 for each HTTP method
+                    // In reality, most instances would have 1 - 3 methods
+                    var lookup = ccClass.UnorderedMethods
+                        .Where(static m => m.IsOfKind(CodeMethodKind.RequestExecutor))
+                        .Select(static m => m.Name.CleanupSymbolName())
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                        if (ccIdx.UnorderedMethods.Any(m => m.IsOfKind(CodeMethodKind.RequestExecutor)
-                            && lookup.Contains(m.Name.CleanupSymbolName())))
-                        {
-                            matchInIdx.Name = $"{matchInIdx.Name}-ById";
-                        }
+                    if (ccIdx.UnorderedMethods.Any(m => m.IsOfKind(CodeMethodKind.RequestExecutor)
+                        && lookup.Contains(m.Name.CleanupSymbolName())))
+                    {
+                        matchInIdx.Name = $"{matchInIdx.Name}-ById";
                     }
                 }
             }
