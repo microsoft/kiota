@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 using Kiota.Builder;
 using Kiota.Builder.Extensions;
-
+using Kiota.Builder.Lock;
 using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers;
@@ -111,6 +112,15 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
         Configuration.Generation.CleanOutput = cleanOutput;
         Configuration.Generation.ClearCache = clearCache;
+
+        if (cleanOutput && Directory.Exists(Configuration.Generation.OutputPath))
+        {
+            foreach (var subDir in Directory.EnumerateDirectories(Configuration.Generation.OutputPath))
+                Directory.Delete(subDir, true);
+            await LockManagementService.BackupLockFileAsync(Configuration.Generation.OutputPath, cancellationToken);
+            foreach (var subFile in Directory.EnumerateFiles(Configuration.Generation.OutputPath))
+                File.Delete(subFile);
+        }
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)

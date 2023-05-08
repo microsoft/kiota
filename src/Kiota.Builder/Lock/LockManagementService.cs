@@ -69,7 +69,7 @@ public class LockManagementService : ILockManagementService
         await JsonSerializer.SerializeAsync(fileStream, lockInfo, context.KiotaLock, cancellationToken);
     }
     /// <inheritdoc/>
-    public Task BackupLockFileAsync(string directoryPath, CancellationToken cancellationToken = default)
+    public static Task BackupLockFileAsync(string directoryPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(directoryPath);
         return BackupLockFileInternalAsync(directoryPath);
