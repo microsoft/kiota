@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed issue where adding the clean output parameter would cause generation to fail.
+
 ## [1.2.0] - 2023-05-04
 
 ### Added
