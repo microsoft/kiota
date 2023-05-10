@@ -243,12 +243,11 @@ public partial class KiotaBuilder
         var excludePatterns = GetFilterPatternsFromConfiguration(config.ExcludePatterns);
         if (!includePatterns.Any() && !excludePatterns.Any()) return;
 
-        var nonOperationIncludePatterns = includePatterns.Where(static x => !x.Value.Any()).Select(static x => x.Key).ToList();
-        var nonOperationExcludePatterns = excludePatterns.Where(static x => !x.Value.Any()).Select(static x => x.Key).ToList();
+        var includePatternKeys = includePatterns.Select(static x => x.Key).ToList();
+        var excludePatternKeys = excludePatterns.Select(static x => x.Key).ToList();
 
-        if (nonOperationIncludePatterns.Any() || nonOperationExcludePatterns.Any())
-            doc.Paths.Keys.Where(x => nonOperationIncludePatterns.Any() && !nonOperationIncludePatterns.Any(y => y.IsMatch(x)) ||
-                                nonOperationExcludePatterns.Any() && nonOperationExcludePatterns.Any(y => y.IsMatch(x)))
+        doc.Paths.Keys.Where(x => includePatternKeys.Any() && !includePatternKeys.Any(y => y.IsMatch(x)) ||
+                                excludePatternKeys.Any() && excludePatternKeys.Any(y => y.IsMatch(x)))
             .ToList()
             .ForEach(x => doc.Paths.Remove(x));
 
@@ -257,13 +256,16 @@ public partial class KiotaBuilder
 
         if (operationIncludePatterns.Any() || operationExcludePatterns.Any())
         {
-            foreach (var path in doc.Paths)
+            //grab only the paths for include or exclude patterns that have operation restrictions
+            foreach (var (key, value) in doc.Paths.Where(x => operationIncludePatterns.Any() && 
+                                                      operationIncludePatterns.Any(y => y.Key.IsMatch(x.Key)) ||
+                                                          operationExcludePatterns.Any() && 
+                                                          operationExcludePatterns.Any(y => y.Key.IsMatch(x.Key))))
             {
-                var pathString = path.Key;
-                path.Value.Operations.Keys.Where(x => operationIncludePatterns.Any() && !operationIncludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)) ||
-                                        operationExcludePatterns.Any() && operationExcludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)))
+                value.Operations.Keys.Where(x => operationIncludePatterns.Any() && !operationIncludePatterns.Any(y => y.Key.IsMatch(key) && y.Value.Contains(x)) ||
+                                                 operationExcludePatterns.Any() && operationExcludePatterns.Any(y => y.Key.IsMatch(key) && y.Value.Contains(x)))
                 .ToList()
-                .ForEach(x => path.Value.Operations.Remove(x));
+                .ForEach(x => value.Operations.Remove(x));
             }
             foreach (var path in doc.Paths.Where(static x => !x.Value.Operations.Any()).ToList())
                 doc.Paths.Remove(path.Key);

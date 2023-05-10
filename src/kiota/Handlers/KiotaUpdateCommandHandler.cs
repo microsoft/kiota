@@ -1,6 +1,7 @@
 ﻿using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,6 +43,19 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
         }
         Configuration.Generation.ClearCache = clearCache;
         Configuration.Generation.CleanOutput = cleanOutput;
+        
+        if (cleanOutput && Directory.Exists(output))
+        {
+            foreach (var subDir in Directory.EnumerateDirectories(output))
+                Directory.Delete(subDir, true);
+            await LockManagementService.BackupLockFileAsync(output, cancellationToken);
+            foreach (var subFile in Directory.EnumerateFiles(output))
+                File.Delete(subFile);
+            
+            //must restore the backup since previous operation deletes it
+            await lockService.RestoreLockFileAsync(output, cancellationToken);
+        }
+        
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
         using (loggerFactory)
         {
