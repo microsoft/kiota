@@ -113,14 +113,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         Configuration.Generation.CleanOutput = cleanOutput;
         Configuration.Generation.ClearCache = clearCache;
 
-        if (cleanOutput && Directory.Exists(Configuration.Generation.OutputPath))
-        {
-            foreach (var subDir in Directory.EnumerateDirectories(Configuration.Generation.OutputPath))
-                Directory.Delete(subDir, true);
-            await LockManagementService.BackupLockFileAsync(Configuration.Generation.OutputPath, cancellationToken);
-            foreach (var subFile in Directory.EnumerateFiles(Configuration.Generation.OutputPath))
-                File.Delete(subFile);
-        }
+        await CleanOutputAsync(cleanOutput, cancellationToken);
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)
@@ -154,6 +147,20 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
+
+    private async Task CleanOutputAsync(bool cleanOutput, CancellationToken cancellationToken)
+    {
+        if (cleanOutput && Directory.Exists(Configuration.Generation.OutputPath))
+        {
+            foreach (var subDir in Directory.EnumerateDirectories(Configuration.Generation.OutputPath))
+                Directory.Delete(subDir, true);
+            var lockService = new LockManagementService();
+            await lockService.BackupLockFileAsync(Configuration.Generation.OutputPath, cancellationToken);
+            foreach (var subFile in Directory.EnumerateFiles(Configuration.Generation.OutputPath))
+                File.Delete(subFile);
+        }
+    }
+
     public required Option<List<string>> IncludePatternsOption
     {
         get; init;

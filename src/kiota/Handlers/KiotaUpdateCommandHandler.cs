@@ -48,7 +48,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
         {
             foreach (var subDir in Directory.EnumerateDirectories(output))
                 Directory.Delete(subDir, true);
-            await LockManagementService.BackupLockFileAsync(output, cancellationToken);
+            await lockService.BackupLockFileAsync(output, cancellationToken);
             foreach (var subFile in Directory.EnumerateFiles(output))
                 File.Delete(subFile);
             
