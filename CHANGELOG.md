@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Shorten Go File names to a max of 252
 
 ## [1.2.0] - 2023-05-04
 
