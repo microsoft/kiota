@@ -22,7 +22,7 @@ public class GoPathSegmenter : CommonPathSegmenter
         return currentElement switch
         {
             CodeNamespace => "go",
-            _ => GetLastFileNameSegment(currentElement).ToSnakeCase().ShortenFileName(252),
+            _ => GetLastFileNameSegment(currentElement).ToSnakeCase().ShortenFileName(),
         };
     }
     public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToLowerInvariant();
