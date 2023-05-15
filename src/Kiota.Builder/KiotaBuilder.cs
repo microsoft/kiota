@@ -259,19 +259,20 @@ public partial class KiotaBuilder
 
         var nonOperationIncludePatterns = includePatterns.Where(static x => !x.Value.Any()).Select(static x => x.Key).ToList();
         var nonOperationExcludePatterns = excludePatterns.Where(static x => !x.Value.Any()).Select(static x => x.Key).ToList();
+        var operationIncludePatterns = includePatterns.Where(static x => x.Value.Any()).ToList();
 
         if (nonOperationIncludePatterns.Any() || nonOperationExcludePatterns.Any())
-            doc.Paths.Keys.Where(x => nonOperationIncludePatterns.Any() && !nonOperationIncludePatterns.Any(y => y.IsMatch(x)) ||
-                                nonOperationExcludePatterns.Any() && nonOperationExcludePatterns.Any(y => y.IsMatch(x)))
+            doc.Paths.Keys.Where(x => (nonOperationIncludePatterns.Any() && !nonOperationIncludePatterns.Any(y => y.IsMatch(x)) ||
+                                nonOperationExcludePatterns.Any() && nonOperationExcludePatterns.Any(y => y.IsMatch(x))) &&
+                                !operationIncludePatterns.Any(y => y.Key.IsMatch(x))) // so we don't trim paths that are going to be filtered by operation
             .ToList()
             .ForEach(x => doc.Paths.Remove(x));
 
-        var operationIncludePatterns = includePatterns.Where(static x => x.Value.Any()).ToList();
         var operationExcludePatterns = excludePatterns.Where(static x => x.Value.Any()).ToList();
 
         if (operationIncludePatterns.Any() || operationExcludePatterns.Any())
         {
-            foreach (var path in doc.Paths)
+            foreach (var path in doc.Paths.Where(x => !nonOperationIncludePatterns.Any(y => y.IsMatch(x.Key))))
             {
                 var pathString = path.Key;
                 path.Value.Operations.Keys.Where(x => operationIncludePatterns.Any() && !operationIncludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)) ||
