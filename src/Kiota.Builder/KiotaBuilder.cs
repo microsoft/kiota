@@ -282,6 +282,9 @@ public partial class KiotaBuilder
             foreach (var path in doc.Paths.Where(static x => !x.Value.Operations.Any()).ToList())
                 doc.Paths.Remove(path.Key);
         }
+
+        if (!doc.Paths.Any())
+            logger.LogWarning("No paths were found matching the provided patterns. Check your configuration.");
     }
     internal void SetApiRootUrl()
     {
