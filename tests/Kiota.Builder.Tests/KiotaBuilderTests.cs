@@ -5363,6 +5363,24 @@ paths:
                         }
                     }
                 },
+                ["students"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                },
             },
             Components = new()
             {
@@ -5381,7 +5399,8 @@ paths:
             ApiRootUrl = "https://localhost",
             IncludePatterns = new() {
                 "users/*/messages*#get,PATCH", // lowercase is voluntary to test case insensitivity
-                "users/**#POST"
+                "users/**#POST",
+                "students"
             }
         }, _httpClient);
         builder.FilterPathsByPatterns(document);
@@ -5395,6 +5414,9 @@ paths:
         Assert.Single(messagesRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Post));
         Assert.Single(messagesRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get));
         Assert.Empty(messagesRS.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Put));
+        var studentsNS = codeModel.FindNamespaceByName("TestSdk.students");
+        var studentsRS = studentsNS.FindChildByName<CodeClass>("StudentsRequestBuilder");
+        Assert.NotNull(studentsRS);
     }
     [Fact]
     public void SupportsIndexingParametersInSubPaths()
