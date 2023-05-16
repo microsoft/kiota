@@ -31,5 +31,6 @@
   "Pick a lock file": "Sélectionnez un fichier verrou",
   "Open a lock file": "Ouvrir un fichier verrou",
   "Filter the API description": "Filtrer la description d'API",
-  "Enter a filter": "Entrez un filtre"
+  "Enter a filter": "Entrez un filtre",
+  "Searching...": "Recherche en cours..."
 }

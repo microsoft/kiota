@@ -176,7 +176,13 @@ export async function activate(
     vscode.commands.registerCommand(
       `${extensionId}.searchApiDescription`,
       async () => {
-        const config = await searchSteps(x => searchDescription(context, x));
+        const config = await searchSteps(x => vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          cancellable: false,
+          title: vscode.l10n.t("Searching...")
+        }, (progress, _) => {
+          return searchDescription(context, x);
+        }));
         if (config.descriptionPath) {
           await openApiTreeProvider.setDescriptionUrl(config.descriptionPath);
           await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);

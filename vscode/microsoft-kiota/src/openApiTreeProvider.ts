@@ -74,7 +74,13 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     public async setDescriptionUrl(descriptionUrl: string): Promise<void> {
         this.closeDescription(false);
         this._descriptionUrl = descriptionUrl;
-        await this.loadNodes();
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            cancellable: false,
+            title: vscode.l10n.t("Loading...")
+          }, (progress, _) => {
+            return this.loadNodes();
+        });
         this.refreshView();
     }
     public get descriptionUrl(): string {
