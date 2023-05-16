@@ -10,7 +10,7 @@ public class FileLogLogger : ILogger, IDisposable
     private readonly StreamWriter _logStream;
     private readonly LogLevel _logLevel;
     private readonly string _categoryName;
-    private const string LogFileName = ".kiota.log";
+    internal const string LogFileName = ".kiota.log";
     public FileLogLogger(string logFileDirectoryAbsolutePath, LogLevel logLevel, string categoryName)
     {
         _logLevel = logLevel;

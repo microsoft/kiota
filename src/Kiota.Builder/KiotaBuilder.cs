@@ -17,6 +17,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
+using Kiota.Builder.Logging;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Validation;
@@ -59,7 +60,8 @@ public partial class KiotaBuilder
             foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
                 Directory.Delete(subDir, true);
             await lockManagementService.BackupLockFileAsync(config.OutputPath, cancellationToken);
-            foreach (var subFile in Directory.EnumerateFiles(config.OutputPath))
+            foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
+                                            .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
                 File.Delete(subFile);
         }
     }
