@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+- Fix issue with command conflicts causing CLI crashes. (Shell)
+- Fix build error by splitting the ambiguous `--file` option into `--input-file` and `--output-file`. (Shell)
+
+## [1.2.1] - 2023-05-16
+
+### Changed
+
+- Fixed a bug where Operation filters would be greedy and exclude non operation filters. [#2651](https://github.com/microsoft/kiota/issues/2651)
+- Shorten Go File names to a max of 252
+- Fixed a bug where clean output option would fail because of the log file. [#2645](https://github.com/microsoft/kiota/issues/2645)
+- Fixed a bug in the extension where selection in multiple indexers would fail. [#2666](https://github.com/microsoft/kiota/issues/2666)
+
+## [1.2.0] - 2023-05-04
+
+### Added
+
+- 📢📢📢 Go is now a stable language!
 - Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
 - Added automatic loading of the lock file for the extension so quick edits of clients are supported.
 - Added a warning message when clients get upgraded from one kiota version to another. [#2598](https://github.com/microsoft/kiota/issues/2598)
@@ -38,8 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where descriptions with multiple server URLs would use the HTTP one instead of HTTPs. [#2336](https://github.com/microsoft/kiota/issues/2336)
 - Fixed a bug where backing store properties would be sometimes duplicated in derived classes.
 - Write PHP URL templates in request builders using single quoted strings to prevent need to escape $-prefixed names e.g. $count, $ref, $value.
-- Fix issue with command conflicts causing CLI crashes. (Shell)
-- Fix build error by splitting the ambiguous `--file` option into `--input-file` and `--output-file`. (Shell)
 
 ## [1.1.3] - 2023-04-18
 
@@ -62,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2023-04-05
 
 ### Added
-
+ 
 - Added Visual Studio Code preview extension. [#2333](https://github.com/microsoft/kiota/issues/2333)
 - Added support for searching in forks for API descriptions in GitHub. [#2429](https://github.com/microsoft/kiota/issues/2429)
 - Added the ability to filter on operations. [#2431](https://github.com/microsoft/kiota/issues/2431)

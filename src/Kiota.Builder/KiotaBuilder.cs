@@ -17,6 +17,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
+using Kiota.Builder.Logging;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Validation;
@@ -59,7 +60,8 @@ public partial class KiotaBuilder
             foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
                 Directory.Delete(subDir, true);
             await lockManagementService.BackupLockFileAsync(config.OutputPath, cancellationToken);
-            foreach (var subFile in Directory.EnumerateFiles(config.OutputPath))
+            foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
+                                            .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
                 File.Delete(subFile);
         }
     }
@@ -259,19 +261,20 @@ public partial class KiotaBuilder
 
         var nonOperationIncludePatterns = includePatterns.Where(static x => !x.Value.Any()).Select(static x => x.Key).ToList();
         var nonOperationExcludePatterns = excludePatterns.Where(static x => !x.Value.Any()).Select(static x => x.Key).ToList();
+        var operationIncludePatterns = includePatterns.Where(static x => x.Value.Any()).ToList();
 
         if (nonOperationIncludePatterns.Any() || nonOperationExcludePatterns.Any())
-            doc.Paths.Keys.Where(x => nonOperationIncludePatterns.Any() && !nonOperationIncludePatterns.Any(y => y.IsMatch(x)) ||
-                                nonOperationExcludePatterns.Any() && nonOperationExcludePatterns.Any(y => y.IsMatch(x)))
+            doc.Paths.Keys.Where(x => (nonOperationIncludePatterns.Any() && !nonOperationIncludePatterns.Any(y => y.IsMatch(x)) ||
+                                nonOperationExcludePatterns.Any() && nonOperationExcludePatterns.Any(y => y.IsMatch(x))) &&
+                                !operationIncludePatterns.Any(y => y.Key.IsMatch(x))) // so we don't trim paths that are going to be filtered by operation
             .ToList()
             .ForEach(x => doc.Paths.Remove(x));
 
-        var operationIncludePatterns = includePatterns.Where(static x => x.Value.Any()).ToList();
         var operationExcludePatterns = excludePatterns.Where(static x => x.Value.Any()).ToList();
 
         if (operationIncludePatterns.Any() || operationExcludePatterns.Any())
         {
-            foreach (var path in doc.Paths)
+            foreach (var path in doc.Paths.Where(x => !nonOperationIncludePatterns.Any(y => y.IsMatch(x.Key))))
             {
                 var pathString = path.Key;
                 path.Value.Operations.Keys.Where(x => operationIncludePatterns.Any() && !operationIncludePatterns.Any(y => y.Key.IsMatch(pathString) && y.Value.Contains(x)) ||
@@ -282,6 +285,9 @@ public partial class KiotaBuilder
             foreach (var path in doc.Paths.Where(static x => !x.Value.Operations.Any()).ToList())
                 doc.Paths.Remove(path.Key);
         }
+
+        if (!doc.Paths.Any())
+            logger.LogWarning("No paths were found matching the provided patterns. Check your configuration.");
     }
     internal void SetApiRootUrl()
     {

@@ -31,5 +31,6 @@
   "Pick a lock file": "اختر ملف قفل",
   "Open a lock file": "افتح ملف قفل",
   "Filter the API description": "قم بتصفية وصف API",
-  "Enter a filter": "أدخل عامل التصفية"
+  "Enter a filter": "أدخل عامل التصفية",
+  "Searching...": "جاري البحث..."
 }

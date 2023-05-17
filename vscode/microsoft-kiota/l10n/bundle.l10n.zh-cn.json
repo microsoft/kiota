@@ -30,5 +30,6 @@
   "Pick a lock file": "请选择一个锁定文件",
   "Open a lock file": "请打开一个锁定文件",
   "Filter the API description": "筛选API描述",
-  "Enter a filter": "输入一个筛选项"
+  "Enter a filter": "输入一个筛选项",
+  "Searching...": "搜索中..."
 }

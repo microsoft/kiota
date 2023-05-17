@@ -3,10 +3,10 @@
   "displayName": "Microsoft Kiota",
   "publisher": "ms-graph",
   "description": "Client generator for HTTP REST APIs described by OpenAPI which helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you're interested in, thanks to a filtering capability.",
-  "version": "1.1.3",
+  "version": "1.2.0",
   "icon": "images/logo.png",
   "engines": {
-    "vscode": "^1.77.0"
+    "vscode": "^1.78.0"
   },
   "categories": [
     "Other"
@@ -21,7 +21,7 @@
   "main": "./dist/extension.js",
   "l10n": "./l10n",
   "contributes": {
-    "viewsWelcome":[
+    "viewsWelcome": [
       {
         "view": "kiota.openApiExplorer",
         "contents": "%kiota.openApiExplorer.welcome%"
@@ -247,21 +247,21 @@
     "@types/adm-zip": "^0.5.0",
     "@types/glob": "^8.0.1",
     "@types/mocha": "^10.0.1",
-    "@types/node": "18.x",
-    "@types/vscode": "^1.77.0",
-    "@typescript-eslint/eslint-plugin": "^5.59.2",
-    "@typescript-eslint/parser": "^5.59.2",
-    "@vscode/test-electron": "^2.2.2",
-    "eslint": "^8.39.0",
-    "glob": "^10.2.2",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.78.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.6",
+    "@typescript-eslint/parser": "^5.59.6",
+    "@vscode/test-electron": "^2.3.2",
+    "eslint": "^8.40.0",
+    "glob": "^10.2.4",
     "mocha": "^10.1.0",
     "ts-loader": "^9.4.2",
     "typescript": "^5.0.4",
-    "webpack": "^5.81.0",
-    "webpack-cli": "^5.0.2"
+    "webpack": "^5.82.1",
+    "webpack-cli": "^5.1.1"
   },
   "dependencies": {
-    "@vscode/l10n": "^0.0.13",
+    "@vscode/l10n": "^0.0.14",
     "adm-zip": "^0.5.10",
     "is-online": "^10.0.0",
     "original-fs": "^1.2.0",
@@ -271,23 +271,23 @@
   "runtimeDependencies": [
     {
       "platformId": "win-x64",
-      "sha256": "46FD2CFA88340AF8A9DED5BD2643DA7A4E28FEDC5C4FFC9A2414041027DB288B"
+      "sha256": "CAF3532A21568481A730E62475E683BC30AA596BB47284AD42F395D6AE898D79"
     },
     {
       "platformId": "win-x86",
-      "sha256": "FCE85F9310967728431461C0DDD6864041EA262081930494F8D4B8A3B7C180C9"
+      "sha256": "E3205AA7FEDF868746EB5165098D12843E29367D0E43A6B397AEDCF9A024CF55"
     },
     {
       "platformId": "linux-x64",
-      "sha256": "6E6763B7D855F43B8C6F4659C13C4D3E9EB085B60A0806E9B6B18BEE828CF2CC"
+      "sha256": "9261D5F803862B01D9777B74D59D446899AD54C5644B6F04772F067A4DBB2842"
     },
     {
       "platformId": "osx-x64",
-      "sha256": "6266A2E02247461EB8C4B7FF0EA45E34DDC6AF05490D5CA26F838DE73D984ACA"
+      "sha256": "6DCCF6D6239A80029F8363E0664155306764E3E865CC288FDABD99C9CD27C500"
     },
     {
       "platformId": "osx-arm64",
-      "sha256": "909D2888AD236EE4D7B7A30D09C73C30C0B9957643FB71CC3C77DB66E9B7C11C"
+      "sha256": "2FD7BE327786962B53D3CDDD7D9C0CFE4B7D608E9B8ED4D3D3342A8DD8DDE62A"
     }
   ]
 }
