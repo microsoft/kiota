@@ -14,7 +14,7 @@
     <Title>Microsoft.OpenApi.Kiota</Title>
     <PackageId>Microsoft.OpenApi.Kiota</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <PackageReleaseNotes>
       https://github.com/microsoft/kiota/releases
     </PackageReleaseNotes>
@@ -27,6 +27,10 @@
     <AssemblyOriginatorKeyFile>..\Microsoft.OpenApi.snk</AssemblyOriginatorKeyFile>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup><!-- the source generators emmit warnings -->
+    <NoWarn>$(NoWarn);CS8785</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

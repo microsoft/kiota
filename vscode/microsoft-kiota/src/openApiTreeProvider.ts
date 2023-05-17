@@ -74,7 +74,13 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     public async setDescriptionUrl(descriptionUrl: string): Promise<void> {
         this.closeDescription(false);
         this._descriptionUrl = descriptionUrl;
-        await this.loadNodes();
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            cancellable: false,
+            title: vscode.l10n.t("Loading...")
+          }, (progress, _) => {
+            return this.loadNodes();
+        });
         this.refreshView();
     }
     public get descriptionUrl(): string {
@@ -110,9 +116,15 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
         const segment = segments.shift();
         if (segment) {
-            const child = currentNode.children.find(x => x.segment === segment);
+            let child = currentNode.children.find(x => x.segment === segment);
             if (child) {
                 return this.findApiNode(segments, child);
+            } else if (segment.startsWith('{') && segment.endsWith('}')) {
+                // in case there are multiple single parameters nodes with different names at the same level
+                child = currentNode.children.find(x => x.segment.startsWith('{') && x.segment.endsWith('}'));
+                if (child) {
+                    return this.findApiNode(segments, child);
+                }
             }
         }
         return undefined;

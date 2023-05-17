@@ -11,9 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.2.1] - 2023-05-16
+
+### Changed
+
 - Fixed a bug where Operation filters would be greedy and exclude non operation filters. [#2651](https://github.com/microsoft/kiota/issues/2651)
 - Shorten Go File names to a max of 252
 - Fixed a bug where clean output option would fail because of the log file. [#2645](https://github.com/microsoft/kiota/issues/2645)
+- Fixed a bug in the extension where selection in multiple indexers would fail. [#2666](https://github.com/microsoft/kiota/issues/2666)
 
 ## [1.2.0] - 2023-05-04
 

@@ -74,7 +74,7 @@ export async function filterSteps(existingFilter: string, filterCallback: (searc
     return state;
 }
 
-export async function searchSteps(searchCallBack: (searchQuery: string) => Promise<Record<string, KiotaSearchResultItem> | undefined>) {
+export async function searchSteps(searchCallBack: (searchQuery: string) => Thenable<Record<string, KiotaSearchResultItem> | undefined>) {
     const state = {} as Partial<SearchState>;
     const title = l10n.t('Search for an API description');
     let step = 1;
