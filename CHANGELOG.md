@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Changed python model classes to pydantic models. [#2684](https://github.com/microsoft/kiota/issues/2684)
+
 ## [1.2.1] - 2023-05-16
 
 ### Changed
