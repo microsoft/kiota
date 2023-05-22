@@ -252,7 +252,7 @@
     "@typescript-eslint/eslint-plugin": "^5.59.6",
     "@typescript-eslint/parser": "^5.59.6",
     "@vscode/test-electron": "^2.3.2",
-    "eslint": "^8.40.0",
+    "eslint": "^8.41.0",
     "glob": "^10.2.5",
     "mocha": "^10.1.0",
     "ts-loader": "^9.4.2",
