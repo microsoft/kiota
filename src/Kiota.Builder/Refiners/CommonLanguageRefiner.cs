@@ -584,6 +584,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             
             newClass.AddUsing(codeComposedType.AllTypes
                 .SelectMany(static c => (c.TypeDefinition as CodeClass)?.Usings ?? Enumerable.Empty<CodeUsing>())
+                .Where(static x => x.IsExternal)
                 .Select(static u => (CodeUsing)u.Clone())
                 .ToArray());
         }
