@@ -134,8 +134,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             $"{AbstractionsPackageName}.store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             $"{AbstractionsPackageName}.store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
-        new (static x => x is CodeClass && x.Parent is CodeClass, "dataclasses", "dataclass"),
-
+        new (static x => x is CodeClass @class && (@class.IsOfKind(CodeClassKind.Model) | x.Parent is CodeClass), "dataclasses", "dataclass, field"),
     };
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {
@@ -156,7 +155,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
             currentProperty.Type.Name = "Dict[str, Any]";
-            currentProperty.DefaultValue = "{}";
+            currentProperty.DefaultValue = "field(default_factory=dict)";
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
         {
