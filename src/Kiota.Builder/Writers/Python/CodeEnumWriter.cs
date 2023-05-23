@@ -11,7 +11,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PythonConventionServic
     {
         writer.WriteLine("from enum import Enum");
         writer.WriteLine();
-        writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}(Enum):");
+        writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}(str, Enum):");
         writer.IncreaseIndent();
         if (!codeElement.Options.Any())
         {
