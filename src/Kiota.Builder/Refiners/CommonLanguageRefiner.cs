@@ -581,10 +581,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 },
             })
                                 .First();
-            newClass.AddUsing(codeClass.Usings
-                                        .Where(static x => x.IsExternal)
-                                        .Select(static x => (CodeUsing)x.Clone())
-                                        .ToArray());
+            
+            newClass.AddUsing(codeComposedType.AllTypes
+                .SelectMany(static c => (c.TypeDefinition as CodeClass)?.Usings ?? Enumerable.Empty<CodeUsing>())
+                .Select(static u => (CodeUsing)u.Clone())
+                .ToArray());
         }
         else
         {
