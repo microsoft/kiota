@@ -39,7 +39,7 @@ public class CodeEnumWriterTests : IDisposable
         currentEnum.AddOption(new CodeEnumOption { Name = optionName });
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.Contains("(Enum):", result);
+        Assert.Contains("(str, Enum):", result);
         Assert.Contains(optionName, result);
     }
     [Fact]
@@ -47,7 +47,7 @@ public class CodeEnumWriterTests : IDisposable
     {
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.Contains("(Enum):", result);
+        Assert.Contains("(str, Enum):", result);
         Assert.Contains("pass", result);
     }
 }

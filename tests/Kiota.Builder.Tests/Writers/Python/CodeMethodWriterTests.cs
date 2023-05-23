@@ -357,7 +357,6 @@ public class CodeMethodWriterTests : IDisposable
         {
             Name = "Error4XX",
             IsErrorDefinition = true
-
         }).First();
         var error5XX = root.AddClass(new CodeClass
         {
@@ -556,7 +555,6 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesMethodAsyncDescription()
     {
-
         method.Documentation.Description = MethodDescription;
         var parameter = new CodeParameter
         {
@@ -584,7 +582,6 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesMethodSyncDescription()
     {
-
         method.Documentation.Description = MethodDescription;
         method.IsAsync = false;
         var parameter = new CodeParameter
@@ -680,7 +677,6 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("@staticmethod", result);
         Assert.DoesNotContain("self", result);
-
     }
     [Fact]
     public void WritesModelFactoryBody()
@@ -872,7 +868,6 @@ public class CodeMethodWriterTests : IDisposable
             },
             IndexParameterName = "id",
         };
-
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("self.request_adapter", result);
@@ -969,6 +964,16 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("self.some_property", result);
     }
     [Fact]
+    public void DoesntWriteGetterToFieldForModelClasses()
+    {
+        method.AddAccessedProperty();
+        method.Kind = CodeMethodKind.Getter;
+        parentClass.Kind = CodeClassKind.Model;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Empty(result);
+    }
+    [Fact]
     public void WritesSetterToField()
     {
         method.AddAccessedProperty();
@@ -976,6 +981,16 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("self.some_property = value", result);
+    }
+    [Fact]
+    public void DoesntWritesSetterToFieldForModelClasses()
+    {
+        method.AddAccessedProperty();
+        method.Kind = CodeMethodKind.Setter;
+        parentClass.Kind = CodeClassKind.Model;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Empty(result);
     }
     [Fact]
     public void WritesConstructor()
@@ -1018,6 +1033,35 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("get_path_parameters", result);
     }
     [Fact]
+    public void DoesntWriteConstructorForModelClasses()
+    {
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        var defaultValue = "someVal";
+        var propName = "prop_with_default_value";
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.AdditionalData,
+            Documentation = new()
+            {
+                Description = "This property has a description",
+            },
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("def __init__()", result);
+        Assert.DoesNotContain("super().__init__()", result);
+        Assert.Contains("has a description", result);
+        Assert.Contains($"{propName}: Optional[str] = {defaultValue}", result);
+    }
+    [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
     {
         method.Kind = CodeMethodKind.Constructor;
@@ -1053,7 +1097,6 @@ public class CodeMethodWriterTests : IDisposable
         };
         unionTypeWrapper.OriginalComposedType.AddType(sType);
         unionTypeWrapper.OriginalComposedType.AddType(arrayType);
-
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("__init__", result);
@@ -1239,7 +1282,6 @@ public class CodeMethodWriterTests : IDisposable
                 Name = "string",
             },
         });
-
         method.AddParameter(new CodeParameter
         {
             Kind = CodeParameterKind.QueryParametersMapperParameter,
@@ -1276,7 +1318,6 @@ public class CodeMethodWriterTests : IDisposable
                 Name = "datetime",
             },
         });
-
         method.AddParameter(new CodeParameter
         {
             Kind = CodeParameterKind.QueryParametersMapperParameter,
