@@ -1028,13 +1028,14 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("super().__init__()", result);
-        Assert.Contains("has a description", result);
+        Assert.Contains("This property has a description", result);
         Assert.Contains($"self.{propName}: Optional[str] = {defaultValue}", result);
-        Assert.Contains("get_path_parameters", result);
+        Assert.Contains("get_path_parameters(", result);
     }
     [Fact]
     public void DoesntWriteConstructorForModelClasses()
     {
+        method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Constructor;
         method.IsAsync = false;
         var defaultValue = "someVal";
@@ -1060,6 +1061,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("super().__init__()", result);
         Assert.Contains("has a description", result);
         Assert.Contains($"{propName}: Optional[str] = {defaultValue}", result);
+        Assert.Contains($"some_property: Optional[str] = None", result);
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()

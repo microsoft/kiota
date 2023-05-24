@@ -39,14 +39,17 @@ public class CodeEnumWriterTests : IDisposable
         currentEnum.AddOption(new CodeEnumOption { Name = optionName });
         writer.Write(currentEnum);
         var result = tw.ToString();
+        Assert.Contains("from enum import Enum", result);
         Assert.Contains("(str, Enum):", result);
-        Assert.Contains(optionName, result);
+        Assert.Contains($"Option1 = \"{optionName}\"", result);
+        Assert.DoesNotContain("pass", result);
     }
     [Fact]
     public void WritesNullStatementOnNoOption()
     {
         writer.Write(currentEnum);
         var result = tw.ToString();
+        Assert.Contains("from enum import Enum", result);
         Assert.Contains("(str, Enum):", result);
         Assert.Contains("pass", result);
     }
