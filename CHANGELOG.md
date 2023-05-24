@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shorten Go File names to a max of 252
 - Fixed a bug where clean output option would fail because of the log file. [#2645](https://github.com/microsoft/kiota/issues/2645)
 - Fixed a bug in the extension where selection in multiple indexers would fail. [#2666](https://github.com/microsoft/kiota/issues/2666)
+- Fixed including unused imports in Go [#2699](https://github.com/microsoft/kiota/pull/2410)
 
 ## [1.2.0] - 2023-05-04
 
