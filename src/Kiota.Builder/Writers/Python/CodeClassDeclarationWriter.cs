@@ -25,7 +25,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
                 _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.Inherits.Name, writer);
             foreach (var implement in codeElement.Implements)
                 _codeUsingWriter.WriteDeferredImport(parentClass, implement.Name, writer);
-            if (parentClass.IsOfKind(CodeClassKind.Model) | parentClass.Parent is CodeClass)
+            if (parentClass.IsOfKind(CodeClassKind.Model) || parentClass.Parent is CodeClass)
             {
                 writer.WriteLine("@dataclass");
             }
