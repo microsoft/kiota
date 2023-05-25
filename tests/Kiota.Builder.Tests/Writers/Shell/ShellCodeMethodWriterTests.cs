@@ -1172,12 +1172,12 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("var fileOption = new Option<FileInfo>(\"--file\")", result);
-        Assert.Contains("fileOption.IsRequired = true;", result);
-        Assert.Contains("command.AddOption(fileOption);", result);
-        Assert.Contains("var file = invocationContext.ParseResult.GetValueForOption(fileOption);", result);
-        Assert.Contains("if (file is null || !file.Exists) return;", result);
-        Assert.Contains("using var stream = file.OpenRead();", result);
+        Assert.Contains("var inputFileOption = new Option<FileInfo>(\"--input-file\")", result);
+        Assert.Contains("inputFileOption.IsRequired = true;", result);
+        Assert.Contains("command.AddOption(inputFileOption);", result);
+        Assert.Contains("var inputFile = invocationContext.ParseResult.GetValueForOption(inputFileOption);", result);
+        Assert.Contains("if (inputFile is null || !inputFile.Exists) return;", result);
+        Assert.Contains("using var stream = inputFile.OpenRead();", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
@@ -1272,14 +1272,15 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("var fileOption = new Option<FileInfo>(\"--file\");", result);
-        Assert.Contains("command.AddOption(fileOption);", result);
+        Assert.Contains("var outputFileOption = new Option<FileInfo>(\"--output-file\");", result);
+        Assert.Contains("command.AddOption(outputFileOption);", result);
         Assert.Contains("command.SetHandler(async (invocationContext) => {", result);
         Assert.Contains("var q = invocationContext.ParseResult.GetValueForOption(qOption);", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
         Assert.Contains("var response = await reqAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken) ?? Stream.Null;", result);
+        Assert.Contains("using var writeStream = outputFile.OpenWrite();", result);
         Assert.Contains("});", result);
         Assert.Contains("return command;", result);
     }

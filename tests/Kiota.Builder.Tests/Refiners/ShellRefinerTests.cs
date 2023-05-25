@@ -12,6 +12,46 @@ public class ShellRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
 
+    static CodeProperty GenerateNavPropertyWithExecutableChild(in CodeNamespace parent)
+    {
+        var navClass = new CodeClass
+        {
+            Name = "GraphOrgContactRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        };
+        parent.AddClass(navClass);
+
+        var methodGet = new CodeMethod
+        {
+            Name = "Get",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType
+            {
+                Name = "test"
+            },
+            OriginalMethod = new CodeMethod
+            {
+                HttpMethod = HttpMethod.Get,
+                Name = "Get",
+                ReturnType = new CodeType
+                {
+                    Name = "string"
+                }
+            }
+        };
+        navClass.AddMethod(methodGet);
+        return new CodeProperty
+        {
+            Name = "GraphOrgContactNav",
+            Kind = CodePropertyKind.RequestBuilder,
+            Type = new CodeType
+            {
+                Name = "GraphOrgContactRequestBuilder",
+                TypeDefinition = navClass
+            }
+        };
+    }
+
     [Fact]
     public async Task AddsUsingsForCommandTypesUsedInCommandBuilder()
     {
@@ -152,7 +192,6 @@ public class ShellRefinerTests
             Name = "somerequestbuilder",
             Kind = CodeClassKind.RequestBuilder,
         }).First();
-        var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
 
         requestBuilder.AddProperty(new CodeProperty
         {
@@ -202,5 +241,46 @@ public class ShellRefinerTests
         Assert.DoesNotContain("adapter", propertyNames);
         Assert.DoesNotContain("adapter", methodParamNames);
         Assert.Contains("BuildRootCommand", methodNames);
+    }
+
+    [Fact]
+    public async Task RenamesNavPropertiesInIndexersWithConflicts()
+    {
+        var subNs = root.AddNamespace($"{root.Name}.subns");
+        var rootRequestBuilder = root.AddClass(new CodeClass
+        {
+            Name = "rootrequestbuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        var classNavProp = GenerateNavPropertyWithExecutableChild(subNs);
+        rootRequestBuilder.AddProperty(classNavProp);
+        var indexerType = new CodeClass
+        {
+            Name = "indexRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        };
+        subNs.AddClass(indexerType);
+        var idxNavProp = GenerateNavPropertyWithExecutableChild(subNs);
+        indexerType.AddProperty(idxNavProp);
+
+        var indexer = new CodeIndexer
+        {
+            Name = "test-idx",
+            IndexParameterName = "test-idx",
+            IndexType = new CodeType
+            {
+                Name = "Test",
+            },
+            ReturnType = new CodeType
+            {
+                Name = "indexRequestBuilder",
+                TypeDefinition = indexerType,
+            }
+        };
+        rootRequestBuilder.Indexer = indexer;
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
+
+        Assert.Equal("GraphOrgContactNav-ById", idxNavProp.Name);
     }
 }
