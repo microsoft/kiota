@@ -364,7 +364,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             errorMappingVarName = "errorMapping";
             writer.WriteLine($"var {errorMappingVarName} = new Dictionary<string, ParsableFactory<IParsable>> {{");
             writer.IncreaseIndent();
-            foreach (var errorMapping in codeElement.ErrorMappings)
+            foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
             {
                 writer.WriteLine($"{{\"{errorMapping.Key.ToUpperInvariant()}\", {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.CreateFromDiscriminatorValue}},");
             }
