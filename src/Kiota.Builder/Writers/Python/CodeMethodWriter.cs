@@ -24,7 +24,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, true, writer);
         var isVoid = "None".Equals(returnType, StringComparison.OrdinalIgnoreCase);
-        if (parentClass.IsOfKind(CodeClassKind.Model) && (codeElement.IsOfKind(CodeMethodKind.Setter) | codeElement.IsOfKind(CodeMethodKind.Getter) | codeElement.IsOfKind(CodeMethodKind.Constructor)))
+        if (parentClass.IsOfKind(CodeClassKind.Model) && (codeElement.IsOfKind(CodeMethodKind.Setter) || codeElement.IsOfKind(CodeMethodKind.Getter) || codeElement.IsOfKind(CodeMethodKind.Constructor)))
         {
             writer.IncreaseIndent();
         }
