@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Fix issue with command conflicts causing CLI crashes. (Shell)
 - Fix build error by splitting the ambiguous `--file` option into `--input-file` and `--output-file`. (Shell)
+- Fix issue with request builders with parameters being excluded from commands output. (Shell)
 
 ## [1.2.1] - 2023-05-16
 

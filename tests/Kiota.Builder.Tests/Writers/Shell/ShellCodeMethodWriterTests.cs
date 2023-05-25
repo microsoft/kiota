@@ -605,6 +605,47 @@ public class ShellCodeMethodWriterTests : IDisposable
     }
 
     [Fact]
+    public void WritesRequestBuilderWithParametersCommands()
+    {
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.SimpleName = "User";
+        var ns1 = root.AddNamespace("Test.Name");
+        var ns2 = ns1.AddNamespace("Test.Name.Sub1");
+        var ns3 = ns2.AddNamespace("Test.Name.Sub1.Sub2");
+        var t2 = parentClass;
+        ns2.AddClass(t2);
+        var t1Sub = new CodeClass { Name = "TestClass1", Kind = CodeClassKind.RequestBuilder };
+        ns3.AddClass(t1Sub);
+
+        t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod1", ReturnType = new CodeType() });
+        t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod2", ReturnType = new CodeType() });
+        method.OriginalMethod = new CodeMethod
+        {
+            ReturnType = new CodeType
+            {
+                Name = "TestRequestBuilderWithA",
+                TypeDefinition = t1Sub
+            }
+        };
+
+        AddRequestProperties();
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("var builder = new TestRequestBuilderWithA", result);
+        Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod1());", result);
+        Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod2());", result);
+        Assert.Contains("return command;", result);
+        var lines = result.Split('\n');
+        Assert.Equal(0, lines.Count(l => l.Contains("var execCommands = new List<Command>()")));
+        Assert.Equal(1, lines.Count(l => l.Contains("var nonExecCommands = new List<Command>()")));
+        Assert.Equal(0, lines.Count(l => l.Contains("foreach (var cmd in execCommands)")));
+        Assert.Equal(1, lines.Count(l => l.Contains("foreach (var cmd in nonExecCommands)")));
+    }
+
+    [Fact]
     public void WritesContainerCommandWithConflictingTypes()
     {
         method.Kind = CodeMethodKind.CommandBuilder;
