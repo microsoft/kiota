@@ -541,7 +541,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
 
     private void WriteNavCommand(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, string name)
     {
-        if (((codeElement.AccessedProperty?.Type) is CodeType codeReturnType) && (codeReturnType.TypeDefinition is CodeClass typeDef))
+        if (((codeElement.AccessedProperty?.Type ?? codeElement.OriginalMethod?.ReturnType) is CodeType codeReturnType) && (codeReturnType.TypeDefinition is CodeClass typeDef))
         {
             var targetClass = conventions.GetTypeString(codeReturnType, codeElement);
 
