@@ -495,7 +495,8 @@ public class CSharpLanguageRefinerTests
             Name = "method",
             ReturnType = new CodeType
             {
-                Name = "DateOnly"
+                Name = "DateOnly",
+                IsExternal = true// this is external from the Kiota abstractions
             },
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
@@ -515,12 +516,55 @@ public class CSharpLanguageRefinerTests
             Name = "method",
             ReturnType = new CodeType
             {
-                Name = "TimeOnly"
+                Name = "TimeOnly",
+                IsExternal = true // this is external from the Kiota abstractions
             },
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Time", method.ReturnType.Name);
+    }
+    [Fact]
+    public async Task ReplacesLocallyDefinedDateOnlyByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.Model
+        }).First();
+        var method = model.AddMethod(new CodeMethod
+        {
+            Name = "method",
+            ReturnType = new CodeType
+            {
+                Name = "DateOnly",
+                IsExternal = false// this is internal from the description
+            },
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        Assert.NotEmpty(model.StartBlock.Usings);
+        Assert.Equal("DateOnlyObject", method.ReturnType.Name);
+    }
+    [Fact]
+    public async Task ReplacesLocallyDefinedTimeOnlyByNativeType()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.Model
+        }).First();
+        var method = model.AddMethod(new CodeMethod
+        {
+            Name = "method",
+            ReturnType = new CodeType
+            {
+                Name = "TimeOnly",
+                IsExternal = false // this is internal from the description
+            },
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        Assert.NotEmpty(model.StartBlock.Usings);
+        Assert.Equal("TimeOnlyObject", method.ReturnType.Name);
     }
     #endregion
 }

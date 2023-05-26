@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix build error by splitting the ambiguous `--file` option into `--input-file` and `--output-file`. (Shell)
 - Fixed including unused imports in Go [#2699](https://github.com/microsoft/kiota/pull/2410)
 - Fixed a bug where error response type with primitive types would cause compile errors in dotnet [#2651](https://github.com/microsoft/kiota/issues/2693)
+- Fixed a bug where CSharp generation would fail if the input openApi contained schemas named 'TimeOnly' or 'DateOnly' [2671](https://github.com/microsoft/kiota/issues/2671)
+- Updated the reserved types for CSharp to include 'Stream' and 'Date' should be reserved names in CSharp [2369](https://github.com/microsoft/kiota/issues/2369)
 
 ## [1.2.1] - 2023-05-16
 
