@@ -12,7 +12,6 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 {
     private static readonly CodePropertyKind[] UnusedPropKinds = new[] { CodePropertyKind.RequestAdapter };
     private static readonly CodeParameterKind[] UnusedParamKinds = new[] { CodeParameterKind.RequestAdapter };
-    private static readonly CodeMethodKind[] UnusedMethodKinds = new[] { CodeMethodKind.RequestBuilderWithParameters };
     private static readonly CodeMethodKind[] ConstructorKinds = new[] { CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor };
     public ShellRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
@@ -163,6 +162,10 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
                 .Where(static e => e.IsOfKind(CodePropertyKind.RequestBuilder));
             CreateCommandBuildersFromNavProps(currentClass, navProperties);
 
+            var requestsWithParams = currentClass.UnorderedMethods
+                .Where(static m=> m.IsOfKind(CodeMethodKind.RequestBuilderWithParameters));
+            CreateCommandBuildersFromRequestBuildersWithParameters(currentClass, requestsWithParams);
+
             // Add build command for indexers. If an indexer's type has methods with the same name, they will be skipped.
             // Deduplication is managed in method writer.
             if (currentClass.Indexer is CodeIndexer idx)
@@ -198,9 +201,6 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         {
             method.RemoveParametersByKind(UnusedParamKinds);
         }
-
-        var unwantedMethods = currentClass.UnorderedMethods.Where(static m => m.IsOfKind(UnusedMethodKinds));
-        currentClass.RemoveChildElement(unwantedMethods.ToArray());
     }
 
     private static void CreateCommandBuildersFromRequestExecutors(CodeClass currentClass, bool classHasIndexers, IEnumerable<CodeMethod> requestMethods)
@@ -262,6 +262,34 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 
         currentClass.AddMethod(method);
         currentClass.RemoveChildElement(indexer);
+    }
+
+    private static void CreateCommandBuildersFromRequestBuildersWithParameters(CodeClass currentClass, IEnumerable<CodeMethod> requestBuildersWithParams) {
+        foreach (var requestBuilder in requestBuildersWithParams)
+        {
+            var method = new CodeMethod
+            {
+                IsAsync = false,
+                Name = $"Build{requestBuilder.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}RbCommand",
+                Kind = CodeMethodKind.CommandBuilder,
+                Documentation = (CodeDocumentation)requestBuilder.Documentation.Clone(),
+                ReturnType = CreateCommandType(),
+                OriginalMethod = requestBuilder,
+                SimpleName = requestBuilder.Name.CleanupSymbolName(),
+                Parent = currentClass
+            };
+
+            // Ensure constructor parameters are removed
+            if (requestBuilder.ReturnType is CodeType ct && ct.TypeDefinition is CodeClass cc) {
+                var constructors = cc.UnorderedMethods.Where(static m=> m.IsOfKind(CodeMethodKind.Constructor));
+                foreach (var item in constructors)
+                {
+                    item.RemoveParametersByKind(CodeParameterKind.Path);
+                }
+            }
+            currentClass.AddMethod(method);
+            currentClass.RemoveChildElement(requestBuilder);
+        }
     }
 
     private static void CreateCommandBuildersFromNavProps(CodeClass currentClass, IEnumerable<CodeProperty> navProperties)
