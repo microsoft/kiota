@@ -43,7 +43,6 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             //         IsExternal = true,
             //     });
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore
@@ -85,6 +84,8 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 },
                 static s => s.ToPascalCase(UnderscoreArray));
             DisambiguatePropertiesWithClassNames(generatedCode);
+            // Correct the core types after reserved names for types/properties are done to avoid collision of types e.g. renaming custom model called `DateOnly` to `Date`
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             cancellationToken.ThrowIfCancellationRequested();
             AddSerializationModulesImport(generatedCode);
             AddParentClassToErrorClasses(

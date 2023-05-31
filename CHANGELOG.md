@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Changed python model classes to dataclasses. [#2684](https://github.com/microsoft/kiota/issues/2684)
+- Fix issue with command conflicts causing CLI crashes. (Shell)
+- Fix build error by splitting the ambiguous `--file` option into `--input-file` and `--output-file`. (Shell)
+- Fixed including unused imports in Go [#2699](https://github.com/microsoft/kiota/pull/2410)
+- Fixed a bug where error response type with primitive types would cause compile errors in dotnet [#2651](https://github.com/microsoft/kiota/issues/2693)
+- Fixed a bug where CSharp generation would fail if the input openApi contained schemas named 'TimeOnly' or 'DateOnly' [2671](https://github.com/microsoft/kiota/issues/2671)
+- Updated the reserved types for CSharp to include 'Stream' and 'Date' should be reserved names in CSharp [2369](https://github.com/microsoft/kiota/issues/2369)
+- Fix issue with request builders with parameters being excluded from commands output. (Shell)
+
 
 ## [1.2.1] - 2023-05-16
 
@@ -21,7 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shorten Go File names to a max of 252
 - Fixed a bug where clean output option would fail because of the log file. [#2645](https://github.com/microsoft/kiota/issues/2645)
 - Fixed a bug in the extension where selection in multiple indexers would fail. [#2666](https://github.com/microsoft/kiota/issues/2666)
-- Fixed including unused imports in Go [#2699](https://github.com/microsoft/kiota/pull/2410)
 
 ## [1.2.0] - 2023-05-04
 

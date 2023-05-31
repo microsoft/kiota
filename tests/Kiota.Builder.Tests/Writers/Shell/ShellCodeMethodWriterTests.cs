@@ -605,6 +605,47 @@ public class ShellCodeMethodWriterTests : IDisposable
     }
 
     [Fact]
+    public void WritesRequestBuilderWithParametersCommands()
+    {
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.SimpleName = "User";
+        var ns1 = root.AddNamespace("Test.Name");
+        var ns2 = ns1.AddNamespace("Test.Name.Sub1");
+        var ns3 = ns2.AddNamespace("Test.Name.Sub1.Sub2");
+        var t2 = parentClass;
+        ns2.AddClass(t2);
+        var t1Sub = new CodeClass { Name = "TestClass1", Kind = CodeClassKind.RequestBuilder };
+        ns3.AddClass(t1Sub);
+
+        t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod1", ReturnType = new CodeType() });
+        t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod2", ReturnType = new CodeType() });
+        method.OriginalMethod = new CodeMethod
+        {
+            ReturnType = new CodeType
+            {
+                Name = "TestRequestBuilderWithA",
+                TypeDefinition = t1Sub
+            }
+        };
+
+        AddRequestProperties();
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("var builder = new TestRequestBuilderWithA", result);
+        Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod1());", result);
+        Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod2());", result);
+        Assert.Contains("return command;", result);
+        var lines = result.Split('\n');
+        Assert.Equal(0, lines.Count(l => l.Contains("var execCommands = new List<Command>()")));
+        Assert.Equal(1, lines.Count(l => l.Contains("var nonExecCommands = new List<Command>()")));
+        Assert.Equal(0, lines.Count(l => l.Contains("foreach (var cmd in execCommands)")));
+        Assert.Equal(1, lines.Count(l => l.Contains("foreach (var cmd in nonExecCommands)")));
+    }
+
+    [Fact]
     public void WritesContainerCommandWithConflictingTypes()
     {
         method.Kind = CodeMethodKind.CommandBuilder;
@@ -1172,12 +1213,12 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("var fileOption = new Option<FileInfo>(\"--file\")", result);
-        Assert.Contains("fileOption.IsRequired = true;", result);
-        Assert.Contains("command.AddOption(fileOption);", result);
-        Assert.Contains("var file = invocationContext.ParseResult.GetValueForOption(fileOption);", result);
-        Assert.Contains("if (file is null || !file.Exists) return;", result);
-        Assert.Contains("using var stream = file.OpenRead();", result);
+        Assert.Contains("var inputFileOption = new Option<FileInfo>(\"--input-file\")", result);
+        Assert.Contains("inputFileOption.IsRequired = true;", result);
+        Assert.Contains("command.AddOption(inputFileOption);", result);
+        Assert.Contains("var inputFile = invocationContext.ParseResult.GetValueForOption(inputFileOption);", result);
+        Assert.Contains("if (inputFile is null || !inputFile.Exists) return;", result);
+        Assert.Contains("using var stream = inputFile.OpenRead();", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
@@ -1272,14 +1313,15 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("var fileOption = new Option<FileInfo>(\"--file\");", result);
-        Assert.Contains("command.AddOption(fileOption);", result);
+        Assert.Contains("var outputFileOption = new Option<FileInfo>(\"--output-file\");", result);
+        Assert.Contains("command.AddOption(outputFileOption);", result);
         Assert.Contains("command.SetHandler(async (invocationContext) => {", result);
         Assert.Contains("var q = invocationContext.ParseResult.GetValueForOption(qOption);", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
         Assert.Contains("var response = await reqAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken) ?? Stream.Null;", result);
+        Assert.Contains("using var writeStream = outputFile.OpenWrite();", result);
         Assert.Contains("});", result);
         Assert.Contains("return command;", result);
     }

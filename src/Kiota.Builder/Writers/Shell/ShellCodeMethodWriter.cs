@@ -19,7 +19,8 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     private const string CancellationTokenParamType = "CancellationToken";
     private const string CancellationTokenParamName = "cancellationToken";
     private const string FileParamType = "FileInfo";
-    private const string FileParamName = "file";
+    private const string InputFileParamName = "inputFile";
+    private const string OutputFileParamName = "outputFile";
     private const string OutputFilterParamType = "IOutputFilter";
     private const string OutputFilterParamName = "outputFilter";
     private const string OutputFilterQueryParamType = "string";
@@ -113,7 +114,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 if (conventions.StreamTypeName.Equals(p.Type?.Name, StringComparison.OrdinalIgnoreCase))
                 {
                     type = FileParamType;
-                    p.Name = FileParamName;
+                    p.Name = InputFileParamName;
                 }
             }
             return (type, NormalizeToIdentifier(p.Name), p);
@@ -195,7 +196,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         else
         {
             // Try reusing nav commands too. e.g. GET /tests and GET /tests/list/
-            // Should resolve to mgc tests lists and mgc tests list get respectively.
+            // Should resolve to mgc tests list and mgc tests list get respectively.
             var navCmd = GetCommandBuilderFromNavProperties(codeElement, parentClass);
 
             if (navCmd is not null)
@@ -277,6 +278,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         var matches = td.Methods
                 .Where(m => m != exclude && m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase))
                     ?? Enumerable.Empty<CodeMethod>();
+
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
         if (!matches.Any()) return Enumerable.Empty<CodeMethod>();
 
@@ -293,10 +295,10 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     {
         if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
         {
-            var fileOptionName = "fileOption";
-            writer.WriteLine($"var {fileOptionName} = new Option<{FileParamType}>(\"--{FileParamName}\");");
+            var fileOptionName = $"{NormalizeToIdentifier(OutputFileParamName)}Option";
+            writer.WriteLine($"var {fileOptionName} = new Option<{FileParamType}>(\"--{NormalizeToOption(OutputFileParamName)}\");");
             writer.WriteLine($"{CommandVariableName}.AddOption({fileOptionName});");
-            parameters.Add((FileParamType, FileParamName, null));
+            parameters.Add((FileParamType, OutputFileParamName, null));
             availableOptions.Add($"{InvocationContextParamName}.ParseResult.GetValueForOption({fileOptionName})");
         }
         else if (!isHandlerVoid && !conventions.IsPrimitiveType(returnType))
@@ -406,7 +408,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             }
             else
             {
-                writer.WriteLine($"if ({FileParamName} == null) {{");
+                writer.WriteLine($"if ({OutputFileParamName} == null) {{");
                 writer.IncreaseIndent();
                 writer.WriteLine("using var reader = new StreamReader(response);");
                 writer.WriteLine("var strContent = reader.ReadToEnd();");
@@ -414,9 +416,9 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 writer.CloseBlock();
                 writer.WriteLine("else {");
                 writer.IncreaseIndent();
-                writer.WriteLine($"using var writeStream = {FileParamName}.OpenWrite();");
+                writer.WriteLine($"using var writeStream = {OutputFileParamName}.OpenWrite();");
                 writer.WriteLine("await response.CopyToAsync(writeStream);");
-                writer.WriteLine($"Console.WriteLine($\"Content written to {{{FileParamName}.FullName}}.\");");
+                writer.WriteLine($"Console.WriteLine($\"Content written to {{{OutputFileParamName}.FullName}}.\");");
                 writer.CloseBlock();
             }
         }
@@ -539,7 +541,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
 
     private void WriteNavCommand(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, string name)
     {
-        if (((codeElement.AccessedProperty?.Type) is CodeType codeReturnType) && (codeReturnType.TypeDefinition is CodeClass typeDef))
+        if (((codeElement.AccessedProperty?.Type ?? codeElement.OriginalMethod?.ReturnType) is CodeType codeReturnType) && (codeReturnType.TypeDefinition is CodeClass typeDef))
         {
             var targetClass = conventions.GetTypeString(codeReturnType, codeElement);
 
@@ -599,11 +601,13 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         bool hasExecutable = builderMethods.Any(static m => m.HttpMethod is not null);
         bool hasNonExecutable = builderMethods.Any(static m => m.HttpMethod is null);
 
-        if (hasExecutable) {
+        if (hasExecutable)
+        {
             writer.WriteLine("var executables = new List<Command>();");
         }
 
-        if (hasNonExecutable) {
+        if (hasNonExecutable)
+        {
             writer.WriteLine("var commands = new List<Command>();");
         }
 
@@ -792,18 +796,20 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         if (!methods.Any()) return;
         var executablesCount = methods.Count(static m => m.OriginalMethod?.HttpMethod is not null);
 
-        if (executablesCount > 0) {
+        if (executablesCount > 0)
+        {
             writer.WriteLine($"var {ExecCommandsVariableName} = new List<Command>();");
             hasExecutable = true;
         }
-        
-        if ((methods.Count - executablesCount) > 0) {
+
+        if ((methods.Count - executablesCount) > 0)
+        {
             writer.WriteLine($"var {NonExecCommandsVariableName} = new List<Command>();");
             hasNonExecutable = true;
         }
 
         bool sortMethods = false;
-        
+
         // Start with the current class' commands then the indexer commands in the item builder.
         foreach (var method in methods.OrderBy(static m => string.Equals(m.ReturnType.Name, indexerReturn, StringComparison.Ordinal)))
         {

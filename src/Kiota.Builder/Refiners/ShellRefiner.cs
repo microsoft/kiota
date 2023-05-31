@@ -12,7 +12,6 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 {
     private static readonly CodePropertyKind[] UnusedPropKinds = new[] { CodePropertyKind.RequestAdapter };
     private static readonly CodeParameterKind[] UnusedParamKinds = new[] { CodeParameterKind.RequestAdapter };
-    private static readonly CodeMethodKind[] UnusedMethodKinds = new[] { CodeMethodKind.RequestBuilderWithParameters };
     private static readonly CodeMethodKind[] ConstructorKinds = new[] { CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor };
     public ShellRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
@@ -91,9 +90,59 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);
+            RenameDuplicateIndexerNavProperties(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             CreateCommandBuilders(generatedCode);
         }, cancellationToken);
+    }
+
+    private static void RenameDuplicateIndexerNavProperties(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass
+            && currentClass.IsOfKind(CodeClassKind.RequestBuilder)
+            && currentClass.Indexer is CodeIndexer indexer
+            && indexer.ReturnType.AllTypes.First().TypeDefinition is CodeClass idxReturn
+            && idxReturn.UnorderedProperties.Any())
+        {
+            // Handles possible conflicts when executable URLs like:
+            // GET /users/{user-id}/directReports/graph.orgContact
+            // GET /users/{user-id}/directReports/{directoryObject-id}/graph.orgContact
+            // would resolve to the same command. i.e.:
+            // mgc users direct-reports graph-org-contact get*
+
+            // The conflicting nav property will be renamed so that we have 2 commands:
+            // mgc users direct-reports graph-org-contact get*
+            // mgc users direct-reports graph-org-contact-by-id get*
+
+            // Find matching nav properties between currentClass' nav & indexer return's nav.
+            var propsInClass = currentClass.UnorderedProperties
+                .Where(static m => m.IsOfKind(CodePropertyKind.RequestBuilder))
+                .ToDictionary(static m => m.Name.CleanupSymbolName(), StringComparer.OrdinalIgnoreCase);
+            var matchesInIndexer = idxReturn.UnorderedProperties
+                .Where(p => p.IsOfKind(CodePropertyKind.RequestBuilder) && propsInClass.ContainsKey(p.Name.CleanupSymbolName()));
+
+            foreach (var matchInIdx in matchesInIndexer)
+            {
+                if (matchInIdx.Type.AllTypes.First().TypeDefinition is CodeClass ccIdx
+                    && propsInClass[matchInIdx.Name].Type.AllTypes.First().TypeDefinition is CodeClass ccClass)
+                {
+                    // Check for execuable command matches
+                    // This list is usually small. Upto a max of ~9 for each HTTP method
+                    // In reality, most instances would have 1 - 3 methods
+                    var lookup = ccClass.UnorderedMethods
+                        .Where(static m => m.IsOfKind(CodeMethodKind.RequestExecutor))
+                        .Select(static m => m.Name.CleanupSymbolName())
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                    if (ccIdx.UnorderedMethods.Any(m => m.IsOfKind(CodeMethodKind.RequestExecutor)
+                        && lookup.Contains(m.Name.CleanupSymbolName())))
+                    {
+                        matchInIdx.Name = $"{matchInIdx.Name}-ById";
+                    }
+                }
+            }
+        }
+        CrawlTree(currentElement, RenameDuplicateIndexerNavProperties);
     }
 
     private static void CreateCommandBuilders(CodeElement currentElement)
@@ -109,13 +158,18 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             CreateCommandBuildersFromRequestExecutors(currentClass, currentClass.Indexer != null, requestExecutors);
 
             // Replace Nav Properties with BuildXXXCommand methods
-            var navProperties = currentClass.Properties
+            var navProperties = currentClass.UnorderedProperties
                 .Where(static e => e.IsOfKind(CodePropertyKind.RequestBuilder));
             CreateCommandBuildersFromNavProps(currentClass, navProperties);
 
+            var requestsWithParams = currentClass.UnorderedMethods
+                .Where(static m=> m.IsOfKind(CodeMethodKind.RequestBuilderWithParameters));
+            CreateCommandBuildersFromRequestBuildersWithParameters(currentClass, requestsWithParams);
+
             // Add build command for indexers. If an indexer's type has methods with the same name, they will be skipped.
             // Deduplication is managed in method writer.
-            if (currentClass.Indexer is CodeIndexer idx) {
+            if (currentClass.Indexer is CodeIndexer idx)
+            {
                 CreateCommandBuildersFromIndexer(currentClass, idx);
             }
 
@@ -140,16 +194,13 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 
     private static void RemoveUnusedParameters(CodeClass currentClass)
     {
-        var requestAdapters = currentClass.Properties.Where(static p => p.IsOfKind(UnusedPropKinds));
+        var requestAdapters = currentClass.UnorderedProperties.Where(static p => p.IsOfKind(UnusedPropKinds));
         currentClass.RemoveChildElement(requestAdapters.ToArray());
         var constructorsWithAdapter = currentClass.UnorderedMethods.Where(static m => m.IsOfKind(ConstructorKinds) && m.Parameters.Any(static p => p.IsOfKind(UnusedParamKinds)));
         foreach (var method in constructorsWithAdapter)
         {
             method.RemoveParametersByKind(UnusedParamKinds);
         }
-
-        var unwantedMethods = currentClass.UnorderedMethods.Where(static m => m.IsOfKind(UnusedMethodKinds));
-        currentClass.RemoveChildElement(unwantedMethods.ToArray());
     }
 
     private static void CreateCommandBuildersFromRequestExecutors(CodeClass currentClass, bool classHasIndexers, IEnumerable<CodeMethod> requestMethods)
@@ -197,7 +248,8 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             OriginalIndexer = indexer,
             Documentation = (CodeDocumentation)indexer.Documentation.Clone(),
             // ReturnType setter assigns the parent
-            ReturnType = new CodeType {
+            ReturnType = new CodeType
+            {
                 Name = "Tuple",
                 IsExternal = true,
                 GenericTypeParameterValues = new List<CodeType> {
@@ -210,6 +262,34 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
 
         currentClass.AddMethod(method);
         currentClass.RemoveChildElement(indexer);
+    }
+
+    private static void CreateCommandBuildersFromRequestBuildersWithParameters(CodeClass currentClass, IEnumerable<CodeMethod> requestBuildersWithParams) {
+        foreach (var requestBuilder in requestBuildersWithParams)
+        {
+            var method = new CodeMethod
+            {
+                IsAsync = false,
+                Name = $"Build{requestBuilder.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}RbCommand",
+                Kind = CodeMethodKind.CommandBuilder,
+                Documentation = (CodeDocumentation)requestBuilder.Documentation.Clone(),
+                ReturnType = CreateCommandType(),
+                OriginalMethod = requestBuilder,
+                SimpleName = requestBuilder.Name.CleanupSymbolName(),
+                Parent = currentClass
+            };
+
+            // Ensure constructor parameters are removed
+            if (requestBuilder.ReturnType is CodeType ct && ct.TypeDefinition is CodeClass cc) {
+                var constructors = cc.UnorderedMethods.Where(static m=> m.IsOfKind(CodeMethodKind.Constructor));
+                foreach (var item in constructors)
+                {
+                    item.RemoveParametersByKind(CodeParameterKind.Path);
+                }
+            }
+            currentClass.AddMethod(method);
+            currentClass.RemoveChildElement(requestBuilder);
+        }
     }
 
     private static void CreateCommandBuildersFromNavProps(CodeClass currentClass, IEnumerable<CodeProperty> navProperties)
@@ -228,7 +308,9 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
                 Parent = currentClass
             };
             currentClass.AddMethod(method);
-            currentClass.RemoveChildElement(navProperty);
+
+            // Remove renamed elements as well
+            currentClass.RemoveChildElementByName(navProperty.Name.Replace("-ById", string.Empty, StringComparison.OrdinalIgnoreCase));
         }
     }
 
