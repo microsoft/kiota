@@ -24,9 +24,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, true, writer);
         var isVoid = "None".Equals(returnType, StringComparison.OrdinalIgnoreCase);
-        WriteMethodPrototype(codeElement, writer, returnType, isVoid);
-        writer.IncreaseIndent();
-        WriteMethodDocumentation(codeElement, writer, returnType, isVoid);
+        if (parentClass.IsOfKind(CodeClassKind.Model) && (codeElement.IsOfKind(CodeMethodKind.Setter) || codeElement.IsOfKind(CodeMethodKind.Getter) || codeElement.IsOfKind(CodeMethodKind.Constructor)))
+        {
+            writer.IncreaseIndent();
+        }
+        else
+        {
+            WriteMethodPrototype(codeElement, writer, returnType, isVoid);
+            writer.IncreaseIndent();
+            WriteMethodDocumentation(codeElement, writer, returnType, isVoid);
+        }
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var requestConfigParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
@@ -44,24 +51,31 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             case CodeMethodKind.ClientConstructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 WriteApiConstructorBody(parentClass, codeElement, writer);
+                writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.Constructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
+                writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.IndexerBackwardCompatibility:
                 WriteIndexerBody(codeElement, parentClass, returnType, writer);
+                writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.Deserializer:
                 WriteDeserializerBody(codeElement, parentClass, writer, inherits);
+                writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.Serializer:
                 WriteSerializerBody(inherits, parentClass, writer);
+                writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.RequestGenerator:
                 WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
+                writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.RequestExecutor:
                 WriteRequestExecutorBody(codeElement, requestParams, parentClass, isVoid, returnType, writer);
+                writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.Getter:
                 WriteGetterBody(codeElement, writer, parentClass);
@@ -71,12 +85,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 break;
             case CodeMethodKind.RequestBuilderWithParameters:
                 WriteRequestBuilderWithParametersBody(codeElement, parentClass, returnType, writer);
+                writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.QueryParametersMapper:
                 WriteQueryParametersMapper(codeElement, parentClass, writer);
+                writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.Factory:
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
+                writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.RawUrlConstructor:
                 throw new InvalidOperationException("RawUrlConstructor is not supported in python");
@@ -84,9 +101,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
             default:
                 WriteDefaultMethodBody(codeElement, writer, returnType);
+                writer.CloseBlock(string.Empty);
                 break;
         }
-        writer.CloseBlock(string.Empty);
     }
     private const string DiscriminatorMappingVarName = "mapping_value";
     private const string NodeVarName = "mapping_value_node";
@@ -211,8 +228,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
-        if (inherits)
+        if (inherits && !parentClass.IsOfKind(CodeClassKind.Model))
             writer.WriteLine("super().__init__()");
+        if (parentClass.IsOfKind(CodeClassKind.Model))
+        {
+            writer.DecreaseIndent();
+        }
         WriteDirectAccessProperties(parentClass, writer);
         WriteSetterAccessProperties(parentClass, writer);
         WriteSetterAccessPropertiesWithoutDefaults(parentClass, writer);
@@ -233,6 +254,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             }
             AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
         }
+        if (parentClass.IsOfKind(CodeClassKind.Model))
+        {
+            writer.IncreaseIndent();
+        }
     }
     private void WriteDirectAccessProperties(CodeClass parentClass, LanguageWriter writer)
     {
@@ -243,8 +268,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
             conventions.WriteInLineDescription(propWithDefault.Documentation.Description, writer);
-            writer.WriteLine($"self.{conventions.GetAccessModifier(propWithDefault.Access)}{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
-            writer.WriteLine();
+            if (parentClass.IsOfKind(CodeClassKind.Model))
+            {
+                writer.WriteLine($"{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
+                writer.WriteLine();
+            }
+            else
+            {
+                writer.WriteLine($"self.{conventions.GetAccessModifier(propWithDefault.Access)}{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
+                writer.WriteLine();
+            }
         }
     }
     private void WriteSetterAccessProperties(CodeClass parentClass, LanguageWriter writer)
@@ -256,7 +289,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .OrderByDescending(static x => x.Kind)
                                         .ThenBy(static x => x.Name))
         {
-            writer.WriteLine($"self.{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
+            if (parentClass.IsOfKind(CodeClassKind.Model))
+                writer.WriteLine($"{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
+            else
+                writer.WriteLine($"self.{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
         }
     }
     private void WriteSetterAccessPropertiesWithoutDefaults(CodeClass parentClass, LanguageWriter writer)
@@ -268,7 +304,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             var returnType = conventions.GetTypeString(propWithoutDefault.Type, propWithoutDefault, true, writer);
             conventions.WriteInLineDescription(propWithoutDefault.Documentation.Description, writer);
-            writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
+            if (parentClass.IsOfKind(CodeClassKind.Model))
+                writer.WriteLine($"{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
+            else
+                writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
         }
     }
     private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string? variableName = default)
@@ -283,33 +322,44 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
-        var backingStore = parentClass.GetBackingStoreProperty();
-        if (backingStore == null)
-            writer.WriteLine($"self.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToSnakeCase()} = value");
+        if (!parentClass.IsOfKind(CodeClassKind.Model))
+        {
+            var backingStore = parentClass.GetBackingStoreProperty();
+            if (backingStore == null)
+                writer.WriteLine($"self.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToSnakeCase()} = value");
+            else
+                writer.WriteLine($"self.{backingStore.NamePrefix}{backingStore.Name.ToSnakeCase()}[\"{codeElement.AccessedProperty?.Name?.ToSnakeCase()}\"] = value");
+            writer.CloseBlock(string.Empty);
+        }
         else
-            writer.WriteLine($"self.{backingStore.NamePrefix}{backingStore.Name.ToSnakeCase()}[\"{codeElement.AccessedProperty?.Name?.ToSnakeCase()}\"] = value");
+            writer.DecreaseIndent();
     }
     private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
-        var backingStore = parentClass.GetBackingStoreProperty();
-        if (backingStore == null)
-            writer.WriteLine($"return self.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
-        else
-            if (!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
-                !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
-                !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue))
+        if (!parentClass.IsOfKind(CodeClassKind.Model))
         {
-            writer.WriteLines($"value: {conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement, true, writer)} = self.{backingStore.NamePrefix}{backingStore.Name.ToSnakeCase()}.get(\"{codeElement.AccessedProperty.Name.ToSnakeCase()}\")",
-                "if not value:");
-            writer.IncreaseIndent();
-            writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue}",
-                $"self.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToSnakeCase()} = value");
-            writer.DecreaseIndent();
-            writer.WriteLines("return value");
+            var backingStore = parentClass.GetBackingStoreProperty();
+            if (backingStore == null)
+                writer.WriteLine($"return self.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
+            else
+                if (!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
+                    !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
+                    !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue))
+            {
+                writer.WriteLines($"value: {conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement, true, writer)} = self.{backingStore.NamePrefix}{backingStore.Name.ToSnakeCase()}.get(\"{codeElement.AccessedProperty.Name.ToSnakeCase()}\")",
+                    "if not value:");
+                writer.IncreaseIndent();
+                writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue}",
+                    $"self.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToSnakeCase()} = value");
+                writer.DecreaseIndent();
+                writer.WriteLines("return value");
+            }
+            else
+                writer.WriteLine($"return self.{backingStore.NamePrefix}{backingStore.Name.ToSnakeCase()}.get(\"{codeElement.AccessedProperty?.Name?.ToSnakeCase()}\")");
+            writer.CloseBlock(string.Empty);
         }
         else
-            writer.WriteLine($"return self.{backingStore.NamePrefix}{backingStore.Name.ToSnakeCase()}.get(\"{codeElement.AccessedProperty?.Name?.ToSnakeCase()}\")");
-
+            writer.DecreaseIndent();
     }
     private static void WriteDefaultMethodBody(CodeMethod codeElement, LanguageWriter writer, string returnType)
     {

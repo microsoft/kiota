@@ -25,9 +25,11 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
                 _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.Inherits.Name, writer);
             foreach (var implement in codeElement.Implements)
                 _codeUsingWriter.WriteDeferredImport(parentClass, implement.Name, writer);
-
+            if (parentClass.IsOfKind(CodeClassKind.Model) || parentClass.Parent is CodeClass)
+            {
+                writer.WriteLine("@dataclass");
+            }
         }
-
 
         var abcClass = !codeElement.Implements.Any() ? string.Empty : $"{codeElement.Implements.Select(static x => x.Name.ToFirstCharacterUpperCase()).Aggregate((x, y) => x + ", " + y)}";
         var derivation = codeElement.Inherits is CodeType inheritType &&
@@ -35,13 +37,6 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
                         !string.IsNullOrEmpty(inheritSymbol) ?
                             inheritSymbol :
                             abcClass;
-
-
-
-        if (codeElement.Parent?.Parent is CodeClass)
-        {
-            writer.WriteLine("@dataclass");
-        }
         writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}({derivation}):");
         writer.IncreaseIndent();
         if (codeElement.Parent is CodeClass parent)

@@ -58,6 +58,24 @@ public class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("class ParentClass()", result);
     }
     [Fact]
+    public void WritesModelClassDeclaration()
+    {
+        parentClass.Kind = CodeClassKind.Model;
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains("@dataclass", result);
+        Assert.Contains("class ParentClass()", result);
+    }
+    [Fact]
+    public void WritesRequestBuilderClassDeclaration()
+    {
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.DoesNotContain("@dataclass", result);
+        Assert.Contains("class ParentClass()", result);
+    }
+    [Fact]
     public void WritesImplementation()
     {
         var declaration = parentClass.StartBlock;
