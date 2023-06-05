@@ -125,6 +125,69 @@ public class OpenApiUrlTreeNodeExtensionsTests
     {
         Assert.Equal(result, original.SanitizeParameterNameForCodeSymbols());
     }
+
+    [Fact]
+    public void GetUrlTemplateSelectsDistinctQueryParameters()
+    {
+        var doc = new OpenApiDocument
+        {
+            Paths = new(),
+        };
+        doc.Paths.Add("{param-with-dashes}\\existing-segment", new()
+        {
+            Operations = new Dictionary<OperationType, OpenApiOperation> {
+                { OperationType.Get, new() {
+                        Parameters = new List<OpenApiParameter> {
+                            new() {
+                                Name = "param-with-dashes",
+                                In = ParameterLocation.Path,
+                                Required = true,
+                                Schema = new() {
+                                    Type = "string"
+                                },
+                                Style = ParameterStyle.Simple,
+                            },
+                            new (){
+                                Name = "$select",
+                                In = ParameterLocation.Query,
+                                Schema = new () {
+                                    Type = "string"
+                                },
+                                Style = ParameterStyle.Simple,
+                            }
+                        }
+                    }
+                },
+                {
+                    OperationType.Put, new() {
+                        Parameters = new List<OpenApiParameter> {
+                            new() {
+                                Name = "param-with-dashes",
+                                In = ParameterLocation.Path,
+                                Required = true,
+                                Schema = new() {
+                                    Type = "string"
+                                },
+                                Style = ParameterStyle.Simple,
+                            },
+                            new (){
+                                Name = "$select",
+                                In = ParameterLocation.Query,
+                                Schema = new () {
+                                    Type = "string"
+                                },
+                                Style = ParameterStyle.Simple,
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select}", node.Children.First().Value.GetUrlTemplate());
+        // the query parameters will be decoded by a middleware at runtime before the request is executed
+    }
+    
     [Fact]
     public void GetUrlTemplateCleansInvalidParameters()
     {

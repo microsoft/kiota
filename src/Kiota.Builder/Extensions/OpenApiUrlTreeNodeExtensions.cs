@@ -177,6 +177,7 @@ public static class OpenApiUrlTreeNodeExtensions
                                         pathItem.Operations
                                                 .SelectMany(static x => x.Value.Parameters)
                                                 .Where(static x => x.In == ParameterLocation.Query))
+                                    .DistinctBy(static x => x.Name)
                                     .ToArray();
             if (parameters.Any())
                 queryStringParameters = "{?" +
