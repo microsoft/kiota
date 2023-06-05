@@ -164,8 +164,18 @@ public static class StringExtensions
                                                                     .Aggregate(static (z, y) => z + y));
 
         result = NormalizeSymbolsAfterCleanup(result);
+        
+        // if the result is empty but the original wasn't, it only contained symbols which have been removed.
+        // So try to return a non empty string by replacing the symbols with words
+        if (string.IsNullOrEmpty(result) && !string.IsNullOrEmpty(original))
+        {
+            result = SpelledOutSymbols.Where(symbol => original.Contains(symbol.Key))
+                                      .Aggregate(original, (current, symbol) => current.Replace(symbol.Key.ToString(), symbol.Value));
+        }
+        
         return result;
     }
+    
     private static readonly Regex NumbersSpellingRegex = new(@"^(?<number>\d+)", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     private static readonly Dictionary<char, string> SpelledOutNumbers = new() {
         {'0', "Zero"},
@@ -179,6 +189,32 @@ public static class StringExtensions
         {'8', "Eight"},
         {'9', "Nine"},
     };
+    
+    private static readonly Dictionary<char, string> SpelledOutSymbols = new() {
+        {'!', "Exclamation"},
+        {'"', "DoubleQuote"},
+        {'#', "Pound"},
+        {'$', "Dollar"},
+        {'%', "Percent"},
+        {'&', "Ampersand"},
+        {'\'', "Apostrophe"},
+        {'(', "LeftParenthesis"},
+        {')', "RightParenthesis"},
+        {'*', "Asterisk"},
+        {'+', "Plus"},
+        {',', "Comma"},
+        {'-', "Hyphen"},
+        {'.', "Period"},
+        {'/', "Slash"},
+        {'\\', "BackSlash"},
+        {':', "Colon"},
+        {';', "SemiColon"},
+        {'<', "LessThan"},
+        {'=', "Equal"},
+        {'>', "GreaterThan"},
+        {'?', "QuestionMark"},
+    };
+    
     /// <summary>
     /// Normalizing logic for custom symbols handling before cleanup
     /// </summary>

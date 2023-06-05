@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 
 using Xunit;
@@ -67,6 +68,19 @@ public class CodeEnumWriterTests : IDisposable
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.DoesNotContain($"\"ValidName\"", result);
+    }
+    
+    [Theory]
+    [InlineData("\\","BackSlash")]
+    [InlineData("?","QuestionMark")]
+    [InlineData("$","Dollar")]
+    public void WritesEnumWithSanitizedName(string symbol, string expected)
+    {
+        currentEnum.Flags = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = symbol.CleanupSymbolName()});
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains(expected, result);
     }
     
     [Fact]

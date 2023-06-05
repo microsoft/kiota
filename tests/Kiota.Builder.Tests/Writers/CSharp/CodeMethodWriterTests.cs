@@ -1365,6 +1365,29 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
     }
     [Fact]
+    public void WritesConstructorAndIncludesSanitizedEnumValue()
+    {
+        method.Kind = CodeMethodKind.Constructor;
+        var defaultValue = "/";
+        var propName = "size";
+        var codeEnum = new CodeEnum
+        {
+            Name = "pictureSize"
+        };
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = codeEnum }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+        Assert.Contains("PictureSize.Slash", result);//ensure symbol is cleaned up
+        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
+    }
+    [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
     {
         method.Kind = CodeMethodKind.Constructor;
