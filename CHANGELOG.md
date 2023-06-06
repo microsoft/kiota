@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the reserved types for CSharp to include 'Stream' and 'Date' should be reserved names in CSharp [2369](https://github.com/microsoft/kiota/issues/2369)
 - Fix issue with request builders with parameters being excluded from commands output. (Shell)
 - Fixed a bug in setting default enum values fails if the symbol has been sanitized and the symbol only contains special characters [2360](https://github.com/microsoft/kiota/issues/2360)
+- Fixed issue where duplicate query parameter names per path were added to the URL template. Now only distinct query parameter names are added. [2725](https://github.com/microsoft/kiota/issues/2725)
 
 ## [1.2.1] - 2023-05-16
 
