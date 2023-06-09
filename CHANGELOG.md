@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.3.0] - 2023-06-09
+
+### Changed
+
 - Changed python model classes to dataclasses. [#2684](https://github.com/microsoft/kiota/issues/2684)
 - Fix issue with command conflicts causing CLI crashes. (Shell)
 - Fix build error by splitting the ambiguous `--file` option into `--input-file` and `--output-file`. (Shell)
