@@ -13,7 +13,7 @@ public abstract class CommonPathSegmenter : IPathSegmenter
         ArgumentException.ThrowIfNullOrEmpty(rootPath);
         ArgumentException.ThrowIfNullOrEmpty(clientNamespaceName);
         ClientNamespaceName = clientNamespaceName;
-        RootPath = rootPath.Contains(Path.DirectorySeparatorChar) ? rootPath : rootPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+        RootPath = rootPath.Contains(Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ? rootPath : rootPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
     }
     protected readonly string ClientNamespaceName;
     protected readonly string RootPath;
@@ -25,12 +25,13 @@ public abstract class CommonPathSegmenter : IPathSegmenter
     public abstract string NormalizeFileName(CodeElement currentElement);
     public virtual string NormalizePath(string fullPath) => fullPath;
     public virtual IEnumerable<string> GetAdditionalSegment(CodeElement currentElement, string fileName) => Enumerable.Empty<string>();
-    protected static string GetLastFileNameSegment(CodeElement currentElement) => currentElement.Name.Split('.').Last();
+    protected static string GetLastFileNameSegment(CodeElement currentElement) => currentElement?.Name.Split('.').Last() ?? string.Empty;
     public string GetPath(CodeNamespace currentNamespace, CodeElement currentElement, bool shouldNormalizePath = true)
     {
+        ArgumentNullException.ThrowIfNull(currentNamespace);
         var fileName = NormalizeFileName(currentElement);
         var namespacePathSegments = new List<string>(currentNamespace.Name
-                                        .Replace(ClientNamespaceName, string.Empty)
+                                        .Replace(ClientNamespaceName, string.Empty, StringComparison.Ordinal)
                                         .TrimStart('.')
                                         .Split('.'));
         namespacePathSegments.AddRange(GetAdditionalSegment(currentElement, fileName)); //Union removes duplicates so we're building a list instead to conserve those.

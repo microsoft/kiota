@@ -1,5 +1,5 @@
-﻿using System.Linq;
-
+﻿using System;
+using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -9,6 +9,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
     public CodeEnumWriter(JavaConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         var enumOptions = codeElement.Options.ToArray();
         if (!enumOptions.Any())
             return;

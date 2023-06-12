@@ -81,6 +81,7 @@ public class KiotaLock
     /// <param name="config">The configuration to update.</param>
     public void UpdateGenerationConfigurationFromLock(GenerationConfiguration config)
     {
+        ArgumentNullException.ThrowIfNull(config);
         config.ClientClassName = ClientClassName;
         config.ClientNamespaceName = ClientNamespaceName;
         if (Enum.TryParse<GenerationLanguage>(Language, out var parsedLanguage))
@@ -107,6 +108,7 @@ public class KiotaLock
     /// <param name="config">The configuration to use.</param>
     public KiotaLock(GenerationConfiguration config)
     {
+        ArgumentNullException.ThrowIfNull(config);
         Language = config.Language.ToString();
         ClientClassName = config.ClientClassName;
         ClientNamespaceName = config.ClientNamespaceName;

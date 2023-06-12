@@ -26,14 +26,14 @@ public class RubyPathSegmenter : CommonPathSegmenter
                         ShortenFileName(directoryName, Path.GetFileName(fullPath)) + FileSuffix) :
             fullPath;
     private string ShortenFileName(string directoryName, string currentFileName) =>
-        currentFileName.Replace(FileSuffix, string.Empty)
+        currentFileName.Replace(FileSuffix, string.Empty, StringComparison.Ordinal)
                         .ShortenFileName(Math.Min(MaxFilePathLength - directoryName.Length, MaxFileNameLength));
-    private static readonly int MaxFilePathLength = 230;
-    internal static readonly int MaxFileNameLength = 98; // brute force tested
+    private const int MaxFilePathLength = 230;
+    internal const int MaxFileNameLength = 98; // brute force tested
     public bool ExceedsMaxPathLength(string fullPath) =>
-        (fullPath.Length - RootPath.Length) > MaxFilePathLength || Path.GetFileName(fullPath).Length > MaxFileNameLength;
+        !string.IsNullOrEmpty(fullPath) && (fullPath.Length - RootPath.Length) > MaxFilePathLength || Path.GetFileName(fullPath).Length > MaxFileNameLength;
     public string GetRelativeFileName(CodeNamespace currentNamespace, CodeElement currentElement) =>
         ExceedsMaxPathLength(GetPath(currentNamespace, currentElement, false)) ?
-            Path.GetFileName(GetPath(currentNamespace, currentElement, true)).Replace(FileSuffix, string.Empty) :
+            Path.GetFileName(GetPath(currentNamespace, currentElement, true)).Replace(FileSuffix, string.Empty, StringComparison.Ordinal) :
             NormalizeFileName(currentElement);
 }

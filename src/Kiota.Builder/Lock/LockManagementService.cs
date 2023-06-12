@@ -35,7 +35,7 @@ public class LockManagementService : ILockManagementService
         if (File.Exists(lockFile))
         {
             await using var fileStream = File.OpenRead(lockFile);
-            return await GetLockFromStreamInternalAsync(fileStream, cancellationToken);
+            return await GetLockFromStreamInternalAsync(fileStream, cancellationToken).ConfigureAwait(false);
         }
         return null;
     }
@@ -47,7 +47,7 @@ public class LockManagementService : ILockManagementService
     }
     private static async Task<KiotaLock?> GetLockFromStreamInternalAsync(Stream stream, CancellationToken cancellationToken)
     {
-        return await JsonSerializer.DeserializeAsync(stream, context.KiotaLock, cancellationToken);
+        return await JsonSerializer.DeserializeAsync(stream, context.KiotaLock, cancellationToken).ConfigureAwait(false);
     }
     /// <inheritdoc/>
     public Task WriteLockFileAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken = default)
@@ -66,7 +66,7 @@ public class LockManagementService : ILockManagementService
     {
         var lockFilePath = Path.Combine(directoryPath, LockFileName);
         await using var fileStream = File.Open(lockFilePath, FileMode.Create);
-        await JsonSerializer.SerializeAsync(fileStream, lockInfo, context.KiotaLock, cancellationToken);
+        await JsonSerializer.SerializeAsync(fileStream, lockInfo, context.KiotaLock, cancellationToken).ConfigureAwait(false);
     }
     /// <inheritdoc/>
     public Task BackupLockFileAsync(string directoryPath, CancellationToken cancellationToken = default)
@@ -111,7 +111,7 @@ public class LockManagementService : ILockManagementService
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(SHA256.Create);
     private static string GetBackupFilePath(string outputPath)
     {
-        var hashedPath = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(outputPath))).Replace("-", string.Empty);
+        var hashedPath = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(outputPath))).Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase);
         return Path.Combine(Path.GetTempPath(), "kiota", "backup", hashedPath, LockFileName);
     }
 }

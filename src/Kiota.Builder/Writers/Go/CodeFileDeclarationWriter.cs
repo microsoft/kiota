@@ -16,14 +16,14 @@ public class CodeFileDeclarationWriter : BaseElementWriter<CodeFileDeclaration, 
         {
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty)}");
             var importSegments = cs
-                                .GetUsings()
+                                .AllUsingsFromChildElements
                                 .Where(x => x.Declaration != null && !x.Declaration.IsExternal && !x.Name.Equals(ns.Name, StringComparison.OrdinalIgnoreCase) &&
                                         x.Declaration.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>() != ns)
                                 .Select(static x => x.GetInternalNamespaceImport())
                                 .Select(static x => new Tuple<string, string>(x.GetNamespaceImportSymbol(), x))
                                 .Distinct()
                                 .Union(cs
-                                    .GetUsings()
+                                    .AllUsingsFromChildElements
                                     .Union(codeElement.Parent is CodeClass currentClass ? currentClass.InnerClasses.SelectMany(static x => x.Usings) : Enumerable.Empty<CodeUsing>())
                                     .Where(static x => x.Declaration != null && x.Declaration.IsExternal)
                                     .Select(static x => new Tuple<string, string>(x.Name.StartsWith("*") ? x.Name[1..] : x.Declaration!.Name.GetNamespaceImportSymbol(), x.Declaration!.Name))

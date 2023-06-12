@@ -78,6 +78,8 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public static CodeMethod FromIndexer(CodeIndexer originalIndexer, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback, bool parameterNullable)
     {
         ArgumentNullException.ThrowIfNull(originalIndexer);
+        ArgumentNullException.ThrowIfNull(methodNameCallback);
+        ArgumentNullException.ThrowIfNull(parameterNameCallback);
         var method = new CodeMethod
         {
             IsAsync = false,
@@ -115,7 +117,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         get; set;
     }
     public string RequestBodyContentType { get; set; } = string.Empty;
-    public HashSet<string> AcceptedResponseTypes = new(StringComparer.OrdinalIgnoreCase);
+    public HashSet<string> AcceptedResponseTypes { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
     public AccessModifier Access { get; set; } = AccessModifier.Public;
 #nullable disable // exposing property is required
     private CodeTypeBase returnType;

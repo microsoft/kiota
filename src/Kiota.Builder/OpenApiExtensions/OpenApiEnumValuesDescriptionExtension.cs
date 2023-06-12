@@ -83,6 +83,7 @@ public class EnumDescription : IOpenApiElement
     }
     public EnumDescription(OpenApiObject source)
     {
+        ArgumentNullException.ThrowIfNull(source);
         if (source.TryGetValue("value", out var rawValue) && rawValue is OpenApiString value)
             Value = value.Value;
         if (source.TryGetValue("description", out var rawDescription) && rawDescription is OpenApiString description)

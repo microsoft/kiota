@@ -59,7 +59,7 @@ public partial class KiotaBuilder
             // not using Directory.Delete on the main directory because it's locked when mapped in a container
             foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
                 Directory.Delete(subDir, true);
-            await lockManagementService.BackupLockFileAsync(config.OutputPath, cancellationToken);
+            await lockManagementService.BackupLockFileAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             foreach (var subFile in Directory.EnumerateFiles(config.OutputPath)
                                             .Where(x => !x.EndsWith(FileLogLogger.LogFileName, StringComparison.OrdinalIgnoreCase)))
                 File.Delete(subFile);
@@ -69,7 +69,7 @@ public partial class KiotaBuilder
     {
         var sw = new Stopwatch();
         var inputPath = config.OpenAPIFilePath;
-        var (_, openApiTree, _) = await GetTreeNodeInternal(inputPath, false, sw, cancellationToken);
+        var (_, openApiTree, _) = await GetTreeNodeInternal(inputPath, false, sw, cancellationToken).ConfigureAwait(false);
         return openApiTree;
     }
     private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
@@ -88,7 +88,7 @@ public partial class KiotaBuilder
         sw.Start();
         if (originalDocument == null)
         {
-            openApiDocument = await CreateOpenApiDocumentAsync(input, generating, cancellationToken);
+            openApiDocument = await CreateOpenApiDocumentAsync(input, generating, cancellationToken).ConfigureAwait(false);
             if (openApiDocument != null)
                 originalDocument = new OpenApiDocument(openApiDocument);
         }
@@ -102,7 +102,7 @@ public partial class KiotaBuilder
 
         // Should Generate
         sw.Start();
-        var shouldGenerate = await ShouldGenerate(cancellationToken);
+        var shouldGenerate = await ShouldGenerate(cancellationToken).ConfigureAwait(false);
         StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
 
         OpenApiUrlTreeNode? openApiTree = null;
@@ -136,7 +136,7 @@ public partial class KiotaBuilder
     private async Task<bool> ShouldGenerate(CancellationToken cancellationToken)
     {
         if (config.CleanOutput) return true;
-        var existingLock = await lockManagementService.GetLockFromDirectoryAsync(config.OutputPath, cancellationToken);
+        var existingLock = await lockManagementService.GetLockFromDirectoryAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
         var configurationLock = new KiotaLock(config)
         {
             DescriptionHash = openApiDocument?.HashCode ?? string.Empty,
@@ -151,7 +151,7 @@ public partial class KiotaBuilder
 
     public async Task<LanguagesInformation?> GetLanguagesInformationAsync(CancellationToken cancellationToken)
     {
-        await GetTreeNodeInternal(config.OpenAPIFilePath, false, new Stopwatch(), cancellationToken);
+        await GetTreeNodeInternal(config.OpenAPIFilePath, false, new Stopwatch(), cancellationToken).ConfigureAwait(false);
 
         return GetLanguagesInformationInternal();
     }
@@ -177,7 +177,7 @@ public partial class KiotaBuilder
 
         try
         {
-            await CleanOutputDirectory(cancellationToken);
+            await CleanOutputDirectory(cancellationToken).ConfigureAwait(false);
             // doing this verification at the beginning to give immediate feedback to the user
             Directory.CreateDirectory(config.OutputPath);
         }
@@ -187,7 +187,7 @@ public partial class KiotaBuilder
         }
         try
         {
-            var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, sw, cancellationToken);
+            var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
 
             if (!shouldGenerate)
             {
@@ -201,22 +201,22 @@ public partial class KiotaBuilder
 
             // RefineByLanguage
             sw.Start();
-            await ApplyLanguageRefinement(config, generatedCode, cancellationToken);
+            await ApplyLanguageRefinement(config, generatedCode, cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - refine by language - took");
 
             // Write language source
             sw.Start();
-            await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken);
+            await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - writing files - took");
 
             // Write lock file
             sw.Start();
-            await UpdateLockFile(cancellationToken);
+            await UpdateLockFile(cancellationToken).ConfigureAwait(false);
             StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
         }
         catch
         {
-            await lockManagementService.RestoreLockFileAsync(config.OutputPath, cancellationToken);
+            await lockManagementService.RestoreLockFileAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             throw;
         }
         return true;
@@ -228,7 +228,7 @@ public partial class KiotaBuilder
         {
             DescriptionHash = openApiDocument?.HashCode ?? string.Empty,
         };
-        await lockManagementService.WriteLockFileAsync(config.OutputPath, configurationLock, cancellationToken);
+        await lockManagementService.WriteLockFileAsync(config.OutputPath, configurationLock, cancellationToken).ConfigureAwait(false);
     }
     private static readonly GlobComparer globComparer = new();
     [GeneratedRegex(@"([\/\\])\{[\w\d-]+\}([\/\\])", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, 2000)]
@@ -342,7 +342,7 @@ public partial class KiotaBuilder
                 };
                 var targetUri = new Uri(inputPath);
                 var fileName = targetUri.GetFileName() is string name && !string.IsNullOrEmpty(name) ? name : "description.yml";
-                input = await cachingProvider.GetDocumentAsync(targetUri, "generation", fileName, cancellationToken: cancellationToken);
+                input = await cachingProvider.GetDocumentAsync(targetUri, "generation", fileName, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
             catch (HttpRequestException ex)
             {
@@ -413,7 +413,7 @@ public partial class KiotaBuilder
             // couldn't parse the URL, it's probably a local file
         }
         var reader = new OpenApiStreamReader(settings);
-        var readResult = await reader.ReadAsync(input, cancellationToken);
+        var readResult = await reader.ReadAsync(input, cancellationToken).ConfigureAwait(false);
         stopwatch.Stop();
         if (generating)
             foreach (var warning in readResult.OpenApiDiagnostic.Warnings)
@@ -439,18 +439,18 @@ public partial class KiotaBuilder
         var distinctKeys = document.Components
                                 .Schemas
                                 .Keys
-                                .Select(x => string.Join(nsNameSeparator, x.Split(nsNameSeparator, StringSplitOptions.RemoveEmptyEntries)
+                                .Select(x => string.Join(NsNameSeparator, x.Split(NsNameSeparator, StringSplitOptions.RemoveEmptyEntries)
                                                 .SkipLast(1)))
-                                .Where(x => !string.IsNullOrEmpty(x))
+                                .Where(static x => !string.IsNullOrEmpty(x))
                                 .Distinct()
-                                .OrderByDescending(x => x.Count(y => y == nsNameSeparator));
-        if (!distinctKeys.Any()) return string.Empty;
-        var longestKey = distinctKeys.FirstOrDefault();
+                                .OrderByDescending(x => x.Count(y => y == NsNameSeparator))
+                                .ToArray();
+        if (distinctKeys.FirstOrDefault() is not string longestKey) return string.Empty;
         var candidate = string.Empty;
-        var longestKeySegments = longestKey?.Split(nsNameSeparator, StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>();
+        var longestKeySegments = longestKey?.Split(NsNameSeparator, StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>();
         foreach (var segment in longestKeySegments)
         {
-            var testValue = (candidate + nsNameSeparator + segment).Trim(nsNameSeparator);
+            var testValue = (candidate + NsNameSeparator + segment).Trim(NsNameSeparator);
             if (distinctKeys.All(x => x.StartsWith(testValue, StringComparison.OrdinalIgnoreCase)))
                 candidate = testValue;
             else
@@ -480,10 +480,13 @@ public partial class KiotaBuilder
     }
     private void MergeIndexNodesAtSameLevel(OpenApiUrlTreeNode node)
     {
-        var indexNodes = node.Children.Where(static x => x.Value.IsPathSegmentWithSingleSimpleParameter());
-        if (indexNodes.Count() > 1)
+        var indexNodes = node.Children
+                        .Where(static x => x.Value.IsPathSegmentWithSingleSimpleParameter())
+                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+        if (indexNodes.Length > 1)
         {
-            var indexNode = indexNodes.OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase).First();
+            var indexNode = indexNodes.First();
             foreach (var child in indexNodes.Except(new[] { indexNode }))
             {
                 node.Children.Remove(child.Key);
@@ -584,7 +587,7 @@ public partial class KiotaBuilder
         var stopwatch = new Stopwatch();
         stopwatch.Start();
 
-        await ILanguageRefiner.Refine(config, generatedCode, token);
+        await ILanguageRefiner.Refine(config, generatedCode, token).ConfigureAwait(false);
 
         stopwatch.Stop();
         logger.LogDebug("{timestamp}ms: Language refinement applied", stopwatch.ElapsedMilliseconds);
@@ -602,16 +605,16 @@ public partial class KiotaBuilder
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var codeRenderer = CodeRenderer.GetCodeRender(config);
-        await codeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode, cancellationToken);
+        await codeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode, cancellationToken).ConfigureAwait(false);
         stopwatch.Stop();
         logger.LogTrace("{timestamp}ms: Files written to {path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
     }
-    private static readonly string requestBuilderSuffix = "RequestBuilder";
-    private static readonly string itemRequestBuilderSuffix = "ItemRequestBuilder";
-    private static readonly string voidType = "void";
-    private static readonly string coreInterfaceType = "IRequestAdapter";
-    private static readonly string requestAdapterParameterName = "requestAdapter";
-    private static readonly string constructorMethodName = "constructor";
+    private const string RequestBuilderSuffix = "RequestBuilder";
+    private const string ItemRequestBuilderSuffix = "ItemRequestBuilder";
+    private const string VoidType = "void";
+    private const string CoreInterfaceType = "IRequestAdapter";
+    private const string RequestAdapterParameterName = "requestAdapter";
+    private const string ConstructorMethodName = "constructor";
     /// <summary>
     /// Create a CodeClass instance that is a request builder class for the OpenApiUrlTreeNode
     /// </summary>
@@ -633,7 +636,7 @@ public partial class KiotaBuilder
         else
         {
             var targetNS = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace;
-            var className = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, itemRequestBuilderSuffix) : currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, requestBuilderSuffix);
+            var className = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, ItemRequestBuilderSuffix) : currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, RequestBuilderSuffix);
             codeClass = targetNS.AddClass(new CodeClass
             {
                 Name = className.CleanupSymbolName(),
@@ -651,7 +654,7 @@ public partial class KiotaBuilder
         foreach (var child in currentNode.Children)
         {
             var propIdentifier = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes);
-            var propType = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes, child.Value.DoesNodeBelongToItemSubnamespace() ? itemRequestBuilderSuffix : requestBuilderSuffix);
+            var propType = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes, child.Value.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
 
             if (child.Value.IsPathSegmentWithSingleSimpleParameter())
                 codeClass.Indexer = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode);
@@ -742,14 +745,14 @@ public partial class KiotaBuilder
                     Description = parameter.Description.CleanupDescription(),
                 },
                 Kind = CodeParameterKind.Path,
-                SerializationName = parameter.Name.Equals(codeName) ? string.Empty : parameter.Name.SanitizeParameterNameForUrlTemplate(),
+                SerializationName = parameter.Name.Equals(codeName, StringComparison.OrdinalIgnoreCase) ? string.Empty : parameter.Name.SanitizeParameterNameForUrlTemplate(),
                 Type = parameterType
             };
             // not using the content schema as RFC6570 will serialize arrays as CSVs and content expects a JSON array, we failsafe to opaque string, it could be improved by involving the serialization layers.
             methodToAdd.AddParameter(mParameter);
         }
     }
-    private static readonly string PathParametersParameterName = "pathParameters";
+    private const string PathParametersParameterName = "pathParameters";
     private void CreateUrlManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isApiClientClass)
     {
         var pathProperty = new CodeProperty
@@ -774,7 +777,7 @@ public partial class KiotaBuilder
 
         var requestAdapterProperty = new CodeProperty
         {
-            Name = requestAdapterParameterName,
+            Name = RequestAdapterParameterName,
             Documentation = new()
             {
                 Description = "The request adapter to use to execute the requests.",
@@ -784,7 +787,7 @@ public partial class KiotaBuilder
             ReadOnly = true,
             Type = new CodeType
             {
-                Name = coreInterfaceType,
+                Name = CoreInterfaceType,
                 IsExternal = true,
                 IsNullable = false,
             }
@@ -792,7 +795,7 @@ public partial class KiotaBuilder
         currentClass.AddProperty(requestAdapterProperty);
         var constructor = new CodeMethod
         {
-            Name = constructorMethodName,
+            Name = ConstructorMethodName,
             Kind = isApiClientClass ? CodeMethodKind.ClientConstructor : CodeMethodKind.Constructor,
             IsAsync = false,
             IsStatic = false,
@@ -801,7 +804,7 @@ public partial class KiotaBuilder
                 Description = $"Instantiates a new {currentClass.Name.ToFirstCharacterUpperCase()} and sets the default values.",
             },
             Access = AccessModifier.Public,
-            ReturnType = new CodeType { Name = voidType, IsExternal = true },
+            ReturnType = new CodeType { Name = VoidType, IsExternal = true },
             Parent = currentClass,
         };
         var pathParametersProperty = new CodeProperty
@@ -843,7 +846,7 @@ public partial class KiotaBuilder
         }
         constructor.AddParameter(new CodeParameter
         {
-            Name = requestAdapterParameterName,
+            Name = RequestAdapterParameterName,
             Type = requestAdapterProperty.Type,
             Optional = false,
             Documentation = (CodeDocumentation)requestAdapterProperty.Documentation.Clone(),
@@ -877,9 +880,9 @@ public partial class KiotaBuilder
     /// </summary>
     private void MapTypeDefinitions(CodeElement codeElement)
     {
-        var unmappedTypes = GetUnmappedTypeDefinitions(codeElement).Distinct();
+        var unmappedTypes = GetUnmappedTypeDefinitions(codeElement).Distinct().ToArray();
 
-        var unmappedTypesWithNoName = unmappedTypes.Where(x => string.IsNullOrEmpty(x.Name)).ToList();
+        var unmappedTypesWithNoName = unmappedTypes.Where(static x => string.IsNullOrEmpty(x.Name)).ToList();
 
         unmappedTypesWithNoName.ForEach(x =>
         {
@@ -904,7 +907,7 @@ public partial class KiotaBuilder
             {
                 parentNS = parentNS?.Parent as CodeNamespace;
                 x.TypeDefinition = (parentNS
-                    ?.FindNamespaceByName($"{parentNS?.Name}.{x.Name[..^requestBuilderSuffix.Length].ToFirstCharacterLowerCase()}".TrimEnd(nsNameSeparator))
+                    ?.FindNamespaceByName($"{parentNS?.Name}.{x.Name[..^RequestBuilderSuffix.Length].ToFirstCharacterLowerCase()}".TrimEnd(NsNameSeparator))
                     ?.FindChildrenByName<CodeClass>(x.Name))?.MinBy(shortestNamespaceOrder);
                 // in case of the .item namespace, going to the parent and then down to the target by convention
                 // this avoid getting the wrong request builder in case we have multiple request builders with the same name in the parent branch
@@ -922,7 +925,7 @@ public partial class KiotaBuilder
                 }
         });
     }
-    private static readonly char nsNameSeparator = '.';
+    private const char NsNameSeparator = '.';
     private static IEnumerable<CodeType> filterUnmappedTypeDefinitions(IEnumerable<CodeTypeBase?> source) =>
     source.OfType<CodeType>()
             .Union(source
@@ -1084,7 +1087,7 @@ public partial class KiotaBuilder
         {
             string returnType;
             if (operation.Responses.Any(static x => noContentStatusCodes.Contains(x.Key)))
-                returnType = voidType;
+                returnType = VoidType;
             else if (operation.Responses.Any(static x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
                 returnType = "string";
             else
@@ -1331,11 +1334,11 @@ public partial class KiotaBuilder
         if (string.IsNullOrEmpty(referenceId)) return string.Empty;
         if (referenceId.StartsWith(config.ClientClassName, StringComparison.OrdinalIgnoreCase)) // the client class having a namespace segment name can be problematic in some languages
             referenceId = referenceId[config.ClientClassName.Length..];
-        referenceId = referenceId.Trim(nsNameSeparator);
+        referenceId = referenceId.Trim(NsNameSeparator);
         if (!string.IsNullOrEmpty(modelNamespacePrefixToTrim) && referenceId.StartsWith(modelNamespacePrefixToTrim, StringComparison.OrdinalIgnoreCase))
             referenceId = referenceId[modelNamespacePrefixToTrim.Length..];
-        referenceId = referenceId.Trim(nsNameSeparator);
-        var lastDotIndex = referenceId.LastIndexOf(nsNameSeparator);
+        referenceId = referenceId.Trim(NsNameSeparator);
+        var lastDotIndex = referenceId.LastIndexOf(NsNameSeparator);
         var namespaceSuffix = lastDotIndex != -1 ? $".{referenceId[..lastDotIndex]}" : string.Empty;
         return $"{modelsNamespace?.Name}{namespaceSuffix}";
     }
@@ -1528,7 +1531,7 @@ public partial class KiotaBuilder
     }
     private CodeNamespace GetSearchNamespace(OpenApiUrlTreeNode currentNode, CodeNamespace currentNamespace)
     {
-        if (modelsNamespace != null && currentNode.DoesNodeBelongToItemSubnamespace() && !currentNamespace.Name.Contains(modelsNamespace.Name))
+        if (modelsNamespace != null && currentNode.DoesNodeBelongToItemSubnamespace() && !currentNamespace.Name.Contains(modelsNamespace.Name, StringComparison.Ordinal))
             return currentNamespace.EnsureItemNamespace();
         return currentNamespace;
     }
@@ -1682,7 +1685,7 @@ public partial class KiotaBuilder
         var result = new ConcurrentDictionary<CodeClass, List<CodeClass>>();
         Parallel.ForEach(models, x =>
         {
-            if (x.GetParentClass() is CodeClass parentClass && !result.TryAdd(parentClass, new() { x }))
+            if (x.ParentClass is CodeClass parentClass && !result.TryAdd(parentClass, new() { x }))
                 result[parentClass].Add(x);
         });
         return result;
@@ -1884,7 +1887,7 @@ public partial class KiotaBuilder
                 {
                     Description = "Serializes information the current object",
                 },
-                ReturnType = new CodeType { Name = voidType, IsNullable = false, IsExternal = true },
+                ReturnType = new CodeType { Name = VoidType, IsNullable = false, IsExternal = true },
                 Parent = model,
             };
             var parameter = new CodeParameter
@@ -1962,7 +1965,7 @@ public partial class KiotaBuilder
     }
     private CodeClass? CreateOperationParameterClass(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
-        var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters.Union(operation.Parameters).Where(static p => p.In == ParameterLocation.Query);
+        var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters.Union(operation.Parameters).Where(static p => p.In == ParameterLocation.Query).ToArray();
         if (parameters.Any())
         {
             var parameterClass = parentClass.AddInnerClass(new CodeClass
@@ -2005,7 +2008,7 @@ public partial class KiotaBuilder
             Type = resultType,
         };
 
-        if (!parameter.Name.Equals(prop.Name))
+        if (!parameter.Name.Equals(prop.Name, StringComparison.OrdinalIgnoreCase))
         {
             prop.SerializationName = parameter.Name.SanitizeParameterNameForUrlTemplate();
         }

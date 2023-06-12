@@ -12,6 +12,7 @@ public class LanguagesInformation : Dictionary<string, LanguageInformation>, IOp
     public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
     public void SerializeAsV3(IOpenApiWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStartObject();
         foreach (var entry in this.OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase))
         {
