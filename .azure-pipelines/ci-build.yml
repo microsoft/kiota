@@ -189,10 +189,6 @@ stages:
           - pwsh: dotnet pack $(Build.SourcesDirectory)/src/Kiota.Builder/Kiota.Builder.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
             displayName: "pack kiota builder"
 
-          # Pack
-          - pwsh: nuget pack $(Build.SourcesDirectory)/src/Microsoft.OpenApi.Kiota.ApiDescription.Client/Microsoft.OpenApi.Kiota.ApiDescription.Client.nuspec -OutputDirectory $(Build.ArtifactStagingDirectory)
-            displayName: "pack targets"
-
           - task: EsrpCodeSigning@2
             displayName: "ESRP CodeSigning Nuget Packages"
             inputs:
@@ -530,7 +526,6 @@ stages:
                     artifact: Nugets
                     source: current
                 - powershell: |
-                    Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg" -Verbose
                     Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
                   displayName: remove other nupkgs to avoid duplication
                 - task: NuGetCommand@2
@@ -538,32 +533,6 @@ stages:
                   inputs:
                     command: push
                     packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg"
-                    nuGetFeedType: external
-                    publishFeedCredentials: "OpenAPI Nuget Connection"
-
-      - deployment: deploy_targets
-        dependsOn: []
-        environment: nuget-org
-        pool:
-          vmImage: ubuntu-latest
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - download: none
-                - task: DownloadPipelineArtifact@2
-                  displayName: Download nupkg from artifacts
-                  inputs:
-                    artifact: Nugets
-                    source: current
-                - powershell: |
-                    Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.ApiDescription.*"
-                  displayName: remove other nupkgs to avoid duplication
-                - task: NuGetCommand@2
-                  displayName: "NuGet push"
-                  inputs:
-                    command: push
-                    packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg"
                     nuGetFeedType: external
                     publishFeedCredentials: "OpenAPI Nuget Connection"
 
