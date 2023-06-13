@@ -27,6 +27,7 @@ public class RubyConventionService : CommonLanguageConventionService
     }
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
+        ArgumentNullException.ThrowIfNull(parameter);
         var defaultValue = parameter.Optional && (targetElement is not CodeMethod currentMethod || !currentMethod.IsOfKind(CodeMethodKind.Setter)) ?
             $"={(string.IsNullOrEmpty(parameter.DefaultValue) ? "nil" : parameter.DefaultValue)}" :
             string.Empty;
@@ -43,15 +44,17 @@ public class RubyConventionService : CommonLanguageConventionService
     }
     public override string TranslateType(CodeType type)
     {
-        return type.Name switch
+        return type?.Name switch
         {
             "integer" => "number",
             "float" or "string" or "object" or "boolean" or "void" => type.Name, // little casing hack
+            null => "object",
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
     }
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         if (!string.IsNullOrEmpty(description))
         {
             writer.WriteLine($"{DocCommentPrefix}");
@@ -70,7 +73,7 @@ public class RubyConventionService : CommonLanguageConventionService
         return string.Empty;
     }
 #pragma warning restore CA1822 // Method should be static
-    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "#");
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "#", StringComparison.OrdinalIgnoreCase);
 #pragma warning disable CA1822 // Method should be static
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default)
     {
