@@ -117,7 +117,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         get; set;
     }
     public string RequestBodyContentType { get; set; } = string.Empty;
-    public HashSet<string> AcceptedResponseTypes { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+    public HashSet<string> AcceptedResponseTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public AccessModifier Access { get; set; } = AccessModifier.Public;
 #nullable disable // exposing property is required
     private CodeTypeBase returnType;

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -13,10 +14,12 @@ public class CodeUsingWriter
     }
     public void WriteCodeElement(IEnumerable<CodeUsing> usings, CodeNamespace parentNamespace, LanguageWriter writer)
     {
-        var externalImportSymbolsAndPaths = usings
+        ArgumentNullException.ThrowIfNull(writer);
+        var enumeratedUsings = usings.ToArray();
+        var externalImportSymbolsAndPaths = enumeratedUsings
                                                 .Where(static x => x.IsExternal)
                                                 .Select(static x => (x.Name, string.Empty, x.Declaration?.Name ?? string.Empty));
-        var internalImportSymbolsAndPaths = usings
+        var internalImportSymbolsAndPaths = enumeratedUsings
                                                 .Where(static x => !x.IsExternal)
                                                 .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNamespace));
         var importSymbolsAndPaths = externalImportSymbolsAndPaths.Union(internalImportSymbolsAndPaths)
