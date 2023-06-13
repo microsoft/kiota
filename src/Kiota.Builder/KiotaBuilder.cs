@@ -1464,7 +1464,7 @@ public partial class KiotaBuilder
         };
 
         // If typeNameForInlineSchema is not null and the schema is referenced, we have most likely unwrapped a referenced schema(most likely from an AllOf/OneOf/AnyOf).
-        // Therefore the current type/schema is not really inlined, so invalidate the typeNameForInlineSchema and let the work with the information from the schema reference.
+        // Therefore the current type/schema is not really inlined, so invalidate the typeNameForInlineSchema and just work with the information from the schema reference.
         if (schema.IsReferencedSchema() && !string.IsNullOrEmpty(typeNameForInlineSchema))
         {
             typeNameForInlineSchema = string.Empty;
