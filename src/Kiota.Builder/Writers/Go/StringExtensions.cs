@@ -7,5 +7,5 @@ public static class StringExtensions
     string.IsNullOrEmpty(s) ? s : s.TrimStart('[').TrimStart(']').TrimStart('*');
 
     public static string TrimSuffix(this string s, string suffix) =>
-        !string.IsNullOrEmpty(s) && s.EndsWith(suffix, StringComparison.Ordinal) ? s.Substring(0, s.Length - suffix.Length) : s;
+        !string.IsNullOrEmpty(s) && suffix != null && s.EndsWith(suffix, StringComparison.Ordinal) ? s[..^suffix.Length] : s;
 }

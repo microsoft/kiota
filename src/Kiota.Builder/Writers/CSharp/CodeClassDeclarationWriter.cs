@@ -29,8 +29,10 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
 
         var derivedTypes = new string?[] { codeElement.Inherits?.Name }
                                         .Union(codeElement.Implements.Select(static x => x.Name))
-                                        .Where(static x => x != null);
-        var derivation = derivedTypes.Any() ? ": " + derivedTypes.Select(static x => x.ToFirstCharacterUpperCase()).Aggregate(static (x, y) => $"{x}, {y}") + " " : string.Empty;
+                                        .Where(static x => x != null)
+                                        .Select(static x => x.ToFirstCharacterUpperCase())
+                                        .ToArray();
+        var derivation = derivedTypes.Any() ? ": " + derivedTypes.Aggregate(static (x, y) => $"{x}, {y}") + " " : string.Empty;
         if (codeElement.Parent is CodeClass parentClass)
             conventions.WriteLongDescription(parentClass.Documentation, writer);
         writer.WriteLine($"public class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}{{");

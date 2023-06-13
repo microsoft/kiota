@@ -29,13 +29,14 @@ public class GoConventionService : CommonLanguageConventionService
     }
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
+        ArgumentNullException.ThrowIfNull(parameter);
         return $"{parameter.Name.ToFirstCharacterLowerCase()} {GetTypeString(parameter.Type, targetElement)}";
     }
-    private static readonly char dot = '.';
+    private const char Dot = '.';
     public string GetImportedStaticMethodName(CodeTypeBase code, CodeElement targetElement, string methodPrefix = "New", string methodSuffix = "", string trimEnd = "")
     {
-        var typeString = GetTypeString(code, targetElement, false, false)?.Split(dot);
-        var importSymbol = typeString == null || typeString.Length < 2 ? string.Empty : typeString.First() + dot;
+        var typeString = GetTypeString(code, targetElement, false, false)?.Split(Dot);
+        var importSymbol = typeString == null || typeString.Length < 2 ? string.Empty : typeString.First() + Dot;
         var methodName = typeString?.Last().ToFirstCharacterUpperCase();
         if (!string.IsNullOrEmpty(trimEnd) && (methodName?.EndsWith(trimEnd, StringComparison.OrdinalIgnoreCase) ?? false))
         {
@@ -47,6 +48,7 @@ public class GoConventionService : CommonLanguageConventionService
         GetTypeString(code, targetElement, includeCollectionInformation, true);
     public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool addPointerSymbol, bool includeImportSymbol = true)
     {
+        ArgumentNullException.ThrowIfNull(targetElement);
         if (code is CodeComposedTypeBase)
             throw new InvalidOperationException($"Go does not support union types, the union type {code.Name} should have been filtered out by the refiner");
         if (code is CodeType currentType)
@@ -71,14 +73,15 @@ public class GoConventionService : CommonLanguageConventionService
             return $"{nullableSymbol}{collectionPrefix}{importSymbol}{typeName}";
         }
 
-        throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+        throw new InvalidOperationException($"type of type {code?.GetType()} is unknown");
     }
 
     public override string TranslateType(CodeType type) => throw new InvalidOperationException("use the overload instead.");
 #pragma warning disable CA1822 // Method should be static
     public string TranslateType(CodeTypeBase type, bool includeImportSymbol)
     {
-        if (type.Name?.StartsWith("map[") ?? false) return type.Name; //casing hack
+        ArgumentNullException.ThrowIfNull(type);
+        if (type.Name.StartsWith("map[", StringComparison.Ordinal)) return type.Name; //casing hack
 
         return type.Name switch
         {
@@ -112,13 +115,13 @@ public class GoConventionService : CommonLanguageConventionService
             "void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "Guid" or "DateTimeOffset"
             or "bool" or "int32" or "int64" or "float32" or "float64" or "UUID" or "Time" or "decimal" or "TimeOnly"
             or "DateOnly" or "ISODuration" or "uint8" => true,
-            "byte" when !typeName.StartsWith("[]") => true,
+            "byte" when !typeName.StartsWith("[]", StringComparison.OrdinalIgnoreCase) => true,
             _ => false,
         };
     }
     public bool IsScalarType(string typeName)
     {
-        if (typeName?.StartsWith("map[") ?? false) return true;
+        if (typeName?.StartsWith("map[", StringComparison.Ordinal) ?? false) return true;
         return typeName?.ToLowerInvariant() switch
         {
             "binary" or "base64" or "base64url" or "void" or "[]byte" => true,
@@ -161,6 +164,7 @@ public class GoConventionService : CommonLanguageConventionService
 
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLine($"{DocCommentPrefix}{description}");
     }
     public void WriteLinkDescription(CodeDocumentation documentation, LanguageWriter writer)

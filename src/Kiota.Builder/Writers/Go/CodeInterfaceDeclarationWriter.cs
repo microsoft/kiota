@@ -9,6 +9,8 @@ public class CodeInterfaceDeclarationWriter : CodeProprietableBlockDeclarationWr
     public CodeInterfaceDeclarationWriter(GoConventionService conventionService) : base(conventionService) { }
     protected override void WriteTypeDeclaration(InterfaceDeclaration codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is not CodeInterface inter) throw new InvalidOperationException("Expected the parent to be an interface");
         var interName = codeElement.Name.ToFirstCharacterUpperCase();
         conventions.WriteShortDescription($"{interName} {inter.Documentation.Description.ToFirstCharacterLowerCase()}", writer);

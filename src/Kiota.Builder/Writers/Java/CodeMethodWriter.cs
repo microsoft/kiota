@@ -259,8 +259,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     }
     private static void WriteRequestBuilderConstructorCall(CodeMethod codeElement, LanguageWriter writer)
     {
-        var pathParameters = codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path));
-        var pathParametersRef = pathParameters.Any() ? (", " + pathParameters.Select(static x => x.Name).Aggregate((x, y) => $"{x}, {y}")) : string.Empty;
+        var pathParameters = codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)).Select(static x => x.Name).ToArray();
+        var pathParametersRef = pathParameters.Any() ? (", " + pathParameters.Aggregate((x, y) => $"{x}, {y}")) : string.Empty;
         if (codeElement.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter &&
             codeElement.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter urlTemplateParamsParameter)
             writer.WriteLine($"this({urlTemplateParamsParameter.Name}, {requestAdapterParameter.Name}{pathParametersRef});");
@@ -334,7 +334,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
             currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam)
         {
-            var pathParameters = currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path));
+            var pathParameters = currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)).ToArray();
             if (pathParameters.Any())
                 conventions.AddParametersAssignment(writer,
                                                     pathParametersParam.Type,
@@ -440,9 +440,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private const string DeserializerVarName = "deserializerMap";
     private void WriteDeserializerBodyForInheritedModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool inherits)
     {
-        var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
+        var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).ToArray();
         writer.WriteLines(
-            $"final {DeserializerReturnType} {DeserializerVarName} = new {DeserializerReturnType}({(inherits ? "super." + method.Name.ToFirstCharacterLowerCase() + "()" : fieldToSerialize.Count())});");
+            $"final {DeserializerReturnType} {DeserializerVarName} = new {DeserializerReturnType}({(inherits ? "super." + method.Name.ToFirstCharacterLowerCase() + "()" : fieldToSerialize.Length)});");
         if (fieldToSerialize.Any())
         {
             fieldToSerialize

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -47,5 +48,5 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
             writer.CloseBlock();
     }
     private static readonly Func<int, string> GetEnumFlag = static idx =>
-        (idx == 0 ? 1 : Math.Pow(2, idx)).ToString();
+        (idx == 0 ? 1 : Math.Pow(2, idx)).ToString(CultureInfo.InvariantCulture);
 }

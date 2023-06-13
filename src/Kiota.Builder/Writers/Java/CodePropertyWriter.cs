@@ -8,6 +8,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
     public CodePropertyWriter(JavaConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.ExistsInExternalBaseType)
             return;
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");

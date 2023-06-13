@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 
@@ -8,6 +9,7 @@ public static class CodeParameterExtensions
 {
     public static CodeProperty? GetHeadersProperty(this CodeParameter parameter)
     {
+        ArgumentNullException.ThrowIfNull(parameter);
         return parameter.Type is CodeType type &&
                 type.TypeDefinition is CodeClass cls &&
                 cls.IsOfKind(CodeClassKind.RequestConfiguration) &&
@@ -17,6 +19,7 @@ public static class CodeParameterExtensions
     }
     public static CodeProperty? GetQueryProperty(this CodeParameter parameter)
     {
+        ArgumentNullException.ThrowIfNull(parameter);
         return parameter.Type is CodeType type &&
                 type.TypeDefinition is CodeClass cls &&
                 cls.IsOfKind(CodeClassKind.RequestConfiguration) &&
@@ -26,6 +29,7 @@ public static class CodeParameterExtensions
     }
     public static CodeProperty? GetOptionsProperty(this CodeParameter parameter)
     {
+        ArgumentNullException.ThrowIfNull(parameter);
         return parameter.Type is CodeType type &&
                 type.TypeDefinition is CodeClass cls &&
                 cls.IsOfKind(CodeClassKind.RequestConfiguration) &&

@@ -8,6 +8,8 @@ public class CodeIndexerWriter : BaseElementWriter<CodeIndexer, CSharpConvention
     public CodeIndexerWriter(CSharpConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeIndexer codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
