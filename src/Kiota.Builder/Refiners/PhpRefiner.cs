@@ -217,7 +217,7 @@ public class PhpRefiner : CommonLanguageRefiner
         {
             currentProperty.Type.IsNullable = false;
             currentProperty.Type.Name = "array";
-            currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex; 
+            currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
             currentProperty.DefaultValue = "[]";
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))
@@ -395,20 +395,19 @@ public class PhpRefiner : CommonLanguageRefiner
                 };
                 if (queryParameterProperty.Type is CodeType codeType && codeType.TypeDefinition is CodeClass queryParamsClass)
                 {
-                    var properties = queryParamsClass.GetPropertiesOfKind(CodePropertyKind.QueryParameter);
+                    var properties = queryParamsClass.GetPropertiesOfKind(CodePropertyKind.QueryParameter)
+                                        .Select(x => new CodeParameter
+                                        {
+                                            DefaultValue = x.DefaultValue,
+                                            Documentation = x.Documentation,
+                                            Name = x.Name,
+                                            Kind = CodeParameterKind.QueryParameter,
+                                            Optional = true,
+                                            Type = x.Type
+                                        }).ToArray();
                     if (properties.Any())
                     {
-                        queryParamFactoryMethod.AddParameter(properties
-                            .Select(x => new CodeParameter
-                            {
-                                DefaultValue = x.DefaultValue,
-                                Documentation = x.Documentation,
-                                Name = x.Name,
-                                Kind = CodeParameterKind.QueryParameter,
-                                Optional = true,
-                                Type = x.Type
-                            })
-                            .ToArray());
+                        queryParamFactoryMethod.AddParameter(properties);
                     }
                 }
                 codeClass.AddMethod(queryParamFactoryMethod);

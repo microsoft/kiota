@@ -187,6 +187,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     protected static void CorrectPropertyType(CodeProperty currentProperty)
     {
+        ArgumentNullException.ThrowIfNull(currentProperty);
         if (currentProperty.IsOfKind(CodePropertyKind.Options))
             currentProperty.DefaultValue = "new List<IRequestOption>()";
         else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
@@ -195,6 +196,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     protected static void CorrectMethodType(CodeMethod currentMethod)
     {
+        ArgumentNullException.ThrowIfNull(currentMethod);
         CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })

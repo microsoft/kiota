@@ -78,7 +78,7 @@ public class SwiftRefiner : CommonLanguageRefiner
         if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))
         {
             if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x =>
+                currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler", StringComparison.Ordinal)).ToList().ForEach(x =>
                 {
                     x.Type.Name = "ResponseHandler";
                     x.Type.IsNullable = false; //no pointers
@@ -87,7 +87,7 @@ public class SwiftRefiner : CommonLanguageRefiner
                 currentMethod.ReturnType.IsNullable = true;
         }
         else if (currentMethod.IsOfKind(CodeMethodKind.Serializer))
-            currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
+            currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter", StringComparison.Ordinal)).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
         else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
         {
             currentMethod.ReturnType.Name = "[String:FieldDeserializer<T>][String:FieldDeserializer<T>]";

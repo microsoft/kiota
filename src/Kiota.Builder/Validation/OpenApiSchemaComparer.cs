@@ -35,15 +35,15 @@ internal class OpenApiSchemaComparer : IEqualityComparer<OpenApiSchema>
                 discriminatorComparer.GetHashCode(obj.Discriminator) * 41 +
                 (GetHashCodeInternal(obj.AdditionalProperties, visitedSchemas) * 37) +
                 Convert.ToInt32(obj.AdditionalPropertiesAllowed) * 31 +
-                (obj.Properties.Select(x => GetHashCodeInternal(x.Value, visitedSchemas) + x.Key.GetHashCode()).SumUnchecked() * 29) +
+                (obj.Properties.Select(x => GetHashCodeInternal(x.Value, visitedSchemas) + x.Key.GetHashCode(StringComparison.Ordinal)).SumUnchecked() * 29) +
                 openApiAnyComparer.GetHashCode(obj.Default) * 23 +
                 (GetHashCodeInternal(obj.Items, visitedSchemas) * 19) +
                 (obj.OneOf.Select(x => GetHashCodeInternal(x, visitedSchemas)).SumUnchecked() * 17) +
                 (obj.AnyOf.Select(x => GetHashCodeInternal(x, visitedSchemas)).SumUnchecked() * 11) +
                 (obj.AllOf.Select(x => GetHashCodeInternal(x, visitedSchemas)).SumUnchecked() * 7) +
-                (string.IsNullOrEmpty(obj.Format) ? 0 : obj.Format.GetHashCode()) * 5 +
-                (string.IsNullOrEmpty(obj.Type) ? 0 : obj.Type.GetHashCode()) * 3 +
-                (string.IsNullOrEmpty(obj.Title) ? 0 : obj.Title.GetHashCode()) * 2;
+                (string.IsNullOrEmpty(obj.Format) ? 0 : obj.Format.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 5 +
+                (string.IsNullOrEmpty(obj.Type) ? 0 : obj.Type.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 3 +
+                (string.IsNullOrEmpty(obj.Title) ? 0 : obj.Title.GetHashCode(StringComparison.Ordinal)) * 2;
         }
         /**
          ignored properties since they don't impact generation:
@@ -83,8 +83,8 @@ internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscrimin
     public int GetHashCode([DisallowNull] OpenApiDiscriminator obj)
     {
         if (obj == null) return 0;
-        return (string.IsNullOrEmpty(obj.PropertyName) ? 0 : obj.PropertyName.GetHashCode()) * 89 +
-            (obj.Mapping?.Select(static x => x.Key.GetHashCode() + (string.IsNullOrEmpty(x.Value) ? 0 : x.Value.GetHashCode())).SumUnchecked() ?? 0) * 83;
+        return (string.IsNullOrEmpty(obj.PropertyName) ? 0 : obj.PropertyName.GetHashCode(StringComparison.Ordinal)) * 89 +
+            (obj.Mapping?.Select(static x => x.Key.GetHashCode(StringComparison.Ordinal) + (string.IsNullOrEmpty(x.Value) ? 0 : x.Value.GetHashCode(StringComparison.Ordinal))).SumUnchecked() ?? 0) * 83;
     }
 }
 internal class OpenApiAnyComparer : IEqualityComparer<IOpenApiAny>
@@ -98,6 +98,6 @@ internal class OpenApiAnyComparer : IEqualityComparer<IOpenApiAny>
     public int GetHashCode([DisallowNull] IOpenApiAny obj)
     {
         if (obj == null || obj.ToString() is not string stringValue || string.IsNullOrEmpty(stringValue)) return 0;
-        return stringValue.GetHashCode() * 97;
+        return stringValue.GetHashCode(StringComparison.Ordinal) * 97;
     }
 }

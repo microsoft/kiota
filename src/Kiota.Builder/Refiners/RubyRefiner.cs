@@ -39,7 +39,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             var reservedNamesProvider = new RubyReservedNamesProvider();
             CorrectNames(generatedCode, s =>
             {
-                if (s.Contains('_') &&
+                if (s.Contains('_', StringComparison.OrdinalIgnoreCase) &&
                      s.ToPascalCase(UnderscoreArray) is string refinedName &&
                     !reservedNamesProvider.ReservedNames.Contains(s) &&
                     !reservedNamesProvider.ReservedNames.Contains(refinedName))

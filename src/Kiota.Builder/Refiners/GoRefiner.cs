@@ -181,9 +181,9 @@ public class GoRefiner : CommonLanguageRefiner
         var search = "RequestBuilder";
         start = start.ToFirstCharacterUpperCase();
         end = end.ToFirstCharacterUpperCase();
-        var endPattern = end.Contains(search) ? end[..(end.IndexOf(search, StringComparison.OrdinalIgnoreCase) + search.Length)] : end;
+        var endPattern = end.Contains(search, StringComparison.OrdinalIgnoreCase) ? end[..(end.IndexOf(search, StringComparison.OrdinalIgnoreCase) + search.Length)] : end;
 
-        if (start.EndsWith(endPattern))
+        if (start.EndsWith(endPattern, StringComparison.OrdinalIgnoreCase))
             return $"{start[..start.IndexOf(endPattern, StringComparison.OrdinalIgnoreCase)]}{end}";
 
         return $"{start}{end}";
@@ -252,7 +252,7 @@ public class GoRefiner : CommonLanguageRefiner
             currentMethod.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace currentNamespace &&
             currentNamespace.Depth > 0 && currentMethod.ReturnType is CodeType ct &&
             ct.TypeDefinition is not null &&
-            !ct.Name.Equals(ct.TypeDefinition.Name))
+            !ct.Name.Equals(ct.TypeDefinition.Name, StringComparison.Ordinal))
         {
             ct.Name = ct.TypeDefinition.Name;
         }
@@ -284,7 +284,7 @@ public class GoRefiner : CommonLanguageRefiner
             // if the parent is not the models namespace rename and move it to package root
             var modelNameSpace = parentNameSpace.FindNamespaceByName($"{_configuration.ClientNamespaceName}.models");
             var packageRootNameSpace = findNameSpaceAtLevel(parentNameSpace, currentNamespace, 1);
-            if (!packageRootNameSpace.Name.Equals(currentNamespace.Name) && modelNameSpace != null && !currentNamespace.IsChildOf(modelNameSpace))
+            if (!packageRootNameSpace.Name.Equals(currentNamespace.Name, StringComparison.Ordinal) && modelNameSpace != null && !currentNamespace.IsChildOf(modelNameSpace))
             {
                 var classNameList = getPathsName(codeClass, codeClass.Name);
                 var newClassName = string.Join(string.Empty, classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
@@ -336,7 +336,7 @@ public class GoRefiner : CommonLanguageRefiner
         // update the code class name to include the entire path
         var currentNamespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
         var namespacePathSegments = new List<string>(currentNamespace.Name
-            .Replace(_configuration.ClientNamespaceName, string.Empty)
+            .Replace(_configuration.ClientNamespaceName, string.Empty, StringComparison.Ordinal)
             .TrimStart('.')
             .Split('.'));
         // add the namespace to the code class Name
@@ -345,7 +345,7 @@ public class GoRefiner : CommonLanguageRefiner
             .ToList();
 
         // check if the last element contains current name and remove it
-        if (namespacePathSegments.Count > 0 && removeDuplicate && fileName.ToFirstCharacterUpperCase().Contains(namespacePathSegments.Last()))
+        if (namespacePathSegments.Count > 0 && removeDuplicate && fileName.ToFirstCharacterUpperCase().Contains(namespacePathSegments.Last(), StringComparison.Ordinal))
             namespacePathSegments.RemoveAt(namespacePathSegments.Count - 1);
 
         namespacePathSegments.Add(fileName.ToFirstCharacterUpperCase());
@@ -373,7 +373,7 @@ public class GoRefiner : CommonLanguageRefiner
             && codeClass.Parent is CodeNamespace currentNamespace
             && !codeClass.IsOfKind(CodeClassKind.Model)
             && findClientNameSpace(codeClass.Parent) is CodeNamespace rootNameSpace
-            && !rootNameSpace.Name.Equals(currentNamespace.Name)
+            && !rootNameSpace.Name.Equals(currentNamespace.Name, StringComparison.Ordinal)
             && !currentNamespace.IsChildOf(rootNameSpace, true))
         {
             var classNameList = getPathsName(codeClass, codeClass.Name.ToFirstCharacterUpperCase());

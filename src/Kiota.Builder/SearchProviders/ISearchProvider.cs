@@ -13,6 +13,6 @@ public interface ISearchProvider
     }
     HashSet<string> KeysToExclude
     {
-        get; set;
+        get; init;
     }
 }
