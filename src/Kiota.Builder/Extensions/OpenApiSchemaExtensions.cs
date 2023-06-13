@@ -17,7 +17,7 @@ public static class OpenApiSchemaExtensions
         if (schema.Items != null)
             return schema.Items.GetSchemaNames();
         if (!string.IsNullOrEmpty(schema.Reference?.Id))
-            return new[] { schema.Reference.Id.Split('/').Last().Split('.').Last() };
+            return new[] { schema.Reference.Id.Split('/')[^1].Split('.')[^1] };
         if (schema.AnyOf.Any())
             return schema.AnyOf.FlattenIfRequired(classNamesFlattener);
         if (schema.AllOf.Any())
@@ -32,7 +32,7 @@ public static class OpenApiSchemaExtensions
     }
     private static IEnumerable<string> FlattenIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter)
     {
-        return (schemas.Count == 1 && string.IsNullOrEmpty(schemas.First().Title) ?
+        return (schemas.Count == 1 && string.IsNullOrEmpty(schemas[0].Title) ?
                     schemas.FlattenEmptyEntries(subsequentGetter, 1) :
                     schemas)
             .Select(static x => x.Title).Where(static x => !string.IsNullOrEmpty(x));
@@ -196,7 +196,7 @@ public static class OpenApiSchemaExtensions
         if (schema.AnyOf.Select(GetDiscriminatorPropertyName).FirstOrDefault(static x => !string.IsNullOrEmpty(x)) is string anyOfDiscriminatorPropertyName)
             return anyOfDiscriminatorPropertyName;
         if (schema.AllOf.Any())
-            return GetDiscriminatorPropertyName(schema.AllOf.Last());
+            return GetDiscriminatorPropertyName(schema.AllOf[^1]);
 
         return string.Empty;
     }
@@ -209,7 +209,7 @@ public static class OpenApiSchemaExtensions
                 return schema.OneOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex));
             else if (schema.AnyOf.Any())
                 return schema.AnyOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex));
-            else if (schema.AllOf.Any(allOfEvaluatorForMappings) && schema.AllOf.Last().Equals(schema.AllOf.Last(allOfEvaluatorForMappings)))
+            else if (schema.AllOf.Any(allOfEvaluatorForMappings) && schema.AllOf[^1].Equals(schema.AllOf.Last(allOfEvaluatorForMappings)))
                 // ensure the matched AllOf entry is the last in the list
                 return GetDiscriminatorMappings(schema.AllOf.Last(allOfEvaluatorForMappings), inheritanceIndex);
             else if (!string.IsNullOrEmpty(schema.Reference?.Id))

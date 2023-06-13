@@ -1445,6 +1445,79 @@ paths:
         Assert.NotNull(derivedResourceInfoClass);
         Assert.NotNull(responseClass);
     }
+    
+    [Fact]
+    public void Inline_Property_Inheritance_Is_Supported2()
+    {
+        var resourceSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Reference = new OpenApiReference
+            {
+                Id = "resource"
+            },
+            UnresolvedReference = false
+        };
+
+        var properties = new Dictionary<string, OpenApiSchema>
+        {
+            { "info", new OpenApiSchema { Type = "string", } },
+            { "derivedResource", new OpenApiSchema { AllOf = new List<OpenApiSchema> { resourceSchema, } } },
+        };
+
+        resourceSchema.Properties = properties;
+        
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["resource/{id}"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema {
+                                                AllOf = new List<OpenApiSchema>()
+                                                {
+                                                    resourceSchema
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "#/components/resource", resourceSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        builder.SetOpenApiDocument(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var resourceClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("resource");
+        var itemsNS = codeModel.FindNamespaceByName("ApiSdk.resource.item");
+        var responseClass = itemsNS.FindChildByName<CodeClass>("ResourceResponse");
+
+
+        Assert.NotNull(resourceClass);
+        Assert.Null(responseClass);
+    }
     [Fact]
     public void MapsTime()
     {
