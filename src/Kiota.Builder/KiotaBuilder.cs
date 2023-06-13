@@ -1463,6 +1463,13 @@ public partial class KiotaBuilder
             false => (parentElement.GetImmediateParentOfType<CodeNamespace>(), null, suffixForInlineSchema), // Inline schema, i.e. specific to the Operation
         };
 
+        // If typeNameForInlineSchema is not null and the schema is referenced, we have most likely unwrapped a referenced schema(most likely from an AllOf/OneOf/AnyOf).
+        // Therefore the current type/schema is not really inlined, so invalidate the typeNameForInlineSchema and just work with the information from the schema reference.
+        if (schema.IsReferencedSchema() && !string.IsNullOrEmpty(typeNameForInlineSchema))
+        {
+            typeNameForInlineSchema = string.Empty;
+        }
+
         if (schema.IsInherited())
         {
             return CreateInheritedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody);
