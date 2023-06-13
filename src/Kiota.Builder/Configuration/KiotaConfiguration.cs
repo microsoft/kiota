@@ -2,6 +2,8 @@
 
 namespace Kiota.Builder.Configuration;
 
+#pragma warning disable CA2227
+#pragma warning disable CA1002
 public class KiotaConfiguration : ICloneable
 {
     public GenerationConfiguration Generation { get; set; } = new();
@@ -20,3 +22,5 @@ public class KiotaConfiguration : ICloneable
         };
     }
 }
+#pragma warning restore CA1002
+#pragma warning restore CA2227

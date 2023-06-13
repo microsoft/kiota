@@ -17,7 +17,7 @@ public class PatAccessTokenProvider : IAccessTokenProvider
     {
         ArgumentNullException.ThrowIfNull(uri);
         if ("https".Equals(uri.Scheme, StringComparison.OrdinalIgnoreCase) && AllowedHostsValidator.IsUrlHostValid(uri))
-            return await StorageService.GetTokenAsync(cancellationToken) ?? string.Empty;
+            return await StorageService.GetTokenAsync(cancellationToken).ConfigureAwait(false) ?? string.Empty;
         return string.Empty;
     }
 }

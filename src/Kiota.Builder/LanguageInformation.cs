@@ -69,6 +69,7 @@ public record LanguageDependency : IOpenApiSerializable
     public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV3(writer);
     public void SerializeAsV3(IOpenApiWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStartObject();
         writer.WriteProperty(nameof(Name).ToFirstCharacterLowerCase(), Name);
         writer.WriteProperty(nameof(Version).ToFirstCharacterLowerCase(), Version);

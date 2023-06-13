@@ -9,7 +9,7 @@ namespace Kiota.Builder.SearchProviders.MSGraph;
 public class OpenApiSpecSearchProvider : ISearchProvider
 {
     public string ProviderKey => "oas";
-    public HashSet<string> KeysToExclude { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public HashSet<string> KeysToExclude { get; init; } = new(StringComparer.OrdinalIgnoreCase);
     public Task<IDictionary<string, SearchResult>> SearchAsync(string term, string? version, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(term);

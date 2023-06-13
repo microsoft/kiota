@@ -4,6 +4,9 @@ using System.Linq;
 using Kiota.Builder.Lock;
 
 namespace Kiota.Builder.Configuration;
+#pragma warning disable CA2227
+#pragma warning disable CA1002
+#pragma warning disable CA1056
 public class GenerationConfiguration : ICloneable
 {
     public string OpenAPIFilePath { get; set; } = "openapi.yaml";
@@ -135,3 +138,6 @@ public class GenerationConfiguration : ICloneable
             StructuredMimeTypes = new(languageInfo.StructuredMimeTypes, StringComparer.OrdinalIgnoreCase);
     }
 }
+#pragma warning restore CA1056
+#pragma warning restore CA1002
+#pragma warning restore CA2227

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
@@ -123,7 +124,7 @@ public static class StringExtensions
     {
         if (string.IsNullOrEmpty(input)) return string.Empty;
         var hash = (sha.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(input));
-        return hash.Select(static b => b.ToString("x2")).Aggregate(static (x, y) => x + y);
+        return hash.Select(static b => b.ToString("x2", CultureInfo.InvariantCulture)).Aggregate(static (x, y) => x + y);
     }
     /// <summary>
     /// For Php strings, having double quotes around strings might cause an issue

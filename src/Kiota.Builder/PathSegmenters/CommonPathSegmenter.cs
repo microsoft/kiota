@@ -15,8 +15,14 @@ public abstract class CommonPathSegmenter : IPathSegmenter
         ClientNamespaceName = clientNamespaceName;
         RootPath = rootPath.Contains(Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ? rootPath : rootPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
     }
-    protected readonly string ClientNamespaceName;
-    protected readonly string RootPath;
+    protected string ClientNamespaceName
+    {
+        get; init;
+    }
+    protected string RootPath
+    {
+        get; init;
+    }
     public abstract string FileSuffix
     {
         get;

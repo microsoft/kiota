@@ -56,7 +56,7 @@ public class GitHubSearchProvider : ISearchProvider
     };
     public HashSet<string> KeysToExclude
     {
-        get; set;
+        get; init;
     }
     public Task<IDictionary<string, SearchResult>> SearchAsync(string term, string? version, CancellationToken cancellationToken)
     {
@@ -67,14 +67,14 @@ public class GitHubSearchProvider : ISearchProvider
         !string.IsNullOrEmpty(organization) && blockLists.Item1.Contains(organization) || blockLists.Item2.Contains($"{organization}/{repo}");
     private async Task<IDictionary<string, SearchResult>> SearchAsyncInternal(string term, CancellationToken cancellationToken)
     {
-        var blockLists = await GetBlockLists(cancellationToken);
-        var isSignedIn = _isSignedInCallback != null && await _isSignedInCallback(cancellationToken);
+        var blockLists = await GetBlockLists(cancellationToken).ConfigureAwait(false);
+        var isSignedIn = _isSignedInCallback != null && await _isSignedInCallback(cancellationToken).ConfigureAwait(false);
         var authenticationProvider = _authenticatedAuthenticationProvider != null && isSignedIn ?
             _authenticatedAuthenticationProvider :
             new Authentication.AnonymousAuthenticationProvider();
-        var gitHubRequestAdapter = new HttpClientRequestAdapter(authenticationProvider, httpClient: _httpClient);
+        using var gitHubRequestAdapter = new HttpClientRequestAdapter(authenticationProvider, httpClient: _httpClient);
         var gitHubClient = new GitHubClient.GitHubClient(gitHubRequestAdapter);
-        if (term.Contains('/'))
+        if (term.Contains('/', StringComparison.OrdinalIgnoreCase))
         {
             var parts = term.Split('/', StringSplitOptions.RemoveEmptyEntries);
             var owner = parts[0];
@@ -109,13 +109,17 @@ public class GitHubSearchProvider : ISearchProvider
     {
         try
         {
-            await using var document = await documentCachingProvider.GetDocumentAsync(_blockListUrl, "search", _blockListUrl.GetFileName(), "text/yaml", cancellationToken);
+#pragma warning disable CA2007
+            await using var document = await documentCachingProvider.GetDocumentAsync(_blockListUrl, "search", _blockListUrl.GetFileName(), "text/yaml", cancellationToken).ConfigureAwait(false);
+#pragma warning restore CA2007
             var deserialized = deserializeDocumentFromYaml<BlockList>(document);
             return new Tuple<HashSet<string>, HashSet<string>>(
                 new HashSet<string>(deserialized.Organizations.Distinct(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase),
                 new HashSet<string>(deserialized.Repositories.Distinct(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase));
         }
+#pragma warning disable CA1031
         catch (Exception ex)
+#pragma warning restore CA1031
         {
             _logger.LogError(ex, "Error while getting block list");
             return new Tuple<HashSet<string>, HashSet<string>>(new HashSet<string>(StringComparer.OrdinalIgnoreCase), new HashSet<string>(StringComparer.OrdinalIgnoreCase));
@@ -126,7 +130,7 @@ public class GitHubSearchProvider : ISearchProvider
                 .WithNamingConvention(new YamlNamingConvention())
                 .IgnoreUnmatchedProperties()
                 .Build());
-    private static async Task<IndexRoot?> deserializeDocumentFromJson(Stream document, CancellationToken cancellationToken) => await JsonSerializer.DeserializeAsync(document, indexRootContext.IndexRoot, cancellationToken);
+    private static async Task<IndexRoot?> deserializeDocumentFromJson(Stream document, CancellationToken cancellationToken) => await JsonSerializer.DeserializeAsync(document, indexRootContext.IndexRoot, cancellationToken).ConfigureAwait(false);
     private static readonly IndexRootJsonContext indexRootContext = new(new JsonSerializerOptions
     {
         PropertyNameCaseInsensitive = true,
@@ -147,10 +151,12 @@ public class GitHubSearchProvider : ISearchProvider
             if (response == null || !response.AdditionalData.TryGetValue(DownloadUrlKey, out var rawDownloadUrl) || rawDownloadUrl is not string downloadUrl || string.IsNullOrEmpty(downloadUrl))
                 return Enumerable.Empty<Tuple<string, SearchResult>>();
             var targetUrl = new Uri(downloadUrl);
-            await using var document = await documentCachingProvider.GetDocumentAsync(targetUrl, "search", targetUrl.GetFileName(), accept, cancellationToken);
+#pragma warning disable CA2007
+            await using var document = await documentCachingProvider.GetDocumentAsync(targetUrl, "search", targetUrl.GetFileName(), accept, cancellationToken).ConfigureAwait(false);
+#pragma warning restore CA2007
             var indexFile = accept.ToLowerInvariant() switch
             {
-                "application/json" => await deserializeDocumentFromJson(document, cancellationToken),
+                "application/json" => await deserializeDocumentFromJson(document, cancellationToken).ConfigureAwait(false),
                 "text/yaml" => deserializeDocumentFromYaml<IndexRoot>(document),
                 _ => throw new InvalidOperationException($"Unsupported accept type {accept}"),
             };
@@ -175,19 +181,19 @@ public class GitHubSearchProvider : ISearchProvider
         }
         catch (BasicError)
         {
-            _logger.LogInformation("Unable to find {fileName} in {org}/{repo}", fileName, org, repo);
+            _logger.LogInformation("Unable to find {FileName} in {Org}/{Repo}", fileName, org, repo);
         }
         catch (Exception ex) when (ex is YamlException || ex is JsonException)
         {
 #if DEBUG
-            _logger.LogError(ex, "Error while parsing the file {fileName} in {org}/{repo}", fileName, org, repo);
+            _logger.LogError(ex, "Error while parsing the file {FileName} in {Org}/{Repo}", fileName, org, repo);
 #else
-            _logger.LogInformation("Error while parsing the file {fileName} in {org}/{repo}", fileName, org, repo);
+            _logger.LogInformation("Error while parsing the file {FileName} in {Org}/{Repo}", fileName, org, repo);
 #endif
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogError(ex, "Error while downloading the file {fileName} in {org}/{repo}", fileName, org, repo);
+            _logger.LogError(ex, "Error while downloading the file {FileName} in {Org}/{Repo}", fileName, org, repo);
         }
         return Enumerable.Empty<Tuple<string, SearchResult>>();
     }
@@ -219,7 +225,7 @@ public class GitHubSearchProvider : ISearchProvider
         }
         catch (BasicError)
         {
-            _logger.LogInformation("Unable to find {fileName} in {org}/{repo}", originalUrl, org, repo);
+            _logger.LogInformation("Unable to find {FileName} in {Org}/{Repo}", originalUrl, org, repo);
         }
         return new Tuple<string, string?>(originalUrl, null);
     }
@@ -234,8 +240,8 @@ public class GitHubSearchProvider : ISearchProvider
             {
                 x.QueryParameters.Q = $"{term} topic:{topic} fork:true";
                 x.QueryParameters.Page = pageNumber;
-                _logger.LogTrace("Page {pageNumber}", x.QueryParameters.Page); // using the property is intentional to avoid trimming
-                _logger.LogTrace("Query: {query}", x.QueryParameters.Q);
+                _logger.LogTrace("Page {PageNumber}", x.QueryParameters.Page); // using the property is intentional to avoid trimming
+                _logger.LogTrace("Query: {Query}", x.QueryParameters.Q);
             }, cancellationToken).ConfigureAwait(false);
             if (reposPage == null)
                 break;

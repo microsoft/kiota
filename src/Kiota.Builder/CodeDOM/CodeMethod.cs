@@ -230,7 +230,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// The base url for every request read from the servers property on the description.
     /// Only provided for constructor on Api client
     /// </summary>
+#pragma warning disable CA1056 // Uri properties should not be strings
     public string BaseUrl { get; set; } = string.Empty;
+#pragma warning restore CA1056 // Uri properties should not be strings
 
     /// <summary>
     /// This is currently used for CommandBuilder methods to get the original name without the Build prefix & Command suffix.
