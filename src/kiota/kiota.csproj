@@ -33,7 +33,7 @@
   </PropertyGroup>
 
   <PropertyGroup><!-- the source generators emmit warnings -->
-    <NoWarn>$(NoWarn);CS8785</NoWarn>
+    <NoWarn>$(NoWarn);CS8785;NU5048</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
