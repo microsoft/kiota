@@ -1445,7 +1445,7 @@ paths:
         Assert.NotNull(derivedResourceInfoClass);
         Assert.NotNull(responseClass);
     }
-    
+
     [Fact]
     public void Inline_Property_Inheritance_Is_Supported2()
     {
@@ -1466,7 +1466,7 @@ paths:
         };
 
         resourceSchema.Properties = properties;
-        
+
         var document = new OpenApiDocument
         {
             Paths = new OpenApiPaths
