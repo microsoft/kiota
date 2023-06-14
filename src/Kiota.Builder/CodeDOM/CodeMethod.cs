@@ -117,7 +117,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         get; set;
     }
     public string RequestBodyContentType { get; set; } = string.Empty;
+#pragma warning disable CA2227
     public HashSet<string> AcceptedResponseTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+#pragma warning restore CA2227
     public AccessModifier Access { get; set; } = AccessModifier.Public;
 #nullable disable // exposing property is required
     private CodeTypeBase returnType;
@@ -200,8 +202,10 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         get => IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter);
     }
+#pragma warning disable CA2227
     public HashSet<string> SerializerModules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public HashSet<string> DeserializerModules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+#pragma warning restore CA2227
     /// <summary>
     /// Indicates whether this method is an overload for another method.
     /// </summary>

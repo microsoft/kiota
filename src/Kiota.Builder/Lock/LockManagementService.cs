@@ -34,7 +34,9 @@ public class LockManagementService : ILockManagementService
         var lockFile = Path.Combine(directoryPath, LockFileName);
         if (File.Exists(lockFile))
         {
+#pragma warning disable CA2007
             await using var fileStream = File.OpenRead(lockFile);
+#pragma warning restore CA2007
             return await GetLockFromStreamInternalAsync(fileStream, cancellationToken).ConfigureAwait(false);
         }
         return null;
@@ -65,7 +67,9 @@ public class LockManagementService : ILockManagementService
     private static async Task WriteLockFileInternalAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken)
     {
         var lockFilePath = Path.Combine(directoryPath, LockFileName);
+#pragma warning disable CA2007
         await using var fileStream = File.Open(lockFilePath, FileMode.Create);
+#pragma warning restore CA2007
         await JsonSerializer.SerializeAsync(fileStream, lockInfo, context.KiotaLock, cancellationToken).ConfigureAwait(false);
     }
     /// <inheritdoc/>

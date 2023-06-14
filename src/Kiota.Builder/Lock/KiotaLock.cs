@@ -51,6 +51,7 @@ public class KiotaLock
     {
         get; set;
     }
+#pragma warning disable CA2227
     /// <summary>
     /// The serializers used for this client.
     /// </summary>
@@ -75,6 +76,7 @@ public class KiotaLock
     /// The OpenAPI validation rules to disable during the generation.
     /// </summary>
     public HashSet<string> DisabledValidationRules { get; set; } = new();
+#pragma warning restore CA2227
     /// <summary>
     /// Updates the passed configuration with the values from the lock file.
     /// </summary>
