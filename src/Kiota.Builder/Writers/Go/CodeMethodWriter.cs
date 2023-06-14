@@ -663,9 +663,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         writer.WriteLines($"{targetVarName} := make([]{propertyTypeImportName}, len({sourceVarName}))",
             $"for i, v := range {sourceVarName} {{");
         writer.IncreaseIndent();
+        writer.StartBlock("if v != nil {");
         var derefPrefix = dereference ? "*(" : string.Empty;
         var derefSuffix = dereference ? ")" : string.Empty;
         writer.WriteLine($"{targetVarName}[i] = {GetTypeAssertion(derefPrefix + "v", pointerSymbol + propertyTypeImportName)}{derefSuffix}");
+        writer.CloseBlock();
         writer.CloseBlock();
     }
 
@@ -919,11 +921,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             writer.WriteLines($"cast := make([]{parsableSymbol}, len({valueGet}))",
                 $"for i, v := range {valueGet} {{");
             writer.IncreaseIndent();
+            writer.StartBlock("if v != nil {");
             if (isInterface)
                 writer.WriteLine($"cast[i] = {GetTypeAssertion("v", parsableSymbol)}");
             else
                 writer.WriteLines("temp := v", // temporary creating a new reference to avoid pointers to the same object
                     $"cast[i] = {parsableSymbol}(&temp)");
+            writer.CloseBlock();
             writer.CloseBlock();
         }
         var collectionPrefix = propType.IsCollection ? "CollectionOf" : string.Empty;
