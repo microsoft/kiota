@@ -15,7 +15,7 @@ public class CodeElementOrderComparer : IComparer<CodeElement>
             (_, null) => 1,
             _ => GetTypeFactor(x).CompareTo(GetTypeFactor(y)) * TypeWeight +
 #pragma warning disable CA1062
-                StringComparer.OrdinalIgnoreCase.Compare(x.Name, y.Name) * NameWeight +
+                StringComparer.InvariantCultureIgnoreCase.Compare(x.Name, y.Name) * NameWeight +
 #pragma warning restore CA1062
                 GetMethodKindFactor(x).CompareTo(GetMethodKindFactor(y)) * methodKindWeight +
                 GetParametersFactor(x).CompareTo(GetParametersFactor(y)) * ParametersWeight,
