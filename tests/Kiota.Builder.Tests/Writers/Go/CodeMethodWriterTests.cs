@@ -799,6 +799,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("result.SetStringValue(val)", result);
         Assert.Contains("else if val, err := parseNode.GetCollectionOfObjectValues(CreateComplexType2FromDiscriminatorValue); val != nil {", result);
         Assert.Contains("cast := make([]ComplexType2, len(val))", result);
+        Assert.Contains("if v != nil ", result);
         Assert.Contains("for i, v := range val", result);
         Assert.Contains("result.SetComplexType2Value(cast)", result);
         Assert.Contains("return result, nil", result);
