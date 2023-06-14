@@ -6,9 +6,12 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <TargetFramework>net7.0</TargetFramework>
     <SignAssembly>true</SignAssembly>
+    <PackageIconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</PackageIconUrl>
     <PackageProjectUrl>https://github.com/microsoft/kiota</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <Authors>Microsoft</Authors>
     <Company>Microsoft</Company>
     <Title>Microsoft.OpenApi.Kiota.Builder</Title>
@@ -29,7 +32,7 @@
   </PropertyGroup>
 
   <PropertyGroup><!-- the source generators emmit warnings -->
-    <NoWarn>$(NoWarn);CS8785</NoWarn>
+    <NoWarn>$(NoWarn);CS8785;NU5048</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -46,6 +49,10 @@
     <PackageReference Include="YamlDotNet" Version="13.1.0" />
     <ProjectReference Include="..\Kiota.Generated\KiotaGenerated.csproj" OutputItemType="Analyzer"
       ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="../../LICENSE" Pack="true" PackagePath="" />
+    <None Include="../../README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
 </Project>
