@@ -599,8 +599,8 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             writer.WriteLine($"return new(new(0), new(0));");
             return;
         }
-        bool hasExecutable = builderMethods.Any(static m => m.HttpMethod is not null);
-        bool hasNonExecutable = builderMethods.Any(static m => m.HttpMethod is null);
+        bool hasExecutable = Array.Exists(builderMethods, static m => m.HttpMethod is not null);
+        bool hasNonExecutable = Array.Exists(builderMethods, static m => m.HttpMethod is null);
 
         if (hasExecutable)
         {

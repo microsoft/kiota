@@ -36,7 +36,7 @@ public class GoConventionService : CommonLanguageConventionService
     public string GetImportedStaticMethodName(CodeTypeBase code, CodeElement targetElement, string methodPrefix = "New", string methodSuffix = "", string trimEnd = "")
     {
         var typeString = GetTypeString(code, targetElement, false, false)?.Split(Dot);
-        var importSymbol = typeString == null || typeString.Length < 2 ? string.Empty : typeString.First() + Dot;
+        var importSymbol = typeString == null || typeString.Length < 2 ? string.Empty : typeString[0] + Dot;
         var methodName = typeString?.Last().ToFirstCharacterUpperCase();
         if (!string.IsNullOrEmpty(trimEnd) && (methodName?.EndsWith(trimEnd, StringComparison.OrdinalIgnoreCase) ?? false))
         {

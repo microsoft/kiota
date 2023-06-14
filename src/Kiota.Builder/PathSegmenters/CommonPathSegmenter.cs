@@ -31,7 +31,7 @@ public abstract class CommonPathSegmenter : IPathSegmenter
     public abstract string NormalizeFileName(CodeElement currentElement);
     public virtual string NormalizePath(string fullPath) => fullPath;
     public virtual IEnumerable<string> GetAdditionalSegment(CodeElement currentElement, string fileName) => Enumerable.Empty<string>();
-    protected static string GetLastFileNameSegment(CodeElement currentElement) => currentElement?.Name.Split('.').Last() ?? string.Empty;
+    protected static string GetLastFileNameSegment(CodeElement currentElement) => currentElement?.Name.Split('.')[^1] ?? string.Empty;
     public string GetPath(CodeNamespace currentNamespace, CodeElement currentElement, bool shouldNormalizePath = true)
     {
         ArgumentNullException.ThrowIfNull(currentNamespace);

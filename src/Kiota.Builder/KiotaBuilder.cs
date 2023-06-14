@@ -460,7 +460,7 @@ public partial class KiotaBuilder
         foreach (var segment in longestKeySegments)
         {
             var testValue = (candidate + NsNameSeparator + segment).Trim(NsNameSeparator);
-            if (distinctKeys.All(x => x.StartsWith(testValue, StringComparison.OrdinalIgnoreCase)))
+            if (Array.TrueForAll(distinctKeys, x => x.StartsWith(testValue, StringComparison.OrdinalIgnoreCase)))
                 candidate = testValue;
             else
                 break;
@@ -495,7 +495,7 @@ public partial class KiotaBuilder
                         .ToArray();
         if (indexNodes.Length > 1)
         {
-            var indexNode = indexNodes.First();
+            var indexNode = indexNodes[0];
             foreach (var child in indexNodes.Except(new[] { indexNode }))
             {
                 node.Children.Remove(child.Key);
