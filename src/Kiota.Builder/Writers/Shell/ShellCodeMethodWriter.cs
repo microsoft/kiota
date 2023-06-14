@@ -546,12 +546,11 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         {
             var targetClass = conventions.GetTypeString(codeReturnType, codeElement);
 
+            // If the nav property has more than 1 match, then it means it
+            // has been initialized by another command builder. Filter it out.
             var builderMethods = typeDef.Methods // Already ordered by name
                 .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                 .GroupBy(static m => m.SimpleName, StringComparer.OrdinalIgnoreCase)
-
-                // If the nav property has more than 1 match, then it means it
-                // has been initialized by another command builder. Filter it out.
                 .Select(static m => m.Count() > 1 ? m.Where(static m1 => m1.AccessedProperty is null) : m)
                 .SelectMany(static x => x) ??
                 Enumerable.Empty<CodeMethod>();
@@ -590,10 +589,10 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             .Select(static m => m.SimpleName)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+        // If a method with the same name exists in the indexer's parent class, filter it.
         var builderMethods = (td.Methods
-            // If a method with the same name exists in the indexer's parent class, filter it.
             .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && !parentMethodNames.Contains(m.SimpleName)) ??
-            Enumerable.Empty<CodeMethod>())
+        Enumerable.Empty<CodeMethod>())
             .ToArray();
         if (!builderMethods.Any())
         {
