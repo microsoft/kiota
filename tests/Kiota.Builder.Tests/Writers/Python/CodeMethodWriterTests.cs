@@ -968,12 +968,12 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("if mapping_value and mapping_value.casefold() == \"#kiota.complexType1\".casefold():", result);
         Assert.Contains("from . import complex_type1", result);
         Assert.Contains("result.complex_type1_value = complex_type1.ComplexType1()", result);
-        Assert.Contains("elif isinstance(string_value_value := parse_node.get_str_value(), str):", result);
+        Assert.Contains("elif string_value_value := parse_node.get_str_value():", result);
         Assert.Contains("result.string_value = string_value_value", result);
-        Assert.Contains("elif isinstance(complex_type2_value_value := parse_node.get_collection_of_object_values(complex_type2.ComplexType2), list):", result);
+        Assert.Contains("elif complex_type2_value_value := parse_node.get_collection_of_object_values(complex_type2.ComplexType2):", result);
         Assert.Contains("result.complex_type2_value = complex_type2_value_value", result);
         Assert.Contains("return result", result);
-        AssertExtensions.Before("get_str_value(), str", "get_collection_of_object_values(ComplexType2)", result);
+        AssertExtensions.Before("get_str_value(), str", "get_collection_of_object_values(complex_type2.ComplexType2)", result);
     }
     [Fact]
     public void WritesModelFactoryBodyForIntersectionModels()
@@ -1005,15 +1005,15 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("mapping_value = parse_node.get_child_node(\"@odata.type\").get_str_value()", result);
         Assert.Contains("result = IntersectionTypeWrapper()", result);
         Assert.DoesNotContain("if mapping_value and mapping_value.casefold() == \"#kiota.complexType1\".casefold():", result);
-        Assert.Contains("if isinstance(string_value_value := parse_node.get_str_value(), str):", result);
+        Assert.Contains("if string_value_value := parse_node.get_str_value():", result);
         Assert.Contains("result.string_value = string_value_value", result);
-        Assert.Contains("elif isinstance(complex_type2_value_value := parse_node.get_collection_of_object_values(complex_type2.ComplexType2), list):", result);
+        Assert.Contains("elif complex_type2_value_value := parse_node.get_collection_of_object_values(complex_type2.ComplexType2):", result);
         Assert.Contains("result.complex_type2_value = complex_type2_value_value", result);
         Assert.Contains("else:", result);
         Assert.Contains("from . import complex_type1", result);
         Assert.Contains("result.complex_type1_value = complex_type1.ComplexType1()", result);
         Assert.Contains("return result", result);
-        AssertExtensions.Before("get_str_value(), str", "get_collection_of_object_values(ComplexType2)", result);
+        AssertExtensions.Before("get_str_value(), str", "get_collection_of_object_values(complex_type2.ComplexType2)", result);
     }
     [Fact]
     public void DoesntWriteFactoryConditionalsOnMissingParameter()

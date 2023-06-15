@@ -106,7 +106,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
     }
     private const string DiscriminatorMappingVarName = "mapping_value";
-    private const string NodeVarName = "mapping_value_node";
 
     private static readonly CodePropertyTypeComparer CodePropertyTypeForwardComparer = new();
     private static readonly CodePropertyTypeComparer CodePropertyTypeBackwardComparer = new(true);
@@ -144,7 +143,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 {
                     var typeName = conventions.GetTypeString(propertyType, codeElement, true, writer);
                     var valueVarName = $"{property.Name.ToSnakeCase()}_value";
-                    writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if isinstance({valueVarName} := {parseNodeParameter.Name.ToSnakeCase()}.{GetDeserializationMethodName(propertyType, codeElement, parentClass)}, {(propertyType.IsCollection ? "list" : typeName)}):");
+                    writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if {valueVarName} := {parseNodeParameter.Name.ToSnakeCase()}.{GetDeserializationMethodName(propertyType, codeElement, parentClass)}:");
                     writer.WriteLine($"{ResultVarName}.{property.Name.ToSnakeCase()} = {valueVarName}");
                     writer.DecreaseIndent();
                 }
@@ -166,7 +165,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             {
                 var typeName = conventions.GetTypeString(propertyType, codeElement, true, writer);
                 var valueVarName = $"{property.Name.ToSnakeCase()}_value";
-                writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if isinstance({valueVarName} := {parseNodeParameter.Name.ToSnakeCase()}.{GetDeserializationMethodName(propertyType, codeElement, parentClass)}, {(propertyType.IsCollection ? "list" : typeName)}):");
+                writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if {valueVarName} := {parseNodeParameter.Name.ToSnakeCase()}.{GetDeserializationMethodName(propertyType, codeElement, parentClass)}:");
                 writer.WriteLine($"{ResultVarName}.{property.Name.ToSnakeCase()} = {valueVarName}");
                 writer.DecreaseIndent();
             }
