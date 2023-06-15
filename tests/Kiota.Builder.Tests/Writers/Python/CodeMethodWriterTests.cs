@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Threading;
+
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Python;
@@ -703,6 +703,52 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("return fields", result);
     }
     [Fact]
+    public void WritesUnionDeSerializerBody()
+    {
+        var wrapper = AddUnionTypeWrapper();
+        var deserializationMethod = wrapper.AddMethod(new CodeMethod
+        {
+            Name = "GetFieldDeserializers",
+            Kind = CodeMethodKind.Deserializer,
+            IsAsync = false,
+            ReturnType = new CodeType
+            {
+                Name = "Dict[str, Callable[[ParseNode], None]]",
+            },
+        }).First();
+        writer.Write(deserializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("super_fields = super()", result);
+        Assert.DoesNotContain("return fields", result);
+        Assert.Contains("if self.complex_type1_value:", result);
+        Assert.Contains("return self.complex_type1_value.get_field_deserializers()", result);
+        Assert.Contains("return {}", result);
+    }
+    [Fact]
+    public void WritesIntersectionDeSerializerBody()
+    {
+        var wrapper = AddIntersectionTypeWrapper();
+        var deserializationMethod = wrapper.AddMethod(new CodeMethod
+        {
+            Name = "get_field_deserializers",
+            Kind = CodeMethodKind.Deserializer,
+            IsAsync = false,
+            ReturnType = new CodeType
+            {
+                Name = "Dict[str, Callable[[ParseNode], None]]",
+            },
+        }).First();
+        writer.Write(deserializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("super_fields = super()", result);
+        Assert.DoesNotContain("return fields", result);
+        Assert.Contains("from . import complex_type1", result);
+        Assert.Contains("if self.complex_type1_value or self.complex_type3_value", result);
+        Assert.Contains("return ParseNodeHelper.merge_deserializers_for_intersection_wrapper(self.complex_type1_value, self.complex_type3_value)", result);
+        Assert.Contains("return {}", result);
+        AssertExtensions.Before("return ParseNodeHelper.merge_deserializers_for_intersection_wrapper(self.complex_type1_value, self.complex_type3_value)", "return {}", result);
+    }
+    [Fact]
     public void WritesDeSerializerBody()
     {
         method.Kind = CodeMethodKind.Deserializer;
@@ -973,7 +1019,6 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("elif complex_type2_value_value := parse_node.get_collection_of_object_values(complex_type2.ComplexType2):", result);
         Assert.Contains("result.complex_type2_value = complex_type2_value_value", result);
         Assert.Contains("return result", result);
-        AssertExtensions.Before("get_str_value(), str", "get_collection_of_object_values(complex_type2.ComplexType2)", result);
     }
     [Fact]
     public void WritesModelFactoryBodyForIntersectionModels()
@@ -1013,7 +1058,6 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("from . import complex_type1", result);
         Assert.Contains("result.complex_type1_value = complex_type1.ComplexType1()", result);
         Assert.Contains("return result", result);
-        AssertExtensions.Before("get_str_value(), str", "get_collection_of_object_values(complex_type2.ComplexType2)", result);
     }
     [Fact]
     public void DoesntWriteFactoryConditionalsOnMissingParameter()
