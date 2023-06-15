@@ -36,15 +36,16 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
             _discriminatorInformation = value;
         }
     }
-    protected override ChildType BaseClone<ChildType>(CodeTypeBase source)
+    protected override TChildType BaseClone<TChildType>(CodeTypeBase source)
     {
+        ArgumentNullException.ThrowIfNull(source);
         if (source is not CodeComposedTypeBase sourceComposed)
             throw new InvalidCastException($"Cannot cast {source.GetType().Name} to {nameof(CodeComposedTypeBase)}");
-        base.BaseClone<ChildType>(source);
+        base.BaseClone<TChildType>(source);
         if (sourceComposed.Types?.Any() ?? false)
             AddType(sourceComposed.Types.ToArray());
         DiscriminatorInformation = (DiscriminatorInformation)sourceComposed.DiscriminatorInformation.Clone();
-        return this is ChildType casted ? casted : throw new InvalidCastException($"Cannot cast {GetType().Name} to {typeof(ChildType).Name}");
+        return this is TChildType casted ? casted : throw new InvalidCastException($"Cannot cast {GetType().Name} to {typeof(TChildType).Name}");
     }
     /// <summary>
     /// The target namespace if the composed type needs to be represented by a class

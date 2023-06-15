@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder;
@@ -13,14 +13,16 @@ public class CodeElementOrderComparer : IComparer<CodeElement>
             (null, null) => 0,
             (null, _) => -1,
             (_, null) => 1,
-            _ => GetTypeFactor(x).CompareTo(GetTypeFactor(y)) * typeWeight +
-                (x.Name?.CompareTo(y.Name) ?? 0) * nameWeight +
+            _ => GetTypeFactor(x).CompareTo(GetTypeFactor(y)) * TypeWeight +
+#pragma warning disable CA1062
+                StringComparer.InvariantCultureIgnoreCase.Compare(x.Name, y.Name) * NameWeight +
+#pragma warning restore CA1062
                 GetMethodKindFactor(x).CompareTo(GetMethodKindFactor(y)) * methodKindWeight +
-                GetParametersFactor(x).CompareTo(GetParametersFactor(y)) * parametersWeight,
+                GetParametersFactor(x).CompareTo(GetParametersFactor(y)) * ParametersWeight,
         };
     }
-    private static readonly int nameWeight = 100;
-    private static readonly int typeWeight = 1000;
+    private const int NameWeight = 100;
+    private const int TypeWeight = 1000;
     protected virtual int GetTypeFactor(CodeElement element)
     {
         return element switch
@@ -51,7 +53,7 @@ public class CodeElementOrderComparer : IComparer<CodeElement>
             };
         return 0;
     }
-    private static readonly int parametersWeight = 1;
+    private const int ParametersWeight = 1;
     private static int GetParametersFactor(CodeElement element)
     {
         if (element is CodeMethod method && (method.Parameters?.Any() ?? false))

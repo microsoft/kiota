@@ -41,21 +41,21 @@ public class KiotaSearcher
             return new Dictionary<string, SearchResult>();
         }
         var apiGurusSearchProvider = new APIsGuruSearchProvider(_config.APIsGuruListUrl, _httpClient, _logger, _config.ClearCache);
-        _logger.LogDebug("searching for {searchTerm}", searchTerm);
-        _logger.LogDebug("searching APIs.guru with url {url}", _config.APIsGuruListUrl);
+        _logger.LogDebug("searching for {SearchTerm}", searchTerm);
+        _logger.LogDebug("searching APIs.guru with url {Url}", _config.APIsGuruListUrl);
         var oasProvider = new OpenApiSpecSearchProvider();
         var githubProvider = new GitHubSearchProvider(_httpClient, _logger, _config.ClearCache, _config.GitHub, _gitHubAuthenticationProvider, _isGitHubSignedInCallBack);
         var results = await Task.WhenAll(
                         SearchProviderAsync(searchTerm, version, apiGurusSearchProvider, cancellationToken),
                         SearchProviderAsync(searchTerm, version, oasProvider, cancellationToken),
-                        SearchProviderAsync(searchTerm, version, githubProvider, cancellationToken));
+                        SearchProviderAsync(searchTerm, version, githubProvider, cancellationToken)).ConfigureAwait(false);
         return results.SelectMany(static x => x)
                 .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase);
     }
     private static async Task<IDictionary<string, SearchResult>> SearchProviderAsync(string searchTerm, string? version, ISearchProvider provider, CancellationToken cancellationToken)
     {
         var providerPrefix = $"{provider.ProviderKey}{ProviderSeparator}";
-        var results = await provider.SearchAsync(searchTerm.Replace(providerPrefix, string.Empty), version, cancellationToken);
+        var results = await provider.SearchAsync(searchTerm.Replace(providerPrefix, string.Empty, StringComparison.OrdinalIgnoreCase), version, cancellationToken).ConfigureAwait(false);
 
         return results
                     .Where(static x => x.Value.DescriptionUrl is not null)

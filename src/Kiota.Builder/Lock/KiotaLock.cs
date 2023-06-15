@@ -51,6 +51,7 @@ public class KiotaLock
     {
         get; set;
     }
+#pragma warning disable CA2227
     /// <summary>
     /// The serializers used for this client.
     /// </summary>
@@ -75,12 +76,14 @@ public class KiotaLock
     /// The OpenAPI validation rules to disable during the generation.
     /// </summary>
     public HashSet<string> DisabledValidationRules { get; set; } = new();
+#pragma warning restore CA2227
     /// <summary>
     /// Updates the passed configuration with the values from the lock file.
     /// </summary>
     /// <param name="config">The configuration to update.</param>
     public void UpdateGenerationConfigurationFromLock(GenerationConfiguration config)
     {
+        ArgumentNullException.ThrowIfNull(config);
         config.ClientClassName = ClientClassName;
         config.ClientNamespaceName = ClientNamespaceName;
         if (Enum.TryParse<GenerationLanguage>(Language, out var parsedLanguage))
@@ -107,6 +110,7 @@ public class KiotaLock
     /// <param name="config">The configuration to use.</param>
     public KiotaLock(GenerationConfiguration config)
     {
+        ArgumentNullException.ThrowIfNull(config);
         Language = config.Language.ToString();
         ClientClassName = config.ClientClassName;
         ClientNamespaceName = config.ClientNamespaceName;

@@ -8,8 +8,14 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers;
 public class RelativeImportManager
 {
-    protected readonly string prefix;
-    protected readonly char separator;
+    protected string prefix
+    {
+        get; init;
+    }
+    protected char separator
+    {
+        get; init;
+    }
     private readonly Func<CodeNamespace, CodeElement, string>? NormalizeFileNameCallback;
     public RelativeImportManager(string namespacePrefix, char namespaceSeparator, Func<CodeNamespace, CodeElement, string>? normalizeFileNameCallback = null)
     {
@@ -49,6 +55,7 @@ public class RelativeImportManager
     }
     protected string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)
     {
+        ArgumentNullException.ThrowIfNull(currentNamespace);
         var result = currentNamespace.GetDifferential(importNamespace, prefix, separator);
         return result.State switch
         {
@@ -62,8 +69,9 @@ public class RelativeImportManager
     protected static string GetUpwardsMoves(int UpwardsMovesCount) => string.Join("/", Enumerable.Repeat("..", UpwardsMovesCount)) + (UpwardsMovesCount > 0 ? "/" : string.Empty);
     protected static string GetRemainingImportPath(IEnumerable<string> remainingSegments)
     {
-        if (remainingSegments.Any())
-            return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate(static (x, y) => $"{x}/{y}") + '/';
+        var segments = remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).ToArray();
+        if (segments.Any())
+            return segments.Aggregate(static (x, y) => $"{x}/{y}") + '/';
         return string.Empty;
     }
 }

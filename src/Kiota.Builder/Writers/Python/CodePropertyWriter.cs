@@ -12,6 +12,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
     }
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement, true, writer);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         /* Only write specific properties as class attributes

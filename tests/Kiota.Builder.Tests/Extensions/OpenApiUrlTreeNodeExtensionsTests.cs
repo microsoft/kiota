@@ -187,7 +187,7 @@ public class OpenApiUrlTreeNodeExtensionsTests
         Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select}", node.Children.First().Value.GetUrlTemplate());
         // the query parameters will be decoded by a middleware at runtime before the request is executed
     }
-    
+
     [Fact]
     public void GetUrlTemplateCleansInvalidParameters()
     {

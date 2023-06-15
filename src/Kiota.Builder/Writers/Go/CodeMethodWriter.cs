@@ -550,7 +550,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType)
     {
-        var pathParameters = codeElement.Parameters.Where(static x => x.IsOfKind(CodeMethod.ParameterKindForConvertedIndexers));
+        var pathParameters = codeElement.Parameters.Where(static x => x.IsOfKind(CodeMethod.ParameterKindForConvertedIndexers)).ToArray();
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"m.BaseRequestBuilder.{pathParametersProperty.Name.ToFirstCharacterUpperCase()}", string.Empty, true, pathParameters.Select(static x => (x.Type, x.SerializationName, x.Name.ToFirstCharacterLowerCase())).ToArray());
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, codeElement.Parameters.Except(pathParameters).ToArray());
@@ -612,7 +612,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     }
     private void WriteDeserializerBodyForInheritedModel(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits)
     {
-        var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType);
+        var fieldToSerialize = parentClass
+                                .GetPropertiesOfKind(CodePropertyKind.Custom)
+                                .Where(static x => !x.ExistsInBaseType)
+                                .OrderBy(static x => x.Name)
+                                .Where(static x => x.Setter != null)
+                                .ToArray();
         if (inherits)
             writer.WriteLine($"res := m.{parentClass.StartBlock.Inherits!.Name.ToFirstCharacterUpperCase()}.{codeElement.Name.ToFirstCharacterUpperCase()}()");
         else
@@ -620,11 +625,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         if (fieldToSerialize.Any())
         {
             var parsableImportSymbol = GetConversionHelperMethodImport(parentClass, "ParseNode");
-            fieldToSerialize
-                    .OrderBy(static x => x.Name)
-                    .Where(static x => x.Setter != null)
-                    .ToList()
-                    .ForEach(x => WriteFieldDeserializer(x, writer, parentClass, parsableImportSymbol));
+            foreach (var field in fieldToSerialize)
+                WriteFieldDeserializer(field, writer, parentClass, parsableImportSymbol);
         }
         writer.WriteLine("return res");
     }
@@ -787,7 +789,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty)
             writer.WriteLines($"{RequestInfoVarName}.UrlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")}",
                         $"{RequestInfoVarName}.PathParameters = {GetPropertyCall(urlTemplateParamsProperty, "\"\"")}");
-        writer.WriteLine($"{RequestInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
+        writer.WriteLine($"{RequestInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
         if (codeElement.AcceptedResponseTypes.Any())
             writer.WriteLine($"{RequestInfoVarName}.Headers.Add(\"Accept\", \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\")");
         if (requestParams.requestBody != null)
@@ -861,10 +863,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     }
     private static string GetNilsErrorPrefix(params string[] returnTypes)
     {
-        var sanitizedTypes = returnTypes.Where(x => !string.IsNullOrEmpty(x));
+        var sanitizedTypes = returnTypes.Where(x => !string.IsNullOrEmpty(x)).ToArray();
         return !sanitizedTypes.Any() ?
                         string.Empty :
-                        sanitizedTypes.Select(_ => "nil").Aggregate((x, y) => $"{x}, {y}") + ", ";
+                        sanitizedTypes.Select(static _ => "nil").Aggregate((x, y) => $"{x}, {y}") + ", ";
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeClass parentClass)
     {
@@ -939,7 +941,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var reference = (isEnum, isComplexType, propType.IsCollection) switch
         {
             (true, false, false) => "&cast",
-            (true, false, true) => $"{conventions.GetTypeString(propType, parentBlock, false, false).Replace(propertyTypeName, "Serialize" + propertyTypeName)}({valueGet})", //importSymbol.SerializeEnumName
+            (true, false, true) => $"{conventions.GetTypeString(propType, parentBlock, false, false).Replace(propertyTypeName, "Serialize" + propertyTypeName, StringComparison.Ordinal)}({valueGet})", //importSymbol.SerializeEnumName
             (false, true, true) => "cast",
             (_, _, _) => valueGet,
         };

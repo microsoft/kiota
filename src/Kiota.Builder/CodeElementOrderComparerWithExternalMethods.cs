@@ -11,7 +11,7 @@ public class CodeElementOrderComparerWithExternalMethods : CodeElementOrderCompa
             ClassDeclaration => 2,
             CodeProperty => 3,
             InterfaceDeclaration => 4,
-            CodeMethod when element.Parent is CodeInterface => 5, //methods are declared inside of interfaces
+            CodeMethod method when method.Parent is CodeInterface => 5, //methods are declared inside of interfaces
             BlockEnd => 6,
             CodeClass => 7,
             CodeInterface => 8,

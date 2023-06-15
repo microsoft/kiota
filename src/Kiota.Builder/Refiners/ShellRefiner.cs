@@ -163,7 +163,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             CreateCommandBuildersFromNavProps(currentClass, navProperties);
 
             var requestsWithParams = currentClass.UnorderedMethods
-                .Where(static m=> m.IsOfKind(CodeMethodKind.RequestBuilderWithParameters));
+                .Where(static m => m.IsOfKind(CodeMethodKind.RequestBuilderWithParameters));
             CreateCommandBuildersFromRequestBuildersWithParameters(currentClass, requestsWithParams);
 
             // Add build command for indexers. If an indexer's type has methods with the same name, they will be skipped.
@@ -252,7 +252,7 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             {
                 Name = "Tuple",
                 IsExternal = true,
-                GenericTypeParameterValues = new List<CodeType> {
+                GenericTypeParameterValues = new() {
                     CreateCommandType(collectionKind),
                     CreateCommandType(collectionKind),
                 }
@@ -264,7 +264,8 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
         currentClass.RemoveChildElement(indexer);
     }
 
-    private static void CreateCommandBuildersFromRequestBuildersWithParameters(CodeClass currentClass, IEnumerable<CodeMethod> requestBuildersWithParams) {
+    private static void CreateCommandBuildersFromRequestBuildersWithParameters(CodeClass currentClass, IEnumerable<CodeMethod> requestBuildersWithParams)
+    {
         foreach (var requestBuilder in requestBuildersWithParams)
         {
             var method = new CodeMethod
@@ -280,8 +281,9 @@ public class ShellRefiner : CSharpRefiner, ILanguageRefiner
             };
 
             // Ensure constructor parameters are removed
-            if (requestBuilder.ReturnType is CodeType ct && ct.TypeDefinition is CodeClass cc) {
-                var constructors = cc.UnorderedMethods.Where(static m=> m.IsOfKind(CodeMethodKind.Constructor));
+            if (requestBuilder.ReturnType is CodeType ct && ct.TypeDefinition is CodeClass cc)
+            {
+                var constructors = cc.UnorderedMethods.Where(static m => m.IsOfKind(CodeMethodKind.Constructor));
                 foreach (var item in constructors)
                 {
                     item.RemoveParametersByKind(CodeParameterKind.Path);

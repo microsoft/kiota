@@ -37,23 +37,23 @@ public class DocumentCachingProvider
     }
     private async Task<Stream> GetDocumentInternalAsync(Uri documentUri, string intermediateFolderName, string fileName, bool couldNotDelete, string? accept, CancellationToken token)
     {
-        var hashedUrl = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(documentUri.ToString()))).Replace("-", string.Empty);
+        var hashedUrl = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(documentUri.ToString()))).Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase);
         var target = Path.Combine(Path.GetTempPath(), "kiota", "cache", intermediateFolderName, hashedUrl, fileName);
         var currentLock = _locks.GetOrAdd(target, _ => new AsyncLock());
-        using (await currentLock.LockAsync(token))
+        using (await currentLock.LockAsync(token).ConfigureAwait(false))
         {// if multiple clients are being updated for the same description, we'll have concurrent download of the file without the lock
             if (!File.Exists(target) || couldNotDelete)
-                return await DownloadDocumentFromSourceAsync(documentUri, target, accept, token);
+                return await DownloadDocumentFromSourceAsync(documentUri, target, accept, token).ConfigureAwait(false);
 
             var lastModificationDate = File.GetLastWriteTime(target);
             if (lastModificationDate.Add(Duration) > DateTime.Now && !ClearCache)
             {
-                Logger.LogDebug("cache file {cacheFile} is up to date and clearCache is {clearCache}, using it", target, ClearCache);
+                Logger.LogDebug("cache file {CacheFile} is up to date and clearCache is {ClearCache}, using it", target, ClearCache);
                 return File.OpenRead(target);
             }
             else
             {
-                Logger.LogDebug("cache file {cacheFile} is out of date, downloading from {url}", target, documentUri);
+                Logger.LogDebug("cache file {CacheFile} is out of date, downloading from {Url}", target, documentUri);
                 try
                 {
                     File.Delete(target);
@@ -61,16 +61,16 @@ public class DocumentCachingProvider
                 catch (IOException ex)
                 {
                     couldNotDelete = true;
-                    Logger.LogWarning("could not delete cache file {cacheFile}, reason: {reason}", target, ex.Message);
+                    Logger.LogWarning("could not delete cache file {CacheFile}, reason: {Reason}", target, ex.Message);
                 }
             }
-            return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, accept, token);
+            return await GetDocumentInternalAsync(documentUri, intermediateFolderName, fileName, couldNotDelete, accept, token).ConfigureAwait(false);
         }
     }
     private static readonly ConcurrentDictionary<string, AsyncLock> _locks = new(StringComparer.OrdinalIgnoreCase);
     private async Task<Stream> DownloadDocumentFromSourceAsync(Uri documentUri, string target, string? accept, CancellationToken token)
     {
-        Logger.LogDebug("cache file {cacheFile} not found, downloading from {url}", target, documentUri);
+        Logger.LogDebug("cache file {CacheFile} not found, downloading from {Url}", target, documentUri);
         var directory = Path.GetDirectoryName(target);
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             Directory.CreateDirectory(directory);
@@ -83,11 +83,13 @@ public class DocumentCachingProvider
             using var responseMessage = await HttpClient.SendAsync(requestMessage, token).ConfigureAwait(false);
             responseMessage.EnsureSuccessStatusCode();
             content = new MemoryStream();
-            await responseMessage.Content.CopyToAsync(content, token);
+            await responseMessage.Content.CopyToAsync(content, token).ConfigureAwait(false);
+#pragma warning disable CA2007
             await using var fileStream = File.Create(target);
+#pragma warning restore CA2007
             content.Position = 0;
-            await content.CopyToAsync(fileStream, token);
-            await fileStream.FlushAsync(token);
+            await content.CopyToAsync(fileStream, token).ConfigureAwait(false);
+            await fileStream.FlushAsync(token).ConfigureAwait(false);
             content.Position = 0;
             return content;
         }
@@ -97,7 +99,7 @@ public class DocumentCachingProvider
         }
         catch (IOException ex)
         {
-            Logger.LogWarning("could not write to cache file {cacheFile}, reason: {reason}", target, ex.Message);
+            Logger.LogWarning("could not write to cache file {CacheFile}, reason: {Reason}", target, ex.Message);
             content.Position = 0;
             return content;
         }

@@ -31,6 +31,7 @@ public class JavaConventionService : CommonLanguageConventionService
 
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
+        ArgumentNullException.ThrowIfNull(parameter);
         var nullKeyword = parameter.Optional ? "Nullable" : "Nonnull";
         var nullAnnotation = parameter.Type.IsNullable ? $"@javax.annotation.{nullKeyword} " : string.Empty;
         return $"{nullAnnotation}final {GetTypeString(parameter.Type, targetElement)} {parameter.Name.ToFirstCharacterLowerCase()}";
@@ -58,7 +59,7 @@ public class JavaConventionService : CommonLanguageConventionService
             return $"{collectionPrefix}{typeName}{collectionSuffix}";
         }
 
-        throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+        throw new InvalidOperationException($"type of type {code?.GetType()} is unknown");
     }
     private static readonly CodeUsingDeclarationNameComparer usingDeclarationComparer = new();
     private static bool IsSymbolDuplicated(string symbol, CodeElement targetElement)
@@ -74,6 +75,7 @@ public class JavaConventionService : CommonLanguageConventionService
     }
     public override string TranslateType(CodeType type)
     {
+        ArgumentNullException.ThrowIfNull(type);
         return type.Name switch
         {
             "int64" => "Long",
@@ -82,26 +84,29 @@ public class JavaConventionService : CommonLanguageConventionService
             "void" or "boolean" when !type.IsNullable => type.Name, //little casing hack
             "binary" or "base64" or "base64url" => "byte[]",
             "Guid" => "UUID",
-            _ when type.Name.Contains('.') => type.Name, // casing
+            _ when type.Name.Contains('.', StringComparison.OrdinalIgnoreCase) => type.Name, // casing
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
         };
     }
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         if (!string.IsNullOrEmpty(description))
             writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
     public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         if (documentation is null) return;
         if (additionalRemarks == default)
             additionalRemarks = Enumerable.Empty<string>();
-        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || additionalRemarks.Any())
+        var remarks = additionalRemarks.ToArray();
+        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || remarks.Any())
         {
             writer.WriteLine(DocCommentStart);
             if (documentation.DescriptionAvailable)
                 writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentation.Description)}");
-            foreach (var additionalRemark in additionalRemarks.Where(static x => !string.IsNullOrEmpty(x)))
+            foreach (var additionalRemark in remarks.Where(static x => !string.IsNullOrEmpty(x)))
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
 
             if (documentation.ExternalDocumentationAvailable)
@@ -113,7 +118,7 @@ public class JavaConventionService : CommonLanguageConventionService
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
         string.IsNullOrEmpty(originalDescription) ?
             originalDescription :
-            nonAsciiReplaceRegex.Replace(originalDescription.Replace("\\", "/").Replace("*/", string.Empty), string.Empty);
+            nonAsciiReplaceRegex.Replace(originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase).Replace("*/", string.Empty, StringComparison.OrdinalIgnoreCase), string.Empty);
 #pragma warning disable CA1822 // Method should be static
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default)
     {

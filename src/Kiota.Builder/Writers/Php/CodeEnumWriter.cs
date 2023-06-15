@@ -12,6 +12,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionService>
 
     public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         conventions.WritePhpDocumentStart(writer);
         var enumProperties = codeElement.Options;
         if (codeElement.Parent is CodeNamespace enumNamespace)

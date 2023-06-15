@@ -15,7 +15,7 @@ public interface IProprietableBlock : ICodeElement
 /// <summary>
 /// Represents a block of code that can have properties and methods
 /// </summary>
-public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumentedElement, IProprietableBlock where T : Enum where U : ProprietableBlockDeclaration, new()
+public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlock<TBlockDeclaration, BlockEnd>, IDocumentedElement, IProprietableBlock where TBlockKind : Enum where TBlockDeclaration : ProprietableBlockDeclaration, new()
 {
     private string name = string.Empty;
     /// <summary>
@@ -48,12 +48,12 @@ public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumen
             RemoveChildElement(property);
     }
 #nullable disable
-    public T Kind
+    public TBlockKind Kind
     {
         get; set;
     }
 #nullable enable
-    public bool IsOfKind(params T[] kinds)
+    public bool IsOfKind(params TBlockKind[] kinds)
     {
         return kinds?.Contains(Kind) ?? false;
     }

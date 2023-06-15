@@ -35,6 +35,7 @@ public class PythonRelativeImportManager : RelativeImportManager
     }
     protected new string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)
     {
+        ArgumentNullException.ThrowIfNull(currentNamespace);
         var result = currentNamespace.GetDifferential(importNamespace, prefix, separator);
         return result.State switch
         {
@@ -48,8 +49,9 @@ public class PythonRelativeImportManager : RelativeImportManager
     protected static new string GetUpwardsMoves(int UpwardsMovesCount) => string.Join("", Enumerable.Repeat(".", UpwardsMovesCount)) + (UpwardsMovesCount > 0 ? "." : string.Empty);
     protected static new string GetRemainingImportPath(IEnumerable<string> remainingSegments)
     {
-        if (remainingSegments.Any())
-            return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate((x, y) => $"{x}.{y}");
+        var segments = remainingSegments.Select(static x => x.ToFirstCharacterLowerCase()).ToArray();
+        if (segments.Any())
+            return segments.Aggregate(static (x, y) => $"{x}.{y}");
         return string.Empty;
     }
 }

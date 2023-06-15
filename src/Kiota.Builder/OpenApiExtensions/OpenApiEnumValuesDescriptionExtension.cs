@@ -37,7 +37,11 @@ public class OpenApiEnumValuesDescriptionExtension : IOpenApiExtension
     /// <summary>
     /// Descriptions for the enum symbols, where the value MUST match the enum symbols in the main description
     /// </summary>
+#pragma warning disable CA2227
+#pragma warning disable CA1002
     public List<EnumDescription> ValuesDescriptions { get; set; } = new();
+#pragma warning restore CA1002
+#pragma warning restore CA2227
 
     /// <inheritdoc />
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
@@ -83,6 +87,7 @@ public class EnumDescription : IOpenApiElement
     }
     public EnumDescription(OpenApiObject source)
     {
+        ArgumentNullException.ThrowIfNull(source);
         if (source.TryGetValue("value", out var rawValue) && rawValue is OpenApiString value)
             Value = value.Value;
         if (source.TryGetValue("description", out var rawDescription) && rawDescription is OpenApiString description)

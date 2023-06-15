@@ -140,13 +140,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private static void AliasCollidingSymbols(IEnumerable<CodeUsing> usings, string currentSymbolName)
     {
-        var duplicatedSymbolsUsings = usings.Where(static x => !x.IsExternal)
+        var enumeratedUsings = usings.ToArray();
+        var duplicatedSymbolsUsings = enumeratedUsings.Where(static x => !x.IsExternal)
                                                                 .Where(static x => x.Declaration != null && x.Declaration.TypeDefinition != null)
                                                                 .GroupBy(static x => x.Declaration!.Name, StringComparer.OrdinalIgnoreCase)
                                                                 .Where(static x => x.DistinctBy(static y => y.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>())
                                                                                     .Count() > 1)
                                                                 .SelectMany(static x => x)
-                                                                .Union(usings
+                                                                .Union(enumeratedUsings
                                                                         .Where(static x => !x.IsExternal && x.Declaration != null)
                                                                         .Where(x => x.Declaration!
                                                                                         .Name
@@ -344,7 +345,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         CreateSeparateSerializers(generatedCode);
         CreateInterfaceModels(generatedCode);
-        AddDeserializerUsingToDisriminatorFactory(generatedCode);
+        AddDeserializerUsingToDiscriminatorFactory(generatedCode);
         ReplaceRequestConfigurationsQueryParamsWithInterfaces(generatedCode);
         AddStaticMethodsUsingsToDeserializerFunctions(generatedCode, functionNameCallback);
     }
@@ -567,7 +568,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
          * Setting request body parameter type of request executor to model interface.
          */
         if (codeMethod.Parameters.FirstOrDefault(static x => x.Kind == CodeParameterKind.RequestBody) is CodeParameter requestBodyParam &&
-            requestBodyParam?.Type is CodeType requestBodyType && requestBodyType.TypeDefinition is CodeClass requestBodyClass)
+            requestBodyParam.Type is CodeType requestBodyType && requestBodyType.TypeDefinition is CodeClass requestBodyClass)
         {
             SetTypeAsModelInterface(CreateModelInterface(requestBodyClass, interfaceNamingCallback), requestBodyType, requestBuilderClass);
 
@@ -579,7 +580,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (codeMethod.ReturnType is CodeType returnType &&
                 returnType.TypeDefinition is CodeClass returnClass &&
                 codeMethod.GetImmediateParentOfType<CodeClass>() is CodeClass parentClass &&
-                returnClass.IsOfKind(CodeClassKind.Model) && !parentClass.Name.Equals(returnClass.Name))
+                returnClass.IsOfKind(CodeClassKind.Model) && !parentClass.Name.Equals(returnClass.Name, StringComparison.Ordinal))
             {
                 AddSerializationUsingToRequestBuilder(returnClass, parentClass);
                 SetTypeAsModelInterface(CreateModelInterface(returnClass, interfaceNamingCallback), returnType, requestBuilderClass);
@@ -716,7 +717,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 TypeDefinition = impl.TypeDefinition,
             });
 
-            modelInterface.AddUsing(modelClass.Usings.First(x => x.Name.Equals(impl.Name)));
+            modelInterface.AddUsing(modelClass.Usings.First(x => x.Name.Equals(impl.Name, StringComparison.Ordinal)));
         }
     }
 
@@ -858,9 +859,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         });
     }
 
-    protected static void AddStaticMethodsUsingsToDeserializerFunctions(CodeElement currentElement, Func<CodeType, string> functionNameCallback)
+    private static void AddStaticMethodsUsingsToDeserializerFunctions(CodeElement currentElement, Func<CodeType, string> functionNameCallback)
     {
-        if (currentElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod is CodeMethod currentMethod && currentMethod.Kind == CodeMethodKind.Deserializer && currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface) is CodeParameter interfaceParameter && interfaceParameter?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface ci)
+        if (currentElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod is CodeMethod currentMethod && currentMethod.Kind == CodeMethodKind.Deserializer && currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface) is CodeParameter interfaceParameter && interfaceParameter.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface ci)
         {
             foreach (var property in ci.Properties)
             {
@@ -891,7 +892,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
     }
 
-    private static void AddDeserializerUsingToDisriminatorFactory(CodeElement codeElement)
+    private static void AddDeserializerUsingToDiscriminatorFactory(CodeElement codeElement)
     {
         if (codeElement is CodeFunction parsableFactoryFunction && parsableFactoryFunction.OriginalLocalMethod.Kind == CodeMethodKind.Factory &&
             parsableFactoryFunction.OriginalLocalMethod?.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeClass modelReturnClass)
@@ -932,6 +933,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
 
         }
-        CrawlTree(codeElement, AddDeserializerUsingToDisriminatorFactory);
+        CrawlTree(codeElement, AddDeserializerUsingToDiscriminatorFactory);
     }
 }

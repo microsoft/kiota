@@ -10,6 +10,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ja
     public CodeClassDeclarationWriter(JavaConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent?.Parent is CodeNamespace ns)
         {
             writer.WriteLine($"package {ns.Name};");

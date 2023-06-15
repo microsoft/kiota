@@ -20,25 +20,30 @@ public class CSharpConventionService : CommonLanguageConventionService
 
     public static void WriteNullableOpening(LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLine($"#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER", false);
         writer.WriteLine($"#nullable enable", false);
     }
     public static void WriteNullableMiddle(LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLine($"#nullable restore", false);
         writer.WriteLine("#else", false);
     }
     public static void WriteNullableClosing(LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLine("#endif", false);
     }
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         if (!string.IsNullOrEmpty(description))
             writer.WriteLine($"{DocCommentPrefix}<summary>{description.CleanupXMLString()}</summary>");
     }
     public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         if (documentation is null) return;
         if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable)
         {
@@ -135,6 +140,7 @@ public class CSharpConventionService : CommonLanguageConventionService
     }
     public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool includeNullableInformation, bool includeActionInformation = true)
     {
+        ArgumentNullException.ThrowIfNull(targetElement);
         if (code is CodeComposedTypeBase)
             throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
         if (code is CodeType currentType)
@@ -156,7 +162,7 @@ public class CSharpConventionService : CommonLanguageConventionService
             return $"{collectionPrefix}{typeName}{genericParameters}{nullableSuffix}{collectionSuffix}";
         }
 
-        throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+        throw new InvalidOperationException($"type of type {code?.GetType()} is unknown");
     }
     private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
     {
@@ -227,6 +233,7 @@ public class CSharpConventionService : CommonLanguageConventionService
 
     public override string TranslateType(CodeType type)
     {
+        ArgumentNullException.ThrowIfNull(type);
         return type.Name switch
         {
             "integer" => "int",
@@ -234,7 +241,7 @@ public class CSharpConventionService : CommonLanguageConventionService
             "int64" => "long",
             "string" or "float" or "double" or "object" or "void" or "decimal" or "sbyte" or "byte" => type.Name.ToLowerInvariant(),// little casing hack
             "binary" or "base64" or "base64url" => "byte[]",
-            _ => type.Name?.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
+            _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
     }
     public bool IsPrimitiveType(string typeName)
@@ -250,6 +257,7 @@ public class CSharpConventionService : CommonLanguageConventionService
     }
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
+        ArgumentNullException.ThrowIfNull(parameter);
         var parameterType = GetTypeString(parameter.Type, targetElement);
         var defaultValue = parameter switch
         {

@@ -267,7 +267,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     {
         var promisePrefix = codeElement.IsAsync ? "Promise.resolve(" : string.Empty;
         var promiseSuffix = codeElement.IsAsync ? ")" : string.Empty;
-        writer.WriteLine($"return {promisePrefix}{(codeElement.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{promiseSuffix};");
+        writer.WriteLine($"return {promisePrefix}{(codeElement.ReturnType.Name.Equals("string", StringComparison.OrdinalIgnoreCase) ? "''" : "{} as any")}{promiseSuffix};");
     }
     private void WriteRequestExecutorBody(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
     {
@@ -281,7 +281,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                                             ?.ToFirstCharacterLowerCase();
         writer.WriteLine($"const requestInfo = this.{generatorMethodName}(");
         var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
-                                        .Select(x => x?.Name).Where(x => x != null);
+                                        .Select(x => x?.Name).Where(x => x != null)
+                                        .ToArray();
         if (requestInfoParameters.Any() && requestInfoParameters.Aggregate((x, y) => $"{x}, {y}") is string requestInfoParametersString)
         {
             writer.IncreaseIndent();

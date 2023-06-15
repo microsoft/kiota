@@ -78,6 +78,8 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public static CodeMethod FromIndexer(CodeIndexer originalIndexer, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback, bool parameterNullable)
     {
         ArgumentNullException.ThrowIfNull(originalIndexer);
+        ArgumentNullException.ThrowIfNull(methodNameCallback);
+        ArgumentNullException.ThrowIfNull(parameterNameCallback);
         var method = new CodeMethod
         {
             IsAsync = false,
@@ -115,7 +117,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         get; set;
     }
     public string RequestBodyContentType { get; set; } = string.Empty;
-    public HashSet<string> AcceptedResponseTypes = new(StringComparer.OrdinalIgnoreCase);
+#pragma warning disable CA2227
+    public HashSet<string> AcceptedResponseTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+#pragma warning restore CA2227
     public AccessModifier Access { get; set; } = AccessModifier.Public;
 #nullable disable // exposing property is required
     private CodeTypeBase returnType;
@@ -198,8 +202,10 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         get => IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter);
     }
+#pragma warning disable CA2227
     public HashSet<string> SerializerModules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public HashSet<string> DeserializerModules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+#pragma warning restore CA2227
     /// <summary>
     /// Indicates whether this method is an overload for another method.
     /// </summary>
@@ -228,7 +234,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// The base url for every request read from the servers property on the description.
     /// Only provided for constructor on Api client
     /// </summary>
+#pragma warning disable CA1056 // Uri properties should not be strings
     public string BaseUrl { get; set; } = string.Empty;
+#pragma warning restore CA1056 // Uri properties should not be strings
 
     /// <summary>
     /// This is currently used for CommandBuilder methods to get the original name without the Build prefix & Command suffix.

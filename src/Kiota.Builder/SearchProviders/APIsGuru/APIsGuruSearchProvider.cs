@@ -29,7 +29,7 @@ public class APIsGuruSearchProvider : ISearchProvider
     public string ProviderKey => "apisguru";
     public HashSet<string> KeysToExclude
     {
-        get; set;
+        get; init;
     } = new() {
         "microsoft.com:graph"
     };
@@ -37,14 +37,17 @@ public class APIsGuruSearchProvider : ISearchProvider
     {
         if (SearchUri == null)
             return new Dictionary<string, SearchResult>();
-        await using var rawDocument = await cachingProvider.GetDocumentAsync(SearchUri, "search", "apisguru.json", "application/json", cancellationToken);
-        var apiEntries = await JsonSerializer.DeserializeAsync(rawDocument, ApiEntriesJsonContext.Default.ApiEntries, cancellationToken);
+#pragma warning disable CA2007
+        await using var rawDocument = await cachingProvider.GetDocumentAsync(SearchUri, "search", "apisguru.json", "application/json", cancellationToken).ConfigureAwait(false);
+#pragma warning restore CA2007
+        var apiEntries = await JsonSerializer.DeserializeAsync(rawDocument, ApiEntriesJsonContext.Default.ApiEntries, cancellationToken).ConfigureAwait(false);
         if (apiEntries == null)
             return new Dictionary<string, SearchResult>();
         var candidates = apiEntries
                             .Where(x => !KeysToExclude.Contains(x.Key))
-                            .Where(x => x.Key.Contains(term, StringComparison.OrdinalIgnoreCase));
-        var singleCandidate = !string.IsNullOrEmpty(version) && candidates.Count() == 1;
+                            .Where(x => x.Key.Contains(term, StringComparison.OrdinalIgnoreCase))
+                            .ToArray();
+        var singleCandidate = !string.IsNullOrEmpty(version) && candidates.Length == 1;
         var results = candidates
                                 .Select(x => x.Value.versions.TryGetValue(GetVersionKey(singleCandidate, version, x), out var versionInfo) ? (x.Key, versionInfo, x.Value.versions.Keys.ToList()) : (x.Key, default, default))
                                 .Where(static x => x.versionInfo is not null)

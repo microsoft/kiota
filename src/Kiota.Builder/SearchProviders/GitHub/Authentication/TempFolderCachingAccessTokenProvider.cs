@@ -26,7 +26,10 @@ public class TempFolderCachingAccessTokenProvider : IAccessTokenProvider
         get; init;
     }
     public AllowedHostsValidator AllowedHostsValidator => Concrete?.AllowedHostsValidator ?? new();
-    public readonly Lazy<ITokenStorageService> TokenStorageService;
+    public Lazy<ITokenStorageService> TokenStorageService
+    {
+        get; init;
+    }
     public TempFolderCachingAccessTokenProvider()
     {
         TokenStorageService = new Lazy<ITokenStorageService>(() => new TempFolderTokenStorageService

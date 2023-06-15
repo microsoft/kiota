@@ -17,7 +17,9 @@ public class OpenApiKiotaExtension : IOpenApiExtension
     /// Name of the extension as used in the description.
     /// </summary>
     public static string Name => "x-ms-kiota-info";
+#pragma warning disable CA2227
     public LanguagesInformation LanguagesInformation { get; set; } = new();
+#pragma warning restore CA2227
 
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
     {

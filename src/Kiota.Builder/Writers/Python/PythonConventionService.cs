@@ -50,6 +50,8 @@ public class PythonConventionService : CommonLanguageConventionService
     }
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
+        ArgumentNullException.ThrowIfNull(parameter);
+        ArgumentNullException.ThrowIfNull(targetElement);
         var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
         return $"{parameter.Name.ToSnakeCase()}: {(parameter.Type.IsNullable ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement, true, writer)}{(parameter.Type.IsNullable ? "] = None" : string.Empty)}{defaultValueSuffix}";
     }
@@ -67,6 +69,7 @@ public class PythonConventionService : CommonLanguageConventionService
     }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
     {
+        ArgumentNullException.ThrowIfNull(targetElement);
         if (code is null)
             return string.Empty;
         var collectionPrefix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "List[";
@@ -87,9 +90,10 @@ public class PythonConventionService : CommonLanguageConventionService
         throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
 #pragma warning restore CA1822 // Method should be static
-    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/");
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase);
     public override string TranslateType(CodeType type)
     {
+        ArgumentNullException.ThrowIfNull(type);
         if (type.IsExternal)
             return TranslateExternalType(type);
         return TranslateInternalType(type);
@@ -112,11 +116,11 @@ public class PythonConventionService : CommonLanguageConventionService
     }
     private static string TranslateInternalType(CodeType type)
     {
-        if (type.Name.Contains("RequestConfiguration") && type.TypeDefinition is not null)
+        if (type.Name.Contains("RequestConfiguration", StringComparison.Ordinal) && type.TypeDefinition is not null)
             return type.TypeDefinition.Name.ToFirstCharacterUpperCase();
-        if (type.Name.Contains("QueryParameters"))
+        if (type.Name.Contains("QueryParameters", StringComparison.Ordinal))
             return type.Name;
-        if (type.Name.Contains("APIError"))
+        if (type.Name.Contains("APIError", StringComparison.Ordinal))
             return type.Name;
         return type.Name.ToLowerInvariant() switch
         {
@@ -129,13 +133,15 @@ public class PythonConventionService : CommonLanguageConventionService
             "boolean" => "bool",
             "guid" or "uuid" => "UUID",
             "object" or "float" or "bytes" or "datetime" or "timedelta" or "date" or "time" => type.Name.ToLowerInvariant(),
-            _ => $"{type.Name.ToSnakeCase()}.{type.Name.ToFirstCharacterUpperCase()}" ?? "object",
+            _ => $"{type.Name.ToSnakeCase()}.{type.Name.ToFirstCharacterUpperCase()}",
         };
     }
 
 #pragma warning disable CA1822 // Method should be static
     public bool TypeExistInSameClassAsTarget(CodeTypeBase currentType, CodeElement targetElement)
     {
+        ArgumentNullException.ThrowIfNull(currentType);
+        ArgumentNullException.ThrowIfNull(targetElement);
         return targetElement.Parent is CodeClass && currentType.Name == targetElement.Parent.Name;
     }
 #pragma warning disable CA1822 // Method should be static
@@ -172,6 +178,7 @@ public class PythonConventionService : CommonLanguageConventionService
     }
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         if (!string.IsNullOrEmpty(description))
         {
             writer.WriteLine(DocCommentStart);
@@ -182,6 +189,7 @@ public class PythonConventionService : CommonLanguageConventionService
 
     public void WriteInLineDescription(string description, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         if (!string.IsNullOrEmpty(description))
         {
             writer.WriteLine($"{InLineCommentPrefix}{RemoveInvalidDescriptionCharacters(description)}");

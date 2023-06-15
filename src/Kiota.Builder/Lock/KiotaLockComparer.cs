@@ -24,11 +24,11 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
             _stringIEnumerableDeepComparer.GetHashCode(obj.DisabledValidationRules?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 47 +
             GetVersionHashCode(obj.KiotaVersion) * 43 +
             GetVersionHashCode(obj.LockFileVersion) * 41 +
-            (string.IsNullOrEmpty(obj.DescriptionLocation) ? 0 : obj.DescriptionLocation.GetHashCode()) * 37 +
-            (string.IsNullOrEmpty(obj.DescriptionHash) ? 0 : obj.DescriptionHash.GetHashCode()) * 31 +
-            (string.IsNullOrEmpty(obj.ClientClassName) ? 0 : obj.ClientClassName.GetHashCode()) * 29 +
-            (string.IsNullOrEmpty(obj.ClientNamespaceName) ? 0 : obj.ClientNamespaceName.GetHashCode()) * 23 +
-            (string.IsNullOrEmpty(obj.Language) ? 0 : obj.Language.GetHashCode()) * 19 +
+            (string.IsNullOrEmpty(obj.DescriptionLocation) ? 0 : obj.DescriptionLocation.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 37 +
+            (string.IsNullOrEmpty(obj.DescriptionHash) ? 0 : obj.DescriptionHash.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 31 +
+            (string.IsNullOrEmpty(obj.ClientClassName) ? 0 : obj.ClientClassName.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 29 +
+            (string.IsNullOrEmpty(obj.ClientNamespaceName) ? 0 : obj.ClientNamespaceName.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 23 +
+            (string.IsNullOrEmpty(obj.Language) ? 0 : obj.Language.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 19 +
             obj.UsesBackingStore.GetHashCode() * 17 +
             obj.IncludeAdditionalData.GetHashCode() * 13 +
             _stringIEnumerableDeepComparer.GetHashCode(obj.Serializers?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 11 +

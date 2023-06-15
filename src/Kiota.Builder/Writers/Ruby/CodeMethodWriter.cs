@@ -185,14 +185,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         var parameterName = codeElement.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.SetterValue))?.Name.ToSnakeCase();
         if (codeElement.AccessedProperty is not null)
-            writer.WriteLine($"@{codeElement.AccessedProperty.NamePrefix}{codeElement.AccessedProperty?.Name?.ToSnakeCase()} = {parameterName}");
+            writer.WriteLine($"@{codeElement.AccessedProperty.NamePrefix}{codeElement.AccessedProperty.Name.ToSnakeCase()} = {parameterName}");
     }
     private static void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.AccessedProperty is not null)
-            writer.WriteLine($"return @{codeElement.AccessedProperty.NamePrefix}{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
+            writer.WriteLine($"return @{codeElement.AccessedProperty.NamePrefix}{codeElement.AccessedProperty.Name.ToSnakeCase()}");
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType)
     {
@@ -239,7 +243,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         writer.WriteLine($"request_info = self.{generatorMethodName}(");
         var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
             .Where(static x => x != null)
-            .Select(static x => x!.Name.ToSnakeCase());
+            .Select(static x => x!.Name.ToSnakeCase())
+            .ToArray();
         if (requestInfoParameters.Any())
         {
             writer.IncreaseIndent();
@@ -271,7 +276,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
             writer.WriteLines($"request_info.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
                                 $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}");
-        writer.WriteLine($"request_info.http_method = :{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
+        writer.WriteLine($"request_info.http_method = :{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
         if (codeElement.AcceptedResponseTypes.Any())
             writer.WriteLine($"request_info.headers.add('Accept', '{string.Join(", ", codeElement.AcceptedResponseTypes)}')");
         if (requestParams.requestConfiguration != null)
@@ -339,13 +344,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
     {
         var isDescriptionPresent = !string.IsNullOrEmpty(code.Documentation.Description);
-        var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Documentation.Description));
+        var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Documentation.Description)).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
         if (isDescriptionPresent || parametersWithDescription.Any())
         {
             writer.WriteLine(conventions.DocCommentStart);
             if (isDescriptionPresent)
                 writer.WriteLine($"{conventions.DocCommentPrefix}{RubyConventionService.RemoveInvalidDescriptionCharacters(code.Documentation.Description)}");
-            foreach (var paramWithDescription in parametersWithDescription.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
+            foreach (var paramWithDescription in parametersWithDescription)
                 writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name.ToSnakeCase()} {RubyConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.Description)}");
 
             if (code.IsAsync)

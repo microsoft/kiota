@@ -8,6 +8,9 @@ namespace Kiota.Builder.SearchProviders.GitHub.Index;
 internal partial class IndexRootJsonContext : JsonSerializerContext
 {
 }
+#pragma warning disable CA2227
+#pragma warning disable CA1002
+#pragma warning disable CA1056
 public class IndexRoot
 {
     public List<IndexApiEntry> Apis { get; set; } = new();
@@ -24,3 +27,6 @@ public class IndexApiProperty
     public string Type { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
 }
+#pragma warning restore CA1056
+#pragma warning restore CA1002
+#pragma warning restore CA2227

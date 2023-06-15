@@ -41,8 +41,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         writer.CloseBlock();
     }
 
-    protected virtual void HandleMethodKind(CodeMethod codeElement, LanguageWriter writer, bool inherits, CodeClass parentClass, bool isVoid)
+    protected virtual void HandleMethodKind(CodeMethod codeElement, LanguageWriter writer, bool doesInherit, CodeClass parentClass, bool isVoid)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(parentClass);
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var returnTypeWithoutCollectionInformation = conventions.GetTypeString(codeElement.ReturnType, codeElement, false);
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
@@ -51,7 +54,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         switch (codeElement.Kind)
         {
             case CodeMethodKind.Serializer:
-                WriteSerializerBody(inherits, codeElement, parentClass, writer);
+                WriteSerializerBody(doesInherit, codeElement, parentClass, writer);
                 break;
             case CodeMethodKind.RequestGenerator:
                 WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
@@ -60,7 +63,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 WriteRequestExecutorBody(codeElement, requestParams, parentClass, isVoid, returnTypeWithoutCollectionInformation, writer);
                 break;
             case CodeMethodKind.Deserializer:
-                WriteDeserializerBody(inherits, codeElement, parentClass, writer);
+                WriteDeserializerBody(doesInherit, codeElement, parentClass, writer);
                 break;
             case CodeMethodKind.ClientConstructor:
                 WriteConstructorBody(parentClass, codeElement, writer);
@@ -349,6 +352,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     }
     protected void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, bool isVoid, string returnTypeWithoutCollectionInformation, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(requestParams);
+        ArgumentNullException.ThrowIfNull(parentClass);
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
         var generatorMethodName = parentClass
@@ -516,6 +523,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
 
     protected string GetSendRequestMethodName(bool isVoid, CodeElement currentElement, CodeTypeBase returnType)
     {
+        ArgumentNullException.ThrowIfNull(returnType);
         var returnTypeName = conventions.GetTypeString(returnType, currentElement, false);
         var isStream = conventions.StreamTypeName.Equals(returnTypeName, StringComparison.OrdinalIgnoreCase);
         var isEnum = returnType is CodeType codeType && codeType.TypeDefinition is CodeEnum;

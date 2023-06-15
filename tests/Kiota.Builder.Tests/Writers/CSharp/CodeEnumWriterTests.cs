@@ -47,42 +47,42 @@ public class CodeEnumWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
         Assert.Contains(Option.Name, result);
     }
-    
+
     [Fact]
     public void NamesDiffer_WritesEnumMember()
     {
         currentEnum.Flags = true;
         currentEnum.AddOption(Option);
-        currentEnum.AddOption(new CodeEnumOption { Name = "InvalidName", SerializationName = "Invalid:Name"});
+        currentEnum.AddOption(new CodeEnumOption { Name = "InvalidName", SerializationName = "Invalid:Name" });
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.Contains($"[EnumMember(Value = \"Invalid:Name\")]", result);
     }
-    
+
     [Fact]
     public void NamesDontDiffer_DoesntWriteEnumMember()
     {
         currentEnum.Flags = true;
         currentEnum.AddOption(Option);
-        currentEnum.AddOption(new CodeEnumOption { Name = "ValidName"});
+        currentEnum.AddOption(new CodeEnumOption { Name = "ValidName" });
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.DoesNotContain($"\"ValidName\"", result);
     }
-    
+
     [Theory]
-    [InlineData("\\","BackSlash")]
-    [InlineData("?","QuestionMark")]
-    [InlineData("$","Dollar")]
+    [InlineData("\\", "BackSlash")]
+    [InlineData("?", "QuestionMark")]
+    [InlineData("$", "Dollar")]
     public void WritesEnumWithSanitizedName(string symbol, string expected)
     {
         currentEnum.Flags = true;
-        currentEnum.AddOption(new CodeEnumOption { Name = symbol.CleanupSymbolName()});
+        currentEnum.AddOption(new CodeEnumOption { Name = symbol.CleanupSymbolName() });
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.Contains(expected, result);
     }
-    
+
     [Fact]
     public void WritesFlagsEnum()
     {

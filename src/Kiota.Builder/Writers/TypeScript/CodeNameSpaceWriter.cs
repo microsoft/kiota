@@ -16,6 +16,8 @@ public class CodeNameSpaceWriter : BaseElementWriter<CodeNamespace, TypeScriptCo
     /// <param name="writer"></param>
     public override void WriteCodeElement(CodeNamespace codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLines(codeElement.Enums
                                     .Concat<CodeElement>(codeElement.Functions)
                                     .Concat(codeElement.Interfaces)

@@ -25,5 +25,5 @@ public class GoPathSegmenter : CommonPathSegmenter
             _ => GetLastFileNameSegment(currentElement).ToSnakeCase().ShortenFileName(),
         };
     }
-    public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToLowerInvariant();
+    public override string NormalizeNamespaceSegment(string segmentName) => segmentName?.ToLowerInvariant() ?? string.Empty;
 }

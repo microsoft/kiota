@@ -8,21 +8,21 @@ namespace Kiota.Builder.CodeDOM;
 /// <summary>
 /// 
 /// </summary>
-public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, new() where U : BlockEnd, new()
+public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where TBlockDeclaration : BlockDeclaration, new() where TBlockEnd : BlockEnd, new()
 {
-    public V StartBlock
+    public TBlockDeclaration StartBlock
     {
         get; set;
     }
     protected ConcurrentDictionary<string, CodeElement> InnerChildElements { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
-    public U EndBlock
+    public TBlockEnd EndBlock
     {
         get; set;
     }
     public CodeBlock()
     {
-        StartBlock = new V { Parent = this };
-        EndBlock = new U { Parent = this };
+        StartBlock = new TBlockDeclaration { Parent = this };
+        EndBlock = new TBlockEnd { Parent = this };
     }
     public override IEnumerable<CodeElement> GetChildElements(bool innerOnly = false)
     {
