@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-
+using System.Threading;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Python;
@@ -251,6 +251,213 @@ public class CodeMethodWriterTests : IDisposable
             }
         });
     }
+    private CodeClass AddUnionTypeWrapper()
+    {
+        var complexType1 = root.AddClass(new CodeClass
+        {
+            Name = "ComplexType1",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var complexType2 = root.AddClass(new CodeClass
+        {
+            Name = "ComplexType2",
+            Kind = CodeClassKind.Model,
+        }).First();
+
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var nUsingComplexType1 = new CodeUsing
+        {
+            Name = complexType1.Name,
+            Declaration = new()
+            {
+                Name = complexType1.Name,
+                TypeDefinition = complexType1,
+            }
+        };
+        var nUsingComplexType2 = new CodeUsing
+        {
+            Name = complexType2.Name,
+            Declaration = new()
+            {
+                Name = complexType2.Name,
+                TypeDefinition = complexType2,
+            }
+        };
+        unionTypeWrapper.StartBlock.AddUsings(nUsingComplexType1, nUsingComplexType2);
+        var cType1 = new CodeType
+        {
+            Name = "ComplexType1",
+            TypeDefinition = complexType1
+        };
+        var cType2 = new CodeType
+        {
+            Name = "ComplexType2",
+            TypeDefinition = complexType2,
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+        };
+        var sType = new CodeType
+        {
+            Name = "string",
+        };
+        unionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType
+        {
+            Name = "ComplexType1",
+            TypeDefinition = cType1
+        });
+        unionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType2", new CodeType
+        {
+            Name = "ComplexType2",
+            TypeDefinition = cType2
+        });
+        unionTypeWrapper.OriginalComposedType.AddType(cType1);
+        unionTypeWrapper.OriginalComposedType.AddType(cType2);
+        unionTypeWrapper.OriginalComposedType.AddType(sType);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "ComplexType1Value",
+            Type = cType1,
+            Kind = CodePropertyKind.Custom
+        });
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "ComplexType2Value",
+            Type = cType2,
+            Kind = CodePropertyKind.Custom
+        });
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "StringValue",
+            Type = sType,
+            Kind = CodePropertyKind.Custom
+        });
+        return unionTypeWrapper;
+    }
+    private CodeClass AddIntersectionTypeWrapper()
+    {
+        var complexType1 = root.AddClass(new CodeClass
+        {
+            Name = "ComplexType1",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var complexType2 = root.AddClass(new CodeClass
+        {
+            Name = "ComplexType2",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var complexType3 = root.AddClass(new CodeClass
+        {
+            Name = "ComplexType3",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var intersectionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "IntersectionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeIntersectionType
+            {
+                Name = "IntersectionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var nUsingComplexType1 = new CodeUsing
+        {
+            Name = complexType1.Name,
+            Declaration = new()
+            {
+                Name = complexType1.Name,
+                TypeDefinition = complexType1,
+            }
+        };
+        var nUsingComplexType2 = new CodeUsing
+        {
+            Name = complexType2.Name,
+            Declaration = new()
+            {
+                Name = complexType2.Name,
+                TypeDefinition = complexType2,
+            }
+        };
+        intersectionTypeWrapper.StartBlock.AddUsings(nUsingComplexType1, nUsingComplexType2);
+        var cType1 = new CodeType
+        {
+            Name = "ComplexType1",
+            TypeDefinition = complexType1
+        };
+        var cType2 = new CodeType
+        {
+            Name = "ComplexType2",
+            TypeDefinition = complexType2,
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+        };
+        var cType3 = new CodeType
+        {
+            Name = "ComplexType3",
+            TypeDefinition = complexType3
+        };
+        intersectionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType
+        {
+            Name = "ComplexType1",
+            TypeDefinition = cType1
+        });
+        intersectionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType2", new CodeType
+        {
+            Name = "ComplexType2",
+            TypeDefinition = cType2
+        });
+        intersectionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType3", new CodeType
+        {
+            Name = "ComplexType3",
+            TypeDefinition = cType3
+        });
+        var sType = new CodeType
+        {
+            Name = "string",
+        };
+        intersectionTypeWrapper.OriginalComposedType.AddType(cType1);
+        intersectionTypeWrapper.OriginalComposedType.AddType(cType2);
+        intersectionTypeWrapper.OriginalComposedType.AddType(cType3);
+        intersectionTypeWrapper.OriginalComposedType.AddType(sType);
+        intersectionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "ComplexType1Value",
+            Type = cType1,
+            Kind = CodePropertyKind.Custom
+        });
+        intersectionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "ComplexType2Value",
+            Type = cType2,
+            Kind = CodePropertyKind.Custom
+        });
+        intersectionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "ComplexType3Value",
+            Type = cType3,
+            Kind = CodePropertyKind.Custom
+        });
+        intersectionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "StringValue",
+            Type = sType,
+            Kind = CodePropertyKind.Custom
+        });
+        return intersectionTypeWrapper;
+    }
     private void AddInheritanceClass()
     {
         parentClass.StartBlock.Inherits = new CodeType
@@ -420,7 +627,7 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("error_mapping: Dict[str, ParsableFactory]", result);
-        Assert.Contains("cannot be undefined", result);
+        Assert.Contains("cannot be null", result);
     }
     [Fact]
     public void WritesRequestExecutorBodyForCollections()
@@ -679,7 +886,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("self", result);
     }
     [Fact]
-    public void WritesModelFactoryBody()
+    public void WritesModelFactoryBodyForInheritedModels()
     {
         parentClass.Kind = CodeClassKind.Model;
         childClass.Kind = CodeClassKind.Model;
@@ -719,13 +926,94 @@ public class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
-        Assert.Contains("if mapping_value_node:", result);
-        Assert.Contains("mapping_value = mapping_value_node.get_str_value()", result);
-        Assert.Contains("if mapping_value == \"ns.childclass\"", result);
+        Assert.Contains("try:", result);
+        Assert.Contains("mapping_value = parse_node.get_child_node(\"@odata.type\").get_str_value()", result);
+        Assert.Contains("except AttributeError:", result);
+        Assert.Contains("mapping_value = None", result);
+        Assert.Contains("if mapping_value and mapping_value.casefold() == \"ns.childclass\".casefold()", result);
         Assert.Contains("from . import child_class", result);
         Assert.Contains("return child_class.ChildClass()", result);
         Assert.Contains("return ParentClass()", result);
+    }
+    [Fact]
+    public void WritesModelFactoryBodyForUnionModels()
+    {
+        var wrapper = AddUnionTypeWrapper();
+        var factoryMethod = wrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "UnionTypeWrapper",
+                TypeDefinition = wrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode"
+            }
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("try:", result);
+        Assert.Contains("mapping_value = parse_node.get_child_node(\"@odata.type\").get_str_value()", result);
+        Assert.Contains("except AttributeError:", result);
+        Assert.Contains("mapping_value = None", result);
+        Assert.Contains("result = UnionTypeWrapper()", result);
+        Assert.Contains("if mapping_value and mapping_value.casefold() == \"#kiota.complexType1\".casefold():", result);
+        Assert.Contains("from . import complex_type1", result);
+        Assert.Contains("result.complex_type1_value = complex_type1.ComplexType1()", result);
+        Assert.Contains("elif isinstance(string_value_value := parse_node.get_str_value(), str):", result);
+        Assert.Contains("result.string_value = string_value_value", result);
+        Assert.Contains("elif isinstance(complex_type2_value_value := parse_node.get_collection_of_object_values(complex_type2.ComplexType2), list):", result);
+        Assert.Contains("result.complex_type2_value = complex_type2_value_value", result);
+        Assert.Contains("return result", result);
+        AssertExtensions.Before("get_str_value(), str", "get_collection_of_object_values(ComplexType2)", result);
+    }
+    [Fact]
+    public void WritesModelFactoryBodyForIntersectionModels()
+    {
+        var wrapper = AddIntersectionTypeWrapper();
+        var factoryMethod = wrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+
+            ReturnType = new CodeType
+            {
+                Name = "IntersectionTypeWrapper",
+                TypeDefinition = wrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode"
+            }
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("try:", result);
+        Assert.DoesNotContain("mapping_value = parse_node.get_child_node(\"@odata.type\").get_str_value()", result);
+        Assert.Contains("result = IntersectionTypeWrapper()", result);
+        Assert.DoesNotContain("if mapping_value and mapping_value.casefold() == \"#kiota.complexType1\".casefold():", result);
+        Assert.Contains("if isinstance(string_value_value := parse_node.get_str_value(), str):", result);
+        Assert.Contains("result.string_value = string_value_value", result);
+        Assert.Contains("elif isinstance(complex_type2_value_value := parse_node.get_collection_of_object_values(complex_type2.ComplexType2), list):", result);
+        Assert.Contains("result.complex_type2_value = complex_type2_value_value", result);
+        Assert.Contains("else:", result);
+        Assert.Contains("from . import complex_type1", result);
+        Assert.Contains("result.complex_type1_value = complex_type1.ComplexType1()", result);
+        Assert.Contains("return result", result);
+        AssertExtensions.Before("get_str_value(), str", "get_collection_of_object_values(ComplexType2)", result);
     }
     [Fact]
     public void DoesntWriteFactoryConditionalsOnMissingParameter()
@@ -1295,7 +1583,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("if original_name is None:", result);
+        Assert.Contains("if not original_name:", result);
         Assert.Contains("if original_name == \"select\":", result);
         Assert.Contains("return \"%24select\"", result);
         Assert.Contains("if original_name == \"expand\":", result);
@@ -1331,7 +1619,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("if original_name is None:", result);
+        Assert.Contains("if not original_name:", result);
         Assert.Contains("if original_name == \"start_date_time\":", result);
         Assert.Contains("return \"startDateTime\"", result);
         Assert.Contains("return original_name", result);
