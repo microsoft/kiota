@@ -402,6 +402,10 @@ public partial class KiotaBuilder
                     OpenApiKiotaExtension.Name,
                     static (i, _ ) => OpenApiKiotaExtension.Parse(i)
                 },
+                {
+                    OpenApiDeprecationExtension.Name,
+                    static (i, _ ) => OpenApiDeprecationExtension.Parse(i)
+                }
             },
             RuleSet = ruleSet,
         };
