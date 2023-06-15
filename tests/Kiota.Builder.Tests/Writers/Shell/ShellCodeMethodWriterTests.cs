@@ -1156,7 +1156,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(bodyOption);", result);
         Assert.Contains("var body = invocationContext.ParseResult.GetValueForOption(bodyOption) ?? string.Empty;", result);
         Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
-        Assert.Contains("var model = parseNode.GetCollectionOfObjectValues<Content>(Content.CreateFromDiscriminatorValue);", result);
+        Assert.Contains("var model = parseNode.GetCollectionOfObjectValues<Content>(Content.CreateFromDiscriminatorValue)?.ToList();", result);
         Assert.Contains("if (model is null) return;", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
