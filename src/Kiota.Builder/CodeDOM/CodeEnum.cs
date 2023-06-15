@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Kiota.Builder.CodeDOM;
 #pragma warning disable CA1711
-public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElement, ITypeDefinition
+public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElement, ITypeDefinition, IDeprecableElement
 {
 #pragma warning restore CA2227
     private readonly HashSet<string> optionsNames = new(StringComparer.OrdinalIgnoreCase); // this structure is used to check if an option name is unique   
@@ -26,4 +26,8 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
         }
     }
     public IEnumerable<CodeEnumOption> Options => OptionsInternal;
+    public DeprecationInformation? Deprecation
+    {
+        get; set;
+    }
 }

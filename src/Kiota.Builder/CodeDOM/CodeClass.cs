@@ -30,7 +30,7 @@ public enum CodeClassKind
 /// <summary>
 /// CodeClass represents an instance of a Class to be generated in source code
 /// </summary>
-public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition, IDiscriminatorInformationHolder
+public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition, IDiscriminatorInformationHolder, IDeprecableElement
 {
     public bool IsErrorDefinition
     {
@@ -135,6 +135,11 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             EnsureElementsAreChildren(value);
             _discriminatorInformation = value;
         }
+    }
+
+    public DeprecationInformation? Deprecation
+    {
+        get; set;
     }
 }
 public class ClassDeclaration : ProprietableBlockDeclaration

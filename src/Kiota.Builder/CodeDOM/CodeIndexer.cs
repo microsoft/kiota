@@ -1,7 +1,7 @@
 ﻿using System;
 
 namespace Kiota.Builder.CodeDOM;
-public class CodeIndexer : CodeTerminal, IDocumentedElement
+public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement
 {
 #nullable disable // exposing property is required
     private CodeTypeBase indexType;
@@ -40,4 +40,8 @@ public class CodeIndexer : CodeTerminal, IDocumentedElement
     /// The Path segment to use for the method name when using back-compatible methods.
     /// </summary>
     public string PathSegment { get; set; } = string.Empty;
+    public DeprecationInformation? Deprecation
+    {
+        get; set;
+    }
 }
