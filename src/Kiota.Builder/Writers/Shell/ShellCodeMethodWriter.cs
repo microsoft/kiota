@@ -658,7 +658,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
 
                 if (requestBodyParamType.IsCollection)
                 {
-                    writer.WriteLine($"var model = parseNode.GetCollectionOfObjectValues<{typeString}>({typeString}.CreateFromDiscriminatorValue);");
+                    writer.WriteLine($"var model = parseNode.GetCollectionOfObjectValues<{typeString}>({typeString}.CreateFromDiscriminatorValue)?.ToList();");
                 }
                 else
                 {
