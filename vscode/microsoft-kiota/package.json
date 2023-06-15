@@ -248,7 +248,7 @@
     "@types/glob": "^8.0.1",
     "@types/mocha": "^10.0.1",
     "@types/node": "20.x",
-    "@types/vscode": "^1.79.0",
+    "@types/vscode": "^1.79.1",
     "@typescript-eslint/eslint-plugin": "^5.59.11",
     "@typescript-eslint/parser": "^5.59.11",
     "@vscode/test-electron": "^2.3.3",
