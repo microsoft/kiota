@@ -786,6 +786,72 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("super().serialize", result);
     }
     [Fact]
+    public void WritesUnionSerializerBody()
+    {
+        var wrapper = AddUnionTypeWrapper();
+        var serializationMethod = wrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Serializer,
+            IsAsync = false,
+            ReturnType = new CodeType
+            {
+                Name = "void",
+            },
+        }).First();
+        serializationMethod.AddParameter(new CodeParameter
+        {
+            Name = "writer",
+            Kind = CodeParameterKind.Serializer,
+            Type = new CodeType
+            {
+                Name = "SerializationWriter"
+            }
+        });
+        writer.Write(serializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("super().serialize", result);
+        Assert.Contains("if self.complex_type1_value:", result);
+        Assert.Contains("writer.write_object_value(None, self.complex_type1_value)", result);
+        Assert.Contains("if self.string_value:", result);
+        Assert.Contains("writer.write_str_value(None, self.string_value)", result);
+        Assert.Contains("if self.complex_type2_value:", result);
+        Assert.Contains("writer.write_collection_of_object_values(None, self.complex_type2_value)", result);
+    }
+    [Fact]
+    public void WritesIntersectionSerializerBody()
+    {
+        var wrapper = AddIntersectionTypeWrapper();
+        var serializationMethod = wrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Serializer,
+            IsAsync = false,
+            ReturnType = new CodeType
+            {
+                Name = "void",
+            },
+        }).First();
+        serializationMethod.AddParameter(new CodeParameter
+        {
+            Name = "writer",
+            Kind = CodeParameterKind.Serializer,
+            Type = new CodeType
+            {
+                Name = "SerializationWriter"
+            }
+        });
+        writer.Write(serializationMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("super().serialize", result);
+        Assert.DoesNotContain("if self.complex_type1_value:", result);
+        Assert.Contains("writer.write_object_value(None, self.complex_type1_value, self.complex_type3_value)", result);
+        Assert.Contains("if self.string_value:", result);
+        Assert.Contains("writer.write_str_value(None, self.string_value)", result);
+        Assert.Contains("if self.complex_type2_value:", result);
+        Assert.Contains("writer.write_collection_of_object_values(None, self.complex_type2_value)", result);
+    }
+    [Fact]
     public void WritesSerializerBody()
     {
         method.Kind = CodeMethodKind.Serializer;
@@ -794,11 +860,15 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("write_str_value", result);
+        Assert.Contains("write_bool_value", result);
+        Assert.Contains("write_int_value", result);
+        Assert.Contains("write_float_value", result);
         Assert.Contains("write_datetime_value", result);
         Assert.Contains("write_timedelta_value", result);
         Assert.Contains("write_date_value", result);
         Assert.Contains("write_time_value", result);
         Assert.Contains("write_uuid_value", result);
+        Assert.Contains("write_object_value", result);
         Assert.Contains("write_collection_of_primitive_values", result);
         Assert.Contains("write_collection_of_object_values", result);
         Assert.Contains("write_enum_value", result);
