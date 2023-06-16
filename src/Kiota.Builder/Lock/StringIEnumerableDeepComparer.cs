@@ -17,6 +17,6 @@ internal class StringIEnumerableDeepComparer : IEqualityComparer<IEnumerable<str
     public int GetHashCode(IEnumerable<string> obj)
     {
         if (obj == null) return 0;
-        return string.Join(",", obj.Order(StringComparer.OrdinalIgnoreCase)).GetHashCode();
+        return string.Join(",", obj.Order(StringComparer.OrdinalIgnoreCase)).GetHashCode(StringComparison.Ordinal);
     }
 }

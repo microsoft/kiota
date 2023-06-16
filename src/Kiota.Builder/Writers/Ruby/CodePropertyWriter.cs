@@ -8,6 +8,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
     public CodePropertyWriter(RubyConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.ExistsInExternalBaseType) return;
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement);

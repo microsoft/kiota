@@ -22,6 +22,7 @@ public class SwiftConventionService : CommonLanguageConventionService
     public override string ParseNodeInterfaceName => "ParseNode";
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         if (!string.IsNullOrEmpty(description))
             writer.WriteLine($"{DocCommentPrefix}<summary>{description}</summary>");
     }
@@ -79,7 +80,7 @@ public class SwiftConventionService : CommonLanguageConventionService
             return $"{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}";
         }
 
-        throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+        throw new InvalidOperationException($"type of type {code?.GetType()} is unknown");
     }
     private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
     {
@@ -90,7 +91,7 @@ public class SwiftConventionService : CommonLanguageConventionService
     }
     public override string TranslateType(CodeType type)
     {
-        return type.Name switch
+        return type?.Name switch
         {
             "integer" => "Int32",
             "boolean" => "Bool",
@@ -100,12 +101,14 @@ public class SwiftConventionService : CommonLanguageConventionService
             "guid" => "UUID",
             "void" or "uint8" or "int8" or "int32" or "int64" or "float32" or "float64" or "string" => type.Name.ToFirstCharacterUpperCase(),
             "binary" or "base64" or "base64url" => "[UInt8]",
-            "DateTimeOffset" => "Date", // TODO
-            _ => type.Name?.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
+            "DateTimeOffset" => "Date", // TODO,
+            null => "object",
+            _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
     }
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
+        ArgumentNullException.ThrowIfNull(parameter);
         var parameterType = GetTypeString(parameter.Type, targetElement);
         var defaultValue = parameter switch
         {

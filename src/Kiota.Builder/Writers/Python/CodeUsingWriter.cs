@@ -20,11 +20,14 @@ public class CodeUsingWriter
     /// <returns>void</returns>
     public void WriteExternalImports(ClassDeclaration codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         var externalImportSymbolsAndPaths = codeElement.Usings
                                                         .Where(static x => x.IsExternal)
                                                         .Select(static x => (x.Name, string.Empty, x.Declaration?.Name))
                                                         .GroupBy(static x => x.Item3)
-                                                        .OrderBy(static x => x.Key);
+                                                        .OrderBy(static x => x.Key)
+                                                        .ToArray();
         if (externalImportSymbolsAndPaths.Any())
         {
             foreach (var codeUsing in externalImportSymbolsAndPaths)
@@ -46,6 +49,8 @@ public class CodeUsingWriter
     /// <returns>void</returns>
     public void WriteInternalErrorMappingImports(CodeClass parentClass, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(parentClass);
+        ArgumentNullException.ThrowIfNull(writer);
         var parentNameSpace = parentClass.GetImmediateParentOfType<CodeNamespace>();
         var internalErrorMappingImportSymbolsAndPaths = parentClass.Usings
                                                         .Where(static x => !x.IsExternal)
@@ -53,7 +58,8 @@ public class CodeUsingWriter
                                                         .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNameSpace))
                                                         .GroupBy(static x => x.Item3)
                                                         .Where(static x => !string.IsNullOrEmpty(x.Key))
-                                                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase);
+                                                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
+                                                        .ToArray();
         WriteCodeUsings(internalErrorMappingImportSymbolsAndPaths, writer);
     }
     /// <summary>
@@ -64,13 +70,16 @@ public class CodeUsingWriter
     /// <returns>void</returns>
     public void WriteInternalImports(CodeClass parentClass, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(parentClass);
+        ArgumentNullException.ThrowIfNull(writer);
         var parentNameSpace = parentClass.GetImmediateParentOfType<CodeNamespace>();
         var internalImportSymbolsAndPaths = parentClass.Usings
                                                         .Where(static x => !x.IsExternal)
                                                         .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNameSpace))
                                                         .GroupBy(static x => x.Item3)
                                                         .Where(static x => !string.IsNullOrEmpty(x.Key))
-                                                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase);
+                                                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
+                                                        .ToArray();
         WriteCodeUsings(internalImportSymbolsAndPaths, writer);
     }
     /// <summary>
@@ -82,12 +91,15 @@ public class CodeUsingWriter
     /// <returns>void</returns>
     public void WriteConditionalInternalImports(ClassDeclaration codeElement, LanguageWriter writer, CodeNamespace parentNameSpace)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         var internalImportSymbolsAndPaths = codeElement.Usings
                                                         .Where(static x => !x.IsExternal)
                                                         .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNameSpace))
                                                         .GroupBy(static x => x.Item3)
                                                         .Where(static x => !string.IsNullOrEmpty(x.Key))
-                                                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase);
+                                                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
+                                                        .ToArray();
         if (internalImportSymbolsAndPaths.Any())
         {
             writer.WriteLine("if TYPE_CHECKING:");
@@ -108,6 +120,8 @@ public class CodeUsingWriter
     /// <returns>void</returns>
     public void WriteDeferredImport(CodeClass parentClass, string typeName, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(parentClass);
+        ArgumentNullException.ThrowIfNull(writer);
         var parentNamespace = parentClass.GetImmediateParentOfType<CodeNamespace>();
         var internalImportSymbolsAndPaths = parentClass.Usings
                                                         .Where(static x => !x.IsExternal)
@@ -115,11 +129,12 @@ public class CodeUsingWriter
                                                         .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNamespace))
                                                         .GroupBy(static x => x.Item3)
                                                         .Where(static x => !string.IsNullOrEmpty(x.Key))
-                                                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase);
+                                                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
+                                                        .ToArray();
         WriteCodeUsings(internalImportSymbolsAndPaths, writer);
     }
 
-    private static void WriteCodeUsings(IOrderedEnumerable<IGrouping<string, (string, string, string)>> importSymbolsAndPaths, LanguageWriter writer)
+    private static void WriteCodeUsings(IGrouping<string, (string, string, string)>[] importSymbolsAndPaths, LanguageWriter writer)
     {
         if (importSymbolsAndPaths.Any())
         {

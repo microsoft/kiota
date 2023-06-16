@@ -57,21 +57,22 @@ public class PhpConventionService : CommonLanguageConventionService
 
     public override string TranslateType(CodeType type)
     {
-        string typeName = type.Name;
-        return typeName?.ToLowerInvariant() switch
+        ArgumentNullException.ThrowIfNull(type);
+        return type.Name.ToLowerInvariant() switch
         {
             "boolean" => "bool",
             "double" => "float",
             "decimal" or "byte" or "guid" => "string",
             "integer" or "int32" or "int64" or "sbyte" => "int",
-            "object" or "string" or "array" or "float" or "void" => typeName.ToLowerInvariant(),
+            "object" or "string" or "array" or "float" or "void" => type.Name.ToLowerInvariant(),
             "binary" or "base64" or "base64url" => "StreamInterface",
-            _ => typeName.ToFirstCharacterUpperCase()
+            _ => type.Name.ToFirstCharacterUpperCase()
         };
     }
 
     public string GetParameterName(CodeParameter parameter)
     {
+        ArgumentNullException.ThrowIfNull(parameter);
         return parameter.Kind switch
         {
             CodeParameterKind.RequestConfiguration => "$requestConfiguration",
@@ -88,6 +89,7 @@ public class PhpConventionService : CommonLanguageConventionService
     }
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
+        ArgumentNullException.ThrowIfNull(parameter);
         var typeString = GetTypeString(parameter.Type, parameter);
         var parameterSuffix = parameter.Kind switch
         {
@@ -105,6 +107,7 @@ public class PhpConventionService : CommonLanguageConventionService
     }
     public string GetParameterDocNullable(CodeParameter parameter, CodeElement codeElement)
     {
+        ArgumentNullException.ThrowIfNull(parameter);
         var parameterSignature = GetParameterSignature(parameter, codeElement).Trim().Split(' ');
         if (parameter.IsOfKind(CodeParameterKind.PathParameters))
         {
@@ -128,10 +131,10 @@ public class PhpConventionService : CommonLanguageConventionService
         return codeParameter.Optional ? $"{doc}|null" : doc;
     }
 
-    private static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/");
+    private static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase);
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
-
+        ArgumentNullException.ThrowIfNull(writer);
         if (!string.IsNullOrEmpty(description))
         {
             writer.WriteLine(DocCommentStart);
@@ -143,6 +146,7 @@ public class PhpConventionService : CommonLanguageConventionService
 
     public void WriteLongDescription(CodeDocumentation codeDocumentation, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeDocumentation is null) return;
         additionalRemarks ??= Enumerable.Empty<string>();
 
@@ -165,6 +169,7 @@ public class PhpConventionService : CommonLanguageConventionService
 
     public void AddRequestBuilderBody(string returnType, LanguageWriter writer, string? suffix = default, IEnumerable<CodeParameter>? pathParameters = default)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         var joined = string.Empty;
         var codeParameters = pathParameters?.ToList();
         if (pathParameters != null && (codeParameters?.Any() ?? false))
@@ -187,10 +192,12 @@ public class PhpConventionService : CommonLanguageConventionService
 
     public void WritePhpDocumentStart(LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLines("<?php", string.Empty);
     }
     public void WriteNamespaceAndImports(ClassDeclaration codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         bool hasUse = false;
         if (codeElement?.Parent?.Parent is CodeNamespace codeNamespace)
         {
@@ -229,7 +236,7 @@ public class PhpConventionService : CommonLanguageConventionService
     }
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default)
     {
-        var codeParameters = pathParameters as CodeParameter[] ?? pathParameters?.ToArray();
+        var codeParameters = pathParameters?.ToArray();
         var codePathParametersSuffix = !(codeParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", codeParameters.Select(x => $"${x.Name.ToFirstCharacterLowerCase()}"))}";
         var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) && parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty ?
             $"$this->{pathParametersProperty.Name}" :
@@ -249,7 +256,7 @@ public class PhpConventionService : CommonLanguageConventionService
 
     private static bool IsSymbolDuplicated(string symbol, CodeElement targetElement)
     {
-        var targetClass = targetElement as CodeClass ?? targetElement?.GetImmediateParentOfType<CodeClass>();
+        var targetClass = targetElement?.GetImmediateParentOfType<CodeClass>();
         if (targetClass?.Parent is CodeClass parentClass)
             targetClass = parentClass;
         return targetClass?.StartBlock

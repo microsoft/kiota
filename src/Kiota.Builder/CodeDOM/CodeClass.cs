@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 using Kiota.Builder.Extensions;
@@ -87,23 +88,20 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             throw new ArgumentOutOfRangeException(nameof(codeInterfaces));
         return AddRange(codeInterfaces);
     }
-    public CodeClass? GetParentClass()
-    {
-        return StartBlock.Inherits?.TypeDefinition as CodeClass;
-    }
+    public CodeClass? ParentClass => StartBlock.Inherits?.TypeDefinition as CodeClass;
     public bool DerivesFrom(CodeClass codeClass)
     {
         ArgumentNullException.ThrowIfNull(codeClass);
-        var parent = GetParentClass();
+        var parent = ParentClass;
         if (parent == null)
             return false;
         if (parent == codeClass)
             return true;
         return parent.DerivesFrom(codeClass);
     }
-    public List<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false, bool includeCurrentClass = true)
+    public Collection<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false, bool includeCurrentClass = true)
     {
-        var parentClass = GetParentClass();
+        var parentClass = ParentClass;
         if (parentClass == null || (currentNamespaceOnly && parentClass.GetImmediateParentOfType<CodeNamespace>() != GetImmediateParentOfType<CodeNamespace>()))
             if (includeCurrentClass)
                 return new() { this };
@@ -115,7 +113,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     }
     public CodeClass? GetGreatestGrandparent(CodeClass? startClassToSkip = default)
     {
-        var parentClass = GetParentClass();
+        var parentClass = ParentClass;
         if (parentClass == null)
             return startClassToSkip != null && startClassToSkip == this ? null : this;
         // we don't want to return the current class if this is the start node in the inheritance tree and doesn't have parent

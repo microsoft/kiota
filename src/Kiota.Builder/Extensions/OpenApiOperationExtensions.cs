@@ -15,6 +15,7 @@ public static class OpenApiOperationExtensions
     private static readonly Regex vendorSpecificCleanup = new(@"[^/]+\+", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     public static OpenApiSchema? GetResponseSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
     {
+        ArgumentNullException.ThrowIfNull(operation);
         // Return Schema that represents all the possible success responses!
         return operation.GetResponseSchemas(SuccessCodes, structuredMimeTypes)
                             .FirstOrDefault();
@@ -28,6 +29,7 @@ public static class OpenApiOperationExtensions
     }
     public static OpenApiSchema? GetRequestSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
     {
+        ArgumentNullException.ThrowIfNull(operation);
         return operation.RequestBody?.Content
                             .GetValidSchemas(structuredMimeTypes).FirstOrDefault();
     }
@@ -45,6 +47,7 @@ public static class OpenApiOperationExtensions
     }
     public static OpenApiSchema? GetResponseSchema(this OpenApiResponse response, HashSet<string> structuredMimeTypes)
     {
+        ArgumentNullException.ThrowIfNull(response);
         return response.Content.GetValidSchemas(structuredMimeTypes).FirstOrDefault();
     }
 }

@@ -53,12 +53,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void ReplaceDefaultSerializationModules(CodeElement generatedCode, HashSet<string> defaultValues, HashSet<string> newModuleNames)
     {
+        ArgumentNullException.ThrowIfNull(defaultValues);
         if (ReplaceSerializationModules(generatedCode, static x => x.SerializerModules, (x, y) => x.SerializerModules = y, defaultValues, newModuleNames))
             return;
         CrawlTree(generatedCode, x => ReplaceDefaultSerializationModules(x, defaultValues, newModuleNames));
     }
     protected static void ReplaceDefaultDeserializationModules(CodeElement generatedCode, HashSet<string> defaultValues, HashSet<string> newModuleNames)
     {
+        ArgumentNullException.ThrowIfNull(defaultValues);
         if (ReplaceSerializationModules(generatedCode, static x => x.DeserializerModules, (x, y) => x.DeserializerModules = y, defaultValues, newModuleNames))
             return;
         CrawlTree(generatedCode, x => ReplaceDefaultDeserializationModules(x, defaultValues, newModuleNames));
@@ -127,6 +129,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         bool classNames = true,
         bool enumNames = true)
     {
+        ArgumentNullException.ThrowIfNull(refineName);
         if (current is CodeClass currentClass && classNames)
         {
             if (refineName(currentClass.Name) is string refinedClassName &&
@@ -183,6 +186,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void ReplacePropertyNames(CodeElement current, HashSet<CodePropertyKind> propertyKindsToReplace, Func<string, string> refineAccessorName)
     {
+        ArgumentNullException.ThrowIfNull(refineAccessorName);
         if (!(propertyKindsToReplace?.Any() ?? true)) return;
         if (current is CodeProperty currentProperty &&
             !currentProperty.ExistsInBaseType &&
@@ -202,6 +206,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, Func<string, string> refineAccessorName, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_")
     {
+        ArgumentNullException.ThrowIfNull(refineAccessorName);
         if (!(propertyKindsToAddAccessors?.Any() ?? true)) return;
         if (current is CodeProperty currentProperty &&
             !currentProperty.ExistsInBaseType &&
@@ -231,7 +236,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 {
                     Description = $"Gets the {propertyOriginalName} property value. {currentProperty.Documentation.Description}",
                 },
-                AccessedProperty =  currentProperty,
+                AccessedProperty = currentProperty,
             }).First();
             currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
             var setter = parentClass.AddMethod(new CodeMethod
@@ -333,6 +338,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type>? codeElementExceptions = null, Func<CodeElement, bool>? shouldReplaceCallback = null)
     {
+        ArgumentNullException.ThrowIfNull(current);
+        ArgumentNullException.ThrowIfNull(provider);
+        ArgumentNullException.ThrowIfNull(replacement);
         var shouldReplace = shouldReplaceCallback?.Invoke(current) ?? true;
         var isNotInExceptions = !codeElementExceptions?.Contains(current.GetType()) ?? true;
         if (current is CodeClass currentClass &&
@@ -482,6 +490,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         });
     protected static void AddDefaultImports(CodeElement current, IEnumerable<AdditionalUsingEvaluator> evaluators)
     {
+        ArgumentNullException.ThrowIfNull(current);
         var usingsToAdd = evaluators.Where(x => x.CodeElementEvaluator.Invoke(current))
                         .SelectMany(usingSelector)
                         .ToArray();
@@ -531,6 +540,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, bool supportInnerClasses = true)
     {
+        ArgumentNullException.ThrowIfNull(currentElement);
         if (currentElement.Parent is CodeClass parentClass)
         {
             if (currentElement is CodeMethod currentMethod)
@@ -581,7 +591,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 },
             })
                                 .First();
-            
+
             newClass.AddUsing(codeComposedType.AllTypes
                 .SelectMany(static c => (c.TypeDefinition as CodeClass)?.Usings ?? Enumerable.Empty<CodeUsing>())
                 .Where(static x => x.IsExternal)
@@ -733,7 +743,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
     private static readonly CodeUsingComparer usingComparerWithDeclarations = new(true);
     private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new(false);
+#pragma warning disable CA1051 // Do not declare visible instance fields
     protected readonly GenerationConfiguration _configuration;
+#pragma warning restore CA1051 // Do not declare visible instance fields
 
     protected static void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration, Func<IEnumerable<CodeTypeBase>, IEnumerable<CodeTypeBase>>? codeTypeFilter = default)
     {
@@ -797,6 +809,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function)
     {
+        ArgumentNullException.ThrowIfNull(currentElement);
+        ArgumentNullException.ThrowIfNull(function);
         foreach (var childElement in currentElement.GetChildElements())
             function.Invoke(childElement);
     }
@@ -879,6 +893,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void CorrectCoreTypes(CodeClass? parentClass, Dictionary<string, (string, CodeUsing?)> coreTypesReplacements, params CodeTypeBase[] types)
     {
+        ArgumentNullException.ThrowIfNull(coreTypesReplacements);
         if (parentClass == null)
             return;
         foreach (var type in types.Where(x => x != null && !string.IsNullOrEmpty(x.Name) && coreTypesReplacements.ContainsKey(x.Name)))
@@ -1048,6 +1063,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void ReplaceLocalMethodsByGlobalFunctions(CodeElement currentElement, Func<CodeMethod, string> nameUpdateCallback, Func<CodeMethod, CodeUsing[]>? usingsCallback, params CodeMethodKind[] kindsToReplace)
     {
+        ArgumentNullException.ThrowIfNull(nameUpdateCallback);
         if (currentElement is CodeMethod currentMethod &&
             currentMethod.IsOfKind(kindsToReplace) &&
             currentMethod.Parent is CodeClass parentClass &&
@@ -1069,6 +1085,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void AddStaticMethodsUsingsForDeserializer(CodeElement currentElement, Func<CodeType, string> functionNameCallback)
     {
+        ArgumentNullException.ThrowIfNull(functionNameCallback);
         if (currentElement is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.Deserializer) &&
             currentMethod.Parent is CodeClass parentClass)
@@ -1097,6 +1114,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void AddStaticMethodsUsingsForRequestExecutor(CodeElement currentElement, Func<CodeType, string> functionNameCallback)
     {
+        ArgumentNullException.ThrowIfNull(functionNameCallback);
         if (currentElement is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
             currentMethod.Parent is CodeClass parentClass)
@@ -1126,6 +1144,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void CopyModelClassesAsInterfaces(CodeElement currentElement, Func<CodeClass, string> interfaceNamingCallback)
     {
+        ArgumentNullException.ThrowIfNull(interfaceNamingCallback);
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
             CopyClassAsInterface(currentClass, interfaceNamingCallback);
         else if (currentElement is CodeProperty codeProperty &&
@@ -1230,70 +1249,73 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             Name = interfaceName,
             TypeDefinition = inter,
         });
-        var classModelChildItems = modelClass.GetChildElements(true);
-        foreach (var method in classModelChildItems.OfType<CodeMethod>()
-                                                    .Where(x => x.IsOfKind(CodeMethodKind.Getter,
-                                                                        CodeMethodKind.Setter,
-                                                                        CodeMethodKind.Factory) &&
-                                                                !(x.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false)))
+        var classModelChildItems = modelClass.GetChildElements(true)?.ToArray();
+        if (classModelChildItems is not null)
         {
-            if (method.ReturnType is CodeType methodReturnType &&
-                !methodReturnType.IsExternal)
+            foreach (var method in classModelChildItems.OfType<CodeMethod>()
+                                                        .Where(x => x.IsOfKind(CodeMethodKind.Getter,
+                                                                            CodeMethodKind.Setter,
+                                                                            CodeMethodKind.Factory) &&
+                                                                    !(x.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false)))
             {
-                if (methodReturnType.TypeDefinition is CodeClass methodTypeClass)
+                if (method.ReturnType is CodeType methodReturnType &&
+                    !methodReturnType.IsExternal)
                 {
-                    var resultType = ReplaceTypeByInterfaceType(methodTypeClass, methodReturnType, usingsToRemove, interfaceNamingCallback);
-                    modelClass.AddUsing(resultType);
-                    if (resultType.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>() != targetNS)
-                        targetUsingBlock.AddUsings((CodeUsing)resultType.Clone());
-                }
-                else if (methodReturnType.TypeDefinition is CodeEnum methodEnumType &&
-                            methodEnumType.Parent is not null)
-                    targetUsingBlock.AddUsings(new CodeUsing
+                    if (methodReturnType.TypeDefinition is CodeClass methodTypeClass)
                     {
-                        Name = methodEnumType.Parent.Name,
-                        Declaration = new CodeType
-                        {
-                            Name = methodEnumType.Name,
-                            TypeDefinition = methodEnumType,
-                        }
-                    });
-            }
-
-            foreach (var parameter in method.Parameters)
-                if (parameter.Type is CodeType parameterType &&
-                    !parameterType.IsExternal)
-                {
-                    if (parameterType.TypeDefinition is CodeClass parameterTypeClass)
-                    {
-                        var resultType = ReplaceTypeByInterfaceType(parameterTypeClass, parameterType, usingsToRemove, interfaceNamingCallback);
+                        var resultType = ReplaceTypeByInterfaceType(methodTypeClass, methodReturnType, usingsToRemove, interfaceNamingCallback);
                         modelClass.AddUsing(resultType);
                         if (resultType.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>() != targetNS)
                             targetUsingBlock.AddUsings((CodeUsing)resultType.Clone());
                     }
-                    else if (parameterType.TypeDefinition is CodeEnum parameterEnumType &&
-                            parameterEnumType.Parent is not null)
+                    else if (methodReturnType.TypeDefinition is CodeEnum methodEnumType &&
+                                methodEnumType.Parent is not null)
                         targetUsingBlock.AddUsings(new CodeUsing
                         {
-                            Name = parameterEnumType.Parent.Name,
+                            Name = methodEnumType.Parent.Name,
                             Declaration = new CodeType
                             {
-                                Name = parameterEnumType.Name,
-                                TypeDefinition = parameterEnumType,
+                                Name = methodEnumType.Name,
+                                TypeDefinition = methodEnumType,
                             }
                         });
                 }
 
-            if (!method.IsStatic)
-                inter.AddMethod((CodeMethod)method.Clone());
-        }
-        foreach (var mProp in classModelChildItems.OfType<CodeProperty>())
-            if (mProp.Type is CodeType propertyType &&
-                !propertyType.IsExternal &&
-                propertyType.TypeDefinition is CodeClass propertyClass)
-            {
-                modelClass.AddUsing(ReplaceTypeByInterfaceType(propertyClass, propertyType, usingsToRemove, interfaceNamingCallback));
+                foreach (var parameter in method.Parameters)
+                    if (parameter.Type is CodeType parameterType &&
+                        !parameterType.IsExternal)
+                    {
+                        if (parameterType.TypeDefinition is CodeClass parameterTypeClass)
+                        {
+                            var resultType = ReplaceTypeByInterfaceType(parameterTypeClass, parameterType, usingsToRemove, interfaceNamingCallback);
+                            modelClass.AddUsing(resultType);
+                            if (resultType.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>() != targetNS)
+                                targetUsingBlock.AddUsings((CodeUsing)resultType.Clone());
+                        }
+                        else if (parameterType.TypeDefinition is CodeEnum parameterEnumType &&
+                                parameterEnumType.Parent is not null)
+                            targetUsingBlock.AddUsings(new CodeUsing
+                            {
+                                Name = parameterEnumType.Parent.Name,
+                                Declaration = new CodeType
+                                {
+                                    Name = parameterEnumType.Name,
+                                    TypeDefinition = parameterEnumType,
+                                }
+                            });
+                    }
+
+                if (!method.IsStatic)
+                    inter.AddMethod((CodeMethod)method.Clone());
             }
+            foreach (var mProp in classModelChildItems.OfType<CodeProperty>())
+                if (mProp.Type is CodeType propertyType &&
+                    !propertyType.IsExternal &&
+                    propertyType.TypeDefinition is CodeClass propertyClass)
+                {
+                    modelClass.AddUsing(ReplaceTypeByInterfaceType(propertyClass, propertyType, usingsToRemove, interfaceNamingCallback));
+                }
+        }
 
         modelClass.RemoveUsingsByDeclarationName(usingsToRemove.ToArray());
         var externalTypesOnInter = inter.Methods.Select(static x => x.ReturnType).OfType<CodeType>().Where(static x => x.IsExternal)
@@ -1368,6 +1390,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static CodeMethod? GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude)
     {
+        ArgumentNullException.ThrowIfNull(currentMethod);
         if (currentMethod.Parameters.Any(x => x.IsOfKind(parameterTypesToExclude)) &&
             currentMethod.Clone() is CodeMethod cloneMethod)
         {
@@ -1414,6 +1437,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void MoveRequestBuilderPropertiesToBaseType(CodeElement currentElement, CodeUsing baseTypeUsing, AccessModifier? accessModifier = null)
     {
+        ArgumentNullException.ThrowIfNull(baseTypeUsing);
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
             if (currentClass.StartBlock.Inherits == null)
@@ -1439,6 +1463,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     protected static void RemoveRequestConfigurationClassesCommonProperties(CodeElement currentElement, CodeUsing baseTypeUsing)
     {
+        ArgumentNullException.ThrowIfNull(baseTypeUsing);
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestConfiguration))
         {
             if (currentClass.StartBlock.Inherits == null)

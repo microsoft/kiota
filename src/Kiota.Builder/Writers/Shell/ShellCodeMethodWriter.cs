@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -50,7 +51,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     {
         var classMethods = parentClass.Methods;
         var name = codeElement.SimpleName;
-        name = uppercaseRegex.Replace(name, "-$1").TrimStart('-').ToLower();
+        name = uppercaseRegex.Replace(name, "-$1").TrimStart('-').ToLowerInvariant();
 
         if (codeElement.HttpMethod == null)
         {
@@ -161,7 +162,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         {
             var (paramType, paramName, _) = parameters[i];
             var op = availableOptions[i];
-            var isRequiredService = op.Contains($"GetService(typeof({paramType})) as {paramType} ?? throw new ArgumentNullException(\"{paramName}\")");
+            var isRequiredService = op.Contains($"GetService(typeof({paramType})) as {paramType} ?? throw new ArgumentNullException(\"{paramName}\")", StringComparison.Ordinal);
             var typeName = isRequiredService ? paramType : "var";
             writer.WriteLine($"{typeName} {paramName.ToFirstCharacterLowerCase()} = {availableOptions[i]};");
         }
@@ -434,22 +435,22 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             var optionBuilder = new StringBuilder("new Option");
             if (!string.IsNullOrEmpty(optionType))
             {
-                optionBuilder.Append($"<{optionType}>");
+                optionBuilder.Append(CultureInfo.InvariantCulture, $"<{optionType}>");
             }
             optionBuilder.Append("(\"");
             if (name.Length > 1) optionBuilder.Append('-');
-            optionBuilder.Append($"-{NormalizeToOption(option!.Name)}\"");
+            optionBuilder.Append(CultureInfo.InvariantCulture, $"-{NormalizeToOption(option!.Name)}\"");
             if (!string.IsNullOrEmpty(option.DefaultValue))
             {
                 var defaultValue = optionType == "string" ? $"\"{option.DefaultValue}\"" : option.DefaultValue;
-                optionBuilder.Append($", getDefaultValue: ()=> {defaultValue}");
+                optionBuilder.Append(CultureInfo.InvariantCulture, $", getDefaultValue: ()=> {defaultValue}");
             }
 
             var builder = BuildDescriptionForElement(option);
 
             if (builder?.Length > 0)
             {
-                optionBuilder.Append($", description: \"{builder}\"");
+                optionBuilder.Append(CultureInfo.InvariantCulture, $", description: \"{builder}\"");
             }
 
             optionBuilder.Append(") {");
@@ -545,12 +546,11 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         {
             var targetClass = conventions.GetTypeString(codeReturnType, codeElement);
 
+            // If the nav property has more than 1 match, then it means it
+            // has been initialized by another command builder. Filter it out.
             var builderMethods = typeDef.Methods // Already ordered by name
                 .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                 .GroupBy(static m => m.SimpleName, StringComparer.OrdinalIgnoreCase)
-
-                // If the nav property has more than 1 match, then it means it
-                // has been initialized by another command builder. Filter it out.
                 .Select(static m => m.Count() > 1 ? m.Where(static m1 => m1.AccessedProperty is null) : m)
                 .SelectMany(static x => x) ??
                 Enumerable.Empty<CodeMethod>();
@@ -589,17 +589,18 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
             .Select(static m => m.SimpleName)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var builderMethods = td.Methods
-            // If a method with the same name exists in the indexer's parent class, filter it.
+        // If a method with the same name exists in the indexer's parent class, filter it.
+        var builderMethods = (td.Methods
             .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && !parentMethodNames.Contains(m.SimpleName)) ??
-            Enumerable.Empty<CodeMethod>();
+        Enumerable.Empty<CodeMethod>())
+            .ToArray();
         if (!builderMethods.Any())
         {
             writer.WriteLine($"return new(new(0), new(0));");
             return;
         }
-        bool hasExecutable = builderMethods.Any(static m => m.HttpMethod is not null);
-        bool hasNonExecutable = builderMethods.Any(static m => m.HttpMethod is null);
+        bool hasExecutable = Array.Exists(builderMethods, static m => m.HttpMethod is not null);
+        bool hasNonExecutable = Array.Exists(builderMethods, static m => m.HttpMethod is null);
 
         if (hasExecutable)
         {
@@ -740,7 +741,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                     indentParam = false;
                 }
 
-                var paramProperty = (param.Name.EndsWith("-query") ? param.Name.Replace("-query", "") : param.Name).ToFirstCharacterUpperCase();
+                var paramProperty = (param.Name.EndsWith("-query", StringComparison.Ordinal) ? param.Name.Replace("-query", "", StringComparison.Ordinal) : param.Name).ToFirstCharacterUpperCase();
                 writer.Write($"q.QueryParameters.{paramProperty} = {paramName};", indentParam);
 
                 writer.WriteLine();
@@ -885,7 +886,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
         // 2 passes for cases like "singleValueLegacyExtendedProperty_id"
         result = delimitedRegex.Replace(result, "-$1");
 
-        return result.ToLower();
+        return result.ToLowerInvariant();
     }
 
     [GeneratedRegex("(?<=[a-z])[-_\\.]+([A-Za-z])", RegexOptions.Compiled)]

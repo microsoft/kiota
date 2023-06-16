@@ -125,3 +125,15 @@ visual_basic_preferred_modifier_order = Partial,Default,Private,Protected,Public
 [*.json]
 indent_size = 2
 insert_final_newline = true
+
+[src/Kiota.Builder/SearchProviders/GitHub/GitHubClient/**/*.cs]
+dotnet_diagnostic.CA1002.severity = none
+dotnet_diagnostic.CA1032.severity = none
+dotnet_diagnostic.CA1034.severity = none
+dotnet_diagnostic.CA1054.severity = none
+dotnet_diagnostic.CA1056.severity = none
+dotnet_diagnostic.CA1302.severity = none
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1720.severity = none
+dotnet_diagnostic.CA2007.severity = none
+dotnet_diagnostic.CA2227.severity = none

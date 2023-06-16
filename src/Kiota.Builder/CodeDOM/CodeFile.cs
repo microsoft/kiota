@@ -16,13 +16,10 @@ public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
         return AddRange(elements);
     }
 
-    public IEnumerable<CodeUsing> GetUsings()
-    {
-        return GetChildElements().SelectMany(x => x.GetChildElements())
-            .Where(x => x is ProprietableBlockDeclaration)
-            .Cast<ProprietableBlockDeclaration>()
-            .SelectMany(x => x.Usings);
-    }
+    public IEnumerable<CodeUsing> AllUsingsFromChildElements => GetChildElements()
+            .SelectMany(static x => x.GetChildElements())
+            .OfType<ProprietableBlockDeclaration>()
+            .SelectMany(static x => x.Usings);
 }
 public class CodeFileDeclaration : ProprietableBlockDeclaration
 {

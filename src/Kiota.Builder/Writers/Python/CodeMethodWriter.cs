@@ -532,7 +532,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                             ?.ToSnakeCase();
         writer.WriteLine($"request_info = self.{generatorMethodName}(");
         var requestInfoParameters = new[] { requestParams.requestBody, requestParams.requestConfiguration }
-                                        .Select(x => x?.Name.ToSnakeCase()).Where(x => x != null);
+                                        .Where(static x => x != null)
+                                        .Select(static x => x!.Name.ToSnakeCase())
+                                        .ToArray();
         if (requestInfoParameters.Any() && requestInfoParameters.Aggregate(static (x, y) => $"{x}, {y}") is string parameters)
         {
             writer.IncreaseIndent();
@@ -672,7 +674,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid)
     {
         var isDescriptionPresent = !string.IsNullOrEmpty(code.Documentation.Description);
-        var parametersWithDescription = code.Parameters.Where(_ => !string.IsNullOrEmpty(code.Documentation.Description));
+        var parametersWithDescription = code.Parameters
+                                        .Where(static x => !string.IsNullOrEmpty(x.Documentation.Description))
+                                        .ToArray();
         var nullablePrefix = code.ReturnType.IsNullable && !isVoid ? "Optional[" : string.Empty;
         var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? "]" : string.Empty;
         if (isDescriptionPresent || parametersWithDescription.Any())

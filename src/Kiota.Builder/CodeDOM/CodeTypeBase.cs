@@ -37,14 +37,15 @@ public abstract class CodeTypeBase : CodeTerminal, ICloneable
             return CollectionKind == CodeTypeCollectionKind.Array;
         }
     }
-    protected virtual ChildType BaseClone<ChildType>(CodeTypeBase source) where ChildType : CodeTypeBase
+    protected virtual TChildType BaseClone<TChildType>(CodeTypeBase source) where TChildType : CodeTypeBase
     {
+        ArgumentNullException.ThrowIfNull(source);
         ActionOf = source.ActionOf;
         IsNullable = source.IsNullable;
         CollectionKind = source.CollectionKind;
         Name = source.Name;
         Parent = source.Parent;
-        return this is ChildType cast ? cast : throw new InvalidOperationException($"the type {GetType()} is not compatible with the type {typeof(ChildType)}");
+        return this is TChildType cast ? cast : throw new InvalidOperationException($"the type {GetType()} is not compatible with the type {typeof(TChildType)}");
     }
 
     public abstract object Clone();

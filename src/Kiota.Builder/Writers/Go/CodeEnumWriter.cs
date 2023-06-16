@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -9,9 +10,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
     public CodeEnumWriter(GoConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if (!codeElement.Options.Any()) return;
         if (codeElement.Parent is CodeNamespace ns)
-            writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty)}");
+            writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase)}");
 
         writer.WriteLine("import (");
         writer.IncreaseIndent();

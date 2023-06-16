@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.CodeDOM;
+﻿using System;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php;
@@ -8,6 +9,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionS
 
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.ExistsInExternalBaseType) return;
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
         var propertyName = codeElement.Name.ToFirstCharacterLowerCase();

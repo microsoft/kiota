@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 
@@ -8,6 +9,8 @@ public class CodeNamespaceWriter : BaseElementWriter<CodeNamespace, SwiftConvent
     public CodeNamespaceWriter(SwiftConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeNamespace codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         var segments = codeElement.Name.Split(".");
         var lastSegment = segments.Last();
         var parentNamespaces = string.Join('.', segments[..^1]);

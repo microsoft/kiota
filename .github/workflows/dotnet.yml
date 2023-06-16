@@ -44,7 +44,6 @@ jobs:
         run: dotnet restore kiota.sln
       - name: Check formatting
         run: dotnet format --verify-no-changes
-        continue-on-error: true # locking until https://github.com/dotnet/sdk/issues/30742
       - name: Build
         run: dotnet build kiota.sln --no-restore
       - name: Install PlayWright browsers

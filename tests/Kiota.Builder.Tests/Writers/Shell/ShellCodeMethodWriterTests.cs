@@ -284,7 +284,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Name = "Tuple",
             IsExternal = true,
-            GenericTypeParameterValues = new List<CodeType> {
+            GenericTypeParameterValues = new() {
                 new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
                 new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
             },
@@ -374,7 +374,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Name = "Tuple",
             IsExternal = true,
-            GenericTypeParameterValues = new List<CodeType> {
+            GenericTypeParameterValues = new() {
                 new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
                 new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
             },

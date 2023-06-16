@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-
+﻿using System;
+using System.Collections.Generic;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder;
@@ -12,9 +12,11 @@ public class BaseCodeParameterOrderComparer : IComparer<CodeParameter>
             (null, null) => 0,
             (null, _) => -1,
             (_, null) => 1,
-            _ => x.Optional.CompareTo(y.Optional) * optionalWeight +
-                 GetKindOrderHint(x.Kind).CompareTo(GetKindOrderHint(y.Kind)) * kindWeight +
-                 x.Name.CompareTo(y.Name) * nameWeight,
+#pragma warning disable CA1062
+            _ => x.Optional.CompareTo(y.Optional) * OptionalWeight +
+                 GetKindOrderHint(x.Kind).CompareTo(GetKindOrderHint(y.Kind)) * KindWeight +
+                 StringComparer.OrdinalIgnoreCase.Compare(x.Name, y.Name) * NameWeight,
+#pragma warning restore CA1062
         };
     }
     protected virtual int GetKindOrderHint(CodeParameterKind kind)
@@ -36,7 +38,7 @@ public class BaseCodeParameterOrderComparer : IComparer<CodeParameter>
             _ => 13,
         };
     }
-    private static readonly int optionalWeight = 10000;
-    private static readonly int kindWeight = 100;
-    private static readonly int nameWeight = 10;
+    private const int OptionalWeight = 10000;
+    private const int KindWeight = 100;
+    private const int NameWeight = 10;
 }

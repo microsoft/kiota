@@ -22,7 +22,7 @@ public abstract class LanguageWriter
 {
     private TextWriter? writer;
     private const int IndentSize = 4;
-    private static readonly string indentString = Enumerable.Repeat(" ", 1000).Aggregate((x, y) => x + y);
+    private static readonly string indentString = Enumerable.Repeat(" ", 1000).Aggregate(static (x, y) => x + y);
     private int currentIndent;
 
     /// <summary>
@@ -115,6 +115,7 @@ public abstract class LanguageWriter
     /// <param name="code"></param>
     public void Write<T>(T code) where T : CodeElement
     {
+        ArgumentNullException.ThrowIfNull(code);
         if (Writers.TryGetValue(code.GetType(), out var elementWriter))
             switch (code)
             {

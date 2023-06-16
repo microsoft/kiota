@@ -7,7 +7,10 @@ namespace Kiota.Builder.Writers.Php;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionService>
 {
 
-    protected readonly bool UseBackingStore = false;
+    protected bool UseBackingStore
+    {
+        get; init;
+    }
     public CodeMethodWriter(PhpConventionService conventionService, bool useBackingStore = false) : base(conventionService)
     {
         UseBackingStore = useBackingStore;
@@ -17,6 +20,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     private const string CreateDiscriminatorMethodName = "createFromDiscriminatorValue";
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
         var returnType = codeElement.Kind == CodeMethodKind.Constructor ? "void" : conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var inherits = parentClass.StartBlock.Inherits != null;
@@ -88,7 +93,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
             writer.WriteLine($"parent::__construct(${(requestAdapterParameter?.Name ?? "requestAdapter")}, {(pathParametersProperty?.DefaultValue ?? "[]")}, {(urlTemplateProperty?.DefaultValue.ReplaceDoubleQuoteWithSingleQuote() ?? "")});");
-        } else if (parentClass.IsOfKind(CodeClassKind.RequestConfiguration))
+        }
+        else if (parentClass.IsOfKind(CodeClassKind.RequestConfiguration))
             writer.WriteLine($"parent::__construct(${(requestHeadersParameter?.Name ?? "headers")} ?? [], ${(requestOptionParameter?.Name ?? "options")} ?? []);");
         else
             writer.WriteLine("parent::__construct();");
@@ -368,7 +374,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             }
         }
 
-        var lowerCaseProp = propertyType.ToLower();
+        var lowerCaseProp = propertyType.ToLowerInvariant();
         return lowerCaseProp switch
         {
             "string" or "guid" => "writeStringValue",
@@ -403,7 +409,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 parseNodeMethod = $"getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
         }
 
-        var lowerCaseType = propertyType.ToLower();
+        var lowerCaseType = propertyType.ToLowerInvariant();
         return string.IsNullOrEmpty(parseNodeMethod) ? lowerCaseType switch
         {
             "int" => "getIntegerValue()",
@@ -480,7 +486,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             var requestConfigParamName = conventions.GetParameterName(requestParams.requestConfiguration);
             writer.StartBlock($"if ({requestConfigParamName} !== null) {{");
             var headersName = $"{requestConfigParamName}->{headers?.Name.ToFirstCharacterLowerCase() ?? "headers"}";
-            writer.WriteLine($"{RequestInfoVarName}->addHeaders({headersName});"); 
+            writer.WriteLine($"{RequestInfoVarName}->addHeaders({headersName});");
             if (queryString != null)
             {
                 var queryStringName = $"{requestConfigParamName}->{queryString.Name.ToFirstCharacterLowerCase()}";
@@ -678,7 +684,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     protected string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
     {
         if (isVoid) return "sendNoContentAsync";
-        if (isStream || conventions.PrimitiveTypes.Contains(returnType.ToLowerInvariant()))
+        if (isStream || conventions.PrimitiveTypes.Contains(returnType))
             if (isCollection)
                 return "sendPrimitiveCollectionAsync";
             else

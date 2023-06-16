@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
@@ -26,7 +27,7 @@ public static class StringExtensions
     public static string ToCamelCase(this string? input, params char[] separators)
     {
         if (string.IsNullOrEmpty(input)) return string.Empty;
-        if (separators.Length == 0) separators = new[] { '-' };
+        if (separators is null || separators.Length == 0) separators = new[] { '-' };
         var chunks = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
         if (chunks.Length == 0) return string.Empty;
         return chunks[0] + string.Join(string.Empty, chunks.Skip(1).Select(ToFirstCharacterUpperCase));
@@ -35,14 +36,14 @@ public static class StringExtensions
     public static string ToPascalCase(this string? input, params char[] separators)
     {
         if (string.IsNullOrEmpty(input)) return string.Empty;
-        if (separators.Length == 0) separators = new[] { '-' };
+        if (separators is null || separators.Length == 0) separators = new[] { '-' };
         var chunks = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
         if (chunks.Length == 0) return string.Empty;
         return string.Join(string.Empty, chunks.Select(ToFirstCharacterUpperCase));
     }
 
     public static string ReplaceValueIdentifier(this string? original) =>
-        string.IsNullOrEmpty(original) ? string.Empty : original.Replace("$value", "Content");
+        string.IsNullOrEmpty(original) ? string.Empty : original.Replace("$value", "Content", StringComparison.Ordinal);
     public static string TrimQuotes(this string? original) =>
         string.IsNullOrEmpty(original) ? string.Empty : original.Trim('\'', '"');
 
@@ -52,7 +53,9 @@ public static class StringExtensions
     /// <param name="fileName">The file name to shorten</param>
     /// <param name="maxFileNameLength">The maximum length of the file name. Default 251 = 255 - .ext</param>
     public static string ShortenFileName(this string name, int length = 251) =>
-        (name.Length > length) ? HashString(name).ToLowerInvariant() : name;
+#pragma warning disable CA1308
+        (!string.IsNullOrEmpty(name) && name.Length > length) ? HashString(name).ToLowerInvariant() : name;
+#pragma warning restore CA1308
 
     public static string ToSnakeCase(this string? name, char separator = '_')
     {
@@ -113,13 +116,15 @@ public static class StringExtensions
     public static string GetNamespaceImportSymbol(this string? importName, string prefix = "i")
     {
         if (string.IsNullOrEmpty(importName)) return string.Empty;
+#pragma warning disable CA1308
         return prefix + HashString(importName).ToLowerInvariant();
+#pragma warning restore CA1308
     }
     private static string HashString(string? input)
     {
         if (string.IsNullOrEmpty(input)) return string.Empty;
         var hash = (sha.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(input));
-        return hash.Select(static b => b.ToString("x2")).Aggregate(static (x, y) => x + y);
+        return hash.Select(static b => b.ToString("x2", CultureInfo.InvariantCulture)).Aggregate(static (x, y) => x + y);
     }
     /// <summary>
     /// For Php strings, having double quotes around strings might cause an issue
@@ -132,7 +137,7 @@ public static class StringExtensions
     public static string ReplaceDoubleQuoteWithSingleQuote(this string? current)
     {
         if (string.IsNullOrEmpty(current)) return string.Empty;
-        return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace("'", "\\'").Replace('\"', '\'') : current;
+        return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace("'", "\\'", StringComparison.OrdinalIgnoreCase).Replace('\"', '\'') : current;
     }
 
     public static string ReplaceDotsWithSlashInNamespaces(this string? namespaced)
@@ -164,18 +169,18 @@ public static class StringExtensions
                                                                     .Aggregate(static (z, y) => z + y));
 
         result = NormalizeSymbolsAfterCleanup(result);
-        
+
         // if the result is empty but the original wasn't, it only contained symbols which have been removed.
         // So try to return a non empty string by replacing the symbols with words
         if (string.IsNullOrEmpty(result) && !string.IsNullOrEmpty(original))
         {
-            result = SpelledOutSymbols.Where(symbol => original.Contains(symbol.Key))
-                                      .Aggregate(original, (current, symbol) => current.Replace(symbol.Key.ToString(), symbol.Value));
+            result = SpelledOutSymbols.Where(symbol => original.Contains(symbol.Key, StringComparison.OrdinalIgnoreCase))
+                                      .Aggregate(original, (current, symbol) => current.Replace(symbol.Key.ToString(), symbol.Value, StringComparison.OrdinalIgnoreCase));
         }
-        
+
         return result;
     }
-    
+
     private static readonly Regex NumbersSpellingRegex = new(@"^(?<number>\d+)", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     private static readonly Dictionary<char, string> SpelledOutNumbers = new() {
         {'0', "Zero"},
@@ -189,7 +194,7 @@ public static class StringExtensions
         {'8', "Eight"},
         {'9', "Nine"},
     };
-    
+
     private static readonly Dictionary<char, string> SpelledOutSymbols = new() {
         {'!', "Exclamation"},
         {'"', "DoubleQuote"},
@@ -214,7 +219,7 @@ public static class StringExtensions
         {'>', "GreaterThan"},
         {'?', "QuestionMark"},
     };
-    
+
     /// <summary>
     /// Normalizing logic for custom symbols handling before cleanup
     /// </summary>

@@ -15,6 +15,8 @@ public static class NamespaceClassNamesProvider
     /// <returns> List of class names in the code name space ordered based on inheritance</returns>
     public static void WriteClassesInOrderOfInheritance(CodeNamespace codeNamespace, Action<CodeClass> callbackToWriteImport)
     {
+        ArgumentNullException.ThrowIfNull(codeNamespace);
+        ArgumentNullException.ThrowIfNull(callbackToWriteImport);
         var writtenClassNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var inheritanceBranches = codeNamespace.Classes.Where(c => c.IsOfKind(CodeClassKind.Model))
                                                 .Select(static x => x.GetInheritanceTree(true))

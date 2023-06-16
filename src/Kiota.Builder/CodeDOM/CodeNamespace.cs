@@ -59,7 +59,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
             throw new ArgumentOutOfRangeException(nameof(codeClasses));
         return AddRange(codeClasses);
     }
-    private static readonly char namespaceNameSeparator = '.';
+    private const char NamespaceNameSeparator = '.';
     public CodeNamespace GetRootNamespace()
     {
         if (Parent is CodeNamespace parentNS) return parentNS.GetRootNamespace();
@@ -73,7 +73,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     public CodeNamespace? FindNamespaceByName(string nsName)
     {
         ArgumentException.ThrowIfNullOrEmpty(nsName);
-        if (nsName.Equals(Name)) return this;
+        if (nsName.Equals(Name, StringComparison.OrdinalIgnoreCase)) return this;
         var result = FindChildByName<CodeNamespace>(nsName, false);
         if (result == null)
             foreach (var childNS in InnerChildElements.Values.OfType<CodeNamespace>())
@@ -88,7 +88,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     public CodeNamespace AddNamespace(string namespaceName)
     {
         ArgumentException.ThrowIfNullOrEmpty(namespaceName);
-        var namespaceNameSegments = namespaceName.Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
+        var namespaceNameSegments = namespaceName.Split(NamespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
         var lastPresentSegmentIndex = default(int);
         var lastPresentSegmentNamespace = GetRootNamespace();
         while (lastPresentSegmentIndex < namespaceNameSegments.Length)

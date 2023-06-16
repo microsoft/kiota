@@ -34,8 +34,10 @@ public class LockManagementService : ILockManagementService
         var lockFile = Path.Combine(directoryPath, LockFileName);
         if (File.Exists(lockFile))
         {
+#pragma warning disable CA2007
             await using var fileStream = File.OpenRead(lockFile);
-            return await GetLockFromStreamInternalAsync(fileStream, cancellationToken);
+#pragma warning restore CA2007
+            return await GetLockFromStreamInternalAsync(fileStream, cancellationToken).ConfigureAwait(false);
         }
         return null;
     }
@@ -47,7 +49,7 @@ public class LockManagementService : ILockManagementService
     }
     private static async Task<KiotaLock?> GetLockFromStreamInternalAsync(Stream stream, CancellationToken cancellationToken)
     {
-        return await JsonSerializer.DeserializeAsync(stream, context.KiotaLock, cancellationToken);
+        return await JsonSerializer.DeserializeAsync(stream, context.KiotaLock, cancellationToken).ConfigureAwait(false);
     }
     /// <inheritdoc/>
     public Task WriteLockFileAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken = default)
@@ -65,8 +67,10 @@ public class LockManagementService : ILockManagementService
     private static async Task WriteLockFileInternalAsync(string directoryPath, KiotaLock lockInfo, CancellationToken cancellationToken)
     {
         var lockFilePath = Path.Combine(directoryPath, LockFileName);
+#pragma warning disable CA2007
         await using var fileStream = File.Open(lockFilePath, FileMode.Create);
-        await JsonSerializer.SerializeAsync(fileStream, lockInfo, context.KiotaLock, cancellationToken);
+#pragma warning restore CA2007
+        await JsonSerializer.SerializeAsync(fileStream, lockInfo, context.KiotaLock, cancellationToken).ConfigureAwait(false);
     }
     /// <inheritdoc/>
     public Task BackupLockFileAsync(string directoryPath, CancellationToken cancellationToken = default)
@@ -111,7 +115,7 @@ public class LockManagementService : ILockManagementService
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(SHA256.Create);
     private static string GetBackupFilePath(string outputPath)
     {
-        var hashedPath = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(outputPath))).Replace("-", string.Empty);
+        var hashedPath = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(outputPath))).Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase);
         return Path.Combine(Path.GetTempPath(), "kiota", "backup", hashedPath, LockFileName);
     }
 }

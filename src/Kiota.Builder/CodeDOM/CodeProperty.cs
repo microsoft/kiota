@@ -42,7 +42,10 @@ public enum CodePropertyKind
 
 public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement, IAlternativeName, ICloneable
 {
-    public bool ReadOnly { get; set; } = false;
+    public bool ReadOnly
+    {
+        get; set;
+    }
     public AccessModifier Access { get; set; } = AccessModifier.Public;
     public bool ExistsInBaseType => OriginalPropertyFromBaseType != null;
     public bool ExistsInExternalBaseType

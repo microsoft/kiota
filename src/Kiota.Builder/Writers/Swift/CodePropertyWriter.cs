@@ -8,6 +8,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, SwiftConventio
     public CodePropertyWriter(SwiftConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(codeElement);
+        ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is not CodeElement parentElement) throw new InvalidOperationException("The parent of a property should be a class");
         var returnType = conventions.GetTypeString(codeElement.Type, parentElement);
         var accessModifier = conventions.GetAccessModifier(codeElement.Access);
