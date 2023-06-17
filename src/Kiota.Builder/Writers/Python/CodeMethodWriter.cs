@@ -511,7 +511,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             writer.WriteLine($"\"{otherProp.WireName}\": lambda n : setattr(self, '{otherProp.Name.ToSnakeCase()}', n.{GetDeserializationMethodName(otherProp.Type, codeElement, parentClass)}),");
         }
-        writer.CloseBlock("}");
+        writer.CloseBlock();
         if (inherits)
         {
             writer.WriteLine($"super_fields = super().{codeElement.Name.ToSnakeCase()}()");
