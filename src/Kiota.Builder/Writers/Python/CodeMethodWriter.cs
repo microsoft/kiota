@@ -141,7 +141,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 }
                 else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum)
                 {
-                    var typeName = conventions.GetTypeString(propertyType, codeElement, true, writer);
                     var valueVarName = $"{property.Name.ToSnakeCase()}_value";
                     writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if {valueVarName} := {parseNodeParameter.Name.ToSnakeCase()}.{GetDeserializationMethodName(propertyType, codeElement, parentClass)}:");
                     writer.WriteLine($"{ResultVarName}.{property.Name.ToSnakeCase()} = {valueVarName}");
