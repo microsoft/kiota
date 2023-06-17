@@ -163,7 +163,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             if (property.Type is CodeType propertyType)
             {
-                var typeName = conventions.GetTypeString(propertyType, codeElement, true, writer);
                 var valueVarName = $"{property.Name.ToSnakeCase()}_value";
                 writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if {valueVarName} := {parseNodeParameter.Name.ToSnakeCase()}.{GetDeserializationMethodName(propertyType, codeElement, parentClass)}:");
                 writer.WriteLine($"{ResultVarName}.{property.Name.ToSnakeCase()} = {valueVarName}");
