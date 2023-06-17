@@ -661,7 +661,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                 .Select(static x => x.Name.ToSnakeCase())
                                 .OrderBy(static x => x)
                                 .Aggregate(static (x, y) => $"self.{x}, self.{y}");
-            writer.WriteLine($"writer.{GetSerializationMethodName(complexProperties.[0].Type)}(None, {propertiesNames})");
+            writer.WriteLine($"writer.{GetSerializationMethodName(complexProperties[0].Type)}(None, {propertiesNames})");
             if (includeElse)
             {
                 writer.DecreaseIndent();
