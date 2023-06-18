@@ -45,7 +45,7 @@ dotnet test ./tests/Kiota.Builder.Tests
     - Update the documentation to reflect your changes, where appropriate.
     - Add an entry to the `CHANGELOG.md` file describing your changes if appropriate.
 4. Push your changes to your fork: `git push origin my-new-feature`
-5. Create a pull request from your fork to the main repository.
+5. Create a pull request from your fork to the main repository. `gh pr create` (with the GitHub CLI)
 
 ## Troubleshooting
 
