@@ -50,10 +50,6 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
-      },
-      {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
     ]
   },
@@ -71,10 +67,6 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/2374"
-      },
-      {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
     ]
   },
@@ -103,10 +95,6 @@
     ],
     "Suppressions": [
       {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
-      },
-      {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/2484"
       }
@@ -120,10 +108,6 @@
       }
     ],
     "Suppressions": [
-      {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
-      },
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/2484"
@@ -209,10 +193,6 @@
     ],
     "Suppressions": [
       {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
-      },
-      {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/2484"
       }
@@ -229,10 +209,6 @@
   "apisguru::meraki.com": {
     "Suppressions": [
       {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
-      },
-      {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/2484"
       }
@@ -240,10 +216,6 @@
   },
   "apisguru::docusign.net": {
     "Suppressions": [
-      {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
-      },
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/2484"
@@ -259,10 +231,6 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
-      },
-      {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
     ]
   }
