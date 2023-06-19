@@ -451,7 +451,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var promisePrefix = codeElement.IsAsync ? "await " : string.Empty;
         writer.WriteLine($"return {promisePrefix}{returnType}()");
     }
-    private readonly string DefaultDeserializerValue = "{}";
+    private const string DefaultDeserializerValue = "{}";
     private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits)
     {
         _codeUsingWriter.WriteInternalImports(parentClass, writer);
