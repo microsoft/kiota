@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for Composed types (De)Serialization for Python Generation. [#1813](https://github.com/microsoft/kiota/issues/1813)
+
 ### Changed
 
 - Deprecated Visual Studio OpenAPI reference packages.
