@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.OpenApiExtensions;
@@ -48,7 +49,7 @@ internal static class OpenApiDeprecationExtensionExtensions
     }
     internal static DeprecationInformation GetDeprecationInformation(this OpenApiUrlTreeNode treeNode)
     {
-        var operations = treeNode.PathItems[Constants.DefaultOpenApiLabel].Operations.Values.ToArray();
+        var operations = treeNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ? pathItem.Operations.Values.ToArray() : Array.Empty<OpenApiOperation>();
         if (operations.All(static x => x.Deprecated) && operations.Select(static x => x.GetDeprecationInformation()).FirstOrDefault(static x => x.IsDeprecated) is DeprecationInformation deprecationInformation)
             return deprecationInformation;
         return new(null, null, null, null, false);

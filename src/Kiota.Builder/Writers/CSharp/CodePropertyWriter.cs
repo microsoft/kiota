@@ -18,6 +18,9 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                                             CodePropertyKind.QueryParameter,
                                             CodePropertyKind.SerializationHint);// Other property types are appropriately constructor initialized
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+        var deprecationMessage = conventions.GetDeprecationInformation(codeElement);
+        if (!string.IsNullOrEmpty(deprecationMessage))
+            writer.WriteLine(deprecationMessage);
         if (isNullableReferenceType)
         {
             CSharpConventionService.WriteNullableOpening(writer);
@@ -38,9 +41,6 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
         var simpleBody = $"get; {setterAccessModifier}set;";
         var defaultValue = string.Empty;
-        var deprecationMessage = conventions.GetDeprecationInformation(codeElement);
-        if (!string.IsNullOrEmpty(deprecationMessage))
-            writer.WriteLine(deprecationMessage);
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:
