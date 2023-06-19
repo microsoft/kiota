@@ -708,7 +708,13 @@ public class CodeMethodWriterTests : IDisposable
             "'users' => fn(ParseNode $n) => $o->setUsers($n->getCollectionOfObjectValues([EmailAddress::class, 'createFromDiscriminatorValue'])),"
         },
         new object[] { new CodeProperty { Name = "years", Type = new CodeType { Name = "integer", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
-            "'years' => function (ParseNode $n) { $val = $n->getCollectionOfPrimitiveValues(); if (is_array($val)) { TypeUtils::validateCollectionValues($val, 'int'); } /** @var array<int>|null $val */ $this->setYears($val); },"
+            "'years' => function (ParseNode $n) {",
+            "$val = $n->getCollectionOfPrimitiveValues();",
+            "if (is_array($val)) {",
+            "TypeUtils::validateCollectionValues($val, 'int');",
+            "/** @var array<int>|null $val */",
+            "$this->setYears($val);"
+            // "'years' => function (ParseNode $n) { $val = $n->getCollectionOfPrimitiveValues(); if (is_array($val)) { TypeUtils::validateCollectionValues($val, 'int'); } /** @var array<int>|null $val */ $this->setYears($val); },"
         },
         new object[] { new CodeProperty{ Name = "definedInParent", Type = new CodeType { Name = "string"}, OriginalPropertyFromBaseType = new CodeProperty() { Name = "definedInParent", Type = new CodeType { Name = "string"}} }, "'definedInParent' => function (ParseNode $n) use ($o) { $o->setDefinedInParent($n->getStringValue())"}
     };
@@ -722,7 +728,7 @@ public class CodeMethodWriterTests : IDisposable
 
     [Theory]
     [MemberData(nameof(DeserializerProperties))]
-    public async Task WriteDeserializer(CodeProperty property, string expected)
+    public async Task WriteDeserializer(CodeProperty property, params string[] expected)
     {
         parentClass.Kind = CodeClassKind.Model;
         var deserializerMethod = new CodeMethod
@@ -753,10 +759,13 @@ public class CodeMethodWriterTests : IDisposable
         parentClass.AddProperty(property);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, parentClass.Parent as CodeNamespace);
         languageWriter.Write(deserializerMethod);
-        if (property.ExistsInBaseType)
-            Assert.DoesNotContain(expected, stringWriter.ToString());
-        else
-            Assert.Contains(Regex.Replace(expected, @"\s+", ""), Regex.Replace(stringWriter.ToString(), @"\s+", ""));
+        foreach (var assertion in expected)
+        {
+            if (property.ExistsInBaseType)
+                Assert.DoesNotContain(assertion, stringWriter.ToString());
+            else
+                Assert.Contains(assertion, stringWriter.ToString());
+        }
     }
 
     [Fact]
@@ -971,6 +980,7 @@ public class CodeMethodWriterTests : IDisposable
         var result = stringWriter.ToString();
         Assert.Contains(": EmailAddress {", result);
         Assert.Contains("public function getEmailAddress", result);
+        Assert.Contains("return $this->emailAddress;", result);
     }
 
     [Fact]
@@ -1444,8 +1454,106 @@ public class CodeMethodWriterTests : IDisposable
 
         Assert.Contains("$this->backingStore = BackingStoreFactorySingleton::getInstance()->createBackingStore();", result);
     }
+    
+    public static IEnumerable<object[]> GetterWithBackingStoreProperties => new List<object[]>
+    {
+        new object[]
+        {
+            new CodeProperty { Name = "name", Type = new CodeType { Name = "string", IsNullable = true}, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+            "public function getName(): ?string",
+            "$val = $this->getBackingStore()->get('name');",
+            "if (is_null($val) || is_string($val)) {",
+            "return $val;",
+            "throw new \\UnexpectedValueException("
+        },
+        new object[]
+        {
+            new CodeProperty { Name = "created", Type = new CodeType { Name = "DateTime", IsNullable = true}, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+            "public function getCreated(): ?DateTime",
+            "$val = $this->getBackingStore()->get('created');",
+            "if (is_null($val) || $val instanceof DateTime) {",
+            "return $val;",
+            "throw new \\UnexpectedValueException("
+        },
+        new object[]
+        {
+            new CodeProperty { Name = "user", Type = new CodeType { Name = "User", IsNullable = true}, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+            "public function getUser(): ?User",
+            "$val = $this->getBackingStore()->get('user');",
+            "if (is_null($val) || $val instanceof User) {",
+            "return $val;",
+            "throw new \\UnexpectedValueException("
+        },
+        new object[]
+        {
+            new CodeProperty { Name = "ids", Type = new CodeType { Name = "integer", IsNullable = true, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array}, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+            "public function getIds(): ?array",
+            "$val = $this->getBackingStore()->get('ids');",
+            "if (is_array($val) || is_null($val)) {",
+            "TypeUtils::validateCollectionValues($val, 'int');",
+            "/** @var array<int>|null $val */",
+            "return $val;",
+            "throw new \\UnexpectedValueException("
+        },
+        new object[]
+        {
+            new CodeProperty { Name = "attendees", Type = new CodeType { Name = "Attendee", IsNullable = true, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array}, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+            "public function getAttendees(): ?array",
+            "$val = $this->getBackingStore()->get('attendees');",
+            "if (is_array($val) || is_null($val)) {",
+            "TypeUtils::validateCollectionValues($val, Attendee::class);",
+            "/** @var array<Attendee>|null $val */",
+            "return $val;",
+            "throw new \\UnexpectedValueException("
+        },
+        new object[]
+        {
+            new CodeProperty { Name = "additionalData", Type = new CodeType { Name = "array", IsNullable = true, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array}, Access = AccessModifier.Private, Kind = CodePropertyKind.AdditionalData },
+            "public function getAdditionalData(): ?array",
+            "$val = $this->getBackingStore()->get('additionalData');",
+            "if (is_null($val) || is_array($val)) {",
+            "/** @var array<string, mixed>|null $val */",
+            "return $val;",
+            "throw new \\UnexpectedValueException("
+        },
+    };
+
+    [Theory]
+    [MemberData(nameof(GetterWithBackingStoreProperties))]
+    public async void WritesGettersWithBackingStore(CodeProperty property, params string[] expected)
+    {
+        parentClass.Kind = CodeClassKind.Model;
+        var backingStoreProperty = new CodeProperty
+        {
+            Name = "backingStore",
+            Access = AccessModifier.Public,
+            DefaultValue = "BackingStoreFactorySingleton.Instance.CreateBackingStore()",
+            Kind = CodePropertyKind.BackingStore,
+            Type = new CodeType { Name = "IBackingStore", IsExternal = true, IsNullable = false }
+        };
+        parentClass.AddProperty(backingStoreProperty);
+        parentClass.AddProperty(property);
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
+        _codeMethodWriter = new CodeMethodWriter(new PhpConventionService(), true);
+        // Refiner adds setters & getters for properties
+        foreach (var getter in parentClass.GetMethodsOffKind(CodeMethodKind.Getter))
+        {
+            _codeMethodWriter.WriteCodeElement(getter, languageWriter);
+        }
+        var result = stringWriter.ToString();
+        
+        Assert.Contains("public function getBackingStore(): BackingStore", result);
+        Assert.Contains("return $this->backingStore;", result);
+
+        foreach (var assertion in expected)
+        {
+            Assert.Contains(assertion, result);
+        }
+    }
+    
     [Fact]
-    public async void WritesGettersAndSettersWithBackingStore()
+    public async void WritesSettersWithBackingStore()
     {
         parentClass.Kind = CodeClassKind.Model;
         var backingStoreProperty = new CodeProperty
@@ -1469,18 +1577,11 @@ public class CodeMethodWriterTests : IDisposable
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
         _codeMethodWriter = new CodeMethodWriter(new PhpConventionService(), true);
         // Refiner adds setters & getters for properties
-        foreach (var getter in parentClass.GetMethodsOffKind(CodeMethodKind.Getter, CodeMethodKind.Setter))
+        foreach (var getter in parentClass.GetMethodsOffKind(CodeMethodKind.Setter))
         {
             _codeMethodWriter.WriteCodeElement(getter, languageWriter);
         }
         var result = stringWriter.ToString();
-
-        Assert.Contains("public function getName(): ?string", result);
-        Assert.Contains("return $this->getBackingStore()->get('name');", result);
-
-        Assert.Contains("public function getBackingStore(): BackingStore", result);
-        Assert.Contains("return $this->backingStore;", result);
-
         Assert.Contains("public function setName(?string $value)", result);
         Assert.Contains("$this->getBackingStore()->set('name', $value);", result);
 

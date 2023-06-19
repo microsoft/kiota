@@ -436,10 +436,43 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     {
         var propertyName = codeMethod.AccessedProperty?.Name.ToFirstCharacterLowerCase();
         var isBackingStoreGetter = codeMethod.AccessedProperty?.Kind == CodePropertyKind.BackingStore;
-        if (UseBackingStore && !isBackingStoreGetter && parentClass.GetBackingStoreProperty() is CodeProperty backingStoreProperty && backingStoreProperty.Getter != null)
-            writer.WriteLine($"return $this->{backingStoreProperty.Getter!.Name}()->get('{propertyName}');");
+        if (UseBackingStore
+            && !isBackingStoreGetter
+            && parentClass.GetBackingStoreProperty() is CodeProperty backingStoreProperty
+            && backingStoreProperty.Getter != null
+            && codeMethod.AccessedProperty is CodeProperty accessedProperty
+            && codeMethod.AccessedProperty?.Type is CodeType propertyType)
+        {
+            writer.WriteLine($"$val = $this->{backingStoreProperty.Getter!.Name}()->get('{propertyName}');");
+            var propertyTypeName = conventions.TranslateType(propertyType);
+            var isScalarType = conventions.ScalarTypes.Contains(propertyTypeName);
+            if (propertyType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None)
+            {
+                writer.WriteLine($"if (is_null($val) || {(isScalarType ? $"is_{propertyTypeName}($val)" : $"$val instanceof {propertyTypeName}")}) {{");
+                writer.IncreaseIndent();
+            }
+            else if (accessedProperty.Kind == CodePropertyKind.AdditionalData)
+            {
+                writer.WriteLine($"if (is_null($val) || is_array($val)) {{");
+                writer.WriteLine($"/** @var array<string, mixed>|null $val */");
+                writer.IncreaseIndent();
+            }
+            else
+            {
+                writer.WriteLine("if (is_array($val) || is_null($val)) {");
+                writer.IncreaseIndent();
+                writer.WriteLine($"TypeUtils::validateCollectionValues($val, {(isScalarType ? $"'{propertyTypeName}'": $"{propertyTypeName}::class")});");
+                writer.WriteLine($"/** @var array<{propertyTypeName}>|null $val */");
+            }
+            writer.WriteLine("return $val;");
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
+            writer.WriteLine($"throw new \\UnexpectedValueException(\"Invalid type found in backing store for '{propertyName}'\");");
+        }
         else
+        {
             writer.WriteLine($"return $this->{propertyName};");
+        }
     }
 
     private void WriteRequestBuilderWithParametersBody(string returnType, LanguageWriter writer, CodeMethod codeMethod)
