@@ -17,20 +17,33 @@ To get started, you'll need to have the following tools installed:
 ## Building the project
 
 ```sh
+# On Linux/MacOS
+sudo dotnet workload restore
+# On Windows, run the following command in an elevated prompt
+dotnet workload restore
+# then
+dotnet restore
+dotnet build
+```
+
+### Building the Kiota generator
+
+You can build just the Kiota generator by running the following commands, which do not require elevated privileges:
+
+```sh
 dotnet restore ./src/kiota
 dotnet build ./src/kiota
 ```
 
 ## Running the tests
 
-### Test the kiota command line
-
+### Test the Kiota command line
 
 ```sh
 dotnet test ./tests/Kiota.Tests/
 ```
 
-### Test the kiota builder
+### Test the Kiota builder
 
 ```sh
 dotnet test ./tests/Kiota.Builder.Tests
