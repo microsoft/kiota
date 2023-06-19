@@ -162,6 +162,7 @@ internal class Server : IServer
                                                                         true,
                                                                         x.Value.ExternalDocs?.Url)) :
                                                                     Enumerable.Empty<PathItem>())
+                                                        .OrderByDescending(static x => x.isOperation)
                                                         .ToArray());
     }
     protected static string GetAbsolutePath(string source)
