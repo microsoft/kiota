@@ -441,7 +441,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             && parentClass.GetBackingStoreProperty() is CodeProperty backingStoreProperty
             && backingStoreProperty.Getter != null
             && codeMethod.AccessedProperty is CodeProperty accessedProperty
-            && codeMethod.AccessedProperty?.Type is CodeType propertyType)
+            && accessedProperty.Type is CodeType propertyType)
         {
             writer.WriteLine($"$val = $this->{backingStoreProperty.Getter!.Name}()->get('{propertyName}');");
             var propertyTypeName = conventions.TranslateType(propertyType);
