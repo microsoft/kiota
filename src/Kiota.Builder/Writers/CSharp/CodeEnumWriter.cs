@@ -30,8 +30,10 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
         if (codeElement.Flags)
             writer.WriteLine("[Flags]");
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
-        writer.WriteLine($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
-        writer.IncreaseIndent();
+        var deprecationMessage = conventions.GetDeprecationInformation(codeElement);
+        if (!string.IsNullOrEmpty(deprecationMessage))
+            writer.WriteLine(deprecationMessage);
+        writer.StartBlock($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
         var idx = 0;
         foreach (var option in codeElement.Options)
         {

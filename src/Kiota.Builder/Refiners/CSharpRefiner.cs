@@ -171,7 +171,9 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
             "Microsoft.Kiota.Abstractions", "RequestHeaders"),
         new (static x => x is CodeEnum prop && prop.Options.Any(x => x.IsNameEscaped),
-            "System.Runtime.Serialization", "EnumMemberAttribute")
+            "System.Runtime.Serialization", "EnumMemberAttribute"),
+        new (static x => x is IDeprecableElement element && element.Deprecation is not null && element.Deprecation.IsDeprecated,
+            "System", "ObsoleteAttribute"),
     };
     protected static void CapitalizeNamespacesFirstLetters(CodeElement current)
     {

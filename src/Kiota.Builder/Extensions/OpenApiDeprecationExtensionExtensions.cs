@@ -9,7 +9,7 @@ internal static class OpenApiDeprecationExtensionExtensions
 {
     internal static DeprecationInformation ToDeprecationInformation(this OpenApiDeprecationExtension value)
     {
-        return new DeprecationInformation(value.Description, value.Date, value.RemovalDate, value.Version, true);
+        return new DeprecationInformation(value.Description.CleanupDescription().CleanupXMLString(), value.Date, value.RemovalDate, value.Version.CleanupDescription().CleanupXMLString(), true);
     }
     internal static DeprecationInformation GetDeprecationInformation(this OpenApiSchema schema)
     {

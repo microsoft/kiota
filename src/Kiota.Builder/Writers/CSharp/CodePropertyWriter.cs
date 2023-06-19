@@ -38,6 +38,9 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
         var simpleBody = $"get; {setterAccessModifier}set;";
         var defaultValue = string.Empty;
+        var deprecationMessage = conventions.GetDeprecationInformation(codeElement);
+        if (!string.IsNullOrEmpty(deprecationMessage))
+            writer.WriteLine(deprecationMessage);
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:

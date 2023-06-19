@@ -682,6 +682,7 @@ public partial class KiotaBuilder
                     logger.LogWarning("Property {Prop} was not created as its type couldn't be determined", propIdentifier);
                     continue;
                 }
+                prop.Deprecation = currentNode.GetDeprecationInformation();
                 if (!string.IsNullOrWhiteSpace(description))
                 {
                     prop.Documentation.Description = description;
@@ -732,7 +733,8 @@ public partial class KiotaBuilder
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None,
                 IsExternal = false,
                 IsNullable = false,
-            }
+            },
+            Deprecation = currentNode.GetDeprecationInformation(),
         };
         AddPathParametersToMethod(currentNode, methodToAdd, false);
         codeClass.AddMethod(methodToAdd);
@@ -759,7 +761,8 @@ public partial class KiotaBuilder
                 },
                 Kind = CodeParameterKind.Path,
                 SerializationName = parameter.Name.Equals(codeName, StringComparison.OrdinalIgnoreCase) ? string.Empty : parameter.Name.SanitizeParameterNameForUrlTemplate(),
-                Type = parameterType
+                Type = parameterType,
+                Deprecation = parameter.GetDeprecationInformation(),
             };
             // not using the content schema as RFC6570 will serialize arrays as CSVs and content expects a JSON array, we failsafe to opaque string, it could be improved by involving the serialization layers.
             methodToAdd.AddParameter(mParameter);
@@ -971,6 +974,7 @@ public partial class KiotaBuilder
             SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
             PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.').Last(),
             IndexParameterName = currentNode.Segment.CleanupSymbolName(),
+            Deprecation = currentNode.GetDeprecationInformation(),
         };
     }
 
@@ -991,6 +995,7 @@ public partial class KiotaBuilder
             },
             ReadOnly = propertySchema?.ReadOnly ?? false,
             Type = resultType,
+            Deprecation = propertySchema?.GetDeprecationInformation(),
         };
         if (prop.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
             !propertyName.Equals(childIdentifier, StringComparison.Ordinal))
@@ -1125,6 +1130,7 @@ public partial class KiotaBuilder
 
             var schema = operation.GetResponseSchema(config.StructuredMimeTypes);
             var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
+            var deprecationInformation = operation.GetDeprecationInformation();
             var executorMethod = new CodeMethod
             {
                 Name = operationType.ToString(),
@@ -1141,6 +1147,7 @@ public partial class KiotaBuilder
                                     .CleanupDescription(),
                 },
                 ReturnType = GetExecutorMethodReturnType(currentNode, schema, operation, parentClass) ?? throw new InvalidSchemaException(),
+                Deprecation = deprecationInformation,
             };
 
             if (operation.Extensions.TryGetValue(OpenApiPagingExtension.Name, out var extension) && extension is OpenApiPagingExtension pagingExtension)
@@ -1197,6 +1204,7 @@ public partial class KiotaBuilder
                 },
                 ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true },
                 Parent = parentClass,
+                Deprecation = deprecationInformation,
             };
             if (schema != null)
             {
@@ -1307,6 +1315,7 @@ public partial class KiotaBuilder
                                     description :
                                     "The request body"
                 },
+                Deprecation = requestBodySchema.GetDeprecationInformation(),
             });
             method.RequestBodyContentType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Key;
         }
@@ -1564,6 +1573,7 @@ public partial class KiotaBuilder
                                             schemaDescription : // if it's a referenced component, we shouldn't use the path item description as it makes it indeterministic
                                             currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel),
                     },
+                    Deprecation = schema.GetDeprecationInformation(),
                 };
                 SetEnumOptions(schema, newEnum);
                 return currentNamespace.AddEnum(newEnum).First();
@@ -1623,6 +1633,7 @@ public partial class KiotaBuilder
                 DocumentationLink = schema.ExternalDocs?.Url,
                 Description = schema.Description.CleanupDescription(),
             },
+            Deprecation = schema.GetDeprecationInformation(),
         };
         if (inheritsFrom != null)
             newClassStub.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
@@ -2019,6 +2030,7 @@ public partial class KiotaBuilder
             },
             Kind = CodePropertyKind.QueryParameter,
             Type = resultType,
+            Deprecation = parameter.GetDeprecationInformation(),
         };
 
         if (!parameter.Name.Equals(prop.Name, StringComparison.OrdinalIgnoreCase))

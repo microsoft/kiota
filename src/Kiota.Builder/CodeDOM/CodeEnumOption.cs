@@ -2,7 +2,7 @@
 
 namespace Kiota.Builder.CodeDOM;
 
-public class CodeEnumOption : IDocumentedElement, ITypeDefinition, IAlternativeName, IDeprecableElement
+public class CodeEnumOption : IDocumentedElement, ITypeDefinition, IAlternativeName
 {
     /// <inheritdoc/>
     public string SerializationName { get; set; } = string.Empty;
@@ -23,9 +23,5 @@ public class CodeEnumOption : IDocumentedElement, ITypeDefinition, IAlternativeN
     public string SymbolName
     {
         get => IsNameEscaped ? SerializationName.CleanupSymbolName() : Name;
-    }
-    public DeprecationInformation? Deprecation
-    {
-        get; set;
     }
 }

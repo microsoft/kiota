@@ -543,6 +543,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                                 .Where(static x => x.Documentation.DescriptionAvailable)
                                                 .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
             writer.WriteLine($"{conventions.DocCommentPrefix}<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">{paramWithDescription.Documentation.Description.CleanupXMLString()}</param>");
+        var deprecationMessage = conventions.GetDeprecationInformation(code);
+        if (!string.IsNullOrEmpty(deprecationMessage))
+            writer.WriteLine(deprecationMessage);
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private static string GetBaseSuffix(bool isConstructor, bool inherits, CodeClass parentClass, CodeMethod currentMethod)
