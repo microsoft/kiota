@@ -177,6 +177,8 @@ public class PhpRefiner : CommonLanguageRefiner
             "Microsoft\\Kiota\\Abstractions\\Serialization", "ParseNode"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             "Microsoft\\Kiota\\Abstractions\\Serialization", "Parsable"),
+        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+            "Microsoft\\Kiota\\Abstractions\\Types", "TypeUtils"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
             "Microsoft\\Kiota\\Abstractions\\Store", "BackingStoreFactory", "BackingStoreFactorySingleton"),

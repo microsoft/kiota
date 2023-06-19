@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
@@ -706,8 +707,8 @@ public class CodeMethodWriterTests : IDisposable
                 }, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
             "'users' => fn(ParseNode $n) => $o->setUsers($n->getCollectionOfObjectValues([EmailAddress::class, 'createFromDiscriminatorValue'])),"
         },
-        new object[] { new CodeProperty { Name = "years", Type = new CodeType { Name = "int", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
-            "'years' => fn(ParseNode $n) => $o->setYears($n->getCollectionOfPrimitiveValues())"
+        new object[] { new CodeProperty { Name = "years", Type = new CodeType { Name = "integer", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
+            "'years' => function (ParseNode $n) { $val = $n->getCollectionOfPrimitiveValues(); if (is_array($val)) { TypeUtils::validateCollectionValues($val, 'int'); } /** @var array<int>|null $val */ $this->setYears($val); },"
         },
         new object[] { new CodeProperty{ Name = "definedInParent", Type = new CodeType { Name = "string"}, OriginalPropertyFromBaseType = new CodeProperty() { Name = "definedInParent", Type = new CodeType { Name = "string"}} }, "'definedInParent' => function (ParseNode $n) use ($o) { $o->setDefinedInParent($n->getStringValue())"}
     };
@@ -755,7 +756,7 @@ public class CodeMethodWriterTests : IDisposable
         if (property.ExistsInBaseType)
             Assert.DoesNotContain(expected, stringWriter.ToString());
         else
-            Assert.Contains(expected, stringWriter.ToString());
+            Assert.Contains(Regex.Replace(expected, @"\s+", ""), Regex.Replace(stringWriter.ToString(), @"\s+", ""));
     }
 
     [Fact]

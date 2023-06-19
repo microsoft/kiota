@@ -401,7 +401,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             if (isCollection)
                 parseNodeMethod = currentType.TypeDefinition switch
                 {
-                    null => "getCollectionOfPrimitiveValues()",
                     CodeEnum enumType => $"getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
                     _ => $"getCollectionOfObjectValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"
                 };
@@ -526,13 +525,35 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             codeProperties
                 .Where(static x => !x.ExistsInBaseType && x.Setter != null)
                 .OrderBy(static x => x.Name)
-                .Select(x =>
-                    $"'{x.WireName}' => fn(ParseNode $n) => $o->{x.Setter!.Name.ToFirstCharacterLowerCase()}($n->{GetDeserializationMethodName(x.Type, method)}),")
                 .ToList()
-                .ForEach(x => writer.WriteLine(x));
+                .ForEach(x => WriteDeserializerPropertyCallback(x, method, writer));
         }
         writer.DecreaseIndent();
         writer.WriteLine(extendsModelClass ? "]);" : "];");
+    }
+
+    private void WriteDeserializerPropertyCallback(CodeProperty property, CodeMethod method, LanguageWriter writer)
+    {
+        if (property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None 
+            && property.Type is CodeType currentType
+            && currentType.TypeDefinition == null)
+        {
+            writer.WriteLine($"'{property.WireName}' => function (ParseNode $n) {{");
+            writer.IncreaseIndent();
+            writer.WriteLine("$val = $n->getCollectionOfPrimitiveValues();");
+            writer.WriteLine($"if (is_array($val)) {{");
+            writer.IncreaseIndent();
+            var type = conventions.TranslateType(property.Type);
+            writer.WriteLine($"TypeUtils::validateCollectionValues($val, '{type}');");
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
+            writer.WriteLine($"/** @var array<{type}>|null $val */");
+            writer.WriteLine($"$this->{property.Setter!.Name.ToFirstCharacterLowerCase()}($val);");
+            writer.DecreaseIndent();
+            writer.WriteLine("},");
+            return;
+        }
+        writer.WriteLine($"'{property.WireName}' => fn(ParseNode $n) => $o->{property.Setter!.Name.ToFirstCharacterLowerCase()}($n->{GetDeserializationMethodName(property.Type, method)}),");
     }
 
     private static void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
