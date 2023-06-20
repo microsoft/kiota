@@ -79,6 +79,35 @@ public class CodeParameterOrderComparerTests
         Assert.Equal(0, comparer.Compare(param2, param2));
     }
     [Fact]
+    public void CancellationParameterIsAfterRequestConfigurationByDefaultWithNamesInReverseOrder()
+    {
+        var comparer = new BaseCodeParameterOrderComparer();
+        Assert.NotNull(comparer);
+        var param1 = new CodeParameter
+        {
+            Name = "requestConfiguration",
+            Kind = CodeParameterKind.RequestConfiguration,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        };
+        var param2 = new CodeParameter
+        {
+            Name = "cancellationToken",
+            Kind = CodeParameterKind.Cancellation,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        };
+        var parameters = new List<CodeParameter> { param1, param2 };
+        Assert.Equal("requestConfiguration", parameters.OrderBy(x => x, comparer).First().Name);
+        Assert.Equal(90, comparer.Compare(param2, param1));
+        Assert.Equal(-90, comparer.Compare(param1, param2));
+        Assert.Equal(0, comparer.Compare(param2, param2));
+    }
+    [Fact]
     public void CancellationParameterIsAfterRequestConfigurationByDefaultIfBothOptional()
     {
         var comparer = new BaseCodeParameterOrderComparer();
