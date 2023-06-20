@@ -16,8 +16,12 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
         var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
-        _codeUsingWriter.WriteExternalImports(codeElement, writer); // external imports before internal imports
-        _codeUsingWriter.WriteConditionalInternalImports(codeElement, writer, parentNamespace);
+        if (codeElement.Parent?.Parent is not CodeClass) //Imports for inner classes will be written locally
+        {
+            _codeUsingWriter.WriteExternalImports(codeElement, writer); // external imports before internal imports
+            _codeUsingWriter.WriteConditionalInternalImports(codeElement, writer, parentNamespace);
+        }
+
 
         if (codeElement.Parent is CodeClass parentClass)
         {
@@ -40,6 +44,13 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
         writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}({derivation}):");
         writer.IncreaseIndent();
         if (codeElement.Parent is CodeClass parent)
+        {
+            if (parent.Parent is CodeClass) // write imports for inner classes
+            {
+                _codeUsingWriter.WriteExternalImports(codeElement, writer);
+                _codeUsingWriter.WriteConditionalInternalImports(codeElement, writer, parentNamespace);
+            }
             conventions.WriteShortDescription(parent.Documentation.Description, writer);
+        }
     }
 }
