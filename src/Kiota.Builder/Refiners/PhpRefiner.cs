@@ -314,9 +314,9 @@ public class PhpRefiner : CommonLanguageRefiner
         if (codeElement is CodeClass codeClass && codeClass.Kind == CodeClassKind.Model)
         {
             var typeUtilsUsing = new CodeUsing { Name = "TypeUtils", Declaration = new CodeType { Name = "Microsoft\\Kiota\\Abstractions\\Types", IsExternal = true } };
-            if (codeClass.Properties.Any(x  =>
+            if (codeClass.Properties.Any(x =>
                     x.Kind == CodePropertyKind.Custom
-                    && x.Type is CodeType codeType 
+                    && x.Type is CodeType codeType
                     && codeType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None
                     && (_configuration.UsesBackingStore || x.Type is CodeType t && t.TypeDefinition == null)))
             {

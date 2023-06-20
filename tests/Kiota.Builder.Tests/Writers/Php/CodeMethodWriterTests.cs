@@ -1454,7 +1454,7 @@ public class CodeMethodWriterTests : IDisposable
 
         Assert.Contains("$this->backingStore = BackingStoreFactorySingleton::getInstance()->createBackingStore();", result);
     }
-    
+
     public static IEnumerable<object[]> GetterWithBackingStoreProperties => new List<object[]>
     {
         new object[]
@@ -1542,7 +1542,7 @@ public class CodeMethodWriterTests : IDisposable
             _codeMethodWriter.WriteCodeElement(getter, languageWriter);
         }
         var result = stringWriter.ToString();
-        
+
         Assert.Contains("public function getBackingStore(): BackingStore", result);
         Assert.Contains("return $this->backingStore;", result);
 
@@ -1551,7 +1551,7 @@ public class CodeMethodWriterTests : IDisposable
             Assert.Contains(assertion, result);
         }
     }
-    
+
     [Fact]
     public async void WritesSettersWithBackingStore()
     {

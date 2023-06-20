@@ -461,7 +461,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             {
                 writer.WriteLine("if (is_array($val) || is_null($val)) {");
                 writer.IncreaseIndent();
-                writer.WriteLine($"TypeUtils::validateCollectionValues($val, {(isScalarType ? $"'{propertyTypeName}'": $"{propertyTypeName}::class")});");
+                writer.WriteLine($"TypeUtils::validateCollectionValues($val, {(isScalarType ? $"'{propertyTypeName}'" : $"{propertyTypeName}::class")});");
                 writer.WriteLine($"/** @var array<{propertyTypeName}>|null $val */");
             }
             writer.WriteLine("return $val;");
@@ -567,7 +567,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
 
     private void WriteDeserializerPropertyCallback(CodeProperty property, CodeMethod method, LanguageWriter writer)
     {
-        if (property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None 
+        if (property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None
             && property.Type is CodeType currentType
             && currentType.TypeDefinition == null)
         {
