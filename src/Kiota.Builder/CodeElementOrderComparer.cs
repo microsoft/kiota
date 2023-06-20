@@ -4,9 +4,9 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder;
-public class CodeElementOrderComparer : IComparer<CodeElement>
+public class CodeElementOrderComparer : BaseStringComparisonComparer<CodeElement>
 {
-    public int Compare(CodeElement? x, CodeElement? y)
+    public override int Compare(CodeElement? x, CodeElement? y)
     {
         return (x, y) switch
         {
@@ -15,7 +15,7 @@ public class CodeElementOrderComparer : IComparer<CodeElement>
             (_, null) => 1,
             _ => GetTypeFactor(x).CompareTo(GetTypeFactor(y)) * TypeWeight +
 #pragma warning disable CA1062
-                StringComparer.InvariantCultureIgnoreCase.Compare(x.Name, y.Name) * NameWeight +
+                CompareStrings(x.Name, y.Name, StringComparer.InvariantCultureIgnoreCase) * NameWeight +
 #pragma warning restore CA1062
                 GetMethodKindFactor(x).CompareTo(GetMethodKindFactor(y)) * methodKindWeight +
                 GetParametersFactor(x).CompareTo(GetParametersFactor(y)) * ParametersWeight,

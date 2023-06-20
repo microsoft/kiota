@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 
 using Kiota.Builder.CodeDOM;
-
 using Xunit;
 
 namespace Kiota.Builder.Tests.CodeDOM;

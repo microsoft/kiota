@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder;
-public class BaseCodeParameterOrderComparer : IComparer<CodeParameter>
+public class BaseCodeParameterOrderComparer : BaseStringComparisonComparer<CodeParameter>
 {
-    public int Compare(CodeParameter? x, CodeParameter? y)
+    public override int Compare(CodeParameter? x, CodeParameter? y)
     {
         return (x, y) switch
         {
@@ -15,7 +14,7 @@ public class BaseCodeParameterOrderComparer : IComparer<CodeParameter>
 #pragma warning disable CA1062
             _ => x.Optional.CompareTo(y.Optional) * OptionalWeight +
                  GetKindOrderHint(x.Kind).CompareTo(GetKindOrderHint(y.Kind)) * KindWeight +
-                 StringComparer.OrdinalIgnoreCase.Compare(x.Name, y.Name) * NameWeight,
+                 CompareStrings(x.Name, y.Name, StringComparer.OrdinalIgnoreCase) * NameWeight,
 #pragma warning restore CA1062
         };
     }
