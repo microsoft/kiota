@@ -454,8 +454,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             else if (accessedProperty.Kind == CodePropertyKind.AdditionalData)
             {
                 writer.WriteLine($"if (is_null($val) || is_array($val)) {{");
-                writer.WriteLine($"/** @var array<string, mixed>|null $val */");
                 writer.IncreaseIndent();
+                writer.WriteLine($"/** @var array<string, mixed>|null $val */");
             }
             else
             {

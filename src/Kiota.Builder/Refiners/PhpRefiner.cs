@@ -48,6 +48,7 @@ public class PhpRefiner : CommonLanguageRefiner
             AddRequestConfigurationConstructors(generatedCode);
             AddQueryParameterFactoryMethod(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            AddCollectionValidationUtilImportToModels(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             AddGetterAndSetterMethods(generatedCode,
                 new() {
@@ -177,8 +178,6 @@ public class PhpRefiner : CommonLanguageRefiner
             "Microsoft\\Kiota\\Abstractions\\Serialization", "ParseNode"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             "Microsoft\\Kiota\\Abstractions\\Serialization", "Parsable"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
-            "Microsoft\\Kiota\\Abstractions\\Types", "TypeUtils"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
             "Microsoft\\Kiota\\Abstractions\\Store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
@@ -308,6 +307,23 @@ public class PhpRefiner : CommonLanguageRefiner
         if (codeElement is CodeMethod method && method.Kind == CodeMethodKind.Setter && method.AccessedProperty?.Kind == CodePropertyKind.BackingStore)
             method.Parameters.ToList().ForEach(param => param.Optional = false);
         CrawlTree(codeElement, CorrectBackingStoreSetterParam);
+    }
+
+    private void AddCollectionValidationUtilImportToModels(CodeElement codeElement)
+    {
+        if (codeElement is CodeClass codeClass && codeClass.Kind == CodeClassKind.Model)
+        {
+            var typeUtilsUsing = new CodeUsing { Name = "TypeUtils", Declaration = new CodeType { Name = "Microsoft\\Kiota\\Abstractions\\Types", IsExternal = true } };
+            if (codeClass.Properties.Any(x  =>
+                    x.Kind == CodePropertyKind.Custom
+                    && x.Type is CodeType codeType 
+                    && codeType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None
+                    && (_configuration.UsesBackingStore || x.Type is CodeType t && t.TypeDefinition == null)))
+            {
+                codeClass.AddUsing(typeUtilsUsing);
+            }
+        }
+        CrawlTree(codeElement, AddCollectionValidationUtilImportToModels);
     }
 
     private static readonly Dictionary<CodePropertyKind, CodeParameterKind> propertyKindToParameterKind = new Dictionary<CodePropertyKind, CodeParameterKind>()
