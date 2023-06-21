@@ -52,10 +52,6 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
       },
       {
-        "Language": "csharp",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2360"
-      },
-      {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       }
@@ -213,10 +209,6 @@
     ],
     "Suppressions": [
       {
-        "Language": "csharp",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2369"
-      },
-      {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2378"
       },
@@ -248,10 +240,6 @@
   },
   "apisguru::docusign.net": {
     "Suppressions": [
-      {
-        "Language": "csharp",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2369"
-      },
       {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/2378"
