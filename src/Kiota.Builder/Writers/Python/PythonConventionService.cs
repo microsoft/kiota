@@ -108,7 +108,7 @@ public class PythonConventionService : CommonLanguageConventionService
             "datetimeoffset" => "datetime.datetime",
             "boolean" => "bool",
             "guid" or "uuid" => "UUID",
-            "object" or "float" or "bytes" or "datetime.datetime" or "datetime.timedelta" or "datetime.date" or "datetime.time" => typeName.ToLowerInvariant(),
+            "object" or "str" or "int" or "float" or "bytes" or "datetime.datetime" or "datetime.timedelta" or "datetime.date" or "datetime.time" => typeName.ToLowerInvariant(),
             _ => !string.IsNullOrEmpty(typeName) ? typeName.ToFirstCharacterUpperCase() : "object",
         };
     }
