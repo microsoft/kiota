@@ -24,6 +24,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         writer.WriteLine(")");
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+        conventions.WriteDeprecation(codeElement, writer);
         writer.WriteLines($"type {typeName} int",
                         string.Empty,
                         "const (");

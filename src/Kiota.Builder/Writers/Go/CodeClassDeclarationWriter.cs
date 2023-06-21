@@ -16,6 +16,7 @@ public class CodeClassDeclarationWriter : CodeProprietableBlockDeclarationWriter
         var className = codeElement.Name.ToFirstCharacterUpperCase();
         if (codeElement.Parent is not CodeClass currentClass) throw new InvalidOperationException("The parent of a class declaration should be a class");
         conventions.WriteShortDescription($"{className} {currentClass.Documentation.Description.ToFirstCharacterLowerCase()}", writer);
+        conventions.WriteDeprecation(currentClass, writer);
         conventions.WriteLinkDescription(currentClass.Documentation, writer);
         writer.StartBlock($"type {className} struct {{");
         if (codeElement.Inherits?.AllTypes?.Any() ?? false)

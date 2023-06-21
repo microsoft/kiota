@@ -14,6 +14,8 @@ public class CodeInterfaceDeclarationWriter : CodeProprietableBlockDeclarationWr
         if (codeElement.Parent is not CodeInterface inter) throw new InvalidOperationException("Expected the parent to be an interface");
         var interName = codeElement.Name.ToFirstCharacterUpperCase();
         conventions.WriteShortDescription($"{interName} {inter.Documentation.Description.ToFirstCharacterLowerCase()}", writer);
+        if (codeElement.Parent is CodeInterface currentInterface && currentInterface.OriginalClass is not null)
+            conventions.WriteDeprecation(currentInterface.OriginalClass, writer);
         conventions.WriteLinkDescription(inter.Documentation, writer);
         writer.WriteLine($"type {interName} interface {{");
         writer.IncreaseIndent();
