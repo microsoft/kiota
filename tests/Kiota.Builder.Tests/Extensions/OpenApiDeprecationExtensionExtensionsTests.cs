@@ -1,13 +1,13 @@
-
+﻿
 
 using System;
-using Kiota.Builder.OpenApiExtensions;
-using Kiota.Builder.Extensions;
-using Xunit;
-using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
+using Kiota.Builder.Extensions;
+using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi.Interfaces;
+using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
+using Xunit;
 
 namespace Kiota.Builder.Tests.Extensions;
 public class OpenApiDeprecationExtensionExtensions

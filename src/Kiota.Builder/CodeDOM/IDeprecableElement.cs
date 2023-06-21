@@ -1,4 +1,4 @@
-namespace Kiota.Builder.CodeDOM;
+﻿namespace Kiota.Builder.CodeDOM;
 public interface IDeprecableElement
 {
     /// <summary>
