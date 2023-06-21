@@ -50,7 +50,7 @@ internal static class OpenApiDeprecationExtensionExtensions
     internal static DeprecationInformation GetDeprecationInformation(this OpenApiUrlTreeNode treeNode)
     {
         var operations = treeNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ? pathItem.Operations.Values.ToArray() : Array.Empty<OpenApiOperation>();
-        if (operations.All(static x => x.Deprecated) && operations.Select(static x => x.GetDeprecationInformation()).FirstOrDefault(static x => x.IsDeprecated) is DeprecationInformation deprecationInformation)
+        if (Array.TrueForAll(operations, static x => x.Deprecated) && operations.Select(static x => x.GetDeprecationInformation()).FirstOrDefault(static x => x.IsDeprecated) is DeprecationInformation deprecationInformation)
             return deprecationInformation;
         return new(null, null, null, null, false);
     }
