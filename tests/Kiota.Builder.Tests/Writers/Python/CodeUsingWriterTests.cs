@@ -42,7 +42,7 @@ public class CodeUsingWriterTests
         codeClass.AddUsing(us);
         usingWriter.WriteInternalImports(codeClass, writer);
         var result = tw.ToString();
-        Assert.Contains("from . import bar as baz", result);
+        Assert.Contains("from .bar import Bar as baz", result);
     }
     [Fact]
     public void DoesntAliasRegularSymbols()
@@ -65,6 +65,6 @@ public class CodeUsingWriterTests
         codeClass.AddUsing(us);
         usingWriter.WriteInternalImports(codeClass, writer);
         var result = tw.ToString();
-        Assert.Contains("from . import bar", result);
+        Assert.Contains("from .bar import Bar", result);
     }
 }

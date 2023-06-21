@@ -609,12 +609,14 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("request_info", result);
-        Assert.Contains("from . import error401, error4_x_x, error5_x_x", result);
+        Assert.Contains("from .error401 import Error401", result);
+        Assert.Contains("from .error4_x_x import Error4XX", result);
+        Assert.Contains("from .error5_x_x import Error5XX", result);
         Assert.Contains("error_mapping: Dict[str, ParsableFactory] =", result);
         Assert.Contains("\"4XX\": error4_x_x.Error4XX", result);
         Assert.Contains("\"5XX\": error5_x_x.Error5XX", result);
         Assert.Contains("\"401\": error401.Error401", result);
-        Assert.Contains("from . import somecustomtype", result);
+        Assert.Contains("from .somecustomtype import Somecustomtype", result);
         Assert.Contains("send_async", result);
         Assert.Contains("raise Exception", result);
     }
@@ -638,7 +640,7 @@ public class CodeMethodWriterTests : IDisposable
         AddRequestBodyParameters();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("from . import somecustomtype", result);
+        Assert.Contains("from .somecustomtype import Somecustomtype", result);
         Assert.Contains("send_collection_async", result);
     }
     [Fact]
@@ -697,7 +699,7 @@ public class CodeMethodWriterTests : IDisposable
         AddInheritanceClass();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("from . import somecustomtype", result);
+        Assert.Contains("from .somecustomtype import Somecustomtype", result);
         Assert.Contains("super_fields = super()", result);
         Assert.Contains("fields.update(super_fields)", result);
         Assert.Contains("return fields", result);
@@ -742,7 +744,7 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.DoesNotContain("super_fields = super()", result);
         Assert.DoesNotContain("return fields", result);
-        Assert.Contains("from . import complex_type1", result);
+        Assert.Contains("from .complex_type1 import ComplexType1", result);
         Assert.Contains("if self.complex_type1_value or self.complex_type3_value", result);
         Assert.Contains("return ParseNodeHelper.merge_deserializers_for_intersection_wrapper(self.complex_type1_value, self.complex_type3_value)", result);
         Assert.Contains("return {}", result);
@@ -756,7 +758,7 @@ public class CodeMethodWriterTests : IDisposable
         AddSerializationProperties();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("from . import somecustomtype", result);
+        Assert.Contains("from .somecustomtype import Somecustomtype", result);
         Assert.Contains("fields: Dict[str, Callable[[Any], None]] =", result);
         Assert.Contains("get_str_value()", result);
         Assert.Contains("get_int_value()", result);
@@ -768,10 +770,10 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("get_timedelta_value()", result);
         Assert.Contains("get_datetime_value()", result);
         Assert.Contains("get_uuid_value()", result);
-        Assert.Contains("get_object_value(dummy_class.DummyClass)", result);
+        Assert.Contains("get_object_value(DummyClass)", result);
         Assert.Contains("get_collection_of_primitive_values(UUID)", result);
-        Assert.Contains("get_collection_of_object_values(complex.Complex)", result);
-        Assert.Contains("get_enum_value(some_enum.SomeEnum)", result);
+        Assert.Contains("get_collection_of_object_values(Complex)", result);
+        Assert.Contains("get_enum_value(SomeEnum)", result);
         Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
@@ -1047,8 +1049,8 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("except AttributeError:", result);
         Assert.Contains("mapping_value = None", result);
         Assert.Contains("if mapping_value and mapping_value.casefold() == \"ns.childclass\".casefold()", result);
-        Assert.Contains("from . import child_class", result);
-        Assert.Contains("return child_class.ChildClass()", result);
+        Assert.Contains("from .child_class import ChildClass", result);
+        Assert.Contains("return ChildClass()", result);
         Assert.Contains("return ParentClass()", result);
     }
     [Fact]
@@ -1082,11 +1084,11 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("mapping_value = None", result);
         Assert.Contains("result = UnionTypeWrapper()", result);
         Assert.Contains("if mapping_value and mapping_value.casefold() == \"#kiota.complexType1\".casefold():", result);
-        Assert.Contains("from . import complex_type1", result);
-        Assert.Contains("result.complex_type1_value = complex_type1.ComplexType1()", result);
+        Assert.Contains("from .complex_type1 import ComplexType1", result);
+        Assert.Contains("result.complex_type1_value = ComplexType1()", result);
         Assert.Contains("elif string_value_value := parse_node.get_str_value():", result);
         Assert.Contains("result.string_value = string_value_value", result);
-        Assert.Contains("elif complex_type2_value_value := parse_node.get_collection_of_object_values(complex_type2.ComplexType2):", result);
+        Assert.Contains("elif complex_type2_value_value := parse_node.get_collection_of_object_values(ComplexType2):", result);
         Assert.Contains("result.complex_type2_value = complex_type2_value_value", result);
         Assert.Contains("return result", result);
     }
@@ -1122,11 +1124,11 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("if mapping_value and mapping_value.casefold() == \"#kiota.complexType1\".casefold():", result);
         Assert.Contains("if string_value_value := parse_node.get_str_value():", result);
         Assert.Contains("result.string_value = string_value_value", result);
-        Assert.Contains("elif complex_type2_value_value := parse_node.get_collection_of_object_values(complex_type2.ComplexType2):", result);
+        Assert.Contains("elif complex_type2_value_value := parse_node.get_collection_of_object_values(ComplexType2):", result);
         Assert.Contains("result.complex_type2_value = complex_type2_value_value", result);
         Assert.Contains("else:", result);
-        Assert.Contains("from . import complex_type1", result);
-        Assert.Contains("result.complex_type1_value = complex_type1.ComplexType1()", result);
+        Assert.Contains("from .complex_type1 import ComplexType1", result);
+        Assert.Contains("result.complex_type1_value = ComplexType1()", result);
         Assert.Contains("return result", result);
     }
     [Fact]
@@ -1293,7 +1295,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("from . import somecustomtype", result);
+        Assert.Contains("from .somecustomtype import Somecustomtype", result);
         Assert.Contains("self.request_adapter", result);
         Assert.Contains("self.path_parameters", result);
         Assert.Contains("path_param", result);

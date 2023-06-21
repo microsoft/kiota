@@ -133,7 +133,7 @@ public class PythonConventionService : CommonLanguageConventionService
             "boolean" => "bool",
             "guid" or "uuid" => "UUID",
             "object" or "float" or "bytes" or "datetime" or "timedelta" or "date" or "time" => type.Name.ToLowerInvariant(),
-            _ => $"{type.Name.ToSnakeCase()}.{type.Name.ToFirstCharacterUpperCase()}",
+            _ => $"{type.Name.ToFirstCharacterUpperCase()}",
         };
     }
 

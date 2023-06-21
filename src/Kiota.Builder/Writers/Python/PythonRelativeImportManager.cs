@@ -24,13 +24,17 @@ public class PythonRelativeImportManager : RelativeImportManager
         var (importSymbol, typeDef) = codeUsing.Declaration?.TypeDefinition is CodeElement td ? td switch
         {
             CodeFunction f => (f.Name.ToFirstCharacterLowerCase(), td),
-            _ => (td.Name.ToSnakeCase(), td),
+            _ => (td.Name.ToFirstCharacterUpperCase(), td),
         } : (codeUsing.Name, null);
 
         if (typeDef == null)
             return (importSymbol, codeUsing.Alias, "."); // it's relative to the folder, with no declaration (default failsafe)
         var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
             typeDef.GetImmediateParentOfType<CodeNamespace>());
+        if (string.IsNullOrEmpty(importPath))
+            importPath += codeUsing.Name;
+        else
+            importPath += codeUsing.Declaration?.Name.ToFirstCharacterLowerCase();
         return (importSymbol, codeUsing.Alias, importPath);
     }
     protected new string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)
@@ -51,7 +55,7 @@ public class PythonRelativeImportManager : RelativeImportManager
     {
         var segments = remainingSegments.Select(static x => x.ToFirstCharacterLowerCase()).ToArray();
         if (segments.Any())
-            return segments.Aggregate(static (x, y) => $"{x}.{y}");
+            return segments.Aggregate(static (x, y) => $"{x}.{y}") + '.';
         return string.Empty;
     }
 }

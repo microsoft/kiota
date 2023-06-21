@@ -85,10 +85,10 @@ public class CodePropertyWriterTests : IDisposable
         writer.Write(property);
         var result = tw.ToString();
         Assert.Contains("@property", result);
-        Assert.Contains("def property_name(self) -> somecustomtype.Somecustomtype:", result);
+        Assert.Contains("def property_name(self) -> Somecustomtype:", result);
         Assert.Contains("This is a request builder", result);
-        Assert.Contains("from .somecustomtype import somecustomtype", result);
-        Assert.Contains($"return {TypeName.ToLower()}.{TypeName}(", result);
+        Assert.Contains("from .somecustomtype.somecustomtype import Somecustomtype", result);
+        Assert.Contains($"return {TypeName}(", result);
         Assert.Contains("self.request_adapter", result);
         Assert.Contains("self.path_parameters", result);
     }
@@ -99,7 +99,7 @@ public class CodePropertyWriterTests : IDisposable
         writer.Write(property);
         var result = tw.ToString();
         Assert.DoesNotContain("@property", result);
-        Assert.Contains($"property_name: Optional[{TypeName.ToLower()}.{TypeName}]", result);
+        Assert.Contains($"property_name: Optional[{TypeName}]", result);
     }
     [Fact]
     public void WritesDefaultValuesForProperties()
