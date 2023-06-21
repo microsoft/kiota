@@ -26,6 +26,7 @@
     "autoload",
     "Contoso",
     "cref",
+    "deprecable",
     "deserialization",
     "deserializers",
     "dumpautoload",
