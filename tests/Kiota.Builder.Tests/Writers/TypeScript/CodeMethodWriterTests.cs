@@ -771,4 +771,16 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("case \"filter\": return \"%24filter\"", result);
         Assert.Contains("default: return originalName", result);
     }
+    [Fact]
+    public void WritesDeprecationInformation()
+    {
+        method.Deprecation = new("This method is deprecated", DateTimeOffset.Parse("2020-01-01T00:00:00Z"), DateTimeOffset.Parse("2021-01-01T00:00:00Z"), "v2.0");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("This method is deprecated", result);
+        Assert.Contains("2020-01-01", result);
+        Assert.Contains("2021-01-01", result);
+        Assert.Contains("v2.0", result);
+        Assert.Contains("@deprecated", result);
+    }
 }

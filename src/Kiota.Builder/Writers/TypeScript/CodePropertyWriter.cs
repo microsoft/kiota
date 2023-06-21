@@ -15,7 +15,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
         var isFlagEnum = codeElement.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum currentEnum && currentEnum.Flags;
 
-        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+        conventions.WriteLongDescription(codeElement, writer);
         switch (codeElement.Parent)
         {
             case CodeInterface:

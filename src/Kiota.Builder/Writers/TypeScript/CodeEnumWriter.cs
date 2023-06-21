@@ -15,7 +15,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, TypeScriptConventionSe
         if (!codeElement.Options.Any())
             return;
 
-        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+        conventions.WriteLongDescription(codeElement, writer);
         writer.WriteLine($"export enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
         writer.IncreaseIndent();
         codeElement.Options.ToList().ForEach(x =>

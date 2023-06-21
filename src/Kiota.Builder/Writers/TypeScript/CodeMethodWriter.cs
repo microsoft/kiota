@@ -393,13 +393,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             (false, true) => $"@returns a Promise of {code.ReturnType.Name.ToFirstCharacterUpperCase()}",
             (false, false) => $"@returns a {code.ReturnType.Name}",
         };
-        conventions.WriteLongDescription(code.Documentation,
-                                            writer,
-                                            code.Parameters
-                                                .Where(static x => x.Documentation.DescriptionAvailable)
-                                                .OrderBy(static x => x.Name)
-                                                .Select(x => $"@param {x.Name} {TypeScriptConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
-                                                .Union(new[] { returnRemark }));
+        conventions.WriteLongDescription(code,
+                                        writer,
+                                        code.Parameters
+                                            .Where(static x => x.Documentation.DescriptionAvailable)
+                                            .OrderBy(static x => x.Name)
+                                            .Select(x => $"@param {x.Name} {TypeScriptConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
+                                            .Union(new[] { returnRemark }));
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid)

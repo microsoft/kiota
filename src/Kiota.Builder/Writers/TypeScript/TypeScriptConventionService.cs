@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -152,25 +153,37 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         if (!string.IsNullOrEmpty(description))
             writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
-    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
+    public void WriteLongDescription(IDocumentedElement documentedElement, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (documentation is null) return;
+        ArgumentNullException.ThrowIfNull(documentedElement);
+        if (documentedElement.Documentation is null) return;
         if (additionalRemarks == default)
             additionalRemarks = Enumerable.Empty<string>();
         var remarks = additionalRemarks.Where(static x => !string.IsNullOrEmpty(x)).ToArray();
-        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || remarks.Any())
+        if (documentedElement.Documentation.DescriptionAvailable || documentedElement.Documentation.ExternalDocumentationAvailable || remarks.Any())
         {
             writer.WriteLine(DocCommentStart);
-            if (documentation.DescriptionAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentation.Description)}");
+            if (documentedElement.Documentation.DescriptionAvailable)
+                writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentedElement.Documentation.Description)}");
             foreach (var additionalRemark in remarks)
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
 
-            if (documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{DocCommentPrefix}@see {{@link {documentation.DocumentationLink}|{documentation.DocumentationLabel}}}");
+            if (documentedElement is IDeprecableElement deprecableElement && GetDeprecationComment(deprecableElement) is string deprecationComment && !string.IsNullOrEmpty(deprecationComment))
+                writer.WriteLine($"{DocCommentPrefix}{deprecationComment}");
+
+            if (documentedElement.Documentation.ExternalDocumentationAvailable)
+                writer.WriteLine($"{DocCommentPrefix}@see {{@link {documentedElement.Documentation.DocumentationLink}|{documentedElement.Documentation.DocumentationLabel}}}");
             writer.WriteLine(DocCommentEnd);
         }
     }
+    internal string GetDeprecationComment(IDeprecableElement element)
+    {
+        if (element.Deprecation is null || !element.Deprecation.IsDeprecated) return string.Empty;
 
+        var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
+        var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
+        var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
+        return $"@deprecated {element.Deprecation.Description}{versionComment}{dateComment}{removalComment}";
+    }
 }
