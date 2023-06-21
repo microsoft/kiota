@@ -225,31 +225,31 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     private const string DateTimePackageName = "datetime";
     private const string UUIDPackageName = "uuid";
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase) {
-    {"DateTimeOffset", ("datetime", new CodeUsing {
-                                    Name = "datetime",
+    {"DateTimeOffset", ("datetime.datetime", new CodeUsing {
+                                    Name = DateTimePackageName,
                                     Declaration = new CodeType {
-                                        Name = DateTimePackageName,
+                                        Name = "-",
                                         IsExternal = true,
                                     },
                                 })},
-    {"TimeSpan", ("timedelta", new CodeUsing {
-                                    Name = "timedelta",
+    {"TimeSpan", ("datetime.timedelta", new CodeUsing {
+                                    Name = DateTimePackageName,
                                     Declaration = new CodeType {
-                                        Name = DateTimePackageName,
+                                        Name = "-",
                                         IsExternal = true,
                                     },
                                 })},
-    {"DateOnly", ("date", new CodeUsing {
-                            Name = "date",
+    {"DateOnly", ("datetime.date", new CodeUsing {
+                            Name = DateTimePackageName,
                             Declaration = new CodeType {
-                                Name = DateTimePackageName,
+                                Name = "-",
                                 IsExternal = true,
                             },
                         })},
-    {"TimeOnly", ("time", new CodeUsing {
-                            Name = "time",
+    {"TimeOnly", ("datetime.time", new CodeUsing {
+                            Name = DateTimePackageName,
                             Declaration = new CodeType {
-                                Name = DateTimePackageName,
+                                Name = "-",
                                 IsExternal = true,
                             },
                         })},

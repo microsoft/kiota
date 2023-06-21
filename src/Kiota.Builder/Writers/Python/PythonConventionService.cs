@@ -75,7 +75,7 @@ public class PythonConventionService : CommonLanguageConventionService
         var collectionPrefix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "List[";
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "]";
         if (code is CodeComposedTypeBase currentUnion && currentUnion.Types.Any())
-            return currentUnion.Types.Select(x => GetTypeString(x, targetElement, true, writer)).Aggregate((x, y) => $"Union[{x}, {y.ToFirstCharacterLowerCase()}]");
+            return currentUnion.Types.Select(x => GetTypeString(x, targetElement, true, writer)).Aggregate((x, y) => $"Union[{x}, {y.ToFirstCharacterUpperCase()}]");
         if (code is CodeType currentType)
         {
             var alias = GetTypeAlias(currentType, targetElement);
@@ -107,10 +107,10 @@ public class PythonConventionService : CommonLanguageConventionService
             "decimal" or "double" => "float",
             "binary" or "base64" or "base64url" => "bytes",
             "void" => "None",
-            "datetimeoffset" => "datetime",
+            "datetimeoffset" => "datetime.datetime",
             "boolean" => "bool",
             "guid" or "uuid" => "UUID",
-            "object" or "float" or "bytes" or "datetime" or "timedelta" or "date" or "time" => type.Name.ToLowerInvariant(),
+            "object" or "float" or "bytes" or "datetime.datetime" or "datetime.timedelta" or "datetime.date" or "datetime.time" => type.Name.ToLowerInvariant(),
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
         };
     }
@@ -129,10 +129,10 @@ public class PythonConventionService : CommonLanguageConventionService
             "decimal" or "double" => "float",
             "binary" or "base64" or "base64url" => "bytes",
             "void" => "None",
-            "datetimeoffset" => "datetime",
+            "datetimeoffset" => "datetime.datetime",
             "boolean" => "bool",
             "guid" or "uuid" => "UUID",
-            "object" or "float" or "bytes" or "datetime" or "timedelta" or "date" or "time" => type.Name.ToLowerInvariant(),
+            "object" or "float" or "bytes" or "datetime.datetime" or "datetime.timedelta" or "datetime.date" or "datetime.time" => type.Name.ToLowerInvariant(),
             _ => $"{type.Name.ToFirstCharacterUpperCase()}",
         };
     }

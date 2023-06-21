@@ -746,8 +746,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         return propertyType switch
         {
-            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"get_{propertyType.ToLowerInvariant()}_value()",
-            "bytes" => "get_bytes_value()",
+            "str" or "bool" or "int" or "float" or "UUID" or "bytes" => $"get_{propertyType.ToLowerInvariant()}_value()",
+            "datetime.datetime" => "get_datetime_value()",
+            "datetime.date" => "get_date_value()",
+            "datetime.time" => "get_time_value()",
+            "datetime.timedelta" => "get_timedelta_value()",
             _ => $"get_object_value({propertyType.ToCamelCase()})",
         };
     }
@@ -769,7 +772,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         return propertyType switch
         {
-            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"write_{propertyType.ToLowerInvariant()}_value",
+            "str" or "bool" or "int" or "float" or "UUID" or "bytes" => $"write_{propertyType.ToLowerInvariant()}_value",
+            "datetime.datetime" => "write_datetime_value()",
+            "datetime.date" => "write_date_value()",
+            "datetime.time" => "write_time_value()",
+            "datetime.timedelta" => "write_timedelta_value()",
             _ => "write_object_value",
         };
     }

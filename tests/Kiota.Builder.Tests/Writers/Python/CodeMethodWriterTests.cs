@@ -149,7 +149,7 @@ public class CodeMethodWriterTests : IDisposable
             Name = "dummyTimespan",
             Type = new CodeType
             {
-                Name = "timedelta"
+                Name = "datetime.timedelta"
             }
         });
         parentClass.AddProperty(new CodeProperty
@@ -157,7 +157,7 @@ public class CodeMethodWriterTests : IDisposable
             Name = "dummyDateTime",
             Type = new CodeType
             {
-                Name = "datetime"
+                Name = "datetime.datetime"
             }
         });
         parentClass.AddProperty(new CodeProperty
@@ -165,7 +165,7 @@ public class CodeMethodWriterTests : IDisposable
             Name = "dummyTime",
             Type = new CodeType
             {
-                Name = "time"
+                Name = "datetime.time"
             }
         });
         parentClass.AddProperty(new CodeProperty
@@ -173,7 +173,7 @@ public class CodeMethodWriterTests : IDisposable
             Name = "dummyDate",
             Type = new CodeType
             {
-                Name = "date"
+                Name = "datetime.date"
             }
         });
         parentClass.AddProperty(new CodeProperty
@@ -181,7 +181,7 @@ public class CodeMethodWriterTests : IDisposable
             Name = "dummyGuid",
             Type = new CodeType
             {
-                Name = "uuid"
+                Name = "UUID"
             }
         });
         parentClass.AddProperty(new CodeProperty
