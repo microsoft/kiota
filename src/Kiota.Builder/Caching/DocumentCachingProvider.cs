@@ -38,7 +38,7 @@ public class DocumentCachingProvider
     private async Task<Stream> GetDocumentInternalAsync(Uri documentUri, string intermediateFolderName, string fileName, bool couldNotDelete, string? accept, CancellationToken token)
     {
         var hashedUrl = BitConverter.ToString((HashAlgorithm.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(documentUri.ToString()))).Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase);
-        var target = Path.Combine(Path.GetTempPath(), "kiota", "cache", intermediateFolderName, hashedUrl, fileName);
+        var target = Path.Combine(Path.GetTempPath(), Constants.TempDirectoryName, "cache", intermediateFolderName, hashedUrl, fileName);
         var currentLock = _locks.GetOrAdd(target, _ => new AsyncLock());
         using (await currentLock.LockAsync(token).ConfigureAwait(false))
         {// if multiple clients are being updated for the same description, we'll have concurrent download of the file without the lock
