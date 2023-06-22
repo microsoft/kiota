@@ -628,21 +628,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 x.TypeDefinition is CodeEnum || x.TypeDefinition is null))
         {
             KiotaBuilder.AddSerializationMembers(newClass, true, usesBackingStore);
-            newClass.AddProperty(new CodeProperty
-            {
-                Name = "serializationHint",
-                Type = new CodeType
-                {
-                    Name = "string",
-                    IsExternal = true,
-                },
-                Documentation = new()
-                {
-                    Description = "Serialization hint for the current wrapper.",
-                },
-                Access = AccessModifier.Public,
-                Kind = CodePropertyKind.SerializationHint,
-            });
             newClass.Kind = CodeClassKind.Model;
         }
         newClass.OriginalComposedType = codeComposedType;

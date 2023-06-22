@@ -34,10 +34,6 @@ public enum CodePropertyKind
     /// The request middleware options. Used when request parameters are wrapped in a class.
     /// </summary>
     Options,
-    /// <summary>
-    /// Serialization hint for composed type wrappers.
-    /// </summary>
-    SerializationHint,
 }
 
 public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement, IAlternativeName, ICloneable, IDeprecableElement
