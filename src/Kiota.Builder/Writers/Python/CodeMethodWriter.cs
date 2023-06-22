@@ -116,7 +116,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.StartBlock($"if {DiscriminatorMappingVarName} and {DiscriminatorMappingVarName}.casefold() == \"{mappedType.Key}\".casefold():");
             var mappedTypeName = mappedType.Value.AllTypes.First().Name;
             _codeUsingWriter.WriteDeferredImport(parentClass, mappedTypeName, writer);
-            writer.WriteLine($"return {mappedTypeName.ToSnakeCase()}.{mappedTypeName.ToFirstCharacterUpperCase()}()");
+            writer.WriteLine($"return {mappedTypeName.ToFirstCharacterUpperCase()}()");
             writer.DecreaseIndent();
         }
         writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}()");
@@ -136,7 +136,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                     var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
                     writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if {DiscriminatorMappingVarName} and {DiscriminatorMappingVarName}.casefold() == \"{mappedType.Key}\".casefold():");
                     _codeUsingWriter.WriteDeferredImport(parentClass, propertyType.Name, writer);
-                    writer.WriteLine($"{ResultVarName}.{property.Name.ToSnakeCase()} = {propertyType.Name.ToSnakeCase()}.{propertyType.Name.ToFirstCharacterUpperCase()}()");
+                    writer.WriteLine($"{ResultVarName}.{property.Name.ToSnakeCase()} = {propertyType.Name.ToFirstCharacterUpperCase()}()");
                     writer.DecreaseIndent();
                 }
                 else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum)
@@ -183,7 +183,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             foreach (var property in complexProperties)
             {
                 _codeUsingWriter.WriteDeferredImport(parentClass, property.Item2.Name, writer);
-                writer.WriteLine($"{ResultVarName}.{property.Item1.Name.ToSnakeCase()} = {property.Item2.Name.ToSnakeCase()}.{property.Item2.Name.ToFirstCharacterUpperCase()}()");
+                writer.WriteLine($"{ResultVarName}.{property.Item1.Name.ToSnakeCase()} = {property.Item2.Name.ToFirstCharacterUpperCase()}()");
             }
             if (includeElse)
             {
@@ -552,7 +552,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.StartBlock($"{errorMappingVarName}: Dict[str, ParsableFactory] = {{");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorMapping.Value.Name.ToSnakeCase()}.{errorMapping.Value.Name},");
+                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorMapping.Value.Name},");
             }
             writer.CloseBlock();
         }
@@ -746,8 +746,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         return propertyType switch
         {
-            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"get_{propertyType.ToLowerInvariant()}_value()",
-            "bytes" => "get_bytes_value()",
+            "str" or "bool" or "int" or "float" or "UUID" or "bytes" => $"get_{propertyType.ToLowerInvariant()}_value()",
+            "datetime.datetime" => "get_datetime_value()",
+            "datetime.date" => "get_date_value()",
+            "datetime.time" => "get_time_value()",
+            "datetime.timedelta" => "get_timedelta_value()",
             _ => $"get_object_value({propertyType.ToCamelCase()})",
         };
     }
@@ -769,7 +772,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         return propertyType switch
         {
-            "str" or "bool" or "int" or "float" or "UUID" or "date" or "time" or "datetime" or "timedelta" => $"write_{propertyType.ToLowerInvariant()}_value",
+            "str" or "bool" or "int" or "float" or "UUID" or "bytes" => $"write_{propertyType.ToLowerInvariant()}_value",
+            "datetime.datetime" => "write_datetime_value()",
+            "datetime.date" => "write_date_value()",
+            "datetime.time" => "write_time_value()",
+            "datetime.timedelta" => "write_timedelta_value()",
             _ => "write_object_value",
         };
     }

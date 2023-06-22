@@ -358,7 +358,7 @@ public class PythonLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
-        Assert.Equal("datetime", method.ReturnType.Name);
+        Assert.Equal("datetime.datetime", method.ReturnType.Name);
     }
     [Fact]
     public async Task ReplacesDateOnlyByNativeType()
@@ -378,7 +378,7 @@ public class PythonLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
-        Assert.Equal("date", method.ReturnType.Name);
+        Assert.Equal("datetime.date", method.ReturnType.Name);
     }
     [Fact]
     public async Task ReplacesTimeOnlyByNativeType()
@@ -398,7 +398,7 @@ public class PythonLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
-        Assert.Equal("time", method.ReturnType.Name);
+        Assert.Equal("datetime.time", method.ReturnType.Name);
     }
     [Fact]
     public async Task ReplacesDurationByNativeType()
@@ -418,7 +418,7 @@ public class PythonLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
-        Assert.Equal("timedelta", method.ReturnType.Name);
+        Assert.Equal("datetime.timedelta", method.ReturnType.Name);
     }
     [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutors()

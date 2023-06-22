@@ -118,8 +118,8 @@ public class CodeClassDeclarationWriterTests : IDisposable
         codeElementWriter.WriteCodeElement(declaration, writer);
         var result = tw.ToString();
         Assert.Contains("if TYPE_CHECKING:", result);
-        Assert.Contains("from . import some_interface", result);
-        Assert.Contains("(some_interface.SomeInterface):", result);
+        Assert.Contains("from .some_interface import SomeInterface", result);
+        Assert.Contains("(SomeInterface):", result);
     }
     [Fact]
     public void WritesInnerClasses()
@@ -190,7 +190,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
         codeElementWriter.WriteCodeElement(declaration, writer);
         var result = tw.ToString();
         Assert.Contains("if TYPE_CHECKING:", result);
-        Assert.Contains("from .messages import message", result);
+        Assert.Contains("from .messages.message import Message", result);
     }
 
     [Fact]
@@ -215,7 +215,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
         codeElementWriter.WriteCodeElement(declaration, writer);
         var result = tw.ToString();
         Assert.Contains("if TYPE_CHECKING:", result);
-        Assert.Contains("from . import message", result);
+        Assert.Contains("from .message import Message", result);
     }
     [Fact]
     public void WritesInternalImportsNoTypeDef()

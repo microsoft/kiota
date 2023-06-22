@@ -75,7 +75,7 @@ public class PythonConventionService : CommonLanguageConventionService
         var collectionPrefix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "List[";
         var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None && includeCollectionInformation ? string.Empty : "]";
         if (code is CodeComposedTypeBase currentUnion && currentUnion.Types.Any())
-            return currentUnion.Types.Select(x => GetTypeString(x, targetElement, true, writer)).Aggregate((x, y) => $"Union[{x}, {y.ToFirstCharacterLowerCase()}]");
+            return currentUnion.Types.Select(x => GetTypeString(x, targetElement, true, writer)).Aggregate((x, y) => $"Union[{x}, {TranslateAllTypes(y)}]");
         if (code is CodeType currentType)
         {
             var alias = GetTypeAlias(currentType, targetElement);
@@ -94,46 +94,22 @@ public class PythonConventionService : CommonLanguageConventionService
     public override string TranslateType(CodeType type)
     {
         ArgumentNullException.ThrowIfNull(type);
-        if (type.IsExternal)
-            return TranslateExternalType(type);
-        return TranslateInternalType(type);
+        return TranslateAllTypes(type.Name);
     }
-    private static string TranslateExternalType(CodeType type)
+    private static string TranslateAllTypes(string typeName)
     {
-        return type.Name.ToLowerInvariant() switch
+        return typeName.ToLowerInvariant() switch
         {
             "string" => "str",
             "integer" or "int32" or "int64" or "long" or "byte" or "sbyte" => "int",
             "decimal" or "double" => "float",
             "binary" or "base64" or "base64url" => "bytes",
             "void" => "None",
-            "datetimeoffset" => "datetime",
+            "datetimeoffset" => "datetime.datetime",
             "boolean" => "bool",
             "guid" or "uuid" => "UUID",
-            "object" or "float" or "bytes" or "datetime" or "timedelta" or "date" or "time" => type.Name.ToLowerInvariant(),
-            _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
-        };
-    }
-    private static string TranslateInternalType(CodeType type)
-    {
-        if (type.Name.Contains("RequestConfiguration", StringComparison.Ordinal) && type.TypeDefinition is not null)
-            return type.TypeDefinition.Name.ToFirstCharacterUpperCase();
-        if (type.Name.Contains("QueryParameters", StringComparison.Ordinal))
-            return type.Name;
-        if (type.Name.Contains("APIError", StringComparison.Ordinal))
-            return type.Name;
-        return type.Name.ToLowerInvariant() switch
-        {
-            "string" => "str",
-            "integer" or "int32" or "int64" or "long" or "byte" or "sbyte" => "int",
-            "decimal" or "double" => "float",
-            "binary" or "base64" or "base64url" => "bytes",
-            "void" => "None",
-            "datetimeoffset" => "datetime",
-            "boolean" => "bool",
-            "guid" or "uuid" => "UUID",
-            "object" or "float" or "bytes" or "datetime" or "timedelta" or "date" or "time" => type.Name.ToLowerInvariant(),
-            _ => $"{type.Name.ToSnakeCase()}.{type.Name.ToFirstCharacterUpperCase()}",
+            "object" or "str" or "int" or "float" or "bytes" or "datetime.datetime" or "datetime.timedelta" or "datetime.date" or "datetime.time" => typeName.ToLowerInvariant(),
+            _ => !string.IsNullOrEmpty(typeName) ? typeName.ToFirstCharacterUpperCase() : "object",
         };
     }
 
