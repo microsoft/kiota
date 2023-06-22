@@ -18,13 +18,14 @@ public class CodeClassDeclarationWriterTests : IDisposable
     private readonly LanguageWriter writer;
     private readonly CodeClassDeclarationWriter codeElementWriter;
     private readonly CodeClass parentClass;
+    private readonly CodeNamespace root;
     public CodeClassDeclarationWriterTests()
     {
         codeElementWriter = new CodeClassDeclarationWriter(new PhpConventionService());
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
-        var root = CodeNamespace.InitRootNamespace();
+        root = CodeNamespace.InitRootNamespace();
         root.Name = "Microsoft\\Graph";
         parentClass = new()
         {
@@ -153,6 +154,71 @@ public class CodeClassDeclarationWriterTests : IDisposable
         codeElementWriter.WriteCodeElement(currentClass, writer);
         var result = tw.ToString();
         Assert.Contains("extends", result);
+    }
+
+    [Fact]
+    public async void AddsImportsToRequestConfigClasses()
+    {
+        var queryParamClass = new CodeClass { Name = "TestRequestQueryParameter", Kind = CodeClassKind.QueryParameters };
+        queryParamClass.AddProperty(new[]
+        {
+            new CodeProperty
+            {
+                Name = "startTime",
+                Kind = CodePropertyKind.QueryParameter,
+                Documentation = new()
+                {
+                    Description = "Filter by start time",
+                },
+                Type = new CodeType
+                {
+                    Name = "datetimeoffset"
+                },
+            },
+            new CodeProperty
+            {
+                Name = "endTime",
+                Kind = CodePropertyKind.QueryParameter,
+                Documentation = new()
+                {
+                    Description = "Filter by end time",
+                },
+                Type = new CodeType
+                {
+                    Name = "datetimeoffset"
+                },
+            },
+            new CodeProperty
+            {
+                Name = "startDate",
+                Kind = CodePropertyKind.QueryParameter,
+                Documentation = new()
+                {
+                    Description = "Filter by start date",
+                },
+                Type = new CodeType
+                {
+                    Name = "dateonly"
+                },
+            },
+        });
+        root.AddClass(queryParamClass);
+        parentClass.Kind = CodeClassKind.RequestConfiguration;
+        parentClass.AddProperty(new[] {
+            new CodeProperty
+            {
+                Name = "queryParameters",
+                Kind = CodePropertyKind.QueryParameters,
+                Documentation = new() { Description = "Request query parameters", },
+                Type = new CodeType { Name = queryParamClass.Name, TypeDefinition = queryParamClass },
+            }
+        });
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+
+        Assert.Contains("use DateTime;", result);
+        Assert.Contains("use Microsoft\\Kiota\\Abstractions\\Types\\Date;", result);
 
     }
 }

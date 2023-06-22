@@ -43,10 +43,10 @@ public class PhpRefiner : CommonLanguageRefiner
                 _configuration.UsesBackingStore,
                 false);
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
+            AddQueryParameterFactoryMethod(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddRequestConfigurationConstructors(generatedCode);
-            AddQueryParameterFactoryMethod(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddCollectionValidationUtilImportToModels(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
@@ -421,7 +421,7 @@ public class PhpRefiner : CommonLanguageRefiner
                                             Name = x.Name,
                                             Kind = CodeParameterKind.QueryParameter,
                                             Optional = true,
-                                            Type = x.Type
+                                            Type = (CodeTypeBase)x.Type.Clone()
                                         }).ToArray();
                     if (properties.Any())
                     {
