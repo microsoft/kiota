@@ -2167,7 +2167,7 @@ public class CodeMethodWriterTests : IDisposable
             },
             new CodeProperty
             {
-                Name = "top",
+                Name = "Top",
                 Kind = CodePropertyKind.QueryParameter,
                 Documentation = new() { Description = "Show only the first n items", },
                 Type = new CodeType { Name = "integer" },
