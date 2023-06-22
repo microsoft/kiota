@@ -613,9 +613,9 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("from .error4_x_x import Error4XX", result);
         Assert.Contains("from .error5_x_x import Error5XX", result);
         Assert.Contains("error_mapping: Dict[str, ParsableFactory] =", result);
-        Assert.Contains("\"4XX\": error4_x_x.Error4XX", result);
-        Assert.Contains("\"5XX\": error5_x_x.Error5XX", result);
-        Assert.Contains("\"401\": error401.Error401", result);
+        Assert.Contains("\"4XX\": Error4XX", result);
+        Assert.Contains("\"5XX\": Error5XX", result);
+        Assert.Contains("\"401\": Error401", result);
         Assert.Contains("from .somecustomtype import Somecustomtype", result);
         Assert.Contains("send_async", result);
         Assert.Contains("raise Exception", result);
