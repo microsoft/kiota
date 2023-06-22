@@ -627,7 +627,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if (codeComposedType.Types.All(static x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
                                 x.TypeDefinition is CodeEnum || x.TypeDefinition is null))
         {
-            KiotaBuilder.AddSerializationMembers(newClass, true, usesBackingStore);
+            KiotaBuilder.AddSerializationMembers(newClass, false, usesBackingStore);
             newClass.Kind = CodeClassKind.Model;
         }
         newClass.OriginalComposedType = codeComposedType;
