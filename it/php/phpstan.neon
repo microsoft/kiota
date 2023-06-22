@@ -7,3 +7,4 @@ parameters:
     - src
   ignoreErrors:
     - '#Parameter [\w\W]+ \$errorMappings of method [\w\\]+RequestAdapter::send[\w]+\(\) expects [\w\W\s]+ given\.#'
+    - '#getFieldDeserializers\(\) should return array\<string, callable\(Microsoft\\Kiota\\Abstractions\\Serialization\\ParseNode\)\: void\> but returns array\{[\d]\: Closure\(Microsoft\\Kiota\\Abstractions\\Serialization\\ParseNode\)\: void.+#'
