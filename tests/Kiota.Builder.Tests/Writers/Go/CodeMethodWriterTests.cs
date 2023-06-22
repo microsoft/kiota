@@ -1905,4 +1905,16 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("ReadOnlyProperty", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+    [Fact]
+    public void WritesDeprecationInformation()
+    {
+        method.Deprecation = new("This method is deprecated", DateTimeOffset.Parse("2020-01-01T00:00:00Z"), DateTimeOffset.Parse("2021-01-01T00:00:00Z"), "v2.0");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("This method is deprecated", result);
+        Assert.Contains("2020-01-01", result);
+        Assert.Contains("2021-01-01", result);
+        Assert.Contains("v2.0", result);
+        Assert.Contains("// Deprecated:", result);
+    }
 }

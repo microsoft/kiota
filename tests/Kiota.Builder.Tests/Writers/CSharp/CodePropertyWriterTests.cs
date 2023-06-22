@@ -190,5 +190,13 @@ public class CodePropertyWriterTests : IDisposable
         Assert.Contains("namespaceLevelOne.Somecustomtype", result);
         Assert.Contains("defaultNamespace.Somecustomtype", result);
     }
+    [Fact]
+    public void WritesDeprecationInformation()
+    {
+        property.Deprecation = new("deprecation message", new DateTimeOffset(2021, 1, 1, 0, 0, 0, TimeSpan.Zero), new DateTimeOffset(2023, 1, 1, 0, 0, 0, TimeSpan.Zero), "v1.0");
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("[Obsolete(\"deprecation message as of v1.0 on 2021-01-01 and will be removed 2023-01-01\")]", result);
+    }
 }
 

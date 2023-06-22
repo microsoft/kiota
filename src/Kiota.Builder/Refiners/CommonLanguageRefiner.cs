@@ -237,6 +237,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Description = $"Gets the {propertyOriginalName} property value. {currentProperty.Documentation.Description}",
                 },
                 AccessedProperty = currentProperty,
+                Deprecation = currentProperty.Deprecation,
             }).First();
             currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
             var setter = parentClass.AddMethod(new CodeMethod
@@ -256,6 +257,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     IsNullable = false,
                     IsExternal = true,
                 },
+                Deprecation = currentProperty.Deprecation,
             }).First();
             setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
             currentProperty.Setter = setter;

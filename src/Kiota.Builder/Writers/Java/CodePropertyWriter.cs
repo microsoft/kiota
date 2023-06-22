@@ -13,9 +13,10 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
         if (codeElement.ExistsInExternalBaseType)
             return;
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
-        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+        conventions.WriteLongDescription(codeElement, writer);
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
         var defaultValue = string.Empty;
+        conventions.WriteDeprecatedAnnotation(codeElement, writer);
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:

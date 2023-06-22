@@ -20,7 +20,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
             "import com.microsoft.kiota.serialization.ValuedEnum;",
             "import java.util.Objects;",
             string.Empty);
-        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+        conventions.WriteLongDescription(codeElement, writer);
+        conventions.WriteDeprecatedAnnotation(codeElement, writer);
         writer.WriteLine($"public enum {enumName} implements ValuedEnum {{");
         writer.IncreaseIndent();
         var lastEnumOption = enumOptions.Last();

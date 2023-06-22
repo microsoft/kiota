@@ -257,6 +257,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     {
         if (code.Documentation.DescriptionAvailable)
             conventions.WriteShortDescription($"{methodName.ToFirstCharacterUpperCase()} {code.Documentation.Description.ToFirstCharacterLowerCase()}", writer);
+        conventions.WriteDeprecation(code, writer);
         conventions.WriteLinkDescription(code.Documentation, writer);
     }
     private const string TempParamsVarName = "urlParams";

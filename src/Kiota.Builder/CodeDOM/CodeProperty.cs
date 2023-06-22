@@ -40,7 +40,7 @@ public enum CodePropertyKind
     SerializationHint,
 }
 
-public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement, IAlternativeName, ICloneable
+public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement, IAlternativeName, ICloneable, IDeprecableElement
 {
     public bool ReadOnly
     {
@@ -115,6 +115,10 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     {
         get; set;
     }
+    public DeprecationInformation? Deprecation
+    {
+        get; set;
+    }
 
     public object Clone()
     {
@@ -133,7 +137,8 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
             Documentation = (CodeDocumentation)Documentation.Clone(),
             SerializationName = SerializationName,
             NamePrefix = NamePrefix,
-            OriginalPropertyFromBaseType = OriginalPropertyFromBaseType?.Clone() as CodeProperty
+            OriginalPropertyFromBaseType = OriginalPropertyFromBaseType?.Clone() as CodeProperty,
+            Deprecation = Deprecation,
         };
         return property;
     }

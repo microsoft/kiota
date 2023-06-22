@@ -71,7 +71,7 @@ public class PagingInformation : ICloneable
     }
 }
 
-public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
+public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement, IDeprecableElement
 {
     public static readonly CodeParameterKind ParameterKindForConvertedIndexers = CodeParameterKind.Custom;
     public static CodeMethod FromIndexer(CodeIndexer originalIndexer, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback, bool parameterNullable)
@@ -92,6 +92,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             },
             ReturnType = (CodeTypeBase)originalIndexer.ReturnType.Clone(),
             OriginalIndexer = originalIndexer,
+            Deprecation = originalIndexer.Deprecation,
         };
         if (method.ReturnType is not null)
             method.ReturnType.IsNullable = false;
@@ -255,6 +256,12 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             return errorMappings.OrderBy(static x => x.Key);
         }
     }
+
+    public DeprecationInformation? Deprecation
+    {
+        get; set;
+    }
+
     public void ReplaceErrorMapping(CodeTypeBase oldType, CodeTypeBase newType)
     {
         var codes = errorMappings.Where(x => x.Value == oldType).Select(static x => x.Key).ToArray();
@@ -286,6 +293,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             AcceptedResponseTypes = new(AcceptedResponseTypes, StringComparer.OrdinalIgnoreCase),
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
             Documentation = (CodeDocumentation)Documentation.Clone(),
+            Deprecation = Deprecation,
         };
         if (Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => (CodeParameter)x.Clone()).ToArray());

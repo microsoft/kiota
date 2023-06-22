@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -94,10 +95,10 @@ public class JavaConventionService : CommonLanguageConventionService
         if (!string.IsNullOrEmpty(description))
             writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
-    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
+    public void WriteLongDescription(CodeElement element, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        if (documentation is null) return;
+        if (element is not IDocumentedElement documentedElement || documentedElement.Documentation is not CodeDocumentation documentation) return;
         if (additionalRemarks == default)
             additionalRemarks = Enumerable.Empty<string>();
         var remarks = additionalRemarks.ToArray();
@@ -108,6 +109,9 @@ public class JavaConventionService : CommonLanguageConventionService
                 writer.WriteLine($"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(documentation.Description)}");
             foreach (var additionalRemark in remarks.Where(static x => !string.IsNullOrEmpty(x)))
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
+            if (element is IDeprecableElement deprecableElement && deprecableElement.Deprecation is not null && deprecableElement.Deprecation.IsDeprecated)
+                foreach (var additionalComment in GetDeprecationInformationForDocumentationComment(deprecableElement))
+                    writer.WriteLine($"{DocCommentPrefix}{additionalComment}");
 
             if (documentation.ExternalDocumentationAvailable)
                 writer.WriteLine($"{DocCommentPrefix}@see <a href=\"{documentation.DocumentationLink}\">{documentation.DocumentationLabel}</a>");
@@ -144,4 +148,22 @@ public class JavaConventionService : CommonLanguageConventionService
             ).ToArray());
     }
 #pragma warning restore CA1822 // Method should be static
+    private string[] GetDeprecationInformationForDocumentationComment(IDeprecableElement element)
+    {
+        if (element.Deprecation is null || !element.Deprecation.IsDeprecated) return Array.Empty<string>();
+
+        var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
+        var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
+        var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
+        return new string[] {
+            $"@deprecated",
+            $"{element.Deprecation.Description}{versionComment}{dateComment}{removalComment}"
+        };
+    }
+    internal void WriteDeprecatedAnnotation(CodeElement element, LanguageWriter writer)
+    {
+        if (element is not IDeprecableElement deprecableElement || deprecableElement.Deprecation is null || !deprecableElement.Deprecation.IsDeprecated) return;
+
+        writer.WriteLine("@Deprecated");
+    }
 }

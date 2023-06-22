@@ -13,6 +13,7 @@ public class CodeIndexerWriter : BaseElementWriter<CodeIndexer, CSharpConvention
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+        conventions.WriteDeprecationAttribute(codeElement, writer);
         writer.StartBlock($"public {returnType} this[{conventions.GetTypeString(codeElement.IndexType, codeElement)} position] {{ get {{");
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp)
             conventions.AddParametersAssignment(writer, pathParametersProp.Type, pathParametersProp.Name.ToFirstCharacterUpperCase(), string.Empty, (codeElement.IndexType, codeElement.SerializationName, "position"));

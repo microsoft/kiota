@@ -49,7 +49,7 @@ public enum CodeParameterKind
     RequestConfiguration,
 }
 
-public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable, IDocumentedElement
+public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable, IDocumentedElement, IDeprecableElement
 {
 #nullable disable // exposing property is required
     private CodeTypeBase type;
@@ -70,6 +70,12 @@ public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable
     public CodeDocumentation Documentation { get; set; } = new();
     public string DefaultValue { get; set; } = string.Empty;
     public string SerializationName { get; set; } = string.Empty;
+    public DeprecationInformation? Deprecation
+    {
+        get;
+        set;
+    }
+
     public object Clone()
     {
         return new CodeParameter
@@ -82,6 +88,7 @@ public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable
             SerializationName = SerializationName,
             Documentation = (CodeDocumentation)Documentation.Clone(),
             Type = (CodeTypeBase)Type.Clone(),
+            Deprecation = Deprecation,
         };
     }
 }

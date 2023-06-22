@@ -678,6 +678,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                             returnType;
         var finalReturnType = isConstructor ? string.Empty : $" {returnTypeAsyncPrefix}{collectionCorrectedReturnType}{returnTypeAsyncSuffix}";
         var staticModifier = code.IsStatic ? " static" : string.Empty;
+        conventions.WriteDeprecatedAnnotation(code, writer);
         writer.WriteLine($"{accessModifier}{staticModifier}{finalReturnType} {methodName}({parameters}) {throwableDeclarations}{{");
         return collectionCorrectedReturnType;
     }
@@ -688,7 +689,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             true => $"@return a CompletableFuture of {code.ReturnType.Name}",
             false => $"@return a {code.ReturnType.Name}",
         };
-        conventions.WriteLongDescription(code.Documentation,
+        conventions.WriteLongDescription(code,
                                         writer,
                                         code.Parameters
                                             .Where(static x => x.Documentation.DescriptionAvailable)
