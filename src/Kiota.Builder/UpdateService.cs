@@ -92,7 +92,7 @@ public class UpdateService
     private static Version? GetVersionFromLabel(string label)
     {
         if (string.IsNullOrEmpty(label)) return null;
-        var versionLabel = label.TrimStart('v', 'V').Split('-', StringSplitOptions.RemoveEmptyEntries).First();
+        var versionLabel = label.TrimStart('v', 'V').Split('-', StringSplitOptions.RemoveEmptyEntries)[0];
         if (Version.TryParse(versionLabel, out var parsedVersion))
             return parsedVersion;
         return null;
