@@ -1,22 +1,28 @@
-using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Contents;
-using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Releases;
-using Microsoft.Kiota.Abstractions;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System;
-namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item {
+using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Contents;
+using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Releases;
+using Microsoft.Kiota.Abstractions;
+namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item
+{
     /// <summary>
     /// Builds and executes requests for operations under \repos\{owner}\{repo}
     /// </summary>
-    public class WithRepoItemRequestBuilder : BaseRequestBuilder {
+    public class WithRepoItemRequestBuilder : BaseRequestBuilder
+    {
         /// <summary>The contents property</summary>
-        public ContentsRequestBuilder Contents { get =>
+        public ContentsRequestBuilder Contents
+        {
+            get =>
             new ContentsRequestBuilder(PathParameters, RequestAdapter);
         }
         /// <summary>The releases property</summary>
-        public ReleasesRequestBuilder Releases { get =>
+        public ReleasesRequestBuilder Releases
+        {
+            get =>
             new ReleasesRequestBuilder(PathParameters, RequestAdapter);
         }
         /// <summary>
@@ -24,14 +30,16 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item {
         /// </summary>
         /// <param name="pathParameters">Path parameters for the request</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public WithRepoItemRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/repos/{owner}/{repo}", pathParameters) {
+        public WithRepoItemRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/repos/{owner}/{repo}", pathParameters)
+        {
         }
         /// <summary>
         /// Instantiates a new WithRepoItemRequestBuilder and sets the default values.
         /// </summary>
         /// <param name="rawUrl">The raw URL to use for the request builder.</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public WithRepoItemRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/repos/{owner}/{repo}", rawUrl) {
+        public WithRepoItemRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/repos/{owner}/{repo}", rawUrl)
+        {
         }
     }
 }

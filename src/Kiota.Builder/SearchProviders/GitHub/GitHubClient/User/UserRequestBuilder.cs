@@ -1,17 +1,21 @@
-using Kiota.Builder.SearchProviders.GitHub.GitHubClient.User.Installations;
-using Microsoft.Kiota.Abstractions;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System;
-namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.User {
+using Kiota.Builder.SearchProviders.GitHub.GitHubClient.User.Installations;
+using Microsoft.Kiota.Abstractions;
+namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.User
+{
     /// <summary>
     /// Builds and executes requests for operations under \user
     /// </summary>
-    public class UserRequestBuilder : BaseRequestBuilder {
+    public class UserRequestBuilder : BaseRequestBuilder
+    {
         /// <summary>The installations property</summary>
-        public InstallationsRequestBuilder Installations { get =>
+        public InstallationsRequestBuilder Installations
+        {
+            get =>
             new InstallationsRequestBuilder(PathParameters, RequestAdapter);
         }
         /// <summary>
@@ -19,14 +23,16 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.User {
         /// </summary>
         /// <param name="pathParameters">Path parameters for the request</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public UserRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/user", pathParameters) {
+        public UserRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/user", pathParameters)
+        {
         }
         /// <summary>
         /// Instantiates a new UserRequestBuilder and sets the default values.
         /// </summary>
         /// <param name="rawUrl">The raw URL to use for the request builder.</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public UserRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/user", rawUrl) {
+        public UserRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/user", rawUrl)
+        {
         }
     }
 }

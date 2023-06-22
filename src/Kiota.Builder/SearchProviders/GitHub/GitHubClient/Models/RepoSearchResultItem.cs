@@ -1,31 +1,57 @@
-using Microsoft.Kiota.Abstractions.Serialization;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System;
-namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
+using Microsoft.Kiota.Abstractions.Serialization;
+namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
+{
     /// <summary>
     /// Repo Search Result Item
     /// </summary>
-    public class RepoSearchResultItem : IAdditionalDataHolder, IParsable {
+    public class RepoSearchResultItem : IAdditionalDataHolder, IParsable
+    {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
-        public IDictionary<string, object> AdditionalData { get; set; }
+        public IDictionary<string, object> AdditionalData
+        {
+            get; set;
+        }
         /// <summary>The allow_auto_merge property</summary>
-        public bool? AllowAutoMerge { get; set; }
+        public bool? AllowAutoMerge
+        {
+            get; set;
+        }
         /// <summary>The allow_forking property</summary>
-        public bool? AllowForking { get; set; }
+        public bool? AllowForking
+        {
+            get; set;
+        }
         /// <summary>The allow_merge_commit property</summary>
-        public bool? AllowMergeCommit { get; set; }
+        public bool? AllowMergeCommit
+        {
+            get; set;
+        }
         /// <summary>The allow_rebase_merge property</summary>
-        public bool? AllowRebaseMerge { get; set; }
+        public bool? AllowRebaseMerge
+        {
+            get; set;
+        }
         /// <summary>The allow_squash_merge property</summary>
-        public bool? AllowSquashMerge { get; set; }
+        public bool? AllowSquashMerge
+        {
+            get; set;
+        }
         /// <summary>The archived property</summary>
-        public bool? Archived { get; set; }
+        public bool? Archived
+        {
+            get; set;
+        }
         /// <summary>The archive_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? ArchiveUrl { get; set; }
+        public string? ArchiveUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string ArchiveUrl { get; set; }
@@ -33,7 +59,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The assignees_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? AssigneesUrl { get; set; }
+        public string? AssigneesUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string AssigneesUrl { get; set; }
@@ -41,7 +70,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The blobs_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? BlobsUrl { get; set; }
+        public string? BlobsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string BlobsUrl { get; set; }
@@ -49,7 +81,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The branches_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? BranchesUrl { get; set; }
+        public string? BranchesUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string BranchesUrl { get; set; }
@@ -57,7 +92,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The clone_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? CloneUrl { get; set; }
+        public string? CloneUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string CloneUrl { get; set; }
@@ -65,7 +103,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The collaborators_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? CollaboratorsUrl { get; set; }
+        public string? CollaboratorsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string CollaboratorsUrl { get; set; }
@@ -73,7 +114,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The comments_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? CommentsUrl { get; set; }
+        public string? CommentsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string CommentsUrl { get; set; }
@@ -81,7 +125,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The commits_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? CommitsUrl { get; set; }
+        public string? CommitsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string CommitsUrl { get; set; }
@@ -89,7 +136,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The compare_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? CompareUrl { get; set; }
+        public string? CompareUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string CompareUrl { get; set; }
@@ -97,7 +147,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The contents_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? ContentsUrl { get; set; }
+        public string? ContentsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string ContentsUrl { get; set; }
@@ -105,27 +158,42 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The contributors_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? ContributorsUrl { get; set; }
+        public string? ContributorsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string ContributorsUrl { get; set; }
 #endif
         /// <summary>The created_at property</summary>
-        public DateTimeOffset? CreatedAt { get; set; }
+        public DateTimeOffset? CreatedAt
+        {
+            get; set;
+        }
         /// <summary>The default_branch property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? DefaultBranch { get; set; }
+        public string? DefaultBranch
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string DefaultBranch { get; set; }
 #endif
         /// <summary>The delete_branch_on_merge property</summary>
-        public bool? DeleteBranchOnMerge { get; set; }
+        public bool? DeleteBranchOnMerge
+        {
+            get; set;
+        }
         /// <summary>The deployments_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? DeploymentsUrl { get; set; }
+        public string? DeploymentsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string DeploymentsUrl { get; set; }
@@ -133,17 +201,26 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The description property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? Description { get; set; }
+        public string? Description
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string Description { get; set; }
 #endif
         /// <summary>Returns whether or not this repository disabled.</summary>
-        public bool? Disabled { get; set; }
+        public bool? Disabled
+        {
+            get; set;
+        }
         /// <summary>The downloads_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? DownloadsUrl { get; set; }
+        public string? DownloadsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string DownloadsUrl { get; set; }
@@ -151,21 +228,36 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The events_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? EventsUrl { get; set; }
+        public string? EventsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string EventsUrl { get; set; }
 #endif
         /// <summary>The fork property</summary>
-        public bool? Fork { get; set; }
+        public bool? Fork
+        {
+            get; set;
+        }
         /// <summary>The forks property</summary>
-        public int? Forks { get; set; }
+        public int? Forks
+        {
+            get; set;
+        }
         /// <summary>The forks_count property</summary>
-        public int? ForksCount { get; set; }
+        public int? ForksCount
+        {
+            get; set;
+        }
         /// <summary>The forks_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? ForksUrl { get; set; }
+        public string? ForksUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string ForksUrl { get; set; }
@@ -173,7 +265,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The full_name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? FullName { get; set; }
+        public string? FullName
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string FullName { get; set; }
@@ -181,7 +276,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The git_commits_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? GitCommitsUrl { get; set; }
+        public string? GitCommitsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string GitCommitsUrl { get; set; }
@@ -189,7 +287,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The git_refs_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? GitRefsUrl { get; set; }
+        public string? GitRefsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string GitRefsUrl { get; set; }
@@ -197,7 +298,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The git_tags_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? GitTagsUrl { get; set; }
+        public string? GitTagsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string GitTagsUrl { get; set; }
@@ -205,27 +309,51 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The git_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? GitUrl { get; set; }
+        public string? GitUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string GitUrl { get; set; }
 #endif
         /// <summary>The has_discussions property</summary>
-        public bool? HasDiscussions { get; set; }
+        public bool? HasDiscussions
+        {
+            get; set;
+        }
         /// <summary>The has_downloads property</summary>
-        public bool? HasDownloads { get; set; }
+        public bool? HasDownloads
+        {
+            get; set;
+        }
         /// <summary>The has_issues property</summary>
-        public bool? HasIssues { get; set; }
+        public bool? HasIssues
+        {
+            get; set;
+        }
         /// <summary>The has_pages property</summary>
-        public bool? HasPages { get; set; }
+        public bool? HasPages
+        {
+            get; set;
+        }
         /// <summary>The has_projects property</summary>
-        public bool? HasProjects { get; set; }
+        public bool? HasProjects
+        {
+            get; set;
+        }
         /// <summary>The has_wiki property</summary>
-        public bool? HasWiki { get; set; }
+        public bool? HasWiki
+        {
+            get; set;
+        }
         /// <summary>The homepage property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? Homepage { get; set; }
+        public string? Homepage
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string Homepage { get; set; }
@@ -233,7 +361,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The hooks_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? HooksUrl { get; set; }
+        public string? HooksUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string HooksUrl { get; set; }
@@ -241,17 +372,26 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The html_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? HtmlUrl { get; set; }
+        public string? HtmlUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string HtmlUrl { get; set; }
 #endif
         /// <summary>The id property</summary>
-        public int? Id { get; set; }
+        public int? Id
+        {
+            get; set;
+        }
         /// <summary>The issue_comment_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? IssueCommentUrl { get; set; }
+        public string? IssueCommentUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string IssueCommentUrl { get; set; }
@@ -259,7 +399,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The issue_events_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? IssueEventsUrl { get; set; }
+        public string? IssueEventsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string IssueEventsUrl { get; set; }
@@ -267,17 +410,26 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The issues_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? IssuesUrl { get; set; }
+        public string? IssuesUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string IssuesUrl { get; set; }
 #endif
         /// <summary>The is_template property</summary>
-        public bool? IsTemplate { get; set; }
+        public bool? IsTemplate
+        {
+            get; set;
+        }
         /// <summary>The keys_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? KeysUrl { get; set; }
+        public string? KeysUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string KeysUrl { get; set; }
@@ -285,7 +437,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The labels_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? LabelsUrl { get; set; }
+        public string? LabelsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string LabelsUrl { get; set; }
@@ -293,7 +448,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The language property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? Language { get; set; }
+        public string? Language
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string Language { get; set; }
@@ -301,7 +459,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The languages_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? LanguagesUrl { get; set; }
+        public string? LanguagesUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string LanguagesUrl { get; set; }
@@ -309,7 +470,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>License Simple</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public NullableLicenseSimple? License { get; set; }
+        public NullableLicenseSimple? License
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public NullableLicenseSimple License { get; set; }
@@ -317,7 +481,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The master_branch property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? MasterBranch { get; set; }
+        public string? MasterBranch
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string MasterBranch { get; set; }
@@ -325,7 +492,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The merges_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? MergesUrl { get; set; }
+        public string? MergesUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string MergesUrl { get; set; }
@@ -333,7 +503,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The milestones_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? MilestonesUrl { get; set; }
+        public string? MilestonesUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string MilestonesUrl { get; set; }
@@ -341,7 +514,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The mirror_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? MirrorUrl { get; set; }
+        public string? MirrorUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string MirrorUrl { get; set; }
@@ -349,7 +525,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? Name { get; set; }
+        public string? Name
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string Name { get; set; }
@@ -357,7 +536,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The node_id property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? NodeId { get; set; }
+        public string? NodeId
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string NodeId { get; set; }
@@ -365,19 +547,31 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The notifications_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? NotificationsUrl { get; set; }
+        public string? NotificationsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string NotificationsUrl { get; set; }
 #endif
         /// <summary>The open_issues property</summary>
-        public int? OpenIssues { get; set; }
+        public int? OpenIssues
+        {
+            get; set;
+        }
         /// <summary>The open_issues_count property</summary>
-        public int? OpenIssuesCount { get; set; }
+        public int? OpenIssuesCount
+        {
+            get; set;
+        }
         /// <summary>A GitHub user.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public NullableSimpleUser? Owner { get; set; }
+        public NullableSimpleUser? Owner
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public NullableSimpleUser Owner { get; set; }
@@ -385,49 +579,79 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The permissions property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public RepoSearchResultItem_permissions? Permissions { get; set; }
+        public RepoSearchResultItem_permissions? Permissions
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public RepoSearchResultItem_permissions Permissions { get; set; }
 #endif
         /// <summary>The private property</summary>
-        public bool? Private { get; set; }
+        public bool? Private
+        {
+            get; set;
+        }
         /// <summary>The pulls_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? PullsUrl { get; set; }
+        public string? PullsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string PullsUrl { get; set; }
 #endif
         /// <summary>The pushed_at property</summary>
-        public DateTimeOffset? PushedAt { get; set; }
+        public DateTimeOffset? PushedAt
+        {
+            get; set;
+        }
         /// <summary>The releases_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? ReleasesUrl { get; set; }
+        public string? ReleasesUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string ReleasesUrl { get; set; }
 #endif
         /// <summary>The score property</summary>
-        public double? Score { get; set; }
+        public double? Score
+        {
+            get; set;
+        }
         /// <summary>The size property</summary>
-        public int? Size { get; set; }
+        public int? Size
+        {
+            get; set;
+        }
         /// <summary>The ssh_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? SshUrl { get; set; }
+        public string? SshUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string SshUrl { get; set; }
 #endif
         /// <summary>The stargazers_count property</summary>
-        public int? StargazersCount { get; set; }
+        public int? StargazersCount
+        {
+            get; set;
+        }
         /// <summary>The stargazers_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? StargazersUrl { get; set; }
+        public string? StargazersUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string StargazersUrl { get; set; }
@@ -435,7 +659,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The statuses_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? StatusesUrl { get; set; }
+        public string? StatusesUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string StatusesUrl { get; set; }
@@ -443,7 +670,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The subscribers_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? SubscribersUrl { get; set; }
+        public string? SubscribersUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string SubscribersUrl { get; set; }
@@ -451,7 +681,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The subscription_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? SubscriptionUrl { get; set; }
+        public string? SubscriptionUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string SubscriptionUrl { get; set; }
@@ -459,7 +692,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The svn_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? SvnUrl { get; set; }
+        public string? SvnUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string SvnUrl { get; set; }
@@ -467,7 +703,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The tags_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? TagsUrl { get; set; }
+        public string? TagsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string TagsUrl { get; set; }
@@ -475,7 +714,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The teams_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? TeamsUrl { get; set; }
+        public string? TeamsUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string TeamsUrl { get; set; }
@@ -483,7 +725,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The temp_clone_token property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? TempCloneToken { get; set; }
+        public string? TempCloneToken
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string TempCloneToken { get; set; }
@@ -491,7 +736,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The text_matches property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public List<RepoSearchResultItem_text_matches>? TextMatches { get; set; }
+        public List<RepoSearchResultItem_text_matches>? TextMatches
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public List<RepoSearchResultItem_text_matches> TextMatches { get; set; }
@@ -499,7 +747,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The topics property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public List<string>? Topics { get; set; }
+        public List<string>? Topics
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public List<string> Topics { get; set; }
@@ -507,17 +758,26 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The trees_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? TreesUrl { get; set; }
+        public string? TreesUrl
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string TreesUrl { get; set; }
 #endif
         /// <summary>The updated_at property</summary>
-        public DateTimeOffset? UpdatedAt { get; set; }
+        public DateTimeOffset? UpdatedAt
+        {
+            get; set;
+        }
         /// <summary>The url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? Url { get; set; }
+        public string? Url
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string Url { get; set; }
@@ -525,35 +785,50 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// <summary>The repository visibility: public, private, or internal.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? Visibility { get; set; }
+        public string? Visibility
+        {
+            get; set;
+        }
 #nullable restore
 #else
         public string Visibility { get; set; }
 #endif
         /// <summary>The watchers property</summary>
-        public int? Watchers { get; set; }
+        public int? Watchers
+        {
+            get; set;
+        }
         /// <summary>The watchers_count property</summary>
-        public int? WatchersCount { get; set; }
+        public int? WatchersCount
+        {
+            get; set;
+        }
         /// <summary>The web_commit_signoff_required property</summary>
-        public bool? WebCommitSignoffRequired { get; set; }
+        public bool? WebCommitSignoffRequired
+        {
+            get; set;
+        }
         /// <summary>
         /// Instantiates a new repoSearchResultItem and sets the default values.
         /// </summary>
-        public RepoSearchResultItem() {
+        public RepoSearchResultItem()
+        {
             AdditionalData = new Dictionary<string, object>();
         }
         /// <summary>
         /// Creates a new instance of the appropriate class based on discriminator value
         /// </summary>
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
-        public static RepoSearchResultItem CreateFromDiscriminatorValue(IParseNode parseNode) {
+        public static RepoSearchResultItem CreateFromDiscriminatorValue(IParseNode parseNode)
+        {
             _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
             return new RepoSearchResultItem();
         }
         /// <summary>
         /// The deserialization information for the current model
         /// </summary>
-        public IDictionary<string, Action<IParseNode>> GetFieldDeserializers() {
+        public IDictionary<string, Action<IParseNode>> GetFieldDeserializers()
+        {
             return new Dictionary<string, Action<IParseNode>> {
                 {"allow_auto_merge", n => { AllowAutoMerge = n.GetBoolValue(); } },
                 {"allow_forking", n => { AllowForking = n.GetBoolValue(); } },
@@ -650,7 +925,8 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         /// Serializes information the current object
         /// </summary>
         /// <param name="writer">Serialization writer to use to serialize this model</param>
-        public void Serialize(ISerializationWriter writer) {
+        public void Serialize(ISerializationWriter writer)
+        {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteBoolValue("allow_auto_merge", AllowAutoMerge);
             writer.WriteBoolValue("allow_forking", AllowForking);
