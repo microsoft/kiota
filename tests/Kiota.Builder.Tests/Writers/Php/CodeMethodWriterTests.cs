@@ -669,7 +669,7 @@ public class CodeMethodWriterTests : IDisposable
         new object[]
         {
             new CodeProperty { Name = "name", Type = new CodeType { Name = "string" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
-            "'name' => fn(ParseNode $n) => $o->setName($n->getStringValue()),"
+            "'name' => fn(ParseNode $n) => $o->setName($n->getStringValue()),", "@return array<string, callable(ParseNode): void>"
         },
         new object[]
         {
