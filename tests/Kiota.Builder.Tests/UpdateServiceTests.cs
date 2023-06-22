@@ -874,6 +874,46 @@ public class UpdateServiceTests
         .Verifiable();
         return new HttpClient(handlerMock.Object);
     });
+    private static readonly Lazy<HttpClient> HttpClientInstanceNoData = new(() =>
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        handlerMock
+        .Protected()
+        // Setup the PROTECTED method to mock
+        .Setup<Task<HttpResponseMessage>>(
+            "SendAsync",
+            ItExpr.IsAny<HttpRequestMessage>(),
+            ItExpr.IsAny<CancellationToken>()
+        )
+        // prepare the expected response of the mocked http call
+        .ReturnsAsync(() => new HttpResponseMessage()
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent("[]", new MediaTypeHeaderValue("application/json")),
+        })
+        .Verifiable();
+        return new HttpClient(handlerMock.Object);
+    });
+    private static readonly Lazy<HttpClient> HttpClientInstanceFailed = new(() =>
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        handlerMock
+        .Protected()
+        // Setup the PROTECTED method to mock
+        .Setup<Task<HttpResponseMessage>>(
+            "SendAsync",
+            ItExpr.IsAny<HttpRequestMessage>(),
+            ItExpr.IsAny<CancellationToken>()
+        )
+        // prepare the expected response of the mocked http call
+        .ReturnsAsync(() => new HttpResponseMessage()
+        {
+            StatusCode = HttpStatusCode.InternalServerError,
+            Content = new StringContent("", new MediaTypeHeaderValue("text/plain")),
+        })
+        .Verifiable();
+        return new HttpClient(handlerMock.Object);
+    });
     [Fact]
     public async Task DoesntEmitMessageOnAlreadyUpToDate()
     {
@@ -896,6 +936,39 @@ public class UpdateServiceTests
         var result = await service.GetUpdateMessageAsync("1.0.0", CancellationToken.None);
         Assert.NotEmpty(result);
         result = await service.GetUpdateMessageAsync("1.0.0", CancellationToken.None);
+        Assert.Empty(result);
+    }
+    [Fact]
+    public async Task ReturnsNoMessageOnEmptyVersion()
+    {
+        var client = HttpClientInstance.Value; //not disposed on purpose
+        var mockLogger = new Mock<ILogger>().Object;
+        var configuration = new UpdateConfiguration();
+        var service = new UpdateService(client, mockLogger, configuration);
+        UpdateService.ClearVerificationDate();
+        var result = await service.GetUpdateMessageAsync(string.Empty, CancellationToken.None);
+        Assert.Empty(result);
+    }
+    [Fact]
+    public async Task ReturnsNoMessageOnNoReleaseInformation()
+    {
+        var client = HttpClientInstanceNoData.Value; //not disposed on purpose
+        var mockLogger = new Mock<ILogger>().Object;
+        var configuration = new UpdateConfiguration();
+        var service = new UpdateService(client, mockLogger, configuration);
+        UpdateService.ClearVerificationDate();
+        var result = await service.GetUpdateMessageAsync("1000000.0.0", CancellationToken.None);
+        Assert.Empty(result);
+    }
+    [Fact]
+    public async Task ReturnsNoMessageOnFailedRequest()
+    {
+        var client = HttpClientInstanceFailed.Value; //not disposed on purpose
+        var mockLogger = new Mock<ILogger>().Object;
+        var configuration = new UpdateConfiguration();
+        var service = new UpdateService(client, mockLogger, configuration);
+        UpdateService.ClearVerificationDate();
+        var result = await service.GetUpdateMessageAsync("1000000.0.0", CancellationToken.None);
         Assert.Empty(result);
     }
 }
