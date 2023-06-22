@@ -177,7 +177,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             writer.WriteLine(DocCommentEnd);
         }
     }
-    internal string GetDeprecationComment(IDeprecableElement element)
+    private string GetDeprecationComment(IDeprecableElement element)
     {
         if (element.Deprecation is null || !element.Deprecation.IsDeprecated) return string.Empty;
 
