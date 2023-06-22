@@ -47,7 +47,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
         Configuration.Search.ClearCache = clearCache;
         using (loggerFactory)
         {
-
+            await CheckForNewVersionAsync(logger, cancellationToken);
             if (!language.HasValue)
             {
                 ShowLanguagesTable();
