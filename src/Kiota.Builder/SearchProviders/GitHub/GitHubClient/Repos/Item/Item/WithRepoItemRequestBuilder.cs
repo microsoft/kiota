@@ -1,4 +1,5 @@
 using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Contents;
+using Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Releases;
 using Microsoft.Kiota.Abstractions;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +14,10 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item {
         /// <summary>The contents property</summary>
         public ContentsRequestBuilder Contents { get =>
             new ContentsRequestBuilder(PathParameters, RequestAdapter);
+        }
+        /// <summary>The releases property</summary>
+        public ReleasesRequestBuilder Releases { get =>
+            new ReleasesRequestBuilder(PathParameters, RequestAdapter);
         }
         /// <summary>
         /// Instantiates a new WithRepoItemRequestBuilder and sets the default values.

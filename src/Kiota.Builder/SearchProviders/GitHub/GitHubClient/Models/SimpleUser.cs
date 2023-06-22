@@ -167,7 +167,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
         public string Url { get; set; }
 #endif
         /// <summary>
-        /// Instantiates a new SimpleUser and sets the default values.
+        /// Instantiates a new simpleUser and sets the default values.
         /// </summary>
         public SimpleUser() {
             AdditionalData = new Dictionary<string, object>();

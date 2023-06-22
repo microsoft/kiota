@@ -1,5 +1,5 @@
 {
-  "descriptionHash": "8005878F8E0AC3CE292F963CD831D4A1BD8DD75A9600DF49F7955E38B00C0342DB88F701F6BFDDE859FE785B45E7371F31DFA3C3691F6D18F8A6793C45A47CBA",
+  "descriptionHash": "087014597DDCFE72CDA938DFB2C642D0C08DD30659AE1F8F5E5DD76867D6880817810549C61F832C864D3C7247192308E1FC6AF7900384BA1C7970A33FFE8D24",
   "descriptionLocation": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.2022-11-28.json",
   "lockFileVersion": "1.0.0",
   "kiotaVersion": "1.3.0",
@@ -28,6 +28,7 @@
   "includePatterns": [
     "**/search/repositories",
     "**/repos/**/contents/**",
+    "**/repos/**/releases",
     "/user/installations"
   ],
   "excludePatterns": [
