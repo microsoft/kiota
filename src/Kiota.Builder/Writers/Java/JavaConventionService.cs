@@ -148,7 +148,7 @@ public class JavaConventionService : CommonLanguageConventionService
             ).ToArray());
     }
 #pragma warning restore CA1822 // Method should be static
-    internal string[] GetDeprecationInformationForDocumentationComment(IDeprecableElement element)
+    private string[] GetDeprecationInformationForDocumentationComment(IDeprecableElement element)
     {
         if (element.Deprecation is null || !element.Deprecation.IsDeprecated) return Array.Empty<string>();
 
