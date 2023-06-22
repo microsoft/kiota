@@ -14,7 +14,7 @@ namespace Kiota.Builder.Caching.Tests;
 public class DocumentCachingProviderTests
 {
     [Fact]
-    public async Task DefensivePrograming()
+    public async Task DefensiveProgramming()
     {
         using var client = new HttpClient();
         var mockLogger = new Mock<ILogger>().Object;
@@ -58,7 +58,7 @@ public class DocumentCachingProviderTests
             ItExpr.IsAny<CancellationToken>()
         )
         // prepare the expected response of the mocked http call
-        .ReturnsAsync(new HttpResponseMessage()
+        .ReturnsAsync(() => new HttpResponseMessage()
         {
             StatusCode = HttpStatusCode.OK,
             Content = new StringContent(ResponsePayload, new MediaTypeHeaderValue("application/json")),
