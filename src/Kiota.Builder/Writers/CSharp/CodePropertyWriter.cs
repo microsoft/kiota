@@ -18,9 +18,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                                             CodePropertyKind.QueryParameter,
                                             CodePropertyKind.SerializationHint);// Other property types are appropriately constructor initialized
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
-        var deprecationMessage = conventions.GetDeprecationInformation(codeElement);
-        if (!string.IsNullOrEmpty(deprecationMessage))
-            writer.WriteLine(deprecationMessage);
+        conventions.WriteDeprecationAttribute(codeElement, writer);
         if (isNullableReferenceType)
         {
             CSharpConventionService.WriteNullableOpening(writer);

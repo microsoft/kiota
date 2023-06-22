@@ -36,9 +36,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
         if (codeElement.Parent is CodeClass parentClass)
         {
             conventions.WriteLongDescription(parentClass.Documentation, writer);
-            var deprecationMessage = conventions.GetDeprecationInformation(parentClass);
-            if (!string.IsNullOrEmpty(deprecationMessage))
-                writer.WriteLine(deprecationMessage);
+            conventions.WriteDeprecationAttribute(parentClass, writer);
         }
         writer.WriteLine($"public class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}{{");
         writer.IncreaseIndent();
