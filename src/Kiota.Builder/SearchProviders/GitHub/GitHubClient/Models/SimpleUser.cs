@@ -1,27 +1,19 @@
-﻿using System;
+using Microsoft.Kiota.Abstractions.Serialization;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Kiota.Abstractions.Serialization;
-namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
-{
+using System;
+namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models {
     /// <summary>
     /// A GitHub user.
     /// </summary>
-    public class SimpleUser : IAdditionalDataHolder, IParsable
-    {
+    public class SimpleUser : IAdditionalDataHolder, IParsable {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
-        public IDictionary<string, object> AdditionalData
-        {
-            get; set;
-        }
+        public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The avatar_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? AvatarUrl
-        {
-            get; set;
-        }
+        public string? AvatarUrl { get; set; }
 #nullable restore
 #else
         public string AvatarUrl { get; set; }
@@ -29,10 +21,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The email property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? Email
-        {
-            get; set;
-        }
+        public string? Email { get; set; }
 #nullable restore
 #else
         public string Email { get; set; }
@@ -40,10 +29,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The events_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? EventsUrl
-        {
-            get; set;
-        }
+        public string? EventsUrl { get; set; }
 #nullable restore
 #else
         public string EventsUrl { get; set; }
@@ -51,10 +37,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The followers_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? FollowersUrl
-        {
-            get; set;
-        }
+        public string? FollowersUrl { get; set; }
 #nullable restore
 #else
         public string FollowersUrl { get; set; }
@@ -62,10 +45,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The following_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? FollowingUrl
-        {
-            get; set;
-        }
+        public string? FollowingUrl { get; set; }
 #nullable restore
 #else
         public string FollowingUrl { get; set; }
@@ -73,10 +53,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The gists_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? GistsUrl
-        {
-            get; set;
-        }
+        public string? GistsUrl { get; set; }
 #nullable restore
 #else
         public string GistsUrl { get; set; }
@@ -84,10 +61,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The gravatar_id property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? GravatarId
-        {
-            get; set;
-        }
+        public string? GravatarId { get; set; }
 #nullable restore
 #else
         public string GravatarId { get; set; }
@@ -95,26 +69,17 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The html_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? HtmlUrl
-        {
-            get; set;
-        }
+        public string? HtmlUrl { get; set; }
 #nullable restore
 #else
         public string HtmlUrl { get; set; }
 #endif
         /// <summary>The id property</summary>
-        public int? Id
-        {
-            get; set;
-        }
+        public int? Id { get; set; }
         /// <summary>The login property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? Login
-        {
-            get; set;
-        }
+        public string? Login { get; set; }
 #nullable restore
 #else
         public string Login { get; set; }
@@ -122,10 +87,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? Name
-        {
-            get; set;
-        }
+        public string? Name { get; set; }
 #nullable restore
 #else
         public string Name { get; set; }
@@ -133,10 +95,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The node_id property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? NodeId
-        {
-            get; set;
-        }
+        public string? NodeId { get; set; }
 #nullable restore
 #else
         public string NodeId { get; set; }
@@ -144,10 +103,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The organizations_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? OrganizationsUrl
-        {
-            get; set;
-        }
+        public string? OrganizationsUrl { get; set; }
 #nullable restore
 #else
         public string OrganizationsUrl { get; set; }
@@ -155,10 +111,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The received_events_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? ReceivedEventsUrl
-        {
-            get; set;
-        }
+        public string? ReceivedEventsUrl { get; set; }
 #nullable restore
 #else
         public string ReceivedEventsUrl { get; set; }
@@ -166,26 +119,17 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The repos_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? ReposUrl
-        {
-            get; set;
-        }
+        public string? ReposUrl { get; set; }
 #nullable restore
 #else
         public string ReposUrl { get; set; }
 #endif
         /// <summary>The site_admin property</summary>
-        public bool? SiteAdmin
-        {
-            get; set;
-        }
+        public bool? SiteAdmin { get; set; }
         /// <summary>The starred_at property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? StarredAt
-        {
-            get; set;
-        }
+        public string? StarredAt { get; set; }
 #nullable restore
 #else
         public string StarredAt { get; set; }
@@ -193,10 +137,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The starred_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? StarredUrl
-        {
-            get; set;
-        }
+        public string? StarredUrl { get; set; }
 #nullable restore
 #else
         public string StarredUrl { get; set; }
@@ -204,10 +145,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The subscriptions_url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? SubscriptionsUrl
-        {
-            get; set;
-        }
+        public string? SubscriptionsUrl { get; set; }
 #nullable restore
 #else
         public string SubscriptionsUrl { get; set; }
@@ -215,10 +153,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The type property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? Type
-        {
-            get; set;
-        }
+        public string? Type { get; set; }
 #nullable restore
 #else
         public string Type { get; set; }
@@ -226,10 +161,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The url property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? Url
-        {
-            get; set;
-        }
+        public string? Url { get; set; }
 #nullable restore
 #else
         public string Url { get; set; }
@@ -237,24 +169,21 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>
         /// Instantiates a new SimpleUser and sets the default values.
         /// </summary>
-        public SimpleUser()
-        {
+        public SimpleUser() {
             AdditionalData = new Dictionary<string, object>();
         }
         /// <summary>
         /// Creates a new instance of the appropriate class based on discriminator value
         /// </summary>
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
-        public static SimpleUser CreateFromDiscriminatorValue(IParseNode parseNode)
-        {
+        public static SimpleUser CreateFromDiscriminatorValue(IParseNode parseNode) {
             _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
             return new SimpleUser();
         }
         /// <summary>
         /// The deserialization information for the current model
         /// </summary>
-        public IDictionary<string, Action<IParseNode>> GetFieldDeserializers()
-        {
+        public IDictionary<string, Action<IParseNode>> GetFieldDeserializers() {
             return new Dictionary<string, Action<IParseNode>> {
                 {"avatar_url", n => { AvatarUrl = n.GetStringValue(); } },
                 {"email", n => { Email = n.GetStringValue(); } },
@@ -283,8 +212,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// Serializes information the current object
         /// </summary>
         /// <param name="writer">Serialization writer to use to serialize this model</param>
-        public void Serialize(ISerializationWriter writer)
-        {
+        public void Serialize(ISerializationWriter writer) {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteStringValue("avatar_url", AvatarUrl);
             writer.WriteStringValue("email", Email);
