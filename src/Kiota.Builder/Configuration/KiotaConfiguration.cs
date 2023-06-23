@@ -10,6 +10,7 @@ public class KiotaConfiguration : ICloneable
     public SearchConfiguration Search { get; set; } = new();
     public DownloadConfiguration Download { get; set; } = new();
     public LanguagesInformation Languages { get; set; } = new();
+    public UpdateConfiguration Update { get; set; } = new();
 
     public object Clone()
     {
@@ -18,7 +19,8 @@ public class KiotaConfiguration : ICloneable
             Generation = (GenerationConfiguration)Generation.Clone(),
             Search = (SearchConfiguration)Search.Clone(),
             Download = (DownloadConfiguration)Download.Clone(),
-            Languages = (LanguagesInformation)Languages.Clone()
+            Languages = (LanguagesInformation)Languages.Clone(),
+            Update = (UpdateConfiguration)Update.Clone()
         };
     }
 }

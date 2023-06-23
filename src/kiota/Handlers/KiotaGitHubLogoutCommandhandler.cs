@@ -15,6 +15,7 @@ internal class KiotaGitHubLogoutCommandHandler : BaseKiotaCommandHandler
         var (loggerFactory, logger) = GetLoggerAndFactory<TempFolderCachingAccessTokenProvider>(context);
         using (loggerFactory)
         {
+            await CheckForNewVersionAsync(logger, cancellationToken);
             try
             {
                 var deviceCodeAuthProvider = GetGitHubDeviceStorageService(logger);

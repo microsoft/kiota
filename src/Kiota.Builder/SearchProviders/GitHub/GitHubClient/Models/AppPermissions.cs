@@ -6,7 +6,7 @@ using Microsoft.Kiota.Abstractions.Serialization;
 namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
 {
     /// <summary>
-    /// The permissions granted to the user-to-server access token.
+    /// The permissions granted to the user access token.
     /// </summary>
     public class AppPermissions : IAdditionalDataHolder, IParsable
     {
@@ -85,6 +85,16 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         {
             get; set;
         }
+        /// <summary>The level of permission to grant the access token for viewing and managing fine-grained personal access tokens that have been approved by an organization.</summary>
+        public AppPermissions_organization_personal_access_token_requests? OrganizationPersonalAccessTokenRequests
+        {
+            get; set;
+        }
+        /// <summary>The level of permission to grant the access token for viewing and managing fine-grained personal access token requests to an organization.</summary>
+        public AppPermissions_organization_personal_access_tokens? OrganizationPersonalAccessTokens
+        {
+            get; set;
+        }
         /// <summary>The level of permission to grant the access token for viewing an organization&apos;s plan.</summary>
         public AppPermissions_organization_plan? OrganizationPlan
         {
@@ -122,11 +132,6 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         }
         /// <summary>The level of permission to grant the access token for pull requests and related comments, assignees, labels, milestones, and merges.</summary>
         public AppPermissions_pull_requests? PullRequests
-        {
-            get; set;
-        }
-        /// <summary>The level of permission to grant the access token to view and manage announcement banners for a repository.</summary>
-        public AppPermissions_repository_announcement_banners? RepositoryAnnouncementBanners
         {
             get; set;
         }
@@ -216,6 +221,8 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
                 {"organization_custom_roles", n => { OrganizationCustomRoles = n.GetEnumValue<AppPermissions_organization_custom_roles>(); } },
                 {"organization_hooks", n => { OrganizationHooks = n.GetEnumValue<AppPermissions_organization_hooks>(); } },
                 {"organization_packages", n => { OrganizationPackages = n.GetEnumValue<AppPermissions_organization_packages>(); } },
+                {"organization_personal_access_token_requests", n => { OrganizationPersonalAccessTokenRequests = n.GetEnumValue<AppPermissions_organization_personal_access_token_requests>(); } },
+                {"organization_personal_access_tokens", n => { OrganizationPersonalAccessTokens = n.GetEnumValue<AppPermissions_organization_personal_access_tokens>(); } },
                 {"organization_plan", n => { OrganizationPlan = n.GetEnumValue<AppPermissions_organization_plan>(); } },
                 {"organization_projects", n => { OrganizationProjects = n.GetEnumValue<AppPermissions_organization_projects>(); } },
                 {"organization_secrets", n => { OrganizationSecrets = n.GetEnumValue<AppPermissions_organization_secrets>(); } },
@@ -224,7 +231,6 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
                 {"packages", n => { Packages = n.GetEnumValue<AppPermissions_packages>(); } },
                 {"pages", n => { Pages = n.GetEnumValue<AppPermissions_pages>(); } },
                 {"pull_requests", n => { PullRequests = n.GetEnumValue<AppPermissions_pull_requests>(); } },
-                {"repository_announcement_banners", n => { RepositoryAnnouncementBanners = n.GetEnumValue<AppPermissions_repository_announcement_banners>(); } },
                 {"repository_hooks", n => { RepositoryHooks = n.GetEnumValue<AppPermissions_repository_hooks>(); } },
                 {"repository_projects", n => { RepositoryProjects = n.GetEnumValue<AppPermissions_repository_projects>(); } },
                 {"secrets", n => { Secrets = n.GetEnumValue<AppPermissions_secrets>(); } },
@@ -258,6 +264,8 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
             writer.WriteEnumValue<AppPermissions_organization_custom_roles>("organization_custom_roles", OrganizationCustomRoles);
             writer.WriteEnumValue<AppPermissions_organization_hooks>("organization_hooks", OrganizationHooks);
             writer.WriteEnumValue<AppPermissions_organization_packages>("organization_packages", OrganizationPackages);
+            writer.WriteEnumValue<AppPermissions_organization_personal_access_token_requests>("organization_personal_access_token_requests", OrganizationPersonalAccessTokenRequests);
+            writer.WriteEnumValue<AppPermissions_organization_personal_access_tokens>("organization_personal_access_tokens", OrganizationPersonalAccessTokens);
             writer.WriteEnumValue<AppPermissions_organization_plan>("organization_plan", OrganizationPlan);
             writer.WriteEnumValue<AppPermissions_organization_projects>("organization_projects", OrganizationProjects);
             writer.WriteEnumValue<AppPermissions_organization_secrets>("organization_secrets", OrganizationSecrets);
@@ -266,7 +274,6 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
             writer.WriteEnumValue<AppPermissions_packages>("packages", Packages);
             writer.WriteEnumValue<AppPermissions_pages>("pages", Pages);
             writer.WriteEnumValue<AppPermissions_pull_requests>("pull_requests", PullRequests);
-            writer.WriteEnumValue<AppPermissions_repository_announcement_banners>("repository_announcement_banners", RepositoryAnnouncementBanners);
             writer.WriteEnumValue<AppPermissions_repository_hooks>("repository_hooks", RepositoryHooks);
             writer.WriteEnumValue<AppPermissions_repository_projects>("repository_projects", RepositoryProjects);
             writer.WriteEnumValue<AppPermissions_secrets>("secrets", Secrets);

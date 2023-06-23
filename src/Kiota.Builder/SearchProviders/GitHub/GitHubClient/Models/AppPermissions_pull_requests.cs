@@ -1,9 +1,13 @@
-﻿namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
+﻿using System;
+using System.Runtime.Serialization;
+namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
 {
     /// <summary>The level of permission to grant the access token for pull requests and related comments, assignees, labels, milestones, and merges.</summary>
     public enum AppPermissions_pull_requests
     {
+        [EnumMember(Value = "read")]
         Read,
+        [EnumMember(Value = "write")]
         Write,
     }
 }

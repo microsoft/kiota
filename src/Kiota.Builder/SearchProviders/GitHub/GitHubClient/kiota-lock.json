@@ -1,8 +1,8 @@
 {
-  "descriptionHash": "A483DB08026C5349885D7831EE825EFC2D10116F413E1D867BA8505931B1DEA0953C5336600FD7D223E82DC324ECC627AF8BB69CA2A429FFEFC3AFA61C7FCE49",
+  "descriptionHash": "087014597DDCFE72CDA938DFB2C642D0C08DD30659AE1F8F5E5DD76867D6880817810549C61F832C864D3C7247192308E1FC6AF7900384BA1C7970A33FFE8D24",
   "descriptionLocation": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.2022-11-28.json",
   "lockFileVersion": "1.0.0",
-  "kiotaVersion": "0.10.0-preview",
+  "kiotaVersion": "1.3.0",
   "clientClassName": "GitHubClient",
   "clientNamespaceName": "Kiota.Builder.SearchProviders.GitHub.GitHubClient",
   "language": "CSharp",
@@ -10,11 +10,13 @@
   "includeAdditionalData": true,
   "serializers": [
     "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
-    "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory"
+    "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory",
+    "Microsoft.Kiota.Serialization.Form.FormSerializationWriterFactory"
   ],
   "deserializers": [
     "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
-    "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory"
+    "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory",
+    "Microsoft.Kiota.Serialization.Form.FormParseNodeFactory"
   ],
   "structuredMimeTypes": [
     "application/json",
@@ -26,6 +28,7 @@
   "includePatterns": [
     "**/search/repositories",
     "**/repos/**/contents/**",
+    "**/repos/**/releases",
     "/user/installations"
   ],
   "excludePatterns": [

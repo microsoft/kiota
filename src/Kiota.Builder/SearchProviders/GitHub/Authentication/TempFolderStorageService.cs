@@ -16,7 +16,7 @@ public class TempFolderTokenStorageService : ITokenStorageService
     {
         get; init;
     }
-    private string GetTokenCacheFilePath() => Path.Combine(Path.GetTempPath(), "kiota", "auth", $"{FileName}.txt");
+    private string GetTokenCacheFilePath() => Path.Combine(Path.GetTempPath(), Constants.TempDirectoryName, "auth", $"{FileName}.txt");
     public async Task<string?> GetTokenAsync(CancellationToken cancellationToken)
     {
         try

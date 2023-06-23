@@ -96,6 +96,13 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     {
         throw new InvalidOperationException("This command handler is async only");
     }
+    protected async Task CheckForNewVersionAsync(ILogger logger, CancellationToken cancellationToken)
+    {
+        var updateService = new UpdateService(httpClient, logger, Configuration.Update);
+        var result = await updateService.GetUpdateMessageAsync(Kiota.Generated.KiotaVersion.Current(), cancellationToken).ConfigureAwait(false);
+        if (!string.IsNullOrEmpty(result))
+            DisplayWarning(result);
+    }
     public abstract Task<int> InvokeAsync(InvocationContext context);
     private readonly List<IDisposable> disposables = new();
     protected (ILoggerFactory, ILogger<T>) GetLoggerAndFactory<T>(InvocationContext context, string logFileRootPath = "")

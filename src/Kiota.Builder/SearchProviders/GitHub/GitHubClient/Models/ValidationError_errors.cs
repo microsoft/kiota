@@ -64,13 +64,13 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         /// <summary>The value property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public Repositories? Value
+        public WithPath? Value
         {
             get; set;
         }
 #nullable restore
 #else
-        public Repositories Value { get; set; }
+        public WithPath Value { get; set; }
 #endif
         /// <summary>
         /// Instantiates a new ValidationError_errors and sets the default values.
@@ -99,7 +99,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
                 {"index", n => { Index = n.GetIntValue(); } },
                 {"message", n => { Message = n.GetStringValue(); } },
                 {"resource", n => { Resource = n.GetStringValue(); } },
-                {"value", n => { Value = n.GetObjectValue<Repositories>(Repositories.CreateFromDiscriminatorValue); } },
+                {"value", n => { Value = n.GetObjectValue<WithPath>(WithPath.CreateFromDiscriminatorValue); } },
             };
         }
         /// <summary>
@@ -114,13 +114,13 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
             writer.WriteIntValue("index", Index);
             writer.WriteStringValue("message", Message);
             writer.WriteStringValue("resource", Resource);
-            writer.WriteObjectValue<Repositories>("value", Value);
+            writer.WriteObjectValue<WithPath>("value", Value);
             writer.WriteAdditionalData(AdditionalData);
         }
         /// <summary>
         /// Composed type wrapper for classes string, integer, string
         /// </summary>
-        public class Repositories : IAdditionalDataHolder, IParsable
+        public class WithPath : IAdditionalDataHolder, IParsable
         {
             /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
             public IDictionary<string, object> AdditionalData
@@ -155,9 +155,9 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
             public string String { get; set; }
 #endif
             /// <summary>
-            /// Instantiates a new repositories and sets the default values.
+            /// Instantiates a new WithPath and sets the default values.
             /// </summary>
-            public Repositories()
+            public WithPath()
             {
                 AdditionalData = new Dictionary<string, object>();
             }
@@ -165,11 +165,11 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
             /// Creates a new instance of the appropriate class based on discriminator value
             /// </summary>
             /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
-            public static Repositories CreateFromDiscriminatorValue(IParseNode parseNode)
+            public static WithPath CreateFromDiscriminatorValue(IParseNode parseNode)
             {
                 _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
                 var mappingValue = parseNode.GetChildNode("")?.GetStringValue();
-                var result = new Repositories();
+                var result = new WithPath();
                 if (parseNode.GetIntValue() is int integerValue)
                 {
                     result.Integer = integerValue;

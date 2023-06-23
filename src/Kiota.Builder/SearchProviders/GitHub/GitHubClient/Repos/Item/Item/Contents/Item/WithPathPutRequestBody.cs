@@ -23,7 +23,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Repos.Item.Item.Cont
 #else
         public WithPathPutRequestBody_author Author { get; set; }
 #endif
-        /// <summary>The branch name. Default: the repository’s default branch (usually `master`)</summary>
+        /// <summary>The branch name. Default: the repository’s default branch.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? Branch

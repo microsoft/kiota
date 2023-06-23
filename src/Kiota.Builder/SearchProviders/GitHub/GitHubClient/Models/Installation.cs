@@ -101,7 +101,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.GitHubClient.Models
         {
             get; set;
         }
-        /// <summary>The permissions granted to the user-to-server access token.</summary>
+        /// <summary>The permissions granted to the user access token.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public AppPermissions? Permissions
