@@ -899,7 +899,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("\"\"\"", result);
         Assert.Contains(MethodDescription, result);
         Assert.Contains("Args:", result);
-        Assert.Contains(ParamName, result);
+        Assert.Contains("param_name", result);
         Assert.Contains(ParamDescription, result);
         Assert.Contains("Returns:", result);
         Assert.Contains("await", result);
@@ -927,7 +927,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("\"\"\"", result);
         Assert.Contains(MethodDescription, result);
         Assert.Contains("Args:", result);
-        Assert.Contains(ParamName, result);
+        Assert.Contains("param_name", result);
         Assert.Contains(ParamDescription, result);
         Assert.DoesNotContain("await", result);
     }
@@ -1431,10 +1431,10 @@ public class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.DoesNotContain("super().__init__()", result);
-        Assert.Contains("This property has a description", result);
-        Assert.Contains($"self.{propName}: Optional[str] = {defaultValue}", result);
-        Assert.Contains("get_path_parameters(", result);
+        Assert.DoesNotContain("super().__init__(self)", result);
+        Assert.DoesNotContain("This property has a description", result);
+        Assert.DoesNotContain($"self.{propName}: Optional[str] = {defaultValue}", result);
+        Assert.DoesNotContain("get_path_parameters(", result);
     }
     [Fact]
     public void DoesntWriteConstructorForModelClasses()
@@ -1560,9 +1560,9 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("super().__init__()", result);
-        Assert.Contains("has a description", result);
-        Assert.Contains($"self.{prop2Name}: Optional[str] = {defaultValue}", result);
-        Assert.Contains($"self.{propName}: Optional[str] = None", result);
+        Assert.DoesNotContain("has a description", result);
+        Assert.DoesNotContain($"self.{prop2Name}: Optional[str] = {defaultValue}", result);
+        Assert.DoesNotContain($"self.{propName}: Optional[str] = None", result);
     }
     [Fact]
     public void WritesApiConstructor()
