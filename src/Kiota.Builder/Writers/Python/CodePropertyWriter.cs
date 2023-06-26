@@ -14,6 +14,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
+        if (codeElement.ExistsInExternalBaseType) return;
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement, true, writer);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         /* Only write specific properties as class attributes
