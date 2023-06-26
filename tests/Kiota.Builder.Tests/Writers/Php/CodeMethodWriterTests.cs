@@ -876,7 +876,7 @@ public class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public void WriteConstructorBody()
+    public async void WriteConstructorBody()
     {
         var constructor = new CodeMethod
         {
@@ -898,13 +898,27 @@ public class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.Custom,
             Type = new CodeType { Name = "string" },
         };
-        parentClass.AddProperty(propWithDefaultValue);
+        var countryCode = new CodeEnum { Name = "countryCode" };
+        countryCode.AddOption(
+            new CodeEnumOption { Name = "kenya", SerializationName = "+254" },
+            new CodeEnumOption { Name = "canada", SerializationName = "+1" });
+        root.AddEnum(countryCode);
+        var enumProp = new CodeProperty
+        {
+            Name = "countryCode",
+            DefaultValue = "\"+254\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "countryCode", TypeDefinition = countryCode }
+        };
+        parentClass.AddProperty(propWithDefaultValue, enumProp);
 
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         _codeMethodWriter.WriteCodeElement(constructor, languageWriter);
         var result = stringWriter.ToString();
 
         Assert.Contains("public function __construct", result);
         Assert.Contains("$this->setType('#microsoft.graph.entity')", result);
+        Assert.Contains("$this->setCountryCode(new CountryCode('+254'));", result);
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()

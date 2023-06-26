@@ -125,7 +125,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             .OrderBy(x => x.Name))
         {
             var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
-            writer.WriteLine($"$this->{setterName}({propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote()});");
+            var defaultValue = propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote();
+            if (propWithDefault.Type is CodeType codeType && codeType.TypeDefinition is CodeEnum enumDefinition)
+            {
+                defaultValue = $"new {enumDefinition.Name.ToFirstCharacterUpperCase()}({defaultValue})";
+            }
+            writer.WriteLine($"$this->{setterName}({defaultValue});");
         }
         foreach (var parameterKind in propertiesToAssign.Keys)
         {
