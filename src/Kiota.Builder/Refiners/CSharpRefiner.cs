@@ -22,7 +22,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                     Name = "BaseRequestBuilder",
                     Declaration = new CodeType
                     {
-                        Name = "Microsoft.Kiota.Abstractions",
+                        Name = AbstractionsNamespaceName,
                         IsExternal = true
                     }
                 });
@@ -33,7 +33,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             //         Name = "RequestConfiguration",
             //         Declaration = new CodeType
             //         {
-            //             Name = "Microsoft.Kiota.Abstractions",
+            //             Name = AbstractionsNamespaceName,
             //             IsExternal = true
             //         }
             //     },
@@ -45,7 +45,11 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
-                _configuration.UsesBackingStore
+                _configuration.UsesBackingStore,
+                true,
+                AbstractionsNamespaceName,
+                "IComposedTypeWrapper",
+                false
             );
             cancellationToken.ThrowIfCancellationRequested();
             AddRawUrlConstructorOverload(generatedCode);
@@ -91,7 +95,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiException",
-                "Microsoft.Kiota.Abstractions"
+                AbstractionsNamespaceName
             );
             AddConstructorsForDefaultValues(generatedCode, false);
             AddDiscriminatorMappingsUsingsToParentClasses(
@@ -127,26 +131,30 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                         .ForEach(x => x.Type.IsNullable = true);
         CrawlTree(currentElement, MakeEnumPropertiesNullable);
     }
+    private const string AbstractionsNamespaceName = "Microsoft.Kiota.Abstractions";
+    private const string SerializationNamespaceName = $"{AbstractionsNamespaceName}.Serialization";
+    private const string StoreNamespaceName = $"{AbstractionsNamespaceName}.Store";
+    private const string ExtensionsNamespaceName = $"{AbstractionsNamespaceName}.Extensions";
 
     protected static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
-            "Microsoft.Kiota.Abstractions", "IRequestAdapter"),
+            AbstractionsNamespaceName, "IRequestAdapter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            "Microsoft.Kiota.Abstractions", "Method", "RequestInformation", "IRequestOption"),
+            AbstractionsNamespaceName, "Method", "RequestInformation", "IRequestOption"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "Microsoft.Kiota.Abstractions", "IResponseHandler"),
+            AbstractionsNamespaceName, "IResponseHandler"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-            "Microsoft.Kiota.Abstractions.Serialization", "ISerializationWriter"),
+            SerializationNamespaceName, "ISerializationWriter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-            "Microsoft.Kiota.Abstractions.Serialization", "IParseNode"),
+            SerializationNamespaceName, "IParseNode"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor),
-            "Microsoft.Kiota.Abstractions.Extensions", "Dictionary"),
+            ExtensionsNamespaceName, "Dictionary"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
-            "Microsoft.Kiota.Abstractions.Serialization", "IParsable"),
+            SerializationNamespaceName, "IParsable"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
-            "Microsoft.Kiota.Abstractions.Serialization", "IAdditionalDataHolder"),
+            SerializationNamespaceName, "IAdditionalDataHolder"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "Microsoft.Kiota.Abstractions.Serialization", "IParsable"),
+            SerializationNamespaceName, "IParsable"),
         new (static x => x is CodeClass || x is CodeEnum,
             "System", "String"),
         new (static x => x is CodeClass,
@@ -161,15 +169,15 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             "System.Linq", "Enumerable"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
-            "Microsoft.Kiota.Abstractions.Store",  "IBackingStoreFactory", "IBackingStoreFactorySingleton"),
+            StoreNamespaceName,  "IBackingStoreFactory", "IBackingStoreFactorySingleton"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
-            "Microsoft.Kiota.Abstractions.Store",  "IBackingStore", "IBackedModel", "BackingStoreFactorySingleton" ),
+            StoreNamespaceName,  "IBackingStore", "IBackedModel", "BackingStoreFactorySingleton" ),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(prop.SerializationName),
-            "Microsoft.Kiota.Abstractions", "QueryParameterAttribute"),
+            AbstractionsNamespaceName, "QueryParameterAttribute"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
-            "Microsoft.Kiota.Abstractions.Serialization", "ParseNodeHelper"),
+            SerializationNamespaceName, "ParseNodeHelper"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
-            "Microsoft.Kiota.Abstractions", "RequestHeaders"),
+            AbstractionsNamespaceName, "RequestHeaders"),
         new (static x => x is CodeEnum prop && prop.Options.Any(x => x.IsNameEscaped),
             "System.Runtime.Serialization", "EnumMemberAttribute"),
         new (static x => x is IDeprecableElement element && element.Deprecation is not null && element.Deprecation.IsDeprecated,
@@ -213,7 +221,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                     Name = "Date",
                     Declaration = new CodeType
                     {
-                        Name = "Microsoft.Kiota.Abstractions",
+                        Name = AbstractionsNamespaceName,
                         IsExternal = true,
                     },
                 })
@@ -224,7 +232,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                     Name = "Time",
                     Declaration = new CodeType
                     {
-                        Name = "Microsoft.Kiota.Abstractions",
+                        Name = AbstractionsNamespaceName,
                         IsExternal = true,
                     },
                 })

@@ -310,6 +310,7 @@ public class CSharpLanguageRefinerTests
         var resultingWrapper = root.FindChildByName<CodeClass>("union");
         Assert.NotNull(resultingWrapper);
         Assert.NotNull(resultingWrapper.OriginalComposedType);
+        Assert.Contains("IComposedTypeWrapper", resultingWrapper.StartBlock.Implements.Select(static x => x.Name));
     }
     [Fact]
     public async Task MovesClassesWithNamespaceNamesUnderNamespace()

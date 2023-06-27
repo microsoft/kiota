@@ -539,7 +539,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration, isNullable));
     }
-    protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, bool supportInnerClasses = true)
+    protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, bool supportInnerClasses = true, string markerInterfaceNamespace = "", string markerInterfaceName = "", bool addMarkerProperty = true)
     {
         ArgumentNullException.ThrowIfNull(currentElement);
         if (currentElement.Parent is CodeClass parentClass)
@@ -547,22 +547,22 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if (currentElement is CodeMethod currentMethod)
             {
                 if (currentMethod.ReturnType is CodeComposedTypeBase currentUnionType)
-                    currentMethod.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, supportInnerClasses);
+                    currentMethod.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, addMarkerProperty);
                 if (currentMethod.Parameters.Any(static x => x.Type is CodeComposedTypeBase))
                     foreach (var currentParameter in currentMethod.Parameters.Where(static x => x.Type is CodeComposedTypeBase))
-                        currentParameter.Type = ConvertComposedTypeToWrapper(parentClass, (CodeComposedTypeBase)currentParameter.Type, usesBackingStore, supportInnerClasses);
+                        currentParameter.Type = ConvertComposedTypeToWrapper(parentClass, (CodeComposedTypeBase)currentParameter.Type, usesBackingStore, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, addMarkerProperty);
                 if (currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeComposedTypeBase>().Any())
                     foreach (var errorUnionType in currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeComposedTypeBase>())
-                        currentMethod.ReplaceErrorMapping(errorUnionType, ConvertComposedTypeToWrapper(parentClass, errorUnionType, usesBackingStore, supportInnerClasses));
+                        currentMethod.ReplaceErrorMapping(errorUnionType, ConvertComposedTypeToWrapper(parentClass, errorUnionType, usesBackingStore, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, addMarkerProperty));
             }
             else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeComposedTypeBase currentUnionType)
-                currentIndexer.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore);
+                currentIndexer.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, addMarkerProperty);
             else if (currentElement is CodeProperty currentProperty && currentProperty.Type is CodeComposedTypeBase currentPropUnionType)
-                currentProperty.Type = ConvertComposedTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, supportInnerClasses);
+                currentProperty.Type = ConvertComposedTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, addMarkerProperty);
         }
-        CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, supportInnerClasses));
+        CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, addMarkerProperty));
     }
-    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, bool supportsInnerClasses = true)
+    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, bool supportsInnerClasses, string markerInterfaceNamespace, string markerInterfaceName, bool addMarkerProperty)
     {
         ArgumentNullException.ThrowIfNull(codeClass);
         ArgumentNullException.ThrowIfNull(codeComposedType);
@@ -591,7 +591,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Description = description
                 },
             })
-                                .First();
+            .First();
 
             newClass.AddUsing(codeComposedType.AllTypes
                 .SelectMany(static c => (c.TypeDefinition as CodeClass)?.Usings ?? Enumerable.Empty<CodeUsing>())
@@ -631,6 +631,22 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             newClass.Kind = CodeClassKind.Model;
         }
         newClass.OriginalComposedType = codeComposedType;
+        if (!string.IsNullOrEmpty(markerInterfaceName) && !string.IsNullOrEmpty(markerInterfaceNamespace))
+        {
+            newClass.StartBlock.AddImplements(new CodeType
+            {
+                Name = markerInterfaceName
+            });
+            newClass.AddUsing(new CodeUsing
+            {
+                Name = markerInterfaceName,
+                Declaration = new()
+                {
+                    Name = markerInterfaceNamespace,
+                    IsExternal = true,
+                }
+            });
+        }
         // Add the discriminator function to the wrapper as it will be referenced. 
         KiotaBuilder.AddDiscriminatorMethod(newClass, codeComposedType.DiscriminatorInformation.DiscriminatorPropertyName, codeComposedType.DiscriminatorInformation.DiscriminatorMappings);
         return new CodeType
