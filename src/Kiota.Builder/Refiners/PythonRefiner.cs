@@ -19,6 +19,16 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             DisableActionOf(generatedCode,
             CodeParameterKind.RequestConfiguration);
+            MoveRequestBuilderPropertiesToBaseType(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseRequestBuilder",
+                    Declaration = new CodeType
+                    {
+                        Name = $"{AbstractionsPackageName}.base_request_builder",
+                        IsExternal = true
+                    }
+                }, AccessModifier.Public);
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
@@ -42,6 +52,16 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new PythonExceptionsReservedNamesProvider(),
                 static x => $"{x}_"
             );
+            RemoveRequestConfigurationClassesCommonProperties(generatedCode,
+                new CodeUsing
+                {
+                    Name = "BaseRequestConfiguration",
+                    Declaration = new CodeType
+                    {
+                        Name = $"{AbstractionsPackageName}.base_request_configuration",
+                        IsExternal = true
+                    }
+                });
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ReplacePropertyNames(generatedCode,

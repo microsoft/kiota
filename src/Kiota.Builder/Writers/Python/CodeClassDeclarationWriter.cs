@@ -16,9 +16,9 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
         var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
-        if (codeElement.Parent?.Parent is not CodeClass) //Imports for inner classes will be written locally
+        _codeUsingWriter.WriteExternalImports(codeElement, writer); // external imports before internal imports
+        if (codeElement.Parent?.Parent is not CodeClass) //Internal imports for inner classes will be written locally
         {
-            _codeUsingWriter.WriteExternalImports(codeElement, writer); // external imports before internal imports
             _codeUsingWriter.WriteConditionalInternalImports(codeElement, writer, parentNamespace);
         }
 

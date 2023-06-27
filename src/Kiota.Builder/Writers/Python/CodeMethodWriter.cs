@@ -38,7 +38,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var requestConfigParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
         var requestParams = new RequestParams(requestBodyParam, requestConfigParam);
-        if (!codeElement.IsOfKind(CodeMethodKind.Setter))
+        if (!codeElement.IsOfKind(CodeMethodKind.Setter) &&
+        !(codeElement.IsOfKind(CodeMethodKind.Constructor) && parentClass.IsOfKind(CodeClassKind.RequestBuilder)))
             foreach (var parameter in codeElement.Parameters.Where(static x => !x.Optional).OrderBy(static x => x.Name))
             {
                 var parameterName = parameter.Name.ToSnakeCase();
@@ -314,31 +315,40 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
         if (inherits && !parentClass.IsOfKind(CodeClassKind.Model))
-            writer.WriteLine("super().__init__()");
+        {
+            if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
+            currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter &&
+            parentClass.Properties.OfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
+            {
+                if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
+                    writer.WriteLine($"super().__init__({requestAdapterParameter.Name.ToSnakeCase()}, {urlTemplateProperty.DefaultValue ?? ""}, {pathParametersParameter.Name.ToSnakeCase()})");
+                else
+                    writer.WriteLine($"super().__init__({requestAdapterParameter.Name.ToSnakeCase()}, {urlTemplateProperty.DefaultValue ?? ""}, None)");
+            }
+            else
+                writer.WriteLine("super().__init__()");
+        }
         if (parentClass.IsOfKind(CodeClassKind.Model))
         {
             writer.DecreaseIndent();
         }
-        WriteDirectAccessProperties(parentClass, writer);
-        WriteSetterAccessProperties(parentClass, writer);
-        WriteSetterAccessPropertiesWithoutDefaults(parentClass, writer);
 
-        if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
+        if (!(parentClass.IsOfKind(CodeClassKind.RequestBuilder) && currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor)))
         {
-            if (currentMethod.IsOfKind(CodeMethodKind.Constructor))
-            {
-                if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam)
-                    conventions.AddParametersAssignment(writer,
-                                                    pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
-                                                    pathParametersParam.Name.ToFirstCharacterLowerCase(),
-                                                    currentMethod.Parameters
-                                                                .Where(x => x.IsOfKind(CodeParameterKind.Path))
-                                                                .Select(x => (x.Type, x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
-                                                                .ToArray());
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
-            }
-            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
+            WriteDirectAccessProperties(parentClass, writer);
+            WriteSetterAccessProperties(parentClass, writer);
+            WriteSetterAccessPropertiesWithoutDefaults(parentClass, writer);
+            if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam)
+                conventions.AddParametersAssignment(writer,
+                                                pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
+                                                pathParametersParam.Name.ToFirstCharacterLowerCase(),
+                                                currentMethod.Parameters
+                                                            .Where(x => x.IsOfKind(CodeParameterKind.Path))
+                                                            .Select(x => (x.Type, x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
+                                                            .ToArray());
+            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
         }
+
         if (parentClass.IsOfKind(CodeClassKind.Model))
         {
             writer.IncreaseIndent();
@@ -686,8 +696,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             {
                 writer.StartBlock("Args:");
 
-                foreach (var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
-                    writer.WriteLine($"{conventions.DocCommentPrefix}{paramWithDescription.Name}: {PythonConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.Description)}");
+                foreach (var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
+                    writer.WriteLine($"{conventions.DocCommentPrefix}{paramWithDescription.Name.ToSnakeCase()}: {PythonConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.Description)}");
                 writer.DecreaseIndent();
             }
             if (!isVoid)
@@ -804,15 +814,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (requestParams.requestConfiguration != null)
         {
             writer.StartBlock($"if {requestParams.requestConfiguration.Name.ToSnakeCase()}:");
-            var headers = requestParams.Headers;
-            if (headers != null)
-                writer.WriteLine($"{RequestInfoVarName}.add_request_headers({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
+            var headers = requestParams.Headers?.Name.ToSnakeCase() ?? "headers";
+            writer.WriteLine($"{RequestInfoVarName}.add_request_headers({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers})");
             var queryString = requestParams.QueryParameters;
             if (queryString != null)
                 writer.WriteLines($"{RequestInfoVarName}.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
-            var options = requestParams.Options;
-            if (options != null)
-                writer.WriteLine($"{RequestInfoVarName}.add_request_options({requestParams.requestConfiguration.Name.ToSnakeCase()}.{options.Name.ToSnakeCase()})");
+            var options = requestParams.Options?.Name.ToSnakeCase() ?? "options";
+            writer.WriteLine($"{RequestInfoVarName}.add_request_options({requestParams.requestConfiguration.Name.ToSnakeCase()}.{options})");
             writer.DecreaseIndent();
         }
     }
