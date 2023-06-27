@@ -100,24 +100,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.WriteLine("parent::__construct();");
 
     }
-    private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
+
+    private void WriteModelConstructorBody(CodeClass parentClass, LanguageWriter writer)
     {
-        if (inherits)
-        {
-            WriteConstructorParentCall(parentClass, currentMethod, writer);
-        }
         var backingStoreProperty = parentClass.GetPropertyOfKind(CodePropertyKind.BackingStore);
         if (backingStoreProperty != null && !string.IsNullOrEmpty(backingStoreProperty.DefaultValue))
             writer.WriteLine($"$this->{backingStoreProperty.Name.ToFirstCharacterLowerCase()} = {backingStoreProperty.DefaultValue};");
-        foreach (var propWithDefault in parentClass.GetPropertiesOfKind(
-                CodePropertyKind.RequestBuilder)
-            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-            .OrderByDescending(x => x.Kind)
-            .ThenBy(x => x.Name))
-        {
-            var isPathSegment = propWithDefault.IsOfKind(CodePropertyKind.PathParameters);
-            writer.WriteLine($"$this->{propWithDefault.Name.ToFirstCharacterLowerCase()} = {(isPathSegment ? "[]" : propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote())};");
-        }
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
             // do not apply the default value if the type is composed as the default value may not necessarily which type to use
@@ -132,19 +120,24 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             }
             writer.WriteLine($"$this->{setterName}({defaultValue});");
         }
-        foreach (var parameterKind in propertiesToAssign.Keys)
-        {
-            AssignPropertyFromParameter(parentClass, currentMethod, parameterKind, propertiesToAssign[parameterKind], writer);
-        }
-        // Handles various query parameter properties in query parameter classes
-        // Separate call because CodeParameterKind.QueryParameter key is already used in map initialization
-        AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameter, writer);
+    }
 
-        if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
-            currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor) &&
-            currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter &&
-            parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty
-           )
+    private void WriteRequestBuilderConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
+    {
+        foreach (var propWithDefault in parentClass.GetPropertiesOfKind(
+                CodePropertyKind.RequestBuilder)
+            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
+            .OrderByDescending(x => x.Kind)
+            .ThenBy(x => x.Name))
+        {
+            var isPathSegment = propWithDefault.IsOfKind(CodePropertyKind.PathParameters);
+            writer.WriteLine($"$this->{propWithDefault.Name.ToFirstCharacterLowerCase()} = {(isPathSegment ? "[]" : propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote())};");
+        }
+        // Set path parameters property
+        if (currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+                currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter &&
+                parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty
+            )
         {
             var pathParametersParameterName = conventions.GetParameterName(pathParametersParameter);
             writer.StartBlock($"if (is_array({pathParametersParameterName})) {{");
@@ -153,6 +146,46 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.IncreaseIndent();
             writer.WriteLine($"{GetPropertyCall(pathParametersProperty, "[]")} = ['{RawUrlParameterKey}' => {conventions.GetParameterName(pathParametersParameter)}];");
             writer.CloseBlock();
+        }
+    }
+
+    private void WriteRequestConfigurationConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
+    {
+        foreach (var parameterKind in propertiesToAssign.Keys)
+        {
+            AssignPropertyFromParameter(parentClass, currentMethod, parameterKind, propertiesToAssign[parameterKind], writer);
+        }
+    }
+    private void WriteQueryParameterConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
+    {
+        // Handles various query parameter properties in query parameter classes
+        // Not in propertiesToAssign because CodeParameterKind.QueryParameter key is already used
+        AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameter, writer);
+    }
+
+    private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
+    {
+        if (inherits)
+        {
+            WriteConstructorParentCall(parentClass, currentMethod, writer);
+        }
+        switch (parentClass.Kind)
+        {
+            case CodeClassKind.Model:
+                WriteModelConstructorBody(parentClass, writer);
+                break;
+            case CodeClassKind.RequestBuilder:
+                WriteRequestBuilderConstructorBody(parentClass, currentMethod, writer);
+                break;
+            case CodeClassKind.RequestConfiguration:
+                WriteRequestConfigurationConstructorBody(parentClass, currentMethod, writer);
+                break;
+            case CodeClassKind.QueryParameters:
+                WriteQueryParameterConstructorBody(parentClass, currentMethod, writer);
+                break;
+            default:
+                writer.WriteLine("");
+                break;
         }
     }
     private void WritePathParametersOptions(CodeMethod currentMethod, CodeClass parentClass, CodeParameter pathParameter, LanguageWriter writer)

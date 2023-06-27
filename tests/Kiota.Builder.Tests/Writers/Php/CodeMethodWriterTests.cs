@@ -878,6 +878,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public async void WriteConstructorBody()
     {
+        parentClass.Kind = CodeClassKind.Model;
         var constructor = new CodeMethod
         {
             Name = "constructor",
