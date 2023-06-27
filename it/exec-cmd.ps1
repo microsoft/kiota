@@ -179,10 +179,9 @@ elseif ($language -eq "php") {
 elseif ($language -eq "python") {
     Invoke-Call -ScriptBlock {
         python -m pip install --upgrade pip
-        pip install pipenv
-        pipenv install --dev --skip-lock
-        pipenv run pylint integration_test --disable=W --rcfile=.pylintrc
-        pipenv run mypy integration_test
+        pip install -r requirements-dev.txt
+        pylint integration_test --disable=W --rcfile=.pylintrc
+        mypy integration_test
     } -ErrorAction Stop
 }
 Pop-Location
