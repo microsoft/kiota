@@ -1702,12 +1702,14 @@ public class CodeMethodWriterTests : IDisposable
                     Name = "void"
                 },
                 Kind = CodeMethodKind.Setter,
+                Parent = intersectionTypeWrapper
             },
             Getter = new CodeMethod
             {
                 Name = "GetComplexType1Value",
                 ReturnType = cType1,
                 Kind = CodeMethodKind.Getter,
+                Parent = intersectionTypeWrapper
             }
         });
         intersectionTypeWrapper.AddProperty(new CodeProperty
@@ -1723,12 +1725,14 @@ public class CodeMethodWriterTests : IDisposable
                     Name = "void"
                 },
                 Kind = CodeMethodKind.Setter,
+                Parent = intersectionTypeWrapper
             },
             Getter = new CodeMethod
             {
                 Name = "GetComplexType2Value",
                 ReturnType = cType2,
                 Kind = CodeMethodKind.Getter,
+                Parent = intersectionTypeWrapper
             }
         });
         intersectionTypeWrapper.AddProperty(new CodeProperty
@@ -1750,6 +1754,7 @@ public class CodeMethodWriterTests : IDisposable
                 Name = "GetComplexType3Value",
                 ReturnType = cType3,
                 Kind = CodeMethodKind.Getter,
+                Parent = intersectionTypeWrapper
             }
         });
         intersectionTypeWrapper.AddProperty(new CodeProperty
@@ -1771,6 +1776,7 @@ public class CodeMethodWriterTests : IDisposable
                 Name = "GetStringValue",
                 ReturnType = sType,
                 Kind = CodeMethodKind.Getter,
+                Parent = intersectionTypeWrapper
             }
         });
         return intersectionTypeWrapper;
