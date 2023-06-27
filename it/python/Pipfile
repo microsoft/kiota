@@ -4,20 +4,20 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-azure-identity = "1.12.0"
+azure-identity = "1.13.0"
 httpx = {version = "==0.23.3", extras = ["http2"]}
-microsoft-kiota-abstractions = "==0.5.0"
+microsoft-kiota-abstractions = "==0.5.5"
 microsoft-kiota-authentication-azure = "==0.2.0"
-microsoft-kiota-http = "==0.4.0"
-microsoft-kiota-serialization-json = "==0.2.2"
-microsoft-kiota-serialization-text = "==0.2.0"
+microsoft-kiota-http = "==0.4.4"
+microsoft-kiota-serialization-json = "==0.3.6"
+microsoft-kiota-serialization-text = "==0.2.1"
 
 [dev-packages]
-flit = "==3.8.0"
-pylint = "==2.16.4"
-mypy = "==1.0.1"
-yapf = "==0.32.0"
+flit = "==3.9.0"
+pylint = "==2.17.4"
+mypy = "==1.4.1"
+yapf = "==0.40.1"
 isort = "==5.12.0"
 toml =  "==0.10.2" 
-pytest = "==7.2.2"
-pytest-asyncio = "==0.20.3"
+pytest = "==7.4.0"
+pytest-asyncio = "==0.21.0"
