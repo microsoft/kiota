@@ -22,6 +22,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
             _codeUsingWriter.WriteConditionalInternalImports(codeElement, writer, parentNamespace);
         }
 
+
         if (codeElement.Parent is CodeClass parentClass)
         {
             if (codeElement.Inherits != null)
@@ -44,8 +45,9 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Py
         writer.IncreaseIndent();
         if (codeElement.Parent is CodeClass parent)
         {
-            if (parent.Parent is CodeClass) // write internal imports for inner classes
+            if (parent.Parent is CodeClass) // write imports for inner classes
             {
+                _codeUsingWriter.WriteExternalImports(codeElement, writer);
                 _codeUsingWriter.WriteConditionalInternalImports(codeElement, writer, parentNamespace);
             }
             conventions.WriteShortDescription(parent.Documentation.Description, writer);
