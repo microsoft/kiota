@@ -67,6 +67,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplacePropertyNames(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
+                    CodePropertyKind.QueryParameter,
                 },
                 static s => s.ToSnakeCase());
             AddParentClassToErrorClasses(

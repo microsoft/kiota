@@ -249,5 +249,55 @@ public class RubyLanguageRefinerTests
         Assert.NotNull(root.FindNamespaceByName($"{graphNS.Name}.i7f5f9550ce583c5b890fd039add74646312e8d1fcdadf26872765e05988073b0"));
         Assert.Equal($"{graphNS.Name}.i7f5f9550ce583c5b890fd039add74646312e8d1fcdadf26872765e05988073b0", subNS.Name);
     }
+    [Fact]
+    public async Task AddsQueryParameterMapperMethod()
+    {
+        var model = graphNS.AddClass(new CodeClass
+        {
+            Name = "somemodel",
+            Kind = CodeClassKind.QueryParameters,
+        }).First();
+
+        model.AddProperty(new CodeProperty
+        {
+            Name = "Select",
+            SerializationName = "%24select",
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
+
+        Assert.Empty(model.Methods);
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, graphNS);
+        Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
+    }
+    [Fact]
+    public async Task AddsQueryParameterMapperMethodAfterMangling()
+    {
+        var model = graphNS.AddClass(new CodeClass
+        {
+            Name = "somemodel",
+            Kind = CodeClassKind.QueryParameters,
+        }).First();
+
+        model.AddProperty(new CodeProperty
+        {
+            Name = "ifExists",
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+            Kind = CodePropertyKind.QueryParameter
+        });
+
+        Assert.Empty(model.Methods);
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, graphNS);
+        Assert.Single(model.Properties.Where(x => x.Name.Equals("if_exists")));
+        Assert.Single(model.Properties.Where(x => x.IsNameEscaped));
+        Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
+    }
     #endregion
 }

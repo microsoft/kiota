@@ -192,7 +192,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             !currentProperty.ExistsInBaseType &&
             propertyKindsToReplace!.Contains(currentProperty.Kind) &&
             current.Parent is CodeClass parentClass &&
-            !parentClass.IsOfKind(CodeClassKind.QueryParameters) &&
             currentProperty.Access == AccessModifier.Public)
         {
             if (string.IsNullOrEmpty(currentProperty.SerializationName))
