@@ -256,6 +256,63 @@ public class GoLanguageRefinerTests
         Assert.NotNull(responseInter);
     }
     [Fact]
+    public async Task ConvertsUnionTypesToWrapper()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.Model
+        }).First();
+        var union = new CodeUnionType
+        {
+            Name = "union",
+        };
+        union.AddType(new()
+        {
+            Name = "type1",
+        }, new()
+        {
+            Name = "type2"
+        });
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "deserialize",
+            Kind = CodePropertyKind.Custom,
+            Type = union.Clone() as CodeTypeBase,
+        }).First();
+        var method = model.AddMethod(new CodeMethod
+        {
+            Name = "method",
+            ReturnType = union.Clone() as CodeTypeBase
+        }).First();
+        var parameter = new CodeParameter
+        {
+            Name = "param1",
+            Type = union.Clone() as CodeTypeBase
+        };
+        var indexer = new CodeIndexer
+        {
+            Name = "idx",
+            ReturnType = union.Clone() as CodeTypeBase,
+            IndexType = new CodeType
+            {
+                Name = "string"
+            },
+            IndexParameterName = "id",
+        };
+        model.Indexer = indexer;
+        method.AddParameter(parameter);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root); //using CSharp so the indexer doesn't get removed
+        Assert.True(property.Type is CodeType);
+        Assert.True(parameter.Type is CodeType);
+        Assert.True(method.ReturnType is CodeType);
+        var resultingWrapper = root.FindChildByName<CodeClass>("union");
+        Assert.NotNull(resultingWrapper);
+        Assert.NotNull(resultingWrapper.OriginalComposedType);
+        Assert.DoesNotContain("IComposedTypeWrapper", resultingWrapper.StartBlock.Implements.Select(static x => x.Name));
+        Assert.NotNull(resultingWrapper.Methods.Single(static x => x.IsOfKind(CodeMethodKind.ComposedTypeMarker)));
+    }
+    [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()
     {
         var model = root.AddClass(new CodeClass
