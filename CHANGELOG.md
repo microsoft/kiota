@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed an issue with query parameter name normalization in Ruby and Python. [#2825](https://github.com/microsoft/kiota/issues/2825)
 - Deprecated Visual Studio OpenAPI reference packages.
 - Fixes a bug where a stackoverflow exception occurs when inlined schemas have self-references [2656](https://github.com/microsoft/kiota/issues/2656)
 - Fixes nil safety while type casting values in collections in Go
