@@ -136,4 +136,31 @@ public class GenerateSample : IDisposable
 
         Assert.Empty(Directory.GetFiles(OutputPath, "*_*", SearchOption.AllDirectories));
     }
+    [InlineData(GenerationLanguage.Python)]
+    [InlineData(GenerationLanguage.Ruby)]
+    [Theory]
+    public async Task GeneratesQueryParametersMapper(GenerationLanguage language)
+    {
+        var logger = LoggerFactory.Create(builder =>
+        {
+        }).CreateLogger<KiotaBuilder>();
+
+        var OutputPath = $".\\Generated\\GeneratesQueryParametersMapper\\{language}";
+        var configuration = new GenerationConfiguration
+        {
+            Language = language,
+            OpenAPIFilePath = "GeneratesQueryMappers.yaml",
+            OutputPath = OutputPath,
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+
+        var fullText = "";
+        foreach (var file in Directory.GetFiles(OutputPath, "*.*", SearchOption.AllDirectories))
+        {
+            fullText += File.ReadAllText(file);
+        }
+
+        Assert.Contains("get_query_parameter", fullText);
+    }
 }

@@ -1,0 +1,18 @@
+openapi: 3.0.0
+info:
+  title: Test
+  version: 1.0.0
+  description: something
+paths:
+  /api/something/v1:
+    get:
+      parameters:
+        - name: "ifExists"
+          schema:
+            type: boolean
+          in: "query"
+      responses:
+        "200":
+          description: "something"
+          content:
+            application/json: {}

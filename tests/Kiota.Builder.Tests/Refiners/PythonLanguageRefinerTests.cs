@@ -63,6 +63,32 @@ public class PythonLanguageRefinerTests
         Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
     }
     [Fact]
+    public async Task AddsQueryParameterMapperMethodAfterMangling()
+    {
+        var model = graphNS.AddClass(new CodeClass
+        {
+            Name = "somemodel",
+            Kind = CodeClassKind.QueryParameters,
+        }).First();
+
+        model.AddProperty(new CodeProperty
+        {
+            Name = "ifExists",
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+            Kind = CodePropertyKind.QueryParameter
+        });
+
+        Assert.Empty(model.Methods);
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS);
+        Assert.Single(model.Properties.Where(x => x.Name.Equals("if_exists")));
+        Assert.Single(model.Properties.Where(x => x.IsNameEscaped));
+        Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
+    }
+    [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()
     {
         var model = root.AddClass(new CodeClass
