@@ -30,4 +30,24 @@ public class CodeTypeTests
         Assert.Equal(type.TypeDefinition.Name, clone.TypeDefinition.Name);
     }
 
+    [Fact]
+    public void ClonesGenericTypeParameterValuesProperly()
+    {
+        var type = new CodeType
+        {
+            Name = "type1",
+        };
+        type.TypeDefinition = new CodeClass
+        {
+            Name = "class1"
+        };
+        var clone = type.Clone() as CodeType;
+        clone.GenericTypeParameterValues.Add(new CodeType { Name = "genparam1" });
+
+        Assert.Single(clone.AllTypes);
+        Assert.Empty(type.GenericTypeParameterValues);
+        Assert.NotEmpty(clone.GenericTypeParameterValues);
+        Assert.Equal(type.TypeDefinition.Name, clone.TypeDefinition.Name);
+    }
+
 }
