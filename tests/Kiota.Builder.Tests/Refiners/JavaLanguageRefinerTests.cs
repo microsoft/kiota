@@ -166,6 +166,13 @@ public class JavaLanguageRefinerTests
         Assert.Contains("Escaped", model.Name);
     }
     [Fact]
+    public async Task EscapeReservedKeywordsInNamespaceToLowercase()
+    {
+        var ns = root.AddNamespace("new");
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        Assert.Equal(ns.Name.ToLower(), ns.Name);
+    }
+    [Fact]
     public async Task ConvertEnumsToPascalCase()
     {
         var model = root.AddEnum(new CodeEnum

@@ -17,7 +17,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            LowerCaseNamespaceNames(generatedCode);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
@@ -84,6 +83,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}Escaped");
             ReplaceReservedExceptionPropertyNames(generatedCode, new JavaExceptionsReservedNamesProvider(), x => $"{x}Escaped");
+            LowerCaseNamespaceNames(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
