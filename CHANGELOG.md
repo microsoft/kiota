@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where a stackoverflow exception occurs when inlined schemas have self-references [2656](https://github.com/microsoft/kiota/issues/2656)
 - Fixes nil safety while type casting values in collections in Go
 - Moved common RequestBuilder ((request_adapter, url_template and path_parameters)) and RequestConfiguration(headers, options) properties to respective base classes in Python.[2440](https://github.com/microsoft/kiota/issues/2440)
+- Fixed a bug where escaped package names would not be lowercased in Java.
 
 ## [1.3.0] - 2023-06-09
 
