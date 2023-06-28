@@ -51,7 +51,11 @@ public class GoRefiner : CommonLanguageRefiner
             );
             ConvertUnionTypesToWrapper(
                 generatedCode,
-                _configuration.UsesBackingStore
+                _configuration.UsesBackingStore,
+                true,
+                string.Empty,
+                string.Empty,
+                "GetIsComposedType"
             );
             AddRawUrlConstructorOverload(
                 generatedCode

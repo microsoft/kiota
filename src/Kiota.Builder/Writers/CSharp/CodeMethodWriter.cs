@@ -90,6 +90,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             case CodeMethodKind.Factory:
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
                 break;
+            case CodeMethodKind.ComposedTypeMarker:
+                throw new InvalidOperationException("ComposedTypeMarker is not required as interface is explicitly implemented.");
             default:
                 writer.WriteLine("return null;");
                 break;

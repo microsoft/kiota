@@ -48,8 +48,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 _configuration.UsesBackingStore,
                 true,
                 AbstractionsNamespaceName,
-                "IComposedTypeWrapper",
-                false
+                "IComposedTypeWrapper"
             );
             cancellationToken.ThrowIfCancellationRequested();
             AddRawUrlConstructorOverload(generatedCode);

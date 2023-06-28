@@ -78,6 +78,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             case CodeMethodKind.Factory when codeElement.IsOverload:
                 WriteFactoryOverloadMethod(codeElement, parentClass, writer);
                 break;
+            case CodeMethodKind.ComposedTypeMarker:
+                throw new InvalidOperationException("ComposedTypeMarker is not required as interface is explicitly implemented.");
             default:
                 writer.WriteLine("return null;");
                 break;

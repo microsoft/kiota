@@ -72,11 +72,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             case CodeMethodKind.Factory:
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
                 break;
+            case CodeMethodKind.ComposedTypeMarker:
+                WriteComposedTypeMarkerBody(writer);
+                break;
             default:
                 writer.WriteLine("return nil");
                 break;
         }
         writer.CloseBlock();
+    }
+    private void WriteComposedTypeMarkerBody(LanguageWriter writer)
+    {
+        writer.WriteLine("return true");
     }
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
@@ -404,7 +411,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                             CodeMethodKind.Deserializer,
                                             CodeMethodKind.RequestBuilderWithParameters,
                                             CodeMethodKind.RequestBuilderBackwardCompatibility,
-                                            CodeMethodKind.RawUrlConstructor) || code.IsAsync ?
+                                            CodeMethodKind.RawUrlConstructor,
+                                            CodeMethodKind.ComposedTypeMarker) || code.IsAsync ?
                                                 string.Empty :
                                                 "error";
         if (!string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration))

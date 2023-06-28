@@ -29,6 +29,10 @@ public enum CodeMethodKind
     /// The method to be used during query parameters serialization to get the proper uri template parameter name.
     /// </summary>
     QueryParametersMapper,
+    /// <summary>
+    /// Method used to distinguish between regular and composed type wrapper models during serialization for loosely-typed languages.
+    /// </summary>
+    ComposedTypeMarker,
 }
 public enum HttpMethod
 {

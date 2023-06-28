@@ -60,8 +60,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 _configuration.UsesBackingStore,
                 true,
                 SerializationNamespaceName,
-                "ComposedTypeWrapper",
-                false
+                "ComposedTypeWrapper"
             );
             AddRawUrlConstructorOverload(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
