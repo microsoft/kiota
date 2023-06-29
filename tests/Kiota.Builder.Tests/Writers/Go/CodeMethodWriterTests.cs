@@ -1917,4 +1917,15 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("v2.0", result);
         Assert.Contains("// Deprecated:", result);
     }
+    [Fact]
+    public void WritesComposedMarker()
+    {
+        method.Kind = CodeMethodKind.ComposedTypeMarker;
+        method.ReturnType = new CodeType { Name = "boolean", IsNullable = false };
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("return true", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("error", result, StringComparison.OrdinalIgnoreCase);
+    }
 }

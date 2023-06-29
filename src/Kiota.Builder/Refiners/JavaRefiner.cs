@@ -23,7 +23,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                     Name = "BaseRequestBuilder",
                     Declaration = new CodeType
                     {
-                        Name = "com.microsoft.kiota",
+                        Name = AbstractionsNamespaceName,
                         IsExternal = true
                     }
                 });
@@ -33,7 +33,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                     Name = "BaseRequestConfiguration",
                     Declaration = new CodeType
                     {
-                        Name = "com.microsoft.kiota",
+                        Name = AbstractionsNamespaceName,
                         IsExternal = true
                     }
                 });
@@ -57,7 +57,10 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
-                _configuration.UsesBackingStore
+                _configuration.UsesBackingStore,
+                true,
+                SerializationNamespaceName,
+                "ComposedTypeWrapper"
             );
             AddRawUrlConstructorOverload(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
@@ -99,29 +102,29 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 defaultConfiguration.Serializers,
                 new(StringComparer.OrdinalIgnoreCase) {
-                    "com.microsoft.kiota.serialization.JsonSerializationWriterFactory",
-                    "com.microsoft.kiota.serialization.TextSerializationWriterFactory",
-                    "com.microsoft.kiota.serialization.FormSerializationWriterFactory",
+                    $"{SerializationNamespaceName}.JsonSerializationWriterFactory",
+                    $"{SerializationNamespaceName}.TextSerializationWriterFactory",
+                    $"{SerializationNamespaceName}.FormSerializationWriterFactory",
                 }
             );
             ReplaceDefaultDeserializationModules(
                 generatedCode,
                 defaultConfiguration.Deserializers,
                 new(StringComparer.OrdinalIgnoreCase) {
-                    "com.microsoft.kiota.serialization.JsonParseNodeFactory",
-                    "com.microsoft.kiota.serialization.FormParseNodeFactory",
-                    "com.microsoft.kiota.serialization.TextParseNodeFactory"
+                    $"{SerializationNamespaceName}.JsonParseNodeFactory",
+                    $"{SerializationNamespaceName}.FormParseNodeFactory",
+                    $"{SerializationNamespaceName}.TextParseNodeFactory"
                 }
             );
             AddSerializationModulesImport(generatedCode,
-                                        new[] { "com.microsoft.kiota.ApiClientBuilder",
-                                                "com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry" },
-                                        new[] { "com.microsoft.kiota.serialization.ParseNodeFactoryRegistry" });
+                                        new[] { $"{AbstractionsNamespaceName}.ApiClientBuilder",
+                                                $"{SerializationNamespaceName}.SerializationWriterFactoryRegistry" },
+                                        new[] { $"{SerializationNamespaceName}.ParseNodeFactoryRegistry" });
             cancellationToken.ThrowIfCancellationRequested();
             AddParentClassToErrorClasses(
                     generatedCode,
                     "ApiException",
-                    "com.microsoft.kiota"
+                    AbstractionsNamespaceName
             );
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
@@ -195,21 +198,23 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, AddEnumSetImport);
     }
     private static readonly JavaConventionService conventionService = new();
+    private const string AbstractionsNamespaceName = "com.microsoft.kiota";
+    private const string SerializationNamespaceName = "com.microsoft.kiota.serialization";
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
-            "com.microsoft.kiota", "RequestAdapter"),
+            AbstractionsNamespaceName, "RequestAdapter"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.PathParameters),
             "java.util", "HashMap"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            "com.microsoft.kiota", "RequestInformation", "RequestOption", "HttpMethod"),
+            AbstractionsNamespaceName, "RequestInformation", "RequestOption", "HttpMethod"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             "java.net", "URISyntaxException"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             "java.util", "Collection", "Map"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
-            "com.microsoft.kiota.serialization", "Parsable"),
+            SerializationNamespaceName, "Parsable"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
-            "com.microsoft.kiota.serialization", "AdditionalDataHolder"),
+            SerializationNamespaceName, "AdditionalDataHolder"),
         new (static x => x is CodeMethod method && method.Parameters.Any(x => !x.Optional),
                 "java.util", "Objects"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) &&
@@ -217,11 +222,11 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                         x.Type.Name.Equals(conventionService.StreamTypeName, StringComparison.OrdinalIgnoreCase)),
             "java.io", "InputStream"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-            "com.microsoft.kiota.serialization", "SerializationWriter"),
+            SerializationNamespaceName, "SerializationWriter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-            "com.microsoft.kiota.serialization", "ParseNode"),
+            SerializationNamespaceName, "ParseNode"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "com.microsoft.kiota.serialization", "Parsable", "ParsableFactory"),
+            SerializationNamespaceName, "Parsable", "ParsableFactory"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "java.util", "HashMap", "Map"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
@@ -234,9 +239,9 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 x is CodeParameter para && "decimal".Equals(para.Type.Name, StringComparison.OrdinalIgnoreCase),
             "java.math", "BigDecimal"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(prop.SerializationName),
-                "com.microsoft.kiota", "QueryParameter"),
+                AbstractionsNamespaceName, "QueryParameter"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
-            "com.microsoft.kiota.serialization", "ParseNodeHelper"),
+            SerializationNamespaceName, "ParseNodeHelper"),
     };
     private static void CorrectPropertyType(CodeProperty currentProperty)
     {

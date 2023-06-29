@@ -15,8 +15,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         var isNullableReferenceType = !propertyType.EndsWith("?", StringComparison.OrdinalIgnoreCase)
                                       && codeElement.IsOfKind(
                                             CodePropertyKind.Custom,
-                                            CodePropertyKind.QueryParameter,
-                                            CodePropertyKind.SerializationHint);// Other property types are appropriately constructor initialized
+                                            CodePropertyKind.QueryParameter);// Other property types are appropriately constructor initialized
         conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
         if (isNullableReferenceType)
