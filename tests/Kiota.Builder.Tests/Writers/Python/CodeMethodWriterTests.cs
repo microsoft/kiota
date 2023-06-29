@@ -876,6 +876,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("write_enum_value", result);
         Assert.Contains("write_additional_data_value(self.additional_data)", result);
         Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("()", result);
     }
     [Fact]
     public void WritesMethodAsyncDescription()
