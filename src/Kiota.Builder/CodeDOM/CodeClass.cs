@@ -65,12 +65,41 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     }
     public override IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
     {
-        var result = base.AddProperty(properties);
-        foreach (var addedPropertyTuple in result.Select(x => new Tuple<CodeProperty, CodeProperty?>(x, StartBlock.GetOriginalPropertyDefinedFromBaseType(x.Name)))
-                                        .Where(static x => x.Item2 != null))
-            addedPropertyTuple.Item1.OriginalPropertyFromBaseType = addedPropertyTuple.Item2!;
+        ArgumentNullException.ThrowIfNull(properties);
+        var result = new CodeProperty[properties.Length];
 
+        for (var i = 0; i < properties.Length; i++)
+        {
+            var property = properties[i];
+            var original = StartBlock.GetOriginalPropertyDefinedFromBaseType(property.WireName);
+            if (original == null)
+            {
+                var uniquePropertyName = ResolveUniquePropertyName(property.Name);
+                if (uniquePropertyName != property.Name && String.IsNullOrEmpty(property.SerializationName))
+                    property.SerializationName = property.Name;
+                property.Name = uniquePropertyName;
+            }
+            else
+            {
+                // the property already exists in a parent type, use its name
+                property.Name = original.Name;
+                property.SerializationName = original.SerializationName;
+                property.OriginalPropertyFromBaseType = original!;
+            }
+            result[i] = base.AddProperty(new[] { property }).First();
+        }
         return result;
+    }
+    private string ResolveUniquePropertyName(string name)
+    {
+        if (FindChildByName<CodeProperty>(name) == null)
+            return name;
+        if (FindChildByName<CodeProperty>(Name + name) == null)
+            return Name + name;
+        var i = 0;
+        while (FindChildByName<CodeProperty>(Name + name + i) != null)
+            i++;
+        return Name + name + i;
     }
     public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
     {
@@ -154,16 +183,16 @@ public class ClassDeclaration : ProprietableBlockDeclaration
         }
     }
 
-    public CodeProperty? GetOriginalPropertyDefinedFromBaseType(string propertyName)
+    public CodeProperty? GetOriginalPropertyDefinedFromBaseType(string serializationName)
     {
-        ArgumentException.ThrowIfNullOrEmpty(propertyName);
+        ArgumentException.ThrowIfNullOrEmpty(serializationName);
 
         if (inherits is CodeType currentInheritsType &&
             currentInheritsType.TypeDefinition is CodeClass currentParentClass)
-            if (currentParentClass.FindChildByName<CodeProperty>(propertyName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
+            if (currentParentClass.FindChild<CodeProperty>(x => x.WireName == serializationName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
                 return currentProperty;
             else
-                return currentParentClass.StartBlock.GetOriginalPropertyDefinedFromBaseType(propertyName);
+                return currentParentClass.StartBlock.GetOriginalPropertyDefinedFromBaseType(serializationName);
         return default;
     }
 

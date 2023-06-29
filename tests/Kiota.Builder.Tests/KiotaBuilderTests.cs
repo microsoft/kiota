@@ -6016,4 +6016,44 @@ paths:
         Assert.Empty(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && keysToCheck.Contains(x.Name)));
         Assert.Single(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
     }
+    [Fact]
+    public async Task CleanupSymbolNameDoesNotCauseNameConflicts()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: Example
+  description: Example
+  version: 1.0.1
+servers:
+  - url: https://example.org
+paths:
+  /directoryObject:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/entity'
+components:
+  schemas:
+    entity:
+      title: entity
+      type: object
+      required: ['type', '@type']
+      properties:
+        type:
+          type: string
+        '@type':
+          type: integer");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var resultClass = codeModel.FindChildByName<CodeClass>("Entity");
+        Assert.NotNull(resultClass);
+        Assert.Equal(2, resultClass.Properties.Count());
+    }
 }
