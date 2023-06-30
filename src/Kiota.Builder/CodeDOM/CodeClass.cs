@@ -65,26 +65,33 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     }
     public override IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
     {
-        ArgumentNullException.ThrowIfNull(properties);
+        if (properties == null || properties.Any(static x => x == null))
+            throw new ArgumentNullException(nameof(properties));
+        if (!properties.Any())
+            throw new ArgumentOutOfRangeException(nameof(properties));
+
         var result = new CodeProperty[properties.Length];
 
         for (var i = 0; i < properties.Length; i++)
         {
             var property = properties[i];
-            var original = StartBlock.GetOriginalPropertyDefinedFromBaseType(property.WireName);
-            if (original == null)
+            if (property.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter))
             {
-                var uniquePropertyName = ResolveUniquePropertyName(property.Name);
-                if (uniquePropertyName != property.Name && String.IsNullOrEmpty(property.SerializationName))
-                    property.SerializationName = property.Name;
-                property.Name = uniquePropertyName;
-            }
-            else
-            {
-                // the property already exists in a parent type, use its name
-                property.Name = original.Name;
-                property.SerializationName = original.SerializationName;
-                property.OriginalPropertyFromBaseType = original!;
+                var original = StartBlock.GetOriginalPropertyDefinedFromBaseType(property.WireName);
+                if (original == null)
+                {
+                    var uniquePropertyName = ResolveUniquePropertyName(property.Name);
+                    if (uniquePropertyName != property.Name && String.IsNullOrEmpty(property.SerializationName))
+                        property.SerializationName = property.Name;
+                    property.Name = uniquePropertyName;
+                }
+                else
+                {
+                    // the property already exists in a parent type, use its name
+                    property.Name = original.Name;
+                    property.SerializationName = original.SerializationName;
+                    property.OriginalPropertyFromBaseType = original!;
+                }
             }
             result[i] = base.AddProperty(new[] { property }).First();
         }

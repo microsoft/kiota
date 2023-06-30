@@ -143,7 +143,7 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
         if (!InnerChildElements.Any())
             return default;
 
-        if (InnerChildElements.Select(x => x.Value).Where(x => x is T castX && match(castX)) is T result)
+        if (InnerChildElements.Select(x => x.Value).Where(x => x is T castX && match(castX)).FirstOrDefault() is T result)
             return result;
         if (findInChildElements)
             foreach (var childElement in InnerChildElements.Values.OfType<IBlock>())
