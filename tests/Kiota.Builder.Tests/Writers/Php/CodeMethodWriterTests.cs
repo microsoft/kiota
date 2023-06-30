@@ -714,7 +714,6 @@ public class CodeMethodWriterTests : IDisposable
             "TypeUtils::validateCollectionValues($val, 'int');",
             "/** @var array<int>|null $val */",
             "$this->setYears($val);"
-            // "'years' => function (ParseNode $n) { $val = $n->getCollectionOfPrimitiveValues(); if (is_array($val)) { TypeUtils::validateCollectionValues($val, 'int'); } /** @var array<int>|null $val */ $this->setYears($val); },"
         },
         new object[] { new CodeProperty{ Name = "definedInParent", Type = new CodeType { Name = "string"}, OriginalPropertyFromBaseType = new CodeProperty() { Name = "definedInParent", Type = new CodeType { Name = "string"}} }, "'definedInParent' => function (ParseNode $n) use ($o) { $o->setDefinedInParent($n->getStringValue())"}
     };
