@@ -107,10 +107,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (backingStoreProperty != null && !string.IsNullOrEmpty(backingStoreProperty.DefaultValue))
             writer.WriteLine($"$this->{backingStoreProperty.Name.ToFirstCharacterLowerCase()} = {backingStoreProperty.DefaultValue};");
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
-            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
+            .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
             // do not apply the default value if the type is composed as the default value may not necessarily which type to use
             .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
-            .OrderBy(x => x.Name))
+            .OrderBy(static x => x.Name))
         {
             var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
             var defaultValue = propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote();
@@ -486,25 +486,21 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             var isScalarType = conventions.ScalarTypes.Contains(propertyTypeName);
             if (propertyType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None)
             {
-                writer.WriteLine($"if (is_null($val) || {(isScalarType ? $"is_{propertyTypeName}($val)" : $"$val instanceof {propertyTypeName}")}) {{");
-                writer.IncreaseIndent();
+                writer.StartBlock($"if (is_null($val) || {(isScalarType ? $"is_{propertyTypeName}($val)" : $"$val instanceof {propertyTypeName}")}) {{");
             }
             else if (accessedProperty.Kind == CodePropertyKind.AdditionalData)
             {
-                writer.WriteLine($"if (is_null($val) || is_array($val)) {{");
-                writer.IncreaseIndent();
+                writer.StartBlock($"if (is_null($val) || is_array($val)) {{");
                 writer.WriteLine($"/** @var array<string, mixed>|null $val */");
             }
             else
             {
-                writer.WriteLine("if (is_array($val) || is_null($val)) {");
-                writer.IncreaseIndent();
+                writer.StartBlock("if (is_array($val) || is_null($val)) {");
                 writer.WriteLine($"TypeUtils::validateCollectionValues($val, {(isScalarType ? $"'{propertyTypeName}'" : $"{propertyTypeName}::class")});");
                 writer.WriteLine($"/** @var array<{propertyTypeName}>|null $val */");
             }
             writer.WriteLine("return $val;");
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.CloseBlock();
             writer.WriteLine($"throw new \\UnexpectedValueException(\"Invalid type found in backing store for '{propertyName}'\");");
         }
         else
@@ -609,15 +605,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             && property.Type is CodeType currentType
             && currentType.TypeDefinition == null)
         {
-            writer.WriteLine($"'{property.WireName}' => function (ParseNode $n) {{");
-            writer.IncreaseIndent();
+            writer.StartBlock($"'{property.WireName}' => function (ParseNode $n) {{");
             writer.WriteLine("$val = $n->getCollectionOfPrimitiveValues();");
-            writer.WriteLine($"if (is_array($val)) {{");
-            writer.IncreaseIndent();
+            writer.StartBlock($"if (is_array($val)) {{");
             var type = conventions.TranslateType(property.Type);
             writer.WriteLine($"TypeUtils::validateCollectionValues($val, '{type}');");
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.CloseBlock();
             writer.WriteLine($"/** @var array<{type}>|null $val */");
             writer.WriteLine($"$this->{property.Setter!.Name.ToFirstCharacterLowerCase()}($val);");
             writer.DecreaseIndent();

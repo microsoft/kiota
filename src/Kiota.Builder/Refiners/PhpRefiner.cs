@@ -318,7 +318,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     x.Kind == CodePropertyKind.Custom
                     && x.Type is CodeType codeType
                     && codeType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None
-                    && (_configuration.UsesBackingStore || x.Type is CodeType t && t.TypeDefinition == null)))
+                    && (_configuration.UsesBackingStore || codeType.TypeDefinition == null)))
             {
                 codeClass.AddUsing(typeUtilsUsing);
             }
