@@ -99,12 +99,12 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     }
     private string ResolveUniquePropertyName(string name)
     {
-        if (FindChildByName<CodeProperty>(name) == null)
+        if (StartBlock.FindPropertyByNameInTypeHierarchy(name) == null)
             return name;
-        if (FindChildByName<CodeProperty>(Name + name) == null)
+        if (StartBlock.FindPropertyByNameInTypeHierarchy(Name + name) == null)
             return Name + name;
         var i = 0;
-        while (FindChildByName<CodeProperty>(Name + name + i) != null)
+        while (StartBlock.FindPropertyByNameInTypeHierarchy(Name + name + i) != null)
             i++;
         return Name + name + i;
     }
@@ -202,7 +202,24 @@ public class ClassDeclaration : ProprietableBlockDeclaration
                 return currentParentClass.StartBlock.GetOriginalPropertyDefinedFromBaseType(serializationName);
         return default;
     }
+    public CodeProperty? FindPropertyByNameInTypeHierarchy(string propertyName)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(propertyName);
 
+        if (Parent is CodeClass thisClass)
+        {
+            if (thisClass.FindChildByName<CodeProperty>(propertyName, findInChildElements: false) is CodeProperty result)
+            {
+                return result;
+            }
+        }
+        if (inherits is CodeType currentInheritsType &&
+            currentInheritsType.TypeDefinition is CodeClass currentParentClass)
+        {
+            return currentParentClass.StartBlock.FindPropertyByNameInTypeHierarchy(propertyName);
+        }
+        return default;
+    }
     public bool InheritsFrom(CodeClass candidate)
     {
         ArgumentNullException.ThrowIfNull(candidate);

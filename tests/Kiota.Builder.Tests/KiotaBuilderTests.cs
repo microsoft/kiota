@@ -6056,4 +6056,60 @@ components:
         Assert.NotNull(resultClass);
         Assert.Equal(2, resultClass.Properties.Count());
     }
+    [Fact]
+    public async Task CleanupSymbolNameDoesNotCauseNameConflictsWithSuperType()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: Example
+  description: Example
+  version: 1.0.1
+servers:
+  - url: https://example.org
+paths:
+  /directoryObject:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/subtype'
+components:
+  schemas:
+    entity:
+      title: entity
+      type: object
+      required: ['@type']
+      properties:
+        '@type':
+          type: integer
+      discriminator:
+        propertyName: '@type'
+        mapping:
+          'subtype': '#/components/schemas/subtype'
+    subtype:
+      allOf:
+        - $ref: '#/components/schemas/entity'
+        - title: subtype
+          type: object
+          required: ['type', '@type']
+          properties:
+            'type':
+              type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var entityClass = codeModel.FindChildByName<CodeClass>("Entity");
+        Assert.NotNull(entityClass);
+        var atType = entityClass.FindChildByName<CodeProperty>("Type");
+        Assert.Equal("@type", atType.WireName);
+        var subtypeClass = codeModel.FindChildByName<CodeClass>("Subtype");
+        Assert.NotNull(subtypeClass);
+        var type = subtypeClass.FindChildByName<CodeProperty>("Subtypetype");
+        Assert.Equal("type", type.WireName);
+    }
 }
