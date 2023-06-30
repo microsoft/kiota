@@ -12,5 +12,4 @@
     $authProvider = new PhpLeagueAuthenticationProvider($tokenRequestContext, [], []);
     $requestAdapter = new GuzzleRequestAdapter($authProvider);
     $client = new ApiClient($requestAdapter);
-    echo "Hello {$client}";
 ?>

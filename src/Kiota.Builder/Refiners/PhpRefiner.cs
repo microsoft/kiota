@@ -43,11 +43,12 @@ public class PhpRefiner : CommonLanguageRefiner
                 _configuration.UsesBackingStore,
                 false);
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
+            AddQueryParameterFactoryMethod(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddRequestConfigurationConstructors(generatedCode);
-            AddQueryParameterFactoryMethod(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            AddCollectionValidationUtilImportToModels(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             AddGetterAndSetterMethods(generatedCode,
                 new() {
@@ -78,7 +79,7 @@ public class PhpRefiner : CommonLanguageRefiner
                 "ParseNode",
                 addUsings: true
             );
-            ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true, _configuration.UsesBackingStore);
+            ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true, true);
             var defaultConfiguration = new GenerationConfiguration();
             ReplaceDefaultSerializationModules(generatedCode,
                 defaultConfiguration.Serializers,
@@ -191,7 +192,7 @@ public class PhpRefiner : CommonLanguageRefiner
         new(x => x is CodeProperty property && property.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(property.SerializationName), "Microsoft\\Kiota\\Abstractions", "QueryParameter"),
         new(x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration), "Microsoft\\Kiota\\Abstractions", "RequestOption"),
         new (static x => x is CodeClass { OriginalComposedType: CodeIntersectionType intersectionType } && intersectionType.Types.Any(static y => !y.IsExternal),
-            "Microsoft\\Kiota\\Serialization", "ParseNodeHelper"),
+            "Microsoft\\Kiota\\Abstractions\\Serialization", "ParseNodeHelper"),
     };
     private static void CorrectPropertyType(CodeProperty currentProperty)
     {
@@ -308,6 +309,23 @@ public class PhpRefiner : CommonLanguageRefiner
         CrawlTree(codeElement, CorrectBackingStoreSetterParam);
     }
 
+    private void AddCollectionValidationUtilImportToModels(CodeElement codeElement)
+    {
+        if (codeElement is CodeClass codeClass && codeClass.Kind == CodeClassKind.Model)
+        {
+            var typeUtilsUsing = new CodeUsing { Name = "TypeUtils", Declaration = new CodeType { Name = "Microsoft\\Kiota\\Abstractions\\Types", IsExternal = true } };
+            if (codeClass.Properties.Any(x =>
+                    x.Kind == CodePropertyKind.Custom
+                    && x.Type is CodeType codeType
+                    && codeType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None
+                    && (_configuration.UsesBackingStore || codeType.TypeDefinition == null)))
+            {
+                codeClass.AddUsing(typeUtilsUsing);
+            }
+        }
+        CrawlTree(codeElement, AddCollectionValidationUtilImportToModels);
+    }
+
     private static readonly Dictionary<CodePropertyKind, CodeParameterKind> propertyKindToParameterKind = new Dictionary<CodePropertyKind, CodeParameterKind>()
     {
         { CodePropertyKind.Headers, CodeParameterKind.Headers },
@@ -403,7 +421,7 @@ public class PhpRefiner : CommonLanguageRefiner
                                             Name = x.Name,
                                             Kind = CodeParameterKind.QueryParameter,
                                             Optional = true,
-                                            Type = x.Type
+                                            Type = (CodeTypeBase)x.Type.Clone()
                                         }).ToArray();
                     if (properties.Any())
                     {

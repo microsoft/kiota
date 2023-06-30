@@ -100,15 +100,30 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.WriteLine("parent::__construct();");
 
     }
-    private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
+
+    private void WriteModelConstructorBody(CodeClass parentClass, LanguageWriter writer)
     {
-        if (inherits)
-        {
-            WriteConstructorParentCall(parentClass, currentMethod, writer);
-        }
         var backingStoreProperty = parentClass.GetPropertyOfKind(CodePropertyKind.BackingStore);
         if (backingStoreProperty != null && !string.IsNullOrEmpty(backingStoreProperty.DefaultValue))
             writer.WriteLine($"$this->{backingStoreProperty.Name.ToFirstCharacterLowerCase()} = {backingStoreProperty.DefaultValue};");
+        foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
+            .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+            // do not apply the default value if the type is composed as the default value may not necessarily which type to use
+            .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
+            .OrderBy(static x => x.Name))
+        {
+            var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
+            var defaultValue = propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote();
+            if (propWithDefault.Type is CodeType codeType && codeType.TypeDefinition is CodeEnum enumDefinition)
+            {
+                defaultValue = $"new {enumDefinition.Name.ToFirstCharacterUpperCase()}({defaultValue})";
+            }
+            writer.WriteLine($"$this->{setterName}({defaultValue});");
+        }
+    }
+
+    private void WriteRequestBuilderConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
+    {
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(
                 CodePropertyKind.RequestBuilder)
             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
@@ -118,28 +133,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             var isPathSegment = propWithDefault.IsOfKind(CodePropertyKind.PathParameters);
             writer.WriteLine($"$this->{propWithDefault.Name.ToFirstCharacterLowerCase()} = {(isPathSegment ? "[]" : propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote())};");
         }
-        foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
-            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-            // do not apply the default value if the type is composed as the default value may not necessarily which type to use
-            .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
-            .OrderBy(x => x.Name))
-        {
-            var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
-            writer.WriteLine($"$this->{setterName}({propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote()});");
-        }
-        foreach (var parameterKind in propertiesToAssign.Keys)
-        {
-            AssignPropertyFromParameter(parentClass, currentMethod, parameterKind, propertiesToAssign[parameterKind], writer);
-        }
-        // Handles various query parameter properties in query parameter classes
-        // Separate call because CodeParameterKind.QueryParameter key is already used in map initialization
-        AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameter, writer);
-
-        if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
-            currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor) &&
-            currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter &&
-            parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty
-           )
+        // Set path parameters property
+        if (currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+                currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter &&
+                parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty
+            )
         {
             var pathParametersParameterName = conventions.GetParameterName(pathParametersParameter);
             writer.StartBlock($"if (is_array({pathParametersParameterName})) {{");
@@ -148,6 +146,46 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.IncreaseIndent();
             writer.WriteLine($"{GetPropertyCall(pathParametersProperty, "[]")} = ['{RawUrlParameterKey}' => {conventions.GetParameterName(pathParametersParameter)}];");
             writer.CloseBlock();
+        }
+    }
+
+    private void WriteRequestConfigurationConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
+    {
+        foreach (var parameterKind in propertiesToAssign.Keys)
+        {
+            AssignPropertyFromParameter(parentClass, currentMethod, parameterKind, propertiesToAssign[parameterKind], writer);
+        }
+    }
+    private void WriteQueryParameterConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
+    {
+        // Handles various query parameter properties in query parameter classes
+        // Not in propertiesToAssign because CodeParameterKind.QueryParameter key is already used
+        AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameter, writer);
+    }
+
+    private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
+    {
+        if (inherits)
+        {
+            WriteConstructorParentCall(parentClass, currentMethod, writer);
+        }
+        switch (parentClass.Kind)
+        {
+            case CodeClassKind.Model:
+                WriteModelConstructorBody(parentClass, writer);
+                break;
+            case CodeClassKind.RequestBuilder:
+                WriteRequestBuilderConstructorBody(parentClass, currentMethod, writer);
+                break;
+            case CodeClassKind.RequestConfiguration:
+                WriteRequestConfigurationConstructorBody(parentClass, currentMethod, writer);
+                break;
+            case CodeClassKind.QueryParameters:
+                WriteQueryParameterConstructorBody(parentClass, currentMethod, writer);
+                break;
+            default:
+                writer.WriteLine("");
+                break;
         }
     }
     private void WritePathParametersOptions(CodeMethod currentMethod, CodeClass parentClass, CodeParameter pathParameter, LanguageWriter writer)
@@ -181,7 +219,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         {
             for (var i = 0; i < parameters.Count; i++)
             {
-                writer.WriteLine($"$this->{properties[i].Name.ToFirstCharacterLowerCase()} = ${parameters[i].Name};");
+                writer.WriteLine($"$this->{properties[i].Name.ToFirstCharacterLowerCase()} = ${parameters[i].Name.ToFirstCharacterLowerCase()};");
             }
         }
     }
@@ -221,7 +259,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     {
         return codeMethod.Kind switch
         {
-            CodeMethodKind.Deserializer => "array<string, callable>",
+            CodeMethodKind.Deserializer => "array<string, callable(ParseNode): void>",
             CodeMethodKind.Getter when codeMethod.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false => "array<string, mixed>",
             CodeMethodKind.Getter when codeMethod.AccessedProperty?.Type.IsCollection ?? false => $"array<{conventions.TranslateType(codeMethod.AccessedProperty.Type)}>",
             _ => conventions.GetTypeString(codeMethod.ReturnType, codeMethod)
@@ -401,7 +439,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             if (isCollection)
                 parseNodeMethod = currentType.TypeDefinition switch
                 {
-                    null => "getCollectionOfPrimitiveValues()",
                     CodeEnum enumType => $"getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
                     _ => $"getCollectionOfObjectValues([{conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'])"
                 };
@@ -437,10 +474,39 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     {
         var propertyName = codeMethod.AccessedProperty?.Name.ToFirstCharacterLowerCase();
         var isBackingStoreGetter = codeMethod.AccessedProperty?.Kind == CodePropertyKind.BackingStore;
-        if (UseBackingStore && !isBackingStoreGetter && parentClass.GetBackingStoreProperty() is CodeProperty backingStoreProperty && backingStoreProperty.Getter != null)
-            writer.WriteLine($"return $this->{backingStoreProperty.Getter!.Name}()->get('{propertyName}');");
+        if (UseBackingStore
+            && !isBackingStoreGetter
+            && parentClass.GetBackingStoreProperty() is CodeProperty backingStoreProperty
+            && backingStoreProperty.Getter != null
+            && codeMethod.AccessedProperty is CodeProperty accessedProperty
+            && accessedProperty.Type is CodeType propertyType)
+        {
+            writer.WriteLine($"$val = $this->{backingStoreProperty.Getter!.Name}()->get('{propertyName}');");
+            var propertyTypeName = conventions.TranslateType(propertyType);
+            var isScalarType = conventions.ScalarTypes.Contains(propertyTypeName);
+            if (propertyType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None)
+            {
+                writer.StartBlock($"if (is_null($val) || {(isScalarType ? $"is_{propertyTypeName}($val)" : $"$val instanceof {propertyTypeName}")}) {{");
+            }
+            else if (accessedProperty.Kind == CodePropertyKind.AdditionalData)
+            {
+                writer.StartBlock($"if (is_null($val) || is_array($val)) {{");
+                writer.WriteLine($"/** @var array<string, mixed>|null $val */");
+            }
+            else
+            {
+                writer.StartBlock("if (is_array($val) || is_null($val)) {");
+                writer.WriteLine($"TypeUtils::validateCollectionValues($val, {(isScalarType ? $"'{propertyTypeName}'" : $"{propertyTypeName}::class")});");
+                writer.WriteLine($"/** @var array<{propertyTypeName}>|null $val */");
+            }
+            writer.WriteLine("return $val;");
+            writer.CloseBlock();
+            writer.WriteLine($"throw new \\UnexpectedValueException(\"Invalid type found in backing store for '{propertyName}'\");");
+        }
         else
+        {
             writer.WriteLine($"return $this->{propertyName};");
+        }
     }
 
     private void WriteRequestBuilderWithParametersBody(string returnType, LanguageWriter writer, CodeMethod codeMethod)
@@ -526,13 +592,32 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             codeProperties
                 .Where(static x => !x.ExistsInBaseType && x.Setter != null)
                 .OrderBy(static x => x.Name)
-                .Select(x =>
-                    $"'{x.WireName}' => fn(ParseNode $n) => $o->{x.Setter!.Name.ToFirstCharacterLowerCase()}($n->{GetDeserializationMethodName(x.Type, method)}),")
                 .ToList()
-                .ForEach(x => writer.WriteLine(x));
+                .ForEach(x => WriteDeserializerPropertyCallback(x, method, writer));
         }
         writer.DecreaseIndent();
         writer.WriteLine(extendsModelClass ? "]);" : "];");
+    }
+
+    private void WriteDeserializerPropertyCallback(CodeProperty property, CodeMethod method, LanguageWriter writer)
+    {
+        if (property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None
+            && property.Type is CodeType currentType
+            && currentType.TypeDefinition == null)
+        {
+            writer.StartBlock($"'{property.WireName}' => function (ParseNode $n) {{");
+            writer.WriteLine("$val = $n->getCollectionOfPrimitiveValues();");
+            writer.StartBlock($"if (is_array($val)) {{");
+            var type = conventions.TranslateType(property.Type);
+            writer.WriteLine($"TypeUtils::validateCollectionValues($val, '{type}');");
+            writer.CloseBlock();
+            writer.WriteLine($"/** @var array<{type}>|null $val */");
+            writer.WriteLine($"$this->{property.Setter!.Name.ToFirstCharacterLowerCase()}($val);");
+            writer.DecreaseIndent();
+            writer.WriteLine("},");
+            return;
+        }
+        writer.WriteLine($"'{property.WireName}' => fn(ParseNode $n) => $o->{property.Setter!.Name.ToFirstCharacterLowerCase()}($n->{GetDeserializationMethodName(property.Type, method)}),");
     }
 
     private static void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
