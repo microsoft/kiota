@@ -99,14 +99,28 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     }
     private string ResolveUniquePropertyName(string name)
     {
-        if (StartBlock.FindPropertyByNameInTypeHierarchy(name) == null)
+        if (FindPropertyByNameInTypeHierarchy(name) == null)
             return name;
-        if (StartBlock.FindPropertyByNameInTypeHierarchy(Name + name) == null)
+        if (FindPropertyByNameInTypeHierarchy(Name + name) == null)
             return Name + name;
         var i = 0;
-        while (StartBlock.FindPropertyByNameInTypeHierarchy(Name + name + i) != null)
+        while (FindPropertyByNameInTypeHierarchy(Name + name + i) != null)
             i++;
         return Name + name + i;
+    }
+    private CodeProperty? FindPropertyByNameInTypeHierarchy(string propertyName)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(propertyName);
+
+        if (FindChildByName<CodeProperty>(propertyName, findInChildElements: false) is CodeProperty result)
+        {
+            return result;
+        }
+        if (ParentClass is CodeClass currentParentClass)
+        {
+            return currentParentClass.FindPropertyByNameInTypeHierarchy(propertyName);
+        }
+        return default;
     }
     public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
     {
@@ -200,24 +214,6 @@ public class ClassDeclaration : ProprietableBlockDeclaration
                 return currentProperty;
             else
                 return currentParentClass.StartBlock.GetOriginalPropertyDefinedFromBaseType(serializationName);
-        return default;
-    }
-    public CodeProperty? FindPropertyByNameInTypeHierarchy(string propertyName)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(propertyName);
-
-        if (Parent is CodeClass thisClass)
-        {
-            if (thisClass.FindChildByName<CodeProperty>(propertyName, findInChildElements: false) is CodeProperty result)
-            {
-                return result;
-            }
-        }
-        if (inherits is CodeType currentInheritsType &&
-            currentInheritsType.TypeDefinition is CodeClass currentParentClass)
-        {
-            return currentParentClass.StartBlock.FindPropertyByNameInTypeHierarchy(propertyName);
-        }
         return default;
     }
     public bool InheritsFrom(CodeClass candidate)
