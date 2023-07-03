@@ -6109,7 +6109,8 @@ components:
         Assert.Equal("@type", atType.WireName);
         var subtypeClass = codeModel.FindChildByName<CodeClass>("Subtype");
         Assert.NotNull(subtypeClass);
-        var type = subtypeClass.FindChildByName<CodeProperty>("Subtypetype");
+        var type = subtypeClass.FindChildByName<CodeProperty>("SubtypeType");
         Assert.Equal("type", type.WireName);
+        Assert.Equal("SubtypeType", type.Name);
     }
 }

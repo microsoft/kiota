@@ -101,12 +101,13 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         if (FindPropertyByNameInTypeHierarchy(name) == null)
             return name;
-        if (FindPropertyByNameInTypeHierarchy(Name + name) == null)
-            return Name + name;
+        var nameWithTypeName = Name + name.ToFirstCharacterUpperCase();
+        if (FindPropertyByNameInTypeHierarchy(nameWithTypeName) == null)
+            return nameWithTypeName;
         var i = 0;
-        while (FindPropertyByNameInTypeHierarchy(Name + name + i) != null)
+        while (FindPropertyByNameInTypeHierarchy(nameWithTypeName + i) != null)
             i++;
-        return Name + name + i;
+        return nameWithTypeName + i;
     }
     private CodeProperty? FindPropertyByNameInTypeHierarchy(string propertyName)
     {
