@@ -306,7 +306,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             }
             writer.CloseBlock("} as Record<string, ParsableFactory<Parsable>>;");
         }
-        writer.WriteLine($"return this.requestAdapter?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler, {errorMappingVarName}) ?? Promise.reject(new Error('request adapter is null'));");
+        writer.WriteLine($"return this.requestAdapter.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} {errorMappingVarName});");
     }
 
     private string GetTypeFactory(bool isVoid, bool isStream, CodeMethod codeElement, LanguageWriter writer)
