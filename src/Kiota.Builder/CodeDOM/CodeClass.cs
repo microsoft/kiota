@@ -70,11 +70,8 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         if (!properties.Any())
             throw new ArgumentOutOfRangeException(nameof(properties));
 
-        var result = new CodeProperty[properties.Length];
-
-        for (var i = 0; i < properties.Length; i++)
+        return properties.Select(property =>
         {
-            var property = properties[i];
             if (property.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter))
             {
                 var original = GetOriginalPropertyDefinedFromBaseType(property.WireName);
@@ -93,9 +90,8 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
                     property.OriginalPropertyFromBaseType = original!;
                 }
             }
-            result[i] = base.AddProperty(new[] { property }).First();
-        }
-        return result;
+            return base.AddProperty(new[] { property }).First();
+        }).ToArray();
     }
     private string ResolveUniquePropertyName(string name)
     {
