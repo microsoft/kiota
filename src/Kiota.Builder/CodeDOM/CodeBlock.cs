@@ -138,22 +138,6 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
             }
         return default;
     }
-    public T? FindChild<T>(Predicate<T> match, bool findInChildElements = true) where T : ICodeElement
-    {
-        if (!InnerChildElements.Any())
-            return default;
-
-        if (InnerChildElements.Select(x => x.Value).Where(x => x is T castX && match(castX)).FirstOrDefault() is T result)
-            return result;
-        if (findInChildElements)
-            foreach (var childElement in InnerChildElements.Values.OfType<IBlock>())
-            {
-                var childResult = childElement.FindChild<T>(match);
-                if (childResult != null)
-                    return childResult;
-            }
-        return default;
-    }
 }
 public class BlockDeclaration : CodeTerminal
 {
