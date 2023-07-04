@@ -109,10 +109,8 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
             var nameToRemove = existingProperty.IsNameEscaped ? existingProperty.Name : currentProperty.Name;
             existingProperty.Name = existingProperty.SerializationName;
             currentProperty.Name = currentProperty.SerializationName;
-            InnerChildElements.TryRemove(nameToRemove, out _);
-            InnerChildElements.TryAdd(existingProperty.Name, existingProperty);
-            InnerChildElements.TryAdd(currentProperty.Name, currentProperty);
-            return existingProperty.IsNameEscaped ? (T)returnedValue : element;
+            if (InnerChildElements.TryRemove(nameToRemove, out _) && InnerChildElements.TryAdd(existingProperty.Name, existingProperty) && InnerChildElements.TryAdd(currentProperty.Name, currentProperty))
+                return existingProperty.IsNameEscaped ? (T)returnedValue : element;
         }
 
         if (element.GetType() == returnedValue.GetType())
