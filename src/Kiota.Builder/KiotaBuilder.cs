@@ -2038,7 +2038,7 @@ public partial class KiotaBuilder
             prop.SerializationName = parameter.Name.SanitizeParameterNameForUrlTemplate();
         }
 
-        if (!parameterClass.ContainsMember(parameter.Name))
+        if (!parameterClass.ContainsPropertyWithWireName(prop.WireName))
         {
             parameterClass.AddProperty(prop);
         }

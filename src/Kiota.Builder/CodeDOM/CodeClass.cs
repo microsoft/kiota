@@ -128,9 +128,13 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         if (FindPropertyByNameInTypeHierarchy(name) == null)
             return name;
-        var nameWithTypeName = Name + name.ToFirstCharacterUpperCase();
-        if (FindPropertyByNameInTypeHierarchy(nameWithTypeName) == null)
-            return nameWithTypeName;
+        // the CodeClass.Name is not very useful as prefix for the property name, so keep the original name and add a number
+        var nameWithTypeName = Kind == CodeClassKind.QueryParameters ? name : Name + name.ToFirstCharacterUpperCase();
+        if (Kind != CodeClassKind.QueryParameters)
+        {
+            if (FindPropertyByNameInTypeHierarchy(nameWithTypeName) == null)
+                return nameWithTypeName;
+        }
         var i = 0;
         while (FindPropertyByNameInTypeHierarchy(nameWithTypeName + i) != null)
             i++;
@@ -176,7 +180,10 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         }
         return default;
     }
-
+    public bool ContainsPropertyWithWireName(string wireName)
+    {
+        return PropertiesByWireName.ContainsKey(wireName);
+    }
     public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
     {
         if (codeClasses == null || codeClasses.Any(x => x == null))

@@ -6113,4 +6113,47 @@ components:
         Assert.Equal("type", type.WireName);
         Assert.Equal("SubtypeType", type.Name);
     }
+    [Fact]
+    public async Task CleanupSymbolNameDoesNotCauseNameConflictsInQueryParameters()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: Example
+  description: Example
+  version: 1.0.1
+servers:
+  - url: https://example.org
+paths:
+  /directoryObject:
+    get:
+      parameters:
+        - name: $select
+          in: query
+          schema:
+            type: string
+        - name: select
+          in: query
+          schema:
+            type: int64
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var parametersClass = codeModel.FindChildByName<CodeClass>("directoryObjectRequestBuilderGetQueryParameters");
+        Assert.NotNull(parametersClass);
+        var dollarSelect = parametersClass.FindChildByName<CodeProperty>("Select");
+        Assert.Equal("%24select", dollarSelect.WireName);
+        Assert.Equal("string", dollarSelect.Type.Name);
+        var select = parametersClass.FindChildByName<CodeProperty>("select0");
+        Assert.Equal("select", select.WireName);
+        Assert.Equal("int64", select.Type.Name);
+    }
 }
