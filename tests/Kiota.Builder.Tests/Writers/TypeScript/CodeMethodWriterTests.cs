@@ -185,7 +185,6 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("\"403\": createError403FromDiscriminatorValue,", result);
         Assert.Contains("as Record<string, ParsableFactory<Parsable>>", result);
         Assert.Contains("sendAsync", result);
-        Assert.Contains("Promise.reject", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

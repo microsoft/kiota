@@ -16,6 +16,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            RemoveHandlerFromRequestBuilder(generatedCode);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), static x => $"{x}Escaped");
             ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
@@ -194,8 +195,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsPackageName, "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             AbstractionsPackageName, "HttpMethod", "RequestInformation", "RequestOption"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            AbstractionsPackageName, "ResponseHandler"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             AbstractionsPackageName, "SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
