@@ -172,7 +172,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
 
         if (PropertiesByWireName.TryGetValue(wireName, out var result))
             return result;
-        return InnerChildElements.Values.OfType<CodeClass>().Select(x => x.FindPropertyByWireName(wireName)).Where(x => x != null).FirstOrDefault();
+        return InnerChildElements.Values.OfType<CodeClass>().Select(x => x.FindPropertyByWireName(wireName)).OfType<CodeProperty>().FirstOrDefault();
     }
     public bool ContainsPropertyWithWireName(string wireName)
     {
