@@ -77,7 +77,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             var property = properties[i];
             if (property.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter))
             {
-                var original = StartBlock.GetOriginalPropertyDefinedFromBaseType(property.WireName);
+                var original = GetOriginalPropertyDefinedFromBaseType(property.WireName);
                 if (original == null)
                 {
                     var uniquePropertyName = ResolveUniquePropertyName(property.Name);
@@ -121,6 +121,17 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         {
             return currentParentClass.FindPropertyByNameInTypeHierarchy(propertyName);
         }
+        return default;
+    }
+    private CodeProperty? GetOriginalPropertyDefinedFromBaseType(string serializationName)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(serializationName);
+
+        if (ParentClass is CodeClass currentParentClass)
+            if (currentParentClass.FindChild<CodeProperty>(x => x.WireName == serializationName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
+                return currentProperty;
+            else
+                return currentParentClass.GetOriginalPropertyDefinedFromBaseType(serializationName);
         return default;
     }
     public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
@@ -203,19 +214,6 @@ public class ClassDeclaration : ProprietableBlockDeclaration
             EnsureElementsAreChildren(value);
             inherits = value;
         }
-    }
-
-    public CodeProperty? GetOriginalPropertyDefinedFromBaseType(string serializationName)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(serializationName);
-
-        if (inherits is CodeType currentInheritsType &&
-            currentInheritsType.TypeDefinition is CodeClass currentParentClass)
-            if (currentParentClass.FindChild<CodeProperty>(x => x.WireName == serializationName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
-                return currentProperty;
-            else
-                return currentParentClass.StartBlock.GetOriginalPropertyDefinedFromBaseType(serializationName);
-        return default;
     }
     public bool InheritsFrom(CodeClass candidate)
     {
