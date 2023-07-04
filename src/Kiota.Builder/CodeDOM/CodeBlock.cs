@@ -43,7 +43,7 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
         if (elements == null) return;
         RemoveChildElementByName(elements.Select(x => x.Name).ToArray());
     }
-    public void RemoveChildElementByName(params string[] names)
+    public virtual void RemoveChildElementByName(params string[] names)
     {
         if (names == null) return;
 

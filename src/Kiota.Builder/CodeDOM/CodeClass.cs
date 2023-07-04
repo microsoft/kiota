@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -32,6 +33,7 @@ public enum CodeClassKind
 /// </summary>
 public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition, IDiscriminatorInformationHolder, IDeprecableElement
 {
+    protected ConcurrentDictionary<string, CodeProperty> PropertiesByWireName { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
     public bool IsErrorDefinition
     {
         get; set;
@@ -90,8 +92,21 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
                     property.OriginalPropertyFromBaseType = original!;
                 }
             }
-            return base.AddProperty(new[] { property }).First();
+            CodeProperty result = base.AddProperty(new[] { property }).First();
+            return PropertiesByWireName.GetOrAdd(result.WireName, result);
         }).ToArray();
+    }
+    public override void RemoveChildElementByName(params string[] names)
+    {
+        if (names == null) return;
+
+        foreach (var name in names)
+        {
+            if (InnerChildElements.TryRemove(name, out var removedElement) && removedElement is CodeProperty removedProperty)
+            {
+                PropertiesByWireName.TryRemove(removedProperty.WireName, out _);
+            }
+        }
     }
     private string ResolveUniquePropertyName(string name)
     {
@@ -124,12 +139,28 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         ArgumentException.ThrowIfNullOrEmpty(serializationName);
 
         if (ParentClass is CodeClass currentParentClass)
-            if (currentParentClass.FindChild<CodeProperty>(x => x.WireName == serializationName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
+            if (currentParentClass.FindPropertyByWireName<CodeProperty>(serializationName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
                 return currentProperty;
             else
                 return currentParentClass.GetOriginalPropertyDefinedFromBaseType(serializationName);
         return default;
     }
+    private CodeProperty? FindPropertyByWireName<T>(string wireName)
+    {
+        if (!PropertiesByWireName.Any())
+            return default;
+
+        if (PropertiesByWireName.TryGetValue(wireName, out var result))
+            return result;
+        foreach (var childElement in InnerChildElements.Values.OfType<CodeClass>())
+        {
+            var childResult = childElement.FindPropertyByWireName<T>(wireName);
+            if (childResult != null)
+                return childResult;
+        }
+        return default;
+    }
+
     public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
     {
         if (codeClasses == null || codeClasses.Any(x => x == null))
