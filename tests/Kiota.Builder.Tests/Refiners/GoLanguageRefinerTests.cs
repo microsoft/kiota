@@ -207,6 +207,37 @@ public class GoLanguageRefinerTests
         Assert.Equal(inter, executorMethodReturnType.TypeDefinition);
     }
     [Fact]
+    public async Task EnsuresMethodNamesAreNotOverLoaded()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        model.AddProperty(new CodeProperty
+        {
+            Name = "additional_data",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = model.Name, TypeDefinition = model, },
+        },new CodeProperty
+        {
+            Name = "property_a",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = model.Name, TypeDefinition = model, },
+        },new CodeProperty
+        {
+            Name = "propertyA",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = model.Name, TypeDefinition = model, },
+        });
+
+        Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+
+        Assert.Equal("SetProperty_a", model.FindChildByName<CodeMethod>("set-property_a").Name);
+        Assert.Equal("SetPropertyA", model.FindChildByName<CodeMethod>("set-propertyA").Name);
+    }
+    [Fact]
     public async Task ReplacesModelsByInnerInterfaces()
     {
         var model = root.AddClass(new CodeClass
