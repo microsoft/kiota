@@ -1683,7 +1683,7 @@ public partial class KiotaBuilder
         var classesDirectlyInUse = modelsDirectlyInUse.OfType<CodeClass>().ToHashSet();
         var allModelClassesIndex = GetDerivationIndex(GetAllModels(clientNamespace).OfType<CodeClass>());
         var derivedClassesInUse = GetDerivedDefinitions(allModelClassesIndex, classesDirectlyInUse.ToArray());
-        var baseOfModelsInUse = classesDirectlyInUse.SelectMany(x => x.GetInheritanceTree(false, false));
+        var baseOfModelsInUse = classesDirectlyInUse.SelectMany(static x => x.GetInheritanceTree(false, false));
         var classesInUse = derivedClassesInUse.Union(classesDirectlyInUse).Union(baseOfModelsInUse).ToHashSet();
         var reusableClassesDerivationIndex = GetDerivationIndex(reusableModels.OfType<CodeClass>());
         var reusableClassesInheritanceIndex = GetInheritanceIndex(allModelClassesIndex);
@@ -1745,7 +1745,7 @@ public partial class KiotaBuilder
         var currentDerived = modelsInUse.SelectMany(x => models.TryGetValue(x, out var res) ? res : Enumerable.Empty<CodeClass>()).ToArray();
         return currentDerived.Union(currentDerived.SelectMany(x => GetDerivedDefinitions(models, new CodeClass[] { x })));
     }
-    private static IEnumerable<CodeElement> GetRelatedDefinitions(CodeElement currentElement, ConcurrentDictionary<CodeClass, List<CodeClass>> derivedIndex, ConcurrentDictionary<CodeClass, List<CodeClass>> inheritanceIndex, ConcurrentDictionary<CodeElement, bool>? visited = null)
+    private static IEnumerable<CodeElement> GetRelatedDefinitions(CodeElement currentElement, ConcurrentDictionary<CodeClass, List<CodeClass>> derivedIndex, ConcurrentDictionary<CodeClass, List<CodeClass>> inheritanceIndex, ConcurrentDictionary<CodeElement, bool>? visited = null, bool includeDerivedTypes = true)
     {
         visited ??= new();
         if (currentElement is not CodeClass currentClass || !visited.TryAdd(currentClass, true)) return Enumerable.Empty<CodeElement>();
@@ -1755,13 +1755,17 @@ public partial class KiotaBuilder
                             .Where(static x => x is CodeClass || x is CodeEnum)
                             .SelectMany(x => x is CodeClass classDefinition ?
                                             (inheritanceIndex.TryGetValue(classDefinition, out var res) ? res : Enumerable.Empty<CodeClass>())
-                                                .Union(GetDerivedDefinitions(derivedIndex, new CodeClass[] { classDefinition }))
+                                                .Union(includeDerivedTypes ? GetDerivedDefinitions(derivedIndex, new CodeClass[] { classDefinition }) : Enumerable.Empty<CodeClass>())
                                                 .Union(new[] { classDefinition })
                                                 .OfType<CodeElement>() :
                                             new[] { x })
                             .Distinct()
                             .ToArray();
-        return propertiesDefinitions.Union(propertiesDefinitions.SelectMany(x => GetRelatedDefinitions(x, derivedIndex, inheritanceIndex, visited))).ToArray();
+        var propertiesParentTypes = propertiesDefinitions.OfType<CodeClass>().SelectMany(static x => x.GetInheritanceTree(false, false)).ToArray();
+        return propertiesDefinitions
+                .Union(propertiesParentTypes)
+                .Union(propertiesParentTypes.SelectMany(x => GetRelatedDefinitions(x, derivedIndex, inheritanceIndex, visited, false)))
+                .Union(propertiesDefinitions.SelectMany(x => GetRelatedDefinitions(x, derivedIndex, inheritanceIndex, visited))).ToArray();
     }
     private IEnumerable<CodeNamespace> GetAllNamespaces(CodeNamespace currentNamespace)
     {
