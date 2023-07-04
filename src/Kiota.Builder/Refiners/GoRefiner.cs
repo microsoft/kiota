@@ -100,7 +100,8 @@ public class GoRefiner : CommonLanguageRefiner
                 _configuration.UsesBackingStore,
                 false,
                 "Get",
-                "Set");
+                "Set",
+                supportsOverloading: false);
             AddConstructorsForDefaultValues(
                 generatedCode,
                 true,
