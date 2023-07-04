@@ -76,23 +76,22 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         {
             if (property.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter))
             {
-                var original = GetOriginalPropertyDefinedFromBaseType(property.WireName);
-                if (original == null)
-                {
-                    var uniquePropertyName = ResolveUniquePropertyName(property.Name);
-                    if (uniquePropertyName != property.Name && String.IsNullOrEmpty(property.SerializationName))
-                        property.SerializationName = property.Name;
-                    property.Name = uniquePropertyName;
-                }
-                else
+                if (GetOriginalPropertyDefinedFromBaseType(property.WireName) is CodeProperty original)
                 {
                     // the property already exists in a parent type, use its name
                     property.Name = original.Name;
                     property.SerializationName = original.SerializationName;
-                    property.OriginalPropertyFromBaseType = original!;
+                    property.OriginalPropertyFromBaseType = original;
+                }
+                else
+                {
+                    var uniquePropertyName = ResolveUniquePropertyName(property.Name);
+                    if (!uniquePropertyName.Equals(property.Name, StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(property.SerializationName))
+                        property.SerializationName = property.Name;
+                    property.Name = uniquePropertyName;
                 }
             }
-            CodeProperty result = base.AddProperty(new[] { property }).First();
+            var result = base.AddProperty(new[] { property }).First();
             return PropertiesByWireName.GetOrAdd(result.WireName, result);
         }).ToArray();
     }
@@ -130,11 +129,8 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             return name;
         // the CodeClass.Name is not very useful as prefix for the property name, so keep the original name and add a number
         var nameWithTypeName = Kind == CodeClassKind.QueryParameters ? name : Name + name.ToFirstCharacterUpperCase();
-        if (Kind != CodeClassKind.QueryParameters)
-        {
-            if (FindPropertyByNameInTypeHierarchy(nameWithTypeName) == null)
-                return nameWithTypeName;
-        }
+        if (Kind != CodeClassKind.QueryParameters && FindPropertyByNameInTypeHierarchy(nameWithTypeName) == null)
+            return nameWithTypeName;
         var i = 0;
         while (FindPropertyByNameInTypeHierarchy(nameWithTypeName + i) != null)
             i++;
