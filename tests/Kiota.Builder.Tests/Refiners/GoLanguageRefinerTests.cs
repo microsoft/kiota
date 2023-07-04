@@ -219,12 +219,12 @@ public class GoLanguageRefinerTests
             Name = "additional_data",
             Kind = CodePropertyKind.Custom,
             Type = new CodeType { Name = model.Name, TypeDefinition = model, },
-        },new CodeProperty
+        }, new CodeProperty
         {
             Name = "property_a",
             Kind = CodePropertyKind.Custom,
             Type = new CodeType { Name = model.Name, TypeDefinition = model, },
-        },new CodeProperty
+        }, new CodeProperty
         {
             Name = "propertyA",
             Kind = CodePropertyKind.Custom,
