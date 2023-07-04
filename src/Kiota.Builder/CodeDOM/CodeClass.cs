@@ -159,26 +159,20 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         ArgumentException.ThrowIfNullOrEmpty(serializationName);
 
         if (ParentClass is CodeClass currentParentClass)
-            if (currentParentClass.FindPropertyByWireName<CodeProperty>(serializationName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
+            if (currentParentClass.FindPropertyByWireName(serializationName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
                 return currentProperty;
             else
                 return currentParentClass.GetOriginalPropertyDefinedFromBaseType(serializationName);
         return default;
     }
-    private CodeProperty? FindPropertyByWireName<T>(string wireName)
+    private CodeProperty? FindPropertyByWireName(string wireName)
     {
         if (!PropertiesByWireName.Any())
             return default;
 
         if (PropertiesByWireName.TryGetValue(wireName, out var result))
             return result;
-        foreach (var childElement in InnerChildElements.Values.OfType<CodeClass>())
-        {
-            var childResult = childElement.FindPropertyByWireName<T>(wireName);
-            if (childResult != null)
-                return childResult;
-        }
-        return default;
+        return InnerChildElements.Values.OfType<CodeClass>().Select(x => x.FindPropertyByWireName(wireName)).Where(x => x != null).FirstOrDefault();
     }
     public bool ContainsPropertyWithWireName(string wireName)
     {
