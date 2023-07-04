@@ -1512,7 +1512,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                     .SelectMany(static x => x.Parameters)
                                                     .Where(x => x.IsOfKind(CodeParameterKind.RequestConfiguration) && x.Type is CodeType type && type.TypeDefinition == currentClass)
                                                     .ToArray();
-            var genericTypeParamValue = currentClass.Properties.OfKind(CodePropertyKind.QueryParameters)?.Type as CodeType ?? defaultValueForGenericTypeParam;
+            var genericTypeParamValue = currentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.QueryParameters)?.Type as CodeType ?? defaultValueForGenericTypeParam;
             if (configurationParameterTypeUsing != null && genericTypeParamValue != null && configurationParameters.Any())
             {
                 parentClass.AddUsing(configurationParameterTypeUsing);

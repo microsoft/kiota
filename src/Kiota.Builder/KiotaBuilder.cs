@@ -1709,7 +1709,7 @@ public partial class KiotaBuilder
         var result = new ConcurrentDictionary<CodeClass, List<CodeClass>>();
         Parallel.ForEach(models, x =>
         {
-            if (x.ParentClass is CodeClass parentClass && !result.TryAdd(parentClass, new() { x }))
+            if (x.BaseClass is CodeClass parentClass && !result.TryAdd(parentClass, new() { x }))
                 result[parentClass].Add(x);
         });
         return result;

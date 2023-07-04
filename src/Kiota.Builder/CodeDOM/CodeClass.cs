@@ -72,27 +72,25 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         if (!properties.Any())
             throw new ArgumentOutOfRangeException(nameof(properties));
 
-        Array.ForEach(properties, property =>
+        foreach (var property in properties.OfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter))
         {
-            if (property.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter))
+            if (GetOriginalPropertyDefinedFromBaseType(property.WireName) is CodeProperty original)
             {
-                if (GetOriginalPropertyDefinedFromBaseType(property.WireName) is CodeProperty original)
-                {
-                    // the property already exists in a parent type, use its name
-                    property.Name = original.Name;
-                    property.SerializationName = original.SerializationName;
-                    property.OriginalPropertyFromBaseType = original;
-                }
-                else
-                {
-                    var uniquePropertyName = ResolveUniquePropertyName(property.Name);
-                    if (!uniquePropertyName.Equals(property.Name, StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(property.SerializationName))
-                        property.SerializationName = property.Name;
-                    property.Name = uniquePropertyName;
-                }
+                // the property already exists in a parent type, use its name
+                property.Name = original.Name;
+                property.SerializationName = original.SerializationName;
+                property.OriginalPropertyFromBaseType = original;
             }
-        });
-        return base.AddProperty(properties).Select(x => PropertiesByWireName.GetOrAdd(x.WireName, x));
+            else
+            {
+                var uniquePropertyName = ResolveUniquePropertyName(property.Name);
+                if (!uniquePropertyName.Equals(property.Name, StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(property.SerializationName))
+                    property.SerializationName = property.Name;
+                property.Name = uniquePropertyName;
+            }
+            PropertiesByWireName.AddOrUpdate(property.WireName, _ => property, (_, _) => property);
+        }
+        return base.AddProperty(properties);
     }
     public override void RenameChildElement(string oldName, string newName)
     {
@@ -143,7 +141,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         {
             return result;
         }
-        if (ParentClass is CodeClass currentParentClass)
+        if (BaseClass is CodeClass currentParentClass)
         {
             return currentParentClass.FindPropertyByNameInTypeHierarchy(propertyName);
         }
@@ -153,7 +151,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         ArgumentException.ThrowIfNullOrEmpty(serializationName);
 
-        if (ParentClass is CodeClass currentParentClass)
+        if (BaseClass is CodeClass currentParentClass)
             if (currentParentClass.FindPropertyByWireName(serializationName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
                 return currentProperty;
             else
@@ -189,11 +187,11 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             throw new ArgumentOutOfRangeException(nameof(codeInterfaces));
         return AddRange(codeInterfaces);
     }
-    public CodeClass? ParentClass => StartBlock.Inherits?.TypeDefinition as CodeClass;
+    public CodeClass? BaseClass => StartBlock.Inherits?.TypeDefinition as CodeClass;
     public bool DerivesFrom(CodeClass codeClass)
     {
         ArgumentNullException.ThrowIfNull(codeClass);
-        var parent = ParentClass;
+        var parent = BaseClass;
         if (parent == null)
             return false;
         if (parent == codeClass)
@@ -202,7 +200,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     }
     public Collection<CodeClass> GetInheritanceTree(bool currentNamespaceOnly = false, bool includeCurrentClass = true)
     {
-        var parentClass = ParentClass;
+        var parentClass = BaseClass;
         if (parentClass == null || (currentNamespaceOnly && parentClass.GetImmediateParentOfType<CodeNamespace>() != GetImmediateParentOfType<CodeNamespace>()))
             if (includeCurrentClass)
                 return new() { this };
@@ -214,7 +212,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     }
     public CodeClass? GetGreatestGrandparent(CodeClass? startClassToSkip = default)
     {
-        var parentClass = ParentClass;
+        var parentClass = BaseClass;
         if (parentClass == null)
             return startClassToSkip != null && startClassToSkip == this ? null : this;
         // we don't want to return the current class if this is the start node in the inheritance tree and doesn't have parent

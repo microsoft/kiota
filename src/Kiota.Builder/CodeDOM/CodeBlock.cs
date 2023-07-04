@@ -74,6 +74,7 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
         if (returnedValue == element)
             return element;
         if (element is CodeMethod currentMethod)
+        {
             if (currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) &&
                 returnedValue is CodeProperty cProp &&
                 cProp.IsOfKind(CodePropertyKind.RequestBuilder) &&
@@ -98,6 +99,22 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
                         return result2;
                 }
             }
+        }
+        else if (element is CodeProperty currentProperty &&
+            returnedValue is CodeProperty existingProperty &&
+            currentProperty.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
+            existingProperty.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
+            (existingProperty.IsNameEscaped || currentProperty.IsNameEscaped))
+        {
+            var nameToRemove = existingProperty.IsNameEscaped ? existingProperty.Name : currentProperty.Name;
+            existingProperty.Name = existingProperty.SerializationName;
+            currentProperty.Name = currentProperty.SerializationName;
+            InnerChildElements.TryRemove(nameToRemove, out _);
+            InnerChildElements.TryAdd(existingProperty.Name, existingProperty);
+            InnerChildElements.TryAdd(currentProperty.Name, currentProperty);
+            return existingProperty.IsNameEscaped ? (T)returnedValue : element;
+        }
+
         if (element.GetType() == returnedValue.GetType())
             return (T)returnedValue;
 

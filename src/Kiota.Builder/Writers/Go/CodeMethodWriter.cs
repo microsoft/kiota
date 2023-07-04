@@ -493,7 +493,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             var newMethodName = conventions.GetImportedStaticMethodName(parentClass.StartBlock.Inherits, parentClass);
             if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
                 currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter &&
-                parentClass.Properties.OfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
+                parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
             {
                 var pathParametersValue = ", map[string]string{}";
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
@@ -535,7 +535,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) && currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
             currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam &&
-            parentClass.Properties.OfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
+            parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
             conventions.AddParametersAssignment(writer,
                                                     pathParametersParam.Type.AllTypes.FirstOrDefault(),
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
