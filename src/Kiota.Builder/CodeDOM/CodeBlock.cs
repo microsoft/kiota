@@ -30,7 +30,7 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
             return InnerChildElements.Values;
         return new CodeElement[] { StartBlock, EndBlock }.Union(InnerChildElements.Values);
     }
-    public void RenameChildElement(string oldName, string newName)
+    public virtual void RenameChildElement(string oldName, string newName)
     {
         if (InnerChildElements.TryRemove(oldName, out var element))
         {

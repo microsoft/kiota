@@ -96,6 +96,22 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             return PropertiesByWireName.GetOrAdd(result.WireName, result);
         }).ToArray();
     }
+    public override void RenameChildElement(string oldName, string newName)
+    {
+        if (InnerChildElements.TryRemove(oldName, out var element))
+        {
+            if (element is CodeProperty removedProperty)
+            {
+                PropertiesByWireName.TryRemove(removedProperty.WireName, out _);
+            }
+            element.Name = newName;
+            InnerChildElements.TryAdd(newName, element);
+            if (element is CodeProperty propertyToAdd)
+            {
+                PropertiesByWireName.TryAdd(propertyToAdd.WireName, propertyToAdd);
+            }
+        }
+    }
     public override void RemoveChildElementByName(params string[] names)
     {
         if (names == null) return;
