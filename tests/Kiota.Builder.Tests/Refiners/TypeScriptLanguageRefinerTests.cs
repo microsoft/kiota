@@ -103,7 +103,7 @@ public class TypeScriptLanguageRefinerTests
         Assert.Contains(deserializerFunction.Usings, x => x.Declaration.TypeDefinition == propertyFactoryMethod);
     }
     [Fact]
-    public async Task AddsExceptionInheritanceOnErrorClasses()
+    public async Task AddsExceptionImplementsOnErrorClasses()
     {
         var model = TestHelper.CreateModelClass("ErrorModel");
         model.IsErrorDefinition = true;
@@ -112,8 +112,8 @@ public class TypeScriptLanguageRefinerTests
 
         var declaration = model.StartBlock;
 
-        Assert.Contains("ApiError", declaration.Usings.Select(x => x.Name));
-        Assert.Equal("ApiError", declaration.Inherits.Name);
+        Assert.Contains("ApiError", declaration.Usings.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("ApiError", declaration.Implements.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
     }
     [Fact]
     public async Task InlineParentOnErrorClassesWhichAlreadyInherit()
@@ -140,52 +140,67 @@ public class TypeScriptLanguageRefinerTests
             }
         });
 
-        otherModel.AddMethod(
-        new CodeMethod
-        {
-            Name = "serializer",
-            Kind = CodeMethodKind.Serializer,
-            ReturnType = new CodeType
+        model.AddMethod(
+            new CodeMethod
             {
-                Name = "void"
-            }
-        });
-
-        otherModel.AddMethod(
-        new CodeMethod
-        {
-            Name = "deserializer",
-            Kind = CodeMethodKind.Deserializer,
-            ReturnType = new CodeType
+                Name = "serializer",
+                Kind = CodeMethodKind.Serializer,
+                ReturnType = new CodeType
+                {
+                    Name = "void"
+                }
+            },
+            new CodeMethod
             {
-                Name = "string"
-            }
-        });
+                Name = "deserializer",
+                Kind = CodeMethodKind.Deserializer,
+                ReturnType = new CodeType
+                {
+                    Name = "string"
+                }
+            });
         otherModel.AddMethod(
-        new CodeMethod
-        {
-            Name = "otherMethod",
-            Kind = CodeMethodKind.RequestGenerator,
-            ReturnType = new CodeType
+            new CodeMethod
             {
-                Name = "string"
-            }
-        });
+                Name = "serializer",
+                Kind = CodeMethodKind.Serializer,
+                ReturnType = new CodeType
+                {
+                    Name = "void"
+                }
+            },
+            new CodeMethod
+            {
+                Name = "deserializer",
+                Kind = CodeMethodKind.Deserializer,
+                ReturnType = new CodeType
+                {
+                    Name = "string"
+                }
+            },
+            new CodeMethod
+            {
+                Name = "otherMethod",
+                Kind = CodeMethodKind.RequestGenerator,
+                ReturnType = new CodeType
+                {
+                    Name = "string"
+                }
+            });
         otherModel.AddUsing(
-        new CodeUsing
-        {
-            Name = "otherNs",
-        });
-        var declaration = model.StartBlock;
-        declaration.Inherits = new CodeType
+            new CodeUsing
+            {
+                Name = "otherNs",
+            });
+        model.StartBlock.Inherits = new CodeType
         {
             TypeDefinition = otherModel
         };
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
-        Assert.Contains(model.Properties, x => x.Name.Equals("otherProp"));
-        Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));
-        Assert.Contains(model.Usings, x => x.Name.Equals("otherNs"));
+        Assert.DoesNotContain("otherProp", model.Properties.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase); // we're not inlining since base error for TS is an interface
+        Assert.DoesNotContain("otherMethod", model.Methods.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
+        Assert.DoesNotContain("otherNs", model.Usings.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
     }
     [Fact]
     public async Task AddsUsingsForErrorTypesForRequestExecutor()

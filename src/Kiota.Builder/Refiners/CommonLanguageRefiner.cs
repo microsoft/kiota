@@ -986,30 +986,45 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         }
     }
-    protected static void AddParentClassToErrorClasses(CodeElement currentElement, string parentClassName, string parentClassNamespace, bool addNamespaceToInheritDeclaration = false)
+    protected static void AddParentClassToErrorClasses(CodeElement currentElement, string parentClassName, string parentClassNamespace, bool addNamespaceToInheritDeclaration = false, bool isInterface = false)
     {
         if (currentElement is CodeClass currentClass &&
             currentClass.IsErrorDefinition &&
             currentClass.StartBlock is ClassDeclaration declaration)
         {
-            if (declaration.Inherits is CodeElement parentElement)
+            if (isInterface)
             {
-                // Need to remove inheritance before fixing up the child elements
-                declaration.Inherits = null;
-                InlineParentClasses(currentClass, parentElement);
-            }
-
-            declaration.Inherits = new CodeType
-            {
-                Name = parentClassName,
-            };
-            if (addNamespaceToInheritDeclaration)
-            {
-                declaration.Inherits.TypeDefinition = new CodeType
+                declaration.AddImplements(new CodeType
                 {
-                    Name = parentClassNamespace,
-                    IsExternal = true,
+                    Name = parentClassName,
+                    TypeDefinition = new CodeType
+                    {
+                        Name = parentClassNamespace,
+                        IsExternal = true,
+                    }
+                });
+            }
+            else
+            {
+                if (declaration.Inherits is CodeElement parentElement)
+                {
+                    // Need to remove inheritance before fixing up the child elements
+                    declaration.Inherits = null;
+                    InlineParentClasses(currentClass, parentElement);
+                }
+
+                declaration.Inherits = new CodeType
+                {
+                    Name = parentClassName,
                 };
+                if (addNamespaceToInheritDeclaration)
+                {
+                    declaration.Inherits.TypeDefinition = new CodeType
+                    {
+                        Name = parentClassNamespace,
+                        IsExternal = true,
+                    };
+                }
             }
             declaration.AddUsings(new CodeUsing
             {
@@ -1021,7 +1036,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 }
             });
         }
-        CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace, addNamespaceToInheritDeclaration));
+        CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace, addNamespaceToInheritDeclaration, isInterface));
     }
     protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true, bool includeParentNamespace = false)
     {

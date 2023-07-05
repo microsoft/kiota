@@ -54,7 +54,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiError",
-                "@microsoft/kiota-abstractions"
+                "@microsoft/kiota-abstractions",
+                false,
+                true
             );
             AddGetterAndSetterMethods(generatedCode,
                 new() {
