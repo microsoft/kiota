@@ -99,11 +99,12 @@ public class GoRefiner : CommonLanguageRefiner
                 delegate(CodeElement element, string s)
                 {
                     var refinedName = s.ToPascalCase(UnderscoreArray);
-                    if (element.Parent is CodeClass parentClass && parentClass.FindChildByName<CodeProperty>(refinedName) is not null)
+                    if (element.Parent is CodeClass parentClass && 
+                        parentClass.FindChildByName<CodeProperty>(refinedName) is not null)
                     {
                         return s;
                     }
-                    return s.ToPascalCase(UnderscoreArray);
+                    return refinedName;
                 }, 
                 _configuration.UsesBackingStore,
                 false,
