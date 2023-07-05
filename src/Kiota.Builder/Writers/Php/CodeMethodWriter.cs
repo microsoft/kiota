@@ -696,7 +696,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             joinedParams = string.Join(", ", callParams);
         }
 
-        var returnType = conventions.TranslateType(codeElement.ReturnType);
+        var returnTypeName = conventions.TranslateType(codeElement.ReturnType);
         writer.WriteLine($"$requestInfo = $this->{generatorMethodName}({joinedParams});");
         writer.WriteLine("try {");
         writer.IncreaseIndent();
@@ -716,20 +716,24 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.WriteLine("];");
         }
 
-        var returnsVoid = returnType.Equals("void", StringComparison.OrdinalIgnoreCase);
-        var isStream = returnType.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase);
+        var returnsVoid = returnTypeName.Equals("void", StringComparison.OrdinalIgnoreCase);
+        var isStream = returnTypeName.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase);
         var isCollection = codeElement.ReturnType.IsCollection;
-        var methodName = GetSendRequestMethodName(returnsVoid, isStream, isCollection, returnType);
+        var isEnum = codeElement.ReturnType is CodeType returnType && returnType.TypeDefinition is CodeEnum;
+        var methodName = GetSendRequestMethodName(returnsVoid, isStream, isCollection, isEnum, returnTypeName);
         var returnTypeFactory = codeElement.ReturnType is CodeType rt && rt.TypeDefinition is CodeClass
-            ? $", [{returnType}::class, '{CreateDiscriminatorMethodName}']"
+            ? $", [{returnTypeName}::class, '{CreateDiscriminatorMethodName}']"
             : string.Empty;
         var returnWithCustomType =
-            !returnsVoid && string.IsNullOrEmpty(returnTypeFactory) && conventions.CustomTypes.Contains(returnType)
-                ? $", {returnType}::class"
+            !returnsVoid && string.IsNullOrEmpty(returnTypeFactory) && conventions.CustomTypes.Contains(returnTypeName)
+                ? $", {returnTypeName}::class"
                 : returnTypeFactory;
-        var finalReturn = string.IsNullOrEmpty(returnWithCustomType) && !returnsVoid
-            ? $", '{returnType}'"
+        var returnEnumType = codeElement.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeEnum
+            ? $", {returnTypeName}::class"
             : returnWithCustomType;
+        var finalReturn = string.IsNullOrEmpty(returnEnumType) && !returnsVoid
+            ? $", '{returnTypeName}'"
+            : returnEnumType;
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("Request adapter property not found");
         writer.WriteLine(
             $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}{finalReturn}, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
@@ -766,10 +770,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 writer.WriteLine($"ApiClientBuilder::{methodName}({module}::class);");
     }
 
-    protected string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
+    protected string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, bool isEnum, string returnType)
     {
         if (isVoid) return "sendNoContentAsync";
-        if (isStream || conventions.PrimitiveTypes.Contains(returnType))
+        if (isStream || isEnum || conventions.PrimitiveTypes.Contains(returnType))
             if (isCollection)
                 return "sendPrimitiveCollectionAsync";
             else
