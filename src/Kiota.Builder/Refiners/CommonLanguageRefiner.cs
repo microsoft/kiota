@@ -203,7 +203,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(current, x => ReplacePropertyNames(x, propertyKindsToReplace!, refineAccessorName));
     }
-    protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, Func<string, string> refineAccessorName, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_", bool supportsOverloading = true)
+    protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, Func<CodeElement, string, string> refineAccessorName, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_")
     {
         ArgumentNullException.ThrowIfNull(refineAccessorName);
         if (!(propertyKindsToAddAccessors?.Any() ?? true)) return;
@@ -223,11 +223,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
             var propertyOriginalName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
                                         .ToFirstCharacterLowerCase();
-            var accessorName = refineAccessorName(propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase());
-            if (!supportsOverloading && parentClass.FindChildByName<CodeProperty>(accessorName) is not null)
-            {
-                accessorName = propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase();
-            }
+            var accessorName = refineAccessorName(current, propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase());
+            
             currentProperty.Getter = parentClass.AddMethod(new CodeMethod
             {
                 Name = $"get-{accessorName}",
@@ -277,7 +274,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Type = (CodeTypeBase)currentProperty.Type.Clone(),
             });
         }
-        CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors!, refineAccessorName, removeProperty, parameterAsOptional, getterPrefix, setterPrefix, fieldPrefix, supportsOverloading));
+        CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors!, refineAccessorName, removeProperty, parameterAsOptional, getterPrefix, setterPrefix, fieldPrefix));
     }
     protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited, bool forceAdd = false, CodeClassKind[]? classKindsToExclude = null)
     {
