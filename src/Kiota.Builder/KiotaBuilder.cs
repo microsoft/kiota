@@ -702,7 +702,7 @@ public partial class KiotaBuilder
         CreateUrlManagement(codeClass, currentNode, isApiClientClass);
 
         if (rootNamespace != null)
-            Parallel.ForEach(currentNode.Children.Values, childNode =>
+            foreach (var childNode in currentNode.Children.Values)
             {
                 if (childNode.GetNodeNamespaceFromPath(config.ClientNamespaceName) is string targetNamespaceName &&
                     !string.IsNullOrEmpty(targetNamespaceName))
@@ -710,7 +710,7 @@ public partial class KiotaBuilder
                     var targetNamespace = rootNamespace.FindOrAddNamespace(targetNamespaceName);
                     CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
                 }
-            });
+            };
     }
     private static void CreateMethod(string propIdentifier, string propType, CodeClass codeClass, OpenApiUrlTreeNode currentNode)
     {
