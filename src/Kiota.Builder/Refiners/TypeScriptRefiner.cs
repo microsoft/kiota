@@ -61,7 +61,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
                 },
-                (_, s) => s.ToCamelCase(UnderscoreArray),
+                static (_, s) => s.ToCamelCase(UnderscoreArray),
                 _configuration.UsesBackingStore,
                 false,
                 string.Empty,

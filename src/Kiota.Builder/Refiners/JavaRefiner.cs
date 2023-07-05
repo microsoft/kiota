@@ -77,7 +77,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.BackingStore,
                 },
-                (_, s) => s.ToCamelCase(UnderscoreArray),
+                static (_, s) => s.ToCamelCase(UnderscoreArray),
                 _configuration.UsesBackingStore,
                 true,
                 "get",

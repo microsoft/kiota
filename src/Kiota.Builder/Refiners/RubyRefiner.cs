@@ -76,7 +76,7 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.BackingStore,
                 },
-                (_, s) => s.ToSnakeCase(),
+                static (_, s) => s.ToSnakeCase(),
                 _configuration.UsesBackingStore,
                 true,
                 string.Empty,
