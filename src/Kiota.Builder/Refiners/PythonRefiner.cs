@@ -80,7 +80,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
                 },
-                static s => s.ToSnakeCase(),
+                static (_, s) => s.ToSnakeCase(),
                 _configuration.UsesBackingStore,
                 false,
                 string.Empty,

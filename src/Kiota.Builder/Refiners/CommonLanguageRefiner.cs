@@ -203,7 +203,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(current, x => ReplacePropertyNames(x, propertyKindsToReplace!, refineAccessorName));
     }
-    protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, Func<string, string> refineAccessorName, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_")
+    protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, Func<CodeElement, string, string> refineAccessorName, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix, string fieldPrefix = "_")
     {
         ArgumentNullException.ThrowIfNull(refineAccessorName);
         if (!(propertyKindsToAddAccessors?.Any() ?? true)) return;
@@ -223,7 +223,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
             var propertyOriginalName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
                                         .ToFirstCharacterLowerCase();
-            var accessorName = refineAccessorName(propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase());
+            var accessorName = refineAccessorName(current, propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase());
+
             currentProperty.Getter = parentClass.AddMethod(new CodeMethod
             {
                 Name = $"get-{accessorName}",
