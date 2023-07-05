@@ -223,7 +223,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
             var propertyOriginalName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
                                         .ToFirstCharacterLowerCase();
-            var accessorName = refineAccessorName(current, propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase());
+            var accessorName = refineAccessorName(current, currentProperty.Name.ToFirstCharacterUpperCase());
 
             currentProperty.Getter = parentClass.AddMethod(new CodeMethod
             {
