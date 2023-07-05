@@ -772,7 +772,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
                 else
                 {
                     // Being here implies a new case to handle.
-                    var url = generatorMethod.Parent is CodeClass c ? c.Properties.OfKind(CodePropertyKind.UrlTemplate)?.Name : null;
+                    var url = generatorMethod.Parent is CodeClass c ? c.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate)?.Name : null;
                     if (string.IsNullOrWhiteSpace(url))
                     {
                         url = "N/A";

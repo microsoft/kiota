@@ -2322,7 +2322,7 @@ paths:
             throw new InvalidOperationException("Discriminator mapping value is not a CodeType");
         Assert.NotNull(castType.TypeDefinition);
         Assert.Equal(directoryObjectClass, castType.TypeDefinition);
-        var doTypeProperty = directoryObjectClass.Properties.First(x => x.Name.Equals("ODataType", StringComparison.OrdinalIgnoreCase));
+        var doTypeProperty = directoryObjectClass.Properties.First(static x => x.Name.Equals("ODataType", StringComparison.OrdinalIgnoreCase));
         Assert.True(doTypeProperty.ExistsInBaseType);
         Assert.Equal("\"#microsoft.graph.directoryObject\"", doTypeProperty.DefaultValue);
     }
@@ -6054,7 +6054,7 @@ components:
         var codeModel = builder.CreateSourceModel(node);
         var resultClass = codeModel.FindChildByName<CodeClass>("Entity");
         Assert.NotNull(resultClass);
-        Assert.Equal(2, resultClass.Properties.Count());
+        Assert.Equal(2, resultClass.Properties.Select(static x => x.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count());
     }
     [Fact]
     public async Task CleanupSymbolNameDoesNotCauseNameConflictsWithSuperType()

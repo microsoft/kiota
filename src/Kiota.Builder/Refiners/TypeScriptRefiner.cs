@@ -351,7 +351,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void CreateSeparateSerializers(CodeElement codeElement)
     {
-        if (codeElement is CodeClass codeClass && codeClass.Kind == CodeClassKind.Model)
+        if (codeElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model))
         {
             CreateSerializationFunctions(codeClass);
         }
@@ -361,9 +361,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void CreateSerializationFunctions(CodeClass modelClass)
     {
         var namespaceOfModel = modelClass.GetImmediateParentOfType<CodeNamespace>();
-        if (modelClass.Methods.FirstOrDefault(static x => x.Kind == CodeMethodKind.Serializer) is not CodeMethod serializerMethod || modelClass.Methods.FirstOrDefault(static x => x.Kind == CodeMethodKind.Deserializer) is not CodeMethod deserializerMethod)
+        if (modelClass.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.Serializer)) is not CodeMethod serializerMethod || modelClass.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.Deserializer)) is not CodeMethod deserializerMethod)
         {
-            throw new InvalidOperationException($"The refiner was unable to create local serializer/derserializer method for {modelClass.Name}");
+            throw new InvalidOperationException($"The refiner was unable to create local serializer/deserializer method for {modelClass.Name}");
         }
         serializerMethod.IsStatic = true;
         deserializerMethod.IsStatic = true;
@@ -437,7 +437,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentElement is CodeClass currentClass)
         {
-            if (currentClass.Kind == CodeClassKind.Model)
+            if (currentClass.IsOfKind(CodeClassKind.Model))
             {
                 var targetNS = currentClass.GetImmediateParentOfType<CodeNamespace>();
                 if (targetNS.Classes.FirstOrDefault(x => x == currentClass) == null)
@@ -523,9 +523,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (codeClass.Parent is not CodeNamespace parentNamespace)
             throw new InvalidOperationException($"Model class {codeClass}'s parent namespace is null");
-        var serializer = (parentNamespace?.FindChildByName<CodeFunction>($"{ModelSerializerPrefix}{codeClass.Name.ToFirstCharacterUpperCase()}")) ??
+        var serializer = parentNamespace.FindChildByName<CodeFunction>($"{ModelSerializerPrefix}{codeClass.Name.ToFirstCharacterUpperCase()}") ??
             throw new InvalidOperationException($"Serializer not found for {codeClass.Name}");
-        var deserializer = (parentNamespace?.FindChildByName<CodeFunction>($"{ModelDeserializerPrefix}{codeClass.Name.ToFirstCharacterUpperCase()}")) ??
+        var deserializer = parentNamespace.FindChildByName<CodeFunction>($"{ModelDeserializerPrefix}{codeClass.Name.ToFirstCharacterUpperCase()}") ??
             throw new InvalidOperationException($"Deserializer not found for {codeClass.Name}");
         return (serializer, deserializer);
     }
@@ -566,12 +566,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         /*
          * Setting request body parameter type of request executor to model interface.
          */
-        if (codeMethod.Parameters.FirstOrDefault(static x => x.Kind == CodeParameterKind.RequestBody) is CodeParameter requestBodyParam &&
+        if (codeMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestBody)) is CodeParameter requestBodyParam &&
             requestBodyParam.Type is CodeType requestBodyType && requestBodyType.TypeDefinition is CodeClass requestBodyClass)
         {
             SetTypeAsModelInterface(CreateModelInterface(requestBodyClass, interfaceNamingCallback), requestBodyType, requestBuilderClass);
 
-            if (codeMethod.Kind == CodeMethodKind.RequestGenerator)
+            if (codeMethod.IsOfKind(CodeMethodKind.RequestGenerator))
             {
                 ProcessModelClassAssociatedWithRequestGenerator(codeMethod, requestBodyClass);
             }
@@ -860,7 +860,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void AddStaticMethodsUsingsToDeserializerFunctions(CodeElement currentElement, Func<CodeType, string> functionNameCallback)
     {
-        if (currentElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod is CodeMethod currentMethod && currentMethod.Kind == CodeMethodKind.Deserializer && currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface) is CodeParameter interfaceParameter && interfaceParameter.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface ci)
+        if (currentElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.Deserializer) && currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface) is CodeParameter interfaceParameter && interfaceParameter.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface ci)
         {
             foreach (var property in ci.Properties)
             {
@@ -893,7 +893,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void AddDeserializerUsingToDiscriminatorFactory(CodeElement codeElement)
     {
-        if (codeElement is CodeFunction parsableFactoryFunction && parsableFactoryFunction.OriginalLocalMethod.Kind == CodeMethodKind.Factory &&
+        if (codeElement is CodeFunction parsableFactoryFunction && parsableFactoryFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Factory) &&
             parsableFactoryFunction.OriginalLocalMethod?.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeClass modelReturnClass)
         {
             var modelDeserializerFunction = GetSerializationFunctionsForNamespace(modelReturnClass).Item2;

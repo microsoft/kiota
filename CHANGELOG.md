@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed serialization of scalar members in union types for C#, Go, Java. [#2462](https://github.com/microsoft/kiota/issues/2462)
 - Deprecated Visual Studio OpenAPI reference packages.
 - Fixed a bug where types trimming would be too aggressive.
+- Fixed a bug where default enum values would not fail to build in TypeScript. [#2615](https://github.com/microsoft/kiota/issues/2615)
 - Replaced response handler parameter by request option to reduce generated code size in TypeScript. [#1855](https://github.com/microsoft/kiota/issues/1855)
 - Fixed a bug where a stackoverflow exception occurs when inlined schemas have self-references [2656](https://github.com/microsoft/kiota/issues/2656)
 - Fixed nil safety while type casting values in collections in Go

@@ -87,8 +87,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         var requestAdapterParameter = currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter);
         var requestOptionParameter = currentMethod.Parameters.OfKind(CodeParameterKind.Options);
         var requestHeadersParameter = currentMethod.Parameters.OfKind(CodeParameterKind.Headers);
-        var pathParametersProperty = parentClass.Properties.OfKind(CodePropertyKind.PathParameters);
-        var urlTemplateProperty = parentClass.Properties.OfKind(CodePropertyKind.UrlTemplate);
+        var pathParametersProperty = parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.PathParameters);
+        var urlTemplateProperty = parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate);
 
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {

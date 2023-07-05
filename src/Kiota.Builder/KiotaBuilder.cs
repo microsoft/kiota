@@ -1709,7 +1709,7 @@ public partial class KiotaBuilder
         var result = new ConcurrentDictionary<CodeClass, List<CodeClass>>();
         Parallel.ForEach(models, x =>
         {
-            if (x.ParentClass is CodeClass parentClass && !result.TryAdd(parentClass, new() { x }))
+            if (x.BaseClass is CodeClass parentClass && !result.TryAdd(parentClass, new() { x }))
                 result[parentClass].Add(x);
         });
         return result;
@@ -1844,32 +1844,33 @@ public partial class KiotaBuilder
     }
     private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace ns, CodeClass model)
     {
-        if (schema?.Properties?.Any() ?? false)
-        {
-            model.AddProperty(schema
-                                .Properties
-                                .Select(x =>
-                                {
-                                    var propertySchema = x.Value;
-                                    var className = propertySchema.GetSchemaName().CleanupSymbolName();
-                                    if (string.IsNullOrEmpty(className))
-                                        className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
-                                    var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
-                                    var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
-                                                        rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
-                                    var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
-                                    if (definition == null)
+        if (!model.Properties.Any(static x => x.IsOfKind(CodePropertyKind.Custom))) // this redundant check on model properties is here to avoid race conditions
+            if (schema?.Properties?.Any() ?? false)
+            {
+                model.AddProperty(schema
+                                    .Properties
+                                    .Select(x =>
                                     {
-                                        logger.LogWarning("Omitted property {PropertyName} for model {ModelName} in API path {ApiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
-                                        return null;
-                                    }
-                                    return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
-                                })
-                                .OfType<CodeProperty>()
-                                .ToArray());
-        }
-        else if (schema?.AllOf?.Any(x => x.IsObject()) ?? false)
-            CreatePropertiesForModelClass(currentNode, schema.AllOf.Last(x => x.IsObject()), ns, model);
+                                        var propertySchema = x.Value;
+                                        var className = propertySchema.GetSchemaName().CleanupSymbolName();
+                                        if (string.IsNullOrEmpty(className))
+                                            className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
+                                        var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
+                                        var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
+                                                            rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
+                                        var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
+                                        if (definition == null)
+                                        {
+                                            logger.LogWarning("Omitted property {PropertyName} for model {ModelName} in API path {ApiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
+                                            return null;
+                                        }
+                                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
+                                    })
+                                    .OfType<CodeProperty>()
+                                    .ToArray());
+            }
+            else if (schema?.AllOf?.LastOrDefault(static x => x.IsObject()) is OpenApiSchema lastAllOfSchema)
+                CreatePropertiesForModelClass(currentNode, lastAllOfSchema, ns, model);
     }
     private const string FieldDeserializersMethodName = "GetFieldDeserializers";
     private const string SerializeMethodName = "Serialize";

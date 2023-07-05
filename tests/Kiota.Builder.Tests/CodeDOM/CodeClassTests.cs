@@ -24,7 +24,7 @@ public class CodeClassTests
         Assert.Throws<ArgumentNullException>(() => codeClass.DiscriminatorInformation.GetDiscriminatorMappingValue(null));
         Assert.Null(codeClass.DiscriminatorInformation.GetDiscriminatorMappingValue("oin"));
 
-        Assert.Null(codeClass.ParentClass);
+        Assert.Null(codeClass.BaseClass);
     }
     [Fact]
     public void IsOfKind()
@@ -228,8 +228,8 @@ public class CodeClassTests
         {
             TypeDefinition = grandParent,
         };
-        Assert.Equal(grandParent, parent.ParentClass);
-        Assert.Equal(parent, childClass.ParentClass);
+        Assert.Equal(grandParent, parent.BaseClass);
+        Assert.Equal(parent, childClass.BaseClass);
         Assert.Equal(grandParent, childClass.GetGreatestGrandparent());
     }
     [Fact]
