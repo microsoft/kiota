@@ -96,7 +96,8 @@ public class GoRefiner : CommonLanguageRefiner
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.Custom,
                     CodePropertyKind.BackingStore },
-                static (CodeElement element, string s) => {
+                static (element, s) =>
+                {
                     var refinedName = s.ToPascalCase(UnderscoreArray);
                     if (element.Parent is CodeClass parentClass &&
                         parentClass.FindChildByName<CodeProperty>(refinedName) is not null)
