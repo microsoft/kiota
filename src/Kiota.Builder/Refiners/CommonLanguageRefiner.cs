@@ -225,13 +225,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var propertyOriginalName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
                                         .ToFirstCharacterLowerCase();
             var accessorName = refineAccessorName(propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase());
-            if (!supportsOverloading)
+            if (!supportsOverloading && parentClass.FindChildByName<CodeProperty>(accessorName) is not null)
             {
-                var existing = parentClass.FindChildByName<CodeProperty>(accessorName);
-                if (existing != null)
-                {
-                    accessorName = propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase();
-                }
+                accessorName = propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase();
             }
             currentProperty.Getter = parentClass.AddMethod(new CodeMethod
             {
