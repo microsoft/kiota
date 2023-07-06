@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed generation of properties with identical names after symbol cleanup. 
 - Prevents method overloading for go getters and setters with different values. [#2719](https://github.com/microsoft/kiota/issues/2719)
 - Fixed PHP request executor methods that return enums.
+- Fix mixup of names between code model generation and code writing which could result in broken code for properties with identical names after symbol cleanup.
 
 ## [1.3.0] - 2023-06-09
 
