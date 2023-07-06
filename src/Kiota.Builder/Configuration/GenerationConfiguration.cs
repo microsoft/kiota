@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Kiota.Builder.Lock;
 
 namespace Kiota.Builder.Configuration;
@@ -14,6 +15,7 @@ public class GenerationConfiguration : ICloneable
     public string ClientClassName { get; set; } = "ApiClient";
     public string ClientNamespaceName { get; set; } = "ApiSdk";
     public string NamespaceNameSeparator { get; set; } = ".";
+
     public string ModelsNamespaceName
     {
         get => $"{ClientNamespaceName}{NamespaceNameSeparator}models";
@@ -95,6 +97,7 @@ public class GenerationConfiguration : ICloneable
         get; set;
     }
     public HashSet<string> DisabledValidationRules { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
+    public int MaxDegreeOfParallelism { get; set; } = -1;
     public object Clone()
     {
         return new GenerationConfiguration
@@ -116,6 +119,7 @@ public class GenerationConfiguration : ICloneable
             ExcludePatterns = new(ExcludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             ClearCache = ClearCache,
             DisabledValidationRules = new(DisabledValidationRules ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            MaxDegreeOfParallelism = MaxDegreeOfParallelism,
         };
     }
     private static readonly StringIEnumerableDeepComparer comparer = new();
