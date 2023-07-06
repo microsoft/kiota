@@ -1,4 +1,4 @@
-Write-Warning "This script only updates dotnet and Go dependencies. Other dependencies must be updated manually. As well as the version in the csprojs. You're welcome to augment it."
+Write-Warning "This script only updates dotnet, TypeScript and Go dependencies. Other dependencies must be updated manually. As well as the version in the csprojs. You're welcome to augment it."
 
 # Get the latest version of a package from NuGet
 function Get-LatestNugetVersion {
@@ -20,6 +20,15 @@ function Get-LatestGithubRelease {
     $response = Invoke-RestMethod -Uri $url -Method Get
     $response.tag_name
 }
+# Get the latest version of a npm package
+function Get-LatestNpmVersion {
+    param(
+        [string]$packageId
+    )
+    $url = "https://registry.npmjs.org/$($packageId.ToLowerInvariant())/latest"
+    $response = Invoke-RestMethod -Uri $url -Method Get
+    $response.version
+}
 
 # Get current script directory
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -40,6 +49,13 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     elseif ($languageName -eq "Go") {
         foreach ($dependency in $language.Dependencies) {
             $latestVersion = Get-LatestGithubRelease -packageId $dependency.Name
+            Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
+            $dependency.Version = $latestVersion
+        }
+    }
+    elseif ($languageName -eq "TypeScript") {
+        foreach ($dependency in $language.Dependencies) {
+            $latestVersion = Get-LatestNpmVersion -packageId $dependency.Name
             Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
             $dependency.Version = $latestVersion
         }
