@@ -60,6 +60,7 @@ internal static class KiotaConfigurationExtensions
         configObject.Generation.IncludeAdditionalData = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.IncludeAdditionalData)}"], out var includeAdditionalData) && includeAdditionalData;
         configObject.Generation.CleanOutput = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.CleanOutput)}"], out var cleanOutput) && cleanOutput;
         configObject.Generation.ClearCache = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ClearCache)}"], out var clearCache) && clearCache;
+        configObject.Generation.MaxDegreeOfParallelism = Int32.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.MaxDegreeOfParallelism)}"], out var maxDegreeOfParallelism) ? maxDegreeOfParallelism : configObject.Generation.MaxDegreeOfParallelism;
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.StructuredMimeTypes)}").LoadHashSet(configObject.Generation.StructuredMimeTypes);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.Serializers)}").LoadHashSet(configObject.Generation.Serializers);
         configuration.GetSection($"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.Deserializers)}").LoadHashSet(configObject.Generation.Deserializers);

@@ -98,13 +98,6 @@ public class GenerationConfiguration : ICloneable
     }
     public HashSet<string> DisabledValidationRules { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
     public int MaxDegreeOfParallelism { get; set; } = -1;
-    public GenerationConfiguration()
-    {
-        if (Int32.TryParse(Environment.GetEnvironmentVariable("KIOTA_GENERATION_MDOP"), out var nrThreads))
-        {
-            MaxDegreeOfParallelism = nrThreads;
-        }
-    }
     public object Clone()
     {
         return new GenerationConfiguration
