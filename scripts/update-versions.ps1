@@ -1,4 +1,4 @@
-Write-Warning "This script only updates dotnet, TypeScript and Go dependencies. Other dependencies must be updated manually. As well as the version in the csprojs. You're welcome to augment it."
+Write-Warning "This script only updates dotnet, TypeScript, Java and Go dependencies. Other dependencies must be updated manually. As well as the version in the csprojs. You're welcome to augment it."
 
 # Get the latest version of a package from NuGet
 function Get-LatestNugetVersion {
@@ -29,6 +29,15 @@ function Get-LatestNpmVersion {
     $response = Invoke-RestMethod -Uri $url -Method Get
     $response.version
 }
+# Get the latest version of a maven package
+function Get-LatestMavenVersion {
+    param(
+        [string]$packageId
+    )
+    $url = "https://repo1.maven.org/maven2/$($packageId.Replace(":", "/").Replace(".", "/"))/maven-metadata.xml"
+    $response = Invoke-RestMethod -Uri $url -Method Get
+    $response.metadata.versioning.latest
+}
 
 # Get current script directory
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -56,6 +65,13 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     elseif ($languageName -eq "TypeScript") {
         foreach ($dependency in $language.Dependencies) {
             $latestVersion = Get-LatestNpmVersion -packageId $dependency.Name
+            Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
+            $dependency.Version = $latestVersion
+        }
+    }
+    elseif ($languageName -eq "Java") {
+        foreach ($dependency in $language.Dependencies) {
+            $latestVersion = Get-LatestMavenVersion -packageId $dependency.Name
             Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
             $dependency.Version = $latestVersion
         }
