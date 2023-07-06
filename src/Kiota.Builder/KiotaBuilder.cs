@@ -38,10 +38,10 @@ public partial class KiotaBuilder
 {
     private readonly ILogger<KiotaBuilder> logger;
     private readonly GenerationConfiguration config;
+    private readonly ParallelOptions parallelOptions;
     private readonly HttpClient httpClient;
     private OpenApiDocument? originalDocument;
     private OpenApiDocument? openApiDocument;
-    private ParallelOptions parallelOptions;
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
     public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client)
@@ -52,13 +52,9 @@ public partial class KiotaBuilder
         this.logger = logger;
         this.config = config;
         httpClient = client;
-        if (!Int32.TryParse(Environment.GetEnvironmentVariable("KIOTA_THREADS"), out var nrThreads))
-        {
-            nrThreads = 5;
-        }
         parallelOptions = new ParallelOptions
         {
-            MaxDegreeOfParallelism = nrThreads
+            MaxDegreeOfParallelism = config.MaxDegreeOfParallelism,
         };
     }
     private async Task CleanOutputDirectory(CancellationToken cancellationToken)
