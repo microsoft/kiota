@@ -1,5 +1,3 @@
-Write-Warning "This script only updates dotnet, TypeScript, Java and Go dependencies. Other dependencies must be updated manually. As well as the version in the csprojs. You're welcome to augment it."
-
 # Get the latest version of a package from NuGet
 function Get-LatestNugetVersion {
     param(
@@ -47,6 +45,15 @@ function Get-LatestComposerVersion {
     $response = Invoke-RestMethod -Uri $url -Method Get
     $response.packages.$packageId[0].version
 }
+# Get the latest version of a pypi package
+function Get-LatestPypiVersion {
+    param(
+        [string]$packageId
+    )
+    $url = "https://pypi.org/pypi/$($packageId.ToLowerInvariant())/json"
+    $response = Invoke-RestMethod -Uri $url -Method Get
+    $response.info.version
+}
 
 # Get current script directory
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -91,6 +98,16 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
             Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
             $dependency.Version = $latestVersion
         }
+    }
+    elseif ($languageName -eq "Python") {
+        foreach ($dependency in $language.Dependencies) {
+            $latestVersion = Get-LatestPypiVersion -packageId $dependency.Name
+            Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
+            $dependency.Version = $latestVersion
+        }
+    }
+    else {
+        Write-Warning "Unsupported language $languageName you need to update it manually"
     }
 }
 
