@@ -439,27 +439,20 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentElement is CodeClass currentClass)
         {
-            if (currentClass.IsOfKind(CodeClassKind.Model))
+            foreach (var codeUsing in currentClass.Usings)
             {
-                var targetNS = currentClass.GetImmediateParentOfType<CodeNamespace>();
-                if (targetNS.Classes.FirstOrDefault(x => x == currentClass) == null)
-                {
-                    return;
-                }
-
-                targetNS.RemoveChildElement(currentElement);
-            }
-            else
-            {
-                foreach (var codeUsing in currentClass.Usings)
-                {
-                    RenameModelInterfacesAndRemoveClassesInUsing(codeUsing);
-                }
+                RenameModelInterfacesAndRemoveClassesInUsing(codeUsing);
             }
         }
-        else if (currentElement is CodeInterface modelInterface && modelInterface.IsOfKind(CodeInterfaceKind.Model))
+        else if (currentElement is CodeInterface modelInterface && modelInterface.IsOfKind(CodeInterfaceKind.Model) && modelInterface.Parent is CodeNamespace parentNS)
         {
-            modelInterface.Name = ReturnFinalInterfaceName(modelInterface.Name);
+            var finalName = ReturnFinalInterfaceName(modelInterface.Name);
+            if (!finalName.Equals(modelInterface.Name, StringComparison.Ordinal))
+            {
+                if (parentNS.FindChildByName<CodeClass>(finalName, false) is CodeClass existingClassToRemove)
+                    parentNS.RemoveChildElement(existingClassToRemove);
+                parentNS.RenameChildElement(modelInterface.Name, finalName);
+            }
         }
         else if (currentElement is CodeFunction codeFunction && codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer))
         {
@@ -474,21 +467,19 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (codeUsing.Declaration is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface)
         {
             codeType.Name = ReturnFinalInterfaceName(codeInterface.Name);
-            codeInterface.Name = ReturnFinalInterfaceName(codeInterface.Name);
         }
     }
     private static void RenameCodeInterfaceParamsInSerializers(CodeFunction codeFunction)
     {
         if (codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault(static x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface) is CodeParameter param && param.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface paramInterface)
         {
-            paramInterface.Name = ReturnFinalInterfaceName(paramInterface.Name);
             param.Name = ReturnFinalInterfaceName(paramInterface.Name);
         }
     }
 
     private static string ReturnFinalInterfaceName(string interfaceName)
     {
-        return interfaceName.Split(TemporaryInterfaceNameSuffix)[0];
+        return interfaceName.EndsWith(TemporaryInterfaceNameSuffix, StringComparison.Ordinal) ? interfaceName[..^TemporaryInterfaceNameSuffix.Length] : interfaceName;
     }
 
     private static void GenerateModelInterfaces(CodeElement currentElement, Func<CodeClass, string> interfaceNamingCallback)

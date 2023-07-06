@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 #pragma warning disable CA1711
 public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElement, ITypeDefinition, IDeprecableElement
 {
 #pragma warning restore CA2227
-    private readonly HashSet<string> optionsNames = new(StringComparer.OrdinalIgnoreCase); // this structure is used to check if an option name is unique   
-    private readonly ConcurrentQueue<CodeEnumOption> OptionsInternal = new(); // this structure is used to maintain the order of the options
     public bool Flags
     {
         get; set;
@@ -19,13 +18,9 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
     {
         if (codeEnumOptions is null) return;
         EnsureElementsAreChildren(codeEnumOptions);
-        foreach (var option in codeEnumOptions)
-        {
-            optionsNames.Add(option.Name);
-            OptionsInternal.Enqueue(option);
-        }
+        AddRange(codeEnumOptions);
     }
-    public IEnumerable<CodeEnumOption> Options => OptionsInternal;
+    public IEnumerable<CodeEnumOption> Options => InnerChildElements.Values.OfType<CodeEnumOption>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
     public DeprecationInformation? Deprecation
     {
         get; set;

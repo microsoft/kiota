@@ -101,12 +101,13 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
                 PropertiesByWireName.TryRemove(removedProperty.WireName, out _);
             }
             element.Name = newName;
-            InnerChildElements.TryAdd(newName, element);
+            AddRange(element);
             if (element is CodeProperty propertyToAdd)
             {
                 PropertiesByWireName.TryAdd(propertyToAdd.WireName, propertyToAdd);
             }
         }
+        else throw new InvalidOperationException($"The element {oldName} could not be found in the class {Name}");
     }
     public override void RemoveChildElementByName(params string[] names)
     {
@@ -114,10 +115,12 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
 
         foreach (var name in names)
         {
-            if (InnerChildElements.TryRemove(name, out var removedElement) && removedElement is CodeProperty removedProperty)
+            if (InnerChildElements.TryRemove(name, out var removedElement))
             {
-                PropertiesByWireName.TryRemove(removedProperty.WireName, out _);
+                if (removedElement is CodeProperty removedProperty)
+                    PropertiesByWireName.TryRemove(removedProperty.WireName, out _);
             }
+            else throw new InvalidOperationException($"The element {name} could not be found in the class {Name}");
         }
     }
     private string ResolveUniquePropertyName(string name)

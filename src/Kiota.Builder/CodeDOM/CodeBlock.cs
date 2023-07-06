@@ -35,13 +35,14 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
         if (InnerChildElements.TryRemove(oldName, out var element))
         {
             element.Name = newName;
-            InnerChildElements.TryAdd(newName, element);
+            AddRange(element);
         }
+        else throw new InvalidOperationException($"The element to rename was not found {oldName}");
     }
     public void RemoveChildElement<T>(params T[] elements) where T : CodeElement
     {
         if (elements == null) return;
-        RemoveChildElementByName(elements.Select(x => x.Name).ToArray());
+        RemoveChildElementByName(elements.Select(static x => x.Name).ToArray());
     }
     public virtual void RemoveChildElementByName(params string[] names)
     {

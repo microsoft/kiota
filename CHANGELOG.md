@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed an issue with query parameter name normalization in Ruby and Python. [#2825](https://github.com/microsoft/kiota/issues/2825)
 - Fixed serialization of scalar members in union types for C#, Go, Java. [#2462](https://github.com/microsoft/kiota/issues/2462)
+- Fixes an issue where class to interface replacement in TypeScript would be flaky. [#2676](https://github.com/microsoft/kiota/issues/2676)
 - Deprecated Visual Studio OpenAPI reference packages.
 - Fixed a bug where TypeScript errors would loose inheritance to base error definition.
 - Fixed a bug where types trimming would be too aggressive.

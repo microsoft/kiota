@@ -2,16 +2,11 @@
 
 namespace Kiota.Builder.CodeDOM;
 
-public class CodeEnumOption : IDocumentedElement, ITypeDefinition, IAlternativeName
+public class CodeEnumOption : CodeElement, IDocumentedElement, ITypeDefinition, IAlternativeName
 {
     /// <inheritdoc/>
     public string SerializationName { get; set; } = string.Empty;
     public CodeDocumentation Documentation { get; set; } = new();
-    public string Name { get; set; } = string.Empty;
-    public CodeElement? Parent
-    {
-        get; set;
-    }
     /// <inheritdoc/>
     public bool IsNameEscaped
     {

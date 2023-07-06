@@ -407,10 +407,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 currentProperty.SerializationName = currentProperty.Name;
             }
             var replacementName = replacement.Invoke(current.Name);
-            if (current.Parent is CodeClass parent
-                && parent.GetChildElements().FirstOrDefault(x => x.Name.Equals(current.Name, StringComparison.Ordinal)) is not null)
-                parent.RenameChildElement(current.Name, replacementName);
-            current.Name = replacementName;
+            if (current.Parent is IBlock parentBlock)
+                parentBlock.RenameChildElement(current.Name, replacementName);
+            else
+                current.Name = replacementName;
         }
 
         CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
@@ -423,8 +423,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     .ToList()
                     .ForEach(x =>
                     {
-                        x.SerializationName = x.Name;
-                        x.Name = replacement.Invoke(x.Name);
+                        if (string.IsNullOrEmpty(x.SerializationName))
+                            x.SerializationName = x.Name;
+                        currentEnum.RenameChildElement(x.Name, replacement.Invoke(x.Name));
                     });
     }
     private static void ReplaceReservedCodeUsingDeclarationNames(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
@@ -460,11 +461,13 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     private static void ReplaceReservedNamespaceSegments(CodeNamespace currentNamespace, IReservedNamesProvider provider, Func<string, string> replacement)
     {
         var segments = currentNamespace.Name.Split('.');
-        if (segments.Any(x => provider.ReservedNames.Contains(x)))
-            currentNamespace.Name = segments.Select(x => provider.ReservedNames.Contains(x) ?
+        if (Array.Exists(segments, provider.ReservedNames.Contains) && currentNamespace.Parent is CodeNamespace parentNamespace)
+        {
+            parentNamespace.RenameChildElement(currentNamespace.Name, segments.Select(x => provider.ReservedNames.Contains(x) ?
                                                             replacement.Invoke(x) :
                                                             x)
-                                            .Aggregate((x, y) => $"{x}.{y}");
+                                            .Aggregate((x, y) => $"{x}.{y}"));
+        }
     }
     private static void ReplaceMappingNames(IEnumerable<KeyValuePair<string, CodeTypeBase>> mappings, IReservedNamesProvider provider, Func<string, string> replacement)
     {
