@@ -264,6 +264,75 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, StreamInterface::class, $errorMappings);", result);
     }
 
+    [Fact]
+    public async void WritesRequestExecutorForEnumTypes()
+    {
+        CodeProperty[] properties =
+        {
+            new CodeProperty { Kind = CodePropertyKind.RequestAdapter, Name = "requestAdapter", Type = new CodeType { Name = "string" } },
+            new CodeProperty { Kind = CodePropertyKind.UrlTemplate, Name = "urlTemplate", Type = new CodeType { Name = "string" } },
+            new CodeProperty { Kind = CodePropertyKind.PathParameters, Name = "pathParameters", Type = new CodeType { Name = "string" } },
+        };
+        parentClass.AddProperty(properties);
+        var countryCodeEnum = root.AddEnum(new CodeEnum { Name = "CountryCode" });
+        var codeMethod = new CodeMethod
+        {
+            Name = "post",
+            HttpMethod = HttpMethod.Post,
+            ReturnType = new CodeType
+            {
+                IsExternal = true,
+                Name = "phoneNumberPrefix",
+                TypeDefinition = countryCodeEnum.First()
+            },
+            Documentation = new()
+            {
+                Description = "This will send a POST request",
+                DocumentationLink = new Uri("https://learn.microsoft.com/"),
+                DocumentationLabel = "Learning"
+            },
+            Kind = CodeMethodKind.RequestExecutor
+        };
+        var codeMethodRequestGenerator = new CodeMethod
+        {
+            Kind = CodeMethodKind.RequestGenerator,
+            HttpMethod = HttpMethod.Post,
+            Name = "createPostRequestInformation",
+            ReturnType = new CodeType
+            {
+                Name = "RequestInformation"
+            }
+        };
+        parentClass.AddMethod(codeMethod);
+        parentClass.AddMethod(codeMethodRequestGenerator);
+        var error4XX = root.AddClass(new CodeClass
+        {
+            Name = "Error4XX",
+        }).First();
+        var error5XX = root.AddClass(new CodeClass
+        {
+            Name = "Error5XX",
+        }).First();
+        var error401 = root.AddClass(new CodeClass
+        {
+            Name = "Error401",
+        }).First();
+        codeMethod.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
+        codeMethod.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
+        codeMethod.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error401 });
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
+        var result = stringWriter.ToString();
+
+        Assert.Contains("public function post(): Promise", result);
+        Assert.Contains("$requestInfo = $this->createPostRequestInformation();", result);
+        Assert.Contains("RejectedPromise", result);
+        Assert.Contains("@link https://learn.microsoft.com/ Learning", result);
+        Assert.Contains("catch(Exception $ex)", result);
+        Assert.Contains("'403' => [Error403::class, 'createFromDiscriminatorValue']", result);
+        Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, PhoneNumberPrefix::class, $errorMappings);", result);
+    }
+
     public static IEnumerable<object[]> SerializerProperties => new List<object[]>
     {
         new object[]
