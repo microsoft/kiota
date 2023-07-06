@@ -54,6 +54,15 @@ function Get-LatestPypiVersion {
     $response = Invoke-RestMethod -Uri $url -Method Get
     $response.info.version
 }
+# Get the latest version of a rubygem package
+function Get-LatestRubygemVersion {
+    param(
+        [string]$packageId
+    )
+    $url = "https://rubygems.org/api/v1/versions/$($packageId.ToLowerInvariant())/latest.json"
+    $response = Invoke-RestMethod -Uri $url -Method Get
+    $response.version
+}
 
 # Get current script directory
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -102,6 +111,13 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     elseif ($languageName -eq "Python") {
         foreach ($dependency in $language.Dependencies) {
             $latestVersion = Get-LatestPypiVersion -packageId $dependency.Name
+            Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
+            $dependency.Version = $latestVersion
+        }
+    }
+    elseif ($languageName -eq "Ruby") {
+        foreach ($dependency in $language.Dependencies) {
+            $latestVersion = Get-LatestRubygemVersion -packageId $dependency.Name
             Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
             $dependency.Version = $latestVersion
         }
