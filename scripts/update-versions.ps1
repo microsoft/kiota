@@ -38,6 +38,15 @@ function Get-LatestMavenVersion {
     $response = Invoke-RestMethod -Uri $url -Method Get
     $response.metadata.versioning.latest
 }
+# Get the latest version of a composer package
+function Get-LatestComposerVersion {
+    param(
+        [string]$packageId
+    )
+    $url = "https://repo.packagist.org/p2/$($packageId.ToLowerInvariant()).json"
+    $response = Invoke-RestMethod -Uri $url -Method Get
+    $response.packages.$packageId[0].version
+}
 
 # Get current script directory
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -72,6 +81,13 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     elseif ($languageName -eq "Java") {
         foreach ($dependency in $language.Dependencies) {
             $latestVersion = Get-LatestMavenVersion -packageId $dependency.Name
+            Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
+            $dependency.Version = $latestVersion
+        }
+    }
+    elseif ($languageName -eq "PHP") {
+        foreach ($dependency in $language.Dependencies) {
+            $latestVersion = Get-LatestComposerVersion -packageId $dependency.Name
             Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
             $dependency.Version = $latestVersion
         }
