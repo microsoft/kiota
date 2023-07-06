@@ -19,4 +19,5 @@ public interface IBlock
     {
         get;
     }
+    void RenameChildElement(string oldName, string newName);
 }

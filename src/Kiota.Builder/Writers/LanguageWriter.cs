@@ -160,7 +160,8 @@ public abstract class LanguageWriter
                 code is not BlockDeclaration &&
                 code is not BlockEnd &&
                 code is not CodeInterface &&
-                code is not CodeFile)
+                code is not CodeFile &&
+                code is not CodeEnumOption)
             throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
     }
     protected void AddOrReplaceCodeElementWriter<T>(ICodeElementWriter<T> writer) where T : CodeElement
