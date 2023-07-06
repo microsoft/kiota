@@ -6054,7 +6054,7 @@ components:
         var codeModel = builder.CreateSourceModel(node);
         var resultClass = codeModel.FindChildByName<CodeClass>("Entity");
         Assert.NotNull(resultClass);
-        Assert.Equal(2, resultClass.Properties.Select(static x => x.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Equal(2, resultClass.Properties.Select(static x => x.WireName).Distinct(StringComparer.OrdinalIgnoreCase).Count());
     }
     [Fact]
     public async Task CleanupSymbolNameDoesNotCauseNameConflictsWithSuperType()
@@ -6105,13 +6105,13 @@ components:
         var codeModel = builder.CreateSourceModel(node);
         var entityClass = codeModel.FindChildByName<CodeClass>("Entity");
         Assert.NotNull(entityClass);
-        var atType = entityClass.FindChildByName<CodeProperty>("Type");
+        var atType = entityClass.FindChildByName<CodeProperty>("Type", false);
         Assert.Equal("@type", atType.WireName);
         var subtypeClass = codeModel.FindChildByName<CodeClass>("Subtype");
         Assert.NotNull(subtypeClass);
-        var type = subtypeClass.FindChildByName<CodeProperty>("SubtypeType");
+        var type = subtypeClass.FindChildByName<CodeProperty>("Type", false);
         Assert.Equal("type", type.WireName);
-        Assert.Equal("SubtypeType", type.Name);
+        Assert.Equal("type", type.Name);
     }
     [Fact]
     public async Task CleanupSymbolNameDoesNotCauseNameConflictsInQueryParameters()
@@ -6149,10 +6149,12 @@ paths:
         var codeModel = builder.CreateSourceModel(node);
         var parametersClass = codeModel.FindChildByName<CodeClass>("directoryObjectRequestBuilderGetQueryParameters");
         Assert.NotNull(parametersClass);
-        var dollarSelect = parametersClass.FindChildByName<CodeProperty>("Select");
+        var dollarSelect = parametersClass.FindChildByName<CodeProperty>("%24Select", false);
+        Assert.NotNull(dollarSelect);
         Assert.Equal("%24select", dollarSelect.WireName);
         Assert.Equal("string", dollarSelect.Type.Name);
-        var select = parametersClass.FindChildByName<CodeProperty>("select0");
+        var select = parametersClass.FindChildByName<CodeProperty>("select", false);
+        Assert.NotNull(select);
         Assert.Equal("select", select.WireName);
         Assert.Equal("int64", select.Type.Name);
     }

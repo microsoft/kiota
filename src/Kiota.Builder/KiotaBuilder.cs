@@ -2008,8 +2008,9 @@ public partial class KiotaBuilder
                                     operation.Summary).CleanupDescription(),
                 },
             }).First();
-            foreach (var parameter in parameters)
-                AddPropertyForQueryParameter(parameter, parameterClass);
+            if (!parameterClass.Properties.Any())
+                foreach (var parameter in parameters)
+                    AddPropertyForQueryParameter(parameter, parameterClass);
 
             return parameterClass;
         }
@@ -2043,14 +2044,7 @@ public partial class KiotaBuilder
             prop.SerializationName = parameter.Name.SanitizeParameterNameForUrlTemplate();
         }
 
-        if (!parameterClass.ContainsPropertyWithWireName(prop.WireName))
-        {
-            parameterClass.AddProperty(prop);
-        }
-        else
-        {
-            logger.LogWarning("Ignoring duplicate parameter {Name}", parameter.Name);
-        }
+        parameterClass.AddProperty(prop);
     }
     private static CodeType GetQueryParameterType(OpenApiSchema schema) =>
         new()
