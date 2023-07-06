@@ -2008,8 +2008,9 @@ public partial class KiotaBuilder
                                     operation.Summary).CleanupDescription(),
                 },
             }).First();
-            foreach (var parameter in parameters)
-                AddPropertyForQueryParameter(parameter, parameterClass);
+            if (!parameterClass.Properties.Any())
+                foreach (var parameter in parameters)
+                    AddPropertyForQueryParameter(parameter, parameterClass);
 
             return parameterClass;
         }
@@ -2043,7 +2044,7 @@ public partial class KiotaBuilder
             prop.SerializationName = parameter.Name.SanitizeParameterNameForUrlTemplate();
         }
 
-        if (!parameterClass.ContainsPropertyWithWireName(prop.WireName))
+        if (!parameterClass.ContainsMember(prop.Name))
         {
             parameterClass.AddProperty(prop);
         }
