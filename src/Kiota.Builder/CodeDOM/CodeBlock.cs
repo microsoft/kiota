@@ -75,7 +75,6 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
         if (returnedValue == element)
             return element;
         if (element is CodeMethod currentMethod)
-        {
             if (currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) &&
                 returnedValue is CodeProperty cProp &&
                 cProp.IsOfKind(CodePropertyKind.RequestBuilder) &&
@@ -100,36 +99,6 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
                         return result2;
                 }
             }
-        }
-        else if (element is CodeProperty currentProperty &&
-            returnedValue is CodeProperty existingProperty &&
-            currentProperty.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
-            existingProperty.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
-            existingProperty.Kind == currentProperty.Kind &&
-            (existingProperty.IsNameEscaped || currentProperty.IsNameEscaped))
-        {
-            var isExistingPropertyNameEscaped = existingProperty.IsNameEscaped;
-            string originalName;
-            var nameToRemove = existingProperty.Name;
-            if (isExistingPropertyNameEscaped)
-            {
-                originalName = existingProperty.Name;
-                existingProperty.Name = existingProperty.SerializationName;
-            }
-            else
-            {
-                originalName = currentProperty.Name;
-                currentProperty.Name = currentProperty.SerializationName;
-            }
-            if (InnerChildElements.TryRemove(nameToRemove, out _) && InnerChildElements.TryAdd(existingProperty.Name, existingProperty) && InnerChildElements.TryAdd(currentProperty.Name, currentProperty))
-            {
-                if (isExistingPropertyNameEscaped)
-                    existingProperty.Name = originalName;
-                else
-                    currentProperty.Name = originalName;
-                return existingProperty.IsNameEscaped ? (T)returnedValue : element;
-            }
-        }
 
         if (element.GetType() == returnedValue.GetType())
             return (T)returnedValue;

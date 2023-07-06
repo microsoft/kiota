@@ -2044,7 +2044,14 @@ public partial class KiotaBuilder
             prop.SerializationName = parameter.Name.SanitizeParameterNameForUrlTemplate();
         }
 
-        parameterClass.AddProperty(prop);
+        if (!parameterClass.ContainsMember(prop.Name))
+        {
+            parameterClass.AddProperty(prop);
+        }
+        else
+        {
+            logger.LogWarning("Ignoring duplicate parameter {Name}", parameter.Name);
+        }
     }
     private static CodeType GetQueryParameterType(OpenApiSchema schema) =>
         new()
