@@ -461,7 +461,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     private static void ReplaceReservedNamespaceSegments(CodeNamespace currentNamespace, IReservedNamesProvider provider, Func<string, string> replacement)
     {
         var segments = currentNamespace.Name.Split('.');
-        if (segments.Any(provider.ReservedNames.Contains) && currentNamespace.Parent is CodeNamespace parentNamespace)
+        if (Array.Exists(segments, provider.ReservedNames.Contains) && currentNamespace.Parent is CodeNamespace parentNamespace)
         {
             parentNamespace.RenameChildElement(currentNamespace.Name, segments.Select(x => provider.ReservedNames.Contains(x) ?
                                                             replacement.Invoke(x) :
