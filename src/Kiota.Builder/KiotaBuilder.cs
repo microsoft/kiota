@@ -41,6 +41,7 @@ public partial class KiotaBuilder
     private readonly HttpClient httpClient;
     private OpenApiDocument? originalDocument;
     private OpenApiDocument? openApiDocument;
+    private ParallelOptions parallelOptions;
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
     public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client)
@@ -51,6 +52,14 @@ public partial class KiotaBuilder
         this.logger = logger;
         this.config = config;
         httpClient = client;
+        if (!Int32.TryParse(Environment.GetEnvironmentVariable("KIOTA_THREADS"), out var nrThreads))
+        {
+            nrThreads = 5;
+        }
+        parallelOptions = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = nrThreads
+        };
     }
     private async Task CleanOutputDirectory(CancellationToken cancellationToken)
     {
@@ -702,7 +711,7 @@ public partial class KiotaBuilder
         CreateUrlManagement(codeClass, currentNode, isApiClientClass);
 
         if (rootNamespace != null)
-            foreach (var childNode in currentNode.Children.Values)
+            Parallel.ForEach(currentNode.Children.Values, parallelOptions, childNode =>
             {
                 if (childNode.GetNodeNamespaceFromPath(config.ClientNamespaceName) is string targetNamespaceName &&
                     !string.IsNullOrEmpty(targetNamespaceName))
@@ -710,7 +719,7 @@ public partial class KiotaBuilder
                     var targetNamespace = rootNamespace.FindOrAddNamespace(targetNamespaceName);
                     CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
                 }
-            };
+            });
     }
     private static void CreateMethod(string propIdentifier, string propType, CodeClass codeClass, OpenApiUrlTreeNode currentNode)
     {
@@ -914,7 +923,7 @@ public partial class KiotaBuilder
                                 x.Parent is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestBuilderWithParameters))
                                 .ToList();
 
-        Parallel.ForEach(unmappedRequestBuilderTypes, x =>
+        Parallel.ForEach(unmappedRequestBuilderTypes, parallelOptions, x =>
         {
             var parentNS = x.Parent?.Parent?.Parent as CodeNamespace;
             x.TypeDefinition = parentNS?.FindChildrenByName<CodeClass>(x.Name).MinBy(shortestNamespaceOrder);
@@ -931,7 +940,7 @@ public partial class KiotaBuilder
             }
         });
 
-        Parallel.ForEach(unmappedTypesWithName.Where(static x => x.TypeDefinition == null).GroupBy(static x => x.Name), x =>
+        Parallel.ForEach(unmappedTypesWithName.Where(static x => x.TypeDefinition == null).GroupBy(static x => x.Name), parallelOptions, x =>
         {
             if (rootNamespace?.FindChildByName<ITypeDefinition>(x.First().Name) is CodeElement definition)
                 foreach (var type in x)
@@ -1687,8 +1696,8 @@ public partial class KiotaBuilder
         var classesInUse = derivedClassesInUse.Union(classesDirectlyInUse).Union(baseOfModelsInUse).ToHashSet();
         var reusableClassesDerivationIndex = GetDerivationIndex(reusableModels.OfType<CodeClass>());
         var reusableClassesInheritanceIndex = GetInheritanceIndex(allModelClassesIndex);
-        var relatedModels = classesInUse.AsParallel().SelectMany(x => GetRelatedDefinitions(x, reusableClassesDerivationIndex, reusableClassesInheritanceIndex)).Union(modelsDirectlyInUse.Where(x => x is CodeEnum).AsParallel()).ToHashSet();// re-including models directly in use for enums
-        Parallel.ForEach(reusableModels, x =>
+        var relatedModels = classesInUse.SelectMany(x => GetRelatedDefinitions(x, reusableClassesDerivationIndex, reusableClassesInheritanceIndex)).Union(modelsDirectlyInUse.Where(x => x is CodeEnum)).ToHashSet();// re-including models directly in use for enums
+        Parallel.ForEach(reusableModels, parallelOptions, x =>
         {
             if (relatedModels.Contains(x) || classesInUse.Contains(x)) return;
             if (x is CodeClass currentClass)
@@ -1704,20 +1713,20 @@ public partial class KiotaBuilder
         foreach (var leafNamespace in FindLeafNamespaces(modelsNamespace))
             RemoveEmptyNamespaces(leafNamespace, modelsNamespace);
     }
-    private static ConcurrentDictionary<CodeClass, List<CodeClass>> GetDerivationIndex(IEnumerable<CodeClass> models)
+    private ConcurrentDictionary<CodeClass, List<CodeClass>> GetDerivationIndex(IEnumerable<CodeClass> models)
     {
         var result = new ConcurrentDictionary<CodeClass, List<CodeClass>>();
-        Parallel.ForEach(models, x =>
+        Parallel.ForEach(models, parallelOptions, x =>
         {
             if (x.BaseClass is CodeClass parentClass && !result.TryAdd(parentClass, new() { x }))
                 result[parentClass].Add(x);
         });
         return result;
     }
-    private static ConcurrentDictionary<CodeClass, List<CodeClass>> GetInheritanceIndex(ConcurrentDictionary<CodeClass, List<CodeClass>> derivedIndex)
+    private ConcurrentDictionary<CodeClass, List<CodeClass>> GetInheritanceIndex(ConcurrentDictionary<CodeClass, List<CodeClass>> derivedIndex)
     {
         var result = new ConcurrentDictionary<CodeClass, List<CodeClass>>();
-        Parallel.ForEach(derivedIndex, entry =>
+        Parallel.ForEach(derivedIndex, parallelOptions, entry =>
         {
             foreach (var derivedClass in entry.Value)
                 if (!result.TryAdd(derivedClass, new() { entry.Key }))
