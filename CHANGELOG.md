@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow configuration of the number of threads via the environment variable KIOTA_GENERATION_MAXDEGREEOFPARALLELISM.
 - Fixes regression where enum options would be renamed in CSharp.
 - Add locking to writing to log files.
+- Typenames are not changed to first char upper case in comments in some cases.
 
 ## [1.3.0] - 2023-06-09
 

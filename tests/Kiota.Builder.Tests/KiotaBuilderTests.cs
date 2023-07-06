@@ -3427,7 +3427,7 @@ paths:
         Assert.NotNull(requestExecutorMethod);
         var executorReturnType = requestExecutorMethod.ReturnType as CodeType;
         Assert.NotNull(executorReturnType);
-        Assert.Contains("DerivedObject", requestExecutorMethod.ReturnType.Name);
+        Assert.Contains("derivedObject", requestExecutorMethod.ReturnType.Name);
         var secondLevelDerivedClass = codeModel.FindChildByName<CodeClass>("derivedObject");
         Assert.NotNull(secondLevelDerivedObject);
         var factoryMethod = secondLevelDerivedClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
@@ -4307,7 +4307,7 @@ paths:
         Assert.NotNull(rbClass);
         var executorMethod = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.NotNull(executorMethod);
-        Assert.Equal("Myobject", executorMethod.ReturnType.Name);
+        Assert.Equal("myobject", executorMethod.ReturnType.Name);
     }
     [Fact]
     public void ModelsUseDescriptionWhenAvailable()
@@ -4374,15 +4374,15 @@ paths:
     [InlineData("application/json", "205", false, "default", "void")]
     [InlineData("application/json", "204", true, "default", "void")]
     [InlineData("application/json", "204", false, "default", "void")]
-    [InlineData("application/json", "203", true, "default", "Myobject")]
+    [InlineData("application/json", "203", true, "default", "myobject")]
     [InlineData("application/json", "203", false, "default", "binary")]
-    [InlineData("application/json", "202", true, "default", "Myobject")]
+    [InlineData("application/json", "202", true, "default", "myobject")]
     [InlineData("application/json", "202", false, "default", "void")]
-    [InlineData("application/json", "201", true, "default", "Myobject")]
+    [InlineData("application/json", "201", true, "default", "myobject")]
     [InlineData("application/json", "201", false, "default", "void")]
-    [InlineData("application/json", "200", true, "default", "Myobject")]
+    [InlineData("application/json", "200", true, "default", "myobject")]
     [InlineData("application/json", "200", false, "default", "binary")]
-    [InlineData("application/json", "2XX", true, "default", "Myobject")]
+    [InlineData("application/json", "2XX", true, "default", "myobject")]
     [InlineData("application/json", "2XX", false, "default", "binary")]
     [InlineData("application/xml", "204", true, "default", "void")]
     [InlineData("application/xml", "204", false, "default", "void")]
@@ -4410,7 +4410,7 @@ paths:
     [InlineData("*/*", "200", false, "default", "binary")]
     [InlineData("text/plain", "204", true, "default", "void")]
     [InlineData("text/plain", "204", false, "default", "void")]
-    [InlineData("text/plain", "200", true, "default", "Myobject")]
+    [InlineData("text/plain", "200", true, "default", "myobject")]
     [InlineData("text/plain", "200", false, "default", "string")]
     [InlineData("text/plain", "204", true, "application/json", "void")]
     [InlineData("text/plain", "204", false, "application/json", "void")]
@@ -4587,7 +4587,7 @@ paths:
         Assert.NotNull(rbClass);
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
-        Assert.Equal("Myobject", executor.ReturnType.Name);
+        Assert.Equal("myobject", executor.ReturnType.Name);
     }
     [Fact]
     public void Considers2XXWithSchemaOver204WithNoSchema()
@@ -4660,7 +4660,7 @@ paths:
         Assert.NotNull(rbClass);
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
-        Assert.Equal("Myobject", executor.ReturnType.Name);
+        Assert.Equal("myobject", executor.ReturnType.Name);
     }
     [Fact]
     public void Considers204WithNoSchemaOver206WithNoSchema()
@@ -4729,7 +4729,7 @@ paths:
         Assert.NotNull(executor);
         Assert.Equal("void", executor.ReturnType.Name);
     }
-    [InlineData("application/json", true, "default", "Myobject")]
+    [InlineData("application/json", true, "default", "myobject")]
     [InlineData("application/json", false, "default", "binary")]
     [InlineData("application/xml", false, "default", "binary")]
     [InlineData("application/xml", true, "default", "binary")] //MyObject when we support it
@@ -4744,7 +4744,7 @@ paths:
     [InlineData("*/*", true, "default", "binary")]
     [InlineData("*/*", false, "default", "binary")]
     [InlineData("text/plain", false, "default", "binary")]
-    [InlineData("text/plain", true, "default", "Myobject")]
+    [InlineData("text/plain", true, "default", "myobject")]
     [InlineData("text/plain", true, "application/json", "binary")]
     [InlineData("text/plain", false, "application/json", "binary")]
     [InlineData("text/yaml", true, "application/json", "binary")]
