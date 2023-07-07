@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prevents method overloading for go getters and setters with different values. [#2719](https://github.com/microsoft/kiota/issues/2719)
 - Fixed PHP request executor methods that return enums.
 - Allow configuration of the number of threads via the environment variable KIOTA_GENERATION_MAXDEGREEOFPARALLELISM.
+- Fixes regression where enum options would be renamed in CSharp.
 
 ## [1.3.0] - 2023-06-09
 
