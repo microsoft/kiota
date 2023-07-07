@@ -11,6 +11,7 @@ public class FileLogLogger : ILogger, IDisposable
     private readonly LogLevel _logLevel;
     private readonly string _categoryName;
     internal const string LogFileName = ".kiota.log";
+    private readonly Object writeLock = new();
     public FileLogLogger(string logFileDirectoryAbsolutePath, LogLevel logLevel, string categoryName)
     {
         _logLevel = logLevel;
@@ -43,8 +44,11 @@ public class FileLogLogger : ILogger, IDisposable
             return;
         _logStream.Flush();
         _logStream.Dispose();
-        if (!wroteAnything && !string.IsNullOrEmpty(_logFileAbsolutePath) && File.Exists(_logFileAbsolutePath))
-            File.Delete(_logFileAbsolutePath);
+        lock (writeLock)
+        {
+            if (!wroteAnything && !string.IsNullOrEmpty(_logFileAbsolutePath) && File.Exists(_logFileAbsolutePath))
+                File.Delete(_logFileAbsolutePath);
+        }
     }
     public bool IsEnabled(LogLevel logLevel)
     {
@@ -57,9 +61,12 @@ public class FileLogLogger : ILogger, IDisposable
         if (!IsEnabled(logLevel))
             return;
 
-        if (!wroteAnything)
-            wroteAnything = true;
-        _logStream.WriteLine($"{logLevel}: {_categoryName} {formatter(state, exception)}");
+        lock (writeLock)
+        {
+            if (!wroteAnything)
+                wroteAnything = true;
+            _logStream.WriteLine($"{logLevel}: {_categoryName} {formatter(state, exception)}");
+        }
     }
 }
 
