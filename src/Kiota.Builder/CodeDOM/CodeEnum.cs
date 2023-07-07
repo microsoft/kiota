@@ -13,14 +13,25 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
         get; set;
     }
     public CodeDocumentation Documentation { get; set; } = new();
+    private readonly ConcurrentQueue<CodeEnumOption> OptionsInternal = new(); // this structure is used to maintain the order of the options
 
     public void AddOption(params CodeEnumOption[] codeEnumOptions)
     {
         if (codeEnumOptions is null) return;
-        EnsureElementsAreChildren(codeEnumOptions);
-        AddRange(codeEnumOptions);
+        var result = AddRange(codeEnumOptions);
+        foreach (var option in result)
+        {
+            OptionsInternal.Enqueue(option);
+        }
     }
-    public IEnumerable<CodeEnumOption> Options => InnerChildElements.Values.OfType<CodeEnumOption>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
+    public IEnumerable<CodeEnumOption> Options
+    {
+        get
+        {
+            return OptionsInternal.Join(InnerChildElements.Values.OfType<CodeEnumOption>().ToHashSet(), static x => x, static y => y, static (x, y) => x);
+            // maintaining order of the options is important for enums as they are often used with comparisons
+        }
+    }
     public DeprecationInformation? Deprecation
     {
         get; set;
