@@ -97,14 +97,15 @@ public static class OpenApiUrlTreeNodeExtensions
     private static readonly HashSet<string> httpVerbs = new(StringComparer.OrdinalIgnoreCase) { "get", "post", "put", "patch", "delete", "head", "options", "trace" };
     private static string GetSegmentName(this OpenApiUrlTreeNode currentNode, HashSet<string> structuredMimeTypes, string? suffix, string? prefix, OpenApiOperation? operation, OpenApiResponse? response, OpenApiSchema? schema, bool requestBody, Func<IEnumerable<string>, string> segmentsReducer)
     {
-        var rawClassName = schema?.Reference?.GetClassName() is string className && !string.IsNullOrEmpty(className) ?
-                            className :
+        var referenceName = schema?.Reference?.GetClassName();
+        var rawClassName = referenceName is not null && !string.IsNullOrEmpty(referenceName) ?
+                            referenceName :
                             ((requestBody ? null : response?.GetResponseSchema(structuredMimeTypes)?.Reference?.GetClassName()) is string responseClassName && !string.IsNullOrEmpty(responseClassName) ?
                                 responseClassName :
                                 ((requestBody ? operation?.GetRequestSchema(structuredMimeTypes) : operation?.GetResponseSchema(structuredMimeTypes))?.Reference?.GetClassName() is string requestClassName && !string.IsNullOrEmpty(requestClassName) ?
                                     requestClassName :
                                     CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier()));
-        if (!string.IsNullOrEmpty(rawClassName))
+        if (!string.IsNullOrEmpty(rawClassName) && string.IsNullOrEmpty(referenceName))
         {
             if (stripExtensionForIndexersRegex.IsMatch(rawClassName))
                 rawClassName = stripExtensionForIndexersRegex.Replace(rawClassName, string.Empty);
