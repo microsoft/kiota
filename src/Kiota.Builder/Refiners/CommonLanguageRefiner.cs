@@ -387,7 +387,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 !propertyType.IsExternal &&
                 provider.ReservedNames.Contains(currentProperty.Type.Name))
             propertyType.Name = replacement.Invoke(propertyType.Name);
-        
+
         // Check if the current name meets the following conditions to be replaced
         // 1. In the list of reserved names
         // 2. If it is a reserved name, make sure that the CodeElement type is worth replacing(not on the blocklist)
@@ -407,7 +407,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             {
                 currentEnumOption.SerializationName = currentEnumOption.Name;
             }
-            
+
             var replacementName = replacement.Invoke(current.Name);
             if (current.Parent is IBlock parentBlock)
                 parentBlock.RenameChildElement(current.Name, replacementName);
