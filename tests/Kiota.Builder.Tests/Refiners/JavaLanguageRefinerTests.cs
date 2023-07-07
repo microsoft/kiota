@@ -26,7 +26,7 @@ public class JavaLanguageRefinerTests
         model.AddOption(option);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.Equal("break", option.Name);
-        Assert.Equal("", option.SerializationName);
+        Assert.Empty(option.SerializationName);
     }
     [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()
