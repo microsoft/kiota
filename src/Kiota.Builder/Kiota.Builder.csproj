@@ -44,7 +44,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
     <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.2.1" />
-    <PackageReference Include="Microsoft.Kiota.Http.HttpClientLibrary" Version="1.0.5" />
+    <PackageReference Include="Microsoft.Kiota.Http.HttpClientLibrary" Version="1.0.6" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Form" Version="1.0.1" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.0.7" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Text" Version="1.0.1" />
