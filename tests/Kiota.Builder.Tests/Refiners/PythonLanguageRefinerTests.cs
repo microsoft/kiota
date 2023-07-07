@@ -88,6 +88,21 @@ public class PythonLanguageRefinerTests
         Assert.Single(model.Properties.Where(x => x.IsNameEscaped));
         Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
     }
+    [Theory]
+    [InlineData("None")]
+    [InlineData("while")]
+    public async Task EnumWithReservedName_IsRenamed(string input)
+    {
+        var model = root.AddEnum(new CodeEnum
+        {
+            Name = "someenum"
+        }).First();
+        var option = new CodeEnumOption { Name = input, SerializationName = input };
+        model.AddOption(option);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+
+        Assert.Equal(input+"_", model.Options.First().Name);// we need to escape this in python
+    }
     [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()
     {

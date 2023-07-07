@@ -34,6 +34,22 @@ public class PhpLanguageRefinerTests
         Assert.Equal("userRequestBuilder", model.Name);
     }
 
+    [Theory]
+    [InlineData("break")]
+    [InlineData("case")]
+    public async Task EnumWithReservedName_IsNotRenamed(string input)
+    {
+        var model = root.AddEnum(new CodeEnum
+        {
+            Name = "someenum"
+        }).First();
+        var option = new CodeEnumOption { Name = input, SerializationName = input };
+        model.AddOption(option);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+
+        Assert.Equal(input, model.Options.First().Name);
+    }
+    
     [Fact]
     public async Task PrefixReservedWordPropertyNamesWith()
     {

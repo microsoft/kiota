@@ -84,7 +84,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "set",
                 string.Empty
             );
-            ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}Escaped");
+            ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}Escaped", new HashSet<Type>{typeof(CodeEnumOption)});
             ReplaceReservedExceptionPropertyNames(generatedCode, new JavaExceptionsReservedNamesProvider(), x => $"{x}Escaped");
             LowerCaseNamespaceNames(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
