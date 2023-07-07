@@ -13,7 +13,7 @@ public class JavaLanguageRefinerTests
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLanguageRefinerTests
     [Fact]
-    public async Task ReplacesReservedEnumOptions()
+    public async Task DoesNotReplacesReservedEnumOptions()
     {
         var model = root.AddEnum(new CodeEnum
         {
@@ -25,8 +25,8 @@ public class JavaLanguageRefinerTests
         };
         model.AddOption(option);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.Equal("breakEscaped", option.Name);
-        Assert.Equal("break", option.SerializationName);
+        Assert.Equal("break", option.Name);
+        Assert.Empty(option.SerializationName);
     }
     [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()

@@ -74,6 +74,8 @@ public class CodeEnumWriterTests : IDisposable
     [InlineData("\\", "BackSlash")]
     [InlineData("?", "QuestionMark")]
     [InlineData("$", "Dollar")]
+    [InlineData("double", "Double")]
+    [InlineData("string", "String")]
     public void WritesEnumWithSanitizedName(string symbol, string expected)
     {
         currentEnum.Flags = true;

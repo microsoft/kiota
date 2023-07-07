@@ -387,11 +387,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 !propertyType.IsExternal &&
                 provider.ReservedNames.Contains(currentProperty.Type.Name))
             propertyType.Name = replacement.Invoke(propertyType.Name);
-        else if (current is CodeEnum currentEnum &&
-                isNotInExceptions &&
-                shouldReplace &&
-                currentEnum.Options.Any(x => provider.ReservedNames.Contains(x.Name)))
-            ReplaceReservedEnumNames(currentEnum, provider, replacement);
+
         // Check if the current name meets the following conditions to be replaced
         // 1. In the list of reserved names
         // 2. If it is a reserved name, make sure that the CodeElement type is worth replacing(not on the blocklist)
@@ -406,6 +402,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             {
                 currentProperty.SerializationName = currentProperty.Name;
             }
+            if (current is CodeEnumOption currentEnumOption &&
+                string.IsNullOrEmpty(currentEnumOption.SerializationName))
+            {
+                currentEnumOption.SerializationName = currentEnumOption.Name;
+            }
+
             var replacementName = replacement.Invoke(current.Name);
             if (current.Parent is IBlock parentBlock)
                 parentBlock.RenameChildElement(current.Name, replacementName);
@@ -416,18 +418,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
     }
 
-    private static void ReplaceReservedEnumNames(CodeEnum currentEnum, IReservedNamesProvider provider, Func<string, string> replacement)
-    {
-        currentEnum.Options
-                    .Where(x => provider.ReservedNames.Contains(x.Name))
-                    .ToList()
-                    .ForEach(x =>
-                    {
-                        if (string.IsNullOrEmpty(x.SerializationName))
-                            x.SerializationName = x.Name;
-                        currentEnum.RenameChildElement(x.Name, replacement.Invoke(x.Name));
-                    });
-    }
     private static void ReplaceReservedCodeUsingDeclarationNames(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
     {
         // replace the using declaration type names that are internally defined by the generator

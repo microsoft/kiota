@@ -28,6 +28,21 @@ public class CSharpLanguageRefinerTests
 
         Assert.Contains("EnumMemberAttribute", declaration.Usings.Select(x => x.Name));
     }
+    [Theory]
+    [InlineData("operator")]
+    [InlineData("string")]
+    public async Task EnumWithReservedName_IsNotRenamed(string input)
+    {
+        var model = root.AddEnum(new CodeEnum
+        {
+            Name = "someenum"
+        }).First();
+        var option = new CodeEnumOption { Name = input, SerializationName = input };
+        model.AddOption(option);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+
+        Assert.Equal(input, model.Options.First().Name);
+    }
     [Fact]
     public async Task EnumDoesntHaveEscapedOption_DoesntUseEnumMemberAttribute()
     {
