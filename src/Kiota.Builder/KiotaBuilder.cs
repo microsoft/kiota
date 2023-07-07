@@ -1859,6 +1859,11 @@ public partial class KiotaBuilder
                 {
                     return;
                 }
+                var allProperties = CollectAllProperties(schema);
+                if (!allProperties.Any())
+                {
+                    return;
+                }
                 model.AddProperty(CollectAllProperties(schema)
                                     .Select(x =>
                                     {
