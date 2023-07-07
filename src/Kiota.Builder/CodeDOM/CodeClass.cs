@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-
+using System.Threading;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;
@@ -31,9 +31,10 @@ public enum CodeClassKind
 /// <summary>
 /// CodeClass represents an instance of a Class to be generated in source code
 /// </summary>
-public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition, IDiscriminatorInformationHolder, IDeprecableElement
+public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition, IDiscriminatorInformationHolder, IDeprecableElement, IDisposable
 {
     protected ConcurrentDictionary<string, CodeProperty> PropertiesByWireName { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+    private readonly CountdownEvent propertiesBuilt = new(1);
     public bool IsErrorDefinition
     {
         get; set;
@@ -64,6 +65,31 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
                 AddRange(value);
         }
         get => InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
+    }
+    public Boolean IsPropertiesBuilt()
+    {
+        return Kind != CodeClassKind.Model || propertiesBuilt.CurrentCount == 0;
+    }
+    public void WaitForPropertiesBuilt()
+    {
+        if (Kind == CodeClassKind.Model && !Monitor.IsEntered(propertiesBuilt))
+        {
+            propertiesBuilt.Wait();
+        }
+    }
+    public void StartBuildingProperties()
+    {
+        if (Kind == CodeClassKind.Model)
+            Monitor.Enter(propertiesBuilt);
+    }
+    public void PropertiesBuildingDone()
+    {
+        if (Kind == CodeClassKind.Model)
+        {
+            if (!IsPropertiesBuilt())
+                propertiesBuilt.Signal();
+            Monitor.Exit(propertiesBuilt);
+        }
     }
     public override IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
     {
@@ -140,6 +166,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         ArgumentException.ThrowIfNullOrEmpty(propertyName);
 
+        WaitForPropertiesBuilt();
         if (FindChildByName<CodeProperty>(propertyName, findInChildElements: false) is CodeProperty result)
         {
             return result;
@@ -154,6 +181,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         ArgumentException.ThrowIfNullOrEmpty(serializationName);
 
+        WaitForPropertiesBuilt();
         if (BaseClass is CodeClass currentParentClass)
             if (currentParentClass.FindPropertyByWireName(serializationName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
                 return currentProperty;
@@ -242,6 +270,24 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     public DeprecationInformation? Deprecation
     {
         get; set;
+    }
+    private bool isDisposed;
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+    protected virtual void Dispose(bool disposing)
+    {
+        if (isDisposed) return;
+
+        if (disposing)
+        {
+            // free managed resources
+            propertiesBuilt.Dispose();
+        }
+
+        isDisposed = true;
     }
 }
 public class ClassDeclaration : ProprietableBlockDeclaration

@@ -1850,11 +1850,16 @@ public partial class KiotaBuilder
     }
     private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace ns, CodeClass model)
     {
-        if (!model.Properties.Any(static x => x.IsOfKind(CodePropertyKind.Custom))) // this redundant check on model properties is here to avoid race conditions
-            if (schema?.Properties?.Any() ?? false)
+        if (!model.IsPropertiesBuilt())
+        {
+            try
             {
-                model.AddProperty(schema
-                                    .Properties
+                model.StartBuildingProperties();
+                if (model.IsPropertiesBuilt())
+                {
+                    return;
+                }
+                model.AddProperty(CollectAllProperties(schema)
                                     .Select(x =>
                                     {
                                         var propertySchema = x.Value;
@@ -1875,8 +1880,33 @@ public partial class KiotaBuilder
                                     .OfType<CodeProperty>()
                                     .ToArray());
             }
-            else if (schema?.AllOf?.LastOrDefault(static x => x.IsObject()) is OpenApiSchema lastAllOfSchema)
-                CreatePropertiesForModelClass(currentNode, lastAllOfSchema, ns, model);
+            finally
+            {
+                model.PropertiesBuildingDone();
+            }
+        }
+    }
+    private Dictionary<String, OpenApiSchema> CollectAllProperties(OpenApiSchema schema)
+    {
+        Dictionary<String, OpenApiSchema> result = new();
+        if (schema.Properties?.Any() ?? false)
+        {
+            foreach (var property in schema.Properties)
+            {
+                result.Add(property.Key, property.Value);
+            }
+        }
+        if (schema.AllOf?.Any() ?? false)
+        {
+            foreach (var supSchema in schema.AllOf.Where(x => x.IsObject() && !x.IsReferencedSchema() && (x.Properties?.Any() ?? false)))
+            {
+                foreach (var supProperty in supSchema.Properties)
+                {
+                    result.Add(supProperty.Key, supProperty.Value);
+                }
+            }
+        }
+        return result;
     }
     private const string FieldDeserializersMethodName = "GetFieldDeserializers";
     private const string SerializeMethodName = "Serialize";
