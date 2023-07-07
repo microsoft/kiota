@@ -62,7 +62,9 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
         {
             if (Getter != null)
                 return Getter;
-            return OriginalPropertyFromBaseType?.Getter;
+            if (ExistsInBaseType)
+                return OriginalPropertyFromBaseType?.Getter;
+            return default;
         }
     }
     public CodeMethod? SetterFromCurrentOrBaseType
@@ -71,7 +73,9 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
         {
             if (Setter != null)
                 return Setter;
-            return OriginalPropertyFromBaseType?.Setter;
+            if (ExistsInBaseType)
+                return OriginalPropertyFromBaseType?.Setter;
+            return default;
         }
     }
 #nullable disable // the backing property is required
@@ -105,12 +109,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     public string WireName => IsNameEscaped ? SerializationName : Name.ToFirstCharacterLowerCase();
     public CodeProperty? OriginalPropertyFromBaseType
     {
-        get => IsOfKind(CodePropertyKind.Custom) ? Parent switch
-        {
-            CodeClass parentClass => parentClass.StartBlock.GetOriginalPropertyDefinedFromBaseType(Name),
-            CodeInterface parentInterface => parentInterface.StartBlock.GetOriginalPropertyDefinedFromBaseType(Name),
-            _ => default
-        } : default;
+        get; set;
     }
     public DeprecationInformation? Deprecation
     {
@@ -134,6 +133,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
             Documentation = (CodeDocumentation)Documentation.Clone(),
             SerializationName = SerializationName,
             NamePrefix = NamePrefix,
+            OriginalPropertyFromBaseType = OriginalPropertyFromBaseType?.Clone() as CodeProperty,
             Deprecation = Deprecation,
         };
         return property;
