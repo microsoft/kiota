@@ -235,14 +235,6 @@ public class CodeMethodWriterTests : IDisposable
             Type = new CodeType
             {
                 Name = "string"
-            },
-            OriginalPropertyFromBaseType = new CodeProperty
-            {
-                Name = "definedInParent",
-                Type = new CodeType
-                {
-                    Name = "string"
-                }
             }
         });
     }
@@ -541,10 +533,24 @@ public class CodeMethodWriterTests : IDisposable
     }
     private void AddInheritanceClass()
     {
+        var baseClass = (parentClass.Parent as CodeNamespace).AddClass(new CodeClass
+        {
+            Name = "someParentClass",
+        }).First();
         parentClass.StartBlock.Inherits = new CodeType
         {
-            Name = "someParentClass"
+            Name = "someParentClass",
+            TypeDefinition = baseClass
         };
+        baseClass.AddProperty(new CodeProperty
+        {
+            Name = "definedInParent",
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+            Kind = CodePropertyKind.Custom,
+        });
     }
     private void AddRequestBodyParameters(CodeMethod target = default, bool useComplexTypeForBody = false)
     {

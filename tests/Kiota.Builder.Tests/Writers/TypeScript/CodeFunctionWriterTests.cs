@@ -6,7 +6,6 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
-using Kiota.Builder.Tests;
 using Kiota.Builder.Writers;
 using Xunit;
 
@@ -258,6 +257,7 @@ public class CodeFunctionWriterTests : IDisposable
         writer.Write(serializeFunction);
         var result = tw.ToString();
         Assert.Contains($"...deserializeInto{inheritedClass.Name.ToFirstCharacterUpperCase()}", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public async Task WritesDeSerializerBody()
@@ -271,7 +271,7 @@ public class CodeFunctionWriterTests : IDisposable
         Assert.Contains("getCollectionOfPrimitiveValues", result);
         Assert.Contains("getCollectionOfObjectValues", result);
         Assert.Contains("getEnumValue", result);
-        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public async Task WritesInheritedSerializerBody()
@@ -283,6 +283,7 @@ public class CodeFunctionWriterTests : IDisposable
         writer.Write(serializeFunction);
         var result = tw.ToString();
         Assert.Contains($"serialize{inheritedClass.Name.ToFirstCharacterUpperCase()}(writer, parentClass)", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public async Task WritesSerializerBody()
@@ -299,7 +300,7 @@ public class CodeFunctionWriterTests : IDisposable
         Assert.Contains("writeCollectionOfObjectValues", result);
         Assert.Contains("writeEnumValue", result);
         Assert.Contains($"writer.writeAdditionalData", result);
-        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

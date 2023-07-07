@@ -42,9 +42,18 @@ namespace Kiota.Builder.Tests
             (modelClass.Parent as CodeNamespace).AddClass(parentClass);
             modelClass.StartBlock.Inherits = new CodeType
             {
-                Name = "someParentClass",
+                Name = parentClass.Name,
                 TypeDefinition = parentClass
             };
+            parentClass.AddProperty(new CodeProperty
+            {
+                Name = "definedInParent",
+                Type = new CodeType
+                {
+                    Name = "string"
+                },
+                Kind = CodePropertyKind.Custom,
+            });
             return parentClass;
         }
 
@@ -83,7 +92,8 @@ namespace Kiota.Builder.Tests
             // CodeClass property
 
             var propertyClass = CreateModelClass("SomeComplexType");
-            (modelClass.Parent as CodeNamespace).AddClass(propertyClass);
+            var parentNamespace = modelClass.Parent as CodeNamespace;
+            parentNamespace.AddClass(propertyClass);
             modelClass.AddProperty(new CodeProperty
             {
                 Name = "dummyComplexColl",
@@ -100,7 +110,7 @@ namespace Kiota.Builder.Tests
             {
                 Name = "EnumType"
             };
-            (modelClass.Parent as CodeNamespace).AddEnum(propertyEnum);
+            parentNamespace.AddEnum(propertyEnum);
             modelClass.AddProperty(new CodeProperty
             {
                 Name = "dummyEnumCollection",
@@ -118,14 +128,7 @@ namespace Kiota.Builder.Tests
                 {
                     Name = "string"
                 },
-                OriginalPropertyFromBaseType = new CodeProperty
-                {
-                    Name = "definedInParent",
-                    Type = new CodeType
-                    {
-                        Name = "string"
-                    }
-                }
+                Kind = CodePropertyKind.Custom,
             });
         }
     }

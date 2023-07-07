@@ -181,7 +181,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
             var properties = codeInterface.Properties.Where(static x => x.Kind == CodePropertyKind.Custom && !x.ExistsInBaseType);
 
             writer.StartBlock("return {");
-            if (codeInterface.StartBlock.Implements.FirstOrDefault(x => x.TypeDefinition is CodeInterface) is CodeType type && type.TypeDefinition is CodeInterface inherits)
+            if (codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType type && type.TypeDefinition is CodeInterface inherits)
             {
                 writer.WriteLine($"...deserializeInto{inherits.Name.ToFirstCharacterUpperCase()}({param.Name.ToFirstCharacterLowerCase()}),");
             }
