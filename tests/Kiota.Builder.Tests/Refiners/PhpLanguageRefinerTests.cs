@@ -49,7 +49,7 @@ public class PhpLanguageRefinerTests
 
         Assert.Equal(input, model.Options.First().Name);
     }
-    
+
     [Fact]
     public async Task PrefixReservedWordPropertyNamesWith()
     {

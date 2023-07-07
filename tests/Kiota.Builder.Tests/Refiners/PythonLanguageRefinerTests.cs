@@ -101,7 +101,7 @@ public class PythonLanguageRefinerTests
         model.AddOption(option);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
 
-        Assert.Equal(input+"_", model.Options.First().Name);// we need to escape this in python
+        Assert.Equal(input + "_", model.Options.First().Name);// we need to escape this in python
     }
     [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()
