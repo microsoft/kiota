@@ -8,7 +8,7 @@ using Microsoft.OpenApi.Models;
 namespace Kiota.Builder.Extensions;
 public static class OpenApiOperationExtensions
 {
-    internal static readonly HashSet<string> SuccessCodes = new(StringComparer.OrdinalIgnoreCase) { "200", "201", "202", "203", "2XX" }; //204 excluded as it won't have a schema
+    internal static readonly HashSet<string> SuccessCodes = new(StringComparer.OrdinalIgnoreCase) { "200", "201", "202", "203", "206", "2XX" }; //204 excluded as it won't have a schema
     /// <summary>
     /// cleans application/vnd.github.mercy-preview+json to application/json
     /// </summary>

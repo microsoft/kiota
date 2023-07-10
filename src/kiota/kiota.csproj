@@ -9,7 +9,6 @@
     <PackageProjectUrl>https://github.com/microsoft/kiota</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ToolCommandName>kiota</ToolCommandName>
     <Authors>Microsoft</Authors>
@@ -57,7 +56,6 @@
       ReferenceOutputAssembly="false" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="../../LICENSE" Pack="true" PackagePath="" />
     <None Include="../../README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
