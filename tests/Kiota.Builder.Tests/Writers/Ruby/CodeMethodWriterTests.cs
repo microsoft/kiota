@@ -151,16 +151,30 @@ public class CodeMethodWriterTests : IDisposable
             Type = new CodeType
             {
                 Name = "string"
-            },
-            OriginalPropertyFromBaseType = dummyProp,
+            }
         });
+
     }
     private void AddInheritanceClass()
     {
+        var baseClass = (parentClass.Parent as CodeNamespace).AddClass(new CodeClass
+        {
+            Name = "someParentClass",
+        }).First();
         parentClass.StartBlock.Inherits = new CodeType
         {
-            Name = "someParentClass"
+            Name = "someParentClass",
+            TypeDefinition = baseClass
         };
+        baseClass.AddProperty(new CodeProperty
+        {
+            Name = "definedInParent",
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+            Kind = CodePropertyKind.Custom,
+        });
     }
     private void AddRequestBodyParameters()
     {
@@ -522,7 +536,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("get_collection_of_primitive_values", result);
         Assert.Contains("get_collection_of_object_values", result);
         Assert.Contains("get_enum_value", result);
-        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public void WritesInheritedSerializerBody()
@@ -534,6 +548,7 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("super", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -548,7 +563,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("write_collection_of_object_values", result);
         Assert.Contains("write_enum_value", result);
         Assert.Contains("write_additional_data", result);
-        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

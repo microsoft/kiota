@@ -240,14 +240,6 @@ public class CodeMethodWriterTests : IDisposable
             Type = new CodeType
             {
                 Name = "string"
-            },
-            OriginalPropertyFromBaseType = new CodeProperty
-            {
-                Name = "definedInParent",
-                Type = new CodeType
-                {
-                    Name = "string"
-                }
             }
         });
     }
@@ -460,10 +452,24 @@ public class CodeMethodWriterTests : IDisposable
     }
     private void AddInheritanceClass()
     {
+        var baseClass = (parentClass.Parent as CodeNamespace).AddClass(new CodeClass
+        {
+            Name = "someParentClass",
+        }).First();
         parentClass.StartBlock.Inherits = new CodeType
         {
-            Name = "someParentClass"
+            Name = "someParentClass",
+            TypeDefinition = baseClass
         };
+        baseClass.AddProperty(new CodeProperty
+        {
+            Name = "definedInParent",
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+            Kind = CodePropertyKind.Custom,
+        });
     }
 
     private void AddCodeUsings()
@@ -703,6 +709,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("super_fields = super()", result);
         Assert.Contains("fields.update(super_fields)", result);
         Assert.Contains("return fields", result);
+        Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public void WritesUnionDeSerializerBody()
@@ -774,7 +781,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("get_collection_of_primitive_values(UUID)", result);
         Assert.Contains("get_collection_of_object_values(Complex)", result);
         Assert.Contains("get_enum_value(SomeEnum)", result);
-        Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public void WritesInheritedSerializerBody()
@@ -786,6 +793,7 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("super().serialize", result);
+        Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public void WritesUnionSerializerBody()
@@ -875,8 +883,8 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("write_collection_of_object_values", result);
         Assert.Contains("write_enum_value", result);
         Assert.Contains("write_additional_data_value(self.additional_data)", result);
-        Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("()", result);
+        Assert.Contains("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("()", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public void WritesMethodAsyncDescription()
