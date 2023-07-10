@@ -415,7 +415,7 @@ stages:
               targetType: "inline"
               script: |
                 $xml = [Xml] (Get-Content $(Build.SourcesDirectory)/src/kiota/kiota.csproj)
-                $version = $xml.Project.PropertyGroup.Version
+                $version = $xml.Project.PropertyGroup.Version[0]
                 echo $version
                 Write-Host "##vso[task.setvariable variable=artifactVersion]$version"
           - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion) -filePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
@@ -491,10 +491,11 @@ stages:
                     targetType: "inline"
                     script: |
                       $xml = [Xml] (Get-Content $(Build.SourcesDirectory)/src/kiota/kiota.csproj)
-                      $version = $xml.Project.PropertyGroup.Version
+                      $version = $xml.Project.PropertyGroup.Version[0]
                       echo $version
                       Write-Host "##vso[task.setvariable variable=artifactVersion]$version"
                 - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion) -filePath $(Build.SourcesDirectory)/CHANGELOG.md
+                  displayName: "Get release notes from CHANGELOG.md"
                 - task: GitHubRelease@1
                   inputs:
                     gitHubConnection: 'microsoftkiota'
