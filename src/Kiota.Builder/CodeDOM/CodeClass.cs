@@ -68,9 +68,9 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     }
     public Boolean IsPropertiesBuilt()
     {
-        return Kind != CodeClassKind.Model || propertiesBuilt.CurrentCount == 0;
+        return Kind != CodeClassKind.Model || propertiesBuilt.IsSet;
     }
-    public void WaitForPropertiesBuilt()
+    private void WaitForPropertiesBuilt()
     {
         if (Kind == CodeClassKind.Model && !Monitor.IsEntered(propertiesBuilt))
         {
@@ -87,7 +87,12 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         if (Kind == CodeClassKind.Model)
         {
             if (!IsPropertiesBuilt())
-                propertiesBuilt.Signal();
+            {
+                if (!propertiesBuilt.Signal())
+                {
+                    throw new InvalidOperationException("PropertiesBuilt CountdownEvent is expected to always reach 0 at this point.");
+                }
+            }
             Monitor.Exit(propertiesBuilt);
         }
     }
