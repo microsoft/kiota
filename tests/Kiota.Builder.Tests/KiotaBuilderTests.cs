@@ -223,6 +223,67 @@ components:
         Assert.NotEmpty(thirdOption.Documentation.Description);
         Assert.Single(enumDef.Options.Where(static x => x.Name.Equals("Premium_LRS", StringComparison.OrdinalIgnoreCase)));
     }
+    [Theory]
+    [InlineData("description: 'Represents an Azure Active Directory user.'")]
+    [InlineData("title: 'user'")]
+    [InlineData("default: {\"displayName\": \"displayName-value\"}")]
+    [InlineData("examples: {\"displayName\": \"displayName-value\"}")]
+    [InlineData("readOnly: true")]
+    [InlineData("writeOnly: true")]
+    [InlineData("deprecated: true")]
+    public async Task DoesNotIntroduceIntermediateTypesForMeaninglessProperties(string additionalInformation)
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /users:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/microsoft.graph.directoryObject'
+                  - " + additionalInformation + @"
+components:
+  schemas:
+    microsoft.graph.directoryObject:
+      title: directoryObject
+      required:
+        - '@odata.type'
+      type: object
+      properties:
+        deletedDateTime:
+          pattern: '^[0-9]{4,}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]{1,12})?(Z|[+-][0-9][0-9]:[0-9][0-9])$'
+          type: string
+          format: date-time
+          nullable: true
+        '@odata.type':
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models.microsoft.graph");
+        Assert.NotNull(modelsNS);
+        Assert.NotNull(modelsNS.FindChildByName<CodeClass>("DirectoryObject", false)); //type in use
+        var usersNS = codeModel.FindNamespaceByName("ApiSdk.users");
+        Assert.NotNull(usersNS);
+        var usersRB = usersNS.FindChildByName<CodeClass>("UsersRequestBuilder", false);
+        Assert.NotNull(usersRB);
+        var getMethod = usersRB.FindChildByName<CodeMethod>("Get", false);
+        Assert.NotNull(getMethod);
+        Assert.Equal("DirectoryObject", getMethod.ReturnType.Name, StringComparer.OrdinalIgnoreCase); //type in use
+        Assert.Null(modelsNS.FindChildByName<CodeClass>("UsersResponse", false)); //empty type
+    }
     [Fact]
     public async Task TrimsInheritanceUnusedModels()
     {
