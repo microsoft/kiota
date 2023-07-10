@@ -1,0 +1,19 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <id>com.github.hossain2024.intellijtestplugin</id>
+    <name>intellijTestPlugin Template</name>
+    <vendor>hossain2024</vendor>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <resource-bundle>messages.MyBundle</resource-bundle>
+
+    <extensions defaultExtensionNs="com.intellij">
+      <!--  <toolWindow factoryClass="com.github.hossain2024.intellijtestplugin.toolWindow.MyToolWindowFactory" id="MyToolWindowFactory"/> -->
+        <toolWindow factoryClass="com.github.hossain2024.intellijtestplugin.toolWindow.MyToolWindowFactory" id="MyToolWindowFactory"/>
+    </extensions>
+
+    <applicationListeners>
+        <listener class="com.github.hossain2024.intellijtestplugin.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
+    </applicationListeners>
+</idea-plugin>
