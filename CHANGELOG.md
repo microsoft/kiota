@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Use schematized types for 206 response codes instead of binary. [#2880](https://github.com/microsoft/kiota/issues/2880)
+
 ## [1.4.0] - 2023-07-07
 
 ### Added
@@ -41,7 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow configuration of the number of threads via the environment variable KIOTA_GENERATION_MAXDEGREEOFPARALLELISM.
 - Fixes regression where enum options would be renamed in CSharp.
 - Add locking to writing to log files.
-- Use actual types for 206 response codes. [#2880](https://github.com/microsoft/kiota/issues/2880)
 
 ## [1.3.0] - 2023-06-09
 
