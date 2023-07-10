@@ -4368,7 +4368,7 @@ paths:
         Assert.Equal("some path item description", responseProperty.Documentation.Description);
     }
 
-    [InlineData("application/json", "206", true, "default", "binary")]
+    [InlineData("application/json", "206", true, "default", "Myobject")]
     [InlineData("application/json", "206", false, "default", "binary")]
     [InlineData("application/json", "205", true, "default", "void")]
     [InlineData("application/json", "205", false, "default", "void")]
