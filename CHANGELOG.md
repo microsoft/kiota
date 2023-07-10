@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deprecated Visual Studio OpenAPI reference packages.
 - Fixed a bug where TypeScript errors would loose inheritance to base error definition.
 - Fixed a bug where types trimming would be too aggressive.
+- Fixed a bug where base property detection would be broken resulting in duplicate properties in inheritance trees.
+- Fixes a bug where classes ending up with Id would have the wrong names.
 - Fixed a bug where default enum values would not fail to build in TypeScript. [#2615](https://github.com/microsoft/kiota/issues/2615)
 - Replaced response handler parameter by request option to reduce generated code size in TypeScript. [#1855](https://github.com/microsoft/kiota/issues/1855)
 - Fixed a bug where a stackoverflow exception occurs when inlined schemas have self-references [2656](https://github.com/microsoft/kiota/issues/2656)

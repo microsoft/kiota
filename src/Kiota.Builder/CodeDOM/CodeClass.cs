@@ -63,14 +63,6 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         }
         get => InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
     }
-    public override IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
-    {
-        var result = base.AddProperty(properties);
-        foreach (var addedPropertyTuple in result.Select(x => new Tuple<CodeProperty, CodeProperty?>(x, StartBlock.GetOriginalPropertyDefinedFromBaseType(x.Name)))
-                                        .Where(static x => x.Item2 != null))
-            addedPropertyTuple.Item1.OriginalPropertyFromBaseType = addedPropertyTuple.Item2!;
-        return result;
-    }
     private CodeProperty? FindPropertyByNameInTypeHierarchy(string propertyName)
     {
         ArgumentException.ThrowIfNullOrEmpty(propertyName);
@@ -171,8 +163,9 @@ public class ClassDeclaration : ProprietableBlockDeclaration
         ArgumentException.ThrowIfNullOrEmpty(propertyName);
 
         if (inherits is CodeType currentInheritsType &&
+            !inherits.IsExternal &&
             currentInheritsType.TypeDefinition is CodeClass currentParentClass)
-            if (currentParentClass.FindChildByName<CodeProperty>(propertyName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
+            if (currentParentClass.FindChildByName<CodeProperty>(propertyName, false) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType)
                 return currentProperty;
             else
                 return currentParentClass.StartBlock.GetOriginalPropertyDefinedFromBaseType(propertyName);

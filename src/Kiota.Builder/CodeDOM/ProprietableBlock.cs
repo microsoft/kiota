@@ -31,7 +31,7 @@ public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlo
         }
     }
     public CodeDocumentation Documentation { get; set; } = new();
-    public virtual IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
+    public IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
     {
         if (properties == null || properties.Any(static x => x == null))
             throw new ArgumentNullException(nameof(properties));

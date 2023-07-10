@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
@@ -25,9 +24,6 @@ public class CodeMethodWriterTests : IDisposable
     private readonly CodeClass parentClass;
     private const string MethodName = "methodName";
     private const string ReturnTypeName = "Promise";
-    private const string MethodDescription = "some description";
-    private const string ParamDescription = "some parameter description";
-    private const string ParamName = "paramName";
     private CodeMethodWriter _codeMethodWriter;
     private readonly ILanguageRefiner _refiner;
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
@@ -396,7 +392,7 @@ public class CodeMethodWriterTests : IDisposable
         new object[] { new CodeProperty { Name = "dateValue", Type = new CodeType { Name = "DateTime" }, Access = AccessModifier.Private}, "$writer->writeDateTimeValue('dateValue', $this->getDateValue());" },
         new object[] { new CodeProperty { Name = "duration", Type = new CodeType { Name = "duration" }, Access = AccessModifier.Private}, "$writer->writeDateIntervalValue('duration', $this->getDuration());" },
         new object[] { new CodeProperty { Name = "stream", Type = new CodeType { Name = "binary" }, Access = AccessModifier.Private}, "$writer->writeBinaryContent('stream', $this->getStream());" },
-        new object[] { new CodeProperty { Name = "definedInParent", Type = new CodeType { Name = "string"}, OriginalPropertyFromBaseType = new CodeProperty() { Name = "definedInParent", Type = new CodeType { Name = "string"}} }, "$write->writeStringValue('definedInParent', $this->getDefinedInParent());"}
+        new object[] { new CodeProperty { Name = "definedInParent", Type = new CodeType { Name = "string"}}, "$write->writeStringValue('definedInParent', $this->getDefinedInParent());"}
     };
 
     [Theory]
@@ -423,6 +419,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddMethod(codeMethod);
         parentClass.AddProperty(property);
+        AddInheritanceClass();
         var propertyType = property.Type.AllTypes.FirstOrDefault()?.TypeDefinition;
         switch (propertyType)
         {
@@ -784,7 +781,7 @@ public class CodeMethodWriterTests : IDisposable
             "/** @var array<int>|null $val */",
             "$this->setYears($val);"
         },
-        new object[] { new CodeProperty{ Name = "definedInParent", Type = new CodeType { Name = "string"}, OriginalPropertyFromBaseType = new CodeProperty() { Name = "definedInParent", Type = new CodeType { Name = "string"}} }, "'definedInParent' => function (ParseNode $n) use ($o) { $o->setDefinedInParent($n->getStringValue())"}
+        new object[] { new CodeProperty{ Name = "definedInParent", Type = new CodeType { Name = "string"}}, "'definedInParent' => function (ParseNode $n) use ($o) { $o->setDefinedInParent($n->getStringValue())"}
     };
     private static CodeClass GetParentClassInStaticContext()
     {
@@ -825,6 +822,7 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddMethod(deserializerMethod);
         parentClass.AddProperty(property);
+        AddInheritanceClass();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, parentClass.Parent as CodeNamespace);
         languageWriter.Write(deserializerMethod);
         foreach (var assertion in expected)
@@ -2117,29 +2115,30 @@ public class CodeMethodWriterTests : IDisposable
             Type = new CodeType
             {
                 Name = "string"
-            },
-            OriginalPropertyFromBaseType = new CodeProperty
-            {
-                Name = "definedInParent",
-                Type = new CodeType
-                {
-                    Name = "string"
-                }
             }
         });
     }
     private void AddInheritanceClass()
     {
+        var baseClass = (parentClass.Parent as CodeNamespace).AddClass(new CodeClass
+        {
+            Name = "someParentClass",
+            Kind = CodeClassKind.Model,
+        }).First();
         parentClass.StartBlock.Inherits = new CodeType
         {
             Name = "someParentClass",
-            TypeDefinition = new CodeClass
-            {
-                Name = "BaseClass",
-                Kind = CodeClassKind.Model,
-                Parent = root
-            }
+            TypeDefinition = baseClass
         };
+        baseClass.AddProperty(new CodeProperty
+        {
+            Name = "definedInParent",
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+            Kind = CodePropertyKind.Custom,
+        });
     }
     [Fact]
     public async void WritesRequestConfigurationConstructor()
