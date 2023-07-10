@@ -1636,7 +1636,7 @@ public partial class KiotaBuilder
             {
                 DocumentationLabel = schema.ExternalDocs?.Description ?? string.Empty,
                 DocumentationLink = schema.ExternalDocs?.Url,
-                Description = (string.IsNullOrEmpty(schema.Description) ? schema.AllOf.LastOrDefault()?.Description : schema.Description).CleanupDescription(),
+                Description = (string.IsNullOrEmpty(schema.Description) ? schema.AllOf.OrderBy(static x => x?.Reference.Id, StringComparer.OrdinalIgnoreCase).LastOrDefault(static x => !string.IsNullOrEmpty(x.Description))?.Description : schema.Description).CleanupDescription(),
             },
             Deprecation = schema.GetDeprecationInformation(),
         };
