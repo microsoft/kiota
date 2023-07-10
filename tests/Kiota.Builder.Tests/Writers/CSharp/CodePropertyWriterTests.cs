@@ -128,14 +128,25 @@ public class CodePropertyWriterTests : IDisposable
     public void DoesntWritePropertiesExistingInParentType()
     {
         property.Kind = CodePropertyKind.Custom;
-        property.OriginalPropertyFromBaseType = new CodeProperty
+        property.Name = "definedInParent";
+        var baseClass = (parentClass.Parent as CodeNamespace).AddClass(new CodeClass
+        {
+            Name = "BaseClass",
+        }).First();
+        parentClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "BaseClass",
+            TypeDefinition = baseClass
+        };
+        baseClass.AddProperty(new CodeProperty
         {
             Name = "definedInParent",
             Type = new CodeType
             {
                 Name = "string"
-            }
-        };
+            },
+            Kind = CodePropertyKind.Custom,
+        });
         writer.Write(property);
         var result = tw.ToString();
         Assert.Empty(result);
@@ -159,19 +170,19 @@ public class CodePropertyWriterTests : IDisposable
         });
 
         var levelOneNameSpace = rootNamespace.AddNamespace("namespaceLevelOne");
-        var anotherderivedClass = levelOneNameSpace.AddClass(
+        var anotherDerivedClass = levelOneNameSpace.AddClass(
             new CodeClass
             {
                 Name = "SomeCustomClass"
             }).First();
-        levelOneNameSpace.AddClass(anotherderivedClass);
+        levelOneNameSpace.AddClass(anotherDerivedClass);
         var conflictingProperty = new CodeProperty
         {
             Name = $"{PropertyName}2",
             Type = new CodeType
             {
                 Name = TypeName,
-                TypeDefinition = anotherderivedClass
+                TypeDefinition = anotherDerivedClass
             },
         };
         testModel.AddProperty(conflictingProperty);

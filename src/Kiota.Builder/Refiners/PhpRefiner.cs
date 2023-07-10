@@ -42,7 +42,7 @@ public class PhpRefiner : CommonLanguageRefiner
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
                 false);
-            ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
+            ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}", new HashSet<Type> { typeof(CodeEnumOption) });
             AddQueryParameterFactoryMethod(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");

@@ -165,14 +165,6 @@ public class CodeMethodWriterTests : IDisposable
             Type = new CodeType
             {
                 Name = "string"
-            },
-            OriginalPropertyFromBaseType = new CodeProperty
-            {
-                Name = "definedInParent",
-                Type = new CodeType
-                {
-                    Name = "string"
-                }
             }
         });
     }
@@ -346,10 +338,24 @@ public class CodeMethodWriterTests : IDisposable
     }
     private void AddInheritanceClass()
     {
+        var baseClass = (parentClass.Parent as CodeNamespace).AddClass(new CodeClass
+        {
+            Name = "someParentClass",
+        }).First();
         parentClass.StartBlock.Inherits = new CodeType
         {
-            Name = "someParentClass"
+            Name = "someParentClass",
+            TypeDefinition = baseClass
         };
+        baseClass.AddProperty(new CodeProperty
+        {
+            Name = "definedInParent",
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+            Kind = CodePropertyKind.Custom,
+        });
     }
     private void AddRequestBodyParameters(bool useComplexTypeForBody = false)
     {
@@ -987,6 +993,7 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("base.", result);
         Assert.Contains("new", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1047,7 +1054,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("GetCollectionOfPrimitiveValues", result);
         Assert.Contains("GetCollectionOfObjectValues", result);
         Assert.Contains("GetEnumValue", result);
-        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("{\"DummyUCaseProp", result);
         Assert.Contains("{\"dummyProp", result);
     }
@@ -1061,6 +1068,7 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("base.Serialize(writer)", result);
+        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1148,7 +1156,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("WriteAdditionalData(additionalData);", result);
         Assert.Contains("WriteStringValue(\"dummyProp\"", result);
         Assert.Contains("WriteStringValue(\"DummyUCaseProp\"", result);
-        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

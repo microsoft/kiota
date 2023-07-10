@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.4.0] - 2023-07-07
+
+### Added
+
 - Added support for Composed types (De)Serialization for Python Generation. [#1813](https://github.com/microsoft/kiota/issues/1813)
 - Added support for deprecation annotations in C#, Java, TypeScript and Go. [#2605](https://github.com/microsoft/kiota/issues/2605)
 - Added a message to update kiota when using an outdated version. [#2099](https://github.com/microsoft/kiota/issues/2099)
@@ -21,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deprecated Visual Studio OpenAPI reference packages.
 - Fixed a bug where TypeScript errors would loose inheritance to base error definition.
 - Fixed a bug where types trimming would be too aggressive.
+- Fixed a bug where base property detection would be broken resulting in duplicate properties in inheritance trees.
+- Fixes a bug where classes ending up with Id would have the wrong names.
 - Fixed a bug where default enum values would not fail to build in TypeScript. [#2615](https://github.com/microsoft/kiota/issues/2615)
 - Replaced response handler parameter by request option to reduce generated code size in TypeScript. [#1855](https://github.com/microsoft/kiota/issues/1855)
 - Fixed a bug where a stackoverflow exception occurs when inlined schemas have self-references [2656](https://github.com/microsoft/kiota/issues/2656)
@@ -31,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prevents method overloading for go getters and setters with different values. [#2719](https://github.com/microsoft/kiota/issues/2719)
 - Fixed PHP request executor methods that return enums.
 - Allow configuration of the number of threads via the environment variable KIOTA_GENERATION_MAXDEGREEOFPARALLELISM.
+- Fixes regression where enum options would be renamed in CSharp.
+- Add locking to writing to log files.
 
 ## [1.3.0] - 2023-06-09
 
