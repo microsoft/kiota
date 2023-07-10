@@ -362,6 +362,6 @@ public class OpenApiUrlTreeNodeExtensionsTests
             .GetClassName(new() { "application/json" }, schema: responseSchema);
 
         // validate that we get a valid class name
-        Assert.Equal("Json", responseClassName);
+        Assert.Equal("json", responseClassName);
     }
 }

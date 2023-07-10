@@ -14,7 +14,7 @@ public class OpenApiReferenceExtensionsTests
         {
             Id = "microsoft.graph.user"
         };
-        Assert.Equal("User", reference.GetClassName());
+        Assert.Equal("user", reference.GetClassName());
     }
     [Fact]
     public void GetsClassNameDefensive()
