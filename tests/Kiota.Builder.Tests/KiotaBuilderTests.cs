@@ -6016,4 +6016,76 @@ paths:
         Assert.Empty(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && keysToCheck.Contains(x.Name)));
         Assert.Single(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
     }
+    [Fact]
+    public async Task DiscriptionTakenFromAllOf()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /directoryObject:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.directoryObject'
+components:
+  schemas:
+    microsoft.graph.entity:
+      title: entity
+      description: 'base entity'
+      type: object
+      properties:
+        id:
+          type: string
+        '@odata.type':
+          type: string
+      discriminator:
+        propertyName: '@odata.type'
+        mapping:
+          '#microsoft.graph.directoryObject': '#/components/schemas/microsoft.graph.directoryObject'
+          '#microsoft.graph.sub1': '#/components/schemas/microsoft.graph.sub1'
+          '#microsoft.graph.sub2': '#/components/schemas/microsoft.graph.sub2'
+    microsoft.graph.directoryObject:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.entity'
+        - title: directoryObject
+          description: 'directory object'
+          type: object
+          required: [ '@odata.type' ]
+          discriminator:
+            propertyName: '@odata.type'
+            mapping:
+              '#microsoft.graph.sub1': '#/components/schemas/microsoft.graph.sub1'
+              '#microsoft.graph.sub2': '#/components/schemas/microsoft.graph.sub2'
+    microsoft.graph.sub1:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.directoryObject'
+        - title: sub1
+          description: 'sub1'
+          type: object
+    microsoft.graph.sub2:
+      description: 'sub2'
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.directoryObject'
+        - title: sub2
+          description: 'ignored'
+          type: object");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.Equal("base entity", codeModel.FindChildByName<CodeClass>("entity").Documentation.Description);
+        Assert.Equal("directory object", codeModel.FindChildByName<CodeClass>("directoryObject").Documentation.Description);
+        Assert.Equal("sub1", codeModel.FindChildByName<CodeClass>("sub1").Documentation.Description);
+        Assert.Equal("sub2", codeModel.FindChildByName<CodeClass>("sub2").Documentation.Description);
+    }
 }
