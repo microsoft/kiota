@@ -1563,6 +1563,7 @@ public partial class KiotaBuilder
             return currentNamespace.EnsureItemNamespace();
         return currentNamespace;
     }
+    private ConcurrentDictionary<string, ModelClassBuildLifecyle> classLifecycles = new(StringComparer.OrdinalIgnoreCase);
     private CodeElement AddModelDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null)
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
@@ -1650,7 +1651,27 @@ public partial class KiotaBuilder
         AddSerializationMembers(newClassStub, includeAdditionalDataProperties, config.UsesBackingStore);
 
         var newClass = currentNamespace.AddClass(newClassStub).First();
-        CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass); // order matters since we might be recursively generating ancestors for discriminator mappings and duplicating additional data/backing store properties
+        var lifecycle = classLifecycles.GetOrAdd(currentNamespace.Name + "." + declarationName, static n => new());
+        if (!lifecycle.IsPropertiesBuilt())
+        {
+            try
+            {
+                lifecycle.StartBuildingProperties();
+                if (!lifecycle.IsPropertiesBuilt())
+                {
+                    if (inheritsFrom != null)
+                    {
+                        classLifecycles.TryGetValue(inheritsFrom.Parent!.Name + "." + inheritsFrom.Name, out var superClassLifecycle);
+                        superClassLifecycle!.WaitForPropertiesBuilt();
+                    }
+                    CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass); // order matters since we might be recursively generating ancestors for discriminator mappings and duplicating additional data/backing store properties
+                }
+            }
+            finally
+            {
+                lifecycle.PropertiesBuildingDone();
+            }
+        }
 
         var mappings = GetDiscriminatorMappings(currentNode, schema, currentNamespace, newClass)
                         .Where(x => x.Value is CodeType type &&
@@ -1850,46 +1871,26 @@ public partial class KiotaBuilder
     }
     private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace ns, CodeClass model)
     {
-        if (!model.IsPropertiesBuilt())
-        {
-            try
-            {
-                model.StartBuildingProperties();
-                if (model.IsPropertiesBuilt())
-                {
-                    return;
-                }
-                var allProperties = CollectAllProperties(schema);
-                if (!allProperties.Any())
-                {
-                    return;
-                }
-                model.AddProperty(CollectAllProperties(schema)
-                                    .Select(x =>
-                                    {
-                                        var propertySchema = x.Value;
-                                        var className = propertySchema.GetSchemaName().CleanupSymbolName();
-                                        if (string.IsNullOrEmpty(className))
-                                            className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
-                                        var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
-                                        var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
-                                                            rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
-                                        var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
-                                        if (definition == null)
-                                        {
-                                            logger.LogWarning("Omitted property {PropertyName} for model {ModelName} in API path {ApiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
-                                            return null;
-                                        }
-                                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
-                                    })
-                                    .OfType<CodeProperty>()
-                                    .ToArray());
-            }
-            finally
-            {
-                model.PropertiesBuildingDone();
-            }
-        }
+        model.AddProperty(CollectAllProperties(schema)
+                            .Select(x =>
+                            {
+                                var propertySchema = x.Value;
+                                var className = propertySchema.GetSchemaName().CleanupSymbolName();
+                                if (string.IsNullOrEmpty(className))
+                                    className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
+                                var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
+                                var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
+                                                    rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
+                                var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
+                                if (definition == null)
+                                {
+                                    logger.LogWarning("Omitted property {PropertyName} for model {ModelName} in API path {ApiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
+                                    return null;
+                                }
+                                return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
+                            })
+                            .OfType<CodeProperty>()
+                            .ToArray());
     }
     private Dictionary<String, OpenApiSchema> CollectAllProperties(OpenApiSchema schema)
     {
