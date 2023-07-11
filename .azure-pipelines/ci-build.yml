@@ -18,6 +18,9 @@ trigger:
   tags:
     include:
       - v*
+  branches:
+    include:
+      - main
 
 variables:
   buildPlatform: "Any CPU"
@@ -66,12 +69,14 @@ stages:
             displayName: "Restore workloads"
             workingDirectory: $(Build.SourcesDirectory)
 
+          #TODO script to generate a version suffix if not a tagged build and set it as variable
+          
           # Build the Product project
           - task: DotNetCoreCLI@2
             displayName: "build"
             inputs:
               projects: '$(Build.SourcesDirectory)\kiota.sln'
-              arguments: "--configuration $(BuildConfiguration) --no-incremental"
+              arguments: "--configuration $(BuildConfiguration) --no-incremental --version-suffix $(versionSuffix)"
 
           # Run the Unit test
           - task: DotNetCoreCLI@2
@@ -183,10 +188,10 @@ stages:
               SessionTimeout: 20
 
           # Pack
-          - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
+          - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg --version-suffix $(versionSuffix)
             displayName: "pack kiota"
 
-          - pwsh: dotnet pack $(Build.SourcesDirectory)/src/Kiota.Builder/Kiota.Builder.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
+          - pwsh: dotnet pack $(Build.SourcesDirectory)/src/Kiota.Builder/Kiota.Builder.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg --version-suffix $(versionSuffix)
             displayName: "pack kiota builder"
 
           - task: EsrpCodeSigning@2
@@ -263,7 +268,8 @@ stages:
             displayName: "Use .NET 7"
             inputs:
               version: 7.x
-          - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture)
+          #TODO call the version suffix script
+          - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture) --version-suffix $(versionSuffix)
             displayName: publish kiota as executable
           - task: AzureKeyVault@2
             displayName: "Azure Key Vault: Get Secrets"
@@ -418,11 +424,12 @@ stages:
                 $version = $xml.Project.PropertyGroup.Version[0]
                 echo $version
                 Write-Host "##vso[task.setvariable variable=artifactVersion]$version"
+              #TODO move this to a script file and use the version suffix information
           - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion) -filePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
           - pwsh: npm i -g @vscode/vsce
           - pwsh: npm ci
             workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
-          - pwsh: vsce package
+          - pwsh: vsce package #TODO add --pre-release based on the trigger
             workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
           - task: CopyFiles@2
             displayName: Prepare staging folder for upload
@@ -438,6 +445,7 @@ stages:
 
   - stage: deploy
     condition: and(contains(variables['build.sourceBranch'], 'refs/tags/v'), succeeded())
+    #TODO add a condition to only run on the main branch
     dependsOn: build
     jobs:
       - job: vs_marketplace
@@ -461,6 +469,7 @@ stages:
                 Write-Host "Publishing $_.FullName"
                 vsce publish --pat "$(vs-marketplace-token)" --packagePath $_.FullName
               }
+            #TODO add a pre-release argument based on the trigger
       - deployment: github_release
         dependsOn: []
         environment: kiota-github-releases
@@ -495,6 +504,7 @@ stages:
                       $version = $xml.Project.PropertyGroup.Version[0]
                       echo $version
                       Write-Host "##vso[task.setvariable variable=artifactVersion]$version"
+                    #TODO update from the script
                 - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion) -filePath $(Build.SourcesDirectory)/CHANGELOG.md
                   displayName: "Get release notes from CHANGELOG.md"
                 - task: GitHubRelease@1
@@ -511,6 +521,7 @@ stages:
                       $(Pipeline.Workspace)/*.nupkg
                       $(Pipeline.Workspace)/*.snupkg
                     addChangeLog: false
+                  #TODO add pre-release flag based on the trigger
 
       - deployment: deploy_kiota
         dependsOn: []
