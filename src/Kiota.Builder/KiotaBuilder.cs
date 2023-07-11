@@ -78,6 +78,7 @@ public partial class KiotaBuilder
         var (_, openApiTree, _) = await GetTreeNodeInternal(inputPath, false, sw, cancellationToken).ConfigureAwait(false);
         return openApiTree;
     }
+    public OpenApiDocument? OriginalOpenApiDocument => originalDocument;
     private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
     {
         logger.LogDebug("kiota version {Version}", Generated.KiotaVersion.Current());
