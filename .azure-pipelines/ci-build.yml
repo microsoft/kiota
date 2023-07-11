@@ -443,7 +443,8 @@ stages:
       - job: vs_marketplace
         variables:
           - group: kiota-vscode-extension-publish
-        dependsOn: []
+        dependsOn: 
+          - github_release
         pool:
           vmImage: ubuntu-latest
         steps:
