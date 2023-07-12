@@ -427,6 +427,27 @@ public class TypeScriptLanguageRefinerTests
         Assert.Equal("Date", modelInterface.Properties.First(x => x.Name == codeProperty.Name).Type.Name);
     }
     [Fact]
+    public async Task ReplacesGuidsByRespectiveType()
+    {
+        var model = TestHelper.CreateModelClass();
+        root.AddClass(model);
+        var codeProperty = model.AddProperty(new CodeProperty
+        {
+            Name = "method",
+            Type = new CodeType
+            {
+                Name = "Guid",
+                IsExternal = true
+            },
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+
+        var modelInterface = root.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
+        Assert.NotEmpty(modelInterface.StartBlock.Usings);
+        Assert.NotEmpty(modelInterface.StartBlock.Usings.Where(x => x.Name.Equals("Guid")));
+        Assert.Equal("Guid", modelInterface.Properties.First(x => x.Name == codeProperty.Name).Type.Name);
+    }
+    [Fact]
     public async Task ReplacesDateOnlyByNativeType()
     {
 
