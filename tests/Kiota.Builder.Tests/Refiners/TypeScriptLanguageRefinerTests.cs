@@ -442,10 +442,10 @@ public class TypeScriptLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
-        var modelInterface = root.Interfaces.First(x => x.Name == model.Name.ToFirstCharacterUpperCase());
+        var modelInterface = root.Interfaces.First(x => x.Name.Equals(model.Name, StringComparison.OrdinalIgnoreCase));
         Assert.NotEmpty(modelInterface.StartBlock.Usings);
-        Assert.NotEmpty(modelInterface.StartBlock.Usings.Where(x => x.Name.Equals("Guid")));
-        Assert.Equal("Guid", modelInterface.Properties.First(x => x.Name == codeProperty.Name).Type.Name);
+        Assert.NotEmpty(modelInterface.StartBlock.Usings.Where(static x => x.Name.Equals("Guid", StringComparison.Ordinal)));
+        Assert.Equal("Guid", modelInterface.Properties.First(x => x.Name.Equals(codeProperty.Name, StringComparison.OrdinalIgnoreCase)).Type.Name, StringComparer.OrdinalIgnoreCase);
     }
     [Fact]
     public async Task ReplacesDateOnlyByNativeType()
