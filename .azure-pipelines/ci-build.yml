@@ -80,7 +80,7 @@ stages:
             displayName: "build"
             inputs:
               projects: '$(Build.SourcesDirectory)\kiota.sln'
-              arguments: "--configuration $(BuildConfiguration) --no-incremental --version-suffix $(versionSuffix)"
+              arguments: '--configuration $(BuildConfiguration) --no-incremental --version-suffix "$(versionSuffix)"'
 
           # Run the Unit test
           - task: DotNetCoreCLI@2
@@ -192,10 +192,10 @@ stages:
               SessionTimeout: 20
 
           # Pack
-          - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg --version-suffix $(versionSuffix)
+          - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg --version-suffix "$(versionSuffix)"
             displayName: "pack kiota"
 
-          - pwsh: dotnet pack $(Build.SourcesDirectory)/src/Kiota.Builder/Kiota.Builder.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg --version-suffix $(versionSuffix)
+          - pwsh: dotnet pack $(Build.SourcesDirectory)/src/Kiota.Builder/Kiota.Builder.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg --version-suffix "$(versionSuffix)"
             displayName: "pack kiota builder"
 
           - task: EsrpCodeSigning@2
@@ -274,7 +274,7 @@ stages:
               version: 7.x
           - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch)
             displayName: "Set version suffix"
-          - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture) --version-suffix $(versionSuffix)
+          - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture) --version-suffix "$(versionSuffix)"
             displayName: publish kiota as executable
           - task: AzureKeyVault@2
             displayName: "Azure Key Vault: Get Secrets"
