@@ -588,6 +588,8 @@ public partial class KiotaBuilder
             StopLogAndReset(stopwatch, $"{nameof(MapTypeDefinitions)}");
             TrimInheritedModels();
             StopLogAndReset(stopwatch, $"{nameof(TrimInheritedModels)}");
+            CleanUpInternalState();
+            StopLogAndReset(stopwatch, $"{nameof(CleanUpInternalState)}");
 
             logger.LogTrace("{Timestamp}ms: Created source model with {Count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.GetChildElements(true).Count());
         }
@@ -2101,4 +2103,11 @@ public partial class KiotaBuilder
             Name = schema.Items?.Type ?? schema.Type,
             CollectionKind = schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default,
         };
+
+    private void CleanUpInternalState()
+    {
+        foreach (var lifecycle in classLifecycles.Values)
+            lifecycle.Dispose();
+        classLifecycles.Clear();
+    }
 }
