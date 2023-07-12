@@ -6,6 +6,7 @@ import { connectToKiota, KiotaOpenApiNode, KiotaShowConfiguration, KiotaShowResu
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<OpenApiTreeNode | undefined | null | void> = new vscode.EventEmitter<OpenApiTreeNode | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<OpenApiTreeNode | undefined | null | void> = this._onDidChangeTreeData.event;
+    private apiTitle?: string;
     constructor(
         private readonly context: vscode.ExtensionContext,
         private _descriptionUrl?: string,
@@ -183,8 +184,11 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                 descriptionPath: this.descriptionUrl
             });
         });
-        if(result && result.rootNode) {
-            this.rawRootNode = result.rootNode;
+        if(result) {
+            this.apiTitle = result.apiTitle;
+            if(result.rootNode) {
+                this.rawRootNode = result.rootNode;
+            }
         }
     }
     getCollapsedState(hasChildren: boolean): vscode.TreeItemCollapsibleState {
@@ -197,7 +201,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     getTreeNodeFromKiotaNode(node: KiotaOpenApiNode): OpenApiTreeNode {
         return new OpenApiTreeNode(
             node.path, 
-            node.segment,
+            node.segment === pathSeparator && this.apiTitle ? pathSeparator + " (" + this.apiTitle + ")" : node.segment,
             node.selected || false,
             this.getCollapsedState(node.children.length > 0),
             node.isOperation || false,
