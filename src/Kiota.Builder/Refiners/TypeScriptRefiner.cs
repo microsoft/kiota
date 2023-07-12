@@ -189,6 +189,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, AliasUsingsWithSameSymbol);
     }
+    private const string GuidPackageName = "guid-typescript";
     private const string AbstractionsPackageName = "@microsoft/kiota-abstractions";
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
@@ -305,6 +306,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                             Name = "TimeOnly",
                             Declaration = new CodeType {
                                 Name = AbstractionsPackageName,
+                                IsExternal = true,
+                            },
+                        })},
+    {"Guid", (string.Empty, new CodeUsing {
+                            Name = "Guid",
+                            Declaration = new CodeType {
+                                Name = GuidPackageName,
                                 IsExternal = true,
                             },
                         })},

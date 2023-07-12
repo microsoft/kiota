@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added the title of the API in the VSCode tree view. [#2779](https://github.com/microsoft/kiota/issues/2779)
+- Added capability to serialize and deserialize UUIDs in typescript
 
 ### Changed
 
