@@ -430,10 +430,10 @@ stages:
             workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
           - pwsh: vsce package --pre-release
             workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
-            if: eq(variables['isPrerelease'], 'true')
+            condition: eq(variables['isPrerelease'], 'true')
           - pwsh: vsce package
             workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
-            if: eq(variables['isPrerelease'], 'false')
+            condition: eq(variables['isPrerelease'], 'false')
           - task: CopyFiles@2
             displayName: Prepare staging folder for upload
             inputs:
@@ -512,13 +512,13 @@ stages:
                 - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                   displayName: "Get Kiota's version-number from .csproj"
                 - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion) -filePath $(Build.SourcesDirectory)/CHANGELOG.md
-                  if: eq(variables['isPrerelease'], 'false')
+                  condition: eq(variables['isPrerelease'], 'false')
                   displayName: "Get release notes from CHANGELOG.md"
                 - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased -filePath $(Build.SourcesDirectory)/CHANGELOG.md
-                  if: eq(variables['isPrerelease'], 'true')
+                  condition: eq(variables['isPrerelease'], 'true')
                   displayName: "Get release notes from CHANGELOG.md"
                 - task: GitHubRelease@1
-                  if: eq(variables['isPrerelease'], 'false')
+                  condition: eq(variables['isPrerelease'], 'false')
                   inputs:
                     gitHubConnection: 'microsoftkiota'
                     tagSource: userSpecifiedTag
@@ -533,7 +533,7 @@ stages:
                       $(Pipeline.Workspace)/*.snupkg
                     addChangeLog: false
                 - task: GitHubRelease@1
-                  if: eq(variables['isPrerelease'], 'true')
+                  condition: eq(variables['isPrerelease'], 'true')
                   inputs:
                     gitHubConnection: 'microsoftkiota'
                     tagSource: userSpecifiedTag
