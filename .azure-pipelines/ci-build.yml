@@ -26,7 +26,7 @@ variables:
   buildPlatform: "Any CPU"
   buildConfiguration: "Release"
   ProductBinPath: '$(Build.SourcesDirectory)\src\kiota\bin\$(BuildConfiguration)'
-  previewBranch: "refs/heads/main"
+  previewBranch: "refs/heads/feature/pre-release"
 
 stages:
   - stage: build
