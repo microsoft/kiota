@@ -3427,7 +3427,7 @@ paths:
         Assert.NotNull(requestExecutorMethod);
         var executorReturnType = requestExecutorMethod.ReturnType as CodeType;
         Assert.NotNull(executorReturnType);
-        Assert.Contains("DerivedObject", requestExecutorMethod.ReturnType.Name);
+        Assert.Contains("derivedObject", requestExecutorMethod.ReturnType.Name);
         var secondLevelDerivedClass = codeModel.FindChildByName<CodeClass>("derivedObject");
         Assert.NotNull(secondLevelDerivedObject);
         var factoryMethod = secondLevelDerivedClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
@@ -4307,7 +4307,7 @@ paths:
         Assert.NotNull(rbClass);
         var executorMethod = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.NotNull(executorMethod);
-        Assert.Equal("Myobject", executorMethod.ReturnType.Name);
+        Assert.Equal("myobject", executorMethod.ReturnType.Name);
     }
     [Fact]
     public void ModelsUseDescriptionWhenAvailable()
@@ -4368,21 +4368,21 @@ paths:
         Assert.Equal("some path item description", responseProperty.Documentation.Description);
     }
 
-    [InlineData("application/json", "206", true, "default", "binary")]
+    [InlineData("application/json", "206", true, "default", "myobject")]
     [InlineData("application/json", "206", false, "default", "binary")]
     [InlineData("application/json", "205", true, "default", "void")]
     [InlineData("application/json", "205", false, "default", "void")]
     [InlineData("application/json", "204", true, "default", "void")]
     [InlineData("application/json", "204", false, "default", "void")]
-    [InlineData("application/json", "203", true, "default", "Myobject")]
+    [InlineData("application/json", "203", true, "default", "myobject")]
     [InlineData("application/json", "203", false, "default", "binary")]
-    [InlineData("application/json", "202", true, "default", "Myobject")]
+    [InlineData("application/json", "202", true, "default", "myobject")]
     [InlineData("application/json", "202", false, "default", "void")]
-    [InlineData("application/json", "201", true, "default", "Myobject")]
+    [InlineData("application/json", "201", true, "default", "myobject")]
     [InlineData("application/json", "201", false, "default", "void")]
-    [InlineData("application/json", "200", true, "default", "Myobject")]
+    [InlineData("application/json", "200", true, "default", "myobject")]
     [InlineData("application/json", "200", false, "default", "binary")]
-    [InlineData("application/json", "2XX", true, "default", "Myobject")]
+    [InlineData("application/json", "2XX", true, "default", "myobject")]
     [InlineData("application/json", "2XX", false, "default", "binary")]
     [InlineData("application/xml", "204", true, "default", "void")]
     [InlineData("application/xml", "204", false, "default", "void")]
@@ -4410,7 +4410,7 @@ paths:
     [InlineData("*/*", "200", false, "default", "binary")]
     [InlineData("text/plain", "204", true, "default", "void")]
     [InlineData("text/plain", "204", false, "default", "void")]
-    [InlineData("text/plain", "200", true, "default", "Myobject")]
+    [InlineData("text/plain", "200", true, "default", "myobject")]
     [InlineData("text/plain", "200", false, "default", "string")]
     [InlineData("text/plain", "204", true, "application/json", "void")]
     [InlineData("text/plain", "204", false, "application/json", "void")]
@@ -4587,7 +4587,7 @@ paths:
         Assert.NotNull(rbClass);
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
-        Assert.Equal("Myobject", executor.ReturnType.Name);
+        Assert.Equal("myobject", executor.ReturnType.Name);
     }
     [Fact]
     public void Considers2XXWithSchemaOver204WithNoSchema()
@@ -4660,7 +4660,7 @@ paths:
         Assert.NotNull(rbClass);
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
-        Assert.Equal("Myobject", executor.ReturnType.Name);
+        Assert.Equal("myobject", executor.ReturnType.Name);
     }
     [Fact]
     public void Considers204WithNoSchemaOver206WithNoSchema()
@@ -4729,7 +4729,7 @@ paths:
         Assert.NotNull(executor);
         Assert.Equal("void", executor.ReturnType.Name);
     }
-    [InlineData("application/json", true, "default", "Myobject")]
+    [InlineData("application/json", true, "default", "myobject")]
     [InlineData("application/json", false, "default", "binary")]
     [InlineData("application/xml", false, "default", "binary")]
     [InlineData("application/xml", true, "default", "binary")] //MyObject when we support it
@@ -4744,7 +4744,7 @@ paths:
     [InlineData("*/*", true, "default", "binary")]
     [InlineData("*/*", false, "default", "binary")]
     [InlineData("text/plain", false, "default", "binary")]
-    [InlineData("text/plain", true, "default", "Myobject")]
+    [InlineData("text/plain", true, "default", "myobject")]
     [InlineData("text/plain", true, "application/json", "binary")]
     [InlineData("text/plain", false, "application/json", "binary")]
     [InlineData("text/yaml", true, "application/json", "binary")]
@@ -6015,5 +6015,77 @@ paths:
         var keysToCheck = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "datasets", "datakeys", "datainfo" };
         Assert.Empty(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && keysToCheck.Contains(x.Name)));
         Assert.Single(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
+    public async Task DiscriptionTakenFromAllOf()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /directoryObject:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.directoryObject'
+components:
+  schemas:
+    microsoft.graph.entity:
+      title: entity
+      description: 'base entity'
+      type: object
+      properties:
+        id:
+          type: string
+        '@odata.type':
+          type: string
+      discriminator:
+        propertyName: '@odata.type'
+        mapping:
+          '#microsoft.graph.directoryObject': '#/components/schemas/microsoft.graph.directoryObject'
+          '#microsoft.graph.sub1': '#/components/schemas/microsoft.graph.sub1'
+          '#microsoft.graph.sub2': '#/components/schemas/microsoft.graph.sub2'
+    microsoft.graph.directoryObject:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.entity'
+        - title: directoryObject
+          description: 'directory object'
+          type: object
+          required: [ '@odata.type' ]
+          discriminator:
+            propertyName: '@odata.type'
+            mapping:
+              '#microsoft.graph.sub1': '#/components/schemas/microsoft.graph.sub1'
+              '#microsoft.graph.sub2': '#/components/schemas/microsoft.graph.sub2'
+    microsoft.graph.sub1:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.directoryObject'
+        - title: sub1
+          description: 'sub1'
+          type: object
+    microsoft.graph.sub2:
+      description: 'sub2'
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.directoryObject'
+        - title: sub2
+          description: 'ignored'
+          type: object");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.Equal("base entity", codeModel.FindChildByName<CodeClass>("entity").Documentation.Description);
+        Assert.Equal("directory object", codeModel.FindChildByName<CodeClass>("directoryObject").Documentation.Description);
+        Assert.Equal("sub1", codeModel.FindChildByName<CodeClass>("sub1").Documentation.Description);
+        Assert.Equal("sub2", codeModel.FindChildByName<CodeClass>("sub2").Documentation.Description);
     }
 }

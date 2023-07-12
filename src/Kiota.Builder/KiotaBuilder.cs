@@ -78,6 +78,7 @@ public partial class KiotaBuilder
         var (_, openApiTree, _) = await GetTreeNodeInternal(inputPath, false, sw, cancellationToken).ConfigureAwait(false);
         return openApiTree;
     }
+    public OpenApiDocument? OriginalOpenApiDocument => originalDocument;
     private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
     {
         logger.LogDebug("kiota version {Version}", Generated.KiotaVersion.Current());
@@ -1636,7 +1637,7 @@ public partial class KiotaBuilder
             {
                 DocumentationLabel = schema.ExternalDocs?.Description ?? string.Empty,
                 DocumentationLink = schema.ExternalDocs?.Url,
-                Description = schema.Description.CleanupDescription(),
+                Description = (string.IsNullOrEmpty(schema.Description) ? schema.AllOf?.FirstOrDefault(static x => !x.IsReferencedSchema() && !string.IsNullOrEmpty(x.Description))?.Description : schema.Description).CleanupDescription(),
             },
             Deprecation = schema.GetDeprecationInformation(),
         };

@@ -99,9 +99,10 @@ internal class Server : IServer
         configuration.IncludePatterns = includeFilters.ToHashSet();
         configuration.ExcludePatterns = excludeFilters.ToHashSet();
         configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
-        var urlTreeNode = await new KiotaBuilder(logger, configuration, httpClient).GetUrlTreeNodeAsync(cancellationToken);
+        var builder = new KiotaBuilder(logger, configuration, httpClient);
+        var urlTreeNode = await builder.GetUrlTreeNodeAsync(cancellationToken);
         var rootNode = urlTreeNode != null ? ConvertOpenApiUrlTreeNodeToPathItem(urlTreeNode) : null;
-        return new ShowResult(logger.LogEntries, rootNode);
+        return new ShowResult(logger.LogEntries, rootNode, builder.OriginalOpenApiDocument?.Info?.Title);
     }
     public async Task<List<LogEntry>> GenerateAsync(string descriptionPath, string output, GenerationLanguage language, string[] includeFilters, string[] excludeFilters, string clientClassName, string clientNamespaceName, CancellationToken cancellationToken)
     {
