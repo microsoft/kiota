@@ -26,6 +26,7 @@ variables:
   buildPlatform: "Any CPU"
   buildConfiguration: "Release"
   ProductBinPath: '$(Build.SourcesDirectory)\src\kiota\bin\$(BuildConfiguration)'
+  previewBranch: "refs/heads/main"
 
 stages:
   - stage: build
@@ -69,7 +70,10 @@ stages:
             displayName: "Restore workloads"
             workingDirectory: $(Build.SourcesDirectory)
 
-          #TODO script to generate a version suffix if not a tagged build and set it as variable
+          - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch)
+            displayName: "Set version suffix"
+          - pwsh: $(Build.SourcesDirectory)/scripts/update-versions.ps1
+            displayName: "Update dependencies versions"
           
           # Build the Product project
           - task: DotNetCoreCLI@2
@@ -268,7 +272,8 @@ stages:
             displayName: "Use .NET 7"
             inputs:
               version: 7.x
-          #TODO call the version suffix script
+          - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch)
+            displayName: "Set version suffix"
           - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture) --version-suffix $(versionSuffix)
             displayName: publish kiota as executable
           - task: AzureKeyVault@2
@@ -396,7 +401,7 @@ stages:
             displayName: "Publish Artifact: binaries"
             inputs:
               ArtifactName: Binaries
-              PathtoPublish: "$(Build.ArtifactStagingDirectory)/binaries/$(architecture).zip"
+              PathToPublish: "$(Build.ArtifactStagingDirectory)/binaries/$(architecture).zip"
 
 
       - job: build_vscode_extension
@@ -415,22 +420,20 @@ stages:
               artifact: Binaries
               source: current
               targetPath: $(Build.ArtifactStagingDirectory)/Binaries
-          - task: PowerShell@2
+          - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch)
+            displayName: "Set version suffix"
+          - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
             displayName: "Get Kiota's version-number from .csproj"
-            inputs:
-              targetType: "inline"
-              script: |
-                $xml = [Xml] (Get-Content $(Build.SourcesDirectory)/src/kiota/kiota.csproj)
-                $version = $xml.Project.PropertyGroup.Version[0]
-                echo $version
-                Write-Host "##vso[task.setvariable variable=artifactVersion]$version"
-              #TODO move this to a script file and use the version suffix information
-          - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion) -filePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
+          - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -filePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
           - pwsh: npm i -g @vscode/vsce
           - pwsh: npm ci
             workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
-          - pwsh: vsce package #TODO add --pre-release based on the trigger
+          - pwsh: vsce package --pre-release
             workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
+            condition: eq(variables['isPrerelease'], 'true')
+          - pwsh: vsce package
+            workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
+            condition: eq(variables['isPrerelease'], 'false')
           - task: CopyFiles@2
             displayName: Prepare staging folder for upload
             inputs:
@@ -441,11 +444,10 @@ stages:
             displayName: "Publish Artifact: VSCode"
             inputs:
               ArtifactName: VSCode
-              PathtoPublish: "$(Build.ArtifactStagingDirectory)/VSCode"
+              PathToPublish: "$(Build.ArtifactStagingDirectory)/VSCode"
 
   - stage: deploy
-    condition: and(contains(variables['build.sourceBranch'], 'refs/tags/v'), succeeded())
-    #TODO add a condition to only run on the main branch
+    condition: and(or(contains(variables['build.sourceBranch'], 'refs/tags/v'), eq(variables['build.sourceBranch'], variables['previewBranch'])), succeeded())
     dependsOn: build
     jobs:
       - job: vs_marketplace
@@ -456,6 +458,10 @@ stages:
         pool:
           vmImage: ubuntu-latest
         steps:
+          - download: none
+          - checkout: self
+            clean: true
+            submodules: true
           - task: DownloadPipelineArtifact@2
             inputs:
               artifact: VSCode
@@ -464,12 +470,20 @@ stages:
             inputs:
               versionSpec: "18.x"
           - pwsh: npm i -g @vscode/vsce
+          - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch)
+            displayName: "Set version suffix"
           - pwsh: |
               Get-ChildItem -Path $(Pipeline.Workspace) -Filter *.vsix -Recurse | ForEach-Object {
                 Write-Host "Publishing $_.FullName"
-                vsce publish --pat "$(vs-marketplace-token)" --packagePath $_.FullName
+                if ($env:isPrerelease -eq "true") {
+                  Write-Host "Publishing $_.FullName as a pre-release"
+                  vsce publish --pat "$(vs-marketplace-token)" --packagePath $_.FullName --pre-release
+                }
+                else {
+                  Write-Host "Publishing $_.FullName as a release"
+                  vsce publish --pat "$(vs-marketplace-token)" --packagePath $_.FullName
+                }
               }
-            #TODO add a pre-release argument based on the trigger
       - deployment: github_release
         dependsOn: []
         environment: kiota-github-releases
@@ -495,19 +509,16 @@ stages:
                   inputs:
                     artifact: Nugets
                     source: current
-                - task: PowerShell@2
+                - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                   displayName: "Get Kiota's version-number from .csproj"
-                  inputs:
-                    targetType: "inline"
-                    script: |
-                      $xml = [Xml] (Get-Content $(Build.SourcesDirectory)/src/kiota/kiota.csproj)
-                      $version = $xml.Project.PropertyGroup.Version[0]
-                      echo $version
-                      Write-Host "##vso[task.setvariable variable=artifactVersion]$version"
-                    #TODO update from the script
                 - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion) -filePath $(Build.SourcesDirectory)/CHANGELOG.md
+                  condition: eq(variables['isPrerelease'], 'false')
+                  displayName: "Get release notes from CHANGELOG.md"
+                - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased -filePath $(Build.SourcesDirectory)/CHANGELOG.md
+                  condition: eq(variables['isPrerelease'], 'true')
                   displayName: "Get release notes from CHANGELOG.md"
                 - task: GitHubRelease@1
+                  condition: eq(variables['isPrerelease'], 'false')
                   inputs:
                     gitHubConnection: 'microsoftkiota'
                     tagSource: userSpecifiedTag
@@ -521,7 +532,22 @@ stages:
                       $(Pipeline.Workspace)/*.nupkg
                       $(Pipeline.Workspace)/*.snupkg
                     addChangeLog: false
-                  #TODO add pre-release flag based on the trigger
+                - task: GitHubRelease@1
+                  condition: eq(variables['isPrerelease'], 'true')
+                  inputs:
+                    gitHubConnection: 'microsoftkiota'
+                    tagSource: userSpecifiedTag
+                    tag: 'v$(artifactVersion)'
+                    title: 'v$(artifactVersion)'
+                    releaseNotesSource: filePath
+                    releaseNotesFilePath: $(Build.SourcesDirectory)/release-notes.txt
+                    assets: |
+                      $(Pipeline.Workspace)/*.zip
+                      $(Pipeline.Workspace)/*.vsix
+                      $(Pipeline.Workspace)/*.nupkg
+                      $(Pipeline.Workspace)/*.snupkg
+                    addChangeLog: false
+                    isPreRelease: true
 
       - deployment: deploy_kiota
         dependsOn: []
