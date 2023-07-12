@@ -45,6 +45,12 @@ updates:
   open-pull-requests-limit: 10
 
 - package-ecosystem: npm
+  directory: "/it/typescript"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+
+- package-ecosystem: npm
   directory: "/vscode/microsoft-kiota"
   schedule:
     interval: daily

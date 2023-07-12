@@ -7,7 +7,6 @@
     "build:meta": "node ./build/esbuild.js --dev --meta",
     "build:meta:prod": "node ./build/esbuild.js --meta",
     "build:prod": "node ./build/esbuild.js",
-    "cz": "git cz",
     "docker:build": "docker build --rm -t typescript:latest .",
     "docker:deploy": "sh ./scripts/deploy.sh",
     "lint": "eslint . --ext .ts,.js",
@@ -17,19 +16,12 @@
     "start:ci": "node ./build/esbuild.js --run",
     "start:prod": "node ./build/esbuild.js --watch --run"
   },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
-  },
   "prettier": "./.prettierrc.json",
   "devDependencies": {
     "@es-exec/esbuild-plugin-start": "^0.0.4",
     "@types/node": "^18.14.1",
     "@typescript-eslint/eslint-plugin": "^5.53.0",
     "@typescript-eslint/parser": "^5.53.0",
-    "commitizen": "^4.3.0",
-    "cz-conventional-changelog": "^3.3.0",
     "esbuild": "^0.17.10",
     "eslint": "^8.34.0",
     "eslint-config-prettier": "^8.6.0",
