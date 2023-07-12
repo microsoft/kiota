@@ -272,6 +272,8 @@ stages:
             displayName: "Use .NET 7"
             inputs:
               version: 7.x
+          - pwsh: $(Build.SourcesDirectory)/scripts/update-versions.ps1
+            displayName: "Update dependencies versions"
           - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch)
             displayName: "Set version suffix"
           - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture) --version-suffix "$(versionSuffix)"
