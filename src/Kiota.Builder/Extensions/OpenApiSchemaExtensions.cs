@@ -170,15 +170,17 @@ public static class OpenApiSchemaExtensions
             if (string.IsNullOrEmpty(item.Title) && subsequentItems.Any())
                 permutations.Add(item, subsequentItems.FlattenEmptyEntries(subsequentGetter, maxDepth.HasValue ? --maxDepth : default));
         }
-        foreach (var permutation in permutations)
-        {
-            var index = result.IndexOf(permutation.Key);
-            result.RemoveAt(index);
-            var offset = 0;
-            foreach (var insertee in permutation.Value)
+        if (permutations.Count > 0) {
+            foreach (var permutation in permutations)
             {
-                result.Insert(index + offset, insertee);
-                offset++;
+                var index = result.IndexOf(permutation.Key);
+                result.RemoveAt(index);
+                var offset = 0;
+                foreach (var insertee in permutation.Value)
+                {
+                    result.Insert(index + offset, insertee);
+                    offset++;
+                }
             }
         }
         return result;
