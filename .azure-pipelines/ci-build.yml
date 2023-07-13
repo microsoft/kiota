@@ -70,7 +70,7 @@ stages:
             displayName: "Restore workloads"
             workingDirectory: $(Build.SourcesDirectory)
 
-          - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch)
+          - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch) -excludeHeadingDash $true
             displayName: "Set version suffix"
           - pwsh: $(Build.SourcesDirectory)/scripts/update-versions.ps1
             displayName: "Update dependencies versions"
@@ -274,7 +274,7 @@ stages:
               version: 7.x
           - pwsh: $(Build.SourcesDirectory)/scripts/update-versions.ps1
             displayName: "Update dependencies versions"
-          - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch)
+          - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch) -excludeHeadingDash $true
             displayName: "Set version suffix"
           - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture) --version-suffix "$(versionSuffix)"
             displayName: publish kiota as executable
@@ -477,7 +477,7 @@ stages:
           - pwsh: |
               Get-ChildItem -Path $(Pipeline.Workspace) -Filter *.vsix -Recurse | ForEach-Object {
                 Write-Host "Publishing $_.FullName"
-                if ($env:isPrerelease -eq "true") {
+                if ($Env:isPrerelease -eq "true") {
                   Write-Host "Publishing $_.FullName as a pre-release"
                   vsce publish --pat "$(vs-marketplace-token)" --packagePath $_.FullName --pre-release
                 }
@@ -486,6 +486,8 @@ stages:
                   vsce publish --pat "$(vs-marketplace-token)" --packagePath $_.FullName
                 }
               }
+            environment:
+              isPrerelease: $(isPrerelease)
       - deployment: github_release
         dependsOn: []
         environment: kiota-github-releases
@@ -511,6 +513,8 @@ stages:
                   inputs:
                     artifact: Nugets
                     source: current
+                - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch)
+                  displayName: "Set version suffix"
                 - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                   displayName: "Get Kiota's version-number from .csproj"
                 - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion) -filePath $(Build.SourcesDirectory)/CHANGELOG.md
@@ -539,8 +543,8 @@ stages:
                   inputs:
                     gitHubConnection: 'microsoftkiota'
                     tagSource: userSpecifiedTag
-                    tag: 'v$(artifactVersion)'
-                    title: 'v$(artifactVersion)'
+                    tag: 'v$(artifactVersion)$(versionSuffix)'
+                    title: 'v$(artifactVersion)$(versionSuffix)'
                     releaseNotesSource: filePath
                     releaseNotesFilePath: $(Build.SourcesDirectory)/release-notes.txt
                     assets: |
