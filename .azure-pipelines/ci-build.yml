@@ -486,7 +486,7 @@ stages:
                   vsce publish --pat "$(vs-marketplace-token)" --packagePath $_.FullName
                 }
               }
-            environment:
+            env:
               isPrerelease: $(isPrerelease)
       - deployment: github_release
         dependsOn: []
