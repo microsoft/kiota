@@ -4,11 +4,17 @@ param (
     $currentBranch,
     [string]
     [Parameter(Mandatory = $true)]
-    $previewBranch
+    $previewBranch,
+    [switch]
+    [bool]
+    $excludeHeadingDash
 )
 if ($currentBranch -eq $previewBranch) {
     $buildSequenceNumber = [int]($Env:BUILD_BUILDNUMBER -split "\." | Select-Object -Last 1)
     $versionSuffix = "-preview." + (Get-Date).ToString("yyyyMMdd") + $buildSequenceNumber.ToString("0000")
+    if ($excludeHeadingDash) {
+        $versionSuffix = $versionSuffix.Substring(1)
+    }
     Write-Host "##vso[task.setvariable variable=versionSuffix]$versionSuffix"
     Write-Host "##vso[task.setvariable variable=isPrerelease]true"
     Write-Output "Version suffix set to $versionSuffix"
