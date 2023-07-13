@@ -33,10 +33,46 @@ variables:
 stages:
   - stage: build
     jobs:
+      - job: update_appsettings
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+            clean: true
+            submodules: true
+
+          - pwsh: $(Build.SourcesDirectory)/scripts/update-versions.ps1
+            displayName: "Update dependencies versions"
+
+          - pwsh: cp $(Build.SourcesDirectory)/src/kiota/appsettings.json $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json -Force -Verbose
+            displayName: Prepare staging folder for upload
+
+          - task: PublishBuildArtifacts@1
+            displayName: "Publish Artifact: AppSettings"
+            inputs:
+              ArtifactName: AppSettings
+              PathtoPublish: "$(Build.ArtifactStagingDirectory)/AppSettings"
+
       - job: build
+        dependsOn: [update_appsettings]
         pool:
           vmImage: windows-latest # needed for compliance tasks
         steps:
+          - checkout: self
+            clean: true
+            submodules: true
+
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              artifact: AppSettings
+              source: current
+              targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
+
+          - pwsh: |
+              cp $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
+              cp $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/Kiota.Web/wwwroot/appsettings.json -Force -Verbose
+            displayName: Copy the appsettings.json
+
           - task: UseDotNet@2
             displayName: "Use .NET 6" # needed for ESRP signing
             inputs:
@@ -74,8 +110,6 @@ stages:
 
           - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch) -excludeHeadingDash
             displayName: "Set version suffix"
-          - pwsh: $(Build.SourcesDirectory)/scripts/update-versions.ps1
-            displayName: "Update dependencies versions"
           
           # Build the Product project
           - task: DotNetCoreCLI@2
@@ -242,7 +276,7 @@ stages:
 
 
       - job: build_binaries
-        dependsOn: []
+        dependsOn: [update_appsettings]
         pool:
           vmImage: $(vmImage)
         strategy:
@@ -274,8 +308,17 @@ stages:
             displayName: "Use .NET 7"
             inputs:
               version: 7.x
-          - pwsh: $(Build.SourcesDirectory)/scripts/update-versions.ps1
-            displayName: "Update dependencies versions"
+
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              artifact: AppSettings
+              source: current
+
+          - pwsh: |
+              cp $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
+              cp $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/Kiota.Web/wwwroot/appsettings.json -Force -Verbose
+            displayName: Copy the appsettings.json
+
           - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch) -excludeHeadingDash
             displayName: "Set version suffix"
           - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture) --version-suffix "$(versionSuffix)"
