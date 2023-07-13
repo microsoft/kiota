@@ -6183,7 +6183,7 @@ components:
         Assert.NotNull(subtypeClass);
         var type = subtypeClass.FindChildByName<CodeProperty>("SubtypeType");
         Assert.Equal("type", type.WireName);
-        Assert.Equal("SubtypeType", type.Name);
+        Assert.Equal("subtypeType", type.Name);
     }
     [Fact]
     public async Task CleanupSymbolNameDoesNotCauseNameConflictsInQueryParameters()

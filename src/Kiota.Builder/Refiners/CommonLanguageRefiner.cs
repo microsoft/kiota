@@ -988,6 +988,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 declaration.AddImplements(new CodeType
                 {
                     Name = parentClassName,
+                    IsExternal = true,
                     TypeDefinition = new CodeType
                     {
                         Name = parentClassNamespace,
@@ -1007,6 +1008,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 declaration.Inherits = new CodeType
                 {
                     Name = parentClassName,
+                    IsExternal = true,
                 };
                 if (addNamespaceToInheritDeclaration)
                 {

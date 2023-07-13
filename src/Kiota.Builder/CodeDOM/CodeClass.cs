@@ -71,25 +71,28 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         if (!properties.Any())
             throw new ArgumentOutOfRangeException(nameof(properties));
 
-        foreach (var property in properties.OfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter))
+        return properties.Select(property =>
         {
-            if (GetOriginalPropertyDefinedFromBaseType(property.WireName) is CodeProperty original)
+            if (property.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter))
             {
-                // the property already exists in a parent type, use its name
-                property.Name = original.Name;
-                property.SerializationName = original.SerializationName;
-                property.OriginalPropertyFromBaseType = original;
+                if (GetOriginalPropertyDefinedFromBaseType(property.WireName) is CodeProperty original)
+                {
+                    // the property already exists in a parent type, use its name
+                    property.Name = original.Name;
+                    property.SerializationName = original.SerializationName;
+                    property.OriginalPropertyFromBaseType = original;
+                }
+                else
+                {
+                    var uniquePropertyName = ResolveUniquePropertyName(property.Name);
+                    if (!uniquePropertyName.Equals(property.Name, StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(property.SerializationName))
+                        property.SerializationName = property.Name;
+                    property.Name = uniquePropertyName;
+                }
             }
-            else
-            {
-                var uniquePropertyName = ResolveUniquePropertyName(property.Name);
-                if (!uniquePropertyName.Equals(property.Name, StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(property.SerializationName))
-                    property.SerializationName = property.Name;
-                property.Name = uniquePropertyName;
-            }
-            PropertiesByWireName.AddOrUpdate(property.WireName, _ => property, (_, _) => property);
-        }
-        return base.AddProperty(properties);
+            CodeProperty result = base.AddProperty(new[] { property }).First();
+            return PropertiesByWireName.GetOrAdd(result.WireName, result);
+        }).ToArray();
     }
     public override void RenameChildElement(string oldName, string newName)
     {
@@ -249,6 +252,11 @@ public class ClassDeclaration : ProprietableBlockDeclaration
     {
         get => inherits; set
         {
+            if (value != null && !value.IsExternal && Parent is CodeClass codeClass && codeClass.Properties.Any())
+            {
+                throw new InvalidOperationException("Cannot change the inherits-property of an already populated type");
+            }
+
             EnsureElementsAreChildren(value);
             inherits = value;
         }
