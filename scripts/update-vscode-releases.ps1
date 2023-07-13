@@ -20,12 +20,16 @@ param (
 $version = $version.TrimStart("v")
 $packageJson = Get-Content $filePath | ConvertFrom-Json
 $packageJson.kiotaVersion = $version
+$extensionVersion = $version
 if ($version -like "*-preview.*") {
-    $packageJson.version = $version.Replace("-preview.", "1")
+    $extensionVersion = $version.Replace("-preview.", "1")
 }
 else {
-    $packageJson.version = $version + "1000000000000"
+    $extensionVersion = $version + "1000000000000"
 }
+$extensionVersionSegments = $extensionVersion.Split(".")
+$extensionVersion = $extensionVersionSegments[0] + "." + $extensionVersionSegments[1] + "." + $extensionVersionSegments[2].TrimStart("0")
+$packageJson.version = $extensionVersion
 $runtimeDependencies = $packageJson.runtimeDependencies
 
 if ($online) {
