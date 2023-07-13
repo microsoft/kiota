@@ -115,9 +115,11 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     $language = $appSettings.Languages.$languageName
     if ($languageName -eq "CSharp" -or $languageName -eq "Shell") {
         foreach ($dependency in $language.Dependencies) {
-            $latestVersion = Get-LatestNugetVersion -packageId $dependency.Name
-            Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
-            $dependency.Version = $latestVersion
+            Retry-Command -ScriptBlock {
+                $latestVersion = Get-LatestNugetVersion -packageId $dependency.Name
+                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
+                $dependency.Version = $latestVersion
+            }
         }
     }
     elseif ($languageName -eq "Go") {
@@ -131,37 +133,47 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     }
     elseif ($languageName -eq "TypeScript") {
         foreach ($dependency in $language.Dependencies) {
-            $latestVersion = Get-LatestNpmVersion -packageId $dependency.Name
-            Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
-            $dependency.Version = $latestVersion
+            Retry-Command -ScriptBlock {
+                $latestVersion = Get-LatestNpmVersion -packageId $dependency.Name
+                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
+                $dependency.Version = $latestVersion
+            }
         }
     }
     elseif ($languageName -eq "Java") {
         foreach ($dependency in $language.Dependencies) {
-            $latestVersion = Get-LatestMavenVersion -packageId $dependency.Name
-            Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
-            $dependency.Version = $latestVersion
+            Retry-Command -ScriptBlock {
+                $latestVersion = Get-LatestMavenVersion -packageId $dependency.Name
+                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
+                $dependency.Version = $latestVersion
+            }
         }
     }
     elseif ($languageName -eq "PHP") {
         foreach ($dependency in $language.Dependencies) {
-            $latestVersion = Get-LatestComposerVersion -packageId $dependency.Name
-            Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
-            $dependency.Version = $latestVersion
+            Retry-Command -ScriptBlock {
+                $latestVersion = Get-LatestComposerVersion -packageId $dependency.Name
+                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
+                $dependency.Version = $latestVersion
+            }
         }
     }
     elseif ($languageName -eq "Python") {
         foreach ($dependency in $language.Dependencies) {
-            $latestVersion = Get-LatestPypiVersion -packageId $dependency.Name
-            Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
-            $dependency.Version = $latestVersion
+            Retry-Command -ScriptBlock {
+                $latestVersion = Get-LatestPypiVersion -packageId $dependency.Name
+                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
+                $dependency.Version = $latestVersion
+            }
         }
     }
     elseif ($languageName -eq "Ruby") {
         foreach ($dependency in $language.Dependencies) {
-            $latestVersion = Get-LatestRubygemVersion -packageId $dependency.Name
-            Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
-            $dependency.Version = $latestVersion
+            Retry-Command -ScriptBlock {
+                $latestVersion = Get-LatestRubygemVersion -packageId $dependency.Name
+                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
+                $dependency.Version = $latestVersion
+            }
         }
     }
     else {
