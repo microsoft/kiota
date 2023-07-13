@@ -427,13 +427,18 @@ stages:
           - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
             displayName: "Get Kiota's version-number from .csproj"
           - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -filePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
+            displayName: "Update VSCode extension version-number"
           - pwsh: npm i -g @vscode/vsce
+            displayName: "Install vsce"
           - pwsh: npm ci
+            displayName: "Install dependencies"
             workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
           - pwsh: vsce package --pre-release
+            displayName: "Package VSCode extension as pre-release"
             workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
             condition: eq(variables['isPrerelease'], 'true')
           - pwsh: vsce package
+            displayName: "Package VSCode extension as release"
             workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
             condition: eq(variables['isPrerelease'], 'false')
           - task: CopyFiles@2
