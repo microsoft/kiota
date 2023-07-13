@@ -44,12 +44,8 @@ stages:
           - pwsh: $(Build.SourcesDirectory)/scripts/update-versions.ps1
             displayName: "Update dependencies versions"
 
-          - task: CopyFiles@2
+          - pwsh: cp $(Build.SourcesDirectory)/src/kiota/appsettings.json $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json -Force -Verbose
             displayName: Prepare staging folder for upload
-            inputs:
-              targetFolder: $(Build.ArtifactStagingDirectory)/AppSettings
-              sourceFolder: $(Build.SourcesDirectory)/src/kiota
-              content: "*.json"
 
           - task: PublishBuildArtifacts@1
             displayName: "Publish Artifact: AppSettings"
@@ -70,6 +66,7 @@ stages:
             inputs:
               artifact: AppSettings
               source: current
+              targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
 
           - pwsh: |
               cp $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
