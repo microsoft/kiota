@@ -20,7 +20,7 @@ public class KiotaVersionGenerator : ISourceGenerator
             XmlDocument csproj = new XmlDocument();
             csproj.Load(PathHelper.Join(directory, "Kiota.Builder.csproj"));
 
-            version = csproj.GetElementsByTagName("Version")[0].InnerText;
+            version = csproj.GetElementsByTagName("VersionPrefix")[0].InnerText;
         }
         catch (Exception e)
         {
