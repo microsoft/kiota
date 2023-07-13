@@ -315,6 +315,7 @@ stages:
             inputs:
               artifact: AppSettings
               source: current
+              targetFolder: $(Build.ArtifactStagingDirectory)/AppSettings
 
           - pwsh: |
               Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
