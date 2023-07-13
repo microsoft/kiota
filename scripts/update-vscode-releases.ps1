@@ -19,7 +19,13 @@ param (
 
 $version = $version.TrimStart("v")
 $packageJson = Get-Content $filePath | ConvertFrom-Json
-$packageJson.version = $version
+$packageJson.kiotaVersion = $version
+if ($version -like "*-preview.*") {
+    $packageJson.version = $version.Replace("-preview.*", "1")
+}
+else {
+    $packageJson.version = $version + "1000000000000"
+}
 $runtimeDependencies = $packageJson.runtimeDependencies
 
 if ($online) {
