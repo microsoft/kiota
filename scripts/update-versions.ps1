@@ -115,7 +115,7 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     if ($languageName -eq "CSharp" -or $languageName -eq "Shell") {
         foreach ($dependency in $language.Dependencies) {
             $latestVersion = Get-LatestNugetVersion -packageId $dependency.Name
-            Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
+            Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
             $dependency.Version = $latestVersion
         }
     }
@@ -123,7 +123,7 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
         foreach ($dependency in $language.Dependencies) {
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestGithubRelease -packageId $dependency.Name
-                Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
+                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
                 $dependency.Version = $latestVersion
             }
         }
@@ -131,35 +131,35 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     elseif ($languageName -eq "TypeScript") {
         foreach ($dependency in $language.Dependencies) {
             $latestVersion = Get-LatestNpmVersion -packageId $dependency.Name
-            Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
+            Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
             $dependency.Version = $latestVersion
         }
     }
     elseif ($languageName -eq "Java") {
         foreach ($dependency in $language.Dependencies) {
             $latestVersion = Get-LatestMavenVersion -packageId $dependency.Name
-            Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
+            Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
             $dependency.Version = $latestVersion
         }
     }
     elseif ($languageName -eq "PHP") {
         foreach ($dependency in $language.Dependencies) {
             $latestVersion = Get-LatestComposerVersion -packageId $dependency.Name
-            Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
+            Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
             $dependency.Version = $latestVersion
         }
     }
     elseif ($languageName -eq "Python") {
         foreach ($dependency in $language.Dependencies) {
             $latestVersion = Get-LatestPypiVersion -packageId $dependency.Name
-            Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
+            Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
             $dependency.Version = $latestVersion
         }
     }
     elseif ($languageName -eq "Ruby") {
         foreach ($dependency in $language.Dependencies) {
             $latestVersion = Get-LatestRubygemVersion -packageId $dependency.Name
-            Write-Information "Updating $dependency.PackageId from $dependency.Version to $latestVersion"
+            Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
             $dependency.Version = $latestVersion
         }
     }
