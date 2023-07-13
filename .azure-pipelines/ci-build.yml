@@ -44,7 +44,9 @@ stages:
           - pwsh: $(Build.SourcesDirectory)/scripts/update-versions.ps1
             displayName: "Update dependencies versions"
 
-          - pwsh: cp $(Build.SourcesDirectory)/src/kiota/appsettings.json $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json -Force -Verbose
+          - pwsh: |
+              New-Item -Path $(Build.ArtifactStagingDirectory)/AppSettings -ItemType Directory -Force -Verbose
+              Copy-Item $(Build.SourcesDirectory)/src/kiota/appsettings.json $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json -Force -Verbose
             displayName: Prepare staging folder for upload
 
           - task: PublishBuildArtifacts@1
@@ -69,8 +71,8 @@ stages:
               targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
 
           - pwsh: |
-              cp $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
-              cp $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/Kiota.Web/wwwroot/appsettings.json -Force -Verbose
+              Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
+              Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/Kiota.Web/wwwroot/appsettings.json -Force -Verbose
             displayName: Copy the appsettings.json
 
           - task: UseDotNet@2
@@ -313,10 +315,11 @@ stages:
             inputs:
               artifact: AppSettings
               source: current
+              targetFolder: $(Build.ArtifactStagingDirectory)/AppSettings
 
           - pwsh: |
-              cp $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
-              cp $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/Kiota.Web/wwwroot/appsettings.json -Force -Verbose
+              Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
+              Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/Kiota.Web/wwwroot/appsettings.json -Force -Verbose
             displayName: Copy the appsettings.json
 
           - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch) -excludeHeadingDash
