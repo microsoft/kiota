@@ -15,10 +15,10 @@ public class KiotaGeneratedTests
             .FullName;
         var csprojFile = Path.Join(topLevelFolder, "src", "Kiota.Builder", "Kiota.Builder.csproj");
 
-        var line = Array.Find(File.ReadAllLines(csprojFile), l => l.Contains("<Version>"));
+        var line = Array.Find(File.ReadAllLines(csprojFile), l => l.Contains("<VersionPrefix>"));
         line = line.Trim();
-        line = line.Replace("<Version>", "");
-        var version = line.Replace("</Version>", "");
+        line = line.Replace("<VersionPrefix>", "");
+        var version = line.Replace("</VersionPrefix>", "");
 
         Assert.Equal(version, Kiota.Generated.KiotaVersion.Current());
     }
