@@ -22,13 +22,14 @@ $packageJson = Get-Content $filePath | ConvertFrom-Json
 $packageJson.kiotaVersion = $version
 $extensionVersion = $version
 if ($version -like "*-preview.*") {
-    $extensionVersion = $version.Replace("-preview.", "1")
+    $fragments = $version.Split("-preview.")
+    $extensionVersion = $fragments[0] + "." + (Get-Date).ToString("yyMMdd") + $fragments[1].Substring(8).TrimStart("0")
 }
 else {
-    $extensionVersion = $version + "1000000000000"
+    $extensionVersion = $version + ".999999999"
 }
 $extensionVersionSegments = $extensionVersion.Split(".")
-$extensionVersion = $extensionVersionSegments[0] + "." + $extensionVersionSegments[1] + "." + $extensionVersionSegments[2].TrimStart("0")
+$extensionVersion = $extensionVersionSegments[0] + "." + $extensionVersionSegments[1] + "." + $extensionVersionSegments[2] + "." + $extensionVersionSegments[3]
 $packageJson.version = $extensionVersion
 $runtimeDependencies = $packageJson.runtimeDependencies
 
