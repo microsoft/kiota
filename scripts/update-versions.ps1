@@ -93,7 +93,8 @@ function Retry-Command {
             }
             catch {
                 Write-Error $_.Exception.InnerException.Message -ErrorAction Continue
-                Start-Sleep -Milliseconds ($Delay * $cnt)
+                $random = Get-Random -Minimum 1 -Maximum 10
+                Start-Sleep -Milliseconds ($Delay * $cnt * $random)
             }
         } while ($cnt -lt $Maximum)
 
