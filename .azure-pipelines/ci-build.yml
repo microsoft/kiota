@@ -17,7 +17,9 @@ trigger:
       ]
   tags:
     include:
-      - v*
+      - "v*"
+    exclude:
+      - "*preview*" # exclude preview tags so we don't publish twice
   branches:
     include:
       - main
