@@ -2,6 +2,7 @@ name: Deploy kiota.dev
 on:
   push:
     tags: ["v*"]
+    tags-ignore: ["*-preview*"] # we don't have a preview environment for kiota.dev
 
 jobs:
   publish_kiota_dev:
