@@ -28,8 +28,6 @@ if ($version -like "*-preview.*") {
 else {
     $extensionVersion = $version + ".999999999"
 }
-$extensionVersionSegments = $extensionVersion.Split(".")
-$extensionVersion = $extensionVersionSegments[0] + "." + $extensionVersionSegments[1] + "." + $extensionVersionSegments[2] + "." + $extensionVersionSegments[3]
 $packageJson.version = $extensionVersion
 $runtimeDependencies = $packageJson.runtimeDependencies
 
