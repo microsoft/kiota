@@ -21,7 +21,7 @@ $version = $version.TrimStart("v")
 $packageJson = Get-Content $filePath | ConvertFrom-Json
 $packageJson.kiotaVersion = $version
 if ($version -like "*-preview.*") {
-    $packageJson.version = $version.Replace("-preview.*", "1")
+    $packageJson.version = $version.Replace("-preview.", "1")
 }
 else {
     $packageJson.version = $version + "1000000000000"
@@ -44,7 +44,7 @@ if ($online) {
 }
 
 foreach ($runtimeDependency in $runtimeDependencies) {
-    $binPath = "$binaryFolderPath/$($runtimeDependency.platformId).zip"
+    $binPath = Join-Path -Path $binaryFolderPath -ChildPath "$($runtimeDependency.platformId).zip"
     if (Test-Path $binPath) {
         $runtimeDependency.sha256 = (Get-FileHash $binPath -Algorithm SHA256).Hash
     }
