@@ -112,6 +112,9 @@ stages:
 
           - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch) -excludeHeadingDash
             displayName: "Set version suffix"
+            
+          - pwsh: $(Build.SourcesDirectory)/scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(versionSuffix)"
+            displayName: "Set version suffix in csproj for generators"
           
           # Build the Product project
           - task: DotNetCoreCLI@2
@@ -324,8 +327,13 @@ stages:
 
           - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch) -excludeHeadingDash
             displayName: "Set version suffix"
+
+          - pwsh: $(Build.SourcesDirectory)/scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(versionSuffix)"
+            displayName: "Set version suffix in csproj for generators"
+
           - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture) --version-suffix "$(versionSuffix)"
             displayName: publish kiota as executable
+
           - task: AzureKeyVault@2
             displayName: "Azure Key Vault: Get Secrets"
             inputs:

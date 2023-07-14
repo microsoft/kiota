@@ -22,8 +22,8 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
         if (obj == null) return 0;
         return
             _stringIEnumerableDeepComparer.GetHashCode(obj.DisabledValidationRules?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 47 +
-            GetVersionHashCode(obj.KiotaVersion) * 43 +
-            GetVersionHashCode(obj.LockFileVersion) * 41 +
+            obj.KiotaVersion.GetHashCode(StringComparison.OrdinalIgnoreCase) * 43 +
+            obj.LockFileVersion.GetHashCode(StringComparison.OrdinalIgnoreCase) * 41 +
             (string.IsNullOrEmpty(obj.DescriptionLocation) ? 0 : obj.DescriptionLocation.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 37 +
             (string.IsNullOrEmpty(obj.DescriptionHash) ? 0 : obj.DescriptionHash.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 31 +
             (string.IsNullOrEmpty(obj.ClientClassName) ? 0 : obj.ClientClassName.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 29 +
@@ -36,17 +36,5 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
             _stringIEnumerableDeepComparer.GetHashCode(obj.StructuredMimeTypes?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 5 +
             _stringIEnumerableDeepComparer.GetHashCode(obj.IncludePatterns?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 3 +
             _stringIEnumerableDeepComparer.GetHashCode(obj.ExcludePatterns?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 2;
-    }
-    private static int GetVersionHashCode(string version)
-    {
-        if (string.IsNullOrEmpty(version)) return 0;
-        if (Version.TryParse(version, out var parsedVersion))
-        {
-            if (parsedVersion.Major > 0)
-                return parsedVersion.Major.GetHashCode();
-            if (parsedVersion.Minor > 0)
-                return parsedVersion.Minor.GetHashCode();
-        }
-        return 0;
     }
 }
