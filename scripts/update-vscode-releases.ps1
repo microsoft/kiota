@@ -40,7 +40,11 @@ if ($version -like "*-preview.*") {
 }
 else {
   $versionParts = $version.Split(".")
-  $extensionVersion = $versionParts[0] + "." + $versionParts[1] + "." + $versionParts[2].TrimStart("0") + "99999999"
+  $patchVersion = $versionParts[2].TrimStart("0")
+  if ([string]::IsNullOrWhiteSpace($patchVersion)) {
+    $patchVersion = "9"
+  }
+  $extensionVersion = $versionParts[0] + "." + $versionParts[1] + "." + $patchVersion + "99999999"
 }
 $packageJson.version = $extensionVersion
 $runtimeDependencies = $packageJson.runtimeDependencies

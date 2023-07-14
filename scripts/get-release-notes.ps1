@@ -27,6 +27,6 @@ if ($version -eq "Unreleased" -and [string]::IsNullOrWhiteSpace($releaseNotes.Re
     throw "Version $version not found in CHANGELOG.md make sure you've updated the changelog"
 }
 if ($check -eq $false) {
-    $targetFile = Join-Path (Split-Path $filePath -Parent) "release-notes.txt"
+    $targetFile = Join-Path (Split-Path $changelogPath -Parent) "release-notes.txt"
     Set-Content -Path $targetFile -Value $releaseNotes -Verbose
 }
