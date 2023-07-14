@@ -392,7 +392,7 @@ public class CodeMethodWriterTests : IDisposable
         new object[] { new CodeProperty { Name = "dateValue", Type = new CodeType { Name = "DateTime" }, Access = AccessModifier.Private}, "$writer->writeDateTimeValue('dateValue', $this->getDateValue());" },
         new object[] { new CodeProperty { Name = "duration", Type = new CodeType { Name = "duration" }, Access = AccessModifier.Private}, "$writer->writeDateIntervalValue('duration', $this->getDuration());" },
         new object[] { new CodeProperty { Name = "stream", Type = new CodeType { Name = "binary" }, Access = AccessModifier.Private}, "$writer->writeBinaryContent('stream', $this->getStream());" },
-        new object[] { new CodeProperty { Name = "definedInParent", Type = new CodeType { Name = "string"}}, "$write->writeStringValue('definedInParent', $this->getDefinedInParent());"}
+        new object[] { new CodeProperty { Name = "definedInParent", Type = new CodeType { Name = "string"}}, "$writer->writeStringValue('definedInParent', $this->getDefinedInParent());"}
     };
 
     [Theory]
@@ -781,7 +781,7 @@ public class CodeMethodWriterTests : IDisposable
             "/** @var array<int>|null $val */",
             "$this->setYears($val);"
         },
-        new object[] { new CodeProperty{ Name = "definedInParent", Type = new CodeType { Name = "string"}}, "'definedInParent' => function (ParseNode $n) use ($o) { $o->setDefinedInParent($n->getStringValue())"}
+        new object[] { new CodeProperty{ Name = "definedInParent", Type = new CodeType { Name = "string"}}, "'definedInParent' => fn(ParseNode $n) => $o->setDefinedInParent($n->getStringValue())"}
     };
     private static CodeClass GetParentClassInStaticContext()
     {
@@ -825,12 +825,13 @@ public class CodeMethodWriterTests : IDisposable
         AddInheritanceClass();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, parentClass.Parent as CodeNamespace);
         languageWriter.Write(deserializerMethod);
+        var result = stringWriter.ToString();
         foreach (var assertion in expected)
         {
             if (property.ExistsInBaseType)
-                Assert.DoesNotContain(assertion, stringWriter.ToString());
+                Assert.DoesNotContain(assertion, result);
             else
-                Assert.Contains(assertion, stringWriter.ToString());
+                Assert.Contains(assertion, result);
         }
     }
 
