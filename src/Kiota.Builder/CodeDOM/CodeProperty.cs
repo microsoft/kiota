@@ -105,12 +105,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     public string WireName => IsNameEscaped ? SerializationName : Name.ToFirstCharacterLowerCase();
     public CodeProperty? OriginalPropertyFromBaseType
     {
-        get => IsOfKind(CodePropertyKind.Custom) ? Parent switch
-        {
-            CodeClass parentClass => parentClass.StartBlock.GetOriginalPropertyDefinedFromBaseType(Name),
-            CodeInterface parentInterface => parentInterface.StartBlock.GetOriginalPropertyDefinedFromBaseType(Name),
-            _ => default
-        } : default;
+        get; set;
     }
     public DeprecationInformation? Deprecation
     {
@@ -134,6 +129,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
             Documentation = (CodeDocumentation)Documentation.Clone(),
             SerializationName = SerializationName,
             NamePrefix = NamePrefix,
+            OriginalPropertyFromBaseType = OriginalPropertyFromBaseType?.Clone() as CodeProperty,
             Deprecation = Deprecation,
         };
         return property;
