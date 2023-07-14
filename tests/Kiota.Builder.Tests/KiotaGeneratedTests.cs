@@ -2,6 +2,7 @@
 using System.IO;
 using Xunit;
 
+namespace Kiota.Builder.Tests;
 public class KiotaGeneratedTests
 {
     [Fact]
@@ -15,11 +16,18 @@ public class KiotaGeneratedTests
             .FullName;
         var csprojFile = Path.Join(topLevelFolder, "src", "Kiota.Builder", "Kiota.Builder.csproj");
 
-        var line = Array.Find(File.ReadAllLines(csprojFile), l => l.Contains("<VersionPrefix>"));
-        line = line.Trim();
-        line = line.Replace("<VersionPrefix>", "");
-        var version = line.Replace("</VersionPrefix>", "");
+        var versionPrefix = GetLineValue(csprojFile, "VersionPrefix");
+        var versionSuffix = GetLineValue(csprojFile, "VersionSuffix");
+        if (!string.IsNullOrEmpty(versionSuffix) && !"$(VersionSuffix)".Equals(versionSuffix, StringComparison.OrdinalIgnoreCase))
+            versionPrefix += "-" + versionSuffix;
 
-        Assert.Equal(version, Kiota.Generated.KiotaVersion.Current());
+        Assert.Equal(versionPrefix, Generated.KiotaVersion.Current());
+    }
+    private static string GetLineValue(string csprojFile, string key)
+    {
+        var line = Array.Find(File.ReadAllLines(csprojFile), l => l.Contains($"<{key}>"));
+        line = line.Trim();
+        line = line.Replace($"<{key}>", "");
+        return line.Replace($"</{key}>", "");
     }
 }

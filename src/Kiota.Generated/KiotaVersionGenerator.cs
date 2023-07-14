@@ -21,6 +21,13 @@ public class KiotaVersionGenerator : ISourceGenerator
             csproj.Load(PathHelper.Join(directory, "Kiota.Builder.csproj"));
 
             version = csproj.GetElementsByTagName("VersionPrefix")[0].InnerText;
+            var versionSuffixTag = csproj.GetElementsByTagName("VersionSuffix");
+            if (versionSuffixTag != null && versionSuffixTag.Count > 0)
+            {
+                var versionSuffix = versionSuffixTag[0].InnerText;
+                if (!string.IsNullOrEmpty(versionSuffix) && !"$(VersionSuffix)".Equals(versionSuffix, StringComparison.OrdinalIgnoreCase))
+                    version += "-" + versionSuffix;
+            }
         }
         catch (Exception e)
         {
