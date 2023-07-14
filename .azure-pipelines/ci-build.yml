@@ -115,6 +115,16 @@ stages:
             
           - pwsh: $(Build.SourcesDirectory)/scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(versionSuffix)"
             displayName: "Set version suffix in csproj for generators"
+
+          - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
+            displayName: "Get Kiota's version-number from .csproj"
+
+          - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion) -check
+            condition: eq(variables['isPrerelease'], 'false')
+            displayName: "Get release notes from CHANGELOG.md"
+
+          - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased -check
+            condition: eq(variables['isPrerelease'], 'true')
           
           # Build the Product project
           - task: DotNetCoreCLI@2
@@ -578,10 +588,10 @@ stages:
                   displayName: "Set version suffix"
                 - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                   displayName: "Get Kiota's version-number from .csproj"
-                - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion) -filePath $(Build.SourcesDirectory)/CHANGELOG.md
+                - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion)
                   condition: eq(variables['isPrerelease'], 'false')
                   displayName: "Get release notes from CHANGELOG.md"
-                - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased -filePath $(Build.SourcesDirectory)/CHANGELOG.md
+                - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased
                   condition: eq(variables['isPrerelease'], 'true')
                   displayName: "Get release notes from CHANGELOG.md"
                 - task: GitHubRelease@1
