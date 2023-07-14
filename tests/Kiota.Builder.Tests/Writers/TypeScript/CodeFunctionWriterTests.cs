@@ -250,7 +250,7 @@ public class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task WritesDeSerializerBody()
     {
-        var parentClass = TestHelper.CreateModelClass(root, "parentClass", true);
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass");
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
@@ -260,7 +260,7 @@ public class CodeFunctionWriterTests : IDisposable
         Assert.Contains("getCollectionOfPrimitiveValues", result);
         Assert.Contains("getCollectionOfObjectValues", result);
         Assert.Contains("getEnumValue", result);
-        Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public async Task WritesInheritedSerializerBody()
