@@ -32,9 +32,27 @@ public class CodeMethodWriterTests : IDisposable
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
+        var baseClass = root.AddClass(new CodeClass
+        {
+            Name = "someParentClass",
+        }).First();
+        baseClass.AddProperty(new CodeProperty
+        {
+            Name = "definedInParent",
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+            Kind = CodePropertyKind.Custom,
+        });
         parentClass = new CodeClass
         {
             Name = "parentClass"
+        };
+        parentClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "someParentClass",
+            TypeDefinition = baseClass
         };
         root.AddClass(parentClass);
         method = new CodeMethod
@@ -56,7 +74,8 @@ public class CodeMethodWriterTests : IDisposable
     {
         parentClass.StartBlock.Inherits = new CodeType
         {
-            Name = "BaseRequestBuilder"
+            Name = "BaseRequestBuilder",
+            IsExternal = true
         };
         parentClass.AddProperty(new CodeProperty
         {
@@ -530,27 +549,6 @@ public class CodeMethodWriterTests : IDisposable
             }
         });
         return intersectionTypeWrapper;
-    }
-    private void AddInheritanceClass()
-    {
-        var baseClass = (parentClass.Parent as CodeNamespace).AddClass(new CodeClass
-        {
-            Name = "someParentClass",
-        }).First();
-        parentClass.StartBlock.Inherits = new CodeType
-        {
-            Name = "someParentClass",
-            TypeDefinition = baseClass
-        };
-        baseClass.AddProperty(new CodeProperty
-        {
-            Name = "definedInParent",
-            Type = new CodeType
-            {
-                Name = "string"
-            },
-            Kind = CodePropertyKind.Custom,
-        });
     }
     private void AddRequestBodyParameters(CodeMethod target = default, bool useComplexTypeForBody = false)
     {
@@ -1231,7 +1229,6 @@ public class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.Deserializer;
         method.IsAsync = false;
         AddSerializationProperties();
-        AddInheritanceClass();
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("m.SomeParentClass.MethodName()", result);
@@ -1306,7 +1303,6 @@ public class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationProperties();
-        AddInheritanceClass();
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("m.SomeParentClass.Serialize", result);
@@ -1591,7 +1587,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesGetterToBackingStore()
     {
-        parentClass.AddBackingStoreProperty();
+        parentClass.GetGreatestGrandparent().AddBackingStoreProperty();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Getter;
         writer.Write(method);
@@ -1602,7 +1598,7 @@ public class CodeMethodWriterTests : IDisposable
     public void WritesGetterToBackingStoreWithNonnullProperty()
     {
         method.AddAccessedProperty();
-        parentClass.AddBackingStoreProperty();
+        parentClass.GetGreatestGrandparent().AddBackingStoreProperty();
         method.AccessedProperty.Type = new CodeType
         {
             Name = "string",
@@ -1619,7 +1615,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesSetterToBackingStore()
     {
-        parentClass.AddBackingStoreProperty();
+        parentClass.GetGreatestGrandparent().AddBackingStoreProperty();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Setter;
         writer.Write(method);
@@ -1774,7 +1770,6 @@ public class CodeMethodWriterTests : IDisposable
     public void WritesInheritedConstructor()
     {
         method.Kind = CodeMethodKind.Constructor;
-        AddInheritanceClass();
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
@@ -1896,7 +1891,6 @@ public class CodeMethodWriterTests : IDisposable
     {
         method.Kind = CodeMethodKind.Serializer;
         AddSerializationProperties();
-        AddInheritanceClass();
         parentClass.AddProperty(new CodeProperty
         {
             Name = "ReadOnlyProperty",

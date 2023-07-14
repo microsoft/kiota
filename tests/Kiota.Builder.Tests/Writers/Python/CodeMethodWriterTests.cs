@@ -31,9 +31,27 @@ public class CodeMethodWriterTests : IDisposable
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
+        var baseClass = root.AddClass(new CodeClass
+        {
+            Name = "someParentClass",
+        }).First();
+        baseClass.AddProperty(new CodeProperty
+        {
+            Name = "definedInParent",
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+            Kind = CodePropertyKind.Custom,
+        });
         parentClass = new CodeClass
         {
             Name = "parentClass"
+        };
+        parentClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "someParentClass",
+            TypeDefinition = baseClass
         };
         root.AddClass(parentClass);
         childClass = new CodeClass
@@ -450,28 +468,6 @@ public class CodeMethodWriterTests : IDisposable
         });
         return intersectionTypeWrapper;
     }
-    private void AddInheritanceClass()
-    {
-        var baseClass = (parentClass.Parent as CodeNamespace).AddClass(new CodeClass
-        {
-            Name = "someParentClass",
-        }).First();
-        parentClass.StartBlock.Inherits = new CodeType
-        {
-            Name = "someParentClass",
-            TypeDefinition = baseClass
-        };
-        baseClass.AddProperty(new CodeProperty
-        {
-            Name = "definedInParent",
-            Type = new CodeType
-            {
-                Name = "string"
-            },
-            Kind = CodePropertyKind.Custom,
-        });
-    }
-
     private void AddCodeUsings()
     {
         var nUsing = new CodeUsing
@@ -702,7 +698,6 @@ public class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.Deserializer;
         method.IsAsync = false;
         AddSerializationProperties();
-        AddInheritanceClass();
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("from .somecustomtype import Somecustomtype", result);
@@ -781,7 +776,8 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("get_collection_of_primitive_values(UUID)", result);
         Assert.Contains("get_collection_of_object_values(Complex)", result);
         Assert.Contains("get_enum_value(SomeEnum)", result);
-        Assert.Contains("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("dummy_string", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public void WritesInheritedSerializerBody()
@@ -789,7 +785,6 @@ public class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationProperties();
-        AddInheritanceClass();
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("super().serialize", result);
@@ -883,8 +878,9 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("write_collection_of_object_values", result);
         Assert.Contains("write_enum_value", result);
         Assert.Contains("write_additional_data_value(self.additional_data)", result);
-        Assert.Contains("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("()", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("dummy_string", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("super().serialize", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
     public void WritesMethodAsyncDescription()
@@ -1313,7 +1309,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesGetterToBackingStore()
     {
-        parentClass.AddBackingStoreProperty();
+        parentClass.GetGreatestGrandparent().AddBackingStoreProperty();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Getter;
         writer.Write(method);
@@ -1334,7 +1330,7 @@ public class CodeMethodWriterTests : IDisposable
     public void WritesGetterToBackingStoreWithNonnullProperty()
     {
         method.AddAccessedProperty();
-        parentClass.AddBackingStoreProperty();
+        parentClass.GetGreatestGrandparent().AddBackingStoreProperty();
         method.AccessedProperty.Type = new CodeType
         {
             Name = "string",
@@ -1360,7 +1356,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesSetterToBackingStore()
     {
-        parentClass.AddBackingStoreProperty();
+        parentClass.GetGreatestGrandparent().AddBackingStoreProperty();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Setter;
         writer.Write(method);
@@ -1524,7 +1520,6 @@ public class CodeMethodWriterTests : IDisposable
         method.IsAsync = false;
         var propName = "prop_with_no_default_value";
         parentClass.Kind = CodeClassKind.Model;
-        AddInheritanceClass();
         parentClass.AddProperty(new CodeProperty
         {
             Name = propName,
@@ -1800,7 +1795,6 @@ public class CodeMethodWriterTests : IDisposable
     {
         method.Kind = CodeMethodKind.Serializer;
         AddSerializationProperties();
-        AddInheritanceClass();
         parentClass.AddProperty(new CodeProperty
         {
             Name = "ReadOnlyProperty",

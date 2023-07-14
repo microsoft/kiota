@@ -36,9 +36,29 @@ public class CodeMethodWriterTests : IDisposable
         root = CodeNamespace.InitRootNamespace();
         root.Name = "Microsoft\\Graph";
         _codeMethodWriter = new CodeMethodWriter(new PhpConventionService());
+
+        var baseClass = root.AddClass(new CodeClass
+        {
+            Name = "someParentClass",
+            Kind = CodeClassKind.Model,
+        }).First();
         parentClass = new CodeClass
         {
             Name = "parentClass"
+        };
+        baseClass.AddProperty(new CodeProperty
+        {
+            Name = "definedInParent",
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+            Kind = CodePropertyKind.Custom,
+        });
+        parentClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "someParentClass",
+            TypeDefinition = baseClass
         };
         root.AddClass(parentClass);
         method = new CodeMethod
@@ -419,7 +439,6 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddMethod(codeMethod);
         parentClass.AddProperty(property);
-        AddInheritanceClass();
         var propertyType = property.Type.AllTypes.FirstOrDefault()?.TypeDefinition;
         switch (propertyType)
         {
@@ -447,7 +466,6 @@ public class CodeMethodWriterTests : IDisposable
         method.IsAsync = false;
         method.ReturnType.Name = "void";
         AddSerializationProperties();
-        AddInheritanceClass();
         languageWriter.Write(method);
         var result = stringWriter.ToString();
         Assert.Contains("parent::serialize($writer)", result);
@@ -822,7 +840,6 @@ public class CodeMethodWriterTests : IDisposable
         });
         parentClass.AddMethod(deserializerMethod);
         parentClass.AddProperty(property);
-        AddInheritanceClass();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, parentClass.Parent as CodeNamespace);
         languageWriter.Write(deserializerMethod);
         foreach (var assertion in expected)
@@ -840,7 +857,6 @@ public class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.Deserializer;
         method.IsAsync = false;
         AddSerializationProperties();
-        AddInheritanceClass();
         languageWriter.Write(method);
         var result = stringWriter.ToString();
         Assert.Contains("parent::methodName()", result);
@@ -893,10 +909,24 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public async Task WriteDeserializerMergeWhenHasParent()
     {
-        var currentClass = parentClass;
-        currentClass.Kind = CodeClassKind.Model;
-        var declaration = currentClass.StartBlock;
-        declaration.Inherits = new CodeType { Name = "Entity", IsExternal = true, IsNullable = false };
+        var cls = new CodeClass
+        {
+            Name = "ModelParent",
+            Kind = CodeClassKind.Model,
+            Parent = root,
+            StartBlock = new ClassDeclaration { Name = "ModelParent", Parent = root }
+        };
+        root.AddClass(cls);
+        var currentClass = new CodeClass
+        {
+            Name = "parentClass",
+            Kind = CodeClassKind.Model
+        };
+        currentClass.StartBlock.Inherits = new CodeType
+        {
+            TypeDefinition = cls
+        };
+        root.AddClass(currentClass);
         currentClass.AddProperty(
             new CodeProperty
             {
@@ -920,18 +950,6 @@ public class CodeMethodWriterTests : IDisposable
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
                 Name = "array"
             }
-        };
-        var cls = new CodeClass
-        {
-            Name = "ModelParent",
-            Kind = CodeClassKind.Model,
-            Parent = root,
-            StartBlock = new ClassDeclaration { Name = "ModelParent", Parent = root }
-        };
-        root.AddClass(cls);
-        currentClass.StartBlock.Inherits = new CodeType
-        {
-            TypeDefinition = cls
         };
         currentClass.AddMethod(deserializerMethod);
 
@@ -1612,13 +1630,17 @@ public class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.BackingStore,
             Type = new CodeType { Name = "IBackingStore", IsExternal = true, IsNullable = false }
         };
-        parentClass.AddProperty(backingStoreProperty);
+        parentClass.GetGreatestGrandparent().AddProperty(backingStoreProperty);
         parentClass.AddProperty(property);
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
         _codeMethodWriter = new CodeMethodWriter(new PhpConventionService(), true);
         // Refiner adds setters & getters for properties
         foreach (var getter in parentClass.GetMethodsOffKind(CodeMethodKind.Getter))
+        {
+            _codeMethodWriter.WriteCodeElement(getter, languageWriter);
+        }
+        foreach (var getter in parentClass.GetGreatestGrandparent().GetMethodsOffKind(CodeMethodKind.Getter))
         {
             _codeMethodWriter.WriteCodeElement(getter, languageWriter);
         }
@@ -1645,7 +1667,7 @@ public class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.BackingStore,
             Type = new CodeType { Name = "IBackingStore", IsExternal = true, IsNullable = false }
         };
-        parentClass.AddProperty(backingStoreProperty);
+        parentClass.GetGreatestGrandparent().AddProperty(backingStoreProperty);
         var modelProperty = new CodeProperty
         {
             Name = "name",
@@ -1659,6 +1681,10 @@ public class CodeMethodWriterTests : IDisposable
         _codeMethodWriter = new CodeMethodWriter(new PhpConventionService(), true);
         // Refiner adds setters & getters for properties
         foreach (var getter in parentClass.GetMethodsOffKind(CodeMethodKind.Setter))
+        {
+            _codeMethodWriter.WriteCodeElement(getter, languageWriter);
+        }
+        foreach (var getter in parentClass.GetGreatestGrandparent().GetMethodsOffKind(CodeMethodKind.Setter))
         {
             _codeMethodWriter.WriteCodeElement(getter, languageWriter);
         }
@@ -2116,28 +2142,6 @@ public class CodeMethodWriterTests : IDisposable
             {
                 Name = "string"
             }
-        });
-    }
-    private void AddInheritanceClass()
-    {
-        var baseClass = (parentClass.Parent as CodeNamespace).AddClass(new CodeClass
-        {
-            Name = "someParentClass",
-            Kind = CodeClassKind.Model,
-        }).First();
-        parentClass.StartBlock.Inherits = new CodeType
-        {
-            Name = "someParentClass",
-            TypeDefinition = baseClass
-        };
-        baseClass.AddProperty(new CodeProperty
-        {
-            Name = "definedInParent",
-            Type = new CodeType
-            {
-                Name = "string"
-            },
-            Kind = CodePropertyKind.Custom,
         });
     }
     [Fact]

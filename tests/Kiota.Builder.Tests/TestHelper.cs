@@ -10,13 +10,23 @@ namespace Kiota.Builder.Tests
 {
     public class TestHelper
     {
-        public static CodeClass CreateModelClass(string className = "model")
+        public static CodeClass CreateModelClass(CodeNamespace codeSpace, string className = "model", bool withInheritance = false)
         {
+            var superClass = withInheritance ? CreateSuperClass(codeSpace) : default;
             var testClass = new CodeClass
             {
                 Name = className,
                 Kind = CodeClassKind.Model
             };
+            if (withInheritance)
+            {
+                testClass.StartBlock.Inherits = new CodeType
+                {
+                    Name = superClass.Name,
+                    TypeDefinition = superClass
+                };
+            }
+            codeSpace.AddClass(testClass);
 
             var deserializer = new CodeMethod
             {
@@ -36,15 +46,9 @@ namespace Kiota.Builder.Tests
             return testClass;
         }
 
-        public static CodeClass AddInheritanceClassToModelClass(CodeClass modelClass)
+        private static CodeClass CreateSuperClass(CodeNamespace codeSpace)
         {
-            var parentClass = CreateModelClass("SuperClass");
-            (modelClass.Parent as CodeNamespace).AddClass(parentClass);
-            modelClass.StartBlock.Inherits = new CodeType
-            {
-                Name = parentClass.Name,
-                TypeDefinition = parentClass
-            };
+            var parentClass = CreateModelClass(codeSpace, "SuperClass");
             parentClass.AddProperty(new CodeProperty
             {
                 Name = "definedInParent",
@@ -91,9 +95,8 @@ namespace Kiota.Builder.Tests
 
             // CodeClass property
 
-            var propertyClass = CreateModelClass("SomeComplexType");
             var parentNamespace = modelClass.Parent as CodeNamespace;
-            parentNamespace.AddClass(propertyClass);
+            var propertyClass = CreateModelClass(parentNamespace, "SomeComplexType");
             modelClass.AddProperty(new CodeProperty
             {
                 Name = "dummyComplexColl",
@@ -130,6 +133,19 @@ namespace Kiota.Builder.Tests
                 },
                 Kind = CodePropertyKind.Custom,
             });
+        }
+
+        public static CodeMethod CreateMethod(CodeClass parentClass, string methodName, string returnTypeName)
+        {
+            var method = new CodeMethod
+            {
+                Name = methodName,
+                ReturnType = new CodeType
+                {
+                    Name = returnTypeName
+                }
+            };
+            return parentClass.AddMethod(method).First();
         }
     }
 }
