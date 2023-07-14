@@ -246,4 +246,42 @@ public class CodePropertyWriterTests
         Assert.Contains("@var array<RequestOption>|null $options", result);
         Assert.Contains("public ?array $options = null;", result);
     }
+
+    [Fact]
+    public async void PropertiesExisingInBaseTypesAreNotWritten()
+    {
+        var parentProperty = new CodeProperty
+        {
+            Name = "odataType",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsExternal = false
+            },
+            DefaultValue = "#microsoft.graph.directoryObject"
+        };
+        parentClass.AddProperty(parentProperty);
+
+        var childProperty = new CodeProperty
+        {
+            Name = "odataType",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsExternal = false
+            },
+            DefaultValue = "#microsoft.graph.user"
+        };
+        var childClass = new CodeClass { Name = "ChildClass", Kind = CodeClassKind.Model };
+        childClass.StartBlock.Inherits = new CodeType { TypeDefinition = parentClass, Name = parentClass.Name };
+        childClass.AddProperty(childProperty);
+        root.AddClass(childClass);
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
+        languageWriter.Write(childProperty);
+        var result = stringWriter.ToString();
+        Assert.Empty(result);
+    }
 }
