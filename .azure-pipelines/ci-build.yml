@@ -128,10 +128,19 @@ stages:
           
           # Build the Product project
           - task: DotNetCoreCLI@2
+            condition: eq(variables['isPrerelease'], 'true')
             displayName: "build"
             inputs:
               projects: '$(Build.SourcesDirectory)\kiota.sln'
               arguments: '--configuration $(BuildConfiguration) --no-incremental --version-suffix "$(versionSuffix)"'
+          
+          # Build the Product project
+          - task: DotNetCoreCLI@2
+            condition: eq(variables['isPrerelease'], 'false')
+            displayName: "build"
+            inputs:
+              projects: '$(Build.SourcesDirectory)\kiota.sln'
+              arguments: '--configuration $(BuildConfiguration) --no-incremental'
 
           # Run the Unit test
           - task: DotNetCoreCLI@2
@@ -244,9 +253,19 @@ stages:
 
           # Pack
           - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg --version-suffix "$(versionSuffix)"
+            condition: eq(variables['isPrerelease'], 'true')
+            displayName: "pack kiota"
+
+          - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
+            condition: eq(variables['isPrerelease'], 'false')
             displayName: "pack kiota"
 
           - pwsh: dotnet pack $(Build.SourcesDirectory)/src/Kiota.Builder/Kiota.Builder.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg --version-suffix "$(versionSuffix)"
+            condition: eq(variables['isPrerelease'], 'true')
+            displayName: "pack kiota builder"
+
+          - pwsh: dotnet pack $(Build.SourcesDirectory)/src/Kiota.Builder/Kiota.Builder.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
+            condition: eq(variables['isPrerelease'], 'false')
             displayName: "pack kiota builder"
 
           - task: EsrpCodeSigning@2
@@ -342,6 +361,11 @@ stages:
             displayName: "Set version suffix in csproj for generators"
 
           - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture) --version-suffix "$(versionSuffix)"
+            condition: eq(variables['isPrerelease'], 'true')
+            displayName: publish kiota as executable
+
+          - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime $(architecture) -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/$(architecture)
+            condition: eq(variables['isPrerelease'], 'false')
             displayName: publish kiota as executable
 
           - task: AzureKeyVault@2
