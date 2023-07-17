@@ -183,6 +183,4 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
 
 # Write the updated appsettings.json file
 $appSettings | ConvertTo-Json -Depth 100 | Set-Content -Path $mainSettings
-$additionalSettingsPath = Join-Path -Path $scriptPath -ChildPath "..\src\Kiota.Web\wwwroot\appsettings.json"
-$appSettings | ConvertTo-Json -Depth 100 | Set-Content -Path $additionalSettingsPath
 
