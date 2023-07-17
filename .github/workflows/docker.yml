@@ -41,6 +41,7 @@ jobs:
           BUILD_BUILDNUMBER: ${{ steps.runnumber.outputs.runnumber }}
 
       - run: ./scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "${{steps.getversionsuffix.outputs.versionSuffix}}"
+        if: contains(github.ref, env.PREVIEW_BRANCH)
         shell: pwsh
         name: "Set version suffix in csproj for generators"
 
