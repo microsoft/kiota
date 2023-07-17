@@ -271,7 +271,7 @@ export async function activate(
 }
 
 async function showUpgradeWarningMessage(clientPath: string, context: vscode.ExtensionContext): Promise<void> {
-  const kiotaVersion = context.extension.packageJSON.version.toLocaleLowerCase();
+  const kiotaVersion = context.extension.packageJSON.kiotaVersion.toLocaleLowerCase();
   const lockFilePath = path.join(clientPath, kiotaLockFile);
   if(!fs.existsSync(lockFilePath)) {
     return;

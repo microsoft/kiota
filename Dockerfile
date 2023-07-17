@@ -1,9 +1,14 @@
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:7.0 AS build-env
+ARG version_suffix
 WORKDIR /app
 
 COPY ./src ./kiota/src
 WORKDIR /app/kiota
-RUN dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false
+RUN if [ -z "$version_suffix" ]; then \
+    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false; \
+    else \
+    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false --version-suffix $version_suffix; \
+    fi
 
 FROM mcr.microsoft.com/dotnet/runtime:7.0 AS runtime
 WORKDIR /app

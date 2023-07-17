@@ -1,10 +1,13 @@
 name: Deploy kiota.dev
 on:
   push:
-    tags: ["v*"]
+    tags:
+      - "v*"
 
 jobs:
   publish_kiota_dev:
+    # we don't have a preview environment for kiota.dev
+    if: ${{ !contains(github.ref, '-preview') }}
     name: Publish kiota.dev
     environment:
       name: kiota.dev
