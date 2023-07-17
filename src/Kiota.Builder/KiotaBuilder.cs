@@ -1899,22 +1899,12 @@ public partial class KiotaBuilder
     }
     private Dictionary<string, OpenApiSchema> CollectAllProperties(OpenApiSchema schema)
     {
-        Dictionary<string, OpenApiSchema> result = new();
-        if (schema.Properties?.Any() ?? false)
-        {
-            foreach (var property in schema.Properties)
-            {
-                result.Add(property.Key, property.Value);
-            }
-        }
+        Dictionary<string, OpenApiSchema> result = schema.Properties?.ToDictionary(static x => x.Key, static x => x.Value, StringComparer.Ordinal) ?? new(StringComparer.Ordinal);
         if (schema.AllOf?.Any() ?? false)
         {
-            foreach (var supSchema in schema.AllOf.Where(static x => x.IsObject() && !x.IsReferencedSchema() && (x.Properties?.Any() ?? false)))
+            foreach (var supProperty in schema.AllOf.Where(static x => x.IsObject() && !x.IsReferencedSchema() && x.Properties is not null).SelectMany(static x => x.Properties))
             {
-                foreach (var supProperty in supSchema.Properties)
-                {
-                    result.Add(supProperty.Key, supProperty.Value);
-                }
+                result.Add(supProperty.Key, supProperty.Value);
             }
         }
         return result;
