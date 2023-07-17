@@ -42,10 +42,6 @@ jobs:
         run: dotnet format --verify-no-changes
       - name: Build
         run: dotnet build kiota.sln --no-restore
-      - name: Install PlayWright browsers
-        run: |
-          dotnet tool install --global Microsoft.Playwright.CLI
-          playwright install
       - name: Test
         run: dotnet test kiota.sln --no-build --verbosity normal --collect:"XPlat Code Coverage"
       - name: Install report generator
