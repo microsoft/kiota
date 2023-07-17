@@ -70,7 +70,7 @@ jobs:
           platforms: linux/amd64,linux/arm64/v8,linux/arm/v7,windows/amd64
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.getversion.outputs.version }}-preview.${{ steps.date.outputs.date }}${{ steps.runnumber.outputs.runnumber }}
           build-args: |
-            version_suffix=${{ steps.date.outputs.date }}${{ steps.runnumber.outputs.runnumber }}
+            version_suffix=preview.${{ steps.date.outputs.date }}${{ steps.runnumber.outputs.runnumber }}
           # we can't get the sequence number from ADO so we default it back to github run number
       - name: Push to GitHub Packages - Release
         if: contains(github.ref, 'refs/tags/v')
