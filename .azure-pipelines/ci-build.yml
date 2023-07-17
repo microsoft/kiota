@@ -20,12 +20,13 @@ trigger:
       - "v*"
     exclude:
       - "*preview*" # exclude preview tags so we don't publish twice
-  schedules:
-    - cron: "0 18 * * 4" # 18:00 UTC every Thursday ~ 14:00 EST every Thursday
-      displayName: Weekly preview
-      branches:
-        include:
-          - main
+schedules:
+- cron: "0 18 * * 4" # 18:00 UTC every Thursday ~ 14:00 EST every Thursday
+  displayName: Weekly preview
+  branches:
+    include:
+      - main
+  always: true
 
 variables:
   buildPlatform: "Any CPU"
