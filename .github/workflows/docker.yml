@@ -33,7 +33,7 @@ jobs:
         id: runnumber
         run: echo "::set-output name=runnumber::$(echo ${{ github.run_number }} |  awk '{ print substr($0, length($0)-3, length($0)) }')"
 
-      - run: ./scripts/get-prerelease-version.ps1 -currentBranch ${{github.ref}} -previewBranch ${{ env.PREVIEW_BRANCH }} -excludeHeadingDash -isGHA $true
+      - run: ./scripts/get-prerelease-version.ps1 -currentBranch ${{github.ref}} -previewBranch ${{ env.PREVIEW_BRANCH }} -excludeHeadingDash -isGHA
         id: getversionsuffix
         shell: pwsh
         name: "Set version suffix"
@@ -44,7 +44,7 @@ jobs:
         shell: pwsh
         name: "Set version suffix in csproj for generators"
 
-      - run: ./scripts/get-version-from-csproj.ps1 -isGHA $true
+      - run: ./scripts/get-version-from-csproj.ps1 -isGHA
         id: getversion
         shell: pwsh
         name: "Get Kiota's version-number from .csproj"
