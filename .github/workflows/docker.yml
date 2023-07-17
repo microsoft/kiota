@@ -31,7 +31,7 @@ jobs:
       - name: Get truncated run number
         if: contains(github.ref, env.PREVIEW_BRANCH)
         id: runnumber
-        run: echo "::set-output name=runnumber::$(echo ${{ github.run_number }} |  awk '{ print substr($0, length($0)-3, length($0)) }')"
+        run: echo "runnumber=$(echo ${{ github.run_number }} |  awk '{ print substr($0, length($0)-3, length($0)) }')" >> $GITHUB_OUTPUT
 
       - run: ./scripts/get-prerelease-version.ps1 -currentBranch ${{github.ref}} -previewBranch ${{ env.PREVIEW_BRANCH }} -excludeHeadingDash -isGHA
         id: getversionsuffix
@@ -60,7 +60,7 @@ jobs:
       - name: Get current date
         if: contains(github.ref, env.PREVIEW_BRANCH)
         id: date
-        run: echo "::set-output name=date::$(date +'%Y%m%d')"
+        run: echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
       - name: Push to GitHub Packages - Nightly
         if: contains(github.ref, env.PREVIEW_BRANCH)
         uses: docker/build-push-action@v4.1.1
