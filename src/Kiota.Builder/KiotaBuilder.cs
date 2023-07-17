@@ -1897,9 +1897,9 @@ public partial class KiotaBuilder
                                 .ToArray());
         }
     }
-    private Dictionary<String, OpenApiSchema> CollectAllProperties(OpenApiSchema schema)
+    private Dictionary<string, OpenApiSchema> CollectAllProperties(OpenApiSchema schema)
     {
-        Dictionary<String, OpenApiSchema> result = new();
+        Dictionary<string, OpenApiSchema> result = new();
         if (schema.Properties?.Any() ?? false)
         {
             foreach (var property in schema.Properties)
@@ -1909,7 +1909,7 @@ public partial class KiotaBuilder
         }
         if (schema.AllOf?.Any() ?? false)
         {
-            foreach (var supSchema in schema.AllOf.Where(x => x.IsObject() && !x.IsReferencedSchema() && (x.Properties?.Any() ?? false)))
+            foreach (var supSchema in schema.AllOf.Where(static x => x.IsObject() && !x.IsReferencedSchema() && (x.Properties?.Any() ?? false)))
             {
                 foreach (var supProperty in supSchema.Properties)
                 {

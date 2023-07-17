@@ -90,7 +90,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
                     property.Name = uniquePropertyName;
                 }
             }
-            CodeProperty result = base.AddProperty(new[] { property }).First();
+            var result = base.AddProperty(new[] { property }).First();
             return PropertiesByWireName.GetOrAdd(result.WireName, result);
         }).ToArray();
     }
@@ -165,12 +165,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     }
     private CodeProperty? FindPropertyByWireName(string wireName)
     {
-        if (!PropertiesByWireName.Any())
-            return default;
-
-        if (PropertiesByWireName.TryGetValue(wireName, out var result))
-            return result;
-        return default;
+        return PropertiesByWireName.TryGetValue(wireName, out var result) ? result : default;
     }
     public bool ContainsPropertyWithWireName(string wireName)
     {
