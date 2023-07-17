@@ -18,10 +18,6 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 7.0.x
-      - name: Restore workloads
-        run: |
-          dotnet workload restore
-          dotnet workload install wasm-tools
       - name: Publish kiota.dev
         run: dotnet publish -c Release
         working-directory: ./src/Kiota.Web

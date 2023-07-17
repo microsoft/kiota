@@ -108,12 +108,6 @@ stages:
               versionSpec: ">=6.1.0"
               checkLatest: true
 
-          - pwsh: |
-              dotnet workload restore
-              dotnet workload install wasm-tools
-            displayName: "Restore workloads"
-            workingDirectory: $(Build.SourcesDirectory)
-
           - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(previewBranch) -excludeHeadingDash
             displayName: "Set version suffix"
             
