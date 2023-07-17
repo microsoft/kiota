@@ -19,8 +19,8 @@ if ($currentBranch -eq $previewBranch) {
         $versionSuffix = $versionSuffix.Substring(1)
     }
     if ($isGHA -eq $true) {
-        Write-Output "::set-output name=versionSuffix::${versionSuffix}"
-        Write-Output "::set-output name=isPrerelease::true"
+        Write-Output "versionSuffix=$versionSuffix" >> $Env:GITHUB_OUTPUT
+        Write-Output "isPrerelease=true" >> $Env:GITHUB_OUTPUT
     }
     else {
         Write-Host "##vso[task.setvariable variable=versionSuffix]$versionSuffix"
@@ -30,8 +30,8 @@ if ($currentBranch -eq $previewBranch) {
 }
 else {
     if ($isGHA -eq $true) {
-        Write-Output "::set-output name=versionSuffix::"
-        Write-Output "::set-output name=isPrerelease::false"
+        Write-Output "versionSuffix=" >> $Env:GITHUB_OUTPUT
+        Write-Output "isPrerelease=false" >> $Env:GITHUB_OUTPUT
     }
     else {
         Write-Host "##vso[task.setvariable variable=versionSuffix]"

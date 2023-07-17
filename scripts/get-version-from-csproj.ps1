@@ -9,7 +9,7 @@ $xml = [Xml] (Get-Content $csprojPath)
 $version = $xml.Project.PropertyGroup.VersionPrefix[0]
 Write-Output "csproj version is $version"
 if ($isGHA -eq $true) {
-    Write-Output "::set-output name=version::${version}"
+    Write-Output "version=$version" >> $Env:GITHUB_OUTPUT
 
 }
 else {
