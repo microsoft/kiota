@@ -1112,7 +1112,7 @@ paths:
         var codeModel = builder.CreateSourceModel(node);
         var userClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("user");
         Assert.NotNull(userClass);
-        var userResponseClass = codeModel.FindNamespaceByName("ApiSdk.users.item").FindChildByName<CodeClass>("UsersResponse", false);
+        var userResponseClass = codeModel.FindNamespaceByName("ApiSdk.users.item").FindChildByName<CodeClass>("UsersGetResponse", false);
         Assert.NotNull(userResponseClass);
         var valueProp = userResponseClass.FindChildByName<CodeProperty>("value", false);
         Assert.NotNull(valueProp);
@@ -1613,9 +1613,9 @@ paths:
         var codeModel = builder.CreateSourceModel(node);
         var resourceClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("resource");
         var itemsNS = codeModel.FindNamespaceByName("ApiSdk.resource.item");
-        var responseClass = itemsNS.FindChildByName<CodeClass>("ResourceResponse");
-        var derivedResourceClass = itemsNS.FindChildByName<CodeClass>("ResourceResponse_derivedResource");
-        var derivedResourceInfoClass = itemsNS.FindChildByName<CodeClass>("ResourceResponse_derivedResource_info");
+        var responseClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse");
+        var derivedResourceClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse_derivedResource");
+        var derivedResourceInfoClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse_derivedResource_info");
 
 
         Assert.NotNull(resourceClass);
@@ -3455,7 +3455,7 @@ paths:
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Assert.Contains("simpleObject", typeNames);
-        Assert.Contains("unionTypeResponseMember1", typeNames);
+        Assert.Contains("unionTypeGetResponseMember1", typeNames);
     }
     [Fact]
     public void IntersectionOfPrimitiveTypesWorks()
@@ -3614,7 +3614,7 @@ paths:
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Assert.Contains("simpleObject", typeNames);
-        Assert.Contains("unionTypeResponseMember1", typeNames);
+        Assert.Contains("unionTypeGetResponseMember1", typeNames);
     }
     [Fact]
     public void InheritedTypeWithInlineSchemaWorks()
@@ -6213,7 +6213,7 @@ paths:
         var codeModel = builder.CreateSourceModel(node);
         var rootNS = codeModel.FindNamespaceByName("ApiSdk");
         Assert.NotNull(rootNS);
-        var inlineType = rootNS.FindChildByName<CodeClass>($"enumerationResponse_{expected}", true);
+        var inlineType = rootNS.FindChildByName<CodeClass>($"enumerationGetResponse_{expected}", true);
         Assert.NotNull(inlineType);
     }
     [Fact]
@@ -6525,7 +6525,7 @@ components:
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectResponse");
+        var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectGetResponse");
         Assert.NotNull(resultClass);
         Assert.Equal(4, resultClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom)).Count());
     }
@@ -6565,7 +6565,7 @@ paths:
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectResponse");
+        var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectGetResponse");
         Assert.NotNull(resultClass);
         var keysToCheck = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "datasets", "datakeys", "datainfo" };
         Assert.Empty(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && keysToCheck.Contains(x.Name)));
