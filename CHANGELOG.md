@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Type names are not changed to first char upper case in comments in some cases.
 - Updated `getEnumValues` method name to `getCollectionOfEnumValues`. [#2907](https://github.com/microsoft/kiota/pull/2907)
 - Added `Method` to the list of `CSharpReservedClassNames`. [#2939](https://github.com/microsoft/kiota/pull/2939)
-
+- Changed generation to use aggregate type for `TimeSpan` values in java [#2069](https://github.com/microsoft/kiota/issues/2069)
 
 ## [1.4.0] - 2023-07-07
 

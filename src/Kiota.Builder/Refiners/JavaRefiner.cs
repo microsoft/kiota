@@ -319,10 +319,10 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                         IsExternal = true,
                                     },
                                 })},
-    {"TimeSpan", ("Period", new CodeUsing {
-                                    Name = "Period",
+    {"TimeSpan", ("PeriodAndDuration", new CodeUsing {
+                                    Name = "PeriodAndDuration",
                                     Declaration = new CodeType {
-                                        Name = "java.time",
+                                        Name = AbstractionsNamespaceName,
                                         IsExternal = true,
                                     },
                                 })},
