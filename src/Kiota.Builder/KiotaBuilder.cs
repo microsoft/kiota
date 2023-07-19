@@ -1603,7 +1603,7 @@ public partial class KiotaBuilder
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .Select((x) =>
                         {
-                            var optionDescription = extensionInformation?.ValuesDescriptions.FirstOrDefault(y => y.Value.Equals(x, StringComparison.OrdinalIgnoreCase));
+                            var optionDescription = extensionInformation?.ValuesDescriptions.Find(y => y.Value.Equals(x, StringComparison.OrdinalIgnoreCase));
                             return new CodeEnumOption
                             {
                                 Name = (optionDescription?.Name is string name && !string.IsNullOrEmpty(name) ?
