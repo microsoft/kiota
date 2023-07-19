@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sunset app.kiota.dev in favour of the VSCode extension. [#2934](https://github.com/microsoft/kiota/issues/2934)
 - Use schematized types for 206 response codes instead of binary. [#2880](https://github.com/microsoft/kiota/issues/2880)
 - Type names are not changed to first char upper case in comments in some cases.
+- Fixed a bug where the show command would display an upgrade warning.
 - Updated `getEnumValues` method name to `getCollectionOfEnumValues`. [#2907](https://github.com/microsoft/kiota/pull/2907)
 - Added `Method` to the list of `CSharpReservedClassNames`. [#2939](https://github.com/microsoft/kiota/pull/2939)
 - Changed generation to use aggregate type for `TimeSpan` values in java [#2069](https://github.com/microsoft/kiota/issues/2069)

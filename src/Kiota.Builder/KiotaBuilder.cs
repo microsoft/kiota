@@ -151,7 +151,7 @@ public partial class KiotaBuilder
             DescriptionHash = openApiDocument?.HashCode ?? string.Empty,
         };
         var comparer = new KiotaLockComparer();
-        if (!configurationLock.KiotaVersion.Equals(existingLock?.KiotaVersion, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrEmpty(existingLock?.KiotaVersion) && !configurationLock.KiotaVersion.Equals(existingLock.KiotaVersion, StringComparison.OrdinalIgnoreCase))
         {
             logger.LogWarning("API client was generated with version {ExistingVersion} and the current version is {CurrentVersion}, it will be upgraded and you should upgrade dependencies", existingLock?.KiotaVersion, configurationLock.KiotaVersion);
         }
