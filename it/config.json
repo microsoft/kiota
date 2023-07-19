@@ -131,8 +131,28 @@
     ],
     "Suppressions": [
       {
-        "Language": "all",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2351"
+        "Language": "java",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2954"
+      },
+      {
+        "Language": "go",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2955"
+      },
+      {
+        "Language": "typescript",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2956"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2957"
       }
     ]
   },
