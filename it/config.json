@@ -219,12 +219,7 @@
     ]
   },
   "apisguru::stripe.com": {
-    "Suppressions": [
-      {
-        "Language": "all",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2352"
-      }
-    ]
+    "Suppressions": []
   },
   "apisguru::meraki.com": {
     "Suppressions": [
