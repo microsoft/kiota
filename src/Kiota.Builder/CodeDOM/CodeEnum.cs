@@ -19,7 +19,7 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
     {
         if (codeEnumOptions is null) return;
         var result = AddRange(codeEnumOptions);
-        foreach (var option in result)
+        foreach (var option in result.Distinct())
         {
             OptionsInternal.Enqueue(option);
         }

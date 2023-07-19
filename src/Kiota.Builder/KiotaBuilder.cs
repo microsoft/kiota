@@ -1597,24 +1597,27 @@ public partial class KiotaBuilder
         OpenApiEnumValuesDescriptionExtension? extensionInformation = null;
         if (schema.Extensions.TryGetValue(OpenApiEnumValuesDescriptionExtension.Name, out var rawExtension) && rawExtension is OpenApiEnumValuesDescriptionExtension localExtInfo)
             extensionInformation = localExtInfo;
-        var entries = schema.Enum.OfType<OpenApiString>().Where(static x => !x.Value.Equals("null", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(x.Value)).Select(static x => x.Value);
-        foreach (var enumValue in entries)
-        {
-            var optionDescription = extensionInformation?.ValuesDescriptions.FirstOrDefault(x => x.Value.Equals(enumValue, StringComparison.OrdinalIgnoreCase));
-            var newOption = new CodeEnumOption
-            {
-                Name = (optionDescription?.Name is string name && !string.IsNullOrEmpty(name) ?
-                        name :
-                        enumValue).CleanupSymbolName(),
-                SerializationName = enumValue,
-                Documentation = new()
-                {
-                    Description = optionDescription?.Description ?? string.Empty,
-                },
-            };
-            if (!string.IsNullOrEmpty(newOption.Name))
-                target.AddOption(newOption);
-        }
+        target.AddOption(schema.Enum.OfType<OpenApiString>()
+                        .Where(static x => !x.Value.Equals("null", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(x.Value))
+                        .Select(static x => x.Value)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .Select((x) =>
+                        {
+                            var optionDescription = extensionInformation?.ValuesDescriptions.FirstOrDefault(y => y.Value.Equals(x, StringComparison.OrdinalIgnoreCase));
+                            return new CodeEnumOption
+                            {
+                                Name = (optionDescription?.Name is string name && !string.IsNullOrEmpty(name) ?
+                                        name :
+                                        x).CleanupSymbolName(),
+                                SerializationName = x,
+                                Documentation = new()
+                                {
+                                    Description = optionDescription?.Description ?? string.Empty,
+                                },
+                            };
+                        })
+                        .Where(static x => !string.IsNullOrEmpty(x.Name))
+                        .ToArray());
     }
     private CodeNamespace GetShortestNamespace(CodeNamespace currentNamespace, OpenApiSchema currentSchema)
     {

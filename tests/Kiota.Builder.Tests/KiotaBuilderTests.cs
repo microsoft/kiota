@@ -184,6 +184,7 @@ components:
         - Standard_GRS
         - Standard_RAGRS
         - Premium_LRS
+        - Premium_LRS
       x-ms-enum:
         name: AccountType
         modelAsString: false
@@ -220,6 +221,7 @@ components:
         Assert.Equal("Standard_LRS", thirdOption.SerializationName);
         Assert.Equal("StandardLocalRedundancy", thirdOption.Name);
         Assert.NotEmpty(thirdOption.Documentation.Description);
+        Assert.Single(enumDef.Options.Where(static x => x.Name.Equals("Premium_LRS", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
     public async Task TrimsInheritanceUnusedModels()
