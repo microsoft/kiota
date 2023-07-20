@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed missing type comments in many cases.
+- Fixed a bug where duplicate enum entries in the description would lead to duplicate members. [#2352](https://github.com/microsoft/kiota/issues/2352)
 - Sunset app.kiota.dev in favour of the VSCode extension. [#2934](https://github.com/microsoft/kiota/issues/2934)
 - Use schematized types for 206 response codes instead of binary. [#2880](https://github.com/microsoft/kiota/issues/2880)
 - Type names are not changed to first char upper case in comments in some cases.
