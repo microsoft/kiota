@@ -219,7 +219,32 @@
     ]
   },
   "apisguru::stripe.com": {
-    "Suppressions": []
+    "Suppressions": [
+      {
+        "Language": "typescript",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
+      },
+      {
+        "Language": "go",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2834"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2964"
+      },
+      {
+        "Language": "java",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2842"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/2842"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      }
+    ]
   },
   "apisguru::meraki.com": {
     "Suppressions": [
