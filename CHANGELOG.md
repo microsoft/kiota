@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `getEnumValues` method name to `getCollectionOfEnumValues`. [#2907](https://github.com/microsoft/kiota/pull/2907)
 - Added `Method` to the list of `CSharpReservedClassNames`. [#2939](https://github.com/microsoft/kiota/pull/2939)
 - Changed generation to use aggregate type for `TimeSpan` values in java [#2069](https://github.com/microsoft/kiota/issues/2069)
+- Fixed generation of properties with identical names after symbol cleanup. [#2869](https://github.com/microsoft/kiota/issues/2869)
 
 ## [1.4.0] - 2023-07-07
 
@@ -48,7 +49,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved common RequestBuilder ((request_adapter, url_template and path_parameters)) and RequestConfiguration(headers, options) properties to respective base classes in Python.[2440](https://github.com/microsoft/kiota/issues/2440)
 - Fixed a bug where escaped package names would not be lowercased in Java.
 - Fix failing PHP integration tests [2378](https://github.com/microsoft/kiota/issues/2378)
-- Fixed generation of properties with identical names after symbol cleanup. 
 - Prevents method overloading for go getters and setters with different values. [#2719](https://github.com/microsoft/kiota/issues/2719)
 - Fixed PHP request executor methods that return enums.
 - Allow configuration of the number of threads via the environment variable KIOTA_GENERATION_MAXDEGREEOFPARALLELISM.
