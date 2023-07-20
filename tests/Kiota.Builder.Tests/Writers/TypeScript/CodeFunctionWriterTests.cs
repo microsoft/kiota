@@ -16,8 +16,6 @@ public class CodeFunctionWriterTests : IDisposable
     private const string DefaultName = "name";
     private readonly StringWriter tw;
     private readonly LanguageWriter writer;
-    private readonly CodeMethod method;
-    private readonly CodeClass parentClass;
     private readonly CodeNamespace root;
     private const string MethodName = "methodName";
     private const string ReturnTypeName = "Somecustomtype";
@@ -28,17 +26,6 @@ public class CodeFunctionWriterTests : IDisposable
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
-        parentClass = TestHelper.CreateModelClass("parentClass");
-        root.AddClass(parentClass);
-        method = new CodeMethod
-        {
-            Name = MethodName,
-            ReturnType = new CodeType
-            {
-                Name = ReturnTypeName
-            }
-        };
-        parentClass.AddMethod(method);
     }
     public void Dispose()
     {
@@ -49,8 +36,8 @@ public class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task WritesModelFactoryBody()
     {
-        var parentModel = root.AddClass(TestHelper.CreateModelClass("parentModel")).First();
-        var childModel = root.AddClass(TestHelper.CreateModelClass("childModel")).First();
+        var parentModel = TestHelper.CreateModelClass(root, "parentModel");
+        var childModel = TestHelper.CreateModelClass(root, "childModel");
         childModel.StartBlock.Inherits = new CodeType
         {
             Name = "parentModel",
@@ -106,8 +93,8 @@ public class CodeFunctionWriterTests : IDisposable
     public async Task DoesntWriteFactorySwitchOnMissingParameter()
     {
 
-        var parentModel = root.AddClass(TestHelper.CreateModelClass("parentModel")).First();
-        var childModel = root.AddClass(TestHelper.CreateModelClass("childModel")).First();
+        var parentModel = TestHelper.CreateModelClass(root, "parentModel");
+        var childModel = TestHelper.CreateModelClass(root, "childModel");
         childModel.StartBlock.Inherits = new CodeType
         {
             Name = "parentModel",
@@ -148,8 +135,8 @@ public class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task DoesntWriteFactorySwitchOnEmptyPropertyName()
     {
-        var parentModel = root.AddClass(TestHelper.CreateModelClass("parentModel")).First();
-        var childModel = root.AddClass(TestHelper.CreateModelClass("childModel")).First();
+        var parentModel = TestHelper.CreateModelClass(root, "parentModel");
+        var childModel = TestHelper.CreateModelClass(root, "childModel");
         childModel.StartBlock.Inherits = new CodeType
         {
             Name = "parentModel",
@@ -204,7 +191,7 @@ public class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task DoesntWriteFactorySwitchOnEmptyMappings()
     {
-        var parentModel = root.AddClass(TestHelper.CreateModelClass("parentModel")).First();
+        var parentModel = TestHelper.CreateModelClass(root, "parentModel");
         var factoryMethod = parentModel.AddMethod(new CodeMethod
         {
             Name = "factory",
@@ -250,8 +237,9 @@ public class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task WritesInheritedDeSerializerBody()
     {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass", true);
+        var inheritedClass = parentClass.BaseClass;
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        var inheritedClass = TestHelper.AddInheritanceClassToModelClass(parentClass);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
@@ -262,6 +250,7 @@ public class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task WritesDeSerializerBody()
     {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass");
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
@@ -276,8 +265,9 @@ public class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task WritesInheritedSerializerBody()
     {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass", true);
+        var inheritedClass = parentClass.BaseClass;
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        var inheritedClass = TestHelper.AddInheritanceClassToModelClass(parentClass);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
@@ -288,6 +278,8 @@ public class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task WritesSerializerBody()
     {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass");
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
@@ -306,7 +298,7 @@ public class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task DoesntWriteReadOnlyPropertiesInSerializerBody()
     {
-        var model = root.AddClass(TestHelper.CreateModelClass("TestModel")).First();
+        var model = TestHelper.CreateModelClass(root, "TestModel");
         model.AddProperty(new CodeProperty
         {
             Name = "ReadOnlyProperty",
@@ -342,7 +334,7 @@ public class CodeFunctionWriterTests : IDisposable
             Kind = CodeClassKind.RequestBuilder,
         }).First();
         var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
-        var errorClass = TestHelper.CreateModelClass("Error4XX");
+        var errorClass = TestHelper.CreateModelClass(subNS, "Error4XX");
         errorClass.IsErrorDefinition = true;
         var factoryMethod = errorClass.AddMethod(new CodeMethod
         {
@@ -355,7 +347,6 @@ public class CodeFunctionWriterTests : IDisposable
             },
             IsStatic = true,
         }).First();
-        subNS.AddClass(errorClass);
         var requestExecutor = requestBuilder.AddMethod(new CodeMethod
         {
             Name = "get",

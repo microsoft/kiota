@@ -27,11 +27,4 @@ public interface IAlternativeName
     {
         get; set;
     }
-    /// <summary>
-    /// Gets the symbol name of the element.
-    /// </summary>
-    string SymbolName
-    {
-        get;
-    }
 }

@@ -127,18 +127,7 @@ public class CodePropertyWriterTests : IDisposable
     [Fact]
     public void DoesntWritePropertiesExistingInParentType()
     {
-        property.Kind = CodePropertyKind.Custom;
-        property.Name = "definedInParent";
-        var baseClass = (parentClass.Parent as CodeNamespace).AddClass(new CodeClass
-        {
-            Name = "BaseClass",
-        }).First();
-        parentClass.StartBlock.Inherits = new CodeType
-        {
-            Name = "BaseClass",
-            TypeDefinition = baseClass
-        };
-        baseClass.AddProperty(new CodeProperty
+        parentClass.AddProperty(new CodeProperty
         {
             Name = "definedInParent",
             Type = new CodeType
@@ -147,7 +136,25 @@ public class CodePropertyWriterTests : IDisposable
             },
             Kind = CodePropertyKind.Custom,
         });
-        writer.Write(property);
+        var subClass = (parentClass.Parent as CodeNamespace).AddClass(new CodeClass
+        {
+            Name = "BaseClass",
+        }).First();
+        subClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "BaseClass",
+            TypeDefinition = parentClass
+        };
+        var propertyToWrite = subClass.AddProperty(new CodeProperty
+        {
+            Name = "definedInParent",
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+            Kind = CodePropertyKind.Custom,
+        }).First();
+        writer.Write(propertyToWrite);
         var result = tw.ToString();
         Assert.Empty(result);
     }

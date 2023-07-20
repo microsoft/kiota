@@ -588,6 +588,8 @@ public partial class KiotaBuilder
             StopLogAndReset(stopwatch, $"{nameof(MapTypeDefinitions)}");
             TrimInheritedModels();
             StopLogAndReset(stopwatch, $"{nameof(TrimInheritedModels)}");
+            CleanUpInternalState();
+            StopLogAndReset(stopwatch, $"{nameof(CleanUpInternalState)}");
 
             logger.LogTrace("{Timestamp}ms: Created source model with {Count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.GetChildElements(true).Count());
         }
@@ -1563,6 +1565,7 @@ public partial class KiotaBuilder
             return currentNamespace.EnsureItemNamespace();
         return currentNamespace;
     }
+    private ConcurrentDictionary<string, ModelClassBuildLifecycle> classLifecycles = new(StringComparer.OrdinalIgnoreCase);
     private CodeElement AddModelDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null)
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
@@ -1650,7 +1653,27 @@ public partial class KiotaBuilder
         AddSerializationMembers(newClassStub, includeAdditionalDataProperties, config.UsesBackingStore);
 
         var newClass = currentNamespace.AddClass(newClassStub).First();
-        CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass); // order matters since we might be recursively generating ancestors for discriminator mappings and duplicating additional data/backing store properties
+        var lifecycle = classLifecycles.GetOrAdd(currentNamespace.Name + "." + declarationName, static n => new());
+        if (!lifecycle.IsPropertiesBuilt())
+        {
+            try
+            {
+                lifecycle.StartBuildingProperties();
+                if (!lifecycle.IsPropertiesBuilt())
+                {
+                    if (inheritsFrom != null)
+                    {
+                        classLifecycles.TryGetValue(inheritsFrom.Parent!.Name + "." + inheritsFrom.Name, out var superClassLifecycle);
+                        superClassLifecycle!.WaitForPropertiesBuilt();
+                    }
+                    CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass); // order matters since we might be recursively generating ancestors for discriminator mappings and duplicating additional data/backing store properties
+                }
+            }
+            finally
+            {
+                lifecycle.PropertiesBuildingDone();
+            }
+        }
 
         var mappings = GetDiscriminatorMappings(currentNode, schema, currentNamespace, newClass)
                         .Where(x => x.Value is CodeType type &&
@@ -1850,33 +1873,41 @@ public partial class KiotaBuilder
     }
     private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace ns, CodeClass model)
     {
-        if (!model.Properties.Any(static x => x.IsOfKind(CodePropertyKind.Custom))) // this redundant check on model properties is here to avoid race conditions
-            if (schema?.Properties?.Any() ?? false)
-            {
-                model.AddProperty(schema
-                                    .Properties
-                                    .Select(x =>
+        if (CollectAllProperties(schema) is var properties && properties.Any())
+        {
+            model.AddProperty(properties
+                                .Select(x =>
+                                {
+                                    var propertySchema = x.Value;
+                                    var className = propertySchema.GetSchemaName().CleanupSymbolName();
+                                    if (string.IsNullOrEmpty(className))
+                                        className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
+                                    var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
+                                    var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
+                                                        rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
+                                    var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
+                                    if (definition == null)
                                     {
-                                        var propertySchema = x.Value;
-                                        var className = propertySchema.GetSchemaName().CleanupSymbolName();
-                                        if (string.IsNullOrEmpty(className))
-                                            className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
-                                        var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
-                                        var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
-                                                            rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
-                                        var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
-                                        if (definition == null)
-                                        {
-                                            logger.LogWarning("Omitted property {PropertyName} for model {ModelName} in API path {ApiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
-                                            return null;
-                                        }
-                                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
-                                    })
-                                    .OfType<CodeProperty>()
-                                    .ToArray());
+                                        logger.LogWarning("Omitted property {PropertyName} for model {ModelName} in API path {ApiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
+                                        return null;
+                                    }
+                                    return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
+                                })
+                                .OfType<CodeProperty>()
+                                .ToArray());
+        }
+    }
+    private Dictionary<string, OpenApiSchema> CollectAllProperties(OpenApiSchema schema)
+    {
+        Dictionary<string, OpenApiSchema> result = schema.Properties?.ToDictionary(static x => x.Key, static x => x.Value, StringComparer.Ordinal) ?? new(StringComparer.Ordinal);
+        if (schema.AllOf?.Any() ?? false)
+        {
+            foreach (var supProperty in schema.AllOf.Where(static x => x.IsObject() && !x.IsReferencedSchema() && x.Properties is not null).SelectMany(static x => x.Properties))
+            {
+                result.Add(supProperty.Key, supProperty.Value);
             }
-            else if (schema?.AllOf?.LastOrDefault(static x => x.IsObject()) is OpenApiSchema lastAllOfSchema)
-                CreatePropertiesForModelClass(currentNode, lastAllOfSchema, ns, model);
+        }
+        return result;
     }
     private const string FieldDeserializersMethodName = "GetFieldDeserializers";
     private const string SerializeMethodName = "Serialize";
@@ -2014,9 +2045,8 @@ public partial class KiotaBuilder
                                     operation.Summary).CleanupDescription(),
                 },
             }).First();
-            if (!parameterClass.Properties.Any())
-                foreach (var parameter in parameters)
-                    AddPropertyForQueryParameter(parameter, parameterClass);
+            foreach (var parameter in parameters)
+                AddPropertyForQueryParameter(parameter, parameterClass);
 
             return parameterClass;
         }
@@ -2050,7 +2080,7 @@ public partial class KiotaBuilder
             prop.SerializationName = parameter.Name.SanitizeParameterNameForUrlTemplate();
         }
 
-        if (!parameterClass.ContainsMember(prop.Name))
+        if (!parameterClass.ContainsPropertyWithWireName(prop.WireName))
         {
             parameterClass.AddProperty(prop);
         }
@@ -2066,4 +2096,11 @@ public partial class KiotaBuilder
             Name = schema.Items?.Type ?? schema.Type,
             CollectionKind = schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default,
         };
+
+    private void CleanUpInternalState()
+    {
+        foreach (var lifecycle in classLifecycles.Values)
+            lifecycle.Dispose();
+        classLifecycles.Clear();
+    }
 }

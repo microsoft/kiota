@@ -521,7 +521,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             var defaultValueReference = propWithDefault.DefaultValue;
             if (defaultValueReference.StartsWith("\"", StringComparison.OrdinalIgnoreCase))
             {
-                defaultValueReference = $"{propWithDefault.SymbolName.ToFirstCharacterLowerCase()}Value";
+                defaultValueReference = $"{propWithDefault.Name.ToFirstCharacterLowerCase()}Value";
                 var defaultValue = propWithDefault.DefaultValue;
                 if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
                 {
@@ -530,7 +530,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 writer.WriteLine($"{defaultValueReference} := {defaultValue}");
                 defaultValueReference = $"&{defaultValueReference}";
             }
-            var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterUpperCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"Set{propWithDefault.SymbolName.ToFirstCharacterUpperCase()}";
+            var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterUpperCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"Set{propWithDefault.Name.ToFirstCharacterUpperCase()}";
             writer.WriteLine($"m.{setterName}({defaultValueReference})");
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) && currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
