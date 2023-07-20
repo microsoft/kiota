@@ -32,7 +32,7 @@ public enum CodeClassKind
 /// </summary>
 public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition, IDiscriminatorInformationHolder, IDeprecableElement
 {
-    protected ConcurrentDictionary<string, CodeProperty> PropertiesByWireName { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, CodeProperty> PropertiesByWireName = new(StringComparer.OrdinalIgnoreCase);
     public bool IsErrorDefinition
     {
         get; set;
@@ -90,7 +90,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
                     property.Name = uniquePropertyName;
                 }
             }
-            var result = base.AddProperty(new[] { property }).First();
+            var result = base.AddProperty(property).First();
             return PropertiesByWireName.GetOrAdd(result.WireName, result);
         }).ToArray();
     }

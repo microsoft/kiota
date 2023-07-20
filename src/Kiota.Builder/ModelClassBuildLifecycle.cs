@@ -3,10 +3,10 @@ using System.Threading;
 
 namespace Kiota.Builder;
 
-public class ModelClassBuildLifecyle : IDisposable
+public class ModelClassBuildLifecycle : IDisposable
 {
     private readonly CountdownEvent propertiesBuilt = new(1);
-    public ModelClassBuildLifecyle()
+    public ModelClassBuildLifecycle()
     {
     }
     public Boolean IsPropertiesBuilt()

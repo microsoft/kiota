@@ -1565,7 +1565,7 @@ public partial class KiotaBuilder
             return currentNamespace.EnsureItemNamespace();
         return currentNamespace;
     }
-    private ConcurrentDictionary<string, ModelClassBuildLifecyle> classLifecycles = new(StringComparer.OrdinalIgnoreCase);
+    private ConcurrentDictionary<string, ModelClassBuildLifecycle> classLifecycles = new(StringComparer.OrdinalIgnoreCase);
     private CodeElement AddModelDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null)
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
