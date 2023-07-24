@@ -181,7 +181,10 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             "System.Runtime.Serialization", "EnumMemberAttribute"),
         new (static x => x is IDeprecableElement element && element.Deprecation is not null && element.Deprecation.IsDeprecated,
             "System", "ObsoleteAttribute"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
+            AbstractionsNamespaceName, MultipartBodyClassName),
     };
+    private const string MultipartBodyClassName = "MultipartBody";
     protected static void CapitalizeNamespacesFirstLetters(CodeElement current)
     {
         if (current is CodeNamespace currentNamespace)
