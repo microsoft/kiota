@@ -92,7 +92,7 @@ h2==4.1.0
 
 hpack==4.0.0 ; python_full_version >= '3.6.1'
 
-httpcore==0.16.3 ; python_version >= '3.7'
+httpcore==0.17.3 ; python_version >= '3.7'
 
 httpx[http2]==0.24.1
 
