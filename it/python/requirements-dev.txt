@@ -56,7 +56,7 @@ tomli-w==1.0.0 ; python_version >= '3.7'
 
 tomlkit==0.11.8 ; python_version >= '3.7'
 
-typing-extensions==4.6.3 ; python_version >= '3.7'
+typing-extensions==4.7.1 ; python_version >= '3.7'
 
 urllib3==2.0.4 ; python_version >= '3.7'
 
