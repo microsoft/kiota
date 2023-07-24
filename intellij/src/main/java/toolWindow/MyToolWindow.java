@@ -6,7 +6,8 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.panels.VerticalLayout;
-import services.MyKiotaProjectService;
+import services.HandlerDispatcher;
+import services.kiotaVersionHandler;
 
 import javax.swing.*;
 import java.awt.*;
@@ -24,7 +25,21 @@ public class MyToolWindow {
     public JComponent Addpanel() {
         ParentPanel.setLayout(new BorderLayout());
         ParentPanel.add(getInput(), BorderLayout.CENTER);
+        ParentPanel.add(showversion(), BorderLayout.SOUTH);
         return ParentPanel;
+    }
+
+    public JComponent showversion() {
+        JBPanel<JBPanel<?>> versionPanel = new JBPanel<>();
+        versionPanel.setLayout(new BorderLayout());
+        HandlerDispatcher d = new HandlerDispatcher();
+        // Get the Kiota version
+
+        // Create a label to display the Kiota version
+        JLabel versionLabel = new JLabel("Kiota Version: " + d.getResp());
+        versionPanel.add(versionLabel, BorderLayout.CENTER);
+
+        return versionPanel;
     }
 
     public JComponent getInput() {

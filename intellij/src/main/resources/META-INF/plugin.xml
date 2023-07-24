@@ -9,7 +9,7 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-      <toolWindow factoryClass="toolWindow.MyKiotaToolFactory" id="MyKiotaToolFactory"/>
+      <toolWindow factoryClass="toolWindow.KiotaToolFactory" id="KiotaToolFactory"/>
     </extensions>
 
     <applicationListeners>
