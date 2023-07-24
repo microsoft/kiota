@@ -589,7 +589,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     AddSerializationUsingToRequestBuilder(requestBodyClass, parentClass);
                 }
 
-                if (!parentClass.Name.EqualsIgnoreCase(requestBodyClass.Name) && CreateModelInterface(requestBodyClass, interfaceNamingCallback) is CodeInterface modelInterface && modelInterface.Parent is not null)
+                if (!parentClass.Name.Equals(requestBodyClass.Name, StringComparison.OrdinalIgnoreCase) && CreateModelInterface(requestBodyClass, interfaceNamingCallback) is CodeInterface modelInterface && modelInterface.Parent is not null)
                 {
                     parentClass.AddUsing(new CodeUsing
                     {
@@ -760,7 +760,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void SetUsingInModelInterface(CodeInterface modelInterface, (CodeInterface?, CodeUsing?) propertyTypeAndUsing)
     {
-        if (propertyTypeAndUsing.Item1 is not null && propertyTypeAndUsing.Item2 is not null && !modelInterface.Name.EqualsIgnoreCase(propertyTypeAndUsing.Item1.Name))
+        if (propertyTypeAndUsing.Item1 is not null && propertyTypeAndUsing.Item2 is not null && !modelInterface.Name.Equals(propertyTypeAndUsing.Item1.Name, StringComparison.OrdinalIgnoreCase))
         {
             modelInterface.AddUsing(propertyTypeAndUsing.Item2);
         }

@@ -25,11 +25,11 @@ public class CodeUsingWriter
                                                 .Select(x => new { CodeUsingPathTokens = _relativeImportManager.GetRelativeImportPathForUsing(x, parentNamespace), ShouldUseTypeImport = GetShouldUseTypeImport(x) });
         var importSymbolsAndPaths = externalImportSymbolsAndPaths
                                                 .Union(internalImportSymbolsAndPaths.Select(static x => new { Symbol = x.CodeUsingPathTokens.Item1, Alias = x.CodeUsingPathTokens.Item2, Path = x.CodeUsingPathTokens.Item3, x.ShouldUseTypeImport }))
-                                                .GroupBy(x => x.Path)
-                                                .OrderBy(x => x.Key);
+                                                .GroupBy(static x => x.Path)
+                                                .OrderBy(static x => x.Key);
         foreach (var codeUsing in importSymbolsAndPaths.Where(static x => !string.IsNullOrWhiteSpace(x.Key)))
-            writer.WriteLine($"import {codeUsing.Select(x => x.ShouldUseTypeImport ? "type " : "").Distinct().OrderBy(static x => x).Aggregate(static (x, y) => x)}" +
-                $"{{{codeUsing.Select(static x => GetAliasedSymbol(x.Symbol, x.Alias)).Distinct().OrderBy(static x => x).Aggregate(static (x, y) => x + ", " + y)}}} from '{codeUsing.Key}';");
+            writer.WriteLine($"import {codeUsing.Select(x => x.ShouldUseTypeImport ? "type " : "").Distinct().OrderBy(static x => x, StringComparer.Ordinal).Aggregate(static (x, y) => x)}" +
+                $"{{{codeUsing.Select(static x => GetAliasedSymbol(x.Symbol, x.Alias)).Distinct().OrderBy(static x => x, StringComparer.Ordinal).Aggregate(static (x, y) => x + ", " + y)}}} from '{codeUsing.Key}';");
 
         writer.WriteLine();
     }
