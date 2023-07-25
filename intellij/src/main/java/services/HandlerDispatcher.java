@@ -25,16 +25,19 @@ public class HandlerDispatcher {
 
     public void setReq(JSONRPC2Request theRequest){
       this.req = theRequest;
-
     }
     public JSONRPC2Request getReq() {
         return req;
     }
+
+
     public JSONRPC2Request requestbuilder (String themethod, int therequestID){
         method = themethod;
         int requestID = therequestID;
         return new JSONRPC2Request(method, requestID);
     }
+
+
     public String getResp(JSONRPC2Request myreq, Function<JSONRPC2Response, String> extractResponse){
          //extractResponse(dispatcher.process(myreq, null);
          return extractResponse.apply(dispatcher.process(myreq, null));

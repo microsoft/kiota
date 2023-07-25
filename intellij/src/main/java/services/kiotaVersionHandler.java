@@ -56,7 +56,6 @@ public class kiotaVersionHandler implements RequestHandler {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-
         return "Unknown";
     }
 
