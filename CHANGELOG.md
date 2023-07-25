@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added the title of the API in the VSCode tree view. [#2779](https://github.com/microsoft/kiota/issues/2779)
-- Added capability to serialize and deserialize UUIDs in typescript
+- Added capability to serialize and deserialize UUIDs in typescript[#40](https://github.com/microsoft/kiota-typescript/issues/40)
+- Use `import type` statement if the generated code is an interface[#2959](https://github.com/microsoft/kiota/issues/2959)
 
 ### Changed
 
