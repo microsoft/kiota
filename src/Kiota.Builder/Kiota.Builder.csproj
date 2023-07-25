@@ -48,7 +48,7 @@
     <PackageReference Include="Microsoft.Kiota.Serialization.Form" Version="1.0.1" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.0.8" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Text" Version="1.0.3" />
-    <PackageReference Include="Microsoft.OpenApi" Version="1.6.5" />
+    <PackageReference Include="Microsoft.OpenApi" Version="1.6.6" />
     <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.5" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     <PackageReference Include="NeoSmart.AsyncLock" Version="3.2.1" />
