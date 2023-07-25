@@ -3,6 +3,7 @@ import com.thetransactioncompany.jsonrpc2.JSONRPC2Request;
 import com.thetransactioncompany.jsonrpc2.JSONRPC2Response;
 import com.thetransactioncompany.jsonrpc2.server.Dispatcher;
 import java.util.*;
+import java.util.function.Function;
 
 
 public class HandlerDispatcher {
@@ -10,26 +11,32 @@ public class HandlerDispatcher {
     private JSONRPC2Request req;
     private JSONRPC2Response resp;
 
+    String method;
+
     public HandlerDispatcher() {
         // Create a new JSON-RPC 2.0 request dispatcher
         dispatcher = new Dispatcher();
         dispatcher.register(new kiotaVersionHandler());
-        //JSONRPC2Request req = new JSONRPC2Request("getkiotaversion", "req-id-01");
-        //resp = dispatcher.process(req, null);
 
     }
-
-    // You can add other methods here to handle JSON-RPC requests or perform other tasks.
-
     public Dispatcher getDispatcher() {
         return dispatcher;
     }
 
+    public void setReq(JSONRPC2Request theRequest){
+      this.req = theRequest;
+
+    }
     public JSONRPC2Request getReq() {
         return req;
     }
-
-    public JSONRPC2Response getResp(req){
-        return dispatcher.process(this.req, null);
+    public JSONRPC2Request requestbuilder (String themethod, int therequestID){
+        method = themethod;
+        int requestID = therequestID;
+        return new JSONRPC2Request(method, requestID);
+    }
+    public String getResp(JSONRPC2Request myreq, Function<JSONRPC2Response, String> extractResponse){
+         //extractResponse(dispatcher.process(myreq, null);
+         return extractResponse.apply(dispatcher.process(myreq, null));
     }
 }

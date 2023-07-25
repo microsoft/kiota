@@ -20,9 +20,6 @@ public class kiotaVersionHandler implements RequestHandler {
     @Override
     public JSONRPC2Response process(JSONRPC2Request request, MessageContext requestCtx) {
         if (request.getMethod().equals("getkiotaversion")) {
-            // Echo first parameter
-            //ArrayList<String> response = new ArrayList<String>();
-
             String version = getkiotaversion();
             return new JSONRPC2Response(version, request.getID());
         } else {

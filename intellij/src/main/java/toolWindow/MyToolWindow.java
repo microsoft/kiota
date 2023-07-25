@@ -1,20 +1,21 @@
 package toolWindow;
-
 import com.intellij.openapi.project.Project; // change this later
 import com.intellij.openapi.ui.LabeledComponent;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.panels.VerticalLayout;
+import com.thetransactioncompany.jsonrpc2.JSONRPC2Request;
+import com.thetransactioncompany.jsonrpc2.server.Dispatcher;
 import services.HandlerDispatcher;
 import services.kiotaVersionHandler;
-
 import javax.swing.*;
 import java.awt.*;
 
 public class MyToolWindow {
    // private final MyKiotaProjectService service;
     private final JBPanel<JBPanel<?>> ParentPanel;
+    HandlerDispatcher d = new HandlerDispatcher();
 
     public MyToolWindow(ToolWindow toolWindow) {
         Project project = toolWindow.getProject();
@@ -32,11 +33,13 @@ public class MyToolWindow {
     public JComponent showversion() {
         JBPanel<JBPanel<?>> versionPanel = new JBPanel<>();
         versionPanel.setLayout(new BorderLayout());
-        HandlerDispatcher d = new HandlerDispatcher();
-        // Get the Kiota version
-
+        String method = "getkiotaversion";
+        int ID = 0;
+        JSONRPC2Request req= d.requestbuilder(method, ID);
         // Create a label to display the Kiota version
-        JLabel versionLabel = new JLabel("Kiota Version: " + d.getResp());
+        JLabel versionLabel = new JLabel(d.getResp(req, (response)-> {
+            return response.getResult().toString();
+        }));
         versionPanel.add(versionLabel, BorderLayout.CENTER);
 
         return versionPanel;
