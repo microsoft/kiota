@@ -20,8 +20,8 @@
   "devDependencies": {
     "@es-exec/esbuild-plugin-start": "^0.0.5",
     "@types/node": "^20.4.4",
-    "@typescript-eslint/eslint-plugin": "^6.1.0",
-    "@typescript-eslint/parser": "^6.1.0",
+    "@typescript-eslint/eslint-plugin": "^6.2.0",
+    "@typescript-eslint/parser": "^6.2.0",
     "esbuild": "^0.18.16",
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^8.6.0",
