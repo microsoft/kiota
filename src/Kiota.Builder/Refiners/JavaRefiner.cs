@@ -105,6 +105,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                     $"{SerializationNamespaceName}.JsonSerializationWriterFactory",
                     $"{SerializationNamespaceName}.TextSerializationWriterFactory",
                     $"{SerializationNamespaceName}.FormSerializationWriterFactory",
+                    $"{SerializationNamespaceName}.MultipartSerializationWriterFactory",
                 }
             );
             ReplaceDefaultDeserializationModules(
