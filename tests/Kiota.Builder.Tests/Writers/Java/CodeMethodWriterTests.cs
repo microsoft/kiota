@@ -591,12 +591,6 @@ public class CodeMethodWriterTests : IDisposable
             },
             Optional = true,
         });
-        method.AddParameter(new CodeParameter
-        {
-            Name = "r",
-            Kind = CodeParameterKind.ResponseHandler,
-            Type = stringType,
-        });
     }
     [Fact]
     public void WritesNullableVoidTypeForExecutor()
@@ -1136,6 +1130,20 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("switch (mappingValue) {", result);
         Assert.DoesNotContain("case \"ns.childmodel\": return new ChildModel();", result);
         Assert.Contains("return new ParentModel()", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyForMultipart()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "MultipartBody", IsExternal = true };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("setContentFromParsable", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
