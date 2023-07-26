@@ -11,59 +11,48 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class kiotaVersionHandler implements RequestHandler {
-
     @Override
     public String[] handledRequests() {
         return new String[]{"getkiotaversion"};
     }
-
     @Override
     public JSONRPC2Response process(JSONRPC2Request request, MessageContext requestCtx) {
         if (request.getMethod().equals("getkiotaversion")) {
-            String version = getkiotaversion();
+            String version = null;
+            String software = "kiota";
+            try {
+                Process process = new ProcessBuilder(software, "--version").start();
+
+                // Read the command output
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                StringBuilder output = new StringBuilder();
+
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+                //process.waitfor- for the process to finish
+                int exitCode = process.waitFor();
+
+                if (exitCode == 0) {
+                    // Extract the version from the output
+                     version = extractVersionFromOutput(output.toString());
+                } else {
+                    System.err.println("Command execution failed with exit code: " + exitCode);
+                }
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
             return new JSONRPC2Response(version, request.getID());
         } else {
             // Method name not supported
             return new JSONRPC2Response(JSONRPC2Error.METHOD_NOT_FOUND, request.getID());
         }
     }
-
-    public String getkiotaversion() {
-        String software = "kiota";
-
-        try {
-            Process process = new ProcessBuilder(software, "--version").start();
-
-            // Read the command output
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            StringBuilder output = new StringBuilder();
-
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
-            }
-
-            //process.waitfor- for the process to finish
-            int exitCode = process.waitFor();
-
-            if (exitCode == 0) {
-                // Extract the version from the output
-                String version = extractVersionFromOutput(output.toString());
-                return version;
-            } else {
-                System.err.println("Command execution failed with exit code: " + exitCode);
-            }
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-        return "Unknown";
-    }
-
     private String extractVersionFromOutput(String output) {
         String[] lines = output.trim().split("\n");
         if (lines.length > 0) {
             String version = lines[0]; //the version is present in the first line of code
-
             //need to remove additional info after + symbol
             int plusIndex = version.indexOf("+");
             if (plusIndex != -1) {

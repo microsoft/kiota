@@ -26,11 +26,10 @@ public class MyToolWindow {
     public JComponent Addpanel() {
         ParentPanel.setLayout(new BorderLayout());
         ParentPanel.add(getInput(), BorderLayout.CENTER);
-        ParentPanel.add(showversion(), BorderLayout.SOUTH);
+        ParentPanel.add(getversion(), BorderLayout.SOUTH);
         return ParentPanel;
     }
-
-    public JComponent showversion() {
+    public JComponent getversion() {
         JBPanel<JBPanel<?>> versionPanel = new JBPanel<>();
         versionPanel.setLayout(new BorderLayout());
         String method = "getkiotaversion";
@@ -38,13 +37,11 @@ public class MyToolWindow {
         JSONRPC2Request req= d.requestbuilder(method, ID);
         // Create a label to display the Kiota version
         JLabel versionLabel = new JLabel(d.getResp(req, (response)-> {
-            return response.getResult().toString();
+            return "kiota version : " + response.getResult().toString();
         }));
         versionPanel.add(versionLabel, BorderLayout.CENTER);
-
         return versionPanel;
     }
-
     public JComponent getInput() {
         JBPanel<JBPanel<?>> mainPanel = new JBPanel<>();
         mainPanel.setLayout(new VerticalLayout(10));
