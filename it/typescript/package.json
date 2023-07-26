@@ -22,7 +22,7 @@
     "@types/node": "^20.4.5",
     "@typescript-eslint/eslint-plugin": "^6.2.0",
     "@typescript-eslint/parser": "^6.2.0",
-    "esbuild": "^0.18.16",
+    "esbuild": "^0.18.17",
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^8.6.0",
     "minimist": "^1.2.8",
