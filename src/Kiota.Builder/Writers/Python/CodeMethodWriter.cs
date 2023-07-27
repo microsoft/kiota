@@ -248,7 +248,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 writer.WriteLine($"self.{pathParametersProperty.Name.ToSnakeCase()}[\"base_url\"] = self.{requestAdapterPropertyName}.base_url");
         }
         if (backingStoreParameter != null)
-            writer.WriteLine($"self.{requestAdapterPropertyName}.enable_backing_store({backingStoreParameter.Name})");
+            writer.WriteLine($"self.{requestAdapterPropertyName}.enable_backing_store({backingStoreParameter.Name.ToSnakeCase()})");
     }
     private static void WriteQueryParametersMapper(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
@@ -385,7 +385,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .ThenBy(static x => x.Name))
         {
             if (parentClass.IsOfKind(CodeClassKind.Model))
-                writer.WriteLine($"{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
+            {
+                var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
+                conventions.WriteInLineDescription(propWithDefault.Documentation.Description, writer);
+                writer.WriteLine($"{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
+            }
             else
                 writer.WriteLine($"self.{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
         }
