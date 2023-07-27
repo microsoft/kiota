@@ -1669,25 +1669,51 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("self.path_parameters[\"base_url\"] = self.core.base_url", result);
     }
     [Fact]
+    public void WritesBackedModelConstructor()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.Kind = CodeMethodKind.Constructor;
+        var backingStoreProp = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "backing_store",
+            Kind = CodePropertyKind.BackingStore,
+            Access = AccessModifier.Public,
+            DefaultValue = "field(default_factory=BackingStoreFactorySingleton(backing_store_factory=None).backing_store_factory.create_backing_store, repr=False)",
+            Type = new CodeType
+            {
+                Name = "BackingStore",
+                IsExternal = true,
+                IsNullable = false,
+            }
+        }).First();
+        var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
+        tempWriter.SetTextWriter(tw);
+        tempWriter.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("backing_store: BackingStore = field(default_factory=BackingStoreFactorySingleton(backing_store_factory=None).backing_store_factory.create_backing_store, repr=False)", result);
+    }
+    [Fact]
     public void WritesApiConstructorWithBackingStore()
     {
         setup();
+        parentClass.Kind = CodeClassKind.Model;
         method.Kind = CodeMethodKind.ClientConstructor;
-        var coreProp = parentClass.AddProperty(new CodeProperty
+        var requestAdapterProp = parentClass.AddProperty(new CodeProperty
         {
-            Name = "core",
+            Name = "request_adapter",
             Kind = CodePropertyKind.RequestAdapter,
             Type = new CodeType
             {
-                Name = "HttpCore",
+                Name = "RequestAdapter",
                 IsExternal = true,
             }
         }).First();
         method.AddParameter(new CodeParameter
         {
-            Name = "core",
+            Name = "request_adapter",
             Kind = CodeParameterKind.RequestAdapter,
-            Type = coreProp.Type,
+            Type = requestAdapterProp.Type,
         });
         var backingStoreParam = new CodeParameter
         {
@@ -1695,8 +1721,9 @@ public class CodeMethodWriterTests : IDisposable
             Kind = CodeParameterKind.BackingStore,
             Type = new CodeType
             {
-                Name = "BackingStore",
+                Name = "BackingStoreFactory",
                 IsExternal = true,
+                IsNullable = true,
             }
         };
         method.AddParameter(backingStoreParam);
@@ -1704,7 +1731,8 @@ public class CodeMethodWriterTests : IDisposable
         tempWriter.SetTextWriter(tw);
         tempWriter.Write(method);
         var result = tw.ToString();
-        Assert.Contains("enable_backing_store", result);
+        Assert.Contains("backing_store: Optional[BackingStoreFactory] = None)", result);
+        Assert.Contains("self.request_adapter.enable_backing_store(backing_store)", result);
     }
     [Fact]
     public void WritesNameMapperMethod()
