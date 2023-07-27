@@ -179,7 +179,7 @@ public abstract class LanguageWriter
             GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName, usesBackingStore),
             GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
             GenerationLanguage.PHP => new PhpWriter(outputPath, clientNamespaceName, usesBackingStore),
-            GenerationLanguage.Python => new PythonWriter(outputPath, clientNamespaceName),
+            GenerationLanguage.Python => new PythonWriter(outputPath, clientNamespaceName, usesBackingStore),
             GenerationLanguage.Go => new GoWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Shell => new ShellWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Swift => new SwiftWriter(outputPath, clientNamespaceName),
