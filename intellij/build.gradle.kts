@@ -26,6 +26,9 @@ dependencies {
 //    implementation(libs.annotations)
     implementation ("com.thetransactioncompany:jsonrpc2-base:1.38")
     implementation("com.thetransactioncompany:jsonrpc2-server:1.11.1")
+    implementation("com.github.briandilley.jsonrpc4j:jsonrpc4j:1.6")
+    implementation ("com.google.guava:guava:31.1-jre")
+    implementation ("com.github.arteam:simple-json-rpc-client:1.3")
 }
 
 // Set the JVM language level used to build the project. Use Java 11 for 2020.3+, and Java 17 for 2022.2+.
@@ -65,6 +68,12 @@ koverReport {
         }
     }
 }
+
+//tasks.withType(JavaExec::class).configureEach {
+//    if (name.endsWith("main()")) {
+//        notCompatibleWithConfigurationCache("JavaExec created by IntelliJ")
+//    }
+//}
 
 tasks {
     wrapper {

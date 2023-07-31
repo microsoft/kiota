@@ -5,17 +5,16 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.panels.VerticalLayout;
-import com.thetransactioncompany.jsonrpc2.JSONRPC2Request;
-import com.thetransactioncompany.jsonrpc2.server.Dispatcher;
-import services.HandlerDispatcher;
-import services.kiotaVersionHandler;
+import services.VersionHandler;
+
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 
 public class MyToolWindow {
    // private final MyKiotaProjectService service;
     private final JBPanel<JBPanel<?>> ParentPanel;
-    HandlerDispatcher d = new HandlerDispatcher();
+    VersionHandler versionHandler = new VersionHandler();
 
     public MyToolWindow(ToolWindow toolWindow) {
         Project project = toolWindow.getProject();
@@ -23,25 +22,26 @@ public class MyToolWindow {
         ParentPanel = new JBPanel<>();
     }
 
-    public JComponent Addpanel() {
+    public JComponent Addpanel() throws IOException {
         ParentPanel.setLayout(new BorderLayout());
         ParentPanel.add(getInput(), BorderLayout.CENTER);
         ParentPanel.add(getversion(), BorderLayout.SOUTH);
         return ParentPanel;
     }
-    public JComponent getversion() {
+    public JComponent getversion() throws IOException {
         JBPanel<JBPanel<?>> versionPanel = new JBPanel<>();
         versionPanel.setLayout(new BorderLayout());
-        String method = "getkiotaversion";
-        int ID = 0;
-        JSONRPC2Request req= d.requestbuilder(method, ID);
+
         // Create a label to display the Kiota version
-        JLabel versionLabel = new JLabel(d.getResp(req, (response)-> {
-            return "kiota version : " + response.getResult().toString();
-        }));
+        JLabel versionLabel = new JLabel( "version : "+ versionHandler.getVersion());
         versionPanel.add(versionLabel, BorderLayout.CENTER);
         return versionPanel;
     }
+
+    /**
+     * This method is for genenration
+     * @return
+     */
     public JComponent getInput() {
         JBPanel<JBPanel<?>> mainPanel = new JBPanel<>();
         mainPanel.setLayout(new VerticalLayout(10));
