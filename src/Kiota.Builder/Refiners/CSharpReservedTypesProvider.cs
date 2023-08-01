@@ -118,6 +118,7 @@ public class CSharpReservedTypesProvider : IReservedNamesProvider
             "MarshalByRefObject",
             "Math",
             "MathF",
+            "Method",
             "MemberAccessException",
             "MemoryExtensions",
             "MethodAccessException",

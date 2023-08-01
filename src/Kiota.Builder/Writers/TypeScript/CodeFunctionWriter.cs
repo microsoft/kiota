@@ -167,7 +167,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         else if (propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
         {
             if (propType.TypeDefinition == null)
-                return $"writeCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
+                return $"writeCollectionOfPrimitiveValues<{propertyType}>";
             else
                 return "writeCollectionOfObjectValues";
         }
@@ -205,10 +205,10 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         if (!string.IsNullOrEmpty(propertyType) && propType is CodeType currentType)
         {
             if (currentType.TypeDefinition is CodeEnum currentEnum)
-                return $"getEnumValue{(currentEnum.Flags || isCollection ? "s" : string.Empty)}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
+                return $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
             else if (isCollection)
                 if (currentType.TypeDefinition == null)
-                    return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>()";
+                    return $"getCollectionOfPrimitiveValues<{propertyType}>()";
                 else
                 {
                     return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, codeFunction.OriginalLocalMethod)})";

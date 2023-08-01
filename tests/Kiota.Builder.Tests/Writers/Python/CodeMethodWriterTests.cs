@@ -15,9 +15,9 @@ public class CodeMethodWriterTests : IDisposable
     private const string DefaultName = "name";
     private readonly StringWriter tw;
     private readonly LanguageWriter writer;
-    private readonly CodeMethod method;
-    private readonly CodeClass parentClass;
-    private readonly CodeClass childClass;
+    private CodeMethod method;
+    private CodeClass parentClass;
+    private CodeClass childClass;
     private readonly CodeNamespace root;
     private const string ClientNamespaceName = "graph";
     private const string MethodName = "method_name";
@@ -31,10 +31,40 @@ public class CodeMethodWriterTests : IDisposable
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
+    }
+    private void setup(bool withInheritance = false)
+    {
+        if (parentClass != null)
+            throw new InvalidOperationException("setup() must only be called once");
+        CodeClass baseClass = default;
+        if (withInheritance)
+        {
+            baseClass = root.AddClass(new CodeClass
+            {
+                Name = "someParentClass",
+            }).First();
+            baseClass.AddProperty(new CodeProperty
+            {
+                Name = "definedInParent",
+                Type = new CodeType
+                {
+                    Name = "string"
+                },
+                Kind = CodePropertyKind.Custom,
+            });
+        }
         parentClass = new CodeClass
         {
             Name = "parentClass"
         };
+        if (withInheritance)
+        {
+            parentClass.StartBlock.Inherits = new CodeType
+            {
+                Name = "someParentClass",
+                TypeDefinition = baseClass
+            };
+        }
         root.AddClass(parentClass);
         childClass = new CodeClass
         {
@@ -450,28 +480,6 @@ public class CodeMethodWriterTests : IDisposable
         });
         return intersectionTypeWrapper;
     }
-    private void AddInheritanceClass()
-    {
-        var baseClass = (parentClass.Parent as CodeNamespace).AddClass(new CodeClass
-        {
-            Name = "someParentClass",
-        }).First();
-        parentClass.StartBlock.Inherits = new CodeType
-        {
-            Name = "someParentClass",
-            TypeDefinition = baseClass
-        };
-        baseClass.AddProperty(new CodeProperty
-        {
-            Name = "definedInParent",
-            Type = new CodeType
-            {
-                Name = "string"
-            },
-            Kind = CodePropertyKind.Custom,
-        });
-    }
-
     private void AddCodeUsings()
     {
         var nUsing = new CodeUsing
@@ -550,12 +558,14 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesRequestBuilder()
     {
+        setup();
         method.Kind = CodeMethodKind.RequestBuilderBackwardCompatibility;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     [Fact]
     public void WritesRequestBodiesThrowOnNullHttpMethod()
     {
+        setup();
         method.Kind = CodeMethodKind.RequestExecutor;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         method.Kind = CodeMethodKind.RequestGenerator;
@@ -564,6 +574,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesRequestExecutorBody()
     {
+        setup();
         method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         var error4XX = root.AddClass(new CodeClass
@@ -629,6 +640,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void DoesntCreateDictionaryOnEmptyErrorMapping()
     {
+        setup();
         method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         AddRequestBodyParameters();
@@ -640,6 +652,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesRequestExecutorBodyForCollections()
     {
+        setup();
         method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
@@ -652,6 +665,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesRequestGeneratorBodyForScalar()
     {
+        setup();
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
@@ -676,6 +690,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesRequestGeneratorBodyForParsable()
     {
+        setup();
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
@@ -699,10 +714,10 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesInheritedDeSerializerBody()
     {
+        setup(true);
         method.Kind = CodeMethodKind.Deserializer;
         method.IsAsync = false;
         AddSerializationProperties();
-        AddInheritanceClass();
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("from .somecustomtype import Somecustomtype", result);
@@ -714,6 +729,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesUnionDeSerializerBody()
     {
+        setup();
         var wrapper = AddUnionTypeWrapper();
         var deserializationMethod = wrapper.AddMethod(new CodeMethod
         {
@@ -736,6 +752,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesIntersectionDeSerializerBody()
     {
+        setup();
         var wrapper = AddIntersectionTypeWrapper();
         var deserializationMethod = wrapper.AddMethod(new CodeMethod
         {
@@ -760,6 +777,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesDeSerializerBody()
     {
+        setup();
         method.Kind = CodeMethodKind.Deserializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -786,10 +804,10 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesInheritedSerializerBody()
     {
+        setup(true);
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationProperties();
-        AddInheritanceClass();
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("super().serialize", result);
@@ -798,6 +816,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesUnionSerializerBody()
     {
+        setup();
         var wrapper = AddUnionTypeWrapper();
         var serializationMethod = wrapper.AddMethod(new CodeMethod
         {
@@ -831,6 +850,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesIntersectionSerializerBody()
     {
+        setup();
         var wrapper = AddIntersectionTypeWrapper();
         var serializationMethod = wrapper.AddMethod(new CodeMethod
         {
@@ -864,6 +884,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesSerializerBody()
     {
+        setup();
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationProperties();
@@ -889,6 +910,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesMethodAsyncDescription()
     {
+        setup();
         method.Documentation.Description = MethodDescription;
         var parameter = new CodeParameter
         {
@@ -916,6 +938,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesMethodSyncDescription()
     {
+        setup();
         method.Documentation.Description = MethodDescription;
         method.IsAsync = false;
         var parameter = new CodeParameter
@@ -943,6 +966,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void Defensive()
     {
+        setup();
         var codeMethodWriter = new CodeMethodWriter(new PythonConventionService(), ClientNamespaceName, false);
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
@@ -954,18 +978,21 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void ThrowsIfMethodIsRawUrlConstructor()
     {
+        setup();
         method.Kind = CodeMethodKind.RawUrlConstructor;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     [Fact]
     public void ThrowsIfParentIsNotClass()
     {
+        setup();
         method.Parent = CodeNamespace.InitRootNamespace();
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     [Fact]
     public void WritesReturnType()
     {
+        setup();
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(MethodName, result);
@@ -975,6 +1002,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void DoesNotAddUndefinedOnNonNullableReturnType()
     {
+        setup();
         method.ReturnType.IsNullable = false;
         writer.Write(method);
         var result = tw.ToString();
@@ -983,6 +1011,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void DoesNotAddAsyncInformationOnSyncMethods()
     {
+        setup();
         method.IsAsync = false;
         writer.Write(method);
         var result = tw.ToString();
@@ -991,6 +1020,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesFactoryMethods()
     {
+        setup();
         method.Kind = CodeMethodKind.Factory;
         method.AddParameter(new CodeParameter
         {
@@ -1015,6 +1045,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesModelFactoryBodyForInheritedModels()
     {
+        setup();
         parentClass.Kind = CodeClassKind.Model;
         childClass.Kind = CodeClassKind.Model;
         childClass.StartBlock.Inherits = new CodeType
@@ -1065,6 +1096,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesModelFactoryBodyForUnionModels()
     {
+        setup();
         var wrapper = AddUnionTypeWrapper();
         var factoryMethod = wrapper.AddMethod(new CodeMethod
         {
@@ -1104,6 +1136,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesModelFactoryBodyForIntersectionModels()
     {
+        setup();
         var wrapper = AddIntersectionTypeWrapper();
         var factoryMethod = wrapper.AddMethod(new CodeMethod
         {
@@ -1143,6 +1176,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void DoesntWriteFactoryConditionalsOnMissingParameter()
     {
+        setup();
         parentClass.Kind = CodeClassKind.Model;
         childClass.Kind = CodeClassKind.Model;
         childClass.StartBlock.Inherits = new CodeType
@@ -1168,6 +1202,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void DoesntWriteFactoryConditionalsOnEmptyPropertyName()
     {
+        setup();
         parentClass.Kind = CodeClassKind.Model;
         childClass.Kind = CodeClassKind.Model;
         childClass.StartBlock.Inherits = new CodeType
@@ -1214,6 +1249,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void DoesntWriteFactorySwitchOnEmptyMappings()
     {
+        setup();
         parentClass.Kind = CodeClassKind.Model;
         method.Kind = CodeMethodKind.Factory;
         method.ReturnType = new CodeType
@@ -1249,6 +1285,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesPublicMethodByDefault()
     {
+        setup();
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain($"_{MethodName}", result); ;// public default
@@ -1256,6 +1293,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesProtectedMethod()
     {
+        setup();
         method.Access = AccessModifier.Protected;
         writer.Write(method);
         var result = tw.ToString();
@@ -1264,6 +1302,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesIndexer()
     {
+        setup();
         AddRequestProperties();
         method.Kind = CodeMethodKind.IndexerBackwardCompatibility;
         method.OriginalIndexer = new()
@@ -1291,6 +1330,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesPathParameterRequestBuilder()
     {
+        setup();
         AddRequestProperties();
         method.Kind = CodeMethodKind.RequestBuilderWithParameters;
         method.AddParameter(new CodeParameter
@@ -1313,7 +1353,8 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesGetterToBackingStore()
     {
-        parentClass.AddBackingStoreProperty();
+        setup();
+        parentClass.GetGreatestGrandparent().AddBackingStoreProperty();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Getter;
         writer.Write(method);
@@ -1324,6 +1365,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesGetterNullBackingStore()
     {
+        setup();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Getter;
         writer.Write(method);
@@ -1333,8 +1375,9 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesGetterToBackingStoreWithNonnullProperty()
     {
+        setup();
         method.AddAccessedProperty();
-        parentClass.AddBackingStoreProperty();
+        parentClass.GetGreatestGrandparent().AddBackingStoreProperty();
         method.AccessedProperty.Type = new CodeType
         {
             Name = "string",
@@ -1351,6 +1394,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesSetterNullBackingStore()
     {
+        setup();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Setter;
         writer.Write(method);
@@ -1360,7 +1404,8 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesSetterToBackingStore()
     {
-        parentClass.AddBackingStoreProperty();
+        setup();
+        parentClass.GetGreatestGrandparent().AddBackingStoreProperty();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Setter;
         writer.Write(method);
@@ -1370,6 +1415,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesGetterToField()
     {
+        setup();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Getter;
         writer.Write(method);
@@ -1379,6 +1425,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void DoesntWriteGetterToFieldForModelClasses()
     {
+        setup();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Getter;
         parentClass.Kind = CodeClassKind.Model;
@@ -1389,6 +1436,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesSetterToField()
     {
+        setup();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Setter;
         writer.Write(method);
@@ -1398,6 +1446,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void DoesntWritesSetterToFieldForModelClasses()
     {
+        setup();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Setter;
         parentClass.Kind = CodeClassKind.Model;
@@ -1408,6 +1457,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesConstructor()
     {
+        setup();
         method.Kind = CodeMethodKind.Constructor;
         method.IsAsync = false;
         var defaultValue = "someVal";
@@ -1448,6 +1498,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void DoesntWriteConstructorForModelClasses()
     {
+        setup();
         method.AddAccessedProperty();
         method.Kind = CodeMethodKind.Constructor;
         method.IsAsync = false;
@@ -1479,6 +1530,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
     {
+        setup();
         method.Kind = CodeMethodKind.Constructor;
         var defaultValue = "\"Test Value\"";
         var propName = "size";
@@ -1520,11 +1572,11 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesConstructorWithInheritance()
     {
+        setup(true);
         method.Kind = CodeMethodKind.Constructor;
         method.IsAsync = false;
         var propName = "prop_with_no_default_value";
         parentClass.Kind = CodeClassKind.Model;
-        AddInheritanceClass();
         parentClass.AddProperty(new CodeProperty
         {
             Name = propName,
@@ -1576,6 +1628,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesApiConstructor()
     {
+        setup();
         method.Kind = CodeMethodKind.ClientConstructor;
         method.IsAsync = false;
         method.BaseUrl = "https://graph.microsoft.com/v1.0";
@@ -1618,6 +1671,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesApiConstructorWithBackingStore()
     {
+        setup();
         method.Kind = CodeMethodKind.ClientConstructor;
         var coreProp = parentClass.AddProperty(new CodeProperty
         {
@@ -1655,6 +1709,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesNameMapperMethod()
     {
+        setup();
         method.Kind = CodeMethodKind.QueryParametersMapper;
         method.IsAsync = false;
         parentClass.AddProperty(new CodeProperty
@@ -1722,6 +1777,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesNameMapperMethodWithUnescapedProperties()
     {
+        setup();
         method.Kind = CodeMethodKind.QueryParametersMapper;
         method.IsAsync = false;
         parentClass.AddProperty(new CodeProperty
@@ -1752,6 +1808,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void MapperMethodFailsIfNoQueryParametersMapperParameter()
     {
+        setup();
         method.Kind = CodeMethodKind.QueryParametersMapper;
         method.IsAsync = false;
         parentClass.AddProperty(new CodeProperty
@@ -1798,9 +1855,9 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void DoesntWriteReadOnlyPropertiesInSerializerBody()
     {
+        setup(true);
         method.Kind = CodeMethodKind.Serializer;
         AddSerializationProperties();
-        AddInheritanceClass();
         parentClass.AddProperty(new CodeProperty
         {
             Name = "ReadOnlyProperty",

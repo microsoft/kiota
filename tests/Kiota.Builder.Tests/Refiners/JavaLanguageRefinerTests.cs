@@ -287,7 +287,7 @@ public class JavaLanguageRefinerTests
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
-        Assert.Equal("Period", method.ReturnType.Name);
+        Assert.Equal("PeriodAndDuration", method.ReturnType.Name);
     }
     [Fact]
     public async Task ReplacesBinaryByNativeType()

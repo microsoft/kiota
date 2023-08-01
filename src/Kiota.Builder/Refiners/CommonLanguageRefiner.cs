@@ -221,9 +221,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 if (!string.IsNullOrEmpty(fieldPrefix))
                     currentProperty.NamePrefix = fieldPrefix;
             }
-            var propertyOriginalName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
-                                        .ToFirstCharacterLowerCase();
-            var accessorName = refineAccessorName(current, propertyOriginalName.CleanupSymbolName().ToFirstCharacterUpperCase());
+            var accessorName = refineAccessorName(current, currentProperty.Name.ToFirstCharacterUpperCase());
 
             currentProperty.Getter = parentClass.AddMethod(new CodeMethod
             {
@@ -234,7 +232,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 ReturnType = (CodeTypeBase)currentProperty.Type.Clone(),
                 Documentation = new()
                 {
-                    Description = $"Gets the {propertyOriginalName} property value. {currentProperty.Documentation.Description}",
+                    Description = $"Gets the {currentProperty.WireName} property value. {currentProperty.Documentation.Description}",
                 },
                 AccessedProperty = currentProperty,
                 Deprecation = currentProperty.Deprecation,
@@ -248,7 +246,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Kind = CodeMethodKind.Setter,
                 Documentation = new()
                 {
-                    Description = $"Sets the {propertyOriginalName} property value. {currentProperty.Documentation.Description}",
+                    Description = $"Sets the {currentProperty.WireName} property value. {currentProperty.Documentation.Description}",
                 },
                 AccessedProperty = currentProperty,
                 ReturnType = new CodeType
@@ -268,7 +266,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Kind = CodeParameterKind.SetterValue,
                 Documentation = new()
                 {
-                    Description = $"Value to set for the {current.Name} property.",
+                    Description = $"Value to set for the {currentProperty.WireName} property.",
                 },
                 Optional = parameterAsOptional,
                 Type = (CodeTypeBase)currentProperty.Type.Clone(),
@@ -990,6 +988,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 declaration.AddImplements(new CodeType
                 {
                     Name = parentClassName,
+                    IsExternal = true,
                     TypeDefinition = new CodeType
                     {
                         Name = parentClassNamespace,
@@ -1009,6 +1008,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 declaration.Inherits = new CodeType
                 {
                     Name = parentClassName,
+                    IsExternal = true,
                 };
                 if (addNamespaceToInheritDeclaration)
                 {

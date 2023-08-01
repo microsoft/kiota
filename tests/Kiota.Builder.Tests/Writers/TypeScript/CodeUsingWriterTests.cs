@@ -64,4 +64,28 @@ public class CodeUsingWriterTests
         var result = tw.ToString();
         Assert.Contains("import {Bar} from", result);
     }
+
+    [Fact]
+    public void WritesImportTypeStatement()
+    {
+        var usingWriter = new CodeUsingWriter("foo");
+        var someInterface = new CodeInterface
+        {
+            Name = "Bar",
+            Kind = CodeInterfaceKind.Model
+        };
+        root.AddInterface(someInterface);
+        var us = new CodeUsing
+        {
+            Name = "bar",
+            Declaration = new CodeType
+            {
+                Name = someInterface.Name,
+                TypeDefinition = someInterface,
+            },
+        };
+        usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
+        var result = tw.ToString();
+        Assert.Contains("import type {Bar} from", result);
+    }
 }

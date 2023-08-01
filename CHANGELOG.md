@@ -9,11 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the title of the API in the VSCode tree view. [#2779](https://github.com/microsoft/kiota/issues/2779)
+- Added capability to serialize and deserialize UUIDs in typescript[#40](https://github.com/microsoft/kiota-typescript/issues/40)
+- Use `import type` statement if the generated code is an interface[#2959](https://github.com/microsoft/kiota/issues/2959)
+
 ### Changed
 
 - Fixed missing type comments in many cases.
+- Fixed a bug where duplicate enum entries in the description would lead to duplicate members. [#2352](https://github.com/microsoft/kiota/issues/2352)
+- Sunset app.kiota.dev in favour of the VSCode extension. [#2934](https://github.com/microsoft/kiota/issues/2934)
 - Use schematized types for 206 response codes instead of binary. [#2880](https://github.com/microsoft/kiota/issues/2880)
-- Typenames are not changed to first char upper case in comments in some cases.
+- Type names are not changed to first char upper case in comments in some cases.
+- Fixed a bug where the show command would display an upgrade warning.
+- Updated `getEnumValues` method name to `getCollectionOfEnumValues`. [#2907](https://github.com/microsoft/kiota/pull/2907)
+- Added `Method` to the list of `CSharpReservedClassNames`. [#2939](https://github.com/microsoft/kiota/pull/2939)
+- Changed generation to use aggregate type for `TimeSpan` values in java [#2069](https://github.com/microsoft/kiota/issues/2069)
+- Fixed generation of properties with identical names after symbol cleanup. [#2869](https://github.com/microsoft/kiota/issues/2869)
 
 ## [1.4.0] - 2023-07-07
 

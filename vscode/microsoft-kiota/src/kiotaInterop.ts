@@ -49,6 +49,7 @@ interface KiotaLoggedResult {
 }
 export interface KiotaShowResult extends KiotaLoggedResult {
     rootNode?: KiotaOpenApiNode;
+    apiTitle?: string;
 }
 
 export interface KiotaSearchResult extends KiotaLoggedResult {

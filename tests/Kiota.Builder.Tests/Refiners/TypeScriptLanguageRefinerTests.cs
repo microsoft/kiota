@@ -13,16 +13,10 @@ public class TypeScriptLanguageRefinerTests
 {
     private readonly CodeNamespace root;
     private readonly CodeNamespace graphNS;
-    private readonly CodeClass parentClass;
     public TypeScriptLanguageRefinerTests()
     {
         root = CodeNamespace.InitRootNamespace();
         graphNS = root.AddNamespace("graph");
-        parentClass = new()
-        {
-            Name = "parentClass"
-        };
-        graphNS.AddClass(parentClass);
     }
 
     #region commonrefiner
@@ -53,13 +47,11 @@ public class TypeScriptLanguageRefinerTests
     [Fact]
     public async Task AddStaticMethodsUsingsForDeserializer()
     {
-        var model = TestHelper.CreateModelClass("Model");
-        graphNS.AddClass(model);
+        var model = TestHelper.CreateModelClass(graphNS, "Model");
 
         var subNs = graphNS.AddNamespace($"{graphNS.Name}.subns");
 
-        var propertyModel = TestHelper.CreateModelClass("PropertyModel");
-        subNs.AddClass(propertyModel);
+        var propertyModel = TestHelper.CreateModelClass(subNs, "PropertyModel");
 
         model.AddMethod(new CodeMethod
         {
@@ -105,9 +97,8 @@ public class TypeScriptLanguageRefinerTests
     [Fact]
     public async Task AddsExceptionImplementsOnErrorClasses()
     {
-        var model = TestHelper.CreateModelClass("ErrorModel");
+        var model = TestHelper.CreateModelClass(root, "ErrorModel");
         model.IsErrorDefinition = true;
-        root.AddClass(model);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
         var declaration = model.StartBlock;
@@ -211,7 +202,7 @@ public class TypeScriptLanguageRefinerTests
             Kind = CodeClassKind.RequestBuilder,
         }).First();
         var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
-        var errorClass = subNS.AddClass(TestHelper.CreateModelClass("Error4XX")).First();
+        var errorClass = TestHelper.CreateModelClass(subNS, "Error4XX");
         errorClass.IsErrorDefinition = true;
         var requestExecutor = requestBuilder.AddMethod(new CodeMethod
         {
@@ -229,10 +220,8 @@ public class TypeScriptLanguageRefinerTests
         });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
-        var childModel = TestHelper.CreateModelClass("childModel");
-        var parentModel = TestHelper.CreateModelClass("parentModel");
-        root.AddClass(childModel);
-        root.AddClass(parentModel);
+        var childModel = TestHelper.CreateModelClass(root, "childModel");
+        var parentModel = TestHelper.CreateModelClass(root, "parentModel");
 
         childModel.StartBlock.Inherits = new CodeType
         {
@@ -275,8 +264,7 @@ public class TypeScriptLanguageRefinerTests
     [Fact]
     public async Task EscapesReservedKeywords()
     {
-        var model = TestHelper.CreateModelClass("break");
-        root.AddClass(model);
+        var model = TestHelper.CreateModelClass(root, "break");
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         var interFaceModel = root.Interfaces.First(x => "BreakEscaped".Equals(x.Name, StringComparison.Ordinal));
         Assert.NotEqual("break", interFaceModel.Name);
@@ -286,8 +274,7 @@ public class TypeScriptLanguageRefinerTests
     [Fact]
     public async Task CorrectsCoreType()
     {
-        var model = TestHelper.CreateModelClass();
-        root.AddClass(model);
+        var model = TestHelper.CreateModelClass(root);
 
         model.AddMethod(new CodeMethod
         {
@@ -409,8 +396,7 @@ public class TypeScriptLanguageRefinerTests
     [Fact]
     public async Task ReplacesDateTimeOffsetByNativeType()
     {
-        var model = TestHelper.CreateModelClass();
-        root.AddClass(model);
+        var model = TestHelper.CreateModelClass(root);
         var codeProperty = model.AddProperty(new CodeProperty
         {
             Name = "method",
@@ -427,11 +413,30 @@ public class TypeScriptLanguageRefinerTests
         Assert.Equal("Date", modelInterface.Properties.First(x => x.Name == codeProperty.Name).Type.Name);
     }
     [Fact]
+    public async Task ReplacesGuidsByRespectiveType()
+    {
+        var model = TestHelper.CreateModelClass(root);
+        var codeProperty = model.AddProperty(new CodeProperty
+        {
+            Name = "method",
+            Type = new CodeType
+            {
+                Name = "Guid",
+                IsExternal = true
+            },
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+
+        var modelInterface = root.Interfaces.First(x => x.Name.Equals(model.Name, StringComparison.OrdinalIgnoreCase));
+        Assert.NotEmpty(modelInterface.StartBlock.Usings);
+        Assert.NotEmpty(modelInterface.StartBlock.Usings.Where(static x => x.Name.Equals("Guid", StringComparison.Ordinal)));
+        Assert.Equal("Guid", modelInterface.Properties.First(x => x.Name.Equals(codeProperty.Name, StringComparison.OrdinalIgnoreCase)).Type.Name, StringComparer.OrdinalIgnoreCase);
+    }
+    [Fact]
     public async Task ReplacesDateOnlyByNativeType()
     {
 
-        var model = TestHelper.CreateModelClass();
-        root.AddClass(model);
+        var model = TestHelper.CreateModelClass(root);
         var codeProperty = model.AddProperty(new CodeProperty
         {
             Name = "method",
@@ -449,8 +454,7 @@ public class TypeScriptLanguageRefinerTests
     [Fact]
     public async Task ReplacesTimeOnlyByNativeType()
     {
-        var model = TestHelper.CreateModelClass();
-        root.AddClass(model);
+        var model = TestHelper.CreateModelClass(root);
         var codeProperty = model.AddProperty(new CodeProperty
         {
             Name = "method",
@@ -470,8 +474,7 @@ public class TypeScriptLanguageRefinerTests
     public async Task ReplacesDurationByNativeType()
     {
 
-        var model = TestHelper.CreateModelClass();
-        root.AddClass(model);
+        var model = TestHelper.CreateModelClass(root);
         var codeProperty = model.AddProperty(new CodeProperty
         {
             Name = "method",
@@ -489,19 +492,12 @@ public class TypeScriptLanguageRefinerTests
     [Fact]
     public async Task AliasesDuplicateUsingSymbols()
     {
-
-        var model = TestHelper.CreateModelClass();
-        graphNS.AddClass(model);
         var modelsNS = graphNS.AddNamespace($"{graphNS.Name}.models");
-
-        var source1 = TestHelper.CreateModelClass("source");
-        modelsNS.AddClass(source1);
-
-
-        var source2 = TestHelper.CreateModelClass("source");
-
         var submodelsNS = modelsNS.AddNamespace($"{modelsNS.Name}.submodels");
-        submodelsNS.AddClass(source2);
+
+        var model = TestHelper.CreateModelClass(graphNS);
+        var source1 = TestHelper.CreateModelClass(modelsNS, "source");
+        var source2 = TestHelper.CreateModelClass(submodelsNS, "source");
 
         source1.AddMethod(new CodeMethod
         {
@@ -617,8 +613,7 @@ public class TypeScriptLanguageRefinerTests
     public async Task AddsModelInterfaceForAModelClass()
     {
         var testNS = CodeNamespace.InitRootNamespace();
-        var model = TestHelper.CreateModelClass("modelA");
-        testNS.AddClass(model);
+        var model = TestHelper.CreateModelClass(testNS, "modelA");
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, testNS);
         Assert.Contains(testNS.Interfaces, x => x.Name == "ModelA");

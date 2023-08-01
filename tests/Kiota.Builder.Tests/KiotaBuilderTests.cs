@@ -184,6 +184,7 @@ components:
         - Standard_GRS
         - Standard_RAGRS
         - Premium_LRS
+        - Premium_LRS
       x-ms-enum:
         name: AccountType
         modelAsString: false
@@ -220,6 +221,7 @@ components:
         Assert.Equal("Standard_LRS", thirdOption.SerializationName);
         Assert.Equal("StandardLocalRedundancy", thirdOption.Name);
         Assert.NotEmpty(thirdOption.Documentation.Description);
+        Assert.Single(enumDef.Options.Where(static x => x.Name.Equals("Premium_LRS", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
     public async Task TrimsInheritanceUnusedModels()
@@ -6015,5 +6017,217 @@ paths:
         var keysToCheck = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "datasets", "datakeys", "datainfo" };
         Assert.Empty(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && keysToCheck.Contains(x.Name)));
         Assert.Single(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && x.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
+    public async Task DiscriptionTakenFromAllOf()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /directoryObject:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.directoryObject'
+components:
+  schemas:
+    microsoft.graph.entity:
+      title: entity
+      description: 'base entity'
+      type: object
+      properties:
+        id:
+          type: string
+        '@odata.type':
+          type: string
+      discriminator:
+        propertyName: '@odata.type'
+        mapping:
+          '#microsoft.graph.directoryObject': '#/components/schemas/microsoft.graph.directoryObject'
+          '#microsoft.graph.sub1': '#/components/schemas/microsoft.graph.sub1'
+          '#microsoft.graph.sub2': '#/components/schemas/microsoft.graph.sub2'
+    microsoft.graph.directoryObject:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.entity'
+        - title: directoryObject
+          description: 'directory object'
+          type: object
+          required: [ '@odata.type' ]
+          discriminator:
+            propertyName: '@odata.type'
+            mapping:
+              '#microsoft.graph.sub1': '#/components/schemas/microsoft.graph.sub1'
+              '#microsoft.graph.sub2': '#/components/schemas/microsoft.graph.sub2'
+    microsoft.graph.sub1:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.directoryObject'
+        - title: sub1
+          description: 'sub1'
+          type: object
+    microsoft.graph.sub2:
+      description: 'sub2'
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.directoryObject'
+        - title: sub2
+          description: 'ignored'
+          type: object");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.Equal("base entity", codeModel.FindChildByName<CodeClass>("entity").Documentation.Description);
+        Assert.Equal("directory object", codeModel.FindChildByName<CodeClass>("directoryObject").Documentation.Description);
+        Assert.Equal("sub1", codeModel.FindChildByName<CodeClass>("sub1").Documentation.Description);
+        Assert.Equal("sub2", codeModel.FindChildByName<CodeClass>("sub2").Documentation.Description);
+    }
+    [Fact]
+    public async Task CleanupSymbolNameDoesNotCauseNameConflicts()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: Example
+  description: Example
+  version: 1.0.1
+servers:
+  - url: https://example.org
+paths:
+  /directoryObject:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/entity'
+components:
+  schemas:
+    entity:
+      title: entity
+      type: object
+      required: ['type', '@type']
+      properties:
+        type:
+          type: string
+        '@type':
+          type: integer");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var resultClass = codeModel.FindChildByName<CodeClass>("Entity");
+        Assert.NotNull(resultClass);
+        Assert.Equal(2, resultClass.Properties.Select(static x => x.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+    }
+    [Fact]
+    public async Task CleanupSymbolNameDoesNotCauseNameConflictsWithSuperType()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: Example
+  description: Example
+  version: 1.0.1
+servers:
+  - url: https://example.org
+paths:
+  /directoryObject:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/subtype'
+components:
+  schemas:
+    entity:
+      title: entity
+      type: object
+      required: ['@type']
+      properties:
+        '@type':
+          type: integer
+      discriminator:
+        propertyName: '@type'
+        mapping:
+          'subtype': '#/components/schemas/subtype'
+    subtype:
+      allOf:
+        - $ref: '#/components/schemas/entity'
+        - title: subtype
+          type: object
+          required: ['type', '@type']
+          properties:
+            'type':
+              type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var entityClass = codeModel.FindChildByName<CodeClass>("Entity");
+        Assert.NotNull(entityClass);
+        var atType = entityClass.FindChildByName<CodeProperty>("Type");
+        Assert.Equal("@type", atType.WireName);
+        var subtypeClass = codeModel.FindChildByName<CodeClass>("Subtype");
+        Assert.NotNull(subtypeClass);
+        var type = subtypeClass.FindChildByName<CodeProperty>("SubtypeType");
+        Assert.Equal("type", type.WireName);
+        Assert.Equal("subtypeType", type.Name);
+    }
+    [Fact]
+    public async Task CleanupSymbolNameDoesNotCauseNameConflictsInQueryParameters()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: Example
+  description: Example
+  version: 1.0.1
+servers:
+  - url: https://example.org
+paths:
+  /directoryObject:
+    get:
+      parameters:
+        - name: $select
+          in: query
+          schema:
+            type: string
+        - name: select
+          in: query
+          schema:
+            type: int64
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var parametersClass = codeModel.FindChildByName<CodeClass>("directoryObjectRequestBuilderGetQueryParameters");
+        Assert.NotNull(parametersClass);
+        var dollarSelect = parametersClass.FindChildByName<CodeProperty>("Select");
+        Assert.Equal("%24select", dollarSelect.WireName);
+        Assert.Equal("string", dollarSelect.Type.Name);
+        var select = parametersClass.FindChildByName<CodeProperty>("select0");
+        Assert.Equal("select", select.WireName);
+        Assert.Equal("int64", select.Type.Name);
     }
 }

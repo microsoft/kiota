@@ -120,7 +120,7 @@ public class CodeMethodWriterTests : IDisposable
             Type = useComplexTypeForBody ? new CodeType
             {
                 Name = "SomeComplexTypeForRequestBody",
-                TypeDefinition = root.AddClass(TestHelper.CreateModelClass("SomeComplexTypeForRequestBody")).First(),
+                TypeDefinition = TestHelper.CreateModelClass(root, "SomeComplexTypeForRequestBody"),
             } : stringType,
         });
         method.AddParameter(new CodeParameter
@@ -191,8 +191,8 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesModelFactoryBodyThrowsIfMethodAndNotFactory()
     {
-        var parentModel = root.AddClass(TestHelper.CreateModelClass("parentModel")).First();
-        var childModel = root.AddClass(TestHelper.CreateModelClass("childModel")).First();
+        var parentModel = TestHelper.CreateModelClass(root, "parentModel");
+        var childModel = TestHelper.CreateModelClass(root, "childModel");
         childModel.StartBlock.Inherits = new CodeType
         {
             Name = "parentModel",

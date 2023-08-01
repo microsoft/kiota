@@ -75,7 +75,7 @@ function getKiotaPathInternal(context: vscode.ExtensionContext, withFileName = t
     const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
     if (packageToInstall) {
         const installPath = context.asAbsolutePath(binariesRootDirectory);
-        const directoryPath = path.join(installPath, context.extension.packageJSON.version, currentPlatform);
+        const directoryPath = path.join(installPath, context.extension.packageJSON.kiotaVersion, currentPlatform);
         if (withFileName) {
             return path.join(directoryPath, fileName);
         }
@@ -118,7 +118,7 @@ function downloadFileFromUrl(url: string, destinationPath: string) {
 }
 const baseDownloadUrl = "https://github.com/microsoft/kiota/releases/download";
 function getDownloadUrl(context: vscode.ExtensionContext, platform: string): string {
-    return `${baseDownloadUrl}/v${context.extension.packageJSON.version}/${platform}.zip`;
+    return `${baseDownloadUrl}/v${context.extension.packageJSON.kiotaVersion}/${platform}.zip`;
 }
 
 function getRuntimeDependenciesPackages(context: vscode.ExtensionContext): Package[] {
