@@ -135,12 +135,6 @@ public class CodeMethodWriterTests : IDisposable
             },
             Optional = true,
         });
-        method.AddParameter(new CodeParameter
-        {
-            Name = "r",
-            Kind = CodeParameterKind.ResponseHandler,
-            Type = stringType,
-        });
     }
     [Fact]
     public void WritesRequestBuilder()
@@ -241,6 +235,19 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.DoesNotContain("const errorMapping: Record<string, new () => Parsable> =", result);
         Assert.Contains("undefined", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyForMultipart()
+    {
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "MultipartBody", IsExternal = true };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("setContentFromParsable", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
