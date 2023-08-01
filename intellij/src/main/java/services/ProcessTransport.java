@@ -1,7 +1,6 @@
 package services;
 
 import com.github.arteam.simplejsonrpc.client.Transport;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -18,7 +17,6 @@ public class ProcessTransport implements Transport {
         }
         this.processCommandsAndArgs = processCommandsAndArgs;
     }
-
     @Override
     public String pass(String request) throws IOException {
         final ProcessBuilder builder = new ProcessBuilder(processCommandsAndArgs);

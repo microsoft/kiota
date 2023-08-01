@@ -18,7 +18,6 @@ public class MyToolWindow {
 
     public MyToolWindow(ToolWindow toolWindow) {
         Project project = toolWindow.getProject();
-       // service = project.getService(MyKiotaProjectService.class);
         ParentPanel = new JBPanel<>();
     }
 

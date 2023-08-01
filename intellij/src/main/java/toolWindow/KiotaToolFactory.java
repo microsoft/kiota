@@ -22,7 +22,6 @@ public class KiotaToolFactory implements ToolWindowFactory {
         }
         toolWindow.getContentManager().addContent(content);
     }
-
     @Override
     public boolean shouldBeAvailable(@NotNull Project project) {
         return true;
