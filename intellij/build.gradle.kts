@@ -23,10 +23,6 @@ repositories {
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
-//    implementation(libs.annotations)
-    implementation ("com.thetransactioncompany:jsonrpc2-base:1.38")
-    implementation("com.thetransactioncompany:jsonrpc2-server:1.11.1")
-    implementation("com.github.briandilley.jsonrpc4j:jsonrpc4j:1.6")
     implementation ("com.google.guava:guava:31.1-jre")
     implementation ("com.github.arteam:simple-json-rpc-client:1.3")
 }
@@ -41,7 +37,6 @@ intellij {
     pluginName = properties("pluginName")
     version = properties("platformVersion")
     type = properties("platformType")
-
     // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file.
     plugins = properties("platformPlugins").map { it.split(',').map(String::trim).filter(String::isNotEmpty) }
 }
@@ -68,13 +63,6 @@ koverReport {
         }
     }
 }
-
-//tasks.withType(JavaExec::class).configureEach {
-//    if (name.endsWith("main()")) {
-//        notCompatibleWithConfigurationCache("JavaExec created by IntelliJ")
-//    }
-//}
-
 tasks {
     wrapper {
         gradleVersion = properties("gradleVersion").get()
@@ -111,7 +99,6 @@ tasks {
             }
         }
     }
-
     // Configure UI tests plugin
     // Read more: https://github.com/JetBrains/intellij-ui-test-robot
     runIdeForUiTests {

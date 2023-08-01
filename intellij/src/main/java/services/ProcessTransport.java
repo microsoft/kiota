@@ -1,5 +1,4 @@
 package services;
-
 import com.github.arteam.simplejsonrpc.client.Transport;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -7,10 +6,8 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-
 public class ProcessTransport implements Transport {
     private final String[] processCommandsAndArgs;
-
     public ProcessTransport(String... processCommandsAndArgs) {
         if (processCommandsAndArgs.length == 0) {
             throw new IllegalArgumentException("processCommandsAndArgs must not be empty");
@@ -20,7 +17,6 @@ public class ProcessTransport implements Transport {
     @Override
     public String pass(String request) throws IOException {
         final ProcessBuilder builder = new ProcessBuilder(processCommandsAndArgs);
-        System.out.println("Starting process: " + String.join(" ", processCommandsAndArgs));
         final Process process = builder.start();
         process.onExit().thenAccept((exitCode) -> {
             System.out.println("Process exited with code: " + exitCode);
@@ -31,7 +27,6 @@ public class ProcessTransport implements Transport {
         String payload = "Content-Length: " + (request.length() + idToInsert.length()) + "\r\n" +
                 "\r\n" +
                 new StringBuilder(request).insert(1, idToInsert).toString();
-        System.out.println("Sending Payload: \n" + payload);
         stdin.write(payload.getBytes(StandardCharsets.UTF_8));
         stdin.flush();
 
@@ -44,10 +39,8 @@ public class ProcessTransport implements Transport {
             character = stdout.read();
             char c = (char) character;
             responseBuilder.append(c);
-            System.out.print(c); // Print each character as it's read from the output
         }
         final String response = responseBuilder.toString();
-       // System.out.println("Response from server: " + response);
         stdout.close();
         stdin.close();
         try {
@@ -58,7 +51,6 @@ public class ProcessTransport implements Transport {
         process.destroyForcibly();
         return response;
     }
-
     private Map<String, String> readResponseHeaders(BufferedReader stdOut) throws IOException {
         StringBuilder headerKey = new StringBuilder();
         StringBuilder headerValue = new StringBuilder();

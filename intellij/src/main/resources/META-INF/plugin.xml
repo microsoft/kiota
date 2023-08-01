@@ -12,7 +12,4 @@
       <toolWindow factoryClass="toolWindow.KiotaToolFactory" id="KiotaToolFactory"/>
     </extensions>
 
-    <applicationListeners>
-        <listener class="com.github.hossain2024.intellijtestplugin.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
-    </applicationListeners>
 </idea-plugin>
