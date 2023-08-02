@@ -14,6 +14,7 @@
     <PackageReference Include="Microsoft.Kiota.Http.HttpClientLibrary" Version="1.0.1" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Form" Version="1.0.1" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.0.3" />
+    <PackageReference Include="Microsoft.kiota.Serialization.Multipart" Version="1.0.0" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Text" Version="1.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
     <PackageReference Include="xunit" Version="2.4.2" />
