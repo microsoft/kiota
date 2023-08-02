@@ -346,7 +346,7 @@ public class GoLanguageRefinerTests
             },
             IndexParameterName = "id",
         };
-        model.Indexer = indexer;
+        model.AddIndexer(indexer);
         method.AddParameter(parameter);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root); //using CSharp so the indexer doesn't get removed
         Assert.True(property.Type is CodeType);

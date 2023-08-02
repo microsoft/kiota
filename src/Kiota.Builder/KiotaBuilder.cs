@@ -678,7 +678,7 @@ public partial class KiotaBuilder
             var propType = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes, child.Value.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
 
             if (child.Value.IsPathSegmentWithSingleSimpleParameter())
-                codeClass.Indexer = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode);
+                codeClass.AddIndexer(CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode));
             else if (child.Value.IsComplexPathMultipleParameters())
                 CreateMethod(propIdentifier, propType, codeClass, child.Value);
             else
