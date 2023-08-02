@@ -5,12 +5,9 @@ import com.github.arteam.simplejsonrpc.client.builder.RequestBuilder;
 import java.io.IOException;
 
 public class VersionHandler {
-    KiotaJavaClient client;
+    final KiotaJavaClient client = new KiotaJavaClient();
 
     public String getVersion() throws IOException {
-        client = new KiotaJavaClient();
-        RequestBuilder<String> requestBuilder = client.createRequest("GetVersion", String.class);
-        String response = requestBuilder.execute();
-        return response;
+        return client.createRequest("GetVersion", String.class).execute();
     }
 }
