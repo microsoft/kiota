@@ -1,30 +1,35 @@
 package toolWindow;
-
-import com.intellij.openapi.project.Project; // change this later
 import com.intellij.openapi.ui.LabeledComponent;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.panels.VerticalLayout;
-import services.MyKiotaProjectService;
-
+import services.VersionHandler;
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 
 public class MyToolWindow {
-   // private final MyKiotaProjectService service;
     private final JBPanel<JBPanel<?>> ParentPanel;
-
+    VersionHandler versionHandler ;
     public MyToolWindow(ToolWindow toolWindow) {
-        Project project = toolWindow.getProject();
-       // service = project.getService(MyKiotaProjectService.class);
         ParentPanel = new JBPanel<>();
+        versionHandler = new VersionHandler();
     }
-
-    public JComponent Addpanel() {
+    public JComponent Addpanel() throws IOException {
         ParentPanel.setLayout(new BorderLayout());
         ParentPanel.add(getInput(), BorderLayout.CENTER);
+        ParentPanel.add(getversion(), BorderLayout.SOUTH);
         return ParentPanel;
+    }
+    public JComponent getversion() throws IOException {
+        JBPanel<JBPanel<?>> versionPanel = new JBPanel<>();
+        versionPanel.setLayout(new BorderLayout());
+
+        // Create a label to display kiota version
+        JLabel versionLabel = new JLabel(versionHandler.getVersion());
+        versionPanel.add(versionLabel, BorderLayout.CENTER);
+        return versionPanel;
     }
 
     public JComponent getInput() {

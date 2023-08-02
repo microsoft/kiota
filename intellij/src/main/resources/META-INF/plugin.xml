@@ -9,10 +9,7 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-      <toolWindow factoryClass="toolWindow.MyKiotaToolFactory" id="MyKiotaToolFactory"/>
+      <toolWindow factoryClass="toolWindow.KiotaToolFactory" id="KiotaToolFactory"/>
     </extensions>
 
-    <applicationListeners>
-        <listener class="com.github.hossain2024.intellijtestplugin.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
-    </applicationListeners>
 </idea-plugin>
