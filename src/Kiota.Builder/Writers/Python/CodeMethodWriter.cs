@@ -362,15 +362,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .ThenBy(static x => x.Name))
         {
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
+            var defaultValue = propWithDefault.DefaultValue;
+            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            {
+                defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}({defaultValue})";
+            }
             conventions.WriteInLineDescription(propWithDefault.Documentation.Description, writer);
             if (parentClass.IsOfKind(CodeClassKind.Model))
             {
-                writer.WriteLine($"{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
+                writer.WriteLine($"{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}");
                 writer.WriteLine();
             }
             else
             {
-                writer.WriteLine($"self.{conventions.GetAccessModifier(propWithDefault.Access)}{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
+                writer.WriteLine($"self.{conventions.GetAccessModifier(propWithDefault.Access)}{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}");
                 writer.WriteLine();
             }
         }
@@ -384,14 +389,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .OrderByDescending(static x => x.Kind)
                                         .ThenBy(static x => x.Name))
         {
+            var defaultValue = propWithDefault.DefaultValue;
+            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            {
+                defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}({defaultValue})";
+            }
             if (parentClass.IsOfKind(CodeClassKind.Model))
             {
                 var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
                 conventions.WriteInLineDescription(propWithDefault.Documentation.Description, writer);
-                writer.WriteLine($"{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
+                writer.WriteLine($"{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}");
             }
             else
-                writer.WriteLine($"self.{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
+                writer.WriteLine($"self.{propWithDefault.Name.ToSnakeCase()} = {defaultValue}");
         }
     }
     private void WriteSetterAccessPropertiesWithoutDefaults(CodeClass parentClass, LanguageWriter writer)
