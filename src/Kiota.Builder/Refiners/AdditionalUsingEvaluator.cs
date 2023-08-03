@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Refiners;
