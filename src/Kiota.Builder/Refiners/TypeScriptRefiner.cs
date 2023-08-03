@@ -78,6 +78,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory",
                     "@microsoft/kiota-serialization-text.TextSerializationWriterFactory",
                     "@microsoft/kiota-serialization-form.FormSerializationWriterFactory",
+                    "@microsoft/kiota-serialization-multipart.MultipartSerializationWriterFactory",
                 }
             );
             ReplaceDefaultDeserializationModules(
@@ -214,8 +215,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
             AbstractionsPackageName, "BackingStoreFactory", "BackingStoreFactorySingleton"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
-            AbstractionsPackageName, "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
+            AbstractionsPackageName, "BackingStore", "BackedModel", "BackingStoreFactorySingleton"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
+            AbstractionsPackageName, MultipartBodyClassName, $"serialize{MultipartBodyClassName}")
     };
+    private const string MultipartBodyClassName = "MultipartBody";
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {
         block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
@@ -248,8 +252,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))
         {
-            if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
+            if (currentMethod.Parameters.OfKind(CodeParameterKind.RequestBody) is CodeParameter requestBodyParam)
+                requestBodyParam.Type.IsNullable = false;
         }
         else if (currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);

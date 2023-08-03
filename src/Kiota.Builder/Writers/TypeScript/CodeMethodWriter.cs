@@ -101,9 +101,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     {
         if (codeElement.IsOfKind(CodeMethodKind.Setter)) return;
 
+        var isRequestExecutor = codeElement.IsOfKind(CodeMethodKind.RequestExecutor);
+
         foreach (var parameter in codeElement.Parameters
-                                        .Where(static x => !x.Optional && !x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters))
-                                        .OrderBy(static x => x.Name))
+                                        .Where(x => !x.Optional && !x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters) &&
+                                                !(isRequestExecutor && x.IsOfKind(CodeParameterKind.RequestBody)))
+                                        .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
         {
             var parameterName = parameter.Name.ToFirstCharacterLowerCase();
             writer.WriteLine($"if(!{parameterName}) throw new Error(\"{parameterName} cannot be undefined\");");
@@ -378,10 +381,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         }
 
         var spreadOperator = requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-        if (requestBody.Type is CodeType currentType && currentType.TypeDefinition is CodeInterface codeInterface)
+        if (requestBody.Type is CodeType currentType && (currentType.TypeDefinition is CodeInterface || currentType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
         {
-            var serializerName = $"serialize{codeInterface.Name.ToFirstCharacterUpperCase()}";
-            writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", body as any, {serializerName});");
+            var serializerName = $"serialize{currentType.Name.ToFirstCharacterUpperCase()}";
+            writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", {requestBody.Name}, {serializerName});");
         }
         else
         {

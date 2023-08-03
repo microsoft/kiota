@@ -43,6 +43,7 @@ public class TypeScriptReservedNamesProvider : IReservedNamesProvider
         "while",
         "with",
         "BaseRequestBuilder",
+        "MultipartBody"
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }

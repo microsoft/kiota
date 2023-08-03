@@ -128,6 +128,7 @@ public class GoRefiner : CommonLanguageRefiner
                     "github.com/microsoft/kiota-serialization-json-go.JsonSerializationWriterFactory",
                     "github.com/microsoft/kiota-serialization-text-go.TextSerializationWriterFactory",
                     "github.com/microsoft/kiota-serialization-form-go.FormSerializationWriterFactory",
+                    "github.com/microsoft/kiota-serialization-multipart-go.MultipartSerializationWriterFactory",
                 });
             ReplaceDefaultDeserializationModules(
                 generatedCode,
@@ -506,9 +507,9 @@ public class GoRefiner : CommonLanguageRefiner
     };
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
-            "github.com/microsoft/kiota-abstractions-go", "RequestAdapter"),
+            AbstractionsNamespaceName, "RequestAdapter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            "github.com/microsoft/kiota-abstractions-go", "RequestInformation", "HttpMethod", "RequestOption"),
+            AbstractionsNamespaceName, "RequestInformation", "HttpMethod", "RequestOption"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor) &&
                     method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) &&
                                             !typeToSkipStrConv.Contains(x.Type.Name)),
@@ -537,12 +538,16 @@ public class GoRefiner : CommonLanguageRefiner
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             "github.com/microsoft/kiota-abstractions-go/serialization", "MergeDeserializersForIntersectionWrapper"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
-            "github.com/microsoft/kiota-abstractions-go", "RequestHeaders"),
+            AbstractionsNamespaceName, "RequestHeaders"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore), "github.com/microsoft/kiota-abstractions-go/store","BackingStore"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                          method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
             "github.com/microsoft/kiota-abstractions-go/store", "BackingStoreFactory"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
+            AbstractionsNamespaceName, MultipartBodyClassName),
     };
+    private const string MultipartBodyClassName = "MultipartBody";
+    private const string AbstractionsNamespaceName = "github.com/microsoft/kiota-abstractions-go";
 
     private void CorrectImplements(ProprietableBlockDeclaration block)
     {
@@ -552,9 +557,12 @@ public class GoRefiner : CommonLanguageRefiner
     private static void CorrectMethodType(CodeMethod currentMethod)
     {
         var parentClass = currentMethod.Parent as CodeClass;
-        if (currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
+        if (currentMethod.IsOfKind(CodeMethodKind.RequestGenerator, CodeMethodKind.RequestExecutor))
         {
-            currentMethod.ReturnType.IsNullable = true;
+            if (currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
+                currentMethod.ReturnType.IsNullable = true;
+            if (currentMethod.Parameters.OfKind(CodeParameterKind.RequestBody) is CodeParameter bodyParam && bodyParam.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase))
+                bodyParam.Type.IsNullable = false;
         }
         else if (currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(static x => x.Type.Name.Equals("ISerializationWriter", StringComparison.Ordinal)).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
@@ -591,7 +599,7 @@ public class GoRefiner : CommonLanguageRefiner
                 currentMethod.ReturnType = new CodeType { Name = "Parsable", IsNullable = false, IsExternal = true };
         }
         CorrectCoreTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
-                                                .Select(x => x.Type)
+                                                .Select(static x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
     }

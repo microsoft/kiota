@@ -2,7 +2,6 @@
   "recommendations": [
     "formulahendry.dotnet-test-explorer",
     "ms-dotnettools.csharp",
-    "editorconfig.editorconfig",
-    "ms-dotnettools.blazorwasm-companion"
+    "editorconfig.editorconfig"
   ]
 }
