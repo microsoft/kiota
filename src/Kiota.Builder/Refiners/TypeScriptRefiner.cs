@@ -192,6 +192,15 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private const string GuidPackageName = "guid-typescript";
     private const string AbstractionsPackageName = "@microsoft/kiota-abstractions";
+    // A helper method to check if a parameter is a multipart body
+    private static bool IsMultipartBody(CodeParameter p) =>
+        p.IsOfKind(CodeParameterKind.RequestBody) &&
+        p.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase);
+
+    // A helper method to check if a method has a multipart body parameter
+    private static bool HasMultipartBody(CodeMethod m) =>
+        m.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
+        m.Parameters.Any(IsMultipartBody);
     // for Kiota abstration library if the code is not required for runtime purposes e.g. interfaces then the IsErassable flag is set to true
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
@@ -224,7 +233,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsPackageName, true, "BackingStore", "BackedModel"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             AbstractionsPackageName, false, "BackingStoreFactorySingleton"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
+        new (x => x is CodeMethod m && HasMultipartBody(m),
             AbstractionsPackageName, MultipartBodyClassName, $"serialize{MultipartBodyClassName}")
     };
     private const string MultipartBodyClassName = "MultipartBody";
