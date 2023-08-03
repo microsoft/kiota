@@ -480,6 +480,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             Name = y,
             Declaration = new CodeType { Name = x.NamespaceName, IsExternal = true },
+            IsErasable = false,
         });
     protected static void AddDefaultImports(CodeElement current, IEnumerable<AdditionalUsingEvaluator> evaluators)
     {

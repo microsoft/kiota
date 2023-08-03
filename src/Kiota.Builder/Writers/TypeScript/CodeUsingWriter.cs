@@ -41,8 +41,8 @@ public class CodeUsingWriter
     **/
     private static bool GetShouldUseTypeImport(CodeUsing codeUsing)
     {
-        // Check if codeUsing.Declaration is an instance of CodeType and if codeType.TypeDefinition is an instance of CodeInterface
-        return codeUsing.Declaration is CodeType codeType && codeType.TypeDefinition is CodeInterface;
+        // Check if codeUsing is Erassable or codeUsing.Declaration is an instance of CodeType and if codeType.TypeDefinition is an instance of CodeInterface
+        return codeUsing.IsErasable || codeUsing.Declaration is CodeType codeType && codeType.TypeDefinition is CodeInterface;
     }
 
     private static string GetAliasedSymbol(string symbol, string alias)
