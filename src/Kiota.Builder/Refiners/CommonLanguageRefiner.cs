@@ -695,8 +695,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if (currentElement is CodeIndexer currentIndexer &&
             currentElement.Parent is CodeClass indexerParentClass)
         {
-            indexerParentClass.RemoveChildElement(currentElement);
-            //TODO remove for v2
+            if (indexerParentClass.ContainsMember(currentElement.Name)) // TODO remove condition for v2 necessary because of the second case of Go block
+                indexerParentClass.RemoveChildElement(currentElement);
+            //TODO remove who block except for last else if body for v2
             var isIndexerStringBackwardCompatible = "string".Equals(currentIndexer.IndexType.Name, StringComparison.OrdinalIgnoreCase) &&
                 currentIndexer.Deprecation is not null && currentIndexer.Deprecation.IsDeprecated &&
                 (indexerParentClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.OriginalIndexer is not null && IsIndexerTypeSpecificVersion(currentIndexer.IndexParameterName, x.OriginalIndexer)) ||
@@ -707,6 +708,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     typeSpecificCompatibleMethod.OriginalIndexer is not null)
                 {
                     indexerParentClass.RenameChildElement(typeSpecificCompatibleMethod.Name, typeSpecificCompatibleMethod.Name + typeSpecificCompatibleMethod.OriginalIndexer.IndexType.Name.ToFirstCharacterUpperCase());
+                }
+                else if (indexerParentClass.Indexer != null && indexerParentClass.Indexer != currentIndexer && IsIndexerTypeSpecificVersion(currentIndexer.IndexParameterName, indexerParentClass.Indexer))
+                {
+                    var specificIndexer = indexerParentClass.Indexer;
+                    indexerParentClass.RemoveChildElement(specificIndexer);
+                    indexerParentClass.AddMethod(CodeMethod.FromIndexer(specificIndexer, methodNameCallback, parameterNameCallback, parameterNullable, true));
                 }
                 indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable));
             }

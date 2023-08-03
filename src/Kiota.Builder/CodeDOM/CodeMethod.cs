@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -78,7 +79,7 @@ public class PagingInformation : ICloneable
 public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement, IDeprecableElement
 {
     public static readonly CodeParameterKind ParameterKindForConvertedIndexers = CodeParameterKind.Custom;
-    public static CodeMethod FromIndexer(CodeIndexer originalIndexer, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback, bool parameterNullable)
+    public static CodeMethod FromIndexer(CodeIndexer originalIndexer, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback, bool parameterNullable, bool typeSpecificOverload = false)
     {
         ArgumentNullException.ThrowIfNull(originalIndexer);
         ArgumentNullException.ThrowIfNull(methodNameCallback);
@@ -89,7 +90,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             IsStatic = false,
             Access = AccessModifier.Public,
             Kind = CodeMethodKind.IndexerBackwardCompatibility,
-            Name = methodNameCallback(originalIndexer.IndexParameterName),
+            Name = methodNameCallback(originalIndexer.IndexParameterName) + (typeSpecificOverload ? originalIndexer.IndexType.Name.ToFirstCharacterUpperCase() : string.Empty),
             Documentation = new()
             {
                 Description = originalIndexer.Documentation.Description,
