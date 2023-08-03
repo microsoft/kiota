@@ -678,7 +678,10 @@ public partial class KiotaBuilder
             var propType = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes, child.Value.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
 
             if (child.Value.IsPathSegmentWithSingleSimpleParameter())
-                codeClass.AddIndexer(CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode));
+            {
+                var indexerParameterType = GetIndexerParameterType(child.Value, currentNode);
+                codeClass.AddIndexer(CreateIndexer($"{propIdentifier}-indexer", propType, indexerParameterType, child.Value, currentNode));
+            }
             else if (child.Value.IsComplexPathMultipleParameters())
                 CreateMethod(propIdentifier, propType, codeClass, child.Value);
             else
@@ -967,23 +970,54 @@ public partial class KiotaBuilder
             _ => childElementsUnmappedTypes,
         };
     }
-    private CodeIndexer CreateIndexer(string childIdentifier, string childType, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
+    private static CodeType DefaultIndexerParameterType => new() { Name = "string", IsExternal = true };
+    private CodeType GetIndexerParameterType(OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
+    {
+        var parameterName = currentNode.Path[parentNode.Path.Length..].Trim('\\', ForwardSlash, '{', '}');
+        var parameter = currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ? pathItem.Parameters
+                        .Select(static x => new { Parameter = x, IsPathParameter = true })
+                        .Union(currentNode.PathItems[Constants.DefaultOpenApiLabel].Operations.SelectMany(static x => x.Value.Parameters).Select(static x => new { Parameter = x, IsPathParameter = false }))
+                        .OrderBy(static x => x.IsPathParameter)
+                        .Select(static x => x.Parameter)
+                        .FirstOrDefault(x => x.Name.Equals(parameterName, StringComparison.OrdinalIgnoreCase) && x.In == ParameterLocation.Path) :
+                        default;
+        var type = parameter switch
+        {
+            null => DefaultIndexerParameterType,
+            _ => GetPrimitiveType(parameter.Schema),
+        } ?? DefaultIndexerParameterType;
+        type.IsNullable = false;
+        return type;
+    }
+    private CodeIndexer[] CreateIndexer(string childIdentifier, string childType, CodeType parameterType, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
     {
         logger.LogTrace("Creating indexer {Name}", childIdentifier);
-        return new CodeIndexer
+        var result = new List<CodeIndexer> { new CodeIndexer
         {
             Name = childIdentifier,
             Documentation = new()
             {
                 Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Gets an item from the {currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName)} collection"),
             },
-            IndexType = new CodeType { Name = "string", IsExternal = true, },
+            IndexType = parameterType,
             ReturnType = new CodeType { Name = childType },
             SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
             PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.').Last(),
             IndexParameterName = currentNode.Segment.CleanupSymbolName(),
             Deprecation = currentNode.GetDeprecationInformation(),
-        };
+        }};
+
+        if (!"string".Equals(parameterType.Name, StringComparison.OrdinalIgnoreCase))
+        { // adding a second indexer for the string version of the parameter so we keep backward compatibility
+            //TODO remove for v2
+            var backCompatibleValue = (CodeIndexer)result[0].Clone();
+            backCompatibleValue.Name += "-string";
+            backCompatibleValue.IndexType = DefaultIndexerParameterType;
+            backCompatibleValue.Deprecation = new DeprecationInformation("This indexer is deprecated and will be removed in the next major version. Use the one with the typed parameter instead.");
+            result.Add(backCompatibleValue);
+        }
+
+        return result.ToArray();
     }
 
     private CodeProperty? CreateProperty(string childIdentifier, string childType, OpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
