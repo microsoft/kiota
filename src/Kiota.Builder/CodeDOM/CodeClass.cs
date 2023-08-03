@@ -48,7 +48,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     public CodeIndexer? Indexer => InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault(static x => !x.Deprecation?.IsDeprecated ?? true);
     public void AddIndexer(params CodeIndexer[] indexers)
     {
-        if (indexers == null || indexers.Any(static x => x == null))
+        if (indexers == null || Array.Exists(indexers, static x => x == null))
             throw new ArgumentNullException(nameof(indexers));
         if (!indexers.Any())
             throw new ArgumentOutOfRangeException(nameof(indexers));
@@ -56,7 +56,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         foreach (var value in indexers)
         {
             var existingIndexers = InnerChildElements.Values.OfType<CodeIndexer>().ToArray();
-            if (existingIndexers.Any(x => !x.IndexParameterName.Equals(value.IndexParameterName, StringComparison.OrdinalIgnoreCase)) ||
+            if (Array.Exists(existingIndexers, x => !x.IndexParameterName.Equals(value.IndexParameterName, StringComparison.OrdinalIgnoreCase)) ||
                     InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)))
             {
                 foreach (var existingIndexer in existingIndexers)
