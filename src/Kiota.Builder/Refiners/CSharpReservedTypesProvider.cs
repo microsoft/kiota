@@ -130,6 +130,7 @@ public class CSharpReservedTypesProvider : IReservedNamesProvider
             "MTAThreadAttribute",
             "MulticastDelegate",
             "MulticastNotSupportedException",
+            "MultipartBody",
             "NonSerializedAttribute",
             "NotFiniteNumberException",
             "NotImplementedException",

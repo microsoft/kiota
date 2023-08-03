@@ -1305,12 +1305,32 @@ public partial class KiotaBuilder
         });
     }
 
+    private readonly ConcurrentDictionary<CodeElement, bool> multipartPropertiesModels = new();
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass requestConfigClass, CodeMethod method)
     {
         if (operation.GetRequestSchema(config.StructuredMimeTypes) is OpenApiSchema requestBodySchema)
         {
-            var requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, $"{operationType}RequestBody", isRequestBody: true) ??
-                throw new InvalidSchemaException();
+            CodeTypeBase requestBodyType;
+            if (operation.RequestBody.Content.IsMultipartFormDataSchema(config.StructuredMimeTypes))
+            {
+                requestBodyType = new CodeType
+                {
+                    Name = "MultipartBody",
+                    IsExternal = true,
+                };
+                var mediaType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Value;
+                foreach (var encodingEntry in mediaType.Encoding
+                                                        .Where(x => !string.IsNullOrEmpty(x.Value.ContentType) &&
+                                                                config.StructuredMimeTypes.Contains(x.Value.ContentType.Split(';', StringSplitOptions.RemoveEmptyEntries)[0])))
+                {
+                    if (CreateModelDeclarations(currentNode, requestBodySchema.Properties[encodingEntry.Key], operation, method, $"{operationType}RequestBody", isRequestBody: true) is CodeType propertyType &&
+                        propertyType.TypeDefinition is not null)
+                        multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
+                }
+            }
+            else
+                requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, $"{operationType}RequestBody", isRequestBody: true) ??
+                    throw new InvalidSchemaException();
             method.AddParameter(new CodeParameter
             {
                 Name = "body",
@@ -1711,7 +1731,7 @@ public partial class KiotaBuilder
     {
         if (modelsNamespace is null || rootNamespace is null || modelsNamespace.Parent is not CodeNamespace clientNamespace) return;
         var reusableModels = GetAllModels(modelsNamespace).ToArray();//to avoid multiple enumerations
-        var modelsDirectlyInUse = GetTypeDefinitionsInNamespace(rootNamespace).ToArray();
+        var modelsDirectlyInUse = GetTypeDefinitionsInNamespace(rootNamespace).Union(multipartPropertiesModels.Keys).ToArray();
         var classesDirectlyInUse = modelsDirectlyInUse.OfType<CodeClass>().ToHashSet();
         var allModelClassesIndex = GetDerivationIndex(GetAllModels(clientNamespace).OfType<CodeClass>());
         var derivedClassesInUse = GetDerivedDefinitions(allModelClassesIndex, classesDirectlyInUse.ToArray());
@@ -2105,5 +2125,6 @@ public partial class KiotaBuilder
         foreach (var lifecycle in classLifecycles.Values)
             lifecycle.Dispose();
         classLifecycles.Clear();
+        multipartPropertiesModels.Clear();
     }
 }

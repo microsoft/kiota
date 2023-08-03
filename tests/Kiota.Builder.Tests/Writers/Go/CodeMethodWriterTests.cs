@@ -617,12 +617,6 @@ public class CodeMethodWriterTests : IDisposable
                 }).First(),
             } : stringType,
         });
-        target.AddParameter(new CodeParameter
-        {
-            Name = "r",
-            Kind = CodeParameterKind.ResponseHandler,
-            Type = stringType,
-        });
     }
     [Fact]
     public void WritesNullableVoidTypeForExecutor()
@@ -661,6 +655,20 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         method.Kind = CodeMethodKind.RequestGenerator;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyForMultipart()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "MultipartBody", IsExternal = true };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("SetContentFromParsable", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesRequestExecutorBody()

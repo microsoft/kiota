@@ -15,7 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <kiota-java.version>0.4.5</kiota-java.version>
+        <kiota-java.version>0.5.0</kiota-java.version>
     </properties>
 
     <dependencies>
@@ -37,6 +37,11 @@
         <dependency>
             <groupId>com.microsoft.kiota</groupId>
             <artifactId>microsoft-kiota-serialization-form</artifactId>
+            <version>${kiota-java.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-serialization-multipart</artifactId>
             <version>${kiota-java.version}</version>
         </dependency>
         <dependency>

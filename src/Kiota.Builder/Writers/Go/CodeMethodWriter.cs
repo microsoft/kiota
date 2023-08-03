@@ -807,7 +807,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             var collectionSuffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
             if (requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase))
                 writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({bodyParamReference})");
-            else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.TypeDefinition is CodeInterface))
+            else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.TypeDefinition is CodeInterface || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
             {
                 if (bodyType.IsCollection)
                 {
