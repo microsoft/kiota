@@ -338,15 +338,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             WriteDirectAccessProperties(parentClass, writer);
             WriteSetterAccessProperties(parentClass, writer);
             WriteSetterAccessPropertiesWithoutDefaults(parentClass, writer);
-            if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam)
-                conventions.AddParametersAssignment(writer,
-                                                pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
-                                                pathParametersParam.Name.ToFirstCharacterLowerCase(),
-                                                currentMethod.Parameters
-                                                            .Where(x => x.IsOfKind(CodeParameterKind.Path))
-                                                            .Select(x => (x.Type, x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
-                                                            .ToArray());
-            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
         }
 
         if (parentClass.IsOfKind(CodeClassKind.Model))
@@ -394,14 +385,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             {
                 defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}({defaultValue})";
             }
+            var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
+            conventions.WriteInLineDescription(propWithDefault.Documentation.Description, writer);
+            var setterString = $"{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}";
             if (parentClass.IsOfKind(CodeClassKind.Model))
             {
-                var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
-                conventions.WriteInLineDescription(propWithDefault.Documentation.Description, writer);
-                writer.WriteLine($"{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}");
+                writer.WriteLine($"{setterString}");
             }
             else
-                writer.WriteLine($"self.{propWithDefault.Name.ToSnakeCase()} = {defaultValue}");
+                writer.WriteLine($"self.{setterString}");
         }
     }
     private void WriteSetterAccessPropertiesWithoutDefaults(CodeClass parentClass, LanguageWriter writer)
