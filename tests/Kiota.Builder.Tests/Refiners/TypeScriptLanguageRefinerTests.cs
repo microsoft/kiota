@@ -260,7 +260,6 @@ public class TypeScriptLanguageRefinerTests
     private const string PathParametersDefaultValue = "new Dictionary<string, object>";
     private const string DateTimeOffsetDefaultName = "DateTimeOffset";
     private const string AdditionalDataDefaultName = "new Dictionary<string, object>()";
-    private const string HandlerDefaultName = "IResponseHandler";
     [Fact]
     public async Task EscapesReservedKeywords()
     {
@@ -331,15 +330,6 @@ public class TypeScriptLanguageRefinerTests
                 Name = "string"
             }
         }).First();
-        executorMethod.AddParameter(new CodeParameter
-        {
-            Name = "handler",
-            Kind = CodeParameterKind.ResponseHandler,
-            Type = new CodeType
-            {
-                Name = HandlerDefaultName,
-            }
-        });
         const string serializerDefaultName = "ISerializationWriter";
         var serializationMethod = model.AddMethod(new CodeMethod
         {

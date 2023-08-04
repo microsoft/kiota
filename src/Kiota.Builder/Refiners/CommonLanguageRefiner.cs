@@ -1486,7 +1486,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var codeMethods = currentClass.Methods.Where(x => x.Kind == CodeMethodKind.RequestExecutor);
             foreach (var codeMethod in codeMethods)
             {
+#pragma warning disable CS0618
                 codeMethod.RemoveParametersByKind(CodeParameterKind.ResponseHandler);
+#pragma warning restore CS0618
             }
         }
 

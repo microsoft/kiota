@@ -137,8 +137,6 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             $"{AbstractionsPackageName}.request_information", "RequestInformation"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             $"{AbstractionsPackageName}.request_option", "RequestOption"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            $"{AbstractionsPackageName}.response_handler", "ResponseHandler"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             $"{AbstractionsPackageName}.serialization", "SerializationWriter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
@@ -192,12 +190,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private static void CorrectMethodType(CodeMethod currentMethod)
     {
-        if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))
-        {
-            if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
-        }
-        else if (currentMethod.IsOfKind(CodeMethodKind.Serializer))
+        if (currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
         else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
             currentMethod.ReturnType.Name = "Dict[str, Callable[[ParseNode], None]]";

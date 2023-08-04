@@ -1014,15 +1014,6 @@ public class GoLanguageRefinerTests
         }).First();
         executor.AddParameter(new()
         {
-            Name = "handler",
-            Kind = CodeParameterKind.ResponseHandler,
-            Type = new CodeType
-            {
-                Name = "string"
-            }
-        },
-        new()
-        {
             Name = "config",
             Kind = CodeParameterKind.RequestConfiguration,
             Type = new CodeType
@@ -1048,7 +1039,7 @@ public class GoLanguageRefinerTests
                 Name = "string"
             }
         }).First();
-        generator.AddParameter(executor.Parameters.Where(x => !x.IsOfKind(CodeParameterKind.ResponseHandler)).ToArray());
+        generator.AddParameter(executor.Parameters.ToArray());
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         var childMethods = builder.Methods;
         Assert.DoesNotContain(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor)); // no executor overloads

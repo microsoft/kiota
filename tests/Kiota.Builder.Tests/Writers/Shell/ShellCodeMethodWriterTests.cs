@@ -108,12 +108,6 @@ public class ShellCodeMethodWriterTests : IDisposable
         });
         method.AddParameter(new CodeParameter
         {
-            Name = "r",
-            Kind = CodeParameterKind.ResponseHandler,
-            Type = stringType,
-        });
-        method.AddParameter(new CodeParameter
-        {
             Name = "o",
             Kind = CodeParameterKind.Options,
             Type = stringType,

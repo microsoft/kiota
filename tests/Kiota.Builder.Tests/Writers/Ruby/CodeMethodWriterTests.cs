@@ -232,12 +232,6 @@ public class CodeMethodWriterTests : IDisposable
             },
             Optional = true,
         });
-        method.AddParameter(new CodeParameter
-        {
-            Name = "r",
-            Kind = CodeParameterKind.ResponseHandler,
-            Type = stringType,
-        });
     }
     [Fact]
     public void WritesRequestBuilder()

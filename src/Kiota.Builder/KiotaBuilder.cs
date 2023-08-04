@@ -1207,6 +1207,7 @@ public partial class KiotaBuilder
             AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, executorMethod);
             parentClass.AddMethod(executorMethod);
 
+#pragma warning disable CS0618
             var handlerParam = new CodeParameter
             {
                 Name = "responseHandler",
@@ -1219,6 +1220,7 @@ public partial class KiotaBuilder
                 Type = new CodeType { Name = "IResponseHandler", IsExternal = true },
             };
             executorMethod.AddParameter(handlerParam);// Add response handler parameter
+#pragma warning restore CS0618
 
             var cancellationParam = new CodeParameter
             {
