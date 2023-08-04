@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Python;
 
@@ -745,6 +746,7 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.DoesNotContain("super_fields = super()", result);
         Assert.DoesNotContain("return fields", result);
+        Assert.DoesNotContain("elif", result);
         Assert.Contains("if self.complex_type1_value:", result);
         Assert.Contains("return self.complex_type1_value.get_field_deserializers()", result);
         Assert.Contains("return {}", result);
@@ -769,6 +771,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("super_fields = super()", result);
         Assert.DoesNotContain("return fields", result);
         Assert.Contains("from .complex_type1 import ComplexType1", result);
+        Assert.DoesNotContain("elif", result);
         Assert.Contains("if self.complex_type1_value or self.complex_type3_value", result);
         Assert.Contains("return ParseNodeHelper.merge_deserializers_for_intersection_wrapper(self.complex_type1_value, self.complex_type3_value)", result);
         Assert.Contains("return {}", result);
@@ -1491,8 +1494,10 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("super().__init__(self)", result);
+        Assert.Contains("def __init__(", result);
         Assert.DoesNotContain("This property has a description", result);
         Assert.DoesNotContain($"self.{propName}: Optional[str] = {defaultValue}", result);
+        Assert.Contains("path_parameters: Optional[Union[Dict[str, Any], str]]", result);
         Assert.DoesNotContain("get_path_parameters(", result);
     }
     [Fact]
@@ -1525,6 +1530,43 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("super().__init__()", result);
         Assert.Contains("has a description", result);
         Assert.Contains($"{propName}: Optional[str] = {defaultValue}", result);
+        Assert.Contains($"some_property: Optional[str] = None", result);
+    }
+    [Fact]
+    public void WritesModelClassesWithEnumValue()
+    {
+        setup();
+        method.AddAccessedProperty();
+        method.Kind = CodeMethodKind.Constructor;
+        var defaultValue = "1024x1024";
+        var propName = "size";
+        var codeEnum = new CodeEnum
+        {
+            Name = "pictureSize"
+        };
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Documentation = new()
+            {
+                Description = "This property has a description",
+            },
+            Type = new CodeType
+            {
+                Name = codeEnum.Name,
+                TypeDefinition = codeEnum
+
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("def __init__()", result);
+        Assert.DoesNotContain("super().__init__()", result);
+        Assert.Contains("has a description", result);
+        Assert.Contains($"{propName}: Optional[{codeEnum.Name.ToFirstCharacterUpperCase()}] = {codeEnum.Name.ToFirstCharacterUpperCase()}({defaultValue})", result);
         Assert.Contains($"some_property: Optional[str] = None", result);
     }
     [Fact]
@@ -1674,7 +1716,7 @@ public class CodeMethodWriterTests : IDisposable
         setup();
         parentClass.Kind = CodeClassKind.Model;
         method.Kind = CodeMethodKind.Constructor;
-        var backingStoreProp = parentClass.AddProperty(new CodeProperty
+        parentClass.AddProperty(new CodeProperty
         {
             Name = "backing_store",
             Kind = CodePropertyKind.BackingStore,
@@ -1686,7 +1728,7 @@ public class CodeMethodWriterTests : IDisposable
                 IsExternal = true,
                 IsNullable = false,
             }
-        }).First();
+        });
         var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName);
         tempWriter.SetTextWriter(tw);
         tempWriter.Write(method);
