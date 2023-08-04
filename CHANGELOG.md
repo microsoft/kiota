@@ -9,26 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.5.0] - 2023-08-04
+
+### Added
+
 - Added the title of the API in the VSCode tree view. [#2779](https://github.com/microsoft/kiota/issues/2779)
 - Added capability to serialize and deserialize UUIDs in typescript[#40](https://github.com/microsoft/kiota-typescript/issues/40)
-- Added auto-generation header for class and enums in CSharp [#2886](https://github.com/microsoft/kiota/issues/2886)
+- Added auto-generation header comment for class and enums in CSharp [#2886](https://github.com/microsoft/kiota/issues/2886)
 - Added support for multipart form data request body in CSharp, Go, Java, and TypeScript. [#220](https://github.com/microsoft/kiota/issues/220)
 - Added support for base64 encoded properties in TypeScript.
 - Added support for type specific (non string) indexers parameters. [#2594](https://github.com/microsoft/kiota/issues/2594)
 
 ### Changed
 
-- Fixed missing type comments in many cases.
+- Fixed missing type comments in many cases. [#2868](https://github.com/microsoft/kiota/issues/2868)
 - Fixed a bug where duplicate enum entries in the description would lead to duplicate members. [#2352](https://github.com/microsoft/kiota/issues/2352)
 - Sunset app.kiota.dev in favour of the VSCode extension. [#2934](https://github.com/microsoft/kiota/issues/2934)
 - Use schematized types for 206 response codes instead of binary. [#2880](https://github.com/microsoft/kiota/issues/2880)
 - Type names are not changed to first char upper case in comments in some cases.
 - Fixed a bug where the show command would display an upgrade warning.
-- Updated `getEnumValues` method name to `getCollectionOfEnumValues`. [#2907](https://github.com/microsoft/kiota/pull/2907)
+- Updated `getEnumValues` method name to `getCollectionOfEnumValues` in TypeScript. [#2907](https://github.com/microsoft/kiota/pull/2907)
 - Added `Method` to the list of `CSharpReservedClassNames`. [#2939](https://github.com/microsoft/kiota/pull/2939)
 - Changed generation to use aggregate type for `TimeSpan` values in java [#2069](https://github.com/microsoft/kiota/issues/2069)
 - Fixed generation of properties with identical names after symbol cleanup. [#2869](https://github.com/microsoft/kiota/issues/2869)
-- Use `import type` syntax in Typescript for all code that will be arrased from output at runtime[#2959](https://github.com/microsoft/kiota/issues/2959)
+- Use `import type` syntax in Typescript for all code that will be erased from output at runtime. [#2959](https://github.com/microsoft/kiota/issues/2959)
 
 ## [1.4.0] - 2023-07-07
 
