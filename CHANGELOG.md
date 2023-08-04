@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added auto-generation header for class and enums in CSharp [#2886](https://github.com/microsoft/kiota/issues/2886)
 - Added support for multipart form data request body in CSharp, Go, Java, and TypeScript. [#220](https://github.com/microsoft/kiota/issues/220)
 - Added support for base64 encoded properties in TypeScript.
+- Added support for type specific (non string) indexers parameters. [#2594](https://github.com/microsoft/kiota/issues/2594)
 
 ### Changed
 

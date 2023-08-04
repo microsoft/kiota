@@ -245,7 +245,7 @@ public class CSharpLanguageRefinerTests
             ReturnType = indexerCodeType,
             IndexParameterName = "id",
         };
-        requestBuilder.Indexer = indexer;
+        requestBuilder.AddIndexer(indexer);
 
 
         var itemSubNamespace = root.AddNamespace($"{subNS.Name}.item"); // otherwise the import gets trimmed
@@ -255,7 +255,7 @@ public class CSharpLanguageRefinerTests
             Kind = CodeClassKind.RequestBuilder,
         }).First();
 
-        var requestExecutor = itemRequestBuilder.AddMethod(new CodeMethod
+        itemRequestBuilder.AddMethod(new CodeMethod
         {
             Name = "get",
             Kind = CodeMethodKind.IndexerBackwardCompatibility,
@@ -263,7 +263,7 @@ public class CSharpLanguageRefinerTests
             {
                 Name = "String"
             },
-        }).First();
+        });
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
 
@@ -315,7 +315,7 @@ public class CSharpLanguageRefinerTests
             },
             IndexParameterName = "id",
         };
-        model.Indexer = indexer;
+        model.AddIndexer(indexer);
         method.AddParameter(parameter);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the indexer doesn't get removed
         Assert.True(property.Type is CodeType);

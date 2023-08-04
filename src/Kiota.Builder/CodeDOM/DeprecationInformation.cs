@@ -2,4 +2,4 @@
 
 namespace Kiota.Builder.CodeDOM;
 
-public record DeprecationInformation(string? Description, DateTimeOffset? Date, DateTimeOffset? RemovalDate, string? Version, bool IsDeprecated = true);
+public record DeprecationInformation(string? Description, DateTimeOffset? Date = null, DateTimeOffset? RemovalDate = null, string? Version = "", bool IsDeprecated = true);

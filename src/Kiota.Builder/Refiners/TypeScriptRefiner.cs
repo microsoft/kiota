@@ -32,7 +32,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by{x.ToFirstCharacterUpperCase()}",
-                static x => x.ToFirstCharacterLowerCase());
+                static x => x.ToFirstCharacterLowerCase(),
+                GenerationLanguage.TypeScript);
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");

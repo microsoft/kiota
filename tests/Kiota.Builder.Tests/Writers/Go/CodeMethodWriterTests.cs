@@ -1574,7 +1574,7 @@ public class CodeMethodWriterTests : IDisposable
     {
         setup();
         AddRequestProperties();
-        parentClass.Indexer = new()
+        parentClass.AddIndexer(new CodeIndexer
         {
             Name = "indx",
             SerializationName = "id",
@@ -1588,7 +1588,7 @@ public class CodeMethodWriterTests : IDisposable
                 Name = "Somecustomtype",
             },
             IndexParameterName = "id",
-        };
+        });
         if (parentClass.Indexer is null)
             throw new InvalidOperationException("Indexer is null");
         var methodForTest = parentClass.AddMethod(CodeMethod.FromIndexer(parentClass.Indexer, static x => $"With{x.ToFirstCharacterUpperCase()}", static x => x.ToFirstCharacterLowerCase(), false)).First();

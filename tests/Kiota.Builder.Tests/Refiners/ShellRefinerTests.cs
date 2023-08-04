@@ -100,7 +100,7 @@ public class ShellRefinerTests
         });
 
         // Add indexer
-        requestBuilder.Indexer = new CodeIndexer
+        requestBuilder.AddIndexer(new CodeIndexer
         {
             Name = "Users-idx",
             ReturnType = new CodeType
@@ -112,7 +112,7 @@ public class ShellRefinerTests
                 Name = "string"
             },
             IndexParameterName = "id",
-        };
+        });
 
         // Add request executor
         requestBuilder.AddMethod(new CodeMethod
@@ -277,7 +277,7 @@ public class ShellRefinerTests
                 TypeDefinition = indexerType,
             }
         };
-        rootRequestBuilder.Indexer = indexer;
+        rootRequestBuilder.AddIndexer(indexer);
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
 

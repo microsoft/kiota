@@ -346,9 +346,9 @@ public class GoLanguageRefinerTests
             },
             IndexParameterName = "id",
         };
-        model.Indexer = indexer;
+        model.AddIndexer(indexer);
         method.AddParameter(parameter);
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root); //using CSharp so the indexer doesn't get removed
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.True(property.Type is CodeType);
         Assert.True(parameter.Type is CodeType);
         Assert.True(method.ReturnType is CodeType);
@@ -357,6 +357,74 @@ public class GoLanguageRefinerTests
         Assert.NotNull(resultingWrapper.OriginalComposedType);
         Assert.DoesNotContain("IComposedTypeWrapper", resultingWrapper.StartBlock.Implements.Select(static x => x.Name));
         Assert.NotNull(resultingWrapper.Methods.Single(static x => x.IsOfKind(CodeMethodKind.ComposedTypeMarker)));
+    }
+    [Fact]
+    public async Task SupportsTypeSpecificOverrideIndexers()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.Model
+        }).First();
+        var union = new CodeUnionType
+        {
+            Name = "union",
+        };
+        union.AddType(new()
+        {
+            Name = "type1",
+        }, new()
+        {
+            Name = "type2"
+        });
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "deserialize",
+            Kind = CodePropertyKind.Custom,
+            Type = union.Clone() as CodeTypeBase,
+        }).First();
+        var method = model.AddMethod(new CodeMethod
+        {
+            Name = "method",
+            ReturnType = union.Clone() as CodeTypeBase
+        }).First();
+        var parameter = new CodeParameter
+        {
+            Name = "param1",
+            Type = union.Clone() as CodeTypeBase
+        };
+        var indexer = new CodeIndexer
+        {
+            Name = "idx-string",
+            ReturnType = union.Clone() as CodeTypeBase,
+            IndexType = new CodeType
+            {
+                Name = "string"
+            },
+            IndexParameterName = "id",
+            Deprecation = new("foo")
+        };
+        var typeSpecificIndexer = new CodeIndexer
+        {
+            Name = "idx",
+            ReturnType = new CodeType
+            {
+                Name = "type1",
+                TypeDefinition = union.Types.First(),
+            },
+            IndexType = new CodeType
+            {
+                Name = "integer"
+            },
+            IndexParameterName = "id",
+        };
+        model.AddIndexer(indexer, typeSpecificIndexer);
+        Assert.NotNull(model.Indexer);
+        method.AddParameter(parameter);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Null(model.Indexer);
+        Assert.NotNull(model.Methods.SingleOrDefault(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.Name.Equals("ByIdInteger") && x.OriginalIndexer != null && x.OriginalIndexer.IndexType.Name.Equals("Integer", StringComparison.OrdinalIgnoreCase)));
+        Assert.NotNull(model.Methods.SingleOrDefault(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.Name.Equals("ById") && x.OriginalIndexer != null && x.OriginalIndexer.IndexType.Name.Equals("string", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()
