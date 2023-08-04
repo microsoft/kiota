@@ -33,7 +33,8 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by_{x.ToSnakeCase()}",
-                static x => x.ToSnakeCase());
+                static x => x.ToSnakeCase(),
+                GenerationLanguage.Python);
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();

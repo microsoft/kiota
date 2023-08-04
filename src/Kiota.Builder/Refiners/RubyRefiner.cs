@@ -20,7 +20,8 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by_{x.ToSnakeCase()}",
-                static x => x.ToSnakeCase());
+                static x => x.ToSnakeCase(),
+                GenerationLanguage.Ruby);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {

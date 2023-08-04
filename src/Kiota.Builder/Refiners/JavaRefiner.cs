@@ -53,7 +53,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 true,
                 static x => $"By{x.ToFirstCharacterUpperCase()}",
-                static x => x.ToFirstCharacterLowerCase());
+                static x => x.ToFirstCharacterLowerCase(),
+                GenerationLanguage.Java);
             cancellationToken.ThrowIfCancellationRequested();
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,

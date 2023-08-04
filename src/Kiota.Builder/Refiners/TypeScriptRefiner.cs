@@ -32,7 +32,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by{x.ToFirstCharacterUpperCase()}",
-                static x => x.ToFirstCharacterLowerCase());
+                static x => x.ToFirstCharacterLowerCase(),
+                GenerationLanguage.TypeScript);
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
@@ -192,31 +193,48 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private const string GuidPackageName = "guid-typescript";
     private const string AbstractionsPackageName = "@microsoft/kiota-abstractions";
+    // A helper method to check if a parameter is a multipart body
+    private static bool IsMultipartBody(CodeParameter p) =>
+        p.IsOfKind(CodeParameterKind.RequestBody) &&
+        p.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase);
+
+    // A helper method to check if a method has a multipart body parameter
+    private static bool HasMultipartBody(CodeMethod m) =>
+        m.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
+        m.Parameters.Any(IsMultipartBody);
+    // for Kiota abstration library if the code is not required for runtime purposes e.g. interfaces then the IsErassable flag is set to true
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
-            AbstractionsPackageName, "RequestAdapter"),
+            AbstractionsPackageName, true, "RequestAdapter"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
-            AbstractionsPackageName, "RequestOption"),
+            AbstractionsPackageName, true, "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            AbstractionsPackageName, "HttpMethod", "RequestInformation", "RequestOption"),
+            AbstractionsPackageName, false, "HttpMethod", "RequestInformation"),
+        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+            AbstractionsPackageName, true, "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-            AbstractionsPackageName, "SerializationWriter"),
+            AbstractionsPackageName, true,"SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
-            AbstractionsPackageName, "ParseNode"),
+            AbstractionsPackageName, true, "ParseNode"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility),
-            AbstractionsPackageName, "getPathParameters"),
+            AbstractionsPackageName, false, "getPathParameters"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            AbstractionsPackageName, "Parsable", "ParsableFactory"),
+            AbstractionsPackageName, true, "Parsable", "ParsableFactory"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
-            AbstractionsPackageName, "Parsable"),
+            AbstractionsPackageName, true, "Parsable"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
-            AbstractionsPackageName, "AdditionalDataHolder"),
+            AbstractionsPackageName, true, "AdditionalDataHolder"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
-            AbstractionsPackageName, "BackingStoreFactory", "BackingStoreFactorySingleton"),
+            AbstractionsPackageName, true, "BackingStoreFactory"),
+        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                    method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+            AbstractionsPackageName, false, "BackingStoreFactorySingleton"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
-            AbstractionsPackageName, "BackingStore", "BackedModel", "BackingStoreFactorySingleton"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
+            AbstractionsPackageName, true, "BackingStore", "BackedModel"),
+        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+            AbstractionsPackageName, false, "BackingStoreFactorySingleton"),
+        new (x => x is CodeMethod m && HasMultipartBody(m),
             AbstractionsPackageName, MultipartBodyClassName, $"serialize{MultipartBodyClassName}")
     };
     private const string MultipartBodyClassName = "MultipartBody";

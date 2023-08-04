@@ -22,7 +22,8 @@ public class SwiftRefiner : CommonLanguageRefiner
                 generatedCode,
                 false,
                 static x => $"By{x.ToFirstCharacterUpperCase()}",
-                static x => x.ToFirstCharacterUpperCase());
+                static x => x.ToFirstCharacterUpperCase(),
+                GenerationLanguage.Swift);
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceReservedNames(
                 generatedCode,

@@ -5711,6 +5711,67 @@ components:
         var collectionRequestBuilder = collectionRequestBuilderNamespace.FindChildByName<CodeClass>("postsRequestBuilder");
         var collectionIndexer = collectionRequestBuilder.Indexer;
         Assert.NotNull(collectionIndexer);
+        Assert.Equal("string", collectionIndexer.IndexType.Name);
+        Assert.False(collectionIndexer.Deprecation.IsDeprecated);
+        var itemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts.item");
+        Assert.NotNull(itemRequestBuilderNamespace);
+        var itemRequestBuilder = itemRequestBuilderNamespace.FindChildByName<CodeClass>("postItemRequestBuilder");
+        Assert.Equal(collectionIndexer.ReturnType.Name, itemRequestBuilder.Name);
+    }
+    [Fact]
+    public async Task IndexerTypeIsAccurateAndBackwardCompatibleIndexersAreAdded()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.0
+info:
+  title: Microsoft Graph get user API
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0/
+paths:
+  /me/posts/{post-id}:
+    get:
+      parameters:
+        - name: post-id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.post'
+components:
+  schemas:
+    microsoft.graph.post:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document!);
+        var codeModel = builder.CreateSourceModel(node);
+        var collectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts");
+        Assert.NotNull(collectionRequestBuilderNamespace);
+        var collectionRequestBuilder = collectionRequestBuilderNamespace.FindChildByName<CodeClass>("postsRequestBuilder");
+        var collectionIndexer = collectionRequestBuilder.Indexer;
+        Assert.NotNull(collectionIndexer);
+        Assert.Equal("integer", collectionIndexer.IndexType.Name);
+        Assert.False(collectionIndexer.IndexType.IsNullable);
+        Assert.False(collectionIndexer.Deprecation.IsDeprecated);
+        var collectionStringIndexer = collectionRequestBuilder.FindChildByName<CodeIndexer>($"{collectionIndexer.Name}-string");
+        Assert.NotNull(collectionStringIndexer);
+        Assert.Equal("string", collectionStringIndexer.IndexType.Name);
+        Assert.True(collectionStringIndexer.IndexType.IsNullable);
+        Assert.True(collectionStringIndexer.Deprecation.IsDeprecated);
         var itemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts.item");
         Assert.NotNull(itemRequestBuilderNamespace);
         var itemRequestBuilder = itemRequestBuilderNamespace.FindChildByName<CodeClass>("postItemRequestBuilder");
