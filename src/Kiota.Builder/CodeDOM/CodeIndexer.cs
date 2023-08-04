@@ -1,7 +1,7 @@
 ﻿using System;
 
 namespace Kiota.Builder.CodeDOM;
-public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement
+public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement, ICloneable
 {
 #nullable disable // exposing property is required
     private CodeTypeBase indexType;
@@ -43,5 +43,20 @@ public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement
     public DeprecationInformation? Deprecation
     {
         get; set;
+    }
+    public object Clone()
+    {
+        return new CodeIndexer
+        {
+            Name = Name,
+            Parent = Parent,
+            IndexType = IndexType.Clone() as CodeTypeBase ?? throw new InvalidOperationException($"Cloning failed. Cloned type is invalid."),
+            ReturnType = ReturnType.Clone() as CodeTypeBase ?? throw new InvalidOperationException($"Cloning failed. Cloned type is invalid."),
+            IndexParameterName = IndexParameterName,
+            SerializationName = SerializationName,
+            Documentation = Documentation.Clone() as CodeDocumentation ?? throw new InvalidOperationException($"Cloning failed. Cloned type is invalid."),
+            PathSegment = PathSegment,
+            Deprecation = Deprecation == null ? null : Deprecation with { }
+        };
     }
 }

@@ -33,7 +33,8 @@ public class GoRefiner : CommonLanguageRefiner
                 generatedCode,
                 false,
                 static x => $"By{x.ToFirstCharacterUpperCase()}",
-                static x => x.ToFirstCharacterLowerCase());
+                static x => x.ToFirstCharacterLowerCase(),
+                GenerationLanguage.Go);
             FlattenNestedHierarchy(generatedCode);
             FlattenGoParamsFileNames(generatedCode);
             FlattenGoFileNames(generatedCode);

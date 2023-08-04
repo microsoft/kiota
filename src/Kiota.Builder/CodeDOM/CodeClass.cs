@@ -45,14 +45,21 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         get; set;
     }
-    public CodeIndexer? Indexer
+    public CodeIndexer? Indexer => InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault(static x => !x.Deprecation?.IsDeprecated ?? true);
+    public void AddIndexer(params CodeIndexer[] indexers)
     {
-        set
+        if (indexers == null || Array.Exists(indexers, static x => x == null))
+            throw new ArgumentNullException(nameof(indexers));
+        if (!indexers.Any())
+            throw new ArgumentOutOfRangeException(nameof(indexers));
+
+        foreach (var value in indexers)
         {
-            ArgumentNullException.ThrowIfNull(value);
-            if (InnerChildElements.Values.OfType<CodeIndexer>().Any() || InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)))
+            var existingIndexers = InnerChildElements.Values.OfType<CodeIndexer>().ToArray();
+            if (Array.Exists(existingIndexers, x => !x.IndexParameterName.Equals(value.IndexParameterName, StringComparison.OrdinalIgnoreCase)) ||
+                    InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)))
             {
-                if (Indexer is CodeIndexer existingIndexer)
+                foreach (var existingIndexer in existingIndexers)
                 {
                     RemoveChildElement(existingIndexer);
                     AddRange(CodeMethod.FromIndexer(existingIndexer, static x => $"With{x.ToFirstCharacterUpperCase()}", static x => x.ToFirstCharacterUpperCase(), true));
@@ -62,7 +69,6 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             else
                 AddRange(value);
         }
-        get => InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
     }
     public override IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
     {

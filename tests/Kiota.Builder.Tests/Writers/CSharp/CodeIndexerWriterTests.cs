@@ -40,7 +40,7 @@ public class CodeIndexerWriterTests : IDisposable
             },
             IndexParameterName = "position"
         };
-        parentClass.Indexer = indexer;
+        parentClass.AddIndexer(indexer);
         parentClass.AddProperty(new()
         {
             Name = "pathParameters",
