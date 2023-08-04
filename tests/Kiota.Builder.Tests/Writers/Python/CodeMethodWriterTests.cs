@@ -1463,6 +1463,34 @@ public class CodeMethodWriterTests : IDisposable
         setup();
         method.Kind = CodeMethodKind.Constructor;
         method.IsAsync = false;
+        var propName = "prop_without_default_value";
+        parentClass.Kind = CodeClassKind.Custom;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            Kind = CodePropertyKind.Custom,
+            Documentation = new()
+            {
+                Description = "This property has a description",
+            },
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("def __init__(self,)", result);
+        Assert.Contains("This property has a description", result);
+        Assert.Contains($"self.{propName}: Optional[str] = None", result);
+        Assert.DoesNotContain("get_path_parameters(", result);
+    }
+    [Fact]
+    public void WritesConstructorForReqestBuilder()
+    {
+        setup(true);
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
         var defaultValue = "someVal";
         var propName = "prop_with_default_value";
         parentClass.Kind = CodeClassKind.RequestBuilder;
@@ -1480,7 +1508,89 @@ public class CodeMethodWriterTests : IDisposable
                 Name = "string"
             }
         });
-        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("def __init__(self,)", result);
+        Assert.DoesNotContain("This property has a description", result);
+        Assert.DoesNotContain($"self.{propName}: Optional[str] = {defaultValue}", result);
+        Assert.DoesNotContain("get_path_parameters(", result);
+        Assert.Contains("super().__init__()", result);
+    }
+    [Fact]
+    public void WritesConstructorForRequestBuilderWithRequestAdapter()
+    {
+        setup(true);
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        var defaultValue = "someVal";
+        var propName = "prop_with_default_value";
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.UrlTemplate,
+            Documentation = new()
+            {
+                Description = "This property has a description",
+            },
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        // AddRequestProperties();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "requestAdapter",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "requestAdapter"
+            },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("super().__init__(self)", result);
+        Assert.Contains("def __init__(self,request_adapter: Optional[RequestAdapter] = None)", result);
+        Assert.DoesNotContain("This property has a description", result);
+        Assert.DoesNotContain($"self.{propName}: Optional[str] = {defaultValue}", result);
+        Assert.DoesNotContain("get_path_parameters(", result);
+        Assert.Contains("super().__init__(request_adapter, someVal, None)", result);
+    }
+    [Fact]
+    public void WritesConstructorForRequestBuilderWithRequestAdapterAndPathParameters()
+    {
+        setup(true);
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        var defaultValue = "someVal";
+        var propName = "prop_with_default_value";
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.UrlTemplate,
+            Documentation = new()
+            {
+                Description = "This property has a description",
+            },
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        // AddRequestProperties();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "requestAdapter",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "requestAdapter"
+            },
+        });
         method.AddParameter(new CodeParameter
         {
             Name = "pathParameters",
@@ -1489,16 +1599,16 @@ public class CodeMethodWriterTests : IDisposable
             {
                 Name = "Union[Dict[str, Any], str]",
                 IsNullable = true,
-            }
+            },
         });
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("super().__init__(self)", result);
-        Assert.Contains("def __init__(", result);
+        Assert.Contains("def __init__(self,request_adapter: Optional[RequestAdapter] = None, path_parameters: Optional[Union[Dict[str, Any], str]] = None)", result);
         Assert.DoesNotContain("This property has a description", result);
         Assert.DoesNotContain($"self.{propName}: Optional[str] = {defaultValue}", result);
-        Assert.Contains("path_parameters: Optional[Union[Dict[str, Any], str]]", result);
         Assert.DoesNotContain("get_path_parameters(", result);
+        Assert.Contains("super().__init__(request_adapter, someVal, path_parameters)", result);
     }
     [Fact]
     public void DoesntWriteConstructorForModelClasses()
@@ -1533,7 +1643,20 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains($"some_property: Optional[str] = None", result);
     }
     [Fact]
-    public void WritesModelClassesWithEnumValue()
+    public void WritesModelClasses()
+    {
+        setup();
+        method.AddAccessedProperty();
+        method.Kind = CodeMethodKind.Constructor;
+        parentClass.Kind = CodeClassKind.Model;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("def __init__()", result);
+        Assert.DoesNotContain("super().__init__()", result);
+        Assert.Contains($"some_property: Optional[str] = None", result);
+    }
+    [Fact]
+    public void WritesModelClassesWithDefaultEnumValue()
     {
         setup();
         method.AddAccessedProperty();
