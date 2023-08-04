@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
+import TelemetryReporter from '@vscode/extension-telemetry';
 import * as path from 'path';
 import * as fs from 'fs';
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
@@ -40,12 +41,14 @@ export async function activate(
   const dependenciesInfoProvider = new DependenciesViewProvider(
     context.extensionUri
   );
+  const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   context.subscriptions.push(
+    reporter,
     vscode.commands.registerCommand(
       `${extensionId}.searchLock`,
       async () => {
         const lockFilePath = await searchLockSteps();
-        if (lockFilePath && lockFilePath.lockFilePath) {
+        if (lockFilePath?.lockFilePath) {
           await loadLockFile(lockFilePath.lockFilePath, openApiTreeProvider);
         }
       }),
