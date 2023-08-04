@@ -1308,17 +1308,20 @@ public class CodeMethodWriterTests : IDisposable
         method.OriginalIndexer = new()
         {
             Name = "indx",
-            SerializationName = "id",
-            IndexType = new CodeType
-            {
-                Name = "string",
-                IsNullable = true,
-            },
             ReturnType = new CodeType
             {
                 Name = "string",
             },
-            IndexParameterName = "id",
+            IndexParameter = new()
+            {
+                Name = "id",
+                Type = new CodeType
+                {
+                    Name = "string",
+                    IsNullable = true,
+                },
+                SerializationName = "id",
+            }
         };
         writer.Write(method);
         var result = tw.ToString();

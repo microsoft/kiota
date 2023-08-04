@@ -5711,7 +5711,7 @@ components:
         var collectionRequestBuilder = collectionRequestBuilderNamespace.FindChildByName<CodeClass>("postsRequestBuilder");
         var collectionIndexer = collectionRequestBuilder.Indexer;
         Assert.NotNull(collectionIndexer);
-        Assert.Equal("string", collectionIndexer.IndexType.Name);
+        Assert.Equal("string", collectionIndexer.IndexParameter.Type.Name);
         Assert.False(collectionIndexer.Deprecation.IsDeprecated);
         var itemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts.item");
         Assert.NotNull(itemRequestBuilderNamespace);
@@ -5764,13 +5764,13 @@ components:
         var collectionRequestBuilder = collectionRequestBuilderNamespace.FindChildByName<CodeClass>("postsRequestBuilder");
         var collectionIndexer = collectionRequestBuilder.Indexer;
         Assert.NotNull(collectionIndexer);
-        Assert.Equal("integer", collectionIndexer.IndexType.Name);
-        Assert.False(collectionIndexer.IndexType.IsNullable);
+        Assert.Equal("integer", collectionIndexer.IndexParameter.Type.Name);
+        Assert.False(collectionIndexer.IndexParameter.Type.IsNullable);
         Assert.False(collectionIndexer.Deprecation.IsDeprecated);
         var collectionStringIndexer = collectionRequestBuilder.FindChildByName<CodeIndexer>($"{collectionIndexer.Name}-string");
         Assert.NotNull(collectionStringIndexer);
-        Assert.Equal("string", collectionStringIndexer.IndexType.Name);
-        Assert.True(collectionStringIndexer.IndexType.IsNullable);
+        Assert.Equal("string", collectionStringIndexer.IndexParameter.Type.Name);
+        Assert.True(collectionStringIndexer.IndexParameter.Type.IsNullable);
         Assert.True(collectionStringIndexer.Deprecation.IsDeprecated);
         var itemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts.item");
         Assert.NotNull(itemRequestBuilderNamespace);

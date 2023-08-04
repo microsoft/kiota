@@ -1577,17 +1577,20 @@ public class CodeMethodWriterTests : IDisposable
         parentClass.AddIndexer(new CodeIndexer
         {
             Name = "indx",
-            SerializationName = "id",
-            IndexType = new CodeType
-            {
-                Name = "string",
-                IsNullable = true,
-            },
             ReturnType = new CodeType
             {
                 Name = "Somecustomtype",
             },
-            IndexParameterName = "id",
+            IndexParameter = new()
+            {
+                Name = "id",
+                SerializationName = "id",
+                Type = new CodeType
+                {
+                    Name = "string",
+                    IsNullable = true,
+                },
+            }
         });
         if (parentClass.Indexer is null)
             throw new InvalidOperationException("Indexer is null");

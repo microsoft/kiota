@@ -29,16 +29,19 @@ public class CodeIndexerWriterTests : IDisposable
         indexer = new CodeIndexer
         {
             Name = "idx",
-            SerializationName = "id",
-            IndexType = new CodeType
-            {
-                Name = "string",
-            },
             ReturnType = new CodeType
             {
                 Name = "SomeRequestBuilder"
             },
-            IndexParameterName = "position"
+            IndexParameter = new()
+            {
+                Name = "position",
+                Type = new CodeType
+                {
+                    Name = "string",
+                },
+                SerializationName = "id",
+            }
         };
         parentClass.AddIndexer(indexer);
         parentClass.AddProperty(new()

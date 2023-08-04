@@ -999,12 +999,15 @@ public partial class KiotaBuilder
             {
                 Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Gets an item from the {currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName)} collection"),
             },
-            IndexType = parameterType,
             ReturnType = new CodeType { Name = childType },
-            SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
             PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.').Last(),
-            IndexParameterName = currentNode.Segment.CleanupSymbolName(),
             Deprecation = currentNode.GetDeprecationInformation(),
+            IndexParameter = new() {
+                Type = parameterType,
+                SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
+                Name = currentNode.Segment.CleanupSymbolName(),
+                //TODO description
+            }
         }};
 
         if (!"string".Equals(parameterType.Name, StringComparison.OrdinalIgnoreCase))
@@ -1012,7 +1015,7 @@ public partial class KiotaBuilder
             //TODO remove for v2
             var backCompatibleValue = (CodeIndexer)result[0].Clone();
             backCompatibleValue.Name += "-string";
-            backCompatibleValue.IndexType = DefaultIndexerParameterType;
+            backCompatibleValue.IndexParameter.Type = DefaultIndexerParameterType;
             backCompatibleValue.Deprecation = new DeprecationInformation("This indexer is deprecated and will be removed in the next major version. Use the one with the typed parameter instead.");
             result.Add(backCompatibleValue);
         }

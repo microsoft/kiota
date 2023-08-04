@@ -231,12 +231,15 @@ public class ShellCodeMethodWriterTests : IDisposable
                 Name = "TestItemRequestBuilder",
                 TypeDefinition = type
             },
-            IndexType = new CodeType
+            IndexParameter = new()
             {
-                Name = "string",
-            },
-            SerializationName = "test",
-            IndexParameterName = "id",
+                Name = "id",
+                Type = new CodeType
+                {
+                    Name = "string",
+                },
+                SerializationName = "test",
+            }
         };
 
         AddRequestProperties();
@@ -312,11 +315,14 @@ public class ShellCodeMethodWriterTests : IDisposable
             {
                 ReturnType = indexerReturn,
                 Name = "testItem-idx",
-                IndexType = new CodeType
+                IndexParameter = new()
                 {
-                    Name = "string",
-                },
-                IndexParameterName = "id",
+                    Name = "id",
+                    Type = new CodeType
+                    {
+                        Name = "string",
+                    },
+                }
             }
         };
 
@@ -402,11 +408,14 @@ public class ShellCodeMethodWriterTests : IDisposable
             {
                 ReturnType = indexerReturn,
                 Name = "testItem-indexer",
-                IndexType = new CodeType
+                IndexParameter = new()
                 {
-                    Name = "string",
-                },
-                IndexParameterName = "id",
+                    Name = "id",
+                    Type = new CodeType
+                    {
+                        Name = "string",
+                    },
+                }
             }
         };
 

@@ -1595,16 +1595,19 @@ public class CodeMethodWriterTests : IDisposable
         method.OriginalIndexer = new CodeIndexer
         {
             Name = "idx",
-            IndexType = new CodeType
-            {
-                Name = "int"
-            },
-            SerializationName = "collectionId",
             ReturnType = new CodeType
             {
                 Name = "string"
             },
-            IndexParameterName = "id"
+            IndexParameter = new()
+            {
+                Name = "id",
+                SerializationName = "collectionId",
+                Type = new CodeType
+                {
+                    Name = "int"
+                },
+            }
         };
         writer.Write(method);
         var result = tw.ToString();

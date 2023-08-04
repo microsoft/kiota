@@ -53,20 +53,23 @@ public class CodeClassTests
         codeClass.AddIndexer(new CodeIndexer
         {
             Name = "idx",
-            SerializationName = "idx_smth",
-            IndexType = new CodeType
-            {
-                Name = "string",
-                IsExternal = true,
-                IsNullable = true,
-            },
             ReturnType = new CodeType
             {
                 Name = "string",
                 IsExternal = true,
                 IsNullable = true,
             },
-            IndexParameterName = "idxSmth",
+            IndexParameter = new()
+            {
+                Name = "idxSmth",
+                SerializationName = "idx_smth",
+                Type = new CodeType
+                {
+                    Name = "string",
+                    IsExternal = true,
+                    IsNullable = true,
+                },
+            }
         });
         Assert.Single(codeClass.GetChildElements(true).OfType<CodeIndexer>());
         Assert.Throws<ArgumentNullException>(() =>
@@ -76,20 +79,23 @@ public class CodeClassTests
         codeClass.AddIndexer(new CodeIndexer
         {
             Name = "idx2",
-            SerializationName = "idx-2",
-            IndexType = new CodeType
-            {
-                Name = "string",
-                IsExternal = true,
-                IsNullable = true,
-            },
             ReturnType = new CodeType
             {
                 Name = "string",
                 IsExternal = true,
                 IsNullable = true,
             },
-            IndexParameterName = "idx2",
+            IndexParameter = new()
+            {
+                Name = "idx2",
+                SerializationName = "idx-2",
+                Type = new CodeType
+                {
+                    Name = "string",
+                    IsExternal = true,
+                    IsNullable = true,
+                },
+            }
         });
         Assert.Empty(codeClass.GetChildElements(true).OfType<CodeIndexer>());
         var methods = codeClass.GetChildElements(true).OfType<CodeMethod>().Where(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)).ToArray();
