@@ -41,6 +41,10 @@ public class CodeIndexerWriterTests : IDisposable
                     Name = "string",
                 },
                 SerializationName = "id",
+                Documentation = new()
+                {
+                    Description = "some description"
+                }
             }
         };
         parentClass.AddIndexer(indexer);
@@ -75,6 +79,7 @@ public class CodeIndexerWriterTests : IDisposable
         Assert.Contains("RequestAdapter", result);
         Assert.Contains("PathParameters", result);
         Assert.Contains("id\", position", result);
+        Assert.Contains("some description", result);
         Assert.Contains("public SomeRequestBuilder this[string position]", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }

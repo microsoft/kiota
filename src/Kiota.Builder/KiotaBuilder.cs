@@ -971,7 +971,7 @@ public partial class KiotaBuilder
         };
     }
     private static CodeType DefaultIndexerParameterType => new() { Name = "string", IsExternal = true };
-    private CodeType GetIndexerParameterType(OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
+    private CodeParameter GetIndexerParameterType(OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
     {
         var parameterName = currentNode.Path[parentNode.Path.Length..].Trim('\\', ForwardSlash, '{', '}');
         var parameter = currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ? pathItem.Parameters
@@ -987,9 +987,19 @@ public partial class KiotaBuilder
             _ => GetPrimitiveType(parameter.Schema),
         } ?? DefaultIndexerParameterType;
         type.IsNullable = false;
-        return type;
+        var result = new CodeParameter
+        {
+            Type = type,
+            SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
+            Name = currentNode.Segment.CleanupSymbolName(),
+            Documentation = new()
+            {
+                Description = parameter?.Description.CleanupDescription() is string description && !string.IsNullOrEmpty(description) ? description : "Unique identifier of the item",
+            },
+        };
+        return result;
     }
-    private CodeIndexer[] CreateIndexer(string childIdentifier, string childType, CodeType parameterType, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
+    private CodeIndexer[] CreateIndexer(string childIdentifier, string childType, CodeParameter parameter, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
     {
         logger.LogTrace("Creating indexer {Name}", childIdentifier);
         var result = new List<CodeIndexer> { new CodeIndexer
@@ -1002,15 +1012,10 @@ public partial class KiotaBuilder
             ReturnType = new CodeType { Name = childType },
             PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.').Last(),
             Deprecation = currentNode.GetDeprecationInformation(),
-            IndexParameter = new() {
-                Type = parameterType,
-                SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
-                Name = currentNode.Segment.CleanupSymbolName(),
-                //TODO description
-            }
+            IndexParameter = parameter,
         }};
 
-        if (!"string".Equals(parameterType.Name, StringComparison.OrdinalIgnoreCase))
+        if (!"string".Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase))
         { // adding a second indexer for the string version of the parameter so we keep backward compatibility
             //TODO remove for v2
             var backCompatibleValue = (CodeIndexer)result[0].Clone();
