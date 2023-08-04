@@ -411,16 +411,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
         }
     }
-    private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string? variableName = default)
-    {
-        if (parentClass.GetPropertyOfKind(propertyKind) is CodeProperty property)
-        {
-            if (!string.IsNullOrEmpty(variableName))
-                writer.WriteLine($"self.{property.Name.ToSnakeCase()} = {variableName.ToSnakeCase()}");
-            else if (currentMethod.Parameters.OfKind(parameterKind) is CodeParameter parameter)
-                writer.WriteLine($"self.{property.Name.ToSnakeCase()} = {parameter.Name.ToSnakeCase()}");
-        }
-    }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
         if (!parentClass.IsOfKind(CodeClassKind.Model))
