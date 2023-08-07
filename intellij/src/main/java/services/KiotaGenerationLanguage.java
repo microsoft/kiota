@@ -1,5 +1,8 @@
 package services;
 
+/**
+ * This is a Enum class representing languages for kiota code generation
+ */
 public enum KiotaGenerationLanguage {
     CSharp(0),
     Java(1),
@@ -11,8 +14,7 @@ public enum KiotaGenerationLanguage {
     Shell(7);
 
 
-
-    private final int value;
+     private final int value;
 
     KiotaGenerationLanguage(int value) {
         this.value = value;
