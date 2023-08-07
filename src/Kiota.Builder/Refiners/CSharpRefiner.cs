@@ -140,8 +140,6 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsNamespaceName, "IRequestAdapter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             AbstractionsNamespaceName, "Method", "RequestInformation", "IRequestOption"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            AbstractionsNamespaceName, "IResponseHandler"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             SerializationNamespaceName, "ISerializationWriter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
