@@ -24,7 +24,7 @@
     "@typescript-eslint/parser": "^6.2.1",
     "esbuild": "^0.18.19",
     "eslint": "^8.46.0",
-    "eslint-config-prettier": "^8.10.0",
+    "eslint-config-prettier": "^9.0.0",
     "minimist": "^1.2.8",
     "prettier": "^3.0.1",
     "typescript": "^4.9.5"
