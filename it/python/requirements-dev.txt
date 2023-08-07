@@ -98,7 +98,7 @@ httpx[http2]==0.24.1
 
 hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==0.6.0
+microsoft-kiota-abstractions==0.7.0
 
 microsoft-kiota-authentication-azure==0.2.0
 
