@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added backing store support for Python. [#2858](https://github.com/microsoft/kiota/issues/2858)
 
 ### Changed
 
