@@ -1324,7 +1324,7 @@ public partial class KiotaBuilder
                 {
                     Description = "Request query parameters",
                 },
-                Type = new CodeType { Name = parameterClass.Name, TypeDefinition = parameterClass },
+                Type = new CodeType { TypeDefinition = parameterClass },
             });
         }
         requestConfigClass.AddProperty(new CodeProperty
@@ -1415,7 +1415,7 @@ public partial class KiotaBuilder
         {
             Name = "requestConfiguration",
             Optional = true,
-            Type = new CodeType { Name = requestConfigClass.Name, TypeDefinition = requestConfigClass, ActionOf = true },
+            Type = new CodeType { TypeDefinition = requestConfigClass, ActionOf = true },
             Kind = CodeParameterKind.RequestConfiguration,
             Documentation = new()
             {
@@ -1443,7 +1443,6 @@ public partial class KiotaBuilder
         return new CodeType
         {
             TypeDefinition = codeDeclaration,
-            Name = className,
         };
     }
     private CodeTypeBase CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody)
@@ -1473,7 +1472,6 @@ public partial class KiotaBuilder
         return new CodeType
         {
             TypeDefinition = codeDeclaration,
-            Name = className,
         };
     }
     private static string? GetReferenceIdFromOriginalSchema(OpenApiSchema schema, OpenApiSchema parentSchema)
@@ -1508,7 +1506,6 @@ public partial class KiotaBuilder
                 return new CodeType
                 {
                     TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, targetSchema, className, shortestNamespace),
-                    Name = className,
                 };// so we don't create unnecessary union types when anyOf was used only for nullable.
             }
         }
@@ -1547,7 +1544,6 @@ public partial class KiotaBuilder
             unionType.AddType(new CodeType
             {
                 TypeDefinition = codeDeclaration,
-                Name = className,
             });
         }
         return unionType;
@@ -1712,7 +1708,7 @@ public partial class KiotaBuilder
             Deprecation = schema.GetDeprecationInformation(),
         };
         if (inheritsFrom != null)
-            newClassStub.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
+            newClassStub.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom };
 
         // Add the class to the namespace after the serialization members
         // as other threads looking for the existence of the class may find the class but the additional data/backing store properties may not be fully populated causing duplication
@@ -1899,7 +1895,7 @@ public partial class KiotaBuilder
             {
                 Description = "Creates a new instance of the appropriate class based on discriminator value",
             },
-            ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name, IsNullable = false },
+            ReturnType = new CodeType { TypeDefinition = newClass, IsNullable = false },
             Kind = CodeMethodKind.Factory,
             IsStatic = true,
             IsAsync = false,
@@ -1934,7 +1930,6 @@ public partial class KiotaBuilder
         var codeClass = AddModelDeclarationIfDoesntExist(currentNode, discriminatorSchema, className, GetShortestNamespace(currentNamespace, discriminatorSchema), shouldInherit ? baseClass : null);
         return new CodeType
         {
-            Name = codeClass.Name,
             TypeDefinition = codeClass,
         };
     }

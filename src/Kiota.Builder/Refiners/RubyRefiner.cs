@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
@@ -9,7 +10,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Refiners;
-public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
+public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public RubyRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override Task Refine(CodeNamespace generatedCode, CancellationToken cancellationToken)
@@ -112,7 +113,8 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode
             );
             cancellationToken.ThrowIfCancellationRequested();
-            RemoveDiscriminatorMappingsThatDependOnSubNameSpace(generatedCode);
+            if (generatedCode.FindNamespaceByName(_configuration.ModelsNamespaceName) is CodeNamespace modelsNS)
+                FlattenModelsNamespaces(modelsNS, modelsNS);
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",
@@ -193,20 +195,23 @@ public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, x => UpdateReferencesToDisambiguatedClasses(x, classesToUpdate, suffix));
     }
-    private static void RemoveDiscriminatorMappingsThatDependOnSubNameSpace(CodeElement currentElement)
+    [GeneratedRegex(@"\\.(<letter>\\w)", RegexOptions.IgnoreCase)]
+    private static partial Regex CapitalizedFirstLetterAfterDot();
+    private static void FlattenModelsNamespaces(CodeElement currentElement, CodeNamespace modelsNS)
     {
-        if (currentElement is CodeClass currentClass &&
-            currentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation &&
-            currentClass.Parent is CodeNamespace classNameSpace)
-            currentClass.DiscriminatorInformation.RemoveDiscriminatorMapping(currentClass.DiscriminatorInformation
-                                                .DiscriminatorMappings
-                                                .Where(x => x.Value is CodeType mapping &&
-                                                            mapping.TypeDefinition is CodeClass mappingClass &&
-                                                            mappingClass.Parent is CodeNamespace mappingClassNamespace &&
-                                                            mappingClassNamespace.IsChildOf(classNameSpace))
-                                                .Select(static x => x.Key)
-                                                .ToArray());
-        CrawlTree(currentElement, RemoveDiscriminatorMappingsThatDependOnSubNameSpace);
+        if (currentElement.Parent is CodeNamespace currentElementNamespace &&
+            currentElementNamespace.IsChildOf(modelsNS))
+        {
+            var elementPrefix = CapitalizedFirstLetterAfterDot().Replace(currentElementNamespace.Name[(modelsNS.Name.Length + 1)..], x => x.Groups["letter"].Value.ToUpperInvariant());
+            currentElementNamespace.RemoveChildElement(currentElement);
+            currentElement.Name = $"{elementPrefix}{currentElement.Name.ToFirstCharacterUpperCase()}";
+            if (currentElement is CodeClass currentClass)
+                modelsNS.AddClass(currentClass);
+            else if (currentElement is CodeEnum currentEnum)
+                modelsNS.AddEnum(currentEnum);
+            //TODO update usings in other classes
+        }
+        CrawlTree(currentElement, x => FlattenModelsNamespaces(x, modelsNS), true);
     }
     private static void CorrectMethodType(CodeMethod currentMethod)
     {

@@ -222,9 +222,9 @@ public class PhpRefiner : CommonLanguageRefiner
             currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
             currentProperty.DefaultValue = "[]";
         }
-        else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))
+        else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder) && currentProperty.Type is CodeType rbTypeDef && rbTypeDef.TypeDefinition is not null)
         {
-            currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
+            rbTypeDef.TypeDefinition.Name = rbTypeDef.TypeDefinition.Name.ToFirstCharacterUpperCase();
         }
         else if (currentProperty.Type.Name?.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) ?? false)
         {

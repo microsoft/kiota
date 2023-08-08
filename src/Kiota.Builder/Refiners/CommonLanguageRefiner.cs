@@ -111,20 +111,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         return false;
     }
-    private static void FixTypeName(CodeTypeBase current, Func<string, string> refineName)
-    {
-        if (current is CodeComposedTypeBase composed)
-        {
-            foreach (var type in composed.Types)
-            {
-                FixTypeName(type, refineName);
-            }
-        }
-
-        if (refineName(current.Name) is string refinedName &&
-                !current.Name.Equals(refinedName, StringComparison.Ordinal))
-            current.Name = refinedName;
-    }
     protected static void CorrectNames(CodeElement current, Func<string, string> refineName,
         bool classNames = true,
         bool enumNames = true)
@@ -136,44 +122,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal))
                 currentClass.Name = refinedClassName;
 
-            if (currentClass.StartBlock.Inherits != null)
-            {
-                FixTypeName(currentClass.StartBlock.Inherits, refineName);
-                if (currentClass.StartBlock.Inherits.TypeDefinition != null)
-                    CorrectNames(currentClass.StartBlock.Inherits.TypeDefinition, refineName);
-            }
-            foreach (var i in currentClass.StartBlock.Implements)
-            {
-                FixTypeName(i, refineName);
-            }
-        }
-        else if (current is CodeIndexer currentIndexer && classNames)
-        {
-            FixTypeName(currentIndexer.ReturnType, refineName);
-        }
-        else if (current is CodeProperty currentProperty && classNames)
-        {
-            FixTypeName(currentProperty.Type, refineName);
-        }
-        else if (current is CodeMethod currentMethod && classNames)
-        {
-            foreach (var param in currentMethod.PathQueryAndHeaderParameters)
-            {
-                FixTypeName(param.Type, refineName);
-            }
-            foreach (var param in currentMethod.Parameters)
-            {
-                FixTypeName(param.Type, refineName);
-            }
-            foreach (var errorMapping in currentMethod.ErrorMappings)
-            {
-                FixTypeName(errorMapping.Value, refineName);
-            }
-            if (refineName(currentMethod.ReturnType.Name) is string refinedMethodTypeName &&
-                !currentMethod.ReturnType.Name.Equals(refinedMethodTypeName, StringComparison.Ordinal))
-            {
-                FixTypeName(currentMethod.ReturnType, refineName);
-            }
+            if (currentClass.StartBlock.Inherits?.TypeDefinition != null)
+                CorrectNames(currentClass.StartBlock.Inherits.TypeDefinition, refineName);
         }
         else if (current is CodeEnum currentEnum &&
             enumNames &&
@@ -847,11 +797,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter));
     }
-    protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function)
+    protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function, bool innerOnly = false)
     {
         ArgumentNullException.ThrowIfNull(currentElement);
         ArgumentNullException.ThrowIfNull(function);
-        foreach (var childElement in currentElement.GetChildElements())
+        foreach (var childElement in currentElement.GetChildElements(innerOnly))
             function.Invoke(childElement);
     }
     protected static void CorrectCoreType(CodeElement currentElement, Action<CodeMethod>? correctMethodType, Action<CodeProperty>? correctPropertyType, Action<ProprietableBlockDeclaration>? correctImplements = default)
@@ -1234,7 +1184,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     private static void SetTypeAndAddUsing(CodeInterface inter, CodeType elemType, CodeElement targetElement)
     {
-        elemType.Name = inter.Name;
         elemType.TypeDefinition = inter;
         var interNS = inter.GetImmediateParentOfType<CodeNamespace>();
         if (interNS != targetElement.GetImmediateParentOfType<CodeNamespace>())
@@ -1391,7 +1340,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     private static CodeUsing ReplaceTypeByInterfaceType(CodeClass sourceClass, CodeType originalType, List<string> usingsToRemove, Func<CodeClass, string> interfaceNamingCallback)
     {
         var propertyInterfaceType = CopyClassAsInterface(sourceClass, interfaceNamingCallback);
-        originalType.Name = propertyInterfaceType.Name;
         originalType.TypeDefinition = propertyInterfaceType;
         usingsToRemove.Add(sourceClass.Name);
         return new CodeUsing
