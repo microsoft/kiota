@@ -164,7 +164,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
 
     /// <summary>
     /// The combination of the path, query and header parameters for the current URL.
-    /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. Shell/CLI)
+    /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. CLI)
     /// </summary>
     public IEnumerable<CodeParameter> PathQueryAndHeaderParameters
     {

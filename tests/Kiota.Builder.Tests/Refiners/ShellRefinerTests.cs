@@ -71,7 +71,7 @@ public class ShellRefinerTests
                 IsExternal = true
             }
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
 
         var declaration = requestBuilder.StartBlock;
 
@@ -166,7 +166,7 @@ public class ShellRefinerTests
             SerializerModules = new() { "com.microsoft.kiota.serialization.Serializer" }
         });
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
 
         var methods = root.GetChildElements().OfType<CodeClass>().SelectMany(c => c.Methods);
         var methodNames = methods.Select(m => m.Name);
@@ -239,7 +239,7 @@ public class ShellRefinerTests
         Assert.Contains("adapter", propertyNames);
         Assert.Contains("adapter", methodParamNames);
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
 
         Assert.DoesNotContain("adapter", propertyNames);
         Assert.DoesNotContain("adapter", methodParamNames);
@@ -285,7 +285,7 @@ public class ShellRefinerTests
         };
         rootRequestBuilder.AddIndexer(indexer);
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
 
         Assert.Equal("GraphOrgContactNav-ById", idxNavProp.Name);
     }

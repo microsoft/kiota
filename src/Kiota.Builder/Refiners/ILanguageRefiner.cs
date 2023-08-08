@@ -31,7 +31,7 @@ public interface ILanguageRefiner
             case GenerationLanguage.Go:
                 await new GoRefiner(config).Refine(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
-            case GenerationLanguage.Shell:
+            case GenerationLanguage.CLI:
                 await new ShellRefiner(config).Refine(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.Swift:

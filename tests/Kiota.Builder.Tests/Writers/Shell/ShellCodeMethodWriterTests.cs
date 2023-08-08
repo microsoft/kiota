@@ -24,7 +24,7 @@ public class ShellCodeMethodWriterTests : IDisposable
 
     public ShellCodeMethodWriterTests()
     {
-        writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Shell, DefaultPath, DefaultName);
+        writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CLI, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
