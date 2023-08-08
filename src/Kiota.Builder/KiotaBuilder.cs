@@ -1263,7 +1263,7 @@ public partial class KiotaBuilder
                 var mediaType = operation.Responses.Values.SelectMany(static x => x.Content).First(x => x.Value.Schema == schema).Key;
                 generatorMethod.AcceptedResponseTypes.Add(mediaType);
             }
-            if (config.Language == GenerationLanguage.Shell)
+            if (config.Language == GenerationLanguage.CLI)
                 SetPathAndQueryParameters(generatorMethod, currentNode, operation);
             AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, generatorMethod);
             parentClass.AddMethod(generatorMethod);

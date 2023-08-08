@@ -86,7 +86,7 @@ export enum KiotaGenerationLanguage {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     Ruby = 7,
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    Shell = 8,
+    CLI = 8,
 }
 export function generationLanguageToString(language: KiotaGenerationLanguage): string {
     switch (language) {
@@ -106,8 +106,8 @@ export function generationLanguageToString(language: KiotaGenerationLanguage): s
             return "Swift";
         case KiotaGenerationLanguage.Ruby:
             return "Ruby";
-        case KiotaGenerationLanguage.Shell:
-            return "Shell";
+        case KiotaGenerationLanguage.CLI:
+            return "CLI";
         default:
             throw new Error("unknown language");
     }
@@ -130,8 +130,8 @@ export function parseGenerationLanguage(value: string): KiotaGenerationLanguage 
             return KiotaGenerationLanguage.Swift;
         case "Ruby":
             return KiotaGenerationLanguage.Ruby;
-        case "Shell":
-            return KiotaGenerationLanguage.Shell;
+        case "CLI":
+            return KiotaGenerationLanguage.CLI;
         default:
             throw new Error("unknown language");
     }
@@ -143,7 +143,7 @@ export const allGenerationLanguages = [
     KiotaGenerationLanguage.PHP,
     KiotaGenerationLanguage.Python,
     KiotaGenerationLanguage.Ruby,
-    KiotaGenerationLanguage.Shell,
+    KiotaGenerationLanguage.CLI,
     KiotaGenerationLanguage.Swift,
     KiotaGenerationLanguage.TypeScript,
 ];
