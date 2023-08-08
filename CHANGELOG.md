@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Renamed the Shell language to CLI. [#3023](https://github.com/microsoft/kiota/issues/3023)
 - Fixed a bug where and extraneous indexer would be generated for CLI. [#3088](https://github.com/microsoft/kiota/issues/3088)
+- Fixed a bug where type specific indexers would fail to build in Go. [#3090](https://github.com/microsoft/kiota/issues/3090)
 
 ## [1.5.0] - 2023-08-04
 
