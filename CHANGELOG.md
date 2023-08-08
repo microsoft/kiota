@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Renamed the Shell language to CLI. [#3023](https://github.com/microsoft/kiota/issues/3023)
+
 ## [1.5.0] - 2023-08-04
 
 ### Added
