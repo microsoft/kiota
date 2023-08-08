@@ -21,7 +21,7 @@ public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement,
     /// <summary>
     /// The parameter to use for the indexer.
     /// </summary>
-    public CodeParameter IndexParameter
+    public required CodeParameter IndexParameter
     {
         get => indexParameter; set
         {
