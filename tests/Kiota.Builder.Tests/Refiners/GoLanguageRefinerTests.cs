@@ -340,11 +340,14 @@ public class GoLanguageRefinerTests
         {
             Name = "idx",
             ReturnType = union.Clone() as CodeTypeBase,
-            IndexType = new CodeType
+            IndexParameter = new()
             {
-                Name = "string"
-            },
-            IndexParameterName = "id",
+                Name = "id",
+                Type = new CodeType
+                {
+                    Name = "string"
+                },
+            }
         };
         model.AddIndexer(indexer);
         method.AddParameter(parameter);
@@ -397,11 +400,14 @@ public class GoLanguageRefinerTests
         {
             Name = "idx-string",
             ReturnType = union.Clone() as CodeTypeBase,
-            IndexType = new CodeType
+            IndexParameter = new()
             {
-                Name = "string"
+                Name = "id",
+                Type = new CodeType
+                {
+                    Name = "string"
+                },
             },
-            IndexParameterName = "id",
             Deprecation = new("foo")
         };
         var typeSpecificIndexer = new CodeIndexer
@@ -412,19 +418,22 @@ public class GoLanguageRefinerTests
                 Name = "type1",
                 TypeDefinition = union.Types.First(),
             },
-            IndexType = new CodeType
+            IndexParameter = new()
             {
-                Name = "integer"
-            },
-            IndexParameterName = "id",
+                Name = "id",
+                Type = new CodeType
+                {
+                    Name = "integer"
+                },
+            }
         };
         model.AddIndexer(indexer, typeSpecificIndexer);
         Assert.NotNull(model.Indexer);
         method.AddParameter(parameter);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Null(model.Indexer);
-        Assert.NotNull(model.Methods.SingleOrDefault(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.Name.Equals("ByIdInteger") && x.OriginalIndexer != null && x.OriginalIndexer.IndexType.Name.Equals("Integer", StringComparison.OrdinalIgnoreCase)));
-        Assert.NotNull(model.Methods.SingleOrDefault(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.Name.Equals("ById") && x.OriginalIndexer != null && x.OriginalIndexer.IndexType.Name.Equals("string", StringComparison.OrdinalIgnoreCase)));
+        Assert.NotNull(model.Methods.SingleOrDefault(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.Name.Equals("ByIdInteger") && x.OriginalIndexer != null && x.OriginalIndexer.IndexParameter.Type.Name.Equals("Integer", StringComparison.OrdinalIgnoreCase)));
+        Assert.NotNull(model.Methods.SingleOrDefault(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.Name.Equals("ById") && x.OriginalIndexer != null && x.OriginalIndexer.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()

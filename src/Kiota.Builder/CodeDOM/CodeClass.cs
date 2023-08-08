@@ -56,7 +56,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         foreach (var value in indexers)
         {
             var existingIndexers = InnerChildElements.Values.OfType<CodeIndexer>().ToArray();
-            if (Array.Exists(existingIndexers, x => !x.IndexParameterName.Equals(value.IndexParameterName, StringComparison.OrdinalIgnoreCase)) ||
+            if (Array.Exists(existingIndexers, x => !x.IndexParameter.Name.Equals(value.IndexParameter.Name, StringComparison.OrdinalIgnoreCase)) ||
                     InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)))
             {
                 foreach (var existingIndexer in existingIndexers)

@@ -237,13 +237,16 @@ public class CSharpLanguageRefinerTests
         var indexer = new CodeIndexer
         {
             Name = "idx",
-            SerializationName = "id",
-            IndexType = new CodeType
-            {
-                Name = "string",
-            },
             ReturnType = indexerCodeType,
-            IndexParameterName = "id",
+            IndexParameter = new()
+            {
+                Name = "id",
+                SerializationName = "id",
+                Type = new CodeType
+                {
+                    Name = "string",
+                },
+            }
         };
         requestBuilder.AddIndexer(indexer);
 
@@ -309,11 +312,14 @@ public class CSharpLanguageRefinerTests
         {
             Name = "idx",
             ReturnType = union.Clone() as CodeTypeBase,
-            IndexType = new CodeType
+            IndexParameter = new()
             {
-                Name = "string"
-            },
-            IndexParameterName = "id",
+                Name = "id",
+                Type = new CodeType
+                {
+                    Name = "string"
+                },
+            }
         };
         model.AddIndexer(indexer);
         method.AddParameter(parameter);

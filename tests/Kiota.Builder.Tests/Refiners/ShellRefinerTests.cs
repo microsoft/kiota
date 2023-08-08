@@ -107,11 +107,14 @@ public class ShellRefinerTests
             {
                 Name = "Address"
             },
-            IndexType = new CodeType
+            IndexParameter = new()
             {
-                Name = "string"
-            },
-            IndexParameterName = "id",
+                Name = "id",
+                Type = new CodeType
+                {
+                    Name = "string"
+                },
+            }
         });
 
         // Add request executor
@@ -266,10 +269,13 @@ public class ShellRefinerTests
         var indexer = new CodeIndexer
         {
             Name = "test-idx",
-            IndexParameterName = "test-idx",
-            IndexType = new CodeType
+            IndexParameter = new()
             {
-                Name = "Test",
+                Name = "test-idx",
+                Type = new CodeType
+                {
+                    Name = "Test",
+                },
             },
             ReturnType = new CodeType
             {
