@@ -104,7 +104,7 @@ microsoft-kiota-authentication-azure==0.2.0
 
 microsoft-kiota-http==0.5.0
 
-microsoft-kiota-serialization-json==0.3.7
+microsoft-kiota-serialization-json==0.4.0
 
 microsoft-kiota-serialization-text==0.2.1
 
