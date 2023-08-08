@@ -16,7 +16,7 @@
     <Title>Microsoft.OpenApi.Kiota</Title>
     <PackageId>Microsoft.OpenApi.Kiota</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <VersionPrefix>1.5.1</VersionPrefix>
+    <VersionPrefix>1.6.0</VersionPrefix>
     <VersionSuffix>$(VersionSuffix)</VersionSuffix>
     <PackageReleaseNotes>
       https://github.com/microsoft/kiota/releases
