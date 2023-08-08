@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+
+## [1.5.1] - 2023-08-08
+
+### Added
+
 - Added backing store support for Python. [#2858](https://github.com/microsoft/kiota/issues/2858)
 - Added support for indexer parameter description. [#2978](https://github.com/microsoft/kiota/issues/2978)
 
