@@ -32,7 +32,7 @@ public interface ILanguageRefiner
                 await new GoRefiner(config).Refine(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.CLI:
-                await new ShellRefiner(config).Refine(generatedCode, cancellationToken).ConfigureAwait(false);
+                await new CliRefiner(config).Refine(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.Swift:
                 await new SwiftRefiner(config).Refine(generatedCode, cancellationToken).ConfigureAwait(false);

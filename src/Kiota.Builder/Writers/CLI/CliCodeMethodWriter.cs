@@ -9,12 +9,12 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.CSharp;
 
-namespace Kiota.Builder.Writers.Shell;
-partial class ShellCodeMethodWriter : CodeMethodWriter
+namespace Kiota.Builder.Writers.Cli;
+partial class CliCodeMethodWriter : CodeMethodWriter
 {
-    private static readonly Regex delimitedRegex = ShellDelimitedRegex();
-    private static readonly Regex camelCaseRegex = ShellCamelCaseRegex();
-    private static readonly Regex uppercaseRegex = ShellUppercaseRegex();
+    private static readonly Regex delimitedRegex = CliDelimitedRegex();
+    private static readonly Regex camelCaseRegex = CliCamelCaseRegex();
+    private static readonly Regex uppercaseRegex = CliUppercaseRegex();
     private const string AllParamType = "bool";
     private const string AllParamName = "all";
     private const string CancellationTokenParamType = "CancellationToken";
@@ -43,7 +43,7 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     private const string NonExecCommandsVariableName = "nonExecCommands";
     private const string indexerReturn = "Tuple";
 
-    public ShellCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService, true)
+    public CliCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService, true)
     {
     }
 
@@ -890,9 +890,9 @@ partial class ShellCodeMethodWriter : CodeMethodWriter
     }
 
     [GeneratedRegex("(?<=[a-z])[-_\\.]+([A-Za-z])", RegexOptions.Compiled)]
-    private static partial Regex ShellDelimitedRegex();
+    private static partial Regex CliDelimitedRegex();
     [GeneratedRegex("(?<=[a-z])([A-Z])", RegexOptions.Compiled)]
-    private static partial Regex ShellCamelCaseRegex();
+    private static partial Regex CliCamelCaseRegex();
     [GeneratedRegex("([A-Z])", RegexOptions.Compiled)]
-    private static partial Regex ShellUppercaseRegex();
+    private static partial Regex CliUppercaseRegex();
 }

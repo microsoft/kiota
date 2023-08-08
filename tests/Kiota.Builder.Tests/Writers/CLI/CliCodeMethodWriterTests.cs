@@ -8,9 +8,9 @@ using Kiota.Builder.Writers;
 
 using Xunit;
 
-namespace Kiota.Builder.Tests.Writers.Shell;
+namespace Kiota.Builder.Tests.Writers.Cli;
 
-public class ShellCodeMethodWriterTests : IDisposable
+public class CliCodeMethodWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -22,7 +22,7 @@ public class ShellCodeMethodWriterTests : IDisposable
     private const string MethodName = "methodName";
     private const string ReturnTypeName = "Somecustomtype";
 
-    public ShellCodeMethodWriterTests()
+    public CliCodeMethodWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CLI, DefaultPath, DefaultName);
         tw = new StringWriter();

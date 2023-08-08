@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
 
-public class ShellRefinerTests
+public class CliRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
 
