@@ -141,6 +141,7 @@ export async function activate(
           cancellable: false,
           title: vscode.l10n.t("Generating client...")
         }, async (progress, _) => {
+          const start = performance.now();
           const result = await generateClient(
             context,
             openApiTreeProvider.descriptionUrl,
@@ -155,10 +156,13 @@ export async function activate(
               ? config.clientNamespaceName
               : "ApiSdk"
           );
+          const duration = performance.now() - start;
           const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
           reporter.sendRawTelemetryEvent(`${extensionId}.generateClient.completed`, {
             "language": generationLanguageToString(language),
             "errorsCount": errorsCount.toString(),
+          }, {
+            "duration": duration,
           });
           return result;
         });
