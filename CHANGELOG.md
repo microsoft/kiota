@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Flattens the models namespaces in Ruby to avoid circular dependencies.
+- Adds ObjectId as a reserved keyword in Ruby to have memory management issues.
+
 
 ## [1.5.1] - 2023-08-08
 
