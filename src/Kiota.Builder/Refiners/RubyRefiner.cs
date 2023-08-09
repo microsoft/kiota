@@ -209,7 +209,6 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 modelsNS.AddClass(currentClass);
             else if (currentElement is CodeEnum currentEnum)
                 modelsNS.AddEnum(currentEnum);
-            //TODO update usings in other classes
         }
         CrawlTree(currentElement, x => FlattenModelsNamespaces(x, modelsNS), true);
     }
