@@ -59,21 +59,23 @@ public class MyToolWindow {
         // Create the TextFieldWithBrowseButton components
         TextFieldWithBrowseButton yamlFilePathField = new TextFieldWithBrowseButton();
         TextFieldWithBrowseButton outputpath = new TextFieldWithBrowseButton();
-        TextFieldWithBrowseButton clientClassField = new TextFieldWithBrowseButton();
-        TextFieldWithBrowseButton postClientNameField = new TextFieldWithBrowseButton();
+        JTextField clientClassField = new JTextField();
+        JTextField postClientNameField = new JTextField();
 
         // Input labels
-        LabeledComponent<TextFieldWithBrowseButton> yamlFilePath_label = LabeledComponent.create(yamlFilePathField, "Enter the YAML file Path");
-        LabeledComponent<TextFieldWithBrowseButton> outputpath_Label = LabeledComponent.create(outputpath, "Enter the output directory");
-        JLabel languageLabel = new JLabel("Select a Language");
-        LabeledComponent<TextFieldWithBrowseButton> clientclassname_label = LabeledComponent.create(clientClassField, "Enter a name for the client class");
-        LabeledComponent<TextFieldWithBrowseButton> clientclassnameSpace_label = LabeledComponent.create(postClientNameField, "Enter the name of the client class namespace");
+        LabeledComponent<TextFieldWithBrowseButton> yamlFilePath_label = LabeledComponent.create(yamlFilePathField, "Enter a path to an openAPI description");
+        LabeledComponent<TextFieldWithBrowseButton> outputpath_Label = LabeledComponent.create(outputpath, "Enter an output path ");
+        JLabel languageLabel = new JLabel("Pick a language");
+        LabeledComponent<JTextField> clientclassname_label = LabeledComponent.create(clientClassField, "Enter a name for the client class");
+        LabeledComponent<JTextField> clientclassnameSpace_label = LabeledComponent.create(postClientNameField, "Enter the name of the client class namespace");
+
 
         JComboBox<KiotaGenerationLanguage> languageComboBox = new ComboBox<>(KiotaGenerationLanguage.values());
+        languageComboBox.setSelectedItem(KiotaGenerationLanguage.Java);
         String[] include = new String[0]; //empty string
         String[] exclude = new String[0]; //empty String
 
-        // Add an action listener to the  genrate button to perform an action when clicked
+        // Add an action listener to the  generate button to perform an action when clicked
         JButton generateButton = new JButton("Generate");
         generateButton.addActionListener(new ActionListener() {
             @Override

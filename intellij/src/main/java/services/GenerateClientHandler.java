@@ -22,5 +22,7 @@ public class GenerateClientHandler {
         Object response = requestBuilder.params(
                 DescriptionPath, output, language, include, include, clientclassname, clientclassnamespace
         ).execute();
+
+        System.out.print(response);
     }
 }

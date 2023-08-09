@@ -13,7 +13,6 @@ public enum KiotaGenerationLanguage {
     Ruby(6),
     Shell(7);
 
-
      private final int value;
 
     KiotaGenerationLanguage(int value) {
