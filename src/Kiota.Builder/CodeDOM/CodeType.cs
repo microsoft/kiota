@@ -10,10 +10,10 @@ public class CodeType : CodeTypeBase, ICloneable
         get => IsExternal || TypeDefinition is null ? base.Name : TypeDefinition.Name;
         set
         {
-            if (IsExternal || TypeDefinition is null)
-                base.Name = value;
+            if (!IsExternal && TypeDefinition is not null)
+                TypeDefinition.Name = value;
             else
-                throw new InvalidOperationException("Cannot set the name of a type that has a type definition");
+                base.Name = value;
         }
     }
     public CodeElement? TypeDefinition
