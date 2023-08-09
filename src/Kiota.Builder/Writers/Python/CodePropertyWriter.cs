@@ -33,6 +33,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                 writer.CloseBlock(string.Empty);
                 break;
             case CodePropertyKind.QueryParameters:
+                returnType = $"{codeElement.Parent?.Parent?.Name.ToFirstCharacterUpperCase()}.{codeElement.Type.Name.ToFirstCharacterUpperCase()}";
+                goto case CodePropertyKind.Headers;
             case CodePropertyKind.Headers:
             case CodePropertyKind.Options:
             case CodePropertyKind.QueryParameter:
