@@ -29,6 +29,7 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
                         IsExternal = true
                     }
                 });
+            RemoveBackwardCompatibleIndexers(generatedCode);
             RemoveRequestConfigurationClasses(generatedCode,
                 new CodeUsing
                 {
@@ -95,6 +96,17 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             CreateCommandBuilders(generatedCode);
         }, cancellationToken);
     }
+    private static void RemoveBackwardCompatibleIndexers(CodeElement currentElement)
+    {//TODO remove for v2
+        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder) && currentClass.Indexer is CodeIndexer specificIndexer &&
+            !specificIndexer.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase) && !(specificIndexer.Deprecation?.IsDeprecated ?? false) &&
+            currentClass.GetChildElements(true).OfType<CodeIndexer>().FirstOrDefault(i => i != specificIndexer && i.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase) && (i.Deprecation?.IsDeprecated ?? false)) is CodeIndexer backwardCompatibleIndexer)
+        {
+            currentClass.RemoveChildElement(backwardCompatibleIndexer);
+        }
+
+        CrawlTree(currentElement, RemoveBackwardCompatibleIndexers);
+    }
 
     private static void RenameDuplicateIndexerNavProperties(CodeElement currentElement)
     {
@@ -126,8 +138,8 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
                 if (matchInIdx.Type.AllTypes.First().TypeDefinition is CodeClass ccIdx
                     && propsInClass[matchInIdx.Name].Type.AllTypes.First().TypeDefinition is CodeClass ccClass)
                 {
-                    // Check for execuable command matches
-                    // This list is usually small. Upto a max of ~9 for each HTTP method
+                    // Check for executable command matches
+                    // This list is usually small. Up to a max of ~9 for each HTTP method
                     // In reality, most instances would have 1 - 3 methods
                     var lookup = ccClass.UnorderedMethods
                         .Where(static m => m.IsOfKind(CodeMethodKind.RequestExecutor))
