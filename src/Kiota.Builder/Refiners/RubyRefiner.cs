@@ -50,6 +50,8 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                     return s;
             }, false, true);
             cancellationToken.ThrowIfCancellationRequested();
+            if (generatedCode.FindNamespaceByName(_configuration.ModelsNamespaceName) is CodeNamespace modelsNS)
+                FlattenModelsNamespaces(modelsNS, modelsNS);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, true);
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
@@ -113,8 +115,6 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode
             );
             cancellationToken.ThrowIfCancellationRequested();
-            if (generatedCode.FindNamespaceByName(_configuration.ModelsNamespaceName) is CodeNamespace modelsNS)
-                FlattenModelsNamespaces(modelsNS, modelsNS);
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",
