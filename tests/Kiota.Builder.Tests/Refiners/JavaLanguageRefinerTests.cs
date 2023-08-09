@@ -427,17 +427,17 @@ public class JavaLanguageRefinerTests
             Name = "something",
             Type = new CodeType { Name = "foo_bar", IsExternal = true },
         };
-        var normalizedModel = root.AddClass(new CodeClass { Name = "foo_bar" }).First();
+        var normalizedModel = root.AddClass(new CodeClass { Name = "foo_baz" }).First();
         var normalizedParam = new CodeParameter
         {
-            Name = "something",
+            Name = "somethingElse",
             Type = new CodeType { TypeDefinition = normalizedModel },
         };
         method.AddParameter(nonNormalizedParam);
         method.AddParameter(normalizedParam);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.Equal("foo_bar", method.Parameters.First().Type.Name);
-        Assert.Equal("FooBar", method.Parameters.Last().Type.Name);
+        Assert.Equal("FooBaz", method.Parameters.Last().Type.Name);
     }
     [Fact]
     public async Task NormalizeInheritedClassesNames()

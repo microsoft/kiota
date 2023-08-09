@@ -116,14 +116,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         bool enumNames = true)
     {
         ArgumentNullException.ThrowIfNull(refineName);
-        if (current is CodeClass currentClass && classNames)
+        if (current is CodeClass currentClass && classNames &&
+            refineName(currentClass.Name) is string refinedClassName &&
+            !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal))
         {
-            if (refineName(currentClass.Name) is string refinedClassName &&
-                !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal))
-                currentClass.Name = refinedClassName;
-
-            if (currentClass.StartBlock.Inherits?.TypeDefinition != null)
-                CorrectNames(currentClass.StartBlock.Inherits.TypeDefinition, refineName);
+            currentClass.Name = refinedClassName;
         }
         else if (current is CodeEnum currentEnum &&
             enumNames &&
