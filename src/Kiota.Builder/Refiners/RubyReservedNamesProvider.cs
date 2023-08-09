@@ -43,6 +43,7 @@ public class RubyReservedNamesProvider : IReservedNamesProvider
         "self",
         "BaseRequestBuilder",
         "ObjectId",
+        "object_id",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }

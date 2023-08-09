@@ -118,16 +118,18 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         ArgumentNullException.ThrowIfNull(refineName);
         if (current is CodeClass currentClass && classNames &&
             refineName(currentClass.Name) is string refinedClassName &&
-            !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal))
+            !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal) &&
+            currentClass.Parent is IBlock parentBlock)
         {
-            currentClass.Name = refinedClassName;
+            parentBlock.RenameChildElement(currentClass.Name, refinedClassName);
         }
         else if (current is CodeEnum currentEnum &&
             enumNames &&
             refineName(currentEnum.Name) is string refinedEnumName &&
-            !currentEnum.Name.Equals(refinedEnumName, StringComparison.Ordinal))
+            !currentEnum.Name.Equals(refinedEnumName, StringComparison.Ordinal) &&
+            currentEnum.Parent is IBlock parentBlock2)
         {
-            currentEnum.Name = refinedEnumName;
+            parentBlock2.RenameChildElement(currentEnum.Name, refinedEnumName);
         }
         CrawlTree(current, x => CorrectNames(x, refineName));
     }
@@ -146,7 +148,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
             var refinedName = refineAccessorName(currentProperty.Name);
             if (!parentClass.Properties.Any(property => refinedName.Equals(property.Name, StringComparison.OrdinalIgnoreCase)))// ensure the refinement won't generate a duplicate
-                currentProperty.Name = refinedName;
+                parentClass.RenameChildElement(currentProperty.Name, refinedName);
         }
         CrawlTree(current, x => ReplacePropertyNames(x, propertyKindsToReplace!, refineAccessorName));
     }
