@@ -912,6 +912,8 @@ public class CodeMethodWriterTests : IDisposable
     {
         setup();
         method.Documentation.Description = MethodDescription;
+        method.Documentation.DocumentationLabel = "see more";
+        method.Documentation.DocumentationLink = new("https://example.org/docs");
         var parameter = new CodeParameter
         {
             Documentation = new()
@@ -929,10 +931,11 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("\"\"\"", result);
         Assert.Contains(MethodDescription, result);
-        Assert.Contains("Args:", result);
-        Assert.Contains("param_name", result);
+        Assert.Contains("param param_name:", result);
         Assert.Contains(ParamDescription, result);
-        Assert.Contains("Returns:", result);
+        Assert.Contains("see more:", result);
+        Assert.Contains("https://example.org/docs", result);
+        Assert.Contains("Returns: Optional[Somecustomtype]", result);
         Assert.Contains("await", result);
     }
     [Fact]
@@ -940,6 +943,8 @@ public class CodeMethodWriterTests : IDisposable
     {
         setup();
         method.Documentation.Description = MethodDescription;
+        method.Documentation.DocumentationLabel = "see more";
+        method.Documentation.DocumentationLink = new("https://example.org/docs");
         method.IsAsync = false;
         var parameter = new CodeParameter
         {
@@ -958,9 +963,11 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("\"\"\"", result);
         Assert.Contains(MethodDescription, result);
-        Assert.Contains("Args:", result);
-        Assert.Contains("param_name", result);
+        Assert.Contains("param param_name:", result);
         Assert.Contains(ParamDescription, result);
+        Assert.Contains("see more:", result);
+        Assert.Contains("https://example.org/docs", result);
+        Assert.Contains("Returns: Optional[Somecustomtype]", result);
         Assert.DoesNotContain("await", result);
     }
     [Fact]
