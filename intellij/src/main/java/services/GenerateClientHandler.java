@@ -23,6 +23,5 @@ public class GenerateClientHandler {
                 DescriptionPath, output, language, include, include, clientclassname, clientclassnamespace
         ).execute();
 
-        System.out.print(response);
     }
 }
