@@ -582,13 +582,19 @@ public class CSharpLanguageRefinerTests
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
+        var timeOnlyModel = root.AddClass(new CodeClass
+        {
+            Name = "TimeOnly",
+            Kind = CodeClassKind.Model
+        }).First();
         var method = model.AddMethod(new CodeMethod
         {
             Name = "method",
             ReturnType = new CodeType
             {
                 Name = "TimeOnly",
-                IsExternal = false // this is internal from the description
+                IsExternal = false, // this is internal from the description
+                TypeDefinition = timeOnlyModel
             },
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
