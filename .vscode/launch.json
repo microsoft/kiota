@@ -181,7 +181,7 @@
         "--openapi",
         "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
         "--language",
-        "shell",
+        "cli",
         "-o",
         "${workspaceFolder}/samples/msgraph-mail/dotnet-cli",
         "--clean-output"

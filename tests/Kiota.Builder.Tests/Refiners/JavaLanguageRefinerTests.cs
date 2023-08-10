@@ -334,7 +334,7 @@ public class JavaLanguageRefinerTests
                 Name = "string",
             }
         });
-        requestBuilder.Indexer = new CodeIndexer
+        requestBuilder.AddIndexer(new CodeIndexer
         {
             Name = "idx",
             ReturnType = new CodeType
@@ -342,12 +342,15 @@ public class JavaLanguageRefinerTests
                 Name = requestBuilder.Name,
                 TypeDefinition = requestBuilder,
             },
-            IndexType = new CodeType
+            IndexParameter = new()
             {
-                Name = "string",
-            },
-            IndexParameterName = "id",
-        };
+                Name = "id",
+                Type = new CodeType
+                {
+                    Name = "string",
+                },
+            }
+        });
         var collectionRequestBuilder = collectionNS.AddClass(new CodeClass
         {
             Name = "CollectionRequestBuilder",

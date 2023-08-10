@@ -1,20 +1,8 @@
 ﻿using System;
 
 namespace Kiota.Builder.CodeDOM;
-public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement
+public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement, ICloneable
 {
-#nullable disable // exposing property is required
-    private CodeTypeBase indexType;
-#nullable enable
-    public required CodeTypeBase IndexType
-    {
-        get => indexType; set
-        {
-            ArgumentNullException.ThrowIfNull(value);
-            EnsureElementsAreChildren(value);
-            indexType = value;
-        }
-    }
 #nullable disable // exposing property is required
     private CodeTypeBase returnType;
 #nullable enable
@@ -27,14 +15,21 @@ public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement
             returnType = value;
         }
     }
+#nullable disable // exposing property is required
+    private CodeParameter indexParameter;
+#nullable enable
     /// <summary>
-    /// The name of the parameter to use for the indexer.
+    /// The parameter to use for the indexer.
     /// </summary>
-    public required string IndexParameterName
+    public required CodeParameter IndexParameter
     {
-        get; set;
+        get => indexParameter; set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            EnsureElementsAreChildren(value);
+            indexParameter = value;
+        }
     }
-    public string SerializationName { get; set; } = string.Empty;
     public CodeDocumentation Documentation { get; set; } = new();
     /// <summary>
     /// The Path segment to use for the method name when using back-compatible methods.
@@ -43,5 +38,18 @@ public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement
     public DeprecationInformation? Deprecation
     {
         get; set;
+    }
+    public object Clone()
+    {
+        return new CodeIndexer
+        {
+            Name = Name,
+            Parent = Parent,
+            ReturnType = (CodeTypeBase)ReturnType.Clone(),
+            Documentation = (CodeDocumentation)Documentation.Clone(),
+            PathSegment = PathSegment,
+            Deprecation = Deprecation == null ? null : Deprecation with { },
+            IndexParameter = (CodeParameter)IndexParameter.Clone(),
+        };
     }
 }

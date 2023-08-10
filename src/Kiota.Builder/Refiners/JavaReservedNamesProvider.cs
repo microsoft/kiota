@@ -63,6 +63,7 @@ public class JavaReservedNamesProvider : IReservedNamesProvider
         "wait",
         "while",
         "BaseRequestBuilder",
+        "MultipartBody",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }

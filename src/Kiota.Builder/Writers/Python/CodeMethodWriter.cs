@@ -221,7 +221,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
             codeElement.OriginalIndexer != null)
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"self.{pathParametersProperty.Name}",
-                (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, codeElement.OriginalIndexer.IndexParameterName.ToSnakeCase()));
+                (codeElement.OriginalIndexer.IndexParameter.Type, codeElement.OriginalIndexer.IndexParameter.SerializationName, codeElement.OriginalIndexer.IndexParameter.Name.ToSnakeCase()));
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
     }
     private void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer)
@@ -248,7 +248,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 writer.WriteLine($"self.{pathParametersProperty.Name.ToSnakeCase()}[\"base_url\"] = self.{requestAdapterPropertyName}.base_url");
         }
         if (backingStoreParameter != null)
-            writer.WriteLine($"self.{requestAdapterPropertyName}.enable_backing_store({backingStoreParameter.Name})");
+            writer.WriteLine($"self.{requestAdapterPropertyName}.enable_backing_store({backingStoreParameter.Name.ToSnakeCase()})");
     }
     private static void WriteQueryParametersMapper(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
@@ -338,15 +338,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             WriteDirectAccessProperties(parentClass, writer);
             WriteSetterAccessProperties(parentClass, writer);
             WriteSetterAccessPropertiesWithoutDefaults(parentClass, writer);
-            if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParam)
-                conventions.AddParametersAssignment(writer,
-                                                pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
-                                                pathParametersParam.Name.ToFirstCharacterLowerCase(),
-                                                currentMethod.Parameters
-                                                            .Where(x => x.IsOfKind(CodeParameterKind.Path))
-                                                            .Select(x => (x.Type, x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
-                                                            .ToArray());
-            AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
         }
 
         if (parentClass.IsOfKind(CodeClassKind.Model))
@@ -362,15 +353,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .ThenBy(static x => x.Name))
         {
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
+            var defaultValue = propWithDefault.DefaultValue;
+            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            {
+                defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}({defaultValue})";
+            }
             conventions.WriteInLineDescription(propWithDefault.Documentation.Description, writer);
             if (parentClass.IsOfKind(CodeClassKind.Model))
             {
-                writer.WriteLine($"{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
+                writer.WriteLine($"{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}");
                 writer.WriteLine();
             }
             else
             {
-                writer.WriteLine($"self.{conventions.GetAccessModifier(propWithDefault.Access)}{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {propWithDefault.DefaultValue}");
+                writer.WriteLine($"self.{conventions.GetAccessModifier(propWithDefault.Access)}{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}");
                 writer.WriteLine();
             }
         }
@@ -384,10 +380,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .OrderByDescending(static x => x.Kind)
                                         .ThenBy(static x => x.Name))
         {
+            var defaultValue = propWithDefault.DefaultValue;
+            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            {
+                defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}({defaultValue})";
+            }
+            var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
+            conventions.WriteInLineDescription(propWithDefault.Documentation.Description, writer);
+            var setterString = $"{propWithDefault.Name.ToSnakeCase()}: {(propWithDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithDefault.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}";
             if (parentClass.IsOfKind(CodeClassKind.Model))
-                writer.WriteLine($"{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
+            {
+                writer.WriteLine($"{setterString}");
+            }
             else
-                writer.WriteLine($"self.{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
+                writer.WriteLine($"self.{setterString}");
         }
     }
     private void WriteSetterAccessPropertiesWithoutDefaults(CodeClass parentClass, LanguageWriter writer)
@@ -403,16 +409,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 writer.WriteLine($"{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
             else
                 writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name.ToSnakeCase()}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = None");
-        }
-    }
-    private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string? variableName = default)
-    {
-        if (parentClass.GetPropertyOfKind(propertyKind) is CodeProperty property)
-        {
-            if (!string.IsNullOrEmpty(variableName))
-                writer.WriteLine($"self.{property.Name.ToSnakeCase()} = {variableName.ToSnakeCase()}");
-            else if (currentMethod.Parameters.OfKind(parameterKind) is CodeParameter parameter)
-                writer.WriteLine($"self.{property.Name.ToSnakeCase()} = {parameter.Name.ToSnakeCase()}");
         }
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)

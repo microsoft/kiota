@@ -1238,7 +1238,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = GenerationLanguage.Shell }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = GenerationLanguage.CLI }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var deviceManagementNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement");
@@ -1331,7 +1331,7 @@ paths:
             },
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = GenerationLanguage.Shell }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = GenerationLanguage.CLI }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var resultsNS = codeModel.FindNamespaceByName("ApiSdk.test.item.results");
@@ -5711,6 +5711,70 @@ components:
         var collectionRequestBuilder = collectionRequestBuilderNamespace.FindChildByName<CodeClass>("postsRequestBuilder");
         var collectionIndexer = collectionRequestBuilder.Indexer;
         Assert.NotNull(collectionIndexer);
+        Assert.Equal("string", collectionIndexer.IndexParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("Unique identifier of the item", collectionIndexer.IndexParameter.Documentation.Description, StringComparer.OrdinalIgnoreCase);
+        Assert.False(collectionIndexer.Deprecation.IsDeprecated);
+        var itemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts.item");
+        Assert.NotNull(itemRequestBuilderNamespace);
+        var itemRequestBuilder = itemRequestBuilderNamespace.FindChildByName<CodeClass>("postItemRequestBuilder");
+        Assert.Equal(collectionIndexer.ReturnType.Name, itemRequestBuilder.Name);
+    }
+    [Fact]
+    public async Task IndexerTypeIsAccurateAndBackwardCompatibleIndexersAreAdded()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.0
+info:
+  title: Microsoft Graph get user API
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0/
+paths:
+  /me/posts/{post-id}:
+    get:
+      parameters:
+        - name: post-id
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: integer
+            format: int32
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.post'
+components:
+  schemas:
+    microsoft.graph.post:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document!);
+        var codeModel = builder.CreateSourceModel(node);
+        var collectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts");
+        Assert.NotNull(collectionRequestBuilderNamespace);
+        var collectionRequestBuilder = collectionRequestBuilderNamespace.FindChildByName<CodeClass>("postsRequestBuilder");
+        var collectionIndexer = collectionRequestBuilder.Indexer;
+        Assert.NotNull(collectionIndexer);
+        Assert.Equal("integer", collectionIndexer.IndexParameter.Type.Name);
+        Assert.Equal("The id of the pet to retrieve", collectionIndexer.IndexParameter.Documentation.Description, StringComparer.OrdinalIgnoreCase);
+        Assert.False(collectionIndexer.IndexParameter.Type.IsNullable);
+        Assert.False(collectionIndexer.Deprecation.IsDeprecated);
+        var collectionStringIndexer = collectionRequestBuilder.FindChildByName<CodeIndexer>($"{collectionIndexer.Name}-string");
+        Assert.NotNull(collectionStringIndexer);
+        Assert.Equal("string", collectionStringIndexer.IndexParameter.Type.Name);
+        Assert.True(collectionStringIndexer.IndexParameter.Type.IsNullable);
+        Assert.True(collectionStringIndexer.Deprecation.IsDeprecated);
         var itemRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts.item");
         Assert.NotNull(itemRequestBuilderNamespace);
         var itemRequestBuilder = itemRequestBuilderNamespace.FindChildByName<CodeClass>("postItemRequestBuilder");
@@ -6229,5 +6293,71 @@ paths:
         var select = parametersClass.FindChildByName<CodeProperty>("select0");
         Assert.Equal("select", select.WireName);
         Assert.Equal("int64", select.Type.Name);
+    }
+    [Fact]
+    public async Task SupportsMultiPartFormAsRequestBody()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: Example
+  description: Example
+  version: 1.0.1
+servers:
+  - url: https://example.org
+paths:
+  /directoryObject:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                address:
+                  $ref: '#/components/schemas/address'
+                profileImage:
+                  type: string
+                  format: binary
+            encoding:
+              id:
+                contentType: text/plain
+              address:
+                contentType: application/json
+              profileImage:
+                contentType: image/png
+        responses:
+          '204':
+            content:
+              application/json:
+                schema:
+                  type: string
+components:
+  schemas:
+    address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var rbClass = codeModel.FindChildByName<CodeClass>("directoryObjectRequestBuilder");
+        Assert.NotNull(rbClass);
+        var postMethod = rbClass.FindChildByName<CodeMethod>("Post", false);
+        Assert.NotNull(postMethod);
+        var bodyParameter = postMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RequestBody));
+        Assert.NotNull(bodyParameter);
+        Assert.Equal("MultipartBody", bodyParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
+        var addressClass = codeModel.FindChildByName<CodeClass>("Address");
+        Assert.NotNull(addressClass);
     }
 }

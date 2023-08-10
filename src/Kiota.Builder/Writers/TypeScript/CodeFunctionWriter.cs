@@ -149,7 +149,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     private string GetSerializationMethodName(CodeTypeBase propType)
     {
         var propertyType = conventions.TranslateType(propType);
-        if (!string.IsNullOrEmpty(propertyType) && propType is CodeType currentType && GetSerializationMethodNameForCodeType(currentType, propertyType) is string result && !String.IsNullOrWhiteSpace(result))
+        if (!string.IsNullOrEmpty(propertyType) && propType is CodeType currentType && GetSerializationMethodNameForCodeType(currentType, propertyType) is string result && !string.IsNullOrWhiteSpace(result))
         {
             return result;
         }
@@ -160,10 +160,12 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         };
     }
 
-    private static string? GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
+    private string? GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
     {
         if (propType.TypeDefinition is CodeEnum currentEnum)
             return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}>";
+        else if (conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase))
+            return "writeByteArrayValue";
         else if (propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
         {
             if (propType.TypeDefinition == null)
@@ -206,6 +208,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         {
             if (currentType.TypeDefinition is CodeEnum currentEnum)
                 return $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
+            else if (conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase))
+                return "getByteArrayValue";
             else if (isCollection)
                 if (currentType.TypeDefinition == null)
                     return $"getCollectionOfPrimitiveValues<{propertyType}>()";
