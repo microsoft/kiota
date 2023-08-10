@@ -1,10 +1,12 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
+import TelemetryReporter from '@vscode/extension-telemetry';
 import * as path from 'path';
 import * as fs from 'fs';
 import { OpenApiTreeNode, OpenApiTreeProvider } from "./openApiTreeProvider";
 import {
+  generationLanguageToString,
   getLogEntriesForLevel,
   KiotaGenerationLanguage,
   KiotaLogEntry,
@@ -40,20 +42,22 @@ export async function activate(
   const dependenciesInfoProvider = new DependenciesViewProvider(
     context.extensionUri
   );
+  const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   context.subscriptions.push(
-    vscode.commands.registerCommand(
+    reporter,
+    registerCommandWithTelemetry(reporter, 
       `${extensionId}.searchLock`,
       async () => {
         const lockFilePath = await searchLockSteps();
-        if (lockFilePath && lockFilePath.lockFilePath) {
+        if (lockFilePath?.lockFilePath) {
           await loadLockFile(lockFilePath.lockFilePath, openApiTreeProvider);
         }
       }),
-    vscode.commands.registerCommand(
+    registerCommandWithTelemetry(reporter, 
       `${extensionId}.selectLock`,
       (x) => loadLockFile(x, openApiTreeProvider)
     ),
-    vscode.commands.registerCommand(statusBarCommandId, async () => {
+    registerCommandWithTelemetry(reporter, statusBarCommandId, async () => {
       const yesAnswer = vscode.l10n.t("Yes");
       const response = await vscode.window.showInformationMessage(
         vscode.l10n.t("Open installation instructions for kiota?"),
@@ -69,27 +73,27 @@ export async function activate(
       dependenciesInfoProvider
     ),
     vscode.window.registerTreeDataProvider(treeViewId, openApiTreeProvider),
-    vscode.commands.registerCommand(
+    registerCommandWithTelemetry(reporter, 
       `${treeViewId}.openDocumentationPage`,
       (x: OpenApiTreeNode) => x.documentationUrl && vscode.env.openExternal(vscode.Uri.parse(x.documentationUrl))
     ),
-    vscode.commands.registerCommand(
+    registerCommandWithTelemetry(reporter, 
       `${treeViewId}.addToSelectedEndpoints`,
       (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, false)
     ),
-    vscode.commands.registerCommand(
+    registerCommandWithTelemetry(reporter, 
       `${treeViewId}.addAllToSelectedEndpoints`,
       (x: OpenApiTreeNode) => openApiTreeProvider.select(x, true, true)
     ),
-    vscode.commands.registerCommand(
+    registerCommandWithTelemetry(reporter, 
       `${treeViewId}.removeFromSelectedEndpoints`,
       (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, false)
     ),
-    vscode.commands.registerCommand(
+    registerCommandWithTelemetry(reporter, 
       `${treeViewId}.removeAllFromSelectedEndpoints`,
       (x: OpenApiTreeNode) => openApiTreeProvider.select(x, false, true)
     ),
-    vscode.commands.registerCommand(
+    registerCommandWithTelemetry(reporter, 
       `${treeViewId}.generateClient`,
       async () => {
         const selectedPaths = openApiTreeProvider.getSelectedPaths();
@@ -136,8 +140,9 @@ export async function activate(
           location: vscode.ProgressLocation.Notification,
           cancellable: false,
           title: vscode.l10n.t("Generating client...")
-        }, (progress, _) => {
-          return generateClient(
+        }, async (progress, _) => {
+          const start = performance.now();
+          const result = await generateClient(
             context,
             openApiTreeProvider.descriptionUrl,
             outputPath,
@@ -151,6 +156,15 @@ export async function activate(
               ? config.clientNamespaceName
               : "ApiSdk"
           );
+          const duration = performance.now() - start;
+          const errorsCount = result ? getLogEntriesForLevel(result, LogLevel.critical, LogLevel.error).length : 0;
+          reporter.sendRawTelemetryEvent(`${extensionId}.generateClient.completed`, {
+            "language": generationLanguageToString(language),
+            "errorsCount": errorsCount.toString(),
+          }, {
+            "duration": duration,
+          });
+          return result;
         });
         
         languagesInformation = await getLanguageInformation(
@@ -173,7 +187,7 @@ export async function activate(
         }
       }
     ),
-    vscode.commands.registerCommand(
+    registerCommandWithTelemetry(reporter, 
       `${extensionId}.searchApiDescription`,
       async () => {
         const config = await searchSteps(x => vscode.window.withProgress({
@@ -189,15 +203,15 @@ export async function activate(
         }
       }
     ),
-    vscode.commands.registerCommand(`${treeViewId}.closeDescription`, () =>
+    registerCommandWithTelemetry(reporter, `${treeViewId}.closeDescription`, () =>
       openApiTreeProvider.closeDescription()
     ),
-    vscode.commands.registerCommand(`${treeViewId}.filterDescription`,
+    registerCommandWithTelemetry(reporter, `${treeViewId}.filterDescription`,
       async () => {
         await filterSteps(openApiTreeProvider.filter, x => openApiTreeProvider.filter = x);
       }
     ),
-    vscode.commands.registerCommand(
+    registerCommandWithTelemetry(reporter, 
       `${treeViewId}.openDescription`,
       async () => {
         const openState = await openSteps();
@@ -268,6 +282,14 @@ export async function activate(
   );
 
   context.subscriptions.push(disposable);
+}
+function registerCommandWithTelemetry(reporter: TelemetryReporter, command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable {
+  return vscode.commands.registerCommand(command, (...args: any[]) => {
+    const splatCommand = command.split('/');
+    const eventName = splatCommand[splatCommand.length - 1];
+    reporter.sendTelemetryEvent(eventName);
+    return callback.apply(thisArg, args);
+  }, thisArg);
 }
 
 async function showUpgradeWarningMessage(clientPath: string, context: vscode.ExtensionContext): Promise<void> {

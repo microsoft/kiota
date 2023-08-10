@@ -33,15 +33,16 @@ public class GenerationConfiguration : ICloneable
     public HashSet<string> Serializers
     {
         get; set;
-    } = new(2, StringComparer.OrdinalIgnoreCase){
+    } = new(4, StringComparer.OrdinalIgnoreCase){
         "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
         "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory",
         "Microsoft.Kiota.Serialization.Form.FormSerializationWriterFactory",
+        "Microsoft.Kiota.Serialization.Multipart.MultipartSerializationWriterFactory"
     };
     public HashSet<string> Deserializers
     {
         get; set;
-    } = new(2, StringComparer.OrdinalIgnoreCase) {
+    } = new(3, StringComparer.OrdinalIgnoreCase) {
         "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
         "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory",
         "Microsoft.Kiota.Serialization.Form.FormParseNodeFactory",
@@ -85,10 +86,11 @@ public class GenerationConfiguration : ICloneable
     public HashSet<string> StructuredMimeTypes
     {
         get; set;
-    } = new(5, StringComparer.OrdinalIgnoreCase) {
+    } = new(4, StringComparer.OrdinalIgnoreCase) {
         "application/json",
         "text/plain",
         "application/x-www-form-urlencoded",
+        "multipart/form-data",
     };
     public HashSet<string> IncludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
     public HashSet<string> ExcludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);

@@ -14,9 +14,8 @@ public class CodeIndexerTests
             {
                 Description = "some description",
             },
-            IndexType = new CodeType(),
             ReturnType = new CodeType(),
-            IndexParameterName = "param",
+            IndexParameter = new() { Name = "param", Type = new CodeType(), }
         };
     }
 }

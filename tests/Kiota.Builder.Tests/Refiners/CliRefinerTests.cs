@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
 
-public class ShellRefinerTests
+public class CliRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
 
@@ -71,7 +71,7 @@ public class ShellRefinerTests
                 IsExternal = true
             }
         }).First();
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
 
         var declaration = requestBuilder.StartBlock;
 
@@ -100,19 +100,22 @@ public class ShellRefinerTests
         });
 
         // Add indexer
-        requestBuilder.Indexer = new CodeIndexer
+        requestBuilder.AddIndexer(new CodeIndexer
         {
             Name = "Users-idx",
             ReturnType = new CodeType
             {
                 Name = "Address"
             },
-            IndexType = new CodeType
+            IndexParameter = new()
             {
-                Name = "string"
-            },
-            IndexParameterName = "id",
-        };
+                Name = "id",
+                Type = new CodeType
+                {
+                    Name = "string"
+                },
+            }
+        });
 
         // Add request executor
         requestBuilder.AddMethod(new CodeMethod
@@ -163,7 +166,7 @@ public class ShellRefinerTests
             SerializerModules = new() { "com.microsoft.kiota.serialization.Serializer" }
         });
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
 
         var methods = root.GetChildElements().OfType<CodeClass>().SelectMany(c => c.Methods);
         var methodNames = methods.Select(m => m.Name);
@@ -236,7 +239,7 @@ public class ShellRefinerTests
         Assert.Contains("adapter", propertyNames);
         Assert.Contains("adapter", methodParamNames);
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
 
         Assert.DoesNotContain("adapter", propertyNames);
         Assert.DoesNotContain("adapter", methodParamNames);
@@ -266,10 +269,13 @@ public class ShellRefinerTests
         var indexer = new CodeIndexer
         {
             Name = "test-idx",
-            IndexParameterName = "test-idx",
-            IndexType = new CodeType
+            IndexParameter = new()
             {
-                Name = "Test",
+                Name = "test-idx",
+                Type = new CodeType
+                {
+                    Name = "Test",
+                },
             },
             ReturnType = new CodeType
             {
@@ -277,9 +283,9 @@ public class ShellRefinerTests
                 TypeDefinition = indexerType,
             }
         };
-        rootRequestBuilder.Indexer = indexer;
+        rootRequestBuilder.AddIndexer(indexer);
 
-        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
 
         Assert.Equal("GraphOrgContactNav-ById", idxNavProp.Name);
     }

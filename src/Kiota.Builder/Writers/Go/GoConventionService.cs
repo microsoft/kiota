@@ -211,15 +211,21 @@ public class GoConventionService : CommonLanguageConventionService
         foreach (var p in parameters)
         {
             var isStringStruct = !p.Item1.IsNullable && p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase);
-            var defaultValue = isStringStruct ? "\"\"" : "nil";
-            var pointerDereference = isStringStruct ? string.Empty : "*";
-            writer.StartBlock($"if {p.Item3} != {defaultValue} {{");
+            var (defaultValue, pointerDereference, shouldCheckNullability) = (isStringStruct, p.Item1.IsNullable) switch
+            {
+                (true, _) => ("\"\"", string.Empty, true),
+                (_, true) => ("nil", "*", true),
+                (_, false) => (string.Empty, string.Empty, false),
+            };
+            if (shouldCheckNullability)
+                writer.StartBlock($"if {p.Item3} != {defaultValue} {{");
             writer.WriteLine($"{pathParametersTarget}[\"{p.Item2}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference + p.Item3)}");
-            writer.CloseBlock();
+            if (shouldCheckNullability)
+                writer.CloseBlock();
         }
     }
 #pragma warning restore CA1822 // Method should be static
-    private const string StrConvHash = "i53ac87e8cb3cc9276228f74d38694a208cacb99bb8ceb705eeae99fb88d4d274";
+    internal const string StrConvHash = "i53ac87e8cb3cc9276228f74d38694a208cacb99bb8ceb705eeae99fb88d4d274";
     private const string TimeFormatHash = "i336074805fc853987abe6f7fe3ad97a6a6f3077a16391fec744f671a015fbd7e";
     private static string GetValueStringConversion(string typeName, string reference)
     {

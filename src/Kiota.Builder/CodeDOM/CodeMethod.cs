@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -78,7 +79,7 @@ public class PagingInformation : ICloneable
 public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement, IDeprecableElement
 {
     public static readonly CodeParameterKind ParameterKindForConvertedIndexers = CodeParameterKind.Custom;
-    public static CodeMethod FromIndexer(CodeIndexer originalIndexer, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback, bool parameterNullable)
+    public static CodeMethod FromIndexer(CodeIndexer originalIndexer, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback, bool parameterNullable, bool typeSpecificOverload = false)
     {
         ArgumentNullException.ThrowIfNull(originalIndexer);
         ArgumentNullException.ThrowIfNull(methodNameCallback);
@@ -89,11 +90,8 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             IsStatic = false,
             Access = AccessModifier.Public,
             Kind = CodeMethodKind.IndexerBackwardCompatibility,
-            Name = methodNameCallback(originalIndexer.IndexParameterName),
-            Documentation = new()
-            {
-                Description = originalIndexer.Documentation.Description,
-            },
+            Name = methodNameCallback(originalIndexer.IndexParameter.Name) + (typeSpecificOverload ? originalIndexer.IndexParameter.Type.Name.ToFirstCharacterUpperCase() : string.Empty),
+            Documentation = (CodeDocumentation)originalIndexer.Documentation.Clone(),
             ReturnType = (CodeTypeBase)originalIndexer.ReturnType.Clone(),
             OriginalIndexer = originalIndexer,
             Deprecation = originalIndexer.Deprecation,
@@ -102,15 +100,12 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             method.ReturnType.IsNullable = false;
         var parameter = new CodeParameter
         {
-            Name = parameterNameCallback(originalIndexer.IndexParameterName),
+            Name = parameterNameCallback(originalIndexer.IndexParameter.Name),
             Optional = false,
             Kind = ParameterKindForConvertedIndexers,
-            Documentation = new()
-            {
-                Description = "Unique identifier of the item",
-            },
-            Type = originalIndexer.IndexType?.Clone() is CodeTypeBase indexType ? indexType : throw new InvalidOperationException("index type is null"),
-            SerializationName = originalIndexer.SerializationName,
+            Documentation = (CodeDocumentation)originalIndexer.IndexParameter.Documentation.Clone(),
+            Type = (CodeTypeBase)originalIndexer.IndexParameter.Type.Clone(),
+            SerializationName = originalIndexer.IndexParameter.SerializationName,
         };
         parameter.Type.IsNullable = parameterNullable;
         method.AddParameter(parameter);
@@ -169,7 +164,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
 
     /// <summary>
     /// The combination of the path, query and header parameters for the current URL.
-    /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. Shell/CLI)
+    /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. CLI)
     /// </summary>
     public IEnumerable<CodeParameter> PathQueryAndHeaderParameters
     {

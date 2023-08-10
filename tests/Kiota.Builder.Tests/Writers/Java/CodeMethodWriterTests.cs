@@ -591,12 +591,6 @@ public class CodeMethodWriterTests : IDisposable
             },
             Optional = true,
         });
-        method.AddParameter(new CodeParameter
-        {
-            Name = "r",
-            Kind = CodeParameterKind.ResponseHandler,
-            Type = stringType,
-        });
     }
     [Fact]
     public void WritesNullableVoidTypeForExecutor()
@@ -1139,6 +1133,20 @@ public class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesRequestGeneratorBodyForMultipart()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "MultipartBody", IsExternal = true };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("setContentFromParsable", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesRequestExecutorBodyForCollections()
     {
         setup();
@@ -1587,16 +1595,19 @@ public class CodeMethodWriterTests : IDisposable
         method.OriginalIndexer = new CodeIndexer
         {
             Name = "idx",
-            IndexType = new CodeType
-            {
-                Name = "int"
-            },
-            SerializationName = "collectionId",
             ReturnType = new CodeType
             {
                 Name = "string"
             },
-            IndexParameterName = "id"
+            IndexParameter = new()
+            {
+                Name = "id",
+                SerializationName = "collectionId",
+                Type = new CodeType
+                {
+                    Name = "int"
+                },
+            }
         };
         writer.Write(method);
         var result = tw.ToString();

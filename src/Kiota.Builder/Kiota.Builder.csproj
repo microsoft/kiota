@@ -16,7 +16,7 @@
     <Title>Microsoft.OpenApi.Kiota.Builder</Title>
     <PackageId>Microsoft.OpenApi.Kiota.Builder</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <VersionPrefix>1.5.0</VersionPrefix>
+    <VersionPrefix>1.6.0</VersionPrefix>
     <VersionSuffix>$(VersionSuffix)</VersionSuffix>
     <PackageReleaseNotes>
       https://github.com/microsoft/kiota/releases
@@ -43,13 +43,14 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
-    <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.2.1" />
+    <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.3.1" />
     <PackageReference Include="Microsoft.Kiota.Http.HttpClientLibrary" Version="1.0.6" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Form" Version="1.0.1" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.0.8" />
+    <PackageReference Include="Microsoft.kiota.Serialization.Multipart" Version="1.0.0" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Text" Version="1.0.3" />
-    <PackageReference Include="Microsoft.OpenApi" Version="1.6.5" />
-    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.5" />
+    <PackageReference Include="Microsoft.OpenApi" Version="1.6.6" />
+    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.6" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     <PackageReference Include="NeoSmart.AsyncLock" Version="3.2.1" />
     <PackageReference Include="YamlDotNet" Version="13.1.1" />
