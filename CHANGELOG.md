@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for external documentation links within descriptions in Python. [2041](https://github.com/microsoft/kiota/issues/2041)
+
 ### Changed
 
 
@@ -31,7 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added the title of the API in the VSCode tree view. [#2779](https://github.com/microsoft/kiota/issues/2779)
 - Added capability to serialize and deserialize UUIDs in typescript
-- Added support for external documentation links within descriptions in Python. [2041](https://github.com/microsoft/kiota/issues/2041)
 - Added capability to serialize and deserialize UUIDs in typescript[#40](https://github.com/microsoft/kiota-typescript/issues/40)
 - Added auto-generation header comment for class and enums in CSharp [#2886](https://github.com/microsoft/kiota/issues/2886)
 - Added support for multipart form data request body in CSharp, Go, Java, and TypeScript. [#220](https://github.com/microsoft/kiota/issues/220)
