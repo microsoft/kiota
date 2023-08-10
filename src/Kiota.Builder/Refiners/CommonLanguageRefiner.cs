@@ -317,10 +317,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             isNotInExceptions &&
             shouldReplace)
         {
-            if (currentMethod.ReturnType is CodeType returnType &&
-                !returnType.IsExternal &&
-                provider.ReservedNames.Contains(returnType.Name))
-                returnType.Name = replacement.Invoke(returnType.Name);
             if (provider.ReservedNames.Contains(currentMethod.Name))
                 currentMethod.Name = replacement.Invoke(currentMethod.Name);
             if (currentMethod.ErrorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
@@ -362,7 +358,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 current.Name = replacementName;
         }
 
-        CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
+        CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback), true);
     }
 
     private static void ReplaceReservedCodeUsingDeclarationNames(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
