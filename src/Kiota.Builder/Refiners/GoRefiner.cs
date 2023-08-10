@@ -515,6 +515,9 @@ public class GoRefiner : CommonLanguageRefiner
                     method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) &&
                                             !typeToSkipStrConv.Contains(x.Type.Name)),
             "strconv", "FormatBool"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) &&
+                    method.OriginalIndexer is CodeIndexer indexer && !indexer.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase),
+            "strconv", "FormatInt"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             "github.com/microsoft/kiota-abstractions-go/serialization", "SerializationWriter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
