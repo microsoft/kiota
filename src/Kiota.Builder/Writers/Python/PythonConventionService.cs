@@ -168,7 +168,7 @@ public class PythonConventionService : CommonLanguageConventionService
         if (documentation is null) return;
         if (additionalRemarks == default)
             additionalRemarks = Enumerable.Empty<string>();
-        var additionalRemarksArray = additionalRemarks as string[] ?? additionalRemarks.ToArray();
+        var additionalRemarksArray = additionalRemarks.ToArray();
         if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || additionalRemarksArray.Any())
         {
             writer.WriteLine(DocCommentStart);
