@@ -678,32 +678,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             }
         }
     }
-
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid)
     {
-        var isDescriptionPresent = !string.IsNullOrEmpty(code.Documentation.Description);
-        var parametersWithDescription = code.Parameters
-                                        .Where(static x => !string.IsNullOrEmpty(x.Documentation.Description))
-                                        .ToArray();
         var nullablePrefix = code.ReturnType.IsNullable && !isVoid ? "Optional[" : string.Empty;
         var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? "]" : string.Empty;
-        if (isDescriptionPresent || parametersWithDescription.Any())
-        {
-            writer.WriteLine(conventions.DocCommentStart);
-            if (isDescriptionPresent)
-                writer.WriteLine($"{conventions.DocCommentPrefix}{PythonConventionService.RemoveInvalidDescriptionCharacters(code.Documentation.Description)}");
-            if (parametersWithDescription.Any())
-            {
-                writer.StartBlock("Args:");
-
-                foreach (var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
-                    writer.WriteLine($"{conventions.DocCommentPrefix}{paramWithDescription.Name.ToSnakeCase()}: {PythonConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Documentation.Description)}");
-                writer.DecreaseIndent();
-            }
-            if (!isVoid)
-                writer.WriteLine($"{conventions.DocCommentPrefix}Returns: {nullablePrefix}{returnType}{nullableSuffix}");
-            writer.WriteLine(conventions.DocCommentEnd);
-        }
+        var returnRemark = isVoid ? "Returns: None" : $"Returns: {nullablePrefix}{returnType}{nullableSuffix}";
+        conventions.WriteLongDescription(code.Documentation,
+                                           writer,
+                                           code.Parameters
+                                               .Where(static x => x.Documentation.DescriptionAvailable)
+                                               .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                               .Select(x => $"param {x.Name.ToSnakeCase()}: {PythonConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
+                                               .Union(new[] { returnRemark }));
     }
     private static readonly PythonCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid)
