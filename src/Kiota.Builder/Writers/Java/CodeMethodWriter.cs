@@ -352,7 +352,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if (parentClass.GetBackingStoreProperty() is CodeProperty backingStore)
             writer.WriteLine($"this.get{backingStore.Name.ToFirstCharacterUpperCase()}().set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value);");
         else
-            writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value;");
+        {
+            string value = String.Equals(codeElement.AccessedProperty?.Type?.Name, "PeriodAndDuration", StringComparison.OrdinalIgnoreCase) ? "PeriodAndDuration.of(value.getPeriod(), value.getDuration());" : "value;";
+            writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = {value}");
+
+        }
     }
     private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
