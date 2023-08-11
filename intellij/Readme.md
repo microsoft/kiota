@@ -1,9 +1,36 @@
-IntelliJTestPlugin :
+# kiota IntelliJ PlugIn
 
-Description: The IntelliJ Test Plugin takes an OpenApi Document and generstes the client using Kiota  classes for a project
-	Install JDK version 17.
-	Install WSL v-2.
+This readme documents how to get started with the kiota Intellij plugin
+# Getting Started
+## Installation
+**Gradle**: Visit the [Gradle Webside](https://gradle.org/install/) and install Gradle `version 7.4`   
+**DotNet**: Visit the [official .NET website](https://dotnet.microsoft.com/en-us/download) and install .NET SDK  
+**kiota** : Install [kiota](https://learn.microsoft.com/en-us/openapi/kiota/install#install-as-net-tool) as a dotnet tool  
+**IntelliJ IDEA Community Edition :** Install [IntelliJ IDEA Community Edition](https://www.jetbrains.com/idea/download)  
+## Clone the Repo
 
-Usage: To activate the plugin, change the Factory class attribute and the id attribute in the plugin.xml (located in Meta-INF) file under the default Extension tag section. Once the plugin is activated enter the parameters to generate the client classes.
+1. Clone the [kiota repository](https://www.jetbrains.com/idea/download) 
+2. Checkout the `intellijplugin branch`  (git checkout intellijplugin)
+
+## The Plugin
+**Configure Project Dependencies:**
+- In the intellijplugin project Go to `File` > `Project Structure`.
+- On the left panel, click on `Modules`.
+- Under `Dependencies`, select `Corretto-17 (Amazon Corretto version 17.0.7)`.
+
+**Run plugin.xml:**  
+    - Navigate to the `META-INF` directory in your project.  
+    - Find and run the `plugin.xml` file.
+
+**Open Plugin Project:**  
+    - When IntelliJ IDEA pops up, create a new blank project.
+    - Select `Gradle` and `Groovy` as the project options.
+
+**Access kiotaToolFactory:**  
+    - On the left-hand side, find and click on the `kiotaToolFactory` tab.
+
+
+
+
 
 
