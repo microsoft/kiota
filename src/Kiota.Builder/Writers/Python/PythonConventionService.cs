@@ -162,6 +162,25 @@ public class PythonConventionService : CommonLanguageConventionService
             writer.WriteLine(DocCommentEnd);
         }
     }
+    public void WriteLongDescription(CodeDocumentation documentation, LanguageWriter writer, IEnumerable<string>? additionalRemarks = default)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        if (documentation is null) return;
+        if (additionalRemarks == default)
+            additionalRemarks = Enumerable.Empty<string>();
+        var additionalRemarksArray = additionalRemarks.ToArray();
+        if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable || additionalRemarksArray.Any())
+        {
+            writer.WriteLine(DocCommentStart);
+            if (documentation.DescriptionAvailable)
+                writer.WriteLine($"{RemoveInvalidDescriptionCharacters(documentation.Description)}");
+            foreach (var additionalRemark in additionalRemarksArray.Where(static x => !string.IsNullOrEmpty(x)))
+                writer.WriteLine($"{additionalRemark}");
+            if (documentation.ExternalDocumentationAvailable)
+                writer.WriteLine($"{documentation.DocumentationLabel}: {documentation.DocumentationLink}");
+            writer.WriteLine(DocCommentEnd);
+        }
+    }
 
     public void WriteInLineDescription(string description, LanguageWriter writer)
     {

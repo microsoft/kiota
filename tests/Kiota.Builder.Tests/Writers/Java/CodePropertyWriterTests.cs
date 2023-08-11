@@ -76,7 +76,7 @@ public class CodePropertyWriterTests : IDisposable
         writer.Write(property);
         var result = tw.ToString();
         Assert.Contains($"{TypeName} {PropertyName}", result);
-        Assert.Contains("@javax.annotation.Nullable", result);
+        Assert.Contains("@jakarta.annotation.Nullable", result);
     }
     [Fact]
     public void WritesFlagEnums()
@@ -102,7 +102,7 @@ public class CodePropertyWriterTests : IDisposable
         (property.Type as CodeType).IsNullable = false;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains("@javax.annotation.Nonnull", result);
+        Assert.Contains("@jakarta.annotation.Nonnull", result);
     }
     [Fact]
     public void WritesSerializationAnnotation()
