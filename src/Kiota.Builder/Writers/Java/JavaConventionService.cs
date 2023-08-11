@@ -34,7 +34,7 @@ public class JavaConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var nullKeyword = parameter.Optional ? "Nullable" : "Nonnull";
-        var nullAnnotation = parameter.Type.IsNullable ? $"@javax.annotation.{nullKeyword} " : string.Empty;
+        var nullAnnotation = parameter.Type.IsNullable ? $"@jakarta.annotation.{nullKeyword} " : string.Empty;
         return $"{nullAnnotation}final {GetTypeString(parameter.Type, targetElement)} {parameter.Name.ToFirstCharacterLowerCase()}";
     }
 
