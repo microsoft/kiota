@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for external documentation links within descriptions in Python. [2041](https://github.com/microsoft/kiota/issues/2041)
+
 ### Changed
 
 
