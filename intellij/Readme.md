@@ -3,7 +3,7 @@
 This readme documents how to get started with the kiota Intellij plugin
 # Getting Started
 ## Installation
-**Gradle**: Visit the [Gradle Webside](https://gradle.org/install/) and install Gradle `version 7.4`   
+**Gradle** : Visit the [Gradle Webside](https://gradle.org/install/) and install Gradle `version 7.4`   
 **DotNet**: Visit the [official .NET website](https://dotnet.microsoft.com/en-us/download) and install .NET SDK  
 **kiota** : Install [kiota](https://learn.microsoft.com/en-us/openapi/kiota/install#install-as-net-tool) as a dotnet tool  
 **IntelliJ IDEA Community Edition :** Install [IntelliJ IDEA Community Edition](https://www.jetbrains.com/idea/download)  
