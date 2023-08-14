@@ -250,7 +250,6 @@ public class GoRefiner : CommonLanguageRefiner
                         continue;
 
                     CodeType type = (codeType.Clone() as CodeType)!;
-                    type.Name = interfaceName;
                     type.TypeDefinition = existing;
                     property.Type = type;
                 }
@@ -316,18 +315,6 @@ public class GoRefiner : CommonLanguageRefiner
 
     private void FlattenGoParamsFileNames(CodeElement currentElement)
     {
-        if (currentElement is CodeProperty currentProp
-            && currentElement.Parent is CodeClass parentClass
-            && parentClass.IsOfKind(CodeClassKind.RequestConfiguration)
-            && currentProp.IsOfKind(CodePropertyKind.QueryParameters))
-        {
-            var nameList = getPathsName(parentClass, currentProp.Type.Name.ToFirstCharacterUpperCase());
-            var newTypeName = string.Join(string.Empty, nameList.Count > 1 ? nameList.Skip(1) : nameList);
-
-            var type = currentProp.Type;
-            type.Name = newTypeName;
-        }
-
         if (currentElement is CodeMethod codeMethod
             && codeMethod.IsOfKind(CodeMethodKind.RequestGenerator, CodeMethodKind.RequestExecutor))
         {
@@ -335,8 +322,6 @@ public class GoRefiner : CommonLanguageRefiner
             {
                 var nameList = getPathsName(param, param.Type.Name.ToFirstCharacterUpperCase());
                 var newTypeName = string.Join(string.Empty, nameList.Count > 1 ? nameList.Skip(1) : nameList);
-                param.Type.Name = newTypeName;
-
                 foreach (var typeDef in param.Type.AllTypes.Select(static x => x.TypeDefinition).Where(x => !string.IsNullOrEmpty(x?.Name) && !newTypeName.EndsWith(x.Name, StringComparison.OrdinalIgnoreCase)))
                     typeDef!.Name = newTypeName;
             }

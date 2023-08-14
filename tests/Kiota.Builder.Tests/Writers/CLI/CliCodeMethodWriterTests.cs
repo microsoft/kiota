@@ -241,7 +241,7 @@ public class CliCodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
 
-        Assert.Contains("var builder = new TestItemRequestBuilder", result);
+        Assert.Contains("var builder = new TestClass", result);
         Assert.Contains("var commands = new List<Command>();", result);
         Assert.Contains("commands.Add(builder.BuildTestMethod1());", result);
         Assert.Contains("commands.AddRange(builder.BuildTestMethod2());", result);
@@ -423,7 +423,7 @@ public class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("var cmds = testItemIndexer.BuildTestMethod2();", result);
         Assert.DoesNotContain("execCommands.AddRange(cmds.Item1);", result);
         Assert.Contains("nonExecCommands.AddRange(cmds.Item2);", result);
-        Assert.Contains("var builder = new TestRequestBuilder", result);
+        Assert.Contains("var builder = new TestNavItemRequestBuilder", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod11());", result);
         Assert.Contains("return command;", result);
         Assert.DoesNotContain("nonExecCommands.Add(builder.BuildTestMethod3());", result);
@@ -553,7 +553,7 @@ public class CliCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var builder = new TestNavRequestBuilder();", result);
+        Assert.Contains("var builder = new TestNavItemRequestBuilder();", result);
         Assert.Contains("execCommands.Add(builder.BuildExecutableTestMethod());", result);
         Assert.Contains("return command;", result);
         Assert.DoesNotContain("BuildNavTestMethod", result);
@@ -596,7 +596,7 @@ public class CliCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var builder = new TestNavRequestBuilder", result);
+        Assert.Contains("var builder = new TestClass1", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod1());", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod2());", result);
         Assert.Contains("return command;", result);
@@ -637,7 +637,7 @@ public class CliCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var builder = new TestRequestBuilderWithA", result);
+        Assert.Contains("var builder = new TestClass1", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod1());", result);
         Assert.Contains("nonExecCommands.Add(builder.BuildTestMethod2());", result);
         Assert.Contains("return command;", result);

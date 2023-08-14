@@ -46,5 +46,6 @@
   ],
   "java.configuration.updateBuildConfiguration": "automatic",
   "dotnet-test-explorer.testProjectPath": "tests/**/*.Tests.csproj",
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "dotnet.defaultSolution": "kiota.sln"
 }
