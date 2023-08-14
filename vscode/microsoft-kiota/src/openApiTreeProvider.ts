@@ -20,6 +20,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         return !!this._lockFile;
     }
     public async loadLockFile(path: string): Promise<void> {
+        //TODO push this to the language server
       this.closeDescription(false);
       this._lockFilePath = path;
       const lockFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
@@ -45,6 +46,59 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
       }
     }
+    public async loadManifestFromUri(path: string): Promise<void> {
+        //TODO update logic
+        this.closeDescription(false);
+        this._lockFilePath = path;
+        const lockFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
+        this._lockFile = JSON.parse(lockFileData.toString()) as LockFile;
+        if (this._lockFile?.descriptionLocation) {
+          this._descriptionUrl = this._lockFile.descriptionLocation;
+          await this.loadNodes();
+          if (this.rawRootNode) {
+              if (this._lockFile.includePatterns.length === 0) {
+                  this.setAllSelected(this.rawRootNode, true);
+              } else {
+                  this._lockFile.includePatterns.forEach(ip => {
+                      const currentNode = this.findApiNode(ip.split(pathSeparator).filter(x => x !== '').map(x => x.split(operationSeparator)).flat(1), this.rawRootNode!);
+                      if(currentNode) {
+                          currentNode.selected = true;
+                          if (!(currentNode.isOperation || false)) {
+                              currentNode.children.filter(x => x.isOperation || false).forEach(x => x.selected = true);
+                          }
+                      }
+                  });
+              }
+              this.refreshView();
+        }
+      }
+    }
+    public async loadManifestFromContent(path: Buffer): Promise<void> {
+        //TODO update logic
+        this.closeDescription(false);
+        const lockFileData = await vscode.workspace.fs.readFile(vscode.Uri.file("path"));
+        this._lockFile = JSON.parse(lockFileData.toString()) as LockFile;
+        if (this._lockFile?.descriptionLocation) {
+          this._descriptionUrl = this._lockFile.descriptionLocation;
+          await this.loadNodes();
+          if (this.rawRootNode) {
+              if (this._lockFile.includePatterns.length === 0) {
+                  this.setAllSelected(this.rawRootNode, true);
+              } else {
+                  this._lockFile.includePatterns.forEach(ip => {
+                      const currentNode = this.findApiNode(ip.split(pathSeparator).filter(x => x !== '').map(x => x.split(operationSeparator)).flat(1), this.rawRootNode!);
+                      if(currentNode) {
+                          currentNode.selected = true;
+                          if (!(currentNode.isOperation || false)) {
+                              currentNode.children.filter(x => x.isOperation || false).forEach(x => x.selected = true);
+                          }
+                      }
+                  });
+              }
+              this.refreshView();
+          }
+        }
+      }
     private setAllSelected(node: KiotaOpenApiNode, selected: boolean) {
         node.selected = selected;
         node.children.forEach(x => this.setAllSelected(x, selected));

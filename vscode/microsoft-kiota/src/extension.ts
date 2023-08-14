@@ -27,6 +27,7 @@ const extensionId = "kiota";
 const focusCommandId = ".focus";
 const statusBarCommandId = `${extensionId}.status`;
 const treeViewId = `${extensionId}.openApiExplorer`;
+const treeViewFocusCommand = `${treeViewId}${focusCommandId}`;
 const dependenciesInfo = `${extensionId}.dependenciesInfo`;
 export const kiotaLockFile = "kiota-lock.json";
 
@@ -44,6 +45,56 @@ export async function activate(
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   context.subscriptions.push(
+    vscode.window.registerUriHandler({
+      handleUri: async (uri: vscode.Uri) => {
+        if (uri.path === "/") {
+          return;
+        }
+        const queryParameters = getQueryParameters(uri);
+        if (uri.path.toLowerCase() === "/opendescription") {
+          const descriptionUrl = queryParameters["descriptionurl"];
+          if (descriptionUrl) {
+            await vscode.window.withProgress({
+              location: vscode.ProgressLocation.Notification,
+              cancellable: false,
+              title: vscode.l10n.t("Loading...")
+            }, async (progress, _) => {
+              await openApiTreeProvider.setDescriptionUrl(descriptionUrl);
+              await vscode.commands.executeCommand(treeViewFocusCommand);
+            });
+            return;
+          }
+        }
+        if (uri.path.toLowerCase() === "/openmanifest") {
+          const manifestUrl = queryParameters["manifesturl"];
+          const manifestContent = queryParameters["manifestcontent"];
+          if (manifestUrl) {
+            await vscode.window.withProgress({
+              location: vscode.ProgressLocation.Notification,
+              cancellable: false,
+              title: vscode.l10n.t("Loading...")
+            }, async (progress, _) => {
+              await openApiTreeProvider.loadManifestFromUri(manifestUrl);
+              await vscode.commands.executeCommand(treeViewFocusCommand);
+            });
+            return;
+          } else if (manifestContent) {
+            await vscode.window.withProgress({
+              location: vscode.ProgressLocation.Notification,
+              cancellable: false,
+              title: vscode.l10n.t("Loading...")
+            }, async (progress, _) => {
+              await openApiTreeProvider.loadManifestFromContent(Buffer.from(manifestContent, 'base64'));
+              await vscode.commands.executeCommand(treeViewFocusCommand);
+            });
+            return;
+          }
+        }
+        void vscode.window.showErrorMessage(
+          vscode.l10n.t("Invalid URL, please check the documentation for the supported URLs")
+        );
+      }
+    }),
     reporter,
     registerCommandWithTelemetry(reporter, 
       `${extensionId}.searchLock`,
@@ -174,7 +225,7 @@ export async function activate(
         );
         if (languagesInformation) {
           dependenciesInfoProvider.update(languagesInformation, language);
-          await vscode.commands.executeCommand(`${dependenciesInfo}${focusCommandId}`);
+          await vscode.commands.executeCommand(treeViewFocusCommand);
         }
         if (typeof config.outputPath === "string" && !openApiTreeProvider.isLockFileLoaded && 
             vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 &&
@@ -199,7 +250,7 @@ export async function activate(
         }));
         if (config.descriptionPath) {
           await openApiTreeProvider.setDescriptionUrl(config.descriptionPath);
-          await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
+          await vscode.commands.executeCommand(treeViewFocusCommand);
         }
       }
     ),
@@ -217,7 +268,7 @@ export async function activate(
         const openState = await openSteps();
         if (openState.descriptionPath) {
           await openApiTreeProvider.setDescriptionUrl(openState.descriptionPath);
-          await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
+          await vscode.commands.executeCommand(treeViewFocusCommand);
         }
       }
     )
@@ -313,7 +364,7 @@ async function loadLockFile(node: { fsPath: string }, openApiTreeProvider: OpenA
     title: vscode.l10n.t("Loading...")
   }, (progress, _) => openApiTreeProvider.loadLockFile(node.fsPath));
   if (openApiTreeProvider.descriptionUrl) {
-    await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
+    await vscode.commands.executeCommand(treeViewFocusCommand);
   }
 }
 
@@ -376,6 +427,20 @@ async function updateStatusBarItem(context: vscode.ExtensionContext): Promise<vo
     );
   }
   kiotaStatusBarItem.show();
+}
+
+function getQueryParameters(uri: vscode.Uri): Record<string, string> {
+  const query = uri.query;
+  if (!query) {
+    return {};
+  }
+  const queryParameters = (query.startsWith('?') ? query.substring(1) : query).split("&");
+  const parameters = {} as Record<string, string>;
+  queryParameters.forEach((element) => {
+    const keyValue = element.split("=");
+    parameters[keyValue[0].toLowerCase()] = decodeURIComponent(keyValue[1]);
+  });
+  return parameters;
 }
 
 // This method is called when your extension is deactivated
