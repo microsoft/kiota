@@ -53,7 +53,7 @@
     <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.6" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     <PackageReference Include="NeoSmart.AsyncLock" Version="3.2.1" />
-    <PackageReference Include="YamlDotNet" Version="13.1.1" />
+    <PackageReference Include="YamlDotNet" Version="13.2.0" />
     <ProjectReference Include="..\Kiota.Generated\KiotaGenerated.csproj" OutputItemType="Analyzer"
       ReferenceOutputAssembly="false" />
   </ItemGroup>
