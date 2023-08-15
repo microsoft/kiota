@@ -99,7 +99,7 @@ public class CodePropertyWriterTests : IDisposable
         writer.Write(property);
         var result = tw.ToString();
         Assert.DoesNotContain("@property", result);
-        Assert.Contains($"property_name: Optional[{TypeName}]", result);
+        Assert.Contains($"property_name: Optional[Graphtests.models.{TypeName}]", result);
     }
     [Fact]
     public void WritesDefaultValuesForProperties()

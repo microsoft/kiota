@@ -794,8 +794,8 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("get_uuid_value()", result);
         Assert.Contains("get_object_value(DummyClass)", result);
         Assert.Contains("get_collection_of_primitive_values(UUID)", result);
-        Assert.Contains("get_collection_of_object_values(Complex)", result);
-        Assert.Contains("get_enum_value(SomeEnum)", result);
+        Assert.Contains("get_collection_of_object_values(SomeComplexType)", result);
+        Assert.Contains("get_enum_value(EnumType)", result);
         Assert.Contains("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]

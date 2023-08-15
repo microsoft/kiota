@@ -467,14 +467,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     /// <param name="currentElement"></param>
     private static void RenameModelInterfacesAndRemoveClasses(CodeElement currentElement)
     {
-        if (currentElement is CodeClass currentClass)
-        {
-            foreach (var codeUsing in currentClass.Usings)
-            {
-                RenameModelInterfacesAndRemoveClassesInUsing(codeUsing);
-            }
-        }
-        else if (currentElement is CodeInterface modelInterface && modelInterface.IsOfKind(CodeInterfaceKind.Model) && modelInterface.Parent is CodeNamespace parentNS)
+        if (currentElement is CodeInterface modelInterface && modelInterface.IsOfKind(CodeInterfaceKind.Model) && modelInterface.Parent is CodeNamespace parentNS)
         {
             var finalName = ReturnFinalInterfaceName(modelInterface.Name);
             if (!finalName.Equals(modelInterface.Name, StringComparison.Ordinal))
@@ -492,13 +485,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, static x => RenameModelInterfacesAndRemoveClasses(x));
     }
 
-    private static void RenameModelInterfacesAndRemoveClassesInUsing(CodeUsing codeUsing)
-    {
-        if (codeUsing.Declaration is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface)
-        {
-            codeType.Name = ReturnFinalInterfaceName(codeInterface.Name);
-        }
-    }
     private static void RenameCodeInterfaceParamsInSerializers(CodeFunction codeFunction)
     {
         if (codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault(static x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface) is CodeParameter param && param.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface paramInterface)
@@ -651,13 +637,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void SetTypeAsModelInterface(CodeInterface interfaceElement, CodeType elemType, CodeClass requestBuilder)
     {
-        elemType.Name = interfaceElement.Name.Split(TemporaryInterfaceNameSuffix)[0];
         var interfaceCodeType = new CodeType
         {
             Name = interfaceElement.Name,
             TypeDefinition = interfaceElement,
         };
-        requestBuilder.RemoveUsingsByDeclarationName(elemType.Name);
+        requestBuilder.RemoveUsingsByDeclarationName(interfaceElement.Name.Split(TemporaryInterfaceNameSuffix)[0]);
         if (!requestBuilder.Usings.Any(x => x.Declaration?.TypeDefinition == elemType.TypeDefinition))
         {
             requestBuilder.AddUsing(new CodeUsing
@@ -868,7 +853,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var propertyInterfaceType = CreateModelInterface(sourceClass, interfaceNamingCallback);
         if (propertyInterfaceType.Parent is null)
             return (null, null);
-        originalType.Name = propertyInterfaceType.Name;
         originalType.TypeDefinition = propertyInterfaceType;
         return (propertyInterfaceType, new CodeUsing
         {

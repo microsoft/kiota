@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Flattens the models namespaces in Ruby to avoid circular dependencies.
+- Adds ObjectId as a reserved keyword in Ruby to have memory management issues.
 - Replace Javax annotations in favor of Jakarta annotations for Java code generation. [#2810](https://github.com/microsoft/kiota/issues/2810)  
 
 ## [1.5.1] - 2023-08-08

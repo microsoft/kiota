@@ -690,7 +690,7 @@ public class CodeMethodWriterTests : IDisposable
         }).First();
         method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
         method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
-        method.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error401 });
+        method.AddErrorMapping("401", new CodeType { Name = "Error401", TypeDefinition = error401 });
         AddRequestBodyParameters();
         method.AddParameter(new CodeParameter
         {
@@ -699,11 +699,7 @@ public class CodeMethodWriterTests : IDisposable
             Type = new CodeType
             {
                 Name = "context.Context",
-                TypeDefinition = new CodeClass
-                {
-                    Name = "CancellationToken",
-                },
-                IsExternal = false,
+                IsExternal = true,
                 IsNullable = false,
             },
             Optional = false,
@@ -714,7 +710,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains($"errorMapping := {AbstractionsPackageHash}.ErrorMappings", result);
         Assert.Contains("\"4XX\": CreateError4XXFromDiscriminatorValue", result);
         Assert.Contains("\"5XX\": CreateError5XXFromDiscriminatorValue", result);
-        Assert.Contains("\"403\": CreateError403FromDiscriminatorValue", result);
+        Assert.Contains("\"401\": CreateError401FromDiscriminatorValue", result);
         Assert.Contains("ctx context.Context,", result);
         Assert.Contains("m.BaseRequestBuilder.RequestAdapter.Send(ctx,", result);
         Assert.Contains("return res.(", result);
@@ -1283,9 +1279,9 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("res := make([]string, len(val))", result);
         Assert.Contains("res[i] = *(v.(*string))", result);
-        Assert.Contains("res := make([]Complex, len(val))", result);
-        Assert.Contains("res[i] = *(v.(*Complex))", result);
-        Assert.Contains("m.SetDummyEnumCollection(val.(*SomeEnum))", result);
+        Assert.Contains("res := make([]SomeComplexType, len(val))", result);
+        Assert.Contains("res[i] = *(v.(*SomeComplexType))", result);
+        Assert.Contains("m.SetDummyEnumCollection(val.(*EnumType))", result);
         Assert.Contains("m.SetDummyProp(val)", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
