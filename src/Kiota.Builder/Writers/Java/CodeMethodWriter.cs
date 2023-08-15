@@ -353,7 +353,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             writer.WriteLine($"this.get{backingStore.Name.ToFirstCharacterUpperCase()}().set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value);");
         else
         {
-            string value = String.Equals(codeElement.AccessedProperty?.Type?.Name, "PeriodAndDuration", StringComparison.OrdinalIgnoreCase) ? "PeriodAndDuration.of(value.getPeriod(), value.getDuration());" : "value;";
+            string value = String.Equals(codeElement.AccessedProperty?.Type?.Name, "PeriodAndDuration", StringComparison.OrdinalIgnoreCase) ? "PeriodAndDuration.ofPeriodAndDuration(value);" : "value;";
             writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = {value}");
 
         }
