@@ -252,7 +252,7 @@
     "@types/node": "20.x",
     "@types/vscode": "^1.81.0",
     "@typescript-eslint/eslint-plugin": "^6.3.0",
-    "@typescript-eslint/parser": "^6.3.0",
+    "@typescript-eslint/parser": "^6.4.0",
     "@vscode/test-electron": "^2.3.4",
     "eslint": "^8.47.0",
     "glob": "^10.3.3",
