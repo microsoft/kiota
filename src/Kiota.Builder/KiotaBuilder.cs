@@ -71,15 +71,15 @@ public partial class KiotaBuilder
                 File.Delete(subFile);
         }
     }
-    public async Task<OpenApiUrlTreeNode?> GetUrlTreeNodeAsync(CancellationToken cancellationToken)
+    public async Task<OpenApiUrlTreeNode?> GetUrlTreeNodeAsync(bool applyFilters, CancellationToken cancellationToken)
     {
         var sw = new Stopwatch();
         var inputPath = config.OpenAPIFilePath;
-        var (_, openApiTree, _) = await GetTreeNodeInternal(inputPath, false, sw, cancellationToken).ConfigureAwait(false);
+        var (_, openApiTree, _) = await GetTreeNodeInternal(inputPath, false, applyFilters, sw, cancellationToken).ConfigureAwait(false);
         return openApiTree;
     }
     public OpenApiDocument? OriginalOpenApiDocument => originalDocument;
-    private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
+    private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, bool applyFilters, Stopwatch sw, CancellationToken cancellationToken)
     {
         logger.LogDebug("kiota version {Version}", Generated.KiotaVersion.Current());
         var stepId = 0;
@@ -115,17 +115,21 @@ public partial class KiotaBuilder
         StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
 
         OpenApiUrlTreeNode? openApiTree = null;
-        if (openApiDocument != null && (shouldGenerate || !generating))
+        if (openApiDocument != null)
         {
+            if (applyFilters)
+            {
+                // filter paths
+                sw.Start();
+                FilterPathsByPatterns(openApiDocument);
+                StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
+            }
+            if (shouldGenerate && generating)
+            {
+                SetApiRootUrl();
 
-            // filter paths
-            sw.Start();
-            FilterPathsByPatterns(openApiDocument);
-            StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
-
-            SetApiRootUrl();
-
-            modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
+                modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
+            }
 
             // Create Uri Space of API
             sw.Start();
@@ -160,7 +164,7 @@ public partial class KiotaBuilder
 
     public async Task<LanguagesInformation?> GetLanguagesInformationAsync(CancellationToken cancellationToken)
     {
-        await GetTreeNodeInternal(config.OpenAPIFilePath, false, new Stopwatch(), cancellationToken).ConfigureAwait(false);
+        await GetTreeNodeInternal(config.OpenAPIFilePath, false, false, new Stopwatch(), cancellationToken).ConfigureAwait(false);
 
         return GetLanguagesInformationInternal();
     }
@@ -196,7 +200,7 @@ public partial class KiotaBuilder
         }
         try
         {
-            var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
+            var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, true, sw, cancellationToken).ConfigureAwait(false);
 
             if (!shouldGenerate)
             {

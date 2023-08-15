@@ -578,7 +578,7 @@ servers:
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var configuration = new GenerationConfiguration { OpenAPIFilePath = tempFilePath, Language = GenerationLanguage.CSharp };
         var builder = new KiotaBuilder(mockLogger.Object, configuration, _httpClient);
-        var treeNode = await builder.GetUrlTreeNodeAsync(new CancellationToken());
+        var treeNode = await builder.GetUrlTreeNodeAsync(false, new CancellationToken());
         Assert.NotNull(treeNode);
         Assert.Equal("GraphClient", configuration.ClientClassName);
         Assert.Equal("Microsoft.Graph", configuration.ClientNamespaceName);
@@ -626,7 +626,7 @@ paths:
                 type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var treeNode = await builder.GetUrlTreeNodeAsync(new CancellationToken());
+        var treeNode = await builder.GetUrlTreeNodeAsync(false, new CancellationToken());
         Assert.NotNull(treeNode);
         Assert.Equal("/", treeNode.Segment);
         Assert.Equal("enumeration", treeNode.Children.First().Value.Segment);

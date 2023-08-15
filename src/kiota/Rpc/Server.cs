@@ -100,7 +100,7 @@ internal class Server : IServer
         configuration.ExcludePatterns = excludeFilters.ToHashSet();
         configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
         var builder = new KiotaBuilder(logger, configuration, httpClient);
-        var urlTreeNode = await builder.GetUrlTreeNodeAsync(cancellationToken);
+        var urlTreeNode = await builder.GetUrlTreeNodeAsync(false, cancellationToken);
         var rootNode = urlTreeNode != null ? ConvertOpenApiUrlTreeNodeToPathItem(urlTreeNode) : null;
         return new ShowResult(logger.LogEntries, rootNode, builder.OriginalOpenApiDocument?.Info?.Title);
     }
