@@ -54,14 +54,7 @@ export async function activate(
         if (uri.path.toLowerCase() === "/opendescription") {
           const descriptionUrl = queryParameters["descriptionurl"];
           if (descriptionUrl) {
-            await vscode.window.withProgress({
-              location: vscode.ProgressLocation.Notification,
-              cancellable: false,
-              title: vscode.l10n.t("Loading...")
-            }, async (progress, _) => {
-              await openApiTreeProvider.setDescriptionUrl(descriptionUrl);
-              await vscode.commands.executeCommand(treeViewFocusCommand);
-            });
+            await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(descriptionUrl));
             return;
           }
         }
@@ -69,24 +62,10 @@ export async function activate(
           const manifestUrl = queryParameters["manifesturl"];
           const manifestContent = queryParameters["manifestcontent"];
           if (manifestUrl) {
-            await vscode.window.withProgress({
-              location: vscode.ProgressLocation.Notification,
-              cancellable: false,
-              title: vscode.l10n.t("Loading...")
-            }, async (progress, _) => {
-              await openApiTreeProvider.loadManifestFromUri(manifestUrl);
-              await vscode.commands.executeCommand(treeViewFocusCommand);
-            });
+            await openTreeViewWithProgress(() => openApiTreeProvider.loadManifestFromUri(manifestUrl));
             return;
           } else if (manifestContent) {
-            await vscode.window.withProgress({
-              location: vscode.ProgressLocation.Notification,
-              cancellable: false,
-              title: vscode.l10n.t("Loading...")
-            }, async (progress, _) => {
-              await openApiTreeProvider.loadManifestFromContent(Buffer.from(manifestContent, 'base64'));
-              await vscode.commands.executeCommand(treeViewFocusCommand);
-            });
+            await openTreeViewWithProgress(() => openApiTreeProvider.loadManifestFromContent(Buffer.from(manifestContent, 'base64')));
             return;
           }
         }
@@ -333,6 +312,16 @@ export async function activate(
   );
 
   context.subscriptions.push(disposable);
+}
+function openTreeViewWithProgress(callback: () => Promise<void>): Thenable<void> {
+  return vscode.window.withProgress({
+    location: vscode.ProgressLocation.Notification,
+    cancellable: false,
+    title: vscode.l10n.t("Loading...")
+  }, async (progress, _) => {
+    await callback();
+    await vscode.commands.executeCommand(treeViewFocusCommand);
+  });
 }
 function registerCommandWithTelemetry(reporter: TelemetryReporter, command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable {
   return vscode.commands.registerCommand(command, (...args: any[]) => {

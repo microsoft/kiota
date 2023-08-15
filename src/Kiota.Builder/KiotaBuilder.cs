@@ -40,7 +40,6 @@ public partial class KiotaBuilder
     private readonly GenerationConfiguration config;
     private readonly ParallelOptions parallelOptions;
     private readonly HttpClient httpClient;
-    private OpenApiDocument? originalDocument;
     private OpenApiDocument? openApiDocument;
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
@@ -71,23 +70,21 @@ public partial class KiotaBuilder
                 File.Delete(subFile);
         }
     }
-    public async Task<OpenApiUrlTreeNode?> GetUrlTreeNodeAsync(bool applyFilters, CancellationToken cancellationToken)
+    public async Task<OpenApiUrlTreeNode?> GetUrlTreeNodeAsync(CancellationToken cancellationToken)
     {
         var sw = new Stopwatch();
         var inputPath = config.OpenAPIFilePath;
-        var (_, openApiTree, _) = await GetTreeNodeInternal(inputPath, false, applyFilters, sw, cancellationToken).ConfigureAwait(false);
+        var (_, openApiTree, _) = await GetTreeNodeInternal(inputPath, false, sw, cancellationToken).ConfigureAwait(false);
         return openApiTree;
     }
-    public OpenApiDocument? OriginalOpenApiDocument => originalDocument;
-    private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, bool applyFilters, Stopwatch sw, CancellationToken cancellationToken)
+    public OpenApiDocument? OpenApiDocument => openApiDocument;
+    private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
     {
         logger.LogDebug("kiota version {Version}", Generated.KiotaVersion.Current());
         var stepId = 0;
         sw.Start();
 #pragma warning disable CA2007
-        await using var input = await (originalDocument == null ?
-                                        LoadStream(inputPath, cancellationToken).ConfigureAwait(false) :
-                                        Task.FromResult<Stream>(new MemoryStream()).ConfigureAwait(false));
+        await using var input = await LoadStream(inputPath, cancellationToken).ConfigureAwait(false);
 #pragma warning restore CA2007
         if (input.Length == 0)
             return (0, null, false);
@@ -95,14 +92,7 @@ public partial class KiotaBuilder
 
         // Parse OpenAPI
         sw.Start();
-        if (originalDocument == null)
-        {
-            openApiDocument = await CreateOpenApiDocumentAsync(input, generating, cancellationToken).ConfigureAwait(false);
-            if (openApiDocument != null)
-                originalDocument = new OpenApiDocument(openApiDocument);
-        }
-        else
-            openApiDocument = new OpenApiDocument(originalDocument);
+        openApiDocument = await CreateOpenApiDocumentAsync(input, generating, cancellationToken).ConfigureAwait(false);
         StopLogAndReset(sw, $"step {++stepId} - parsing the document - took");
 
         sw.Start();
@@ -117,13 +107,10 @@ public partial class KiotaBuilder
         OpenApiUrlTreeNode? openApiTree = null;
         if (openApiDocument != null)
         {
-            if (applyFilters)
-            {
-                // filter paths
-                sw.Start();
-                FilterPathsByPatterns(openApiDocument);
-                StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
-            }
+            // filter paths
+            sw.Start();
+            FilterPathsByPatterns(openApiDocument);
+            StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
             if (shouldGenerate && generating)
             {
                 SetApiRootUrl();
@@ -164,7 +151,7 @@ public partial class KiotaBuilder
 
     public async Task<LanguagesInformation?> GetLanguagesInformationAsync(CancellationToken cancellationToken)
     {
-        await GetTreeNodeInternal(config.OpenAPIFilePath, false, false, new Stopwatch(), cancellationToken).ConfigureAwait(false);
+        await GetTreeNodeInternal(config.OpenAPIFilePath, false, new Stopwatch(), cancellationToken).ConfigureAwait(false);
 
         return GetLanguagesInformationInternal();
     }
@@ -200,7 +187,7 @@ public partial class KiotaBuilder
         }
         try
         {
-            var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, true, sw, cancellationToken).ConfigureAwait(false);
+            var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternal(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
 
             if (!shouldGenerate)
             {
