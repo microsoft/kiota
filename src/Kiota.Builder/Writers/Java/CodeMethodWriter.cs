@@ -17,7 +17,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
-        WriteMethodDocumentation(codeElement, writer);
+        WriteMethodDocumentation(codeElement, writer, returnType);
         if (codeElement.IsAsync &&
             codeElement.IsOfKind(CodeMethodKind.RequestExecutor) &&
             returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
@@ -671,13 +671,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.WriteLine($"{accessModifier}{staticModifier}{finalReturnType} {methodName}({parameters}) {{");
         return collectionCorrectedReturnType;
     }
-    private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
+    private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, string returnType)
     {
-        var returnRemark = code.IsAsync switch
+        // var returnRemark = code.IsAsync switch
+        // {
+        //     true => $"@return a CompletableFuture of {code.ReturnType.Name}",
+        //     false => $"@return a {code.ReturnType.Name}",
+        // };
+        var returnRemark = returnType.Equals("void", StringComparison.OrdinalIgnoreCase) ? string.Empty : (code.IsAsync switch
         {
             true => $"@return a CompletableFuture of {code.ReturnType.Name}",
             false => $"@return a {code.ReturnType.Name}",
-        };
+        });
         conventions.WriteLongDescription(code,
                                         writer,
                                         code.Parameters
