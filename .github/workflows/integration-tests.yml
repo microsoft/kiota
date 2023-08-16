@@ -204,12 +204,3 @@ jobs:
         with:
           name: idempotency-artifacts
           path: it/idempotency-folder*.zip
-
-  cleanup:
-    runs-on: ubuntu-latest
-    needs: [integration]
-    steps:
-      - uses: jimschubert/delete-artifacts-action@v1
-        with:
-          artifact_name: "generator"
-          min_bytes: "0"
