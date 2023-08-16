@@ -658,6 +658,26 @@ public class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesRequestExecutorOverloadBody()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.OriginalMethod = method;
+        AddRequestBodyParameters();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("final RequestInformation requestInfo", result);
+        Assert.DoesNotContain("final HashMap<String, ParsableFactory<? extends Parsable>> errorMapping = new HashMap<String, ParsableFactory<? extends Parsable>>", result);
+        Assert.DoesNotContain("put(\"4XX\", Error4XX::createFromDiscriminatorValue);", result);
+        Assert.DoesNotContain("put(\"5XX\", Error5XX::createFromDiscriminatorValue);", result);
+        Assert.DoesNotContain("put(\"401\", Error401::createFromDiscriminatorValue);", result);
+        Assert.DoesNotContain("sendAsync", result);
+        Assert.DoesNotContain($"java.util.concurrent.CompletableFuture<Somecustomtype> {ExecuterExceptionVar} = new java.util.concurrent.CompletableFuture<Somecustomtype>();", result);
+        Assert.DoesNotContain($"{ExecuterExceptionVar}.completeExceptionally(ex);", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void DoesntCreateDictionaryOnEmptyErrorMapping()
     {
         setup();
