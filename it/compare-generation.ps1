@@ -86,7 +86,7 @@ if (!$preserveOutput) {
     Remove-Item $tmpFolder2 -Force -Recurse
 }
 else {
-    Write-Output "Folder 1: $tmpFolder1" 
+    Write-Output "Folder 1: $tmpFolder1"
     Write-Output "Folder 2: $tmpFolder2"
 }
 
