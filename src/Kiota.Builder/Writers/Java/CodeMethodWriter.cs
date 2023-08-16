@@ -42,12 +42,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 WriteIndexerBody(codeElement, parentClass, writer, returnType);
                 break;
             case CodeMethodKind.RequestGenerator when codeElement.IsOverload:
-                WriteGeneratorMethodCall(codeElement, requestParams, parentClass, writer, "return ");
+                WriteGeneratorOrExecutorMethodCall(codeElement, requestParams, parentClass, writer, "return ", CodeMethodKind.RequestGenerator);
                 break;
             case CodeMethodKind.RequestGenerator when !codeElement.IsOverload:
                 WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
                 break;
-            case CodeMethodKind.RequestExecutor:
+            case CodeMethodKind.RequestExecutor when codeElement.IsOverload:
+                WriteGeneratorOrExecutorMethodCall(codeElement, requestParams, parentClass, writer, "return ", CodeMethodKind.RequestExecutor);
+                break;
+            case CodeMethodKind.RequestExecutor when !codeElement.IsOverload:
                 WriteRequestExecutorBody(codeElement, requestParams, parentClass, writer, signatureReturnType);
                 break;
             case CodeMethodKind.Getter:
@@ -465,7 +468,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, false);
         writer.WriteLine("try {");
         writer.IncreaseIndent();
-        WriteGeneratorMethodCall(codeElement, requestParams, parentClass, writer, $"final RequestInformation {RequestInfoVarName} = ");
+        WriteGeneratorOrExecutorMethodCall(codeElement, requestParams, parentClass, writer, $"final RequestInformation {RequestInfoVarName} = ", CodeMethodKind.RequestGenerator);
         var sendMethodName = GetSendRequestMethodName(codeElement.ReturnType.IsCollection, returnType, codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeEnum);
         var errorMappingVarName = "null";
         if (codeElement.ErrorMappings.Any())
@@ -503,11 +506,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     }
     private const string RequestInfoVarName = "requestInfo";
     private const string RequestConfigVarName = "requestConfig";
-    private static void WriteGeneratorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix)
+    private static void WriteGeneratorOrExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix, CodeMethodKind codeMethodKind)
     {
-        var generatorMethodName = parentClass
+        var methodName = parentClass
                                             .Methods
-                                            .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
+                                            .FirstOrDefault(x => x.IsOfKind(codeMethodKind) && x.HttpMethod == codeElement.HttpMethod)
                                             ?.Name
                                             ?.ToFirstCharacterLowerCase();
         var paramsList = new[] { requestParams.requestBody, requestParams.requestConfiguration };
@@ -517,7 +520,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var skipIndex = requestParams.requestBody == null ? 1 : 0;
         requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "null"));
         var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x, y) => $"{x}, {y}") : string.Empty;
-        writer.WriteLine($"{prefix}{generatorMethodName}({paramsCall});");
+        writer.WriteLine($"{prefix}{methodName}({paramsCall});");
     }
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)
     {
