@@ -17,14 +17,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
-        WriteMethodDocumentation(codeElement, writer, returnType);
         if (codeElement.IsAsync &&
             codeElement.IsOfKind(CodeMethodKind.RequestExecutor) &&
             returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
             returnType = "Void"; //generic type for the future
-        if (!codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor)) //Constructors don't need an annotation
-            writer.WriteLine(codeElement.ReturnType.IsNullable && !codeElement.IsAsync ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
-        var signatureReturnType = WriteMethodPrototype(codeElement, writer, returnType);
+        WriteMethodDocumentation(codeElement, writer, returnType);
+        WriteMethodPrototype(codeElement, writer, returnType);
         writer.IncreaseIndent();
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
@@ -49,7 +47,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
                 break;
             case CodeMethodKind.RequestExecutor:
-                WriteRequestExecutorBody(codeElement, requestParams, parentClass, writer, signatureReturnType);
+                WriteRequestExecutorBody(codeElement, requestParams, parentClass, writer);
                 break;
             case CodeMethodKind.Getter:
                 WriteGetterBody(codeElement, writer, parentClass);
@@ -459,7 +457,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.WriteLine($"return {DeserializerVarName};");
     }
     private const string FactoryMethodName = "createFromDiscriminatorValue";
-    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string signatureReturnType)
+    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, false);
@@ -673,12 +671,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, string returnType)
     {
-        // var returnRemark = code.IsAsync switch
-        // {
-        //     true => $"@return a CompletableFuture of {code.ReturnType.Name}",
-        //     false => $"@return a {code.ReturnType.Name}",
-        // };
-        var returnRemark = returnType.Equals("void", StringComparison.OrdinalIgnoreCase) ? string.Empty : (code.IsAsync switch
+        var returnVoid = returnType.Equals("void", StringComparison.OrdinalIgnoreCase);
+        // Void returns, this includes constructors, should not have a return statement in the JavaDocs. 
+        var returnRemark = returnVoid ? string.Empty : (code.IsAsync switch
         {
             true => $"@return a CompletableFuture of {code.ReturnType.Name}",
             false => $"@return a {code.ReturnType.Name}",
@@ -690,7 +685,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                             .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                                             .Select(x => $"@param {x.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
                                             .Union(new[] { returnRemark }));
-
+        if (!returnVoid) //Nullable/Nonnull annotations for returns are a part of Method Documentation  
+            writer.WriteLine(code.ReturnType.IsNullable && !code.IsAsync ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method)
     {
