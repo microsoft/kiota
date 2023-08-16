@@ -76,8 +76,8 @@ Get-FileHash -InputStream ([IO.MemoryStream]::new([char[]]$HashString1))
 $HashString2 = (Get-ChildItem $tmpFolder2 -Recurse | where { ! $_.PSIsContainer } | Get-FileHash -Algorithm MD5).Hash | Out-String
 Get-FileHash -InputStream ([IO.MemoryStream]::new([char[]]$HashString2))
 
-Remove-Item $tmpFolder1
-Remove-Item $tmpFolder2
+Remove-Item $tmpFolder1 -Force -Recurse
+Remove-Item $tmpFolder2 -Force -Recurse
 
 if ($HashString1 -eq $HashString2) {
     Write-Output "The content of the folders is identical"
