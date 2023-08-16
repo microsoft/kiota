@@ -228,8 +228,7 @@ export async function activate(
           return searchDescription(context, x);
         }));
         if (config.descriptionPath) {
-          await openApiTreeProvider.setDescriptionUrl(config.descriptionPath);
-          await vscode.commands.executeCommand(treeViewFocusCommand);
+          await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
         }
       }
     ),
@@ -246,8 +245,7 @@ export async function activate(
       async () => {
         const openState = await openSteps();
         if (openState.descriptionPath) {
-          await openApiTreeProvider.setDescriptionUrl(openState.descriptionPath);
-          await vscode.commands.executeCommand(treeViewFocusCommand);
+          await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(openState.descriptionPath!));
         }
       }
     )
@@ -347,14 +345,7 @@ async function showUpgradeWarningMessage(clientPath: string, context: vscode.Ext
 }
 
 async function loadLockFile(node: { fsPath: string }, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
-  await vscode.window.withProgress({
-    location: vscode.ProgressLocation.Notification,
-    cancellable: false,
-    title: vscode.l10n.t("Loading...")
-  }, (progress, _) => openApiTreeProvider.loadLockFile(node.fsPath));
-  if (openApiTreeProvider.descriptionUrl) {
-    await vscode.commands.executeCommand(treeViewFocusCommand);
-  }
+  await openTreeViewWithProgress(() => openApiTreeProvider.loadLockFile(node.fsPath));
 }
 
 async function exportLogsAndShowErrors(result: KiotaLogEntry[]) : Promise<void> {
