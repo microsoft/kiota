@@ -61,11 +61,15 @@ export async function activate(
         if (uri.path.toLowerCase() === "/openmanifest") {
           const manifestUrl = queryParameters["manifesturl"];
           const manifestContent = queryParameters["manifestcontent"];
+          const apiIdentifier = queryParameters["apiidentifier"];
           if (manifestUrl) {
-            await openTreeViewWithProgress(() => openApiTreeProvider.loadManifestFromUri(manifestUrl));
+            await openTreeViewWithProgress(() => openApiTreeProvider.loadManifestFromUri(manifestUrl, apiIdentifier));
             return;
           } else if (manifestContent) {
-            await openTreeViewWithProgress(() => openApiTreeProvider.loadManifestFromContent(Buffer.from(manifestContent, 'base64')));
+            await openTreeViewWithProgress(async () => {
+              const logs = await openApiTreeProvider.loadManifestFromContent(manifestContent, apiIdentifier);
+              await exportLogsAndShowErrors(logs);
+            });
             return;
           }
         }
@@ -311,14 +315,15 @@ export async function activate(
 
   context.subscriptions.push(disposable);
 }
-function openTreeViewWithProgress(callback: () => Promise<void>): Thenable<void> {
+function openTreeViewWithProgress<T>(callback: () => Promise<T>): Thenable<T> {
   return vscode.window.withProgress({
     location: vscode.ProgressLocation.Notification,
     cancellable: false,
     title: vscode.l10n.t("Loading...")
   }, async (progress, _) => {
-    await callback();
+    const result = await callback();
     await vscode.commands.executeCommand(treeViewFocusCommand);
+    return result;
   });
 }
 function registerCommandWithTelemetry(reporter: TelemetryReporter, command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable {
