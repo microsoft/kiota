@@ -199,3 +199,17 @@ jobs:
       - name: Verify idempotency
         shell: pwsh
         run: ./it/compare-generation.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: idempotency-artifacts
+          path: it/idempotency-folder*.zip
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [integration]
+    steps:
+      - uses: jimschubert/delete-artifacts-action@v1
+        with:
+          artifact_name: "generator"
+          min_bytes: "0"

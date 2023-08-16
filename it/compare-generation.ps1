@@ -81,20 +81,26 @@ Get-FileHash -InputStream ([IO.MemoryStream]::new([char[]]$HashString1))
 $HashString2 = (Get-ChildItem $tmpFolder2 -Recurse | where { ! $_.PSIsContainer } | Get-FileHash -Algorithm MD5).Hash | Out-String
 Get-FileHash -InputStream ([IO.MemoryStream]::new([char[]]$HashString2))
 
-if (!$preserveOutput) {
-    Remove-Item $tmpFolder1 -Force -Recurse
-    Remove-Item $tmpFolder2 -Force -Recurse
-}
-else {
-    Write-Output "Folder 1: $tmpFolder1"
-    Write-Output "Folder 2: $tmpFolder2"
-}
+Write-Output "Folder 1: $tmpFolder1"
+Write-Output "Folder 2: $tmpFolder2"
 
 if ($HashString1 -eq $HashString2) {
     Write-Output "The content of the folders is identical"
+
+    if (!$preserveOutput) {
+        Remove-Item $tmpFolder1 -Force -Recurse
+        Remove-Item $tmpFolder2 -Force -Recurse
+    }
+
     Exit 0
 }
 else {
     Write-Error "The content of the folders is NOT identical"
+
+    Remove-Item idempotency-folder1.zip -Force
+    Remove-Item idempotency-folder2.zip -Force
+
+    Compress-Archive -Path $tmpFolder1 -DestinationPath idempotency-folder1.zip
+    Compress-Archive -Path $tmpFolder1 -DestinationPath idempotency-folder2.zip
     Exit 1
 }
