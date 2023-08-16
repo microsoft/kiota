@@ -22,7 +22,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             codeElement.IsOfKind(CodeMethodKind.RequestExecutor) &&
             returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
             returnType = "Void"; //generic type for the future
-        writer.WriteLine(codeElement.ReturnType.IsNullable && !codeElement.IsAsync ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
+        if (!codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor)) //Constructors don't need an annotation
+            writer.WriteLine(codeElement.ReturnType.IsNullable && !codeElement.IsAsync ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
         var signatureReturnType = WriteMethodPrototype(codeElement, writer, returnType);
         writer.IncreaseIndent();
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
