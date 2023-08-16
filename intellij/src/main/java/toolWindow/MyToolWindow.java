@@ -53,16 +53,14 @@ public class MyToolWindow {
     public JComponent getversion() throws IOException {
         JBPanel<JBPanel<?>> versionPanel = new JBPanel<>();
         versionPanel.setLayout(new BorderLayout());
-
         // Create a label to display kiota version
-        JLabel versionLabel = new JLabel("Kiota version: " +versionHandler.getVersion());
+        JLabel versionLabel = new JLabel("Kiota version:" +versionHandler.getVersion());
         versionPanel.add(versionLabel, BorderLayout.CENTER);
         return versionPanel;
     }
 
     /**
      * this method sets the client(UI) to get input from user and creates button with their functions
-     *
      * @return panel
      */
     public JComponent getInput() {
@@ -198,9 +196,7 @@ public class MyToolWindow {
         mainPanel.add(clientclassnameSpace_label);
         mainPanel.add(generateButtonPanel);
         return mainPanel;
-
     }
-
 }
 
 
