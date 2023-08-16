@@ -458,13 +458,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.WriteLine($"return {DeserializerVarName};");
     }
     private const string FactoryMethodName = "createFromDiscriminatorValue";
-    private const string ExecuterExceptionVar = "executionException";
     private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string signatureReturnType)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, false);
-        writer.WriteLine("try {");
-        writer.IncreaseIndent();
         WriteGeneratorMethodCall(codeElement, requestParams, parentClass, writer, $"final RequestInformation {RequestInfoVarName} = ");
         var sendMethodName = GetSendRequestMethodName(codeElement.ReturnType.IsCollection, returnType, codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeEnum);
         var errorMappingVarName = "null";
@@ -479,12 +476,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         }
         var factoryParameter = codeElement.ReturnType is CodeType returnCodeType && returnCodeType.TypeDefinition is CodeClass ? $"{returnType}::{FactoryMethodName}" : $"{returnType}.class";
         writer.WriteLine($"return this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {errorMappingVarName});");
-        writer.DecreaseIndent();
-        writer.StartBlock("} catch (URISyntaxException ex) {");
-        writer.WriteLine($"final java.util.concurrent.CompletableFuture<{signatureReturnType}> {ExecuterExceptionVar} = new java.util.concurrent.CompletableFuture<{signatureReturnType}>();");
-        writer.WriteLine($"{ExecuterExceptionVar}.completeExceptionally(ex);");
-        writer.WriteLine($"return {ExecuterExceptionVar};");
-        writer.CloseBlock();
     }
     private string GetSendRequestMethodName(bool isCollection, string returnType, bool isEnum)
     {
@@ -670,18 +661,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             _ => code.Name.ToFirstCharacterLowerCase()
         };
         var parameters = string.Join(", ", code.Parameters.OrderBy(static x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)));
-        var throwableDeclarations = code.Kind switch
-        {
-            CodeMethodKind.RequestGenerator => "throws URISyntaxException ",
-            _ => string.Empty
-        };
         var collectionCorrectedReturnType = code.ReturnType.IsArray && code.IsOfKind(CodeMethodKind.RequestExecutor) ?
                                             $"Iterable<{returnType.StripArraySuffix()}>" :
                                             returnType;
         var finalReturnType = isConstructor ? string.Empty : $" {returnTypeAsyncPrefix}{collectionCorrectedReturnType}{returnTypeAsyncSuffix}";
         var staticModifier = code.IsStatic ? " static" : string.Empty;
         conventions.WriteDeprecatedAnnotation(code, writer);
-        writer.WriteLine($"{accessModifier}{staticModifier}{finalReturnType} {methodName}({parameters}) {throwableDeclarations}{{");
+        writer.WriteLine($"{accessModifier}{staticModifier}{finalReturnType} {methodName}({parameters}) {{");
         return collectionCorrectedReturnType;
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
