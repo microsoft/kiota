@@ -1,8 +1,7 @@
 # Kiota IntelliJ PlugIn
 <!-- Plugin description -->
-This is a test plugin description for the Kiota IntelliJ plugin. This plugin is used to generate an API client to call any OpenAPI described API you are interested in from a Microsoft Graph OpenAPI specification.
+This is a description for the Kiota IntelliJ plugin. This plugin is used to generate an API client to call any OpenAPI described API you are interested in from a Microsoft Graph OpenAPI specification.
 <!-- Plugin description end -->
-
 This readme documents how to get started with the kiota Intellij plugin
 # Getting Started
 ## Installation
