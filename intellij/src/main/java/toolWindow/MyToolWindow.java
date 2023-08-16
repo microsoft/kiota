@@ -55,7 +55,7 @@ public class MyToolWindow {
         versionPanel.setLayout(new BorderLayout());
 
         // Create a label to display kiota version
-        JLabel versionLabel = new JLabel("Kiota Version: " +versionHandler.getVersion());
+        JLabel versionLabel = new JLabel("Kiota version: " +versionHandler.getVersion());
         versionPanel.add(versionLabel, BorderLayout.CENTER);
         return versionPanel;
     }
