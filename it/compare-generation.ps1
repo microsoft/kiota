@@ -3,7 +3,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$descriptionUrl,
     [Parameter(Mandatory = $true)][string]$language,
-    [Parameter(Mandatory = $false)][switch]$dev
+    [Parameter(Mandatory = $false)][switch]$dev,
+    [Parameter(Mandatory = $false)][switch]$preserveOutput
 )
 
 if ([string]::IsNullOrEmpty($descriptionUrl)) {
@@ -65,9 +66,13 @@ Start-Process "$kiotaExec" -ArgumentList "generate --clean-output --language ${l
 
 # Remove variable output files
 Remove-Item (Join-Path -Path $tmpFolder1 -ChildPath "kiota-lock.json")
-Remove-Item -Force (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log")
+if (Test-Path (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log")) {
+    Remove-Item -Force (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log")
+}
 Remove-Item (Join-Path -Path $tmpFolder2 -ChildPath "kiota-lock.json")
-Remove-Item -Force (Join-Path -Path $tmpFolder2 -ChildPath ".kiota.log")
+if (Test-Path (Join-Path -Path $tmpFolder2 -ChildPath ".kiota.log")) {
+    Remove-Item -Force (Join-Path -Path $tmpFolder2 -ChildPath ".kiota.log")
+}
 
 # Compare hashes
 $HashString1 = (Get-ChildItem $tmpFolder1 -Recurse | where { ! $_.PSIsContainer } | Get-FileHash -Algorithm MD5).Hash | Out-String
@@ -76,8 +81,14 @@ Get-FileHash -InputStream ([IO.MemoryStream]::new([char[]]$HashString1))
 $HashString2 = (Get-ChildItem $tmpFolder2 -Recurse | where { ! $_.PSIsContainer } | Get-FileHash -Algorithm MD5).Hash | Out-String
 Get-FileHash -InputStream ([IO.MemoryStream]::new([char[]]$HashString2))
 
-Remove-Item $tmpFolder1 -Force -Recurse
-Remove-Item $tmpFolder2 -Force -Recurse
+if (!$preserveOutput) {
+    Remove-Item $tmpFolder1 -Force -Recurse
+    Remove-Item $tmpFolder2 -Force -Recurse
+}
+else {
+    Write-Output "Folder 1: $tmpFolder1" 
+    Write-Output "Folder 2: $tmpFolder2"
+}
 
 if ($HashString1 -eq $HashString2) {
     Write-Output "The content of the folders is identical"
