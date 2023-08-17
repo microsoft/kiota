@@ -116,9 +116,7 @@ public class MyToolWindow {
                         String clientClass = clientClassField.getText();
                         String clientClassNamespace = postClientNameField.getText();
                         KiotaGenerationLanguage selectedLanguage = (KiotaGenerationLanguage) languageComboBox.getSelectedItem();
-
                         generateClientHandler.generateclient(descriptionPath, output, selectedLanguage, include, exclude, clientClass, clientClassNamespace);
-
                         return null;
                     }
                     @Override
@@ -141,6 +139,11 @@ public class MyToolWindow {
                                 showStickyNotification(currentProject, "Generation completed successfully! ", NotificationType.INFORMATION);
                                 progressBar.setVisible(false);
                                 generateButton.setVisible(true);
+                            }else{
+                                showStickyNotification(currentProject,  "An error occurred during generation" + responseString, NotificationType.ERROR);
+                                progressBar.setVisible(false);
+                                progressBar.setEnabled(false);
+                                generateButton.setVisible(true);
                             }
                         }
                     }
@@ -149,10 +152,7 @@ public class MyToolWindow {
                         notification.setImportant(true); // Make it sticky
                         notification.notify(project);
                     }
-
-
                 };
-
                 worker.execute();
             }
         });
@@ -164,7 +164,6 @@ public class MyToolWindow {
                 JFileChooser fileChooser = new JFileChooser();
                 fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
                 int returnValue = fileChooser.showOpenDialog(null);
-
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = fileChooser.getSelectedFile();
                     String selectedPath = selectedFile.getAbsolutePath();
