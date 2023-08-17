@@ -617,12 +617,6 @@ public class CodeMethodWriterTests : IDisposable
                 }).First(),
             } : stringType,
         });
-        target.AddParameter(new CodeParameter
-        {
-            Name = "r",
-            Kind = CodeParameterKind.ResponseHandler,
-            Type = stringType,
-        });
     }
     [Fact]
     public void WritesNullableVoidTypeForExecutor()
@@ -661,6 +655,20 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         method.Kind = CodeMethodKind.RequestGenerator;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyForMultipart()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "MultipartBody", IsExternal = true };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("SetContentFromParsable", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
     public void WritesRequestExecutorBody()
@@ -1566,21 +1574,24 @@ public class CodeMethodWriterTests : IDisposable
     {
         setup();
         AddRequestProperties();
-        parentClass.Indexer = new()
+        parentClass.AddIndexer(new CodeIndexer
         {
             Name = "indx",
-            SerializationName = "id",
-            IndexType = new CodeType
-            {
-                Name = "string",
-                IsNullable = true,
-            },
             ReturnType = new CodeType
             {
                 Name = "Somecustomtype",
             },
-            IndexParameterName = "id",
-        };
+            IndexParameter = new()
+            {
+                Name = "id",
+                SerializationName = "id",
+                Type = new CodeType
+                {
+                    Name = "string",
+                    IsNullable = true,
+                },
+            }
+        });
         if (parentClass.Indexer is null)
             throw new InvalidOperationException("Indexer is null");
         var methodForTest = parentClass.AddMethod(CodeMethod.FromIndexer(parentClass.Indexer, static x => $"With{x.ToFirstCharacterUpperCase()}", static x => x.ToFirstCharacterLowerCase(), false)).First();

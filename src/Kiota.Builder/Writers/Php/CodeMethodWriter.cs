@@ -675,7 +675,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
             codeElement.OriginalIndexer != null)
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"$this->{pathParametersProperty.Name}",
-                (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, $"${codeElement.OriginalIndexer.IndexParameterName.ToFirstCharacterLowerCase()}"));
+                (codeElement.OriginalIndexer.IndexParameter.Type, codeElement.OriginalIndexer.IndexParameter.SerializationName, $"${codeElement.OriginalIndexer.IndexParameter.Name.ToFirstCharacterLowerCase()}"));
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, pathParameters);
     }
 

@@ -9,5 +9,5 @@ public enum GenerationLanguage
     Go,
     Swift,
     Ruby,
-    Shell
+    CLI
 }

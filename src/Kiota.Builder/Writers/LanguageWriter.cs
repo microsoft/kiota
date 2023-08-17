@@ -6,13 +6,13 @@ using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.PathSegmenters;
+using Kiota.Builder.Writers.Cli;
 using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Writers.Go;
 using Kiota.Builder.Writers.Java;
 using Kiota.Builder.Writers.Php;
 using Kiota.Builder.Writers.Python;
 using Kiota.Builder.Writers.Ruby;
-using Kiota.Builder.Writers.Shell;
 using Kiota.Builder.Writers.Swift;
 using Kiota.Builder.Writers.TypeScript;
 
@@ -179,9 +179,9 @@ public abstract class LanguageWriter
             GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName, usesBackingStore),
             GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
             GenerationLanguage.PHP => new PhpWriter(outputPath, clientNamespaceName, usesBackingStore),
-            GenerationLanguage.Python => new PythonWriter(outputPath, clientNamespaceName),
+            GenerationLanguage.Python => new PythonWriter(outputPath, clientNamespaceName, usesBackingStore),
             GenerationLanguage.Go => new GoWriter(outputPath, clientNamespaceName),
-            GenerationLanguage.Shell => new ShellWriter(outputPath, clientNamespaceName),
+            GenerationLanguage.CLI => new CliWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Swift => new SwiftWriter(outputPath, clientNamespaceName),
             _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),
         };

@@ -33,11 +33,12 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by_{x.ToSnakeCase()}",
-                static x => x.ToSnakeCase());
+                static x => x.ToSnakeCase(),
+                GenerationLanguage.Python);
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
-            CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.__instance.create_backing_store()");
+            CorrectCoreTypesForBackingStore(generatedCode, "field(default_factory=BackingStoreFactorySingleton(backing_store_factory=None).backing_store_factory.create_backing_store, repr=False)");
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             cancellationToken.ThrowIfCancellationRequested();
@@ -81,7 +82,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.AdditionalData,
                 },
                 static (_, s) => s.ToSnakeCase(),
-                _configuration.UsesBackingStore,
+                false,
                 false,
                 string.Empty,
                 string.Empty);
@@ -136,8 +137,6 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             $"{AbstractionsPackageName}.request_information", "RequestInformation"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             $"{AbstractionsPackageName}.request_option", "RequestOption"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            $"{AbstractionsPackageName}.response_handler", "ResponseHandler"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             $"{AbstractionsPackageName}.serialization", "SerializationWriter"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
@@ -154,7 +153,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
             $"{AbstractionsPackageName}.store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
-            $"{AbstractionsPackageName}.store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
+            $"{AbstractionsPackageName}.store", "BackedModel", "BackingStore", "BackingStoreFactorySingleton" ),
         new (static x => x is CodeClass @class && (@class.IsOfKind(CodeClassKind.Model) || x.Parent is CodeClass), "dataclasses", "dataclass, field"),
         new (static x => x is CodeClass { OriginalComposedType: CodeIntersectionType intersectionType } && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             $"{AbstractionsPackageName}.serialization", "ParseNodeHelper"),
@@ -191,12 +190,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private static void CorrectMethodType(CodeMethod currentMethod)
     {
-        if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))
-        {
-            if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
-        }
-        else if (currentMethod.IsOfKind(CodeMethodKind.Serializer))
+        if (currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
         else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
             currentMethod.ReturnType.Name = "Dict[str, Callable[[ParseNode], None]]";

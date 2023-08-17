@@ -113,7 +113,7 @@ $appSettings = Get-Content -Path $mainSettings -Raw | ConvertFrom-Json
 
 foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name | Sort-Object)) {
     $language = $appSettings.Languages.$languageName
-    if ($languageName -eq "CSharp" -or $languageName -eq "Shell") {
+    if ($languageName -eq "CSharp" -or $languageName -eq "CLI") {
         foreach ($dependency in $language.Dependencies) {
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestNugetVersion -packageId $dependency.Name

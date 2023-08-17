@@ -423,12 +423,6 @@ public class CodeMethodWriterTests : IDisposable
         });
         method.AddParameter(new CodeParameter
         {
-            Name = "r",
-            Kind = CodeParameterKind.ResponseHandler,
-            Type = stringType,
-        });
-        method.AddParameter(new CodeParameter
-        {
             Name = "c",
             Kind = CodeParameterKind.Cancellation,
             Type = stringType,
@@ -484,6 +478,20 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains(AsyncKeyword, result);
         Assert.Contains("await", result);
         Assert.Contains("cancellationToken", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyForMultipart()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "MultipartBody", IsExternal = true };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("SetContentFromParsable", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]

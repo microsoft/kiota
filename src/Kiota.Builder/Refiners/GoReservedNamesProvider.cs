@@ -31,7 +31,8 @@ public class GoReservedNamesProvider : IReservedNamesProvider
         "type",
         "var",
         "vendor", // cannot be used as a package name
-        "BaseRequestBuilder"
+        "BaseRequestBuilder",
+        "MultipartBody",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }

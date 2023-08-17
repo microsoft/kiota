@@ -678,7 +678,10 @@ public partial class KiotaBuilder
             var propType = child.Value.GetNavigationPropertyName(config.StructuredMimeTypes, child.Value.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
 
             if (child.Value.IsPathSegmentWithSingleSimpleParameter())
-                codeClass.Indexer = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode);
+            {
+                var indexerParameterType = GetIndexerParameterType(child.Value, currentNode);
+                codeClass.AddIndexer(CreateIndexer($"{propIdentifier}-indexer", propType, indexerParameterType, child.Value, currentNode));
+            }
             else if (child.Value.IsComplexPathMultipleParameters())
                 CreateMethod(propIdentifier, propType, codeClass, child.Value);
             else
@@ -967,23 +970,62 @@ public partial class KiotaBuilder
             _ => childElementsUnmappedTypes,
         };
     }
-    private CodeIndexer CreateIndexer(string childIdentifier, string childType, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
+    private static CodeType DefaultIndexerParameterType => new() { Name = "string", IsExternal = true };
+    private CodeParameter GetIndexerParameterType(OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
+    {
+        var parameterName = currentNode.Path[parentNode.Path.Length..].Trim('\\', ForwardSlash, '{', '}');
+        var parameter = currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ? pathItem.Parameters
+                        .Select(static x => new { Parameter = x, IsPathParameter = true })
+                        .Union(currentNode.PathItems[Constants.DefaultOpenApiLabel].Operations.SelectMany(static x => x.Value.Parameters).Select(static x => new { Parameter = x, IsPathParameter = false }))
+                        .OrderBy(static x => x.IsPathParameter)
+                        .Select(static x => x.Parameter)
+                        .FirstOrDefault(x => x.Name.Equals(parameterName, StringComparison.OrdinalIgnoreCase) && x.In == ParameterLocation.Path) :
+                        default;
+        var type = parameter switch
+        {
+            null => DefaultIndexerParameterType,
+            _ => GetPrimitiveType(parameter.Schema),
+        } ?? DefaultIndexerParameterType;
+        type.IsNullable = false;
+        var result = new CodeParameter
+        {
+            Type = type,
+            SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
+            Name = currentNode.Segment.CleanupSymbolName(),
+            Documentation = new()
+            {
+                Description = parameter?.Description.CleanupDescription() is string description && !string.IsNullOrEmpty(description) ? description : "Unique identifier of the item",
+            },
+        };
+        return result;
+    }
+    private CodeIndexer[] CreateIndexer(string childIdentifier, string childType, CodeParameter parameter, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
     {
         logger.LogTrace("Creating indexer {Name}", childIdentifier);
-        return new CodeIndexer
+        var result = new List<CodeIndexer> { new CodeIndexer
         {
             Name = childIdentifier,
             Documentation = new()
             {
                 Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Gets an item from the {currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName)} collection"),
             },
-            IndexType = new CodeType { Name = "string", IsExternal = true, },
             ReturnType = new CodeType { Name = childType },
-            SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
             PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.').Last(),
-            IndexParameterName = currentNode.Segment.CleanupSymbolName(),
             Deprecation = currentNode.GetDeprecationInformation(),
-        };
+            IndexParameter = parameter,
+        }};
+
+        if (!"string".Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase))
+        { // adding a second indexer for the string version of the parameter so we keep backward compatibility
+            //TODO remove for v2
+            var backCompatibleValue = (CodeIndexer)result[0].Clone();
+            backCompatibleValue.Name += "-string";
+            backCompatibleValue.IndexParameter.Type = DefaultIndexerParameterType;
+            backCompatibleValue.Deprecation = new DeprecationInformation("This indexer is deprecated and will be removed in the next major version. Use the one with the typed parameter instead.");
+            result.Add(backCompatibleValue);
+        }
+
+        return result.ToArray();
     }
 
     private CodeProperty? CreateProperty(string childIdentifier, string childType, OpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
@@ -1173,6 +1215,7 @@ public partial class KiotaBuilder
             AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, executorMethod);
             parentClass.AddMethod(executorMethod);
 
+#pragma warning disable CS0618
             var handlerParam = new CodeParameter
             {
                 Name = "responseHandler",
@@ -1185,6 +1228,7 @@ public partial class KiotaBuilder
                 Type = new CodeType { Name = "IResponseHandler", IsExternal = true },
             };
             executorMethod.AddParameter(handlerParam);// Add response handler parameter
+#pragma warning restore CS0618
 
             var cancellationParam = new CodeParameter
             {
@@ -1219,7 +1263,7 @@ public partial class KiotaBuilder
                 var mediaType = operation.Responses.Values.SelectMany(static x => x.Content).First(x => x.Value.Schema == schema).Key;
                 generatorMethod.AcceptedResponseTypes.Add(mediaType);
             }
-            if (config.Language == GenerationLanguage.Shell)
+            if (config.Language == GenerationLanguage.CLI)
                 SetPathAndQueryParameters(generatorMethod, currentNode, operation);
             AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, generatorMethod);
             parentClass.AddMethod(generatorMethod);
@@ -1305,12 +1349,32 @@ public partial class KiotaBuilder
         });
     }
 
+    private readonly ConcurrentDictionary<CodeElement, bool> multipartPropertiesModels = new();
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass requestConfigClass, CodeMethod method)
     {
         if (operation.GetRequestSchema(config.StructuredMimeTypes) is OpenApiSchema requestBodySchema)
         {
-            var requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, $"{operationType}RequestBody", isRequestBody: true) ??
-                throw new InvalidSchemaException();
+            CodeTypeBase requestBodyType;
+            if (operation.RequestBody.Content.IsMultipartFormDataSchema(config.StructuredMimeTypes))
+            {
+                requestBodyType = new CodeType
+                {
+                    Name = "MultipartBody",
+                    IsExternal = true,
+                };
+                var mediaType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Value;
+                foreach (var encodingEntry in mediaType.Encoding
+                                                        .Where(x => !string.IsNullOrEmpty(x.Value.ContentType) &&
+                                                                config.StructuredMimeTypes.Contains(x.Value.ContentType.Split(';', StringSplitOptions.RemoveEmptyEntries)[0])))
+                {
+                    if (CreateModelDeclarations(currentNode, requestBodySchema.Properties[encodingEntry.Key], operation, method, $"{operationType}RequestBody", isRequestBody: true) is CodeType propertyType &&
+                        propertyType.TypeDefinition is not null)
+                        multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
+                }
+            }
+            else
+                requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, $"{operationType}RequestBody", isRequestBody: true) ??
+                    throw new InvalidSchemaException();
             method.AddParameter(new CodeParameter
             {
                 Name = "body",
@@ -1711,7 +1775,7 @@ public partial class KiotaBuilder
     {
         if (modelsNamespace is null || rootNamespace is null || modelsNamespace.Parent is not CodeNamespace clientNamespace) return;
         var reusableModels = GetAllModels(modelsNamespace).ToArray();//to avoid multiple enumerations
-        var modelsDirectlyInUse = GetTypeDefinitionsInNamespace(rootNamespace).ToArray();
+        var modelsDirectlyInUse = GetTypeDefinitionsInNamespace(rootNamespace).Union(multipartPropertiesModels.Keys).ToArray();
         var classesDirectlyInUse = modelsDirectlyInUse.OfType<CodeClass>().ToHashSet();
         var allModelClassesIndex = GetDerivationIndex(GetAllModels(clientNamespace).OfType<CodeClass>());
         var derivedClassesInUse = GetDerivedDefinitions(allModelClassesIndex, classesDirectlyInUse.ToArray());
@@ -2105,5 +2169,6 @@ public partial class KiotaBuilder
         foreach (var lifecycle in classLifecycles.Values)
             lifecycle.Dispose();
         classLifecycles.Clear();
+        multipartPropertiesModels.Clear();
     }
 }

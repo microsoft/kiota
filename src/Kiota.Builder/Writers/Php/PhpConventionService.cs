@@ -84,7 +84,6 @@ public class PhpConventionService : CommonLanguageConventionService
             CodeParameterKind.RequestBody => "$body",
             CodeParameterKind.RawUrl => "$rawUrl",
             CodeParameterKind.Serializer => "$writer",
-            CodeParameterKind.ResponseHandler => "$responseHandler",
             CodeParameterKind.SetterValue => "$value",
             _ => $"${parameter.Name.ToFirstCharacterLowerCase()}"
         };
@@ -96,7 +95,6 @@ public class PhpConventionService : CommonLanguageConventionService
         var parameterSuffix = parameter.Kind switch
         {
             CodeParameterKind.RequestAdapter => $"RequestAdapter {GetParameterName(parameter)}",
-            CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",
             CodeParameterKind.PathParameters => GetParameterName(parameter),
             CodeParameterKind.Serializer => $"SerializationWriter {GetParameterName(parameter)}",
             _ => $"{typeString} {GetParameterName(parameter)}"

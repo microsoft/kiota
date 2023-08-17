@@ -33,6 +33,12 @@ public static class OpenApiOperationExtensions
         return operation.RequestBody?.Content
                             .GetValidSchemas(structuredMimeTypes).FirstOrDefault();
     }
+    private static readonly HashSet<string> multipartMimeTypes = new(1, StringComparer.OrdinalIgnoreCase) { "multipart/form-data" };
+    public static bool IsMultipartFormDataSchema(this IDictionary<string, OpenApiMediaType> source, HashSet<string> structuredMimeTypes)
+    {
+        return source.GetValidSchemas(structuredMimeTypes).FirstOrDefault() is OpenApiSchema schema &&
+        source.GetValidSchemas(multipartMimeTypes).FirstOrDefault() == schema;
+    }
     public static IEnumerable<OpenApiSchema> GetValidSchemas(this IDictionary<string, OpenApiMediaType> source, HashSet<string> structuredMimeTypes)
     {
         if (!(structuredMimeTypes?.Any() ?? false))
