@@ -1,9 +1,12 @@
 package services;
 import com.github.arteam.simplejsonrpc.client.builder.RequestBuilder;
+import com.intellij.ide.UiActivity;
+
 public class GenerateClientHandler {
 
     KiotaJavaClient myClient;
 
+    private Object response;
     /**
      * A method to generate clientClasses.
      * must pass a list of params where the 0th position must start with a string as the params in the kiota server are positional
@@ -19,9 +22,16 @@ public class GenerateClientHandler {
         myClient = new KiotaJavaClient();
         // Create the RequestBuilder
         RequestBuilder<Object> requestBuilder = myClient.createRequest("Generate", Object.class);
-        Object response = requestBuilder.params(
+        response = requestBuilder.params(
                 DescriptionPath, output, language, include, include, clientclassname, clientclassnamespace
         ).execute();
+        System.out.println(response);
+    }
 
+    /**
+     * @return the response
+     */
+    public Object getResponse() {
+        return response;
     }
 }
