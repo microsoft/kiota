@@ -6,6 +6,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Java;
 public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
 {
+    public static string AutoGenerationHeader => "@Generated(\"com.microsoft.kiota\")";
     public CodeEnumWriter(JavaConventionService conventionService) : base(conventionService) { }
     public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
     {
@@ -22,6 +23,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
             string.Empty);
         conventions.WriteLongDescription(codeElement, writer);
         conventions.WriteDeprecatedAnnotation(codeElement, writer);
+        writer.WriteLine($"{AutoGenerationHeader}");
         writer.WriteLine($"public enum {enumName} implements ValuedEnum {{");
         writer.IncreaseIndent();
         var lastEnumOption = enumOptions.Last();
