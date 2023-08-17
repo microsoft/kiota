@@ -297,7 +297,6 @@ public class PhpRefiner : CommonLanguageRefiner
                     .Select(x => x.ToFirstCharacterUpperCase())
                     .ToArray());
                 usingElement.Alias = $"{(string.IsNullOrEmpty(replacement) ? string.Empty : $"\\{replacement}")}\\{usingElement.Declaration!.TypeDefinition!.Name.ToFirstCharacterUpperCase()}";
-                usingElement.Declaration.Name = usingElement.Alias;
             }
         }
         CrawlTree(currentElement, AliasUsingWithSameSymbol);
