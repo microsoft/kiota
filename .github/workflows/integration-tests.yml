@@ -203,4 +203,4 @@ jobs:
         if: failure()
         with:
           name: idempotency-artifacts
-          path: it/idempotency-folder*.zip
+          path: idempotency-folder*.zip
