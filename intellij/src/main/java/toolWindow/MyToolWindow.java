@@ -157,7 +157,6 @@ public class MyToolWindow {
             }
         });
 
-
         // Add the ActionListener to the  (yamlFilePathField) browse icon
         yamlFilePathField.addActionListener(new ActionListener() {
             @Override
@@ -198,7 +197,3 @@ public class MyToolWindow {
         return mainPanel;
     }
 }
-
-
-
-
