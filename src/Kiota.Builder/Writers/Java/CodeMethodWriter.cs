@@ -41,12 +41,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 WriteIndexerBody(codeElement, parentClass, writer, returnType);
                 break;
             case CodeMethodKind.RequestGenerator when codeElement.IsOverload:
-                WriteGeneratorMethodCall(codeElement, requestParams, parentClass, writer, "return ");
+                WriteGeneratorOrExecutorMethodCall(codeElement, requestParams, parentClass, writer, "return ", CodeMethodKind.RequestGenerator);
                 break;
             case CodeMethodKind.RequestGenerator when !codeElement.IsOverload:
                 WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
                 break;
-            case CodeMethodKind.RequestExecutor:
+            case CodeMethodKind.RequestExecutor when codeElement.IsOverload:
+                WriteGeneratorOrExecutorMethodCall(codeElement, requestParams, parentClass, writer, "return ", CodeMethodKind.RequestExecutor);
+                break;
+            case CodeMethodKind.RequestExecutor when !codeElement.IsOverload:
                 WriteRequestExecutorBody(codeElement, requestParams, parentClass, writer);
                 break;
             case CodeMethodKind.Getter:
@@ -461,7 +464,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, false);
-        WriteGeneratorMethodCall(codeElement, requestParams, parentClass, writer, $"final RequestInformation {RequestInfoVarName} = ");
+        WriteGeneratorOrExecutorMethodCall(codeElement, requestParams, parentClass, writer, $"final RequestInformation {RequestInfoVarName} = ", CodeMethodKind.RequestGenerator);
         var sendMethodName = GetSendRequestMethodName(codeElement.ReturnType.IsCollection, returnType, codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeEnum);
         var errorMappingVarName = "null";
         if (codeElement.ErrorMappings.Any())
@@ -493,11 +496,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     }
     private const string RequestInfoVarName = "requestInfo";
     private const string RequestConfigVarName = "requestConfig";
-    private static void WriteGeneratorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix)
+    private static void WriteGeneratorOrExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix, CodeMethodKind codeMethodKind)
     {
-        var generatorMethodName = parentClass
+        var methodName = parentClass
                                             .Methods
-                                            .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
+                                            .FirstOrDefault(x => x.IsOfKind(codeMethodKind) && x.HttpMethod == codeElement.HttpMethod)
                                             ?.Name
                                             ?.ToFirstCharacterLowerCase();
         var paramsList = new[] { requestParams.requestBody, requestParams.requestConfiguration };
@@ -507,7 +510,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var skipIndex = requestParams.requestBody == null ? 1 : 0;
         requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "null"));
         var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x, y) => $"{x}, {y}") : string.Empty;
-        writer.WriteLine($"{prefix}{generatorMethodName}({paramsCall});");
+        writer.WriteLine($"{prefix}{methodName}({paramsCall});");
     }
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)
     {
@@ -671,7 +674,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, string returnType)
     {
         var returnVoid = returnType.Equals("void", StringComparison.OrdinalIgnoreCase);
-        // Void returns, this includes constructors, should not have a return statement in the JavaDocs. 
+        // Void returns, this includes constructors, should not have a return statement in the JavaDocs.
         var returnRemark = returnVoid ? string.Empty : (code.IsAsync switch
         {
             true => $"@return a CompletableFuture of {code.ReturnType.Name}",
@@ -684,7 +687,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                             .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                                             .Select(x => $"@param {x.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
                                             .Union(new[] { returnRemark }));
-        if (!returnVoid) //Nullable/Nonnull annotations for returns are a part of Method Documentation  
+        if (!returnVoid) //Nullable/Nonnull annotations for returns are a part of Method Documentation
             writer.WriteLine(code.ReturnType.IsNullable && !code.IsAsync ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method)
