@@ -648,7 +648,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}({serializationKey}, {dataToSerialize});");
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
-    private string WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType)
+    private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType)
     {
         var accessModifier = conventions.GetAccessModifier(code.Access);
         var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
@@ -667,7 +667,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var staticModifier = code.IsStatic ? " static" : string.Empty;
         conventions.WriteDeprecatedAnnotation(code, writer);
         writer.WriteLine($"{accessModifier}{staticModifier}{finalReturnType} {methodName}({parameters}) {{");
-        return collectionCorrectedReturnType;
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, string returnType)
     {
