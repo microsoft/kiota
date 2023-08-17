@@ -99,10 +99,16 @@ internal class Server : IServer
     }
     public async Task<ManifestResult> GetManifestDetailsAsync(string manifestPath, string apiIdentifier, CancellationToken cancellationToken)
     {
+        var logger = new ForwardedLogger<KiotaBuilder>();
         try
         {
             var manifestManagementService = new ManifestManagementService();
-            await using var manifestFileContent = File.OpenRead(manifestPath);
+            var documentCachingProvider = new DocumentCachingProvider(httpClient, logger);
+            await using var manifestFileContent = manifestPath.StartsWith("http", StringComparison.OrdinalIgnoreCase) switch
+            {
+                false => File.OpenRead(manifestPath),
+                true => await documentCachingProvider.GetDocumentAsync(new Uri(manifestPath), "manifest", "manifest.json", cancellationToken: cancellationToken)
+            };
             var manifest = manifestManagementService.DeserializeManifestDocument(manifestFileContent)
                             ?? throw new InvalidOperationException("The manifest could not be decoded");
 
@@ -123,7 +129,6 @@ internal class Server : IServer
         }
         catch (Exception ex)
         {
-            var logger = new ForwardedLogger<KiotaBuilder>();
             logger.LogCritical("error showing the client: {exceptionMessage}", ex.Message);
             return new ManifestResult(logger.LogEntries, null, null);
         }
