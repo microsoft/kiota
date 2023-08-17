@@ -1,37 +1,50 @@
 # Kiota IntelliJ PlugIn
 <!-- Plugin description -->
-This is a description for the Kiota IntelliJ plugin. This plugin is used to generate an API client to call any OpenAPI described API you are interested in from a Microsoft Graph OpenAPI specification.
+Kiota IntelliJ plugin is used to generate an API client to call any OpenAPI described API you are interested in from a Microsoft Graph OpenAPI specification.
+One of the goals of the project is to provide the best code generator support possible for OpenAPI and JSON Schema features from IntelliJ platform.
 <!-- Plugin description end -->
-This readme documents how to get started with the kiota Intellij plugin
+
+This readme documents how to get started with the Kiota Intellij plugin
 # Getting Started
 ## Installation
 **Gradle** : Visit the [Gradle Webside](https://gradle.org/install/) and install Gradle `version 7.4`   
 **DotNet**: Visit the [official .NET website](https://dotnet.microsoft.com/en-us/download) and install .NET SDK  
-**kiota** : Install [kiota](https://learn.microsoft.com/en-us/openapi/kiota/install#install-as-net-tool) as a dotnet tool  
+**Kiota** : Install [kiota](https://learn.microsoft.com/en-us/openapi/kiota/install#install-as-net-tool) as a dotnet tool  
 **IntelliJ IDEA Community Edition :** Install [IntelliJ IDEA Community Edition](https://www.jetbrains.com/idea/download)  
 ## Clone the Repo
 
-1. Clone the [kiota repository](https://www.jetbrains.com/idea/download) 
-2. Checkout the `intellijplugin branch`  (git checkout intellijplugin)
+1. Clone the [Kiota repository](https://github.com/microsoft/kiota) 
+2. Checkout the **intellijplugin** branch: `git checkout intellijplugin`
 
 ## The Plugin
-**Configure Project Dependencies:**
-- In the intellijplugin project Go to `File` > `Project Structure`.
-- On the left panel, click on `Modules`.
-- Under `Dependencies`, select `Corretto-17 (Amazon Corretto version 17.0.7)`.
+### Configure Project Dependencies: ###
+- In the intellijplugin project go to **File** > **Project Structure**
+- On the left panel, click on `Modules`
+- Under `Dependencies`, click on **Add SDK** from the **Module SDK** dropdown
+- click on **Download SDK**
+- Select `Corretto-17 (Amazon Corretto version 17.0.8)`   
 
-**Run plugin.xml:**  
-    - Navigate to the `META-INF` directory in your project.  
-    - Find and run the `plugin.xml` file.
+### Run plugin.xml: ###
+- Navigate to [`intellij/intellij/src/main/resources/META-INF/plugin.xml`](https://github.com/microsoft/kiota/blob/intellijplugin/intellij/src/main/resources/META-INF/plugin.xml) in your project's repository to access the `plugin.xml` file
+- select  **run plugin** from the top dropdown menu
+- This starts a new instance of **Intelli IDEA** with the **intellijTestPlugin Template plugin** installed
 
-**Open Plugin Project:**  
-    - When IntelliJ IDEA pops up, create a new blank project.
-    - Select `Gradle` and `Groovy` as the project options.
+### Open Plugin Project: ### 
+1. When IntelliJ IDEA opens, select **New Project**.
+2. Provide a **Name** for the project.
+3. Select **Groovy** for the **Language** input.
+4. Select **Gradle** for the **Build system** input.
+5. Leave the other default selections and click on **Create**.
 
-**Access kiotaToolFactory:**  
-    - On the left-hand side, find and click on the `kiotaToolFactory` tab.
-
-
+### Use the Kiota IntelliJ Plugin ###  
+Wait for the environment to get indexed before you can use the plugin.
+   1. Select the **KiotaToolFactory** tab on the left side of the environment. This is the Kiota IntelliJ Plugin.
+   2. Set a path to an OpenAPI description file.
+   3. Set an output path. We suggest that you set a path to the root of the blank project you created in the previous step.
+   4. Leave Java as the default language.
+   5. Set a client class name. If you don't provide a value, *ApiClient* will be used.
+   6. Set a namespace for the generated client classes.
+   7. Select the **Generate** button. You can find your generated files at the specified output location.
 
 
 
