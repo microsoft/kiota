@@ -82,6 +82,7 @@ public partial class KiotaBuilder
     {
         logger.LogDebug("kiota version {Version}", Generated.KiotaVersion.Current());
         var stepId = 0;
+        //TODO: load the manifest and get the URL if provided instead of the description
         sw.Start();
 #pragma warning disable CA2007
         await using var input = await LoadStream(inputPath, cancellationToken).ConfigureAwait(false);

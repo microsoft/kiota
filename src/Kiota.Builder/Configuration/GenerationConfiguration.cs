@@ -11,6 +11,7 @@ namespace Kiota.Builder.Configuration;
 public class GenerationConfiguration : ICloneable
 {
     public string OpenAPIFilePath { get; set; } = "openapi.yaml";
+    public string ApiManifestPath { get; set; } = "apimanifest.json";
     public string OutputPath { get; set; } = "./output";
     public string ClientClassName { get; set; } = "ApiClient";
     public string ClientNamespaceName { get; set; } = "ApiSdk";

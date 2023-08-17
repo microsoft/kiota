@@ -97,7 +97,7 @@ public static class KiotaHost
     {
         var defaultGenerationConfiguration = new GenerationConfiguration();
         var descriptionOption = GetDescriptionOption(defaultGenerationConfiguration.OpenAPIFilePath);
-        descriptionOption.IsRequired = false;
+        var manifestOption = GetManifestOption(defaultGenerationConfiguration.ApiManifestPath);
         var versionOption = GetVersionOption();
         var logLevelOption = GetLogLevelOption();
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
@@ -107,6 +107,7 @@ public static class KiotaHost
         AddEnumValidator(languageOption, "language");
         var infoCommand = new Command("info", "Displays information about the languages supported by kiota and dependencies to add in your project.") {
             descriptionOption,
+            manifestOption,
             versionOption,
             logLevelOption,
             clearCacheOption,
@@ -116,6 +117,7 @@ public static class KiotaHost
         infoCommand.Handler = new KiotaInfoCommandHandler
         {
             DescriptionOption = descriptionOption,
+            ManifestOption = manifestOption,
             VersionOption = versionOption,
             LogLevelOption = logLevelOption,
             ClearCacheOption = clearCacheOption,
@@ -134,7 +136,7 @@ public static class KiotaHost
     {
         var defaultGenerationConfiguration = new GenerationConfiguration();
         var descriptionOption = GetDescriptionOption(defaultGenerationConfiguration.OpenAPIFilePath);
-        descriptionOption.IsRequired = false; // can also use search approach
+        var manifestOption = GetManifestOption(defaultGenerationConfiguration.ApiManifestPath);
 
         var versionOption = GetVersionOption();
         var logLevelOption = GetLogLevelOption();
@@ -148,6 +150,7 @@ public static class KiotaHost
             logLevelOption,
             versionOption,
             descriptionOption,
+            manifestOption,
             maxDepthOption,
             includePatterns,
             excludePatterns,
@@ -159,6 +162,7 @@ public static class KiotaHost
             LogLevelOption = logLevelOption,
             VersionOption = versionOption,
             DescriptionOption = descriptionOption,
+            ManifestOption = manifestOption,
             MaxDepthOption = maxDepthOption,
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
@@ -288,18 +292,27 @@ public static class KiotaHost
         option.Arity = ArgumentArity.ZeroOrMore;
         return option;
     }
-    private static Option<string> GetDescriptionOption(string defaultValue)
+    private static readonly Lazy<bool> isRunningInContainer = new(() =>
     {
         var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_CONTAINER");
-        var runsInContainer = !string.IsNullOrEmpty(kiotaInContainerRaw) && bool.TryParse(kiotaInContainerRaw, out var kiotaInContainer) && kiotaInContainer;
-        var descriptionOption = new Option<string>("--openapi", "The path to the OpenAPI description file used to generate the code files.");
-        if (runsInContainer)
+        return !string.IsNullOrEmpty(kiotaInContainerRaw) && bool.TryParse(kiotaInContainerRaw, out var kiotaInContainer) && kiotaInContainer;
+    });
+    private static Option<string> GetDescriptionOption(string defaultValue)
+    {
+        var descriptionOption = new Option<string>("--openapi", "The path or URI to the OpenAPI description file used to generate the code files.");
+        if (isRunningInContainer.Value)
             descriptionOption.SetDefaultValue(defaultValue);
-        else
-            descriptionOption.IsRequired = true;
         descriptionOption.AddAlias("-d");
         descriptionOption.ArgumentHelpName = "path";
         return descriptionOption;
+    }
+    private static Option<string> GetManifestOption(string defaultValue)
+    {
+        var manifestOption = new Option<string>("--manifest", "The path or URI to the API manifest file used to generate the code files.");
+        if (isRunningInContainer.Value)
+            manifestOption.SetDefaultValue(defaultValue);
+        manifestOption.AddAlias("-m");
+        return manifestOption;
     }
     private static readonly Regex classNameRegex = new(@"^[a-zA-Z_][\w_-]+", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
     private static readonly Regex namespaceNameRegex = new(@"^[\w][\w\._-]+", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
@@ -307,6 +320,7 @@ public static class KiotaHost
     {
         var defaultConfiguration = new GenerationConfiguration();
         var descriptionOption = GetDescriptionOption(defaultConfiguration.OpenAPIFilePath);
+        var manifestOption = GetManifestOption(defaultConfiguration.ApiManifestPath);
 
         var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);
 
@@ -363,6 +377,7 @@ public static class KiotaHost
 
         var command = new Command("generate", "Generates a REST HTTP API client from an OpenAPI description file.") {
             descriptionOption,
+            manifestOption,
             outputOption,
             languageOption,
             classOption,
@@ -382,6 +397,7 @@ public static class KiotaHost
         command.Handler = new KiotaGenerationCommandHandler
         {
             DescriptionOption = descriptionOption,
+            ManifestOption = manifestOption,
             OutputOption = outputOption,
             LanguageOption = languageOption,
             ClassOption = classOption,
