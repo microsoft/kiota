@@ -48,10 +48,12 @@ public class CodeElementComparerPythonTests
                 ReturnType = new CodeType {
                     Name = "string"
                 },
-                IndexType = new CodeType {
-                    Name = "string"
-                },
-                IndexParameterName = "param"
+                IndexParameter = new() {
+                    Name = "param",
+                    Type = new CodeType {
+                        Name = "string"
+                    },
+                }
             }, new CodeProperty() {
                 Name = "prop",
                 Type = new CodeType {

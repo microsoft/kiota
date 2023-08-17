@@ -8,9 +8,9 @@ using Kiota.Builder.Writers;
 
 using Xunit;
 
-namespace Kiota.Builder.Tests.Writers.Shell;
+namespace Kiota.Builder.Tests.Writers.Cli;
 
-public class ShellCodeMethodWriterTests : IDisposable
+public class CliCodeMethodWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -22,9 +22,9 @@ public class ShellCodeMethodWriterTests : IDisposable
     private const string MethodName = "methodName";
     private const string ReturnTypeName = "Somecustomtype";
 
-    public ShellCodeMethodWriterTests()
+    public CliCodeMethodWriterTests()
     {
-        writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Shell, DefaultPath, DefaultName);
+        writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CLI, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
@@ -104,12 +104,6 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Name = "b",
             Kind = CodeParameterKind.RequestBody,
-            Type = stringType,
-        });
-        method.AddParameter(new CodeParameter
-        {
-            Name = "r",
-            Kind = CodeParameterKind.ResponseHandler,
             Type = stringType,
         });
         method.AddParameter(new CodeParameter
@@ -231,12 +225,15 @@ public class ShellCodeMethodWriterTests : IDisposable
                 Name = "TestItemRequestBuilder",
                 TypeDefinition = type
             },
-            IndexType = new CodeType
+            IndexParameter = new()
             {
-                Name = "string",
-            },
-            SerializationName = "test",
-            IndexParameterName = "id",
+                Name = "id",
+                Type = new CodeType
+                {
+                    Name = "string",
+                },
+                SerializationName = "test",
+            }
         };
 
         AddRequestProperties();
@@ -312,11 +309,14 @@ public class ShellCodeMethodWriterTests : IDisposable
             {
                 ReturnType = indexerReturn,
                 Name = "testItem-idx",
-                IndexType = new CodeType
+                IndexParameter = new()
                 {
-                    Name = "string",
-                },
-                IndexParameterName = "id",
+                    Name = "id",
+                    Type = new CodeType
+                    {
+                        Name = "string",
+                    },
+                }
             }
         };
 
@@ -402,11 +402,14 @@ public class ShellCodeMethodWriterTests : IDisposable
             {
                 ReturnType = indexerReturn,
                 Name = "testItem-indexer",
-                IndexType = new CodeType
+                IndexParameter = new()
                 {
-                    Name = "string",
-                },
-                IndexParameterName = "id",
+                    Name = "id",
+                    Type = new CodeType
+                    {
+                        Name = "string",
+                    },
+                }
             }
         };
 

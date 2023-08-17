@@ -237,15 +237,18 @@ public class CSharpLanguageRefinerTests
         var indexer = new CodeIndexer
         {
             Name = "idx",
-            SerializationName = "id",
-            IndexType = new CodeType
-            {
-                Name = "string",
-            },
             ReturnType = indexerCodeType,
-            IndexParameterName = "id",
+            IndexParameter = new()
+            {
+                Name = "id",
+                SerializationName = "id",
+                Type = new CodeType
+                {
+                    Name = "string",
+                },
+            }
         };
-        requestBuilder.Indexer = indexer;
+        requestBuilder.AddIndexer(indexer);
 
 
         var itemSubNamespace = root.AddNamespace($"{subNS.Name}.item"); // otherwise the import gets trimmed
@@ -255,7 +258,7 @@ public class CSharpLanguageRefinerTests
             Kind = CodeClassKind.RequestBuilder,
         }).First();
 
-        var requestExecutor = itemRequestBuilder.AddMethod(new CodeMethod
+        itemRequestBuilder.AddMethod(new CodeMethod
         {
             Name = "get",
             Kind = CodeMethodKind.IndexerBackwardCompatibility,
@@ -263,7 +266,7 @@ public class CSharpLanguageRefinerTests
             {
                 Name = "String"
             },
-        }).First();
+        });
 
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
 
@@ -309,13 +312,16 @@ public class CSharpLanguageRefinerTests
         {
             Name = "idx",
             ReturnType = union.Clone() as CodeTypeBase,
-            IndexType = new CodeType
+            IndexParameter = new()
             {
-                Name = "string"
-            },
-            IndexParameterName = "id",
+                Name = "id",
+                Type = new CodeType
+                {
+                    Name = "string"
+                },
+            }
         };
-        model.Indexer = indexer;
+        model.AddIndexer(indexer);
         method.AddParameter(parameter);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the indexer doesn't get removed
         Assert.True(property.Type is CodeType);

@@ -716,16 +716,19 @@ public class CodeMethodWriterTests : IDisposable
             OriginalIndexer = new CodeIndexer
             {
                 Name = "messageById",
-                SerializationName = "message_id",
-                IndexType = new CodeType
-                {
-                    Name = "MessageRequestBuilder"
-                },
                 ReturnType = new CodeType
                 {
                     Name = "MessageRequestBuilder"
                 },
-                IndexParameterName = "id",
+                IndexParameter = new()
+                {
+                    Name = "id",
+                    SerializationName = "message_id",
+                    Type = new CodeType
+                    {
+                        Name = "MessageRequestBuilder"
+                    },
+                }
             },
             OriginalMethod = new CodeMethod
             {

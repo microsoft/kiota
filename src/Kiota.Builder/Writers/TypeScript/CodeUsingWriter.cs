@@ -19,17 +19,17 @@ public class CodeUsingWriter
         var enumeratedUsings = usings.ToArray();
         var externalImportSymbolsAndPaths = enumeratedUsings
                                                 .Where(static x => x.IsExternal)
-                                                .Select(static x => new { Symbol = x.Name, Alias = string.Empty, Path = x.Declaration?.Name ?? string.Empty, ShouldUseTypeImport = false });
+                                                .Select(static x => new { Symbol = x.Name, Alias = string.Empty, Path = x.Declaration?.Name ?? string.Empty, ShouldUseTypeImport = x.IsErasable });
         var internalImportSymbolsAndPaths = enumeratedUsings
                                                 .Where(static x => !x.IsExternal)
                                                 .Select(x => new { CodeUsingPathTokens = _relativeImportManager.GetRelativeImportPathForUsing(x, parentNamespace), ShouldUseTypeImport = GetShouldUseTypeImport(x) });
         var importSymbolsAndPaths = externalImportSymbolsAndPaths
                                                 .Union(internalImportSymbolsAndPaths.Select(static x => new { Symbol = x.CodeUsingPathTokens.Item1, Alias = x.CodeUsingPathTokens.Item2, Path = x.CodeUsingPathTokens.Item3, x.ShouldUseTypeImport }))
-                                                .GroupBy(static x => x.Path)
-                                                .OrderBy(static x => x.Key);
-        foreach (var codeUsing in importSymbolsAndPaths.Where(static x => !string.IsNullOrWhiteSpace(x.Key)))
+                                                .GroupBy(static x => (x.Path, x.ShouldUseTypeImport))
+                                                .OrderBy(static x => x.Key.Path);
+        foreach (var codeUsing in importSymbolsAndPaths.Where(static x => !string.IsNullOrWhiteSpace(x.Key.Path)))
             writer.WriteLine($"import {codeUsing.Select(x => x.ShouldUseTypeImport ? "type " : "").Distinct().OrderBy(static x => x, StringComparer.Ordinal).Aggregate(static (x, y) => x)}" +
-                $"{{{codeUsing.Select(static x => GetAliasedSymbol(x.Symbol, x.Alias)).Distinct().OrderBy(static x => x, StringComparer.Ordinal).Aggregate(static (x, y) => x + ", " + y)}}} from '{codeUsing.Key}';");
+                $"{{{codeUsing.Select(static x => GetAliasedSymbol(x.Symbol, x.Alias)).Distinct().OrderBy(static x => x, StringComparer.Ordinal).Aggregate(static (x, y) => x + ", " + y)}}} from '{codeUsing.Key.Path}';");
 
         writer.WriteLine();
     }
@@ -41,8 +41,8 @@ public class CodeUsingWriter
     **/
     private static bool GetShouldUseTypeImport(CodeUsing codeUsing)
     {
-        // Check if codeUsing.Declaration is an instance of CodeType and if codeType.TypeDefinition is an instance of CodeInterface
-        return codeUsing.Declaration is CodeType codeType && codeType.TypeDefinition is CodeInterface;
+        // Check if codeUsing is Erassable or codeUsing.Declaration is an instance of CodeType and if codeType.TypeDefinition is an instance of CodeInterface
+        return codeUsing.IsErasable || codeUsing.Declaration is CodeType codeType && codeType.TypeDefinition is CodeInterface;
     }
 
     private static string GetAliasedSymbol(string symbol, string alias)

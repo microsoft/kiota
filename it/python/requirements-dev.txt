@@ -76,13 +76,13 @@ async-timeout==4.0.2 ; python_version >= '3.6'
 
 attrs==23.1.0 ; python_version >= '3.7'
 
-azure-core==1.28.0 ; python_version >= '3.7'
+azure-core==1.29.1 ; python_version >= '3.7'
 
-azure-identity==1.13.0
+azure-identity==1.14.0
 
 cffi==1.15.1
 
-cryptography==41.0.2 ; python_version >= '3.7'
+cryptography==41.0.3 ; python_version >= '3.7'
 
 frozenlist==1.4.0 ; python_version >= '3.7'
 
@@ -98,13 +98,13 @@ httpx[http2]==0.24.1
 
 hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==0.6.0
+microsoft-kiota-abstractions==0.7.0
 
 microsoft-kiota-authentication-azure==0.2.0
 
-microsoft-kiota-http==0.4.4
+microsoft-kiota-http==0.5.0
 
-microsoft-kiota-serialization-json==0.3.7
+microsoft-kiota-serialization-json==0.4.0
 
 microsoft-kiota-serialization-text==0.2.1
 

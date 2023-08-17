@@ -29,7 +29,6 @@ public class GenerateClientHandler {
     }
 
     /**
-     *
      * @return the response
      */
     public Object getResponse() {

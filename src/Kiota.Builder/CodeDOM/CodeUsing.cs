@@ -16,6 +16,10 @@ public class CodeUsing : CodeElement, ICloneable
     {
         get => Declaration?.IsExternal ?? true;
     }
+    public bool IsErasable
+    {
+        get; set;
+    }
     public string Alias { get; set; } = string.Empty;
     public object Clone()
     {
@@ -25,6 +29,7 @@ public class CodeUsing : CodeElement, ICloneable
             Alias = Alias,
             Name = Name,
             Parent = Parent,
+            IsErasable = IsErasable,
         };
     }
 }

@@ -32,7 +32,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by{x.ToFirstCharacterUpperCase()}",
-                static x => x.ToFirstCharacterLowerCase());
+                static x => x.ToFirstCharacterLowerCase(),
+                GenerationLanguage.TypeScript);
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
@@ -78,6 +79,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory",
                     "@microsoft/kiota-serialization-text.TextSerializationWriterFactory",
                     "@microsoft/kiota-serialization-form.FormSerializationWriterFactory",
+                    "@microsoft/kiota-serialization-multipart.MultipartSerializationWriterFactory",
                 }
             );
             ReplaceDefaultDeserializationModules(
@@ -191,31 +193,51 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private const string GuidPackageName = "guid-typescript";
     private const string AbstractionsPackageName = "@microsoft/kiota-abstractions";
+    // A helper method to check if a parameter is a multipart body
+    private static bool IsMultipartBody(CodeParameter p) =>
+        p.IsOfKind(CodeParameterKind.RequestBody) &&
+        p.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase);
+
+    // A helper method to check if a method has a multipart body parameter
+    private static bool HasMultipartBody(CodeMethod m) =>
+        m.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
+        m.Parameters.Any(IsMultipartBody);
+    // for Kiota abstration library if the code is not required for runtime purposes e.g. interfaces then the IsErassable flag is set to true
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
-            AbstractionsPackageName, "RequestAdapter"),
+            AbstractionsPackageName, true, "RequestAdapter"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
-            AbstractionsPackageName, "RequestOption"),
+            AbstractionsPackageName, true, "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            AbstractionsPackageName, "HttpMethod", "RequestInformation", "RequestOption"),
+            AbstractionsPackageName, false, "HttpMethod", "RequestInformation"),
+        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+            AbstractionsPackageName, true, "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-            AbstractionsPackageName, "SerializationWriter"),
+            AbstractionsPackageName, true,"SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
-            AbstractionsPackageName, "ParseNode"),
+            AbstractionsPackageName, true, "ParseNode"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility),
-            AbstractionsPackageName, "getPathParameters"),
+            AbstractionsPackageName, false, "getPathParameters"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            AbstractionsPackageName, "Parsable", "ParsableFactory"),
+            AbstractionsPackageName, true, "Parsable", "ParsableFactory"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
-            AbstractionsPackageName, "Parsable"),
+            AbstractionsPackageName, true, "Parsable"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
-            AbstractionsPackageName, "AdditionalDataHolder"),
+            AbstractionsPackageName, true, "AdditionalDataHolder"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
-            AbstractionsPackageName, "BackingStoreFactory", "BackingStoreFactorySingleton"),
+            AbstractionsPackageName, true, "BackingStoreFactory"),
+        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                    method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+            AbstractionsPackageName, false, "BackingStoreFactorySingleton"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
-            AbstractionsPackageName, "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
+            AbstractionsPackageName, true, "BackingStore", "BackedModel"),
+        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+            AbstractionsPackageName, false, "BackingStoreFactorySingleton"),
+        new (x => x is CodeMethod m && HasMultipartBody(m),
+            AbstractionsPackageName, MultipartBodyClassName, $"serialize{MultipartBodyClassName}")
     };
+    private const string MultipartBodyClassName = "MultipartBody";
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {
         block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
@@ -248,8 +270,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))
         {
-            if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
+            if (currentMethod.Parameters.OfKind(CodeParameterKind.RequestBody) is CodeParameter requestBodyParam)
+                requestBodyParam.Type.IsNullable = false;
         }
         else if (currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);

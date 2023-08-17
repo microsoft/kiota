@@ -29,18 +29,25 @@ public class CodeIndexerWriterTests : IDisposable
         indexer = new CodeIndexer
         {
             Name = "idx",
-            SerializationName = "id",
-            IndexType = new CodeType
-            {
-                Name = "string",
-            },
             ReturnType = new CodeType
             {
                 Name = "SomeRequestBuilder"
             },
-            IndexParameterName = "position"
+            IndexParameter = new()
+            {
+                Name = "position",
+                Type = new CodeType
+                {
+                    Name = "string",
+                },
+                SerializationName = "id",
+                Documentation = new()
+                {
+                    Description = "some description"
+                }
+            }
         };
-        parentClass.Indexer = indexer;
+        parentClass.AddIndexer(indexer);
         parentClass.AddProperty(new()
         {
             Name = "pathParameters",
@@ -72,6 +79,7 @@ public class CodeIndexerWriterTests : IDisposable
         Assert.Contains("RequestAdapter", result);
         Assert.Contains("PathParameters", result);
         Assert.Contains("id\", position", result);
+        Assert.Contains("some description", result);
         Assert.Contains("public SomeRequestBuilder this[string position]", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }

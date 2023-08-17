@@ -12,6 +12,7 @@ public enum CodeParameterKind
     /// The request headers when used as a executor/generator parameter. Most languages use the intermediate RequestConfiguration wrapper class.
     ///</summary>
     Headers,
+    [Obsolete("The parameter kind is replaced by a request option instead")]
     ResponseHandler,
     RequestBody,
     SetterValue,
