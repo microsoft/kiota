@@ -22,6 +22,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
             string.Empty);
         conventions.WriteLongDescription(codeElement, writer);
         conventions.WriteDeprecatedAnnotation(codeElement, writer);
+        writer.WriteLine($"{JavaConventionService.AutoGenerationHeader}");
         writer.WriteLine($"public enum {enumName} implements ValuedEnum {{");
         writer.IncreaseIndent();
         var lastEnumOption = enumOptions.Last();

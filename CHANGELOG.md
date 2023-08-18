@@ -13,9 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fix issue with generating classes with Aliases(PHP)[microsoftgraph/msgraph-beta-sdk-php#197](https://github.com/microsoftgraph/msgraph-beta-sdk-php/pull/197)
 - Flattens the models namespaces in Ruby to avoid circular dependencies.
 - Adds ObjectId as a reserved keyword in Ruby to have memory management issues.
-- Replace Javax annotations in favor of Jakarta annotations for Java code generation. [#2810](https://github.com/microsoft/kiota/issues/2810)  
+- Replace Javax annotations in favor of Jakarta annotations for Java code generation. [#2810](https://github.com/microsoft/kiota/issues/2810)
+- RequestExecuters call overload methods reducing code generation size for Java. [#3150](https://github.com/microsoft/kiota/issues/3150)  
+- Remove URISyntaxException from Java generated RequestExecutors and RequestGenerators. [#3149](https://github.com/microsoft/kiota/issues/3149)
+- Adds 'Generated' annotation to generated Enums and Classes for Java. [#3106](https://github.com/microsoft/kiota/issues/3106)
 
 ## [1.5.1] - 2023-08-08
 

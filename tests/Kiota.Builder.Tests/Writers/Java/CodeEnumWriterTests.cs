@@ -4,6 +4,7 @@ using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.Java;
 
 using Xunit;
 
@@ -49,6 +50,7 @@ public class CodeEnumWriterTests : IDisposable
         Assert.Contains("@jakarta.annotation.Nullable", result);
         Assert.Contains("forValue(@jakarta.annotation.Nonnull final String searchValue)", result);
         Assert.Contains("default: return null;", result);
+        Assert.Contains(JavaConventionService.AutoGenerationHeader, result);
         AssertExtensions.CurlyBracesAreClosed(result);
         Assert.Contains(optionName, result);
     }

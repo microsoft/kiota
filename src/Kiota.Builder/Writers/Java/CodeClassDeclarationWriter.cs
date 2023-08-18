@@ -35,6 +35,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ja
         if (codeElement.Parent is CodeClass parentClass)
             conventions.WriteLongDescription(parentClass, writer);
         var innerClassStatic = codeElement.Parent is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) && currentClass.Parent is CodeClass ? "static " : string.Empty; //https://stackoverflow.com/questions/47541459/no-enclosing-instance-is-accessible-must-qualify-the-allocation-with-an-enclosi
+        writer.WriteLine(JavaConventionService.AutoGenerationHeader);
         writer.WriteLine($"public {innerClassStatic}class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation} {{");
         writer.IncreaseIndent();
     }
