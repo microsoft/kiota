@@ -1718,6 +1718,24 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("this.someProperty = value", result);
     }
     [Fact]
+    public void WritePeriodAndDurationSetterToField()
+    {
+        setup();
+        method.AccessedProperty = new CodeProperty
+        {
+            Name = "someProperty",
+            Type = new CodeType
+            {
+                Name = "PeriodAndDuration",
+            },
+        };
+        (method.Parent as CodeClass)?.AddProperty(method.AccessedProperty);
+        method.Kind = CodeMethodKind.Setter;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("this.someProperty = PeriodAndDuration.ofPeriodAndDuration(value);", result);
+    }
+    [Fact]
     public void WritesConstructor()
     {
         setup();
