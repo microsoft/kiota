@@ -104,7 +104,7 @@ public class TypeScriptLanguageRefinerTests
 
         var declaration = model.StartBlock;
 
-        Assert.True(declaration.Usings.First(x => x.Name == apiErrorClassName).IsErasable);
+        Assert.True(declaration.Usings.First(x => x.Name.EqualsIgnoreCase(apiErrorClassName)).IsErasable);
         Assert.Contains(apiErrorClassName, declaration.Usings.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
         Assert.Contains(apiErrorClassName, declaration.Implements.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
     }
