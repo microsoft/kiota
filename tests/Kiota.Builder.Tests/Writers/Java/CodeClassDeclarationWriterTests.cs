@@ -10,7 +10,6 @@ using Xunit;
 namespace Kiota.Builder.Tests.Writers.Java;
 public class CodeClassDeclarationWriterTests : IDisposable
 {
-    private const string AutoGenerationHeader = "@Generated(\"com.microsoft.kiota\")";
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
     private readonly StringWriter tw;
@@ -48,7 +47,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
     {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
-        Assert.Contains(AutoGenerationHeader, result);
+        Assert.Contains(JavaConventionService.AutoGenerationHeader, result);
     }
     [Fact]
     public void WritesImplementation()
