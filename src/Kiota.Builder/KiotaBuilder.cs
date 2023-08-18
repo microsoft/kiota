@@ -19,6 +19,7 @@ using Kiota.Builder.Exceptions;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
 using Kiota.Builder.Logging;
+using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Validation;
@@ -26,6 +27,7 @@ using Kiota.Builder.Writers;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Microsoft.OpenApi.Services;
@@ -78,11 +80,73 @@ public partial class KiotaBuilder
         return openApiTree;
     }
     public OpenApiDocument? OpenApiDocument => openApiDocument;
+    private static string NormalizeApiManifestPath(Request request, string? baseUrl)
+    {
+        var rawValue = $"{request.UriTemplate}{(request.Method is null ? string.Empty : "#")}{request.Method?.ToUpperInvariant()}";
+        if (!string.IsNullOrEmpty(baseUrl) && rawValue.StartsWith(baseUrl, StringComparison.OrdinalIgnoreCase))
+            rawValue = rawValue[baseUrl.Length..];
+        if (!rawValue.StartsWith('/'))
+            rawValue = '/' + rawValue;
+        return rawValue.Split('?', StringSplitOptions.RemoveEmptyEntries)[0];
+    }
+    public async Task<Tuple<string, IEnumerable<string>>?> GetApiManifestDetailsAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            logger.LogDebug("Api manifest path: {ApiManifestPath}", config.ApiManifestPath);
+            var pathParts = config.ApiManifestPath.Split(new char[] { '#' }, StringSplitOptions.RemoveEmptyEntries);
+            var manifestPath = pathParts[0];
+            var apiIdentifier = pathParts.Length > 1 ? pathParts[1] : string.Empty;
+            var manifestManagementService = new ManifestManagementService();
+            var documentCachingProvider = new DocumentCachingProvider(httpClient, logger);
+#pragma warning disable CA2000
+            using var manifestFileContent = manifestPath.StartsWith("http", StringComparison.OrdinalIgnoreCase) switch
+            {
+                false => File.OpenRead(manifestPath),
+                true => await documentCachingProvider.GetDocumentAsync(new Uri(manifestPath), "manifests", "manifest.json", cancellationToken: cancellationToken).ConfigureAwait(false)
+            };
+#pragma warning restore CA2000
+            var manifest = manifestManagementService.DeserializeManifestDocument(manifestFileContent)
+                            ?? throw new InvalidOperationException("The manifest could not be decoded");
+
+            var apiDependency = (manifest.ApiDependencies.Count, string.IsNullOrEmpty(apiIdentifier)) switch
+            {
+                (0, _) => throw new InvalidOperationException("The manifest contains no APIs"),
+                (1, _) => manifest.ApiDependencies.First().Value,
+                (_, true) => throw new InvalidOperationException("The manifest contains multiple APIs, please specify the API identifier"),
+                (_, false) => manifest.ApiDependencies.TryGetValue(apiIdentifier, out var apiDep) ? apiDep : throw new InvalidOperationException($"The manifest does not contain the API {apiIdentifier}")
+            };
+
+            if (apiDependency.ApiDescriptionUrl is null)
+                throw new InvalidOperationException("The manifest does not contain an API description URL");
+
+            return new Tuple<string, IEnumerable<string>>(apiDependency.ApiDescriptionUrl,
+                                apiDependency.Requests.Select(x => NormalizeApiManifestPath(x, apiDependency.ApiDeploymentBaseUrl)).ToArray());
+        }
+#pragma warning disable CA1031
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            logger.LogCritical("error getting the API manifest: {ExceptionMessage}", ex.Message);
+            return null;
+        }
+    }
     private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternal(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
     {
         logger.LogDebug("kiota version {Version}", Generated.KiotaVersion.Current());
         var stepId = 0;
-        //TODO: load the manifest and get the URL if provided instead of the description
+        if (config.ShouldGetApiManifest)
+        {
+            sw.Start();
+            var manifestDetails = await GetApiManifestDetailsAsync(cancellationToken).ConfigureAwait(false);
+            if (manifestDetails is not null)
+            {
+                inputPath = manifestDetails.Item1;
+                if (!config.IncludePatterns.Any())
+                    config.IncludePatterns = manifestDetails.Item2.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            }
+            StopLogAndReset(sw, $"step {++stepId} - getting the manifest - took");
+        }
         sw.Start();
 #pragma warning disable CA2007
         await using var input = await LoadStream(inputPath, cancellationToken).ConfigureAwait(false);

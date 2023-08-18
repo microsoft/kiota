@@ -74,7 +74,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             {
                 openapi = searchResultDescription;
             }
-            if (string.IsNullOrEmpty(openapi))
+            if (string.IsNullOrEmpty(openapi) && string.IsNullOrEmpty(manifest))
             {
                 logger.LogError("no description provided");
                 return 1;

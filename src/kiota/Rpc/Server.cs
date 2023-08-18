@@ -7,15 +7,12 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder;
-using Kiota.Builder.Caching;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
 using Kiota.Builder.Logging;
-using Kiota.Builder.Manifest;
 using Kiota.Generated;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 
@@ -100,47 +97,13 @@ internal class Server : IServer
     public async Task<ManifestResult> GetManifestDetailsAsync(string manifestPath, string apiIdentifier, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
-        try
-        {
-            var manifestManagementService = new ManifestManagementService();
-            var documentCachingProvider = new DocumentCachingProvider(httpClient, logger);
-            await using var manifestFileContent = manifestPath.StartsWith("http", StringComparison.OrdinalIgnoreCase) switch
-            {
-                false => File.OpenRead(manifestPath),
-                true => await documentCachingProvider.GetDocumentAsync(new Uri(manifestPath), "manifest", "manifest.json", cancellationToken: cancellationToken)
-            };
-            var manifest = manifestManagementService.DeserializeManifestDocument(manifestFileContent)
-                            ?? throw new InvalidOperationException("The manifest could not be decoded");
-
-            var apiDependency = (manifest.ApiDependencies.Count, string.IsNullOrEmpty(apiIdentifier)) switch
-            {
-                (0, _) => throw new InvalidOperationException("The manifest contains no APIs"),
-                (1, _) => manifest.ApiDependencies.First().Value,
-                (_, true) => throw new InvalidOperationException("The manifest contains multiple APIs, please specify the API identifier"),
-                (_, false) => manifest.ApiDependencies.TryGetValue(apiIdentifier, out var apiDep) ? apiDep : throw new InvalidOperationException($"The manifest does not contain the API {apiIdentifier}")
-            };
-
-            if (apiDependency.ApiDescriptionUrl is null)
-                throw new InvalidOperationException("The manifest does not contain an API description URL");
-
-            return new ManifestResult(new(),
-                            apiDependency.ApiDescriptionUrl,
-                            apiDependency.Requests.Select(x => NormalizeApiManifestPath(x, apiDependency.ApiDeploymentBaseUrl)).ToArray());
-        }
-        catch (Exception ex)
-        {
-            logger.LogCritical("error showing the client: {exceptionMessage}", ex.Message);
-            return new ManifestResult(logger.LogEntries, null, null);
-        }
-    }
-    private static string NormalizeApiManifestPath(Request request, string? baseUrl)
-    {
-        var rawValue = $"{request.UriTemplate}{(request.Method is null ? string.Empty : "#")}{request.Method?.ToUpperInvariant()}";
-        if (!string.IsNullOrEmpty(baseUrl) && rawValue.StartsWith(baseUrl, StringComparison.OrdinalIgnoreCase))
-            rawValue = rawValue[baseUrl.Length..];
-        if (!rawValue.StartsWith('/'))
-            rawValue = '/' + rawValue;
-        return rawValue.Split('?', StringSplitOptions.RemoveEmptyEntries)[0];
+        var configuration = Configuration.Generation;
+        configuration.ApiManifestPath = $"{manifestPath}#{apiIdentifier}";
+        var builder = new KiotaBuilder(logger, configuration, httpClient);
+        var manifestResult = await builder.GetApiManifestDetailsAsync(cancellationToken);
+        return new ManifestResult(logger.LogEntries,
+                            manifestResult?.Item1,
+                            manifestResult?.Item2.ToArray());
     }
     public async Task<ShowResult> ShowAsync(string descriptionPath, string[] includeFilters, string[] excludeFilters, CancellationToken cancellationToken)
     {
