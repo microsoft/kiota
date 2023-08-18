@@ -687,7 +687,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                             .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                                             .Select(x => $"@param {x.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
                                             .Union(new[] { returnRemark }));
-        if (!returnVoid) //Nullable/Nonnull annotations for returns are a part of Method Documentation
+        if (!returnVoid || code.IsAsync) //Nullable/Nonnull annotations for returns are a part of Method Documentation
             writer.WriteLine(code.ReturnType.IsNullable && !code.IsAsync ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method)
