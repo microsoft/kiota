@@ -1,6 +1,6 @@
 # Kiota IntelliJ PlugIn
 <!-- Plugin description -->
-Kiota IntelliJ plugin is used to generate an API client to call any OpenAPI described API you are interested in from a Microsoft Graph OpenAPI specification.
+Kiota IntelliJ plugin is used to generate an API client to call any OpenAPI described API you are interested in from an OpenAPI specification.
 One of the goals of the project is to provide the best code generator support possible for OpenAPI and JSON Schema features from IntelliJ platform.
 <!-- Plugin description end -->
 
