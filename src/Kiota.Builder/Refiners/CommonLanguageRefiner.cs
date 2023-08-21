@@ -468,7 +468,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         ArgumentNullException.ThrowIfNull(codeComposedType);
         CodeClass newClass;
         var description =
-            $"Composed type wrapper for classes {codeComposedType.Types.Select(static x => x.Name).Aggregate(static (x, y) => x + ", " + y)}";
+            $"Composed type wrapper for classes {codeComposedType.Types.Select(static x => x.Name).Order(StringComparer.OrdinalIgnoreCase).Aggregate(static (x, y) => x + ", " + y)}";
         if (!supportsInnerClasses)
         {
             var @namespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
