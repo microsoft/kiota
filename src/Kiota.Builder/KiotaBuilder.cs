@@ -1084,10 +1084,13 @@ public partial class KiotaBuilder
 
         return result.ToArray();
     }
+    private static readonly StructuralPropertiesReservedNameProvider structuralPropertiesReservedNameProvider = new();
 
     private CodeProperty? CreateProperty(string childIdentifier, string childType, OpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
     {
         var propertyName = childIdentifier.CleanupSymbolName();
+        if (structuralPropertiesReservedNameProvider.ReservedNames.Contains(propertyName))
+            propertyName += "Property";
         var resultType = existingType ?? GetPrimitiveType(propertySchema, childType);
         if (resultType == null) return null;
         var prop = new CodeProperty
