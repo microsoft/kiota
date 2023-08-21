@@ -53,6 +53,7 @@ export async function activate(
         }
         const queryParameters = getQueryParameters(uri);
         if (uri.path.toLowerCase() === "/opendescription") {
+          reporter.sendTelemetryEvent("DeepLink.OpenDescription");
           const descriptionUrl = queryParameters["descriptionurl"];
           if (descriptionUrl) {
             await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(descriptionUrl));
@@ -60,6 +61,7 @@ export async function activate(
           }
         }
         if (uri.path.toLowerCase() === "/openmanifest") {
+          reporter.sendTelemetryEvent("DeepLink.OpenManifest");
           const manifestUrl = queryParameters["manifesturl"];
           const manifestContent = queryParameters["manifestcontent"];
           const apiIdentifier = queryParameters["apiidentifier"];
