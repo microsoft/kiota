@@ -100,7 +100,9 @@ else {
     Remove-Item idempotency-folder1.zip -Force
     Remove-Item idempotency-folder2.zip -Force
 
-    Compress-Archive -Path $tmpFolder1 -DestinationPath idempotency-folder1.zip
-    Compress-Archive -Path $tmpFolder1 -DestinationPath idempotency-folder2.zip
-    Exit 1
+    if ($dev -eq $false) {
+        Compress-Archive -Path $tmpFolder1 -DestinationPath idempotency-folder1.zip
+        Compress-Archive -Path $tmpFolder1 -DestinationPath idempotency-folder2.zip
+        Exit 1
+    }
 }
