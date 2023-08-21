@@ -26,7 +26,7 @@ public class CodeUsingWriter
         var importSymbolsAndPaths = externalImportSymbolsAndPaths
                                                 .Union(internalImportSymbolsAndPaths.Select(static x => new { Symbol = x.CodeUsingPathTokens.Item1, Alias = x.CodeUsingPathTokens.Item2, Path = x.CodeUsingPathTokens.Item3, x.ShouldUseTypeImport }))
                                                 .GroupBy(static x => (x.Path, x.ShouldUseTypeImport))
-                                                .OrderBy(static x => x.Key.Path)
+                                                .OrderBy(static x => x.Key.Path, StringComparer.Ordinal)
                                                 .ThenBy(static x => x.Key.ShouldUseTypeImport);
         foreach (var codeUsing in importSymbolsAndPaths.Where(static x => !string.IsNullOrWhiteSpace(x.Key.Path)))
             writer.WriteLine($"import {codeUsing.Select(x => x.ShouldUseTypeImport ? "type " : "").Distinct().OrderBy(static x => x, StringComparer.Ordinal).Aggregate(static (x, y) => x)}" +
