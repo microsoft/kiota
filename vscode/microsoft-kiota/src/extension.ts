@@ -13,13 +13,14 @@ import {
   LogLevel,
   parseGenerationLanguage,
 } from "./kiotaInterop";
-import { filterSteps, generateSteps, openSteps, searchLockSteps, searchSteps } from "./steps";
+import { filterSteps, generateSteps, openManifestSteps, openSteps, searchLockSteps, searchSteps, selectApiManifestKey } from "./steps";
 import { getKiotaVersion } from "./getKiotaVersion";
 import { searchDescription } from "./searchDescription";
 import { generateClient } from "./generateClient";
 import { getLanguageInformation } from "./getLanguageInformation";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { updateClients } from "./updateClients";
+import { ApiManifest } from "./apiManifest";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -62,14 +63,21 @@ export async function activate(
           const manifestUrl = queryParameters["manifesturl"];
           const manifestContent = queryParameters["manifestcontent"];
           const apiIdentifier = queryParameters["apiidentifier"];
+          const fromClipboard = queryParameters["fromclipboard"];
           if (manifestUrl) {
-            await openTreeViewWithProgress(() => openApiTreeProvider.loadManifestFromUri(manifestUrl, apiIdentifier));
+            await openTreeViewWithProgress(async () => {
+              const logs = await openApiTreeProvider.loadManifestFromUri(manifestUrl, apiIdentifier);
+              await exportLogsAndShowErrors(logs);
+            });
             return;
           } else if (manifestContent) {
             await openTreeViewWithProgress(async () => {
               const logs = await openApiTreeProvider.loadManifestFromContent(manifestContent, apiIdentifier);
               await exportLogsAndShowErrors(logs);
             });
+            return;
+          } else if (fromClipboard.toLowerCase() === "true") {
+            await openManifestFromClipboard(openApiTreeProvider, apiIdentifier!);
             return;
           }
         }
@@ -252,6 +260,19 @@ export async function activate(
           await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(openState.descriptionPath!));
         }
       }
+    ),
+    registerCommandWithTelemetry(reporter, 
+      `${treeViewId}.openManifestPath`,
+      async () => {
+        const openState = await openManifestSteps();
+        if (openState.manifestPath) {
+          await openTreeViewWithProgress(() => openApiTreeProvider.loadManifestFromUri(openState.manifestPath!));
+        }
+      }
+    ),
+    registerCommandWithTelemetry(reporter, 
+      `${treeViewId}.pasteManifest`,
+      () => openManifestFromClipboard(openApiTreeProvider, "")
     )
   );
 
@@ -314,6 +335,36 @@ export async function activate(
   );
 
   context.subscriptions.push(disposable);
+}
+async function openManifestFromClipboard(openApiTreeProvider: OpenApiTreeProvider, apiIdentifier: string): Promise<void> {
+  await openTreeViewWithProgress(async () => {
+    const clipBoardContent = await vscode.env.clipboard.readText();
+    if (!clipBoardContent) {
+      await vscode.window.showErrorMessage(
+        vscode.l10n.t("No content found in the clipboard")
+      );
+      return;
+    }
+    try {
+      const decodedContent = Buffer.from(clipBoardContent, 'base64').toString('utf-8');
+      const deserializedContent = JSON.parse(decodedContent) as ApiManifest;
+      if (!apiIdentifier && deserializedContent.apiDependencies && Object.keys(deserializedContent.apiDependencies).length > 1) {
+        const apiKeys = Object.keys(deserializedContent.apiDependencies);
+        const selectKeyResult = await selectApiManifestKey(apiKeys);
+        if (selectKeyResult.selectedKey) {
+          apiIdentifier = selectKeyResult.selectedKey;
+        }
+      }
+    } catch (error) {
+      await vscode.window.showErrorMessage(
+        vscode.l10n.t("Invalid content found in the clipboard")
+      );
+      return;
+    }
+
+    const logs = await openApiTreeProvider.loadManifestFromContent(clipBoardContent, apiIdentifier);
+    await exportLogsAndShowErrors(logs);
+  });
 }
 function openTreeViewWithProgress<T>(callback: () => Promise<T>): Thenable<T> {
   return vscode.window.withProgress({
