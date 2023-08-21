@@ -596,8 +596,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, MoveClassesWithNamespaceNamesUnderNamespace);
     }
-    private static readonly Func<string, CodeIndexer, bool> IsIndexerTypeSpecificVersion =
-    (currentIndexerParameterName, existingIndexer) => currentIndexerParameterName.Equals(existingIndexer.IndexParameter.Name, StringComparison.OrdinalIgnoreCase) && !"string".Equals(existingIndexer.IndexParameter.Type.Name, StringComparison.OrdinalIgnoreCase);
     protected static void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, bool parameterNullable, Func<string, string> methodNameCallback, Func<string, string> parameterNameCallback, GenerationLanguage language)
     {
         if (currentElement is CodeIndexer currentIndexer &&
@@ -606,18 +604,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if (indexerParentClass.ContainsMember(currentElement.Name)) // TODO remove condition for v2 necessary because of the second case of Go block
                 indexerParentClass.RemoveChildElement(currentElement);
             //TODO remove who block except for last else if body for v2
-            var isIndexerStringBackwardCompatible = "string".Equals(currentIndexer.IndexParameter.Type.Name, StringComparison.OrdinalIgnoreCase) &&
-                currentIndexer.Deprecation is not null && currentIndexer.Deprecation.IsDeprecated &&
-                (indexerParentClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.OriginalIndexer is not null && IsIndexerTypeSpecificVersion(currentIndexer.IndexParameter.Name, x.OriginalIndexer)) ||
-                    (indexerParentClass.Indexer != null && indexerParentClass.Indexer != currentIndexer && IsIndexerTypeSpecificVersion(currentIndexer.IndexParameter.Name, indexerParentClass.Indexer)));
-            if (isIndexerStringBackwardCompatible && language == GenerationLanguage.Go)
+            if (currentIndexer.IsLegacyIndexer && language == GenerationLanguage.Go)
             {
-                if (indexerParentClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.OriginalIndexer is not null && IsIndexerTypeSpecificVersion(currentIndexer.IndexParameter.Name, x.OriginalIndexer)) is CodeMethod typeSpecificCompatibleMethod &&
+                if (indexerParentClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.OriginalIndexer is not null && !x.OriginalIndexer.IsLegacyIndexer) is CodeMethod typeSpecificCompatibleMethod &&
                     typeSpecificCompatibleMethod.OriginalIndexer is not null)
                 {
                     indexerParentClass.RenameChildElement(typeSpecificCompatibleMethod.Name, typeSpecificCompatibleMethod.Name + typeSpecificCompatibleMethod.OriginalIndexer.IndexParameter.Type.Name.ToFirstCharacterUpperCase());
                 }
-                else if (indexerParentClass.Indexer != null && indexerParentClass.Indexer != currentIndexer && IsIndexerTypeSpecificVersion(currentIndexer.IndexParameter.Name, indexerParentClass.Indexer))
+                else if (indexerParentClass.Indexer != null && indexerParentClass.Indexer != currentIndexer && !indexerParentClass.Indexer.IsLegacyIndexer)
                 {
                     var specificIndexer = indexerParentClass.Indexer;
                     indexerParentClass.RemoveChildElement(specificIndexer);
@@ -625,7 +619,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 }
                 indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable));
             }
-            else if (!isIndexerStringBackwardCompatible)
+            else if (!currentIndexer.IsLegacyIndexer)
                 indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable));
 
         }

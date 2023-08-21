@@ -1078,6 +1078,7 @@ public partial class KiotaBuilder
             backCompatibleValue.Name += "-string";
             backCompatibleValue.IndexParameter.Type = DefaultIndexerParameterType;
             backCompatibleValue.Deprecation = new DeprecationInformation("This indexer is deprecated and will be removed in the next major version. Use the one with the typed parameter instead.");
+            backCompatibleValue.IsLegacyIndexer = true;
             result.Add(backCompatibleValue);
         }
 
