@@ -31,5 +31,11 @@
   "Open a lock file": "Открыть файл блокировки",
   "Filter the API description": "Отфильтровать описание API",
   "Enter a filter": "Ввести фильтр",
-  "Searching...": "идет поиск..."
+  "Searching...": "идет поиск...",
+  "A path or URL to an API manifest": "Путь или URL к манифесту API",
+  "Open an API manifest": "Откройте манифест API",
+  "Invalid URL, please check the documentation for the supported URLs": "Неверный URL, пожалуйста, проверьте документацию на поддерживаемые URL",
+  "No content found in the clipboard": "В буфере обмена нет содержимого",
+  "Invalid content found in the clipboard": "В буфере обмена обнаружено недопустимое содержимое",
+  "Select an API manifest key": "Выберите ключ манифеста API для редактирования"
 }
