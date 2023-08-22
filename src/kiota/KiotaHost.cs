@@ -308,10 +308,10 @@ public static class KiotaHost
     }
     private static Option<string> GetManifestOption(string defaultValue)
     {
-        var manifestOption = new Option<string>("--manifest", "The path or URI to the API manifest file used to generate the code files.");
+        var manifestOption = new Option<string>("--manifest", "The path or URI to the API manifest file used to generate the code files. Append #apikey if the target manifest contains multiple API dependencies entries.");
         if (isRunningInContainer.Value)
             manifestOption.SetDefaultValue(defaultValue);
-        manifestOption.AddAlias("-m");
+        manifestOption.AddAlias("-a");
         return manifestOption;
     }
     private static readonly Regex classNameRegex = new(@"^[a-zA-Z_][\w_-]+", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
