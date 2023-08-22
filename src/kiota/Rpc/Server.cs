@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder;
@@ -12,6 +13,7 @@ using Kiota.Builder.Logging;
 using Kiota.Generated;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 
 namespace kiota.Rpc;
@@ -92,17 +94,47 @@ internal class Server : IServer
         var results = await searchService.SearchAsync(searchTerm, string.Empty, cancellationToken);
         return new(logger.LogEntries, results);
     }
+    public async Task<ManifestResult> GetManifestDetailsAsync(string manifestPath, string apiIdentifier, CancellationToken cancellationToken)
+    {
+        var logger = new ForwardedLogger<KiotaBuilder>();
+        var configuration = Configuration.Generation;
+        configuration.ApiManifestPath = $"{manifestPath}#{apiIdentifier}";
+        var builder = new KiotaBuilder(logger, configuration, httpClient);
+        var manifestResult = await builder.GetApiManifestDetailsAsync(cancellationToken);
+        return new ManifestResult(logger.LogEntries,
+                            manifestResult?.Item1,
+                            manifestResult?.Item2.ToArray());
+    }
     public async Task<ShowResult> ShowAsync(string descriptionPath, string[] includeFilters, string[] excludeFilters, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
-        configuration.IncludePatterns = includeFilters.ToHashSet();
-        configuration.ExcludePatterns = excludeFilters.ToHashSet();
         configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
         var builder = new KiotaBuilder(logger, configuration, httpClient);
-        var urlTreeNode = await builder.GetUrlTreeNodeAsync(cancellationToken);
-        var rootNode = urlTreeNode != null ? ConvertOpenApiUrlTreeNodeToPathItem(urlTreeNode) : null;
-        return new ShowResult(logger.LogEntries, rootNode, builder.OriginalOpenApiDocument?.Info?.Title);
+        var fullUrlTreeNode = await builder.GetUrlTreeNodeAsync(cancellationToken);
+        configuration.IncludePatterns = includeFilters.ToHashSet(StringComparer.Ordinal);
+        configuration.ExcludePatterns = excludeFilters.ToHashSet(StringComparer.Ordinal);
+        var filteredTreeNode = configuration.IncludePatterns.Any() || configuration.ExcludePatterns.Any() ?
+                            await new KiotaBuilder(new NoopLogger<KiotaBuilder>(), configuration, httpClient).GetUrlTreeNodeAsync(cancellationToken) : // openapi.net seems to have side effects between tree node and the document, we need to drop all references
+                            default;
+        var filteredPaths = filteredTreeNode is null ? new HashSet<string>() : GetOperationsFromTreeNode(filteredTreeNode).ToHashSet(StringComparer.Ordinal);
+        var rootNode = fullUrlTreeNode != null ? ConvertOpenApiUrlTreeNodeToPathItem(fullUrlTreeNode, filteredPaths) : null;
+        return new ShowResult(logger.LogEntries, rootNode, builder.OpenApiDocument?.Info?.Title);
+    }
+    private static IEnumerable<string> GetOperationsFromTreeNode(OpenApiUrlTreeNode node)
+    {
+        return (node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItems) ?
+                                    pathItems.Operations.Select(x => NormalizeOperationNodePath(node, x.Key, true)) :
+                                    Enumerable.Empty<string>())
+                                    .Union(node.Children.SelectMany(static x => GetOperationsFromTreeNode(x.Value)));
+    }
+    private static readonly Regex indexingNormalizationRegex = new(@"{\w+}", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+    private static string NormalizeOperationNodePath(OpenApiUrlTreeNode node, OperationType operationType, bool forIndexing = false)
+    {
+        var name = $"{node.Path}#{operationType.ToString().ToUpperInvariant()}";
+        if (forIndexing)
+            return indexingNormalizationRegex.Replace(name, "{}");
+        return name;
     }
     public async Task<List<LogEntry>> GenerateAsync(string descriptionPath, string output, GenerationLanguage language, string[] includeFilters, string[] excludeFilters, string clientClassName, string clientNamespaceName, CancellationToken cancellationToken)
     {
@@ -151,21 +183,23 @@ internal class Server : IServer
         if (result is not null) return result;
         return Configuration.Languages;
     }
-    private static PathItem ConvertOpenApiUrlTreeNodeToPathItem(OpenApiUrlTreeNode node)
+    private static PathItem ConvertOpenApiUrlTreeNodeToPathItem(OpenApiUrlTreeNode node, HashSet<string> filteredPaths)
     {
-        return new PathItem(node.Path, node.Segment, node.Children
-                                                        .Select(static x => ConvertOpenApiUrlTreeNodeToPathItem(x.Value))
-                                                        .Union(node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var openApiPathItems) ?
-                                                                    openApiPathItems.Operations.Select(x => new PathItem(
-                                                                        $"{node.Path}#{x.Key.ToString().ToUpperInvariant()}",
-                                                                        x.Key.ToString().ToUpperInvariant(),
-                                                                        Array.Empty<PathItem>(),
-                                                                        true,
-                                                                        x.Value.ExternalDocs?.Url)) :
-                                                                    Enumerable.Empty<PathItem>())
-                                                        .OrderByDescending(static x => x.isOperation)
-                                                        .ThenBy(static x => x.segment, StringComparer.OrdinalIgnoreCase)
-                                                        .ToArray());
+        var children = node.Children
+                            .Select(x => ConvertOpenApiUrlTreeNodeToPathItem(x.Value, filteredPaths))
+                            .Union(node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var openApiPathItems) ?
+                                        openApiPathItems.Operations.Select(x => new PathItem(
+                                            NormalizeOperationNodePath(node, x.Key),
+                                            x.Key.ToString().ToUpperInvariant(),
+                                            Array.Empty<PathItem>(),
+                                            !filteredPaths.Any() || filteredPaths.Contains(NormalizeOperationNodePath(node, x.Key, true)),
+                                            true,
+                                            x.Value.ExternalDocs?.Url)) :
+                                        Enumerable.Empty<PathItem>())
+                            .OrderByDescending(static x => x.isOperation)
+                            .ThenBy(static x => x.segment, StringComparer.OrdinalIgnoreCase)
+                            .ToArray();
+        return new PathItem(node.Path, node.Segment, children, !filteredPaths.Any() || Array.Exists(children, static x => x.isOperation) && children.Where(static x => x.isOperation).All(static x => x.selected));
     }
     protected static string GetAbsolutePath(string source)
     {

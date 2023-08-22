@@ -87,7 +87,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
             {
                 DisplaySuccess($"File successfully downloaded to {path}");
                 DisplayShowHint(searchTerm, version, path);
-                DisplayGenerateHint(path, Enumerable.Empty<string>(), Enumerable.Empty<string>());
+                DisplayGenerateHint(path, string.Empty, Enumerable.Empty<string>(), Enumerable.Empty<string>());
             }
             return statusCode;
         }

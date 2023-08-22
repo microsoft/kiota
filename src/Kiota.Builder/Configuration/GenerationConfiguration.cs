@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Kiota.Builder.Lock;
 
 namespace Kiota.Builder.Configuration;
@@ -10,7 +10,21 @@ namespace Kiota.Builder.Configuration;
 #pragma warning disable CA1056
 public class GenerationConfiguration : ICloneable
 {
+    public static GenerationConfiguration DefaultConfiguration
+    {
+        get;
+    } = new();
+    public bool ShouldGetApiManifest
+    {
+        get
+        {
+            return (string.IsNullOrEmpty(OpenAPIFilePath) || OpenAPIFilePath.Equals(DefaultConfiguration.OpenAPIFilePath, StringComparison.OrdinalIgnoreCase)) &&
+                (!string.IsNullOrEmpty(ApiManifestPath) || !ApiManifestPath.Equals(DefaultConfiguration.ApiManifestPath, StringComparison.OrdinalIgnoreCase)) &&
+                (ApiManifestPath.StartsWith("http", StringComparison.OrdinalIgnoreCase) || File.Exists(ApiManifestPath));
+        }
+    }
     public string OpenAPIFilePath { get; set; } = "openapi.yaml";
+    public string ApiManifestPath { get; set; } = "apimanifest.json";
     public string OutputPath { get; set; } = "./output";
     public string ClientClassName { get; set; } = "ApiClient";
     public string ClientNamespaceName { get; set; } = "ApiSdk";

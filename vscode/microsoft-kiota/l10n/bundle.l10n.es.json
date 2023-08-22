@@ -32,5 +32,11 @@
   "Open a lock file": "Abrir un archivo lock",
   "Filter the API description": "Filtrar descripción de API",
   "Enter a filter": "Ingresar un filtro",
-  "Searching...": "Buscando..."
+  "Searching...": "Buscando...",
+  "A path or URL to an API manifest": "Ruta o URL de manifesto de API",
+  "Open an API manifest": "Abrir manifesto de API",
+  "Invalid URL, please check the documentation for the supported URLs": "URL inválido, por favor revise la documentación de URL soportados.",
+  "No content found in the clipboard": "Sin contenido en el portapapeles.",
+  "Invalid content found in the clipboard": "Contenido inválido en el portapapeles.",
+  "Select an API manifest key": "Seleccione una llave de manifesto de API."
 }

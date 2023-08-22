@@ -15,8 +15,10 @@
   "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "احذف الكل",
   "kiota.openApiExplorer.closeDescription.title": "اغلق وصف API",
   "kiota.openApiExplorer.openDescription.title": "افتح وصف API",
-  "kiota.openApiExplorer.welcome": "لم يتم اختيار وصف API\n[ابحث](command:kiota.searchApiDescription)\n[افتح](command:kiota.openApiExplorer.openDescription)\n[اختر ملف](command:kiota.searchLock)",
+  "kiota.openApiExplorer.welcome": "لم يتم اختيار وصف API\n[ابحث](command:kiota.searchApiDescription)\n[افتح وصف API](command:kiota.openApiExplorer.openDescription)\n[افتح البيان](command:command:kiota.openApiExplorer.openManifestPath)\n[الصق البيان](command:kiota.openApiExplorer.pasteManifest)\n[اختر ملف](command:kiota.searchLock)",
   "kiota.searchLock.title": "ابحث عن ملف قفل",
   "kiota.openApiExplorer.filterDescription.title": "قم بتصفية وصف API",
-  "kiota.openApiExplorer.openDocumentationPage.title": "افتح صفحة الوثائق"
+  "kiota.openApiExplorer.openDocumentationPage.title": "افتح صفحة الوثائق",
+  "kiota.openApiExplorer.openManifestPath.title": "افتح بيان واجهة برمجة التطبيقات",
+  "kiota.openApiExplorer.pasteManifest.title": "الصق بيان واجهة برمجة التطبيقات"
 }

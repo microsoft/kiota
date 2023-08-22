@@ -43,6 +43,10 @@ export interface KiotaShowConfiguration {
     excludeFilters: string[];
     descriptionPath: string;
 }
+export interface KiotaGetManifestDetailsConfiguration {
+    manifestPath: string;
+    apiIdentifier: string;
+}
 
 interface KiotaLoggedResult {
     logs: KiotaLogEntry[];
@@ -50,6 +54,11 @@ interface KiotaLoggedResult {
 export interface KiotaShowResult extends KiotaLoggedResult {
     rootNode?: KiotaOpenApiNode;
     apiTitle?: string;
+}
+
+export interface KiotaManifestResult extends KiotaLoggedResult {
+    apiDescriptionPath?: string;
+    selectedPaths?: string[];
 }
 
 export interface KiotaSearchResult extends KiotaLoggedResult {
