@@ -951,6 +951,42 @@ public class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesIndexerWithUuidParam()
+    {
+
+        setup();
+        AddRequestProperties();
+        parentClass.AddIndexer(new CodeIndexer
+        {
+            Name = "indx",
+            ReturnType = new CodeType
+            {
+                Name = "Somecustomtype",
+            },
+            IndexParameter = new()
+            {
+                Name = "id",
+                SerializationName = "id",
+                Type = new CodeType
+                {
+                    Name = "UUID",
+                    IsNullable = true,
+                },
+            }
+        });
+        if (parentClass.Indexer is null)
+            throw new InvalidOperationException("Indexer is null");
+        var methodForTest = parentClass.AddMethod(CodeMethod.FromIndexer(parentClass.Indexer, static x => $"With{x.ToFirstCharacterUpperCase()}", static x => x.ToFirstCharacterLowerCase(), false)).First();
+        writer.Write(methodForTest);
+        var result = tw.ToString();
+        Assert.Contains("m.BaseRequestBuilder.RequestAdapter", result);
+        Assert.Contains("WithId(id i561e97a8befe7661a44c8f54600992b4207a3a0cf6770e5559949bc276de2e22.UUID)(Somecustomtype)", result);
+        Assert.Contains("m.BaseRequestBuilder.PathParameters", result);
+        Assert.Contains("[\"id\"] = id.String()", result);
+        Assert.Contains("return", result);
+        Assert.Contains("NewSomecustomtypeInternal(urlTplParams, m.BaseRequestBuilder.RequestAdapter)", result); // checking the parameter is passed to the constructor
+    }
+    [Fact]
     public void DoesntWriteFactorySwitchOnMissingParameter()
     {
         setup();
