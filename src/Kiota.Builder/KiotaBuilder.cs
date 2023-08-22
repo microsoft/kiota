@@ -1997,26 +1997,28 @@ public partial class KiotaBuilder
     {
         if (CollectAllProperties(schema) is var properties && properties.Any())
         {
-            model.AddProperty(properties
-                                .Select(x =>
-                                {
-                                    var propertySchema = x.Value;
-                                    var className = propertySchema.GetSchemaName().CleanupSymbolName();
-                                    if (string.IsNullOrEmpty(className))
-                                        className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
-                                    var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
-                                    var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
-                                                        rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
-                                    var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
-                                    if (definition == null)
-                                    {
-                                        logger.LogWarning("Omitted property {PropertyName} for model {ModelName} in API path {ApiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
-                                        return null;
-                                    }
-                                    return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
-                                })
-                                .OfType<CodeProperty>()
-                                .ToArray());
+            var propertiesToAdd = properties
+                    .Select(x =>
+                    {
+                        var propertySchema = x.Value;
+                        var className = propertySchema.GetSchemaName().CleanupSymbolName();
+                        if (string.IsNullOrEmpty(className))
+                            className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
+                        var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
+                        var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
+                                            rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
+                        var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
+                        if (definition == null)
+                        {
+                            logger.LogWarning("Omitted property {PropertyName} for model {ModelName} in API path {ApiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
+                            return null;
+                        }
+                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
+                    })
+                    .OfType<CodeProperty>()
+                    .ToArray();
+            if (propertiesToAdd.Any())
+                model.AddProperty(propertiesToAdd);
         }
     }
     private Dictionary<string, OpenApiSchema> CollectAllProperties(OpenApiSchema schema)
