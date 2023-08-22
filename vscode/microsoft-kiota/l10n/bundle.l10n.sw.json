@@ -32,5 +32,11 @@
   "Open a lock file": "Fungua faili ya kufunga",
   "Filter the API description": "Chuja maelezo ya API",
   "Enter a filter": "Ingiza kichujio",
-  "Searching...": "Inatafuta..."
+  "Searching...": "Inatafuta...",
+  "A path or URL to an API manifest": "Njia au URL ya dhahiri ya API",
+  "Open an API manifest": "Fungua dhahiri ya API",
+  "Invalid URL, please check the documentation for the supported URLs": "URL batili, tafadhali angalia nyaraka kupata URL zinazotumika",
+  "No content found in the clipboard": "Hakuna maudhui yaliyopatikana katika eneo la kunakili",
+  "Invalid content found in the clipboard": "Maudhui batili yamepatikana katika eneo la kunakili",
+  "Select an API manifest key": "Chagua funguo ya dhahiri ya API"
 }
