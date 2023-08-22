@@ -503,7 +503,7 @@ public class GoRefiner : CommonLanguageRefiner
                                             !typeToSkipStrConv.Contains(x.Type.Name)),
             "strconv", "FormatBool"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) &&
-                    method.OriginalIndexer is CodeIndexer indexer && !indexer.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase) 
+                    method.OriginalIndexer is CodeIndexer indexer && !indexer.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase)
                     && !typeToSkipStrConv.Contains(indexer.IndexParameter.Type.Name),
             "strconv", "FormatInt"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
