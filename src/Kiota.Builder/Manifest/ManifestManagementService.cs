@@ -29,7 +29,7 @@ public class ManifestManagementService
     public ApiManifestDocument? DeserializeManifestDocument(Stream jsonValue)
     {
         ArgumentNullException.ThrowIfNull(jsonValue);
-        var jsonDocument = JsonDocument.Parse(jsonValue);
+        var jsonDocument = await JsonDocument.ParseAsync(jsonValue);
         return ApiManifestDocument.Load(jsonDocument.RootElement);
     }
 }
