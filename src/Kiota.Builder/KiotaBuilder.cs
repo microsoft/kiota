@@ -106,7 +106,7 @@ public partial class KiotaBuilder
                 true => await documentCachingProvider.GetDocumentAsync(new Uri(manifestPath), "manifests", "manifest.json", cancellationToken: cancellationToken).ConfigureAwait(false)
             };
 #pragma warning restore CA2000
-            var manifest = manifestManagementService.DeserializeManifestDocument(manifestFileContent)
+            var manifest = await manifestManagementService.DeserializeManifestDocumentAsync(manifestFileContent).ConfigureAwait(false)
                             ?? throw new InvalidOperationException("The manifest could not be decoded");
 
             var apiDependency = (manifest.ApiDependencies.Count, string.IsNullOrEmpty(apiIdentifier)) switch

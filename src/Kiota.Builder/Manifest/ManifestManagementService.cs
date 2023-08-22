@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Microsoft.OpenApi.ApiManifest;
 
 namespace Kiota.Builder.Manifest;
@@ -15,21 +15,10 @@ public class ManifestManagementService
     /// </summary>
     /// <param name="jsonValue">The API manifest JSON representation</param>
     /// <returns>The deserialized manifest</returns>
-    public ApiManifestDocument? DeserializeManifestDocument(string jsonValue)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(jsonValue);
-        var jsonDocument = JsonDocument.Parse(jsonValue);
-        return ApiManifestDocument.Load(jsonDocument.RootElement);
-    }
-    /// <summary>
-    /// Deserializes the API manifest document from a JSON representation.
-    /// </summary>
-    /// <param name="jsonValue">The API manifest JSON representation</param>
-    /// <returns>The deserialized manifest</returns>
-    public ApiManifestDocument? DeserializeManifestDocument(Stream jsonValue)
+    public async Task<ApiManifestDocument?> DeserializeManifestDocumentAsync(Stream jsonValue)
     {
         ArgumentNullException.ThrowIfNull(jsonValue);
-        var jsonDocument = await JsonDocument.ParseAsync(jsonValue);
+        var jsonDocument = await JsonDocument.ParseAsync(jsonValue).ConfigureAwait(false);
         return ApiManifestDocument.Load(jsonDocument.RootElement);
     }
 }
