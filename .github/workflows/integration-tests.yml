@@ -196,9 +196,16 @@ jobs:
           name: generator
           path: publish
       - run: chmod a+x ./publish/kiota
+      - name: Check if test is suppressed
+        id: check-suppressed
+        run: |
+          $isSuppressed = . ./it/get-is-suppressed.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }} -kind idempotency
+          Write-Output "IS_SUPPRESSED=$($isSuppressed.ToString().ToLowerInvariant())" >> $Env:GITHUB_OUTPUT
+        shell: pwsh
       - name: Verify idempotency
         shell: pwsh
         run: ./it/compare-generation.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
       - uses: actions/upload-artifact@v3
         if: failure()
         with:
