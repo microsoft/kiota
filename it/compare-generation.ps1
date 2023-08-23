@@ -23,8 +23,7 @@ function New-TemporaryDirectory {
     New-Item -ItemType Directory -Path (Join-Path $parent $name)
 }
 
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$rootPath = Join-Path -Path $scriptPath -ChildPath ".."
+$rootPath = Join-Path -Path $PSScriptRoot -ChildPath ".."
 
 $Env:KIOTA_TUTORIAL_ENABLED = "false"
 $executableName = "kiota"
@@ -44,7 +43,7 @@ switch ($dev) {
     }
 }
 
-$targetOpenapiPath = Join-Path -Path $scriptPath -ChildPath "openapi.yaml"
+$targetOpenapiPath = Join-Path -Path $PSScriptRoot -ChildPath "openapi.yaml"
 if (Test-Path $targetOpenapiPath) {
     Remove-Item $targetOpenapiPath
 }

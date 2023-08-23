@@ -38,8 +38,7 @@ elseif ($language -eq "python") {
     $command = " --output `"./it/$language/integration_test/client`" --namespace-name `"integration_test.client`""
 }
 
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$configPath = Join-Path -Path $scriptPath -ChildPath "config.json"
+$configPath = Join-Path -Path $PSScriptRoot -ChildPath "config.json"
 $jsonValue = Get-Content -Path $configPath -Raw | ConvertFrom-Json
 $descriptionValue = $jsonValue.psobject.properties.Where({ $_.name -eq $descriptionUrl }).value
 if ($null -ne $descriptionValue) {
