@@ -45,7 +45,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         get; set;
     }
-    public CodeIndexer? Indexer => InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault(static x => !x.Deprecation?.IsDeprecated ?? true);
+    public CodeIndexer? Indexer => InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault(static x => !x.IsLegacyIndexer);
     public void AddIndexer(params CodeIndexer[] indexers)
     {
         if (indexers == null || Array.Exists(indexers, static x => x == null))

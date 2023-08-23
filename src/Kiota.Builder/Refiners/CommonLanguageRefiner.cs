@@ -603,21 +603,27 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             if (indexerParentClass.ContainsMember(currentElement.Name)) // TODO remove condition for v2 necessary because of the second case of Go block
                 indexerParentClass.RemoveChildElement(currentElement);
-            //TODO remove who block except for last else if body for v2
-            if (currentIndexer.IsLegacyIndexer && language == GenerationLanguage.Go)
+            //TODO remove whole block except for last else if body for v2
+            if (language == GenerationLanguage.Go)
             {
-                if (indexerParentClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.OriginalIndexer is not null && !x.OriginalIndexer.IsLegacyIndexer) is CodeMethod typeSpecificCompatibleMethod &&
-                    typeSpecificCompatibleMethod.OriginalIndexer is not null)
+                if (currentIndexer.IsLegacyIndexer)
                 {
-                    indexerParentClass.RenameChildElement(typeSpecificCompatibleMethod.Name, typeSpecificCompatibleMethod.Name + typeSpecificCompatibleMethod.OriginalIndexer.IndexParameter.Type.Name.ToFirstCharacterUpperCase());
+                    if (indexerParentClass.Indexer is CodeIndexer specificIndexer && specificIndexer != currentIndexer && !specificIndexer.IsLegacyIndexer)
+                    {
+                        indexerParentClass.RemoveChildElement(specificIndexer);
+                        indexerParentClass.AddMethod(CodeMethod.FromIndexer(specificIndexer, methodNameCallback, parameterNameCallback, parameterNullable, true));
+                    }
+                    indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable));
                 }
-                else if (indexerParentClass.Indexer != null && indexerParentClass.Indexer != currentIndexer && !indexerParentClass.Indexer.IsLegacyIndexer)
+                else
                 {
-                    var specificIndexer = indexerParentClass.Indexer;
-                    indexerParentClass.RemoveChildElement(specificIndexer);
-                    indexerParentClass.AddMethod(CodeMethod.FromIndexer(specificIndexer, methodNameCallback, parameterNameCallback, parameterNullable, true));
+                    if (indexerParentClass.GetChildElements(true).OfType<CodeIndexer>().FirstOrDefault(static x => x.IsLegacyIndexer) is CodeIndexer legacyIndexer)
+                    {
+                        indexerParentClass.RemoveChildElement(legacyIndexer);
+                        indexerParentClass.AddMethod(CodeMethod.FromIndexer(legacyIndexer, methodNameCallback, parameterNameCallback, parameterNullable));
+                    }
+                    indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable, true));
                 }
-                indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable));
             }
             else if (!currentIndexer.IsLegacyIndexer)
                 indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable));
