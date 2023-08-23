@@ -197,10 +197,16 @@ jobs:
         shell: pwsh
         run: ./it/compare-generation.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
         continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
+      - id: replace_url
+        if: always()
+        run: |
+          ORIGINAL="${{ matrix.description }}"
+          REPLACED="${ORIGINAL//[-:<>|\*\?\\\/\.]/_}"
+          echo "ARTKEY=$REPLACED" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v3
-        if: failure()
+        if: always()
         with:
-          name: idempotency-artifacts
+          name: idempotency-${{ matrix.language }}-${{ steps.replace_url.outputs.ARTKEY }}
           path: idempotency-folder*.zip
 
   cleanup:

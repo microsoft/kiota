@@ -97,17 +97,19 @@ if ($HashString1 -eq $HashString2) {
 }
 else {
     Write-Error "The content of the folders is NOT identical"
+    $archivePath1 = Join-Path $rootPath -ChildPath "idempotency-folder1.zip"
+    $archivePath2 = Join-Path $rootPath -ChildPath "idempotency-folder2.zip"
 
-    if (Test-Path "idempotency-folder1.zip") {
-        Remove-Item "idempotency-folder1.zip" -Force
+    if (Test-Path $archivePath1) {
+        Remove-Item $archivePath1 -Force
     }
-    if (Test-Path "idempotency-folder2.zip") {
-        Remove-Item "idempotency-folder2.zip" -Force
+    if (Test-Path $archivePath2) {
+        Remove-Item $archivePath2 -Force
     }
 
     if ($dev -eq $false) {
-        Compress-Archive -Path $tmpFolder1 -DestinationPath "idempotency-folder1.zip"
-        Compress-Archive -Path $tmpFolder1 -DestinationPath "idempotency-folder2.zip"
+        Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath1
+        Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath2
         Exit 1
     }
 }
