@@ -101,15 +101,15 @@ else {
     $archivePath2 = Join-Path $rootPath -ChildPath "idempotency-folder2.zip"
 
     if (Test-Path $archivePath1) {
-        Remove-Item $archivePath1 -Force
+        Remove-Item $archivePath1 -Force -Verbose
     }
     if (Test-Path $archivePath2) {
-        Remove-Item $archivePath2 -Force
+        Remove-Item $archivePath2 -Force -Verbose
     }
 
     if ($dev -eq $false) {
-        Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath1
-        Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath2
-        Exit 1
+        Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath1 -Verbose
+        Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath2 -Verbose
     }
+    Exit 1
 }
