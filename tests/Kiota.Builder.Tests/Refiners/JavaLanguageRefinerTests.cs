@@ -145,8 +145,8 @@ public class JavaLanguageRefinerTests
         };
         nUsing.Declaration = new CodeType
         {
-            Name = "break",
             IsExternal = false,
+            TypeDefinition = model
         };
         model.AddUsing(nUsing);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);

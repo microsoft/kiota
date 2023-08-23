@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove URISyntaxException from Java generated RequestExecutors and RequestGenerators. [#3149](https://github.com/microsoft/kiota/issues/3149)
 - Adds 'Generated' annotation to generated Enums and Classes for Java. [#3106](https://github.com/microsoft/kiota/issues/3106)
 - Fixes uuid conversion to string value in PathParameters in Go. [#3106](https://github.com/microsoft/kiota/issues/3176)
+- Fixes a bug with incorrect reserved models renaming that occurs sometimes depending on the order of type processing [microsoftgraph/msgraph-sdk-dotnet/issues/2084](https://github.com/microsoftgraph/msgraph-sdk-dotnet/issues/2084)
 
 ## [1.5.1] - 2023-08-08
 

@@ -298,15 +298,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentClass.StartBlock is ClassDeclaration currentDeclaration)
         {
             replacement = CheckReplacementNameIsNotAlreadyInUse(currentClass.GetImmediateParentOfType<CodeNamespace>(), current, replacement);
-            ReplaceReservedCodeUsingDeclarationNames(currentDeclaration, provider, replacement);
             // if we are don't have a CodeNamespace exception, the namespace segments are also being replaced
             // in the CodeNamespace if-block so we also need to update the using references
             if (!codeElementExceptions?.Contains(typeof(CodeNamespace)) ?? true)
                 ReplaceReservedCodeUsingNamespaceSegmentNames(currentDeclaration, provider, replacement);
-            if (currentDeclaration.Inherits?.Name is string inheritName && provider.ReservedNames.Contains(inheritName) && (currentDeclaration.Inherits is not CodeType inheritType || !inheritType.IsExternal))
+            if (currentDeclaration.Inherits?.Name is string inheritName && provider.ReservedNames.Contains(inheritName) && (currentDeclaration.Inherits is not CodeType))
                 currentDeclaration.Inherits.Name = replacement(currentDeclaration.Inherits.Name);
-            if (currentClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Value.Name).Any(provider.ReservedNames.Contains))
-                ReplaceMappingNames(currentClass.DiscriminatorInformation.DiscriminatorMappings, provider, replacement);
         }
         else if (current is CodeNamespace currentNamespace &&
             isNotInExceptions &&
@@ -319,9 +316,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             if (provider.ReservedNames.Contains(currentMethod.Name))
                 currentMethod.Name = replacement.Invoke(currentMethod.Name);
-            if (currentMethod.ErrorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
-                ReplaceMappingNames(currentMethod.ErrorMappings, provider, replacement);
-            ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
         }
         else if (current is CodeProperty currentProperty &&
                 isNotInExceptions &&
@@ -337,7 +331,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         // 3. There's not a very specific condition preventing from replacement
         if (provider.ReservedNames.Contains(current.Name) &&
             isNotInExceptions &&
-            shouldReplace)
+            (shouldReplaceCallback?.Invoke(current) ?? true))// re-invoke the callback if present as conditions above may have renamed dependencies.
         {
             if (current is CodeProperty currentProperty &&
                 currentProperty.IsOfKind(CodePropertyKind.Custom) &&
@@ -360,21 +354,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback), true);
     }
-
-    private static void ReplaceReservedCodeUsingDeclarationNames(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
-    {
-        // replace the using declaration type names that are internally defined by the generator
-        currentDeclaration.Usings
-                        .Select(x => x.Declaration)
-                        .Where(x => x != null && !x.IsExternal)
-                        .Join(provider.ReservedNames, static x => x!.Name, static y => y, static (x, y) => x)
-                        .ToList()
-                        .ForEach(x =>
-                        {
-                            x!.Name = replacement.Invoke(x.Name);
-                        });
-    }
-
     private static void ReplaceReservedCodeUsingNamespaceSegmentNames(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
     {
         // replace the using namespace segment names that are internally defined by the generator
@@ -401,23 +380,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                             x)
                                             .Aggregate((x, y) => $"{x}.{y}"));
         }
-    }
-    private static void ReplaceMappingNames(IEnumerable<KeyValuePair<string, CodeTypeBase>> mappings, IReservedNamesProvider provider, Func<string, string> replacement)
-    {
-        mappings.Where(x => provider.ReservedNames.Contains(x.Value.Name))
-                                        .ToList()
-                                        .ForEach(x => x.Value.Name = replacement.Invoke(x.Value.Name));
-    }
-    private static void ReplaceReservedParameterNamesTypes(CodeMethod currentMethod, IReservedNamesProvider provider, Func<string, string> replacement)
-    {
-        currentMethod.Parameters.Where(x => x.Type is CodeType parameterType &&
-                                            !parameterType.IsExternal &&
-                                            provider.ReservedNames.Contains(parameterType.Name))
-                                            .ToList()
-                                            .ForEach(x =>
-                                            {
-                                                x.Type.Name = replacement.Invoke(x.Type.Name);
-                                            });
     }
     private static IEnumerable<CodeUsing> usingSelector(AdditionalUsingEvaluator x) =>
     x.ImportSymbols.Select(y =>
