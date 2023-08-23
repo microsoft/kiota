@@ -152,7 +152,7 @@ jobs:
         if: always()
         with:
           name: generation-results-${{ matrix.language }}-${{ steps.replace_url.outputs.ARTKEY }}
-          path: it/${{ matrix.language }}
+          path: it/${{ matrix.language }}.zip
 
   idempotency:
     runs-on: ubuntu-latest
