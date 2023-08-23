@@ -910,7 +910,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         }
     }
-    protected static void AddParentClassToErrorClasses(CodeElement currentElement, string parentClassName, string parentClassNamespace, bool addNamespaceToInheritDeclaration = false, bool isInterface = false)
+    protected static void AddParentClassToErrorClasses(CodeElement currentElement, string parentClassName, string parentClassNamespace, bool addNamespaceToInheritDeclaration = false, bool isInterface = false, bool isErasable = false)
     {
         if (currentElement is CodeClass currentClass &&
             currentClass.IsErrorDefinition &&
@@ -922,11 +922,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 {
                     Name = parentClassName,
                     IsExternal = true,
-                    TypeDefinition = new CodeType
-                    {
-                        Name = parentClassNamespace,
-                        IsExternal = true,
-                    }
                 });
             }
             else
@@ -959,10 +954,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 {
                     Name = parentClassNamespace,
                     IsExternal = true,
-                }
+                },
+                IsErasable = isErasable
             });
         }
-        CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace, addNamespaceToInheritDeclaration, isInterface));
+        CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace, addNamespaceToInheritDeclaration, isInterface, isErasable));
     }
     protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true, bool includeParentNamespace = false)
     {

@@ -57,6 +57,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ApiError",
                 "@microsoft/kiota-abstractions",
                 false,
+                true,
                 true
             );
             AddGetterAndSetterMethods(generatedCode,
