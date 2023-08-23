@@ -34,4 +34,4 @@ $archiveLocation = Join-Path -Path $PSScriptRoot -ChildPath "$language.zip"
 if (Test-Path $archiveLocation) {
     Remove-Item $archiveLocation -Force -ErrorAction SilentlyContinue -Verbose
 }
-Compress-Archive -Path $testPath -DestinationPath $archiveLocation -Verbose
+Compress-Archive -Path $testPath -DestinationPath $archiveLocation

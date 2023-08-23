@@ -107,8 +107,9 @@ else {
     }
 
     if ($dev -eq $false) {
-        Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath1 -Verbose
-        Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath2 -Verbose
+        Write-Host "Creating archives at location $archivePath1 and $archivePath2"
+        Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath1
+        Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath2
     }
     Exit 1
 }
