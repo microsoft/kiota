@@ -222,6 +222,12 @@
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/2484"
       }
+    ],
+    "IdempotencySuppressions": [
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      }
     ]
   },
   "apisguru::stripe.com": {
