@@ -26,6 +26,7 @@ function New-TemporaryDirectory {
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $rootPath = Join-Path -Path $scriptPath -ChildPath ".."
 
+$Env:KIOTA_TUTORIAL_ENABLED = "false"
 $executableName = "kiota"
 if ($IsWindows) {
     $executableName = "kiota.exe"
