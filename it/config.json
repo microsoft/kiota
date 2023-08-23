@@ -281,6 +281,10 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/3067"
       }
     ]
   },
