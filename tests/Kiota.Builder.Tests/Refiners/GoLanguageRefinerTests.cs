@@ -408,7 +408,8 @@ public class GoLanguageRefinerTests
                     Name = "string"
                 },
             },
-            Deprecation = new("foo")
+            Deprecation = new("foo"),
+            IsLegacyIndexer = true
         };
         var typeSpecificIndexer = new CodeIndexer
         {

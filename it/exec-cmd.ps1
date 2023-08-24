@@ -28,19 +28,15 @@ function Invoke-Call {
     }
 }
 
-function Retry([Action]$action)
-{
-    $attempts=10
-    $sleepInSeconds=1
-    do
-    {
-        try
-        {
+function Retry([Action]$action) {
+    $attempts = 10
+    $sleepInSeconds = 1
+    do {
+        try {
             $action.Invoke();
             break;
         }
-        catch [Exception]
-        {
+        catch [Exception] {
             Write-Host $_.Exception.Message
         }            
         $attempts--
@@ -48,18 +44,17 @@ function Retry([Action]$action)
     } while ($attempts -gt 0)
 }
 
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$testPath = Join-Path -Path $scriptPath -ChildPath $language
-$mockServerPath = Join-Path -Path $scriptPath -ChildPath "mockserver"
+$testPath = Join-Path -Path $PSScriptRoot -ChildPath $language
+$mockServerPath = Join-Path -Path $PSScriptRoot -ChildPath "mockserver"
 
 function Kill-MockServer {
     Push-Location $mockServerPath
-        mvn --batch-mode mockserver:stopForked
+    mvn --batch-mode mockserver:stopForked
     Pop-Location
 }
 
 $mockSeverITFolder = $null
-$configPath = Join-Path -Path $scriptPath -ChildPath "config.json"
+$configPath = Join-Path -Path $PSScriptRoot -ChildPath "config.json"
 $jsonValue = Get-Content -Path $configPath -Raw | ConvertFrom-Json
 $descriptionValue = $jsonValue.psobject.properties.Where({ $_.name -eq $descriptionUrl }).value
 if ($null -ne $descriptionValue) {
@@ -73,14 +68,14 @@ if (!([string]::IsNullOrEmpty($mockSeverITFolder))) {
     # Kill any leftover MockServer
     Kill-MockServer
     Push-Location $mockServerPath
-        mvn  --batch-mode mockserver:runForked
+    mvn  --batch-mode mockserver:runForked
     Pop-Location
 
     # Provision Mock server with the right spec
-    $openapiUrl = Join-Path -Path $scriptPath -ChildPath "openapi.yaml"
+    $openapiUrl = Join-Path -Path $PSScriptRoot -ChildPath "openapi.yaml"
     
     # provision MockServer to mock the specific openapi description https://www.mock-server.com/mock_server/using_openapi.html#button_open_api_filepath
-    Retry({Invoke-WebRequest -Method PUT -Body "{ `"specUrlOrPayload`": `"$openapiUrl`" }" -Uri http://localhost:1080/mockserver/openapi -ContentType application/json})
+    Retry({ Invoke-WebRequest -Method PUT -Body "{ `"specUrlOrPayload`": `"$openapiUrl`" }" -Uri http://localhost:1080/mockserver/openapi -ContentType application/json })
 }
 
 Push-Location $testPath
@@ -101,7 +96,8 @@ if ($language -eq "csharp") {
         } -ErrorAction Stop
 
         Pop-Location
-    } else {
+    }
+    else {
         Invoke-Call -ScriptBlock {
             dotnet build
         } -ErrorAction Stop
@@ -124,7 +120,8 @@ elseif ($language -eq "java") {
         } -ErrorAction Stop
 
         Pop-Location
-    } else {
+    }
+    else {
         Invoke-Call -ScriptBlock {
             mvn clean compile --batch-mode
         } -ErrorAction Stop
@@ -147,7 +144,8 @@ elseif ($language -eq "go") {
         } -ErrorAction Stop
 
         Pop-Location
-    } else {
+    }
+    else {
         Invoke-Call -ScriptBlock {
             go install
             go build

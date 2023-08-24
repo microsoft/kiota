@@ -2,7 +2,8 @@
 
 param(
     [Parameter(Mandatory = $true)][string]$descriptionUrl,
-    [Parameter(Mandatory = $true)][string]$language
+    [Parameter(Mandatory = $true)][string]$language,
+    [string]$kind = "integration"
 )
 
 if ([string]::IsNullOrEmpty($descriptionUrl)) {
@@ -15,14 +16,20 @@ if ([string]::IsNullOrEmpty($language)) {
     exit 1
 }
 
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$configPath = Join-Path -Path $scriptPath -ChildPath "config.json"
+$configPath = Join-Path -Path $PSScriptRoot -ChildPath "config.json"
 $jsonValue = Get-Content -Path $configPath -Raw | ConvertFrom-Json
 $descriptionValue = $jsonValue.psobject.properties.Where({ $_.name -eq $descriptionUrl }).value
 
 if ($null -ne $descriptionValue) {
-    if ($descriptionValue.PSObject.Properties.Name -contains "Suppressions") {
+    if ($kind -eq "integration" -and $descriptionValue.PSObject.Properties.Name -contains "Suppressions") {
         $languageInformation = $descriptionValue.Suppressions | Where-Object { $_.Language -eq $language -or $_.Language -eq "all" } | Select-Object -First 1
+        if ($null -ne $languageInformation) {
+            Write-Warning "Suppressed $descriptionUrl for $language, rationale: $($languageInformation.Rationale)"
+            return $true
+        }
+    }
+    elseif ($kind -eq "idempotency" -and $descriptionValue.PSObject.Properties.Name -contains "IdempotencySuppressions") {
+        $languageInformation = $descriptionValue.IdempotencySuppressions | Where-Object { $_.Language -eq $language -or $_.Language -eq "all" } | Select-Object -First 1
         if ($null -ne $languageInformation) {
             Write-Warning "Suppressed $descriptionUrl for $language, rationale: $($languageInformation.Rationale)"
             return $true

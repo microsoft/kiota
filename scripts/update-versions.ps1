@@ -104,11 +104,8 @@ function Retry-Command {
     }
 }
 
-# Get current script directory
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-
 # Read the appsettings.json file
-$mainSettings = Join-Path -Path $scriptPath -ChildPath "..\src\kiota\appsettings.json"
+$mainSettings = Join-Path -Path $PSScriptRoot -ChildPath "..\src\kiota\appsettings.json"
 $appSettings = Get-Content -Path $mainSettings -Raw | ConvertFrom-Json
 
 foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name | Sort-Object)) {
