@@ -289,4 +289,57 @@ public class CliRefinerTests
 
         Assert.Equal("GraphOrgContactNav-ById", idxNavProp.Name);
     }
+
+    [Fact]
+    public async Task RenamesNavPropertiesMatchingParentNameWithConflicts()
+    {
+        var subNs = root.AddNamespace($"{root.Name}.subns");
+        var subNs2 = root.AddNamespace($"{root.Name}.subns.subns");
+        // Model test/{test-id}/test
+        var rootRequestBuilder = root.AddClass(new CodeClass
+        {
+            Name = "rootrequestbuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+
+        var leafTestPropTd = new CodeClass();
+        var leafTestProp = new CodeProperty
+        {
+            Name = "test",
+            Kind = CodePropertyKind.RequestBuilder,
+            Type = new CodeType { TypeDefinition = leafTestPropTd }
+        };
+
+        subNs2.AddClass(leafTestPropTd);
+
+        var rootTestIdxReturnTd = new CodeClass();
+        subNs.AddClass(rootTestIdxReturnTd);
+
+        var rootTestIdx = new CodeIndexer
+        {
+            ReturnType = new CodeType { TypeDefinition = rootTestIdxReturnTd },
+            IndexParameter = new CodeParameter { Type = new CodeType() }
+        };
+
+        rootTestIdxReturnTd.AddProperty(leafTestProp);
+
+        var rootTestPropTd = new CodeClass
+        {
+            Kind = CodeClassKind.RequestBuilder
+        };
+
+        subNs.AddClass(rootTestPropTd);
+        rootTestPropTd.AddIndexer(rootTestIdx);
+        var rootTestProp = new CodeProperty
+        {
+            Name = "test",
+            Kind = CodePropertyKind.RequestBuilder,
+            Type = new CodeType { TypeDefinition = rootTestPropTd }
+        };
+        rootRequestBuilder.AddProperty(rootTestProp);
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CLI }, root);
+
+        Assert.Equal("sub-test", leafTestProp.Name);
+    }
 }

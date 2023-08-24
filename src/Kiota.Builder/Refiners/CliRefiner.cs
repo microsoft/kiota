@@ -8,6 +8,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
+
 public class CliRefiner : CSharpRefiner, ILanguageRefiner
 {
     private static readonly CodePropertyKind[] UnusedPropKinds = new[] { CodePropertyKind.RequestAdapter };
@@ -61,9 +62,9 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);
             /* Exclude the following as their names will be capitalized making the change unnecessary in this case sensitive language
-                * code classes, class declarations, property names, using declarations, namespace names
-                * Exclude CodeMethod as the return type will also be capitalized (excluding the CodeType is not enough since this is evaluated at the code method level)
-            */
+             * code classes, class declarations, property names, using declarations, namespace names
+             * Exclude CodeMethod as the return type will also be capitalized (excluding the CodeType is not enough since this is evaluated at the code method level)
+             */
             ReplaceReservedNames(
                 generatedCode,
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
@@ -92,15 +93,25 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);
             RenameDuplicateIndexerNavProperties(generatedCode);
+            // Must be called after the more specific RenameDuplicateIndexerNavProperties
+            RenameMatchingSubsequentNavCommands(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             CreateCommandBuilders(generatedCode);
         }, cancellationToken);
     }
     private static void RemoveBackwardCompatibleIndexers(CodeElement currentElement)
-    {//TODO remove for v2
-        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder) && currentClass.Indexer is CodeIndexer specificIndexer &&
-            !specificIndexer.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase) && !(specificIndexer.Deprecation?.IsDeprecated ?? false) &&
-            currentClass.GetChildElements(true).OfType<CodeIndexer>().FirstOrDefault(i => i != specificIndexer && i.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase) && (i.Deprecation?.IsDeprecated ?? false)) is CodeIndexer backwardCompatibleIndexer)
+    {
+        //TODO remove for v2
+        if (currentElement is CodeClass
+            {
+                Kind: CodeClassKind.RequestBuilder, Indexer: { } specificIndexer
+            } currentClass &&
+            !specificIndexer.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase) &&
+            !(specificIndexer.Deprecation?.IsDeprecated ?? false) &&
+            currentClass.GetChildElements(true).OfType<CodeIndexer>().FirstOrDefault(i =>
+                i != specificIndexer &&
+                i.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase) &&
+                (i.Deprecation?.IsDeprecated ?? false)) is { } backwardCompatibleIndexer)
         {
             currentClass.RemoveChildElement(backwardCompatibleIndexer);
         }
@@ -110,9 +121,7 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
 
     private static void RenameDuplicateIndexerNavProperties(CodeElement currentElement)
     {
-        if (currentElement is CodeClass currentClass
-            && currentClass.IsOfKind(CodeClassKind.RequestBuilder)
-            && currentClass.Indexer is CodeIndexer indexer
+        if (currentElement is CodeClass { Kind: CodeClassKind.RequestBuilder, Indexer: { } indexer } currentClass
             && indexer.ReturnType.AllTypes.First().TypeDefinition is CodeClass idxReturn
             && idxReturn.UnorderedProperties.Any())
         {
@@ -128,65 +137,114 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
 
             // Find matching nav properties between currentClass' nav & indexer return's nav.
             var propsInClass = currentClass.UnorderedProperties
-                .Where(static m => m.IsOfKind(CodePropertyKind.RequestBuilder))
+                .Where(static m => m.Kind is CodePropertyKind.RequestBuilder)
                 .ToDictionary(static m => m.Name.CleanupSymbolName(), StringComparer.OrdinalIgnoreCase);
             var matchesInIndexer = idxReturn.UnorderedProperties
-                .Where(p => p.IsOfKind(CodePropertyKind.RequestBuilder) && propsInClass.ContainsKey(p.Name.CleanupSymbolName()));
+                .Where(p => p.Kind is CodePropertyKind.RequestBuilder &&
+                            propsInClass.ContainsKey(p.Name.CleanupSymbolName()));
 
             foreach (var matchInIdx in matchesInIndexer)
             {
-                if (matchInIdx.Type.AllTypes.First().TypeDefinition is CodeClass ccIdx
-                    && propsInClass[matchInIdx.Name].Type.AllTypes.First().TypeDefinition is CodeClass ccClass)
+                if (matchInIdx.Type.AllTypes.First().TypeDefinition is not CodeClass ccIdx
+                    || propsInClass[matchInIdx.Name].Type.AllTypes.First().TypeDefinition is not CodeClass ccClass)
                 {
-                    // Check for executable command matches
-                    // This list is usually small. Up to a max of ~9 for each HTTP method
-                    // In reality, most instances would have 1 - 3 methods
-                    var lookup = ccClass.UnorderedMethods
-                        .Where(static m => m.IsOfKind(CodeMethodKind.RequestExecutor))
-                        .Select(static m => m.Name.CleanupSymbolName())
-                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    continue;
+                }
 
-                    if (ccIdx.UnorderedMethods.Any(m => m.IsOfKind(CodeMethodKind.RequestExecutor)
-                        && lookup.Contains(m.Name.CleanupSymbolName())))
-                    {
-                        matchInIdx.Name = $"{matchInIdx.Name}-ById";
-                    }
+                // Check for executable command matches
+                // This list is usually small. Up to a max of ~9 for each HTTP method
+                // In reality, most instances would have 1 - 3 methods
+                var lookup = ccClass.UnorderedMethods
+                    .Where(static m => m.Kind is CodeMethodKind.RequestExecutor)
+                    .Select(static m => m.Name.CleanupSymbolName())
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                if (ccIdx.UnorderedMethods.Any(m => m.Kind is CodeMethodKind.RequestExecutor
+                    && (lookup.Contains(m.Name.CleanupSymbolName()))))
+                {
+                    matchInIdx.Name = $"{matchInIdx.Name}-ById";
                 }
             }
         }
+
         CrawlTree(currentElement, RenameDuplicateIndexerNavProperties);
+    }
+
+    private static void RenameMatchingSubsequentNavCommands(CodeElement currentElement)
+    {
+        // System.Commandline library doesn't support situations where a
+        // command name matches its parent's name. e.g. mgc sites sites *
+
+        // https://github.com/microsoftgraph/msgraph-cli/issues/322
+        // https://github.com/microsoftgraph/msgraph-cli/issues/316
+        // https://github.com/dotnet/command-line-api/issues/2260
+
+        // To work around that limitation, this command renames any nav
+        // property that will result in a command matching its parent's name by
+        // adding a 'sub-' prefix.
+
+        // Should handle situations like:
+        // GET /sites/{site-id}/sites
+        // and generate the command:
+        // mgc sites sub-sites get
+        // instead of
+        // mgc sites sites get
+        if (currentElement is CodeProperty
+            {
+                Kind: CodePropertyKind.RequestBuilder, Type: CodeType
+                {
+                    TypeDefinition: CodeClass
+                    {
+                        Kind: CodeClassKind.RequestBuilder, Indexer: { } indexer
+                    }
+                }
+            } currentProp && indexer.ReturnType.AllTypes.First().TypeDefinition is CodeClass idxReturn
+                          && idxReturn.UnorderedProperties.Any())
+        {
+            // Find matching nav properties in indexer.
+            var matchesProp = idxReturn.UnorderedProperties
+                .Where(p => p.Kind is CodePropertyKind.RequestBuilder &&
+                            p.Name.Equals(currentProp.Name, StringComparison.Ordinal));
+
+            foreach (var matchInIdx in matchesProp)
+            {
+                matchInIdx.Name = $"sub-{matchInIdx.Name}";
+            }
+        }
+
+        CrawlTree(currentElement, RenameMatchingSubsequentNavCommands);
     }
 
     private static void CreateCommandBuilders(CodeElement currentElement)
     {
-        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
+        if (currentElement is CodeClass currentClass && currentClass.Kind is CodeClassKind.RequestBuilder)
         {
             // Remove request executor
             RemoveUnusedParameters(currentClass);
 
             // Clone executors & convert to build command
             var requestExecutors = currentClass.UnorderedMethods
-                .Where(static e => e.IsOfKind(CodeMethodKind.RequestExecutor));
+                .Where(static e => e.Kind is CodeMethodKind.RequestExecutor);
             CreateCommandBuildersFromRequestExecutors(currentClass, currentClass.Indexer != null, requestExecutors);
 
             // Replace Nav Properties with BuildXXXCommand methods
             var navProperties = currentClass.UnorderedProperties
-                .Where(static e => e.IsOfKind(CodePropertyKind.RequestBuilder));
+                .Where(static e => e.Kind is CodePropertyKind.RequestBuilder);
             CreateCommandBuildersFromNavProps(currentClass, navProperties);
 
             var requestsWithParams = currentClass.UnorderedMethods
-                .Where(static m => m.IsOfKind(CodeMethodKind.RequestBuilderWithParameters));
+                .Where(static m => m.Kind is CodeMethodKind.RequestBuilderWithParameters);
             CreateCommandBuildersFromRequestBuildersWithParameters(currentClass, requestsWithParams);
 
             // Add build command for indexers. If an indexer's type has methods with the same name, they will be skipped.
             // Deduplication is managed in method writer.
-            if (currentClass.Indexer is CodeIndexer idx)
+            if (currentClass.Indexer is { } idx)
             {
                 CreateCommandBuildersFromIndexer(currentClass, idx);
             }
 
             // Build root command
-            var clientConstructor = currentClass.UnorderedMethods.FirstOrDefault(static m => m.IsOfKind(CodeMethodKind.ClientConstructor));
+            var clientConstructor = currentClass.UnorderedMethods.FirstOrDefault(static m => m.Kind is CodeMethodKind.ClientConstructor);
             if (clientConstructor != null)
             {
                 var rootMethod = new CodeMethod
@@ -221,7 +279,7 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
         {
             var clone = (CodeMethod)requestMethod.Clone();
             var cmdName = clone.Name;
-            if (clone.HttpMethod is HttpMethod m)
+            if (clone.HttpMethod is { } m)
             {
                 cmdName = GetCommandNameFromHttpMethod(m, classHasIndexers);
             }
@@ -295,7 +353,7 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             // Ensure constructor parameters are removed
             if (requestBuilder.ReturnType is CodeType ct && ct.TypeDefinition is CodeClass cc)
             {
-                var constructors = cc.UnorderedMethods.Where(static m => m.IsOfKind(CodeMethodKind.Constructor));
+                var constructors = cc.UnorderedMethods.Where(static m => m.Kind is CodeMethodKind.Constructor);
                 foreach (var item in constructors)
                 {
                     item.RemoveParametersByKind(CodeParameterKind.Path);
@@ -324,7 +382,9 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             currentClass.AddMethod(method);
 
             // Remove renamed elements as well
-            currentClass.RemoveChildElementByName(navProperty.Name.Replace("-ById", string.Empty, StringComparison.OrdinalIgnoreCase));
+            currentClass.RemoveChildElementByName(navProperty.Name
+                .Replace("-ById", string.Empty, StringComparison.OrdinalIgnoreCase)
+                .Replace("sub-", string.Empty, StringComparison.OrdinalIgnoreCase));
         }
     }
 
@@ -338,15 +398,16 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
         };
     }
 
-    private static readonly AdditionalUsingEvaluator[] additionalUsingEvaluators = {
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-            "System.CommandLine",  "Command", "RootCommand", "IConsole"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-            "Microsoft.Kiota.Cli.Commons.IO", "IOutputFormatter", "IOutputFormatterFactory", "FormatterType", "PageLinkData", "IPagingService"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-            "System.Text",  "Encoding"),
-        new (x => {
-            return x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
-        } , "Microsoft.Kiota.Cli.Commons.Extensions", "GetRequestAdapter")
+    private static readonly AdditionalUsingEvaluator[] additionalUsingEvaluators =
+    {
+        new(x => x is CodeClass { Kind: CodeClassKind.RequestBuilder },
+            "System.CommandLine", "Command", "RootCommand", "IConsole"),
+        new(x => x is CodeClass { Kind: CodeClassKind.RequestBuilder },
+            "Microsoft.Kiota.Cli.Commons.IO", "IOutputFormatter", "IOutputFormatterFactory", "FormatterType",
+            "PageLinkData", "IPagingService"),
+        new(x => x is CodeClass { Kind: CodeClassKind.RequestBuilder },
+            "System.Text", "Encoding"),
+        new(x => x is CodeMethod { Kind: CodeMethodKind.RequestExecutor or CodeMethodKind.RequestGenerator },
+            "Microsoft.Kiota.Cli.Commons.Extensions", "GetRequestAdapter")
     };
 }
