@@ -39,6 +39,12 @@ public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement,
     {
         get; set;
     }
+    //TODO remove property for v2
+    public bool IsLegacyIndexer
+    {
+        get; set;
+    }
+
     public object Clone()
     {
         return new CodeIndexer
@@ -50,6 +56,7 @@ public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement,
             PathSegment = PathSegment,
             Deprecation = Deprecation == null ? null : Deprecation with { },
             IndexParameter = (CodeParameter)IndexParameter.Clone(),
+            IsLegacyIndexer = IsLegacyIndexer,
         };
     }
 }

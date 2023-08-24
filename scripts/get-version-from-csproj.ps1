@@ -3,8 +3,7 @@ param (
     [bool]
     $isGHA
 )
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$csprojPath = Join-Path $scriptPath "../src/kiota/kiota.csproj"
+$csprojPath = Join-Path $PSScriptRoot "../src/kiota/kiota.csproj"
 $xml = [Xml] (Get-Content $csprojPath)
 $version = $xml.Project.PropertyGroup.VersionPrefix[0]
 Write-Output "csproj version is $version"

@@ -9,9 +9,8 @@ if ($versionSuffix -eq "") {
 }
 
 # Get current script directory
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$appCsProjPath = Join-Path -Path $scriptPath -ChildPath "../src/kiota/kiota.csproj"
-$builderCsProjPath = Join-Path -Path $scriptPath -ChildPath "../src/Kiota.Builder/Kiota.Builder.csproj"
+$appCsProjPath = Join-Path -Path $PSScriptRoot -ChildPath "../src/kiota/kiota.csproj"
+$builderCsProjPath = Join-Path -Path $PSScriptRoot -ChildPath "../src/Kiota.Builder/Kiota.Builder.csproj"
 
 #load xml from csproj
 $appCsProj = [xml](Get-Content $appCsProjPath)

@@ -9,10 +9,7 @@ param (
 
 $version = $version.TrimStart("v")
 
-# Get current script directory
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-
-$changelogPath = Join-Path -Path $scriptPath -ChildPath "../CHANGELOG.md"
+$changelogPath = Join-Path -Path $PSScriptRoot -ChildPath "../CHANGELOG.md"
 
 $changeLogContent = Get-Content $changelogPath -Raw
 $headerLine = "## [$version]"
