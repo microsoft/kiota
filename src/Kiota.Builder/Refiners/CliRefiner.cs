@@ -106,12 +106,9 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             {
                 Kind: CodeClassKind.RequestBuilder, Indexer: { } specificIndexer
             } currentClass &&
-            !specificIndexer.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase) &&
-            !(specificIndexer.Deprecation?.IsDeprecated ?? false) &&
-            currentClass.GetChildElements(true).OfType<CodeIndexer>().FirstOrDefault(i =>
-                i != specificIndexer &&
-                i.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase) &&
-                (i.Deprecation?.IsDeprecated ?? false)) is { } backwardCompatibleIndexer)
+            currentClass.GetChildElements(true)
+                .OfType<CodeIndexer>()
+                .FirstOrDefault(static i => i.IsLegacyIndexer) is { } backwardCompatibleIndexer)
         {
             currentClass.RemoveChildElement(backwardCompatibleIndexer);
         }
