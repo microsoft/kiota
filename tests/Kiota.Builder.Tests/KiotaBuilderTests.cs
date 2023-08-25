@@ -5983,6 +5983,170 @@ paths:
         Assert.Equal("{+baseurl}/users/{id}/careerAdvisor", careerAdvisorUrlTemplate.DefaultValue.Trim('"'));
     }
     [Fact]
+    public void AddReservedPathParameterSymbol()
+    {
+        var userSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                },
+                {
+                    "displayName", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "#/components/schemas/microsoft.graph.user"
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["users/{id}/manager"] = new OpenApiPathItem
+                {
+                    Parameters = new List<OpenApiParameter> {
+                        new OpenApiParameter {
+                            Name = "id",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            },
+                            Extensions = {
+                                ["x-ms-reserved-parameter"] = new OpenApiReservedParameterExtension {
+                                    IsReserved = true
+                                }
+                            }
+                        }
+                    },
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = userSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "microsoft.graph.user", userSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new CountLogger<KiotaBuilder>();
+        var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var managerRB = codeModel.FindNamespaceByName("ApiSdk.users.item.manager").FindChildByName<CodeClass>("ManagerRequestBuilder", false);
+        Assert.NotNull(managerRB);
+        var managerUrlTemplate = managerRB.FindChildByName<CodeProperty>("UrlTemplate", false);
+        Assert.NotNull(managerUrlTemplate);
+        Assert.Equal("{+baseurl}/users/{+id}/manager", managerUrlTemplate.DefaultValue.Trim('"'));
+    }
+    [Fact]
+    public void DoesNotAddReservedPathParameterSymbol()
+    {
+        var userSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string"
+                    }
+                },
+                {
+                    "displayName", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "#/components/schemas/microsoft.graph.user"
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["users/{id}/manager"] = new OpenApiPathItem
+                {
+                    Parameters = new List<OpenApiParameter> {
+                        new OpenApiParameter {
+                            Name = "id",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            },
+                            Extensions = {
+                                ["x-ms-reserved-parameter"] = new OpenApiReservedParameterExtension {
+                                    IsReserved = false
+                                }
+                            }
+                        }
+                    },
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = userSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "microsoft.graph.user", userSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new CountLogger<KiotaBuilder>();
+        var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var managerRB = codeModel.FindNamespaceByName("ApiSdk.users.item.manager").FindChildByName<CodeClass>("ManagerRequestBuilder", false);
+        Assert.NotNull(managerRB);
+        var managerUrlTemplate = managerRB.FindChildByName<CodeProperty>("UrlTemplate", false);
+        Assert.NotNull(managerUrlTemplate);
+        Assert.Equal("{+baseurl}/users/{id}/manager", managerUrlTemplate.DefaultValue.Trim('"'));
+    }
+    [Fact]
     public async Task MergesIntersectionTypes()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
