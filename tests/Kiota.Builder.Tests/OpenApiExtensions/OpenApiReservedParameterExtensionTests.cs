@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi;
