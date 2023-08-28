@@ -6,7 +6,7 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
-public class KiotaToolFactory implements ToolWindowFactory {
+public class Kiota implements ToolWindowFactory {
     MyToolWindow myToolWindow ;
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {

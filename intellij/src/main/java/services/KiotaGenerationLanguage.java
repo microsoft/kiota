@@ -12,13 +12,10 @@ public enum KiotaGenerationLanguage {
     Swift(5),
     Ruby(6),
     Shell(7);
-
-     private final int value;
-
+    private final int value;
     KiotaGenerationLanguage(int value) {
         this.value = value;
     }
-
     public int getValue() {
         return value;
     }

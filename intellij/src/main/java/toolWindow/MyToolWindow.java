@@ -9,15 +9,18 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.panels.VerticalLayout;
-import services.GenerateClientHandler;
-import services.KiotaGenerationLanguage;
-import services.VersionHandler;
+import services.*;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
 import java.io.File;
+import com.intellij.icons.AllIcons;
 import java.io.IOException;
+import java.util.Map;
+
 import static com.intellij.find.actions.FindInPathAction.NOTIFICATION_GROUP;
 
 public class MyToolWindow {
@@ -27,11 +30,13 @@ public class MyToolWindow {
     VersionHandler versionHandler;
     GenerateClientHandler generateClientHandler;
 
+    SearchDescriptionHandler searchDescriptionHandler;
+    JButton searchIconLabel;
     public MyToolWindow(ToolWindow toolWindow) {
         ParentPanel = new JBPanel<>();
         versionHandler = new VersionHandler();
         generateClientHandler = new GenerateClientHandler();
-
+        searchDescriptionHandler = new SearchDescriptionHandler();
     }
 
     /**
@@ -54,18 +59,20 @@ public class MyToolWindow {
         JBPanel<JBPanel<?>> versionPanel = new JBPanel<>();
         versionPanel.setLayout(new BorderLayout());
         // Create a label to display kiota version
-        JLabel versionLabel = new JLabel("Kiota version:" +versionHandler.getVersion());
+        JLabel versionLabel = new JLabel("Kiota version:" + versionHandler.getVersion());
         versionPanel.add(versionLabel, BorderLayout.CENTER);
         return versionPanel;
     }
 
     /**
-     * this method sets the client(UI) to get input from user and creates button with their functions
+     * this method sets the client(UI) to get input from user and creates button with their function
      * @return panel
      */
     public JComponent getInput() {
         JBPanel<JBPanel<?>> mainPanel = new JBPanel<>();
         mainPanel.setLayout(new VerticalLayout(10));
+        searchIconLabel = new JButton(AllIcons.Actions.Search);
+        searchIconLabel.setPreferredSize(new Dimension(35, 2));
 
         // Create the TextFieldWithBrowseButton components
         TextFieldWithBrowseButton yamlFilePathField = new TextFieldWithBrowseButton();
@@ -74,28 +81,32 @@ public class MyToolWindow {
         JTextField postClientNameField = new JTextField();
 
         // Input labels
-        LabeledComponent<TextFieldWithBrowseButton> yamlFilePath_label = LabeledComponent.create(yamlFilePathField, "Enter a path to an openAPI description");
+        //LabeledComponent<TextFieldWithBrowseButton> yamlFilePath_label = LabeledComponent.create(yamlFilePathField, "Enter a path to an openAPI description");
+        JLabel yamlFilePathLabel = new JLabel("Enter a path to an openAPI description");
+        yamlFilePathLabel.setLabelFor(yamlFilePathField);
+        JBPanel<?> yamlFilePathPanel = new JBPanel<>(new BorderLayout());
+        yamlFilePathPanel.add(yamlFilePathLabel, BorderLayout.NORTH);
+        yamlFilePathPanel.add(yamlFilePathField, BorderLayout.CENTER);
+        yamlFilePathPanel.add(searchIconLabel, BorderLayout.EAST);
         LabeledComponent<TextFieldWithBrowseButton> outputpath_Label = LabeledComponent.create(outputpath, "Enter an output path ");
+
         JLabel languageLabel = new JLabel("Pick a language");
         LabeledComponent<JTextField> clientclassname_label = LabeledComponent.create(clientClassField, "Enter a name for the client class");
         LabeledComponent<JTextField> clientclassnameSpace_label = LabeledComponent.create(postClientNameField, "Enter the name of the client class namespace");
-
 
         JComboBox<KiotaGenerationLanguage> languageComboBox = new ComboBox<>(KiotaGenerationLanguage.values());
         languageComboBox.setSelectedItem(KiotaGenerationLanguage.Java);
         String[] include = new String[0]; //empty string
         String[] exclude = new String[0]; //empty String
 
-        // Add an action listener to the  generate button to perform an action when clicked
+        // Add an action listener to the  generate button
         JButton generateButton = new JButton("Generate");
         JProgressBar progressBar = new JProgressBar();
         progressBar.setIndeterminate(true);
         JPanel generateButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         generateButtonPanel.add(generateButton); // Add the generate button to the panel
 
-
-        progressBarPanel.setLayout(new FlowLayout(FlowLayout.CENTER)); // changed this
-        progressBar.setName("generate");
+        progressBarPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         progressBarPanel.add(progressBar);
         generateButtonPanel.add(progressBarPanel);
         progressBar.setVisible(false);
@@ -119,6 +130,7 @@ public class MyToolWindow {
                         generateClientHandler.generateclient(descriptionPath, output, selectedLanguage, include, exclude, clientClass, clientClassNamespace);
                         return null;
                     }
+
                     @Override
                     protected void done() {
                         // Generation is complete, re-enable the button
@@ -139,14 +151,15 @@ public class MyToolWindow {
                                 showStickyNotification(currentProject, "Generation completed successfully! ", NotificationType.INFORMATION);
                                 progressBar.setVisible(false);
                                 generateButton.setVisible(true);
-                            }else{
-                                showStickyNotification(currentProject,  "An error occurred during generation" + responseString, NotificationType.ERROR);
+                            } else {
+                                showStickyNotification(currentProject, "An error occurred during generation" + responseString, NotificationType.ERROR);
                                 progressBar.setVisible(false);
                                 progressBar.setEnabled(false);
                                 generateButton.setVisible(true);
                             }
                         }
                     }
+
                     private void showStickyNotification(Project project, String message, NotificationType type) {
                         Notification notification = NOTIFICATION_GROUP.createNotification(message, type);
                         notification.setImportant(true); // Make it sticky
@@ -156,6 +169,7 @@ public class MyToolWindow {
                 worker.execute();
             }
         });
+
 
         // Add the ActionListener to the  (yamlFilePathField) browse icon
         yamlFilePathField.addActionListener(new ActionListener() {
@@ -171,6 +185,17 @@ public class MyToolWindow {
                 }
             }
         });
+        //Add actionlistener to searchIcon
+        searchIconLabel.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String searchTerm = showSearchDialog();
+                if (searchTerm != null) {
+                    yamlFilePathField.setText(searchTerm);
+                }
+            }
+        });
+
         // Add the ActionListener to the  (outputpath) browse icon
         outputpath.addActionListener(new ActionListener() {
             @Override
@@ -186,7 +211,7 @@ public class MyToolWindow {
                 }
             }
         });
-        mainPanel.add(yamlFilePath_label);
+        mainPanel.add(yamlFilePathPanel);
         mainPanel.add(outputpath_Label);
         mainPanel.add(languageLabel);
         mainPanel.add(languageComboBox);
@@ -194,5 +219,39 @@ public class MyToolWindow {
         mainPanel.add(clientclassnameSpace_label);
         mainPanel.add(generateButtonPanel);
         return mainPanel;
+    }
+
+    /**
+     * this method shows dialog input field for search term and returns the result panel
+     * @return searchresult panel
+     */
+    private String showSearchDialog() {
+        String searchTerm = JOptionPane.showInputDialog(null, "Enter search term:", "Search", JOptionPane.PLAIN_MESSAGE);
+        if (searchTerm != null && !searchTerm.isEmpty()) {
+            KiotaSearchResult searchResult = searchDescriptionHandler.search(searchTerm);
+            if (searchResult != null) {
+                return showSearchResultsDialog(searchResult);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @param searchResult
+     * @return selected value
+     */
+    private String showSearchResultsDialog(KiotaSearchResult searchResult) {
+        Map<String, KiotaSearchResultItem> resultsMap = searchResult.getResults();
+
+        if (!resultsMap.isEmpty()) {
+            SearchResultsDialog dialog = new SearchResultsDialog(resultsMap);
+            dialog.setSize(700, 500);
+            if (dialog.showAndGet()) {
+                return dialog.getSelectedValue(); // Return the selected option as a string
+            }
+        } else {
+            JOptionPane.showMessageDialog(null, "No search results found.", "Search Results", JOptionPane.INFORMATION_MESSAGE);
+        }
+        return null;
     }
 }
