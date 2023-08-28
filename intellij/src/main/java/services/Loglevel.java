@@ -8,9 +8,7 @@ public enum LogLevel {
     ERROR(4),
     CRITICAL(5),
     NONE(6);
-
     private final int value;
-
     LogLevel(int value) {
         this.value = value;
     }
