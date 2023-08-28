@@ -305,10 +305,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else if (currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
             parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
-        else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlBuilder))
+        else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlBuilder) && currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is { } parameter)
         {
-            if (currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is { } parameter)
-                parameter.Type.IsNullable = false;
+            parameter.Type.IsNullable = false;
         }
         CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
