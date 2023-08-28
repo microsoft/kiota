@@ -467,6 +467,10 @@ public partial class KiotaBuilder
                 {
                     OpenApiDeprecationExtension.Name,
                     static (i, _ ) => OpenApiDeprecationExtension.Parse(i)
+                },
+                {
+                    OpenApiReservedParameterExtension.Name,
+                    static (i, _ ) => OpenApiReservedParameterExtension.Parse(i)
                 }
             },
             RuleSet = ruleSet,

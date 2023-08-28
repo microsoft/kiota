@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
-
+using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 
@@ -196,17 +197,24 @@ public static class OpenApiUrlTreeNodeExtensions
                                                 .Aggregate(static (x, y) => $"{x},{y}") +
                                         '}';
         }
+        var pathReservedPathParametersIds = currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pItem) ?
+                                                pItem.Parameters
+                                                        .Union(pItem.Operations.SelectMany(static x => x.Value.Parameters))
+                                                        .Where(static x => x.In == ParameterLocation.Path && x.Extensions.TryGetValue(OpenApiReservedParameterExtension.Name, out var ext) && ext is OpenApiReservedParameterExtension reserved && reserved.IsReserved.HasValue && reserved.IsReserved.Value)
+                                                        .Select(static x => x.Name)
+                                                        .ToHashSet(StringComparer.OrdinalIgnoreCase) :
+                                                new HashSet<string>();
         return "{+baseurl}" +
-                SanitizePathParameterNamesForUrlTemplate(currentNode.Path.Replace('\\', '/')) +
+                SanitizePathParameterNamesForUrlTemplate(currentNode.Path.Replace('\\', '/'), pathReservedPathParametersIds) +
                 queryStringParameters;
     }
     private static readonly Regex pathParamMatcher = new(@"{(?<paramname>[^}]+)}", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
-    private static string SanitizePathParameterNamesForUrlTemplate(string original)
+    private static string SanitizePathParameterNamesForUrlTemplate(string original, HashSet<string> reservedParameterNames)
     {
         if (string.IsNullOrEmpty(original) || !original.Contains('{', StringComparison.OrdinalIgnoreCase)) return original;
         var parameters = pathParamMatcher.Matches(original);
         foreach (var value in parameters.Select(x => x.Groups["paramname"].Value))
-            original = original.Replace(value, value.SanitizeParameterNameForUrlTemplate(), StringComparison.Ordinal);
+            original = original.Replace(value, (reservedParameterNames.Contains(value) ? "+" : string.Empty) + value.SanitizeParameterNameForUrlTemplate(), StringComparison.Ordinal);
         return original;
     }
     public static string SanitizeParameterNameForUrlTemplate(this string original)
