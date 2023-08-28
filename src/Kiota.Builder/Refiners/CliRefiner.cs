@@ -104,7 +104,7 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
         //TODO remove for v2
         if (currentElement is CodeClass
             {
-                Kind: CodeClassKind.RequestBuilder, Indexer: { } specificIndexer
+                Kind: CodeClassKind.RequestBuilder, Indexer: not null
             } currentClass &&
             currentClass.GetChildElements(true)
                 .OfType<CodeIndexer>()
