@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for raw URL in the fluent API surface in CSharp, Go, Java, PHP, Python, Ruby, TypeScript. [#3199](https://github.com/microsoft/kiota/issues/3199)
 - Added support for external documentation links within descriptions in Python. [#2041](https://github.com/microsoft/kiota/issues/2041)
 - Added support for API manifests. [#3104](https://github.com/microsoft/kiota/issues/3104)
 - Added support for reserved path parameters. [#2320](https://github.com/microsoft/kiota/issues/2320)
