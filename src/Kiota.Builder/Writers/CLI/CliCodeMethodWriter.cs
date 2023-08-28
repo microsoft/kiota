@@ -12,9 +12,9 @@ using Kiota.Builder.Writers.CSharp;
 namespace Kiota.Builder.Writers.Cli;
 partial class CliCodeMethodWriter : CodeMethodWriter
 {
-    private static readonly Regex delimitedRegex = CliDelimitedRegex();
-    private static readonly Regex camelCaseRegex = CliCamelCaseRegex();
-    private static readonly Regex uppercaseRegex = CliUppercaseRegex();
+    private static readonly Regex DelimitedRegex = CliDelimitedRegex();
+    private static readonly Regex CamelCaseRegex = CliCamelCaseRegex();
+    private static readonly Regex UppercaseRegex = CliUppercaseRegex();
     private const string AllParamType = "bool";
     private const string AllParamName = "all";
     private const string CancellationTokenParamType = "CancellationToken";
@@ -41,7 +41,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
     private const string CommandVariableName = "command";
     private const string ExecCommandsVariableName = "execCommands";
     private const string NonExecCommandsVariableName = "nonExecCommands";
-    private const string indexerReturn = "Tuple";
+    private const string IndexerReturn = "Tuple";
 
     public CliCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService, true)
     {
@@ -51,7 +51,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
     {
         var classMethods = parentClass.Methods;
         var name = codeElement.SimpleName;
-        name = uppercaseRegex.Replace(name, "-$1").TrimStart('-').ToLowerInvariant();
+        name = UppercaseRegex.Replace(name, "-$1").TrimStart('-').ToLowerInvariant();
 
         if (codeElement.HttpMethod == null)
         {
@@ -80,9 +80,9 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         if (parentClass
             .UnorderedMethods
             .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod) is not CodeMethod generatorMethod ||
-            codeElement.OriginalMethod is not CodeMethod originalMethod) return;
-        var parametersList = generatorMethod.PathQueryAndHeaderParameters.Where(static p => !string.IsNullOrWhiteSpace(p.Name)).ToList() ?? new List<CodeParameter>();
-        if (originalMethod.Parameters.OfKind(CodeParameterKind.RequestBody) is CodeParameter bodyParam)
+            codeElement.OriginalMethod is not { } originalMethod) return;
+        var parametersList = generatorMethod.PathQueryAndHeaderParameters.Where(static p => !string.IsNullOrWhiteSpace(p.Name)).ToList();
+        if (originalMethod.Parameters.OfKind(CodeParameterKind.RequestBody) is { } bodyParam)
         {
             parametersList.Add(bodyParam);
         }
@@ -212,7 +212,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         writer.WriteLine($"var {CommandVariableName} = {initializer};");
         WriteCommandDescription(codeElement, writer);
 
-        var includedSubCommands = AddMatchingIndexerCommandsAsSubCommands(codeElement, writer, parentClass, builderVarName ?? BuilderInstanceName, commandInfo?.method);
+        var includedSubCommands = AddMatchingIndexerCommandsAsSubCommands(codeElement, writer, parentClass, builderVarName ?? BuilderInstanceName, commandInfo?.method).ToArray();
         return (includedSubCommands, builderVarName);
     }
 
@@ -232,7 +232,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         // The actual command names will not be the same as the SimpleName.
         // There shouldn't be more than 1 match that is a non-list command.
         var match = td.UnorderedMethods
-                .Where(static m => !string.Equals(m.ReturnType.Name, indexerReturn, StringComparison.Ordinal) && m.HttpMethod == null) // Guard against pulling in executable commands.
+                .Where(static m => !string.Equals(m.ReturnType.Name, IndexerReturn, StringComparison.Ordinal) && m.HttpMethod == null) // Guard against pulling in executable commands.
                 .SingleOrDefault(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase));
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
         if (match is null) return null;
@@ -277,8 +277,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         if (indexer.ReturnType.AllTypes.First().TypeDefinition is not CodeClass td) return Enumerable.Empty<CodeMethod>();
 
         var matches = td.Methods
-                .Where(m => m != exclude && m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase))
-                    ?? Enumerable.Empty<CodeMethod>();
+            .Where(m => m != exclude && m.IsOfKind(CodeMethodKind.CommandBuilder) && string.Equals(m.SimpleName, codeElement.SimpleName, StringComparison.OrdinalIgnoreCase));
 
         // If there are no commands in this indexer that match a command in the current class, skip the indexer.
         if (!matches.Any()) return Enumerable.Empty<CodeMethod>();
@@ -348,7 +347,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         }
     }
 
-    private void WriteCommandHandlerBodyOutput(LanguageWriter writer, CodeMethod originalMethod, bool isHandlerVoid)
+    private void WriteCommandHandlerBodyOutput(LanguageWriter writer, in CodeMethod originalMethod, bool isHandlerVoid)
     {
         if (isHandlerVoid)
         {
@@ -365,7 +364,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
                 writer.WriteLine($"IOutputFormatter? {formatterVar} = null;");
             }
             if (originalMethod.ReturnType is CodeType type &&
-                conventions.GetTypeString(type, originalMethod) is string typeString && !typeString.Equals("Stream", StringComparison.Ordinal))
+                conventions.GetTypeString(type, originalMethod) is { } typeString && !typeString.Equals("Stream", StringComparison.Ordinal))
             {
                 var formatterTypeVal = "FormatterType.TEXT";
                 if (conventions.IsPrimitiveType(typeString))
@@ -374,7 +373,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
                 }
                 else
                 {
-                    if (originalMethod?.PagingInformation != null)
+                    if (originalMethod.PagingInformation != null)
                     {
                         // Special handling for pageable requests
                         writer.WriteLine("if (pageResponse?.StatusCode >= 200 && pageResponse?.StatusCode < 300) {");
@@ -384,14 +383,14 @@ partial class CliCodeMethodWriter : CodeMethodWriter
                     formatterTypeVal = OutputFormatParamName;
                     string canFilterExpr = $"(response != Stream.Null)";
                     writer.WriteLine($"response = {canFilterExpr} ? await {OutputFilterParamName}.FilterOutputAsync(response, {OutputFilterQueryParamName}, {CancellationTokenParamName}) : response;");
-                    if (originalMethod?.PagingInformation == null)
+                    if (originalMethod.PagingInformation == null)
                     {
                         writer.Write("var ");
                     }
-                    writer.Write($"{formatterOptionsVar} = {OutputFormatParamName}.GetOutputFormatterOptions(new FormatterOptionsModel(!{JsonNoIndentParamName}));", originalMethod?.PagingInformation != null);
+                    writer.Write($"{formatterOptionsVar} = {OutputFormatParamName}.GetOutputFormatterOptions(new FormatterOptionsModel(!{JsonNoIndentParamName}));", originalMethod.PagingInformation != null);
                     writer.WriteLine();
 
-                    if (originalMethod?.PagingInformation != null)
+                    if (originalMethod.PagingInformation != null)
                     {
                         writer.CloseBlock("} else {");
                         writer.IncreaseIndent();
@@ -400,7 +399,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
                     }
                 }
 
-                if (originalMethod?.PagingInformation == null)
+                if (originalMethod.PagingInformation == null)
                 {
                     writer.WriteLine($"var {formatterVar} = {OutputFormatterFactoryParamName}.GetFormatter({formatterTypeVal});");
                 }
@@ -491,10 +490,10 @@ partial class CliCodeMethodWriter : CodeMethodWriter
     {
         var documentation = element switch
         {
-            CodeMethod doc when element is CodeMethod => doc.Documentation,
-            CodeProperty prop when element is CodeProperty => prop.Documentation,
-            CodeIndexer prop when element is CodeIndexer => prop.Documentation,
-            CodeParameter prop when element is CodeParameter => prop.Documentation,
+            CodeMethod doc => doc.Documentation,
+            CodeProperty prop => prop.Documentation,
+            CodeIndexer prop => prop.Documentation,
+            CodeParameter prop => prop.Documentation,
             _ => null,
         };
         // Optimization, don't allocate
@@ -512,8 +511,8 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             {
                 newLine = element switch
                 {
-                    _ when element is CodeParameter => "\\n",
-                    _ => "\\n\\n",
+                    CodeParameter => @"\n",
+                    _ => @"\n\n",
                 };
             }
             string title;
@@ -527,7 +526,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             }
             string titleSuffix = element switch
             {
-                _ when element is CodeParameter => ": ",
+                CodeParameter => ": ",
                 _ => ":\\n  ",
             };
 
@@ -551,9 +550,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
             var builderMethods = typeDef.Methods // Already ordered by name
                 .Where(static m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                 .GroupBy(static m => m.SimpleName, StringComparer.OrdinalIgnoreCase)
-                .Select(static m => m.Count() > 1 ? m.Where(static m1 => m1.AccessedProperty is null) : m)
-                .SelectMany(static x => x) ??
-                Enumerable.Empty<CodeMethod>();
+                .SelectMany(static m => m.Count() > 1 ? m.Where(static m1 => m1.AccessedProperty is null) : m);
             if (!builderMethods.Any()) return;
 
             var (includedSubCommands, matchingIndexerIdName) = InitializeSharedCommand(codeElement, parent, writer, name);
@@ -591,8 +588,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
 
         // If a method with the same name exists in the indexer's parent class, filter it.
         var builderMethods = (td.Methods
-            .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && !parentMethodNames.Contains(m.SimpleName)) ??
-        Enumerable.Empty<CodeMethod>())
+                .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder) && !parentMethodNames.Contains(m.SimpleName)))
             .ToArray();
         if (!builderMethods.Any())
         {
@@ -812,9 +808,9 @@ partial class CliCodeMethodWriter : CodeMethodWriter
         bool sortMethods = false;
 
         // Start with the current class' commands then the indexer commands in the item builder.
-        foreach (var method in methods.OrderBy(static m => string.Equals(m.ReturnType.Name, indexerReturn, StringComparison.Ordinal)))
+        foreach (var method in methods.OrderBy(static m => string.Equals(m.ReturnType.Name, IndexerReturn, StringComparison.Ordinal)))
         {
-            if (string.Equals(method.ReturnType.Name, indexerReturn, StringComparison.Ordinal))
+            if (string.Equals(method.ReturnType.Name, IndexerReturn, StringComparison.Ordinal))
             {
                 // If we have any indexer sub-command, we must provide the name of the indexer
                 writer.WriteLine($"var cmds = {builderName ?? BuilderInstanceName}.{method.Name}();");
@@ -882,9 +878,9 @@ partial class CliCodeMethodWriter : CodeMethodWriter
     /// <returns></returns>
     private static string NormalizeToOption(string input)
     {
-        var result = camelCaseRegex.Replace(input, "-$1");
+        var result = CamelCaseRegex.Replace(input, "-$1");
         // 2 passes for cases like "singleValueLegacyExtendedProperty_id"
-        result = delimitedRegex.Replace(result, "-$1");
+        result = DelimitedRegex.Replace(result, "-$1");
 
         return result.ToLowerInvariant();
     }
