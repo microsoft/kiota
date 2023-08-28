@@ -817,15 +817,28 @@ public class GoLanguageRefinerTests
         Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.RequestBuilderBackwardCompatibility)));
     }
     [Fact]
-    public async Task AddsErrorImportForEnums()
+    public async Task AddsErrorImportForEnumsForMultiValueEnum()
     {
         var testEnum = root.AddEnum(new CodeEnum
         {
             Name = "TestEnum",
-
+            Flags = true
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Single(testEnum.Usings.Where(x => x.Name == "errors"));
+        Assert.Single(testEnum.Usings.Where(static x => "errors".Equals(x.Name, StringComparison.Ordinal)));
+        Assert.Single(testEnum.Usings.Where(static x => "strings".Equals(x.Name, StringComparison.Ordinal)));
+    }
+    [Fact]
+    public async Task AddsErrorImportForEnumsForSingleValueEnum()
+    {
+        var testEnum = root.AddEnum(new CodeEnum
+        {
+            Name = "TestEnum",
+            Flags = false
+        }).First();
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Single(testEnum.Usings.Where(static x => "errors".Equals(x.Name, StringComparison.Ordinal)));
+        Assert.Empty(testEnum.Usings.Where(static x => "strings".Equals(x.Name, StringComparison.Ordinal)));
     }
     [Fact]
     public async Task CorrectsCoreType()

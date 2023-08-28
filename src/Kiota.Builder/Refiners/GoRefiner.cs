@@ -116,7 +116,7 @@ public class GoRefiner : CommonLanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             MakeModelPropertiesNullable(
                 generatedCode);
-            AddErrorImportForEnums(
+            AddErrorAndStringsImportForEnums(
                 generatedCode);
             var defaultConfiguration = new GenerationConfiguration();
             ReplaceDefaultSerializationModules(
@@ -469,7 +469,7 @@ public class GoRefiner : CommonLanguageRefiner
         }
         CrawlTree(currentElement, ReplaceRequestBuilderPropertiesByMethods);
     }
-    private static void AddErrorImportForEnums(CodeElement currentElement)
+    private static void AddErrorAndStringsImportForEnums(CodeElement currentElement)
     {
         if (currentElement is CodeEnum currentEnum)
         {
@@ -477,8 +477,16 @@ public class GoRefiner : CommonLanguageRefiner
             {
                 Name = "errors",
             });
+
+            if (currentEnum.Flags)
+            {
+                currentEnum.AddUsing(new CodeUsing
+                {
+                    Name = "strings",
+                });
+            }
         }
-        CrawlTree(currentElement, AddErrorImportForEnums);
+        CrawlTree(currentElement, AddErrorAndStringsImportForEnums);
     }
     private static readonly GoConventionService conventions = new();
     private static readonly HashSet<string> typeToSkipStrConv = new(StringComparer.OrdinalIgnoreCase) {
