@@ -1292,6 +1292,27 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("$this->pathParameters = ['request-raw-url' => $pathParametersOrRawUrl];", result);
         Assert.Contains("$this->pathParameters = $urlTplParams;", result);
     }
+    [Fact]
+    public void WritesWithUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RawUrlBuilder;
+        Assert.Throws<InvalidOperationException>(() => languageWriter.Write(method));
+        method.AddParameter(new CodeParameter
+        {
+            Name = "rawUrl",
+            Kind = CodeParameterKind.RawUrl,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
+        Assert.Throws<InvalidOperationException>(() => languageWriter.Write(method));
+        AddRequestProperties();
+        languageWriter.Write(method);
+        var result = stringWriter.ToString();
+        Assert.Contains($"return new {parentClass.Name.ToFirstCharacterUpperCase()}", result);
+    }
 
     [Fact]
     public void WritesModelFactoryBodyForUnionModels()

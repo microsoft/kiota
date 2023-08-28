@@ -19,6 +19,7 @@ public class PhpRefiner : CommonLanguageRefiner
     {
         return Task.Run(() =>
         {
+            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
             AddInnerClasses(generatedCode,
                 true,
                 string.Empty,
