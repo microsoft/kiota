@@ -1,11 +1,7 @@
 package services;
 import com.github.arteam.simplejsonrpc.client.builder.RequestBuilder;
-import com.intellij.ide.UiActivity;
-
 public class GenerateClientHandler {
-
     KiotaJavaClient myClient;
-
     private Object response;
     /**
      * A method to generate clientClasses.
@@ -27,7 +23,6 @@ public class GenerateClientHandler {
         ).execute();
         System.out.println(response);
     }
-
     /**
      * @return the response
      */

@@ -1,7 +1,4 @@
 package services;
-
-import com.github.arteam.simplejsonrpc.client.builder.RequestBuilder;
-
 import java.io.IOException;
 
 public class VersionHandler {
