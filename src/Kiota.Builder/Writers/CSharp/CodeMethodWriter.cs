@@ -69,6 +69,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 WriteConstructorBody(parentClass, codeElement, writer);
                 WriteApiConstructorBody(parentClass, codeElement, writer);
                 break;
+            case CodeMethodKind.RawUrlBuilder:
+                WriteRawUrlBuilderBody(parentClass, codeElement, writer);
+                break;
             case CodeMethodKind.Constructor:
             case CodeMethodKind.RawUrlConstructor:
                 WriteConstructorBody(parentClass, codeElement, writer);
@@ -96,6 +99,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 writer.WriteLine("return null;");
                 break;
         }
+    }
+    private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+    {
+        var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
+        var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
+        writer.WriteLine($"return new {parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToFirstCharacterLowerCase()}, {requestAdapterProperty.Name.ToFirstCharacterUpperCase()});");
     }
     private static readonly CodePropertyTypeComparer CodePropertyTypeForwardComparer = new();
     private static readonly CodePropertyTypeComparer CodePropertyTypeBackwardComparer = new(true);

@@ -131,6 +131,10 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             else throw new InvalidOperationException($"The element {name} could not be found in the class {Name}");
         }
     }
+    public void RemoveMethodByKinds(params CodeMethodKind[] kinds)
+    {
+        RemoveChildElementByName(InnerChildElements.Where(x => x.Value is CodeMethod method && method.IsOfKind(kinds)).Select(static x => x.Key).ToArray());
+    }
     private string ResolveUniquePropertyName(string name)
     {
         if (FindPropertyByNameInTypeHierarchy(name) == null)

@@ -29,6 +29,7 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
                         IsExternal = true
                     }
                 });
+            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlBuilder);
             RemoveBackwardCompatibleIndexers(generatedCode);
             RemoveRequestConfigurationClasses(generatedCode,
                 new CodeUsing

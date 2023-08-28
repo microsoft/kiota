@@ -51,6 +51,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             case CodeMethodKind.Setter:
                 WriteSetterBody(codeElement, writer, parentClass);
                 break;
+            case CodeMethodKind.RawUrlBuilder:
+                WriteRawUrlBuilderBody(parentClass, codeElement, writer);
+                break;
             case CodeMethodKind.ClientConstructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 WriteApiConstructorBody(parentClass, codeElement, writer);
@@ -80,6 +83,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 break;
         }
         writer.CloseBlock();
+    }
+    private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+    {
+        var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
+        var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
+        writer.WriteLine($"return New{parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToFirstCharacterLowerCase()}, m.BaseRequestBuilder.{requestAdapterProperty.Name.ToFirstCharacterUpperCase()});");
     }
     private void WriteComposedTypeMarkerBody(LanguageWriter writer)
     {
@@ -412,7 +421,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                             CodeMethodKind.RequestBuilderWithParameters,
                                             CodeMethodKind.RequestBuilderBackwardCompatibility,
                                             CodeMethodKind.RawUrlConstructor,
-                                            CodeMethodKind.ComposedTypeMarker) || code.IsAsync ?
+                                            CodeMethodKind.ComposedTypeMarker,
+                                            CodeMethodKind.RawUrlBuilder) || code.IsAsync ?
                                                 string.Empty :
                                                 "error";
         if (!string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration))

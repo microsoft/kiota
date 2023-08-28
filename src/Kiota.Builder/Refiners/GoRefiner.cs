@@ -58,9 +58,6 @@ public class GoRefiner : CommonLanguageRefiner
                 string.Empty,
                 "GetIsComposedType"
             );
-            AddRawUrlConstructorOverload(
-                generatedCode
-            );
             cancellationToken.ThrowIfCancellationRequested();
             RemoveModelPropertiesThatDependOnSubNamespaces(
                 generatedCode
@@ -589,6 +586,12 @@ public class GoRefiner : CommonLanguageRefiner
 
             if (currentMethod.IsOfKind(CodeMethodKind.Factory))
                 currentMethod.ReturnType = new CodeType { Name = "Parsable", IsNullable = false, IsExternal = true };
+        }
+        else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlBuilder))
+        {
+            currentMethod.ReturnType.IsNullable = true;
+            if (currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is CodeParameter codeParameter)
+                codeParameter.Type.IsNullable = false;
         }
         CorrectCoreTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(static x => x.Type)

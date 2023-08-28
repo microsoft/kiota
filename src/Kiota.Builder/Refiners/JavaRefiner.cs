@@ -63,7 +63,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 SerializationNamespaceName,
                 "ComposedTypeWrapper"
             );
-            AddRawUrlConstructorOverload(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true, true);

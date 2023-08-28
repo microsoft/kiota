@@ -34,6 +34,10 @@ public enum CodeMethodKind
     /// Method used to distinguish between regular and composed type wrapper models during serialization for loosely-typed languages.
     /// </summary>
     ComposedTypeMarker,
+    /// <summary>
+    /// Fluent API method returning a request builder with a set raw URL. depends on the RawUrlConstructor.
+    /// </summary>
+    RawUrlBuilder,
 }
 public enum HttpMethod
 {

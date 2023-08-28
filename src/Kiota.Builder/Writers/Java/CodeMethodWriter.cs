@@ -58,6 +58,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             case CodeMethodKind.Setter:
                 WriteSetterBody(codeElement, writer, parentClass);
                 break;
+            case CodeMethodKind.RawUrlBuilder:
+                WriteRawUrlBuilderBody(parentClass, codeElement, writer);
+                break;
             case CodeMethodKind.ClientConstructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 WriteApiConstructorBody(parentClass, codeElement, writer);
@@ -87,6 +90,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 break;
         }
         writer.CloseBlock();
+    }
+    private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+    {
+        var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
+        var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
+        writer.WriteLine($"return new {parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToFirstCharacterLowerCase()}, {requestAdapterProperty.Name.ToFirstCharacterLowerCase()});");
     }
     private const string ResultVarName = "result";
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
