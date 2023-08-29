@@ -1775,6 +1775,27 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("NewBaseRequestBuilder", result);
     }
     [Fact]
+    public void WritesWithUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RawUrlBuilder;
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        method.AddParameter(new CodeParameter
+        {
+            Name = "rawUrl",
+            Kind = CodeParameterKind.RawUrl,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"return New{parentClass.Name.ToFirstCharacterUpperCase()}", result);
+    }
+    [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
     {
         setup();

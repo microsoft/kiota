@@ -51,7 +51,6 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "IComposedTypeWrapper"
             );
             cancellationToken.ThrowIfCancellationRequested();
-            AddRawUrlConstructorOverload(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();

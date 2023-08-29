@@ -16,6 +16,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
             RemoveHandlerFromRequestBuilder(generatedCode);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), static x => $"{x}Escaped");
             ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
@@ -304,6 +305,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else if (currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
             parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
+        else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlBuilder) && currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is { } parameter)
+        {
+            parameter.Type.IsNullable = false;
+        }
         CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })

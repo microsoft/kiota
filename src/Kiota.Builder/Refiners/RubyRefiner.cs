@@ -18,6 +18,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 false,
                 static x => $"by_{x.ToSnakeCase()}",

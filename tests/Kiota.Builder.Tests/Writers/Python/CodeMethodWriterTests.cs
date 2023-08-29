@@ -1490,6 +1490,27 @@ public class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("get_path_parameters(", result);
     }
     [Fact]
+    public void WritesWithUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RawUrlBuilder;
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        method.AddParameter(new CodeParameter
+        {
+            Name = "rawUrl",
+            Kind = CodeParameterKind.RawUrl,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"return {parentClass.Name.ToFirstCharacterUpperCase()}", result);
+    }
+    [Fact]
     public void WritesConstructorForReqestBuilder()
     {
         setup(true);

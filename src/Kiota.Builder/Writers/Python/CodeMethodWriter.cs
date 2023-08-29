@@ -54,6 +54,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 WriteApiConstructorBody(parentClass, codeElement, writer);
                 writer.CloseBlock(string.Empty);
                 break;
+            case CodeMethodKind.RawUrlBuilder:
+                WriteRawUrlBuilderBody(parentClass, codeElement, writer);
+                writer.CloseBlock(string.Empty);
+                break;
             case CodeMethodKind.Constructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 writer.CloseBlock(string.Empty);
@@ -105,6 +109,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 writer.CloseBlock(string.Empty);
                 break;
         }
+    }
+    private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+    {
+        var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
+        var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
+        writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToSnakeCase()}, self.{requestAdapterProperty.Name.ToSnakeCase()})");
     }
     private const string DiscriminatorMappingVarName = "mapping_value";
 

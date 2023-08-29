@@ -765,6 +765,7 @@ public partial class KiotaBuilder
         // Add methods for Operations
         if (currentNode.HasOperations(Constants.DefaultOpenApiLabel))
         {
+            CreateWithUrlMethod(currentNode, codeClass);
             foreach (var operation in currentNode
                                     .PathItems[Constants.DefaultOpenApiLabel]
                                     .Operations)
@@ -782,6 +783,41 @@ public partial class KiotaBuilder
                     CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
                 }
             });
+    }
+    private static void CreateWithUrlMethod(OpenApiUrlTreeNode currentNode, CodeClass currentClass)
+    {
+        var methodToAdd = new CodeMethod
+        {
+            Name = "WithUrl",
+            Kind = CodeMethodKind.RawUrlBuilder,
+            Documentation = new()
+            {
+                Description = "Returns a request builder with the provided arbitrary URL. Using this method means any other path or query parameters are ignored.",
+            },
+            Access = AccessModifier.Public,
+            IsAsync = false,
+            IsStatic = false,
+            ReturnType = new CodeType
+            {
+                ActionOf = false,
+                IsExternal = false,
+                IsNullable = false,
+                TypeDefinition = currentClass,
+            },
+            Deprecation = currentNode.GetDeprecationInformation(),
+        };
+        methodToAdd.AddParameter(new CodeParameter
+        {
+            Name = "rawUrl",
+            Type = new CodeType { Name = "string", IsExternal = true },
+            Optional = false,
+            Documentation = new()
+            {
+                Description = "The raw URL to use for the request builder.",
+            },
+            Kind = CodeParameterKind.RawUrl,
+        });
+        currentClass.AddMethod(methodToAdd);
     }
     private static void CreateMethod(string propIdentifier, string propType, CodeClass codeClass, OpenApiUrlTreeNode currentNode)
     {
@@ -960,6 +996,25 @@ public partial class KiotaBuilder
             constructor.AddParameter(backingStoreParam);
         }
         currentClass.AddMethod(constructor);
+        if (!isApiClientClass)
+        {
+            var overloadCtor = (CodeMethod)constructor.Clone();
+            overloadCtor.Kind = CodeMethodKind.RawUrlConstructor;
+            overloadCtor.OriginalMethod = constructor;
+            overloadCtor.RemoveParametersByKind(CodeParameterKind.PathParameters, CodeParameterKind.Path);
+            overloadCtor.AddParameter(new CodeParameter
+            {
+                Name = "rawUrl",
+                Type = new CodeType { Name = "string", IsExternal = true },
+                Optional = false,
+                Documentation = new()
+                {
+                    Description = "The raw URL to use for the request builder.",
+                },
+                Kind = CodeParameterKind.RawUrl,
+            });
+            currentClass.AddMethod(overloadCtor);
+        }
     }
     private static readonly Func<CodeClass, int> shortestNamespaceOrder = x => x.GetNamespaceDepth();
     /// <summary>

@@ -55,6 +55,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             case CodeMethodKind.Setter:
                 WriteSetterBody(codeElement, writer, parentClass);
                 break;
+            case CodeMethodKind.RawUrlBuilder:
+                WriteRawUrlBuilderBody(parentClass, codeElement, writer);
+                break;
             case CodeMethodKind.ClientConstructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 WriteApiConstructorBody(parentClass, codeElement, writer);
@@ -80,6 +83,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         }
         writer.DecreaseIndent();
         writer.WriteLine("};");
+    }
+    private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+    {
+        var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
+        var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
+        writer.WriteLine($"return new {parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToFirstCharacterLowerCase()}, this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()});");
     }
 
     private static void WriteQueryParametersMapper(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)

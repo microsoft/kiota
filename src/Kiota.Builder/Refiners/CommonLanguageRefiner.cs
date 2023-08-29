@@ -617,12 +617,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 }
                 else
                 {
-                    if (indexerParentClass.GetChildElements(true).OfType<CodeIndexer>().FirstOrDefault(static x => x.IsLegacyIndexer) is CodeIndexer legacyIndexer)
+                    var foundLegacyIndexer = indexerParentClass.Methods.Any(x => x.Kind is CodeMethodKind.IndexerBackwardCompatibility && x.OriginalIndexer is not null && x.OriginalIndexer.IsLegacyIndexer);
+                    if (!foundLegacyIndexer && indexerParentClass.GetChildElements(true).OfType<CodeIndexer>().FirstOrDefault(static x => x.IsLegacyIndexer) is CodeIndexer legacyIndexer)
                     {
                         indexerParentClass.RemoveChildElement(legacyIndexer);
                         indexerParentClass.AddMethod(CodeMethod.FromIndexer(legacyIndexer, methodNameCallback, parameterNameCallback, parameterNullable));
+                        foundLegacyIndexer = true;
                     }
-                    indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable, true));
+                    indexerParentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, methodNameCallback, parameterNameCallback, parameterNullable, foundLegacyIndexer));
                 }
             }
             else if (!currentIndexer.IsLegacyIndexer)
@@ -787,31 +789,19 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         .ForEach(static x => x.Type.IsNullable = true);
         CrawlTree(currentElement, MakeModelPropertiesNullable);
     }
-    protected static void AddRawUrlConstructorOverload(CodeElement currentElement)
+    protected static void RemoveMethodByKind(CodeElement currentElement, CodeMethodKind kind, params CodeMethodKind[] additionalKinds)
     {
-        if (currentElement is CodeMethod currentMethod &&
-            currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+        RemoveMethodByKindImpl(currentElement, new List<CodeMethodKind>(additionalKinds) { kind }.ToArray());
+    }
+    private static void RemoveMethodByKindImpl(CodeElement currentElement, CodeMethodKind[] kinds)
+    {
+        if (currentElement is CodeMethod codeMethod &&
             currentElement.Parent is CodeClass parentClass &&
-            parentClass.IsOfKind(CodeClassKind.RequestBuilder))
+            codeMethod.IsOfKind(kinds))
         {
-            var overloadCtor = (CodeMethod)currentMethod.Clone();
-            overloadCtor.Kind = CodeMethodKind.RawUrlConstructor;
-            overloadCtor.OriginalMethod = currentMethod;
-            overloadCtor.RemoveParametersByKind(CodeParameterKind.PathParameters, CodeParameterKind.Path);
-            overloadCtor.AddParameter(new CodeParameter
-            {
-                Name = "rawUrl",
-                Type = new CodeType { Name = "string", IsExternal = true },
-                Optional = false,
-                Documentation = new()
-                {
-                    Description = "The raw URL to use for the request builder.",
-                },
-                Kind = CodeParameterKind.RawUrl,
-            });
-            parentClass.AddMethod(overloadCtor);
+            parentClass.RemoveMethodByKinds(codeMethod.Kind);
         }
-        CrawlTree(currentElement, AddRawUrlConstructorOverload);
+        CrawlTree(currentElement, x => RemoveMethodByKindImpl(x, kinds));
     }
     protected static void RemoveCancellationParameter(CodeElement currentElement)
     {
