@@ -56,6 +56,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 break;
             case CodeMethodKind.RawUrlBuilder:
                 WriteRawUrlBuilderBody(parentClass, codeElement, writer);
+                writer.CloseBlock(string.Empty);
                 break;
             case CodeMethodKind.Constructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
