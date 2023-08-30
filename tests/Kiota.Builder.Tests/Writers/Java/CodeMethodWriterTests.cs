@@ -643,7 +643,7 @@ public class CodeMethodWriterTests : IDisposable
         }).First();
         method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
         method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
-        method.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error401 });
+        method.AddErrorMapping("401", new CodeType { Name = "Error401", TypeDefinition = error401 });
         AddRequestBodyParameters();
         writer.Write(method);
         var result = tw.ToString();
@@ -651,10 +651,28 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("final HashMap<String, ParsableFactory<? extends Parsable>> errorMapping = new HashMap<String, ParsableFactory<? extends Parsable>>", result);
         Assert.Contains("put(\"4XX\", Error4XX::createFromDiscriminatorValue);", result);
         Assert.Contains("put(\"5XX\", Error5XX::createFromDiscriminatorValue);", result);
-        Assert.Contains("put(\"403\", Error403::createFromDiscriminatorValue);", result);
+        Assert.Contains("put(\"401\", Error401::createFromDiscriminatorValue);", result);
         Assert.Contains("sendAsync", result);
-        Assert.Contains($"java.util.concurrent.CompletableFuture<Somecustomtype> {ExecuterExceptionVar} = new java.util.concurrent.CompletableFuture<Somecustomtype>();", result);
-        Assert.Contains($"{ExecuterExceptionVar}.completeExceptionally(ex);", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestExecutorOverloadBody()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.OriginalMethod = method;
+        AddRequestBodyParameters();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("final RequestInformation requestInfo", result);
+        Assert.DoesNotContain("final HashMap<String, ParsableFactory<? extends Parsable>> errorMapping = new HashMap<String, ParsableFactory<? extends Parsable>>", result);
+        Assert.DoesNotContain("put(\"4XX\", Error4XX::createFromDiscriminatorValue);", result);
+        Assert.DoesNotContain("put(\"5XX\", Error5XX::createFromDiscriminatorValue);", result);
+        Assert.DoesNotContain("put(\"401\", Error401::createFromDiscriminatorValue);", result);
+        Assert.DoesNotContain("sendAsync", result);
+        Assert.DoesNotContain($"java.util.concurrent.CompletableFuture<Somecustomtype> {ExecuterExceptionVar} = new java.util.concurrent.CompletableFuture<Somecustomtype>();", result);
+        Assert.DoesNotContain($"{ExecuterExceptionVar}.completeExceptionally(ex);", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1157,7 +1175,6 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("sendCollectionAsync", result);
-        Assert.Contains("final java.util.concurrent.CompletableFuture<Iterable<Somecustomtype>> executionException = new java.util.concurrent.CompletableFuture<Iterable<Somecustomtype>>()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1701,6 +1718,24 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("this.someProperty = value", result);
     }
     [Fact]
+    public void WritePeriodAndDurationSetterToField()
+    {
+        setup();
+        method.AccessedProperty = new CodeProperty
+        {
+            Name = "someProperty",
+            Type = new CodeType
+            {
+                Name = "PeriodAndDuration",
+            },
+        };
+        (method.Parent as CodeClass)?.AddProperty(method.AccessedProperty);
+        method.Kind = CodeMethodKind.Setter;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("this.someProperty = PeriodAndDuration.ofPeriodAndDuration(value);", result);
+    }
+    [Fact]
     public void WritesConstructor()
     {
         setup();
@@ -1733,6 +1768,27 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains($"this.set{propName.ToFirstCharacterUpperCase()}({defaultValue})", result);
         Assert.Contains("super", result);
+    }
+    [Fact]
+    public void WritesWithUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RawUrlBuilder;
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        method.AddParameter(new CodeParameter
+        {
+            Name = "rawUrl",
+            Kind = CodeParameterKind.RawUrl,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"return new {parentClass.Name.ToFirstCharacterUpperCase()}", result);
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()

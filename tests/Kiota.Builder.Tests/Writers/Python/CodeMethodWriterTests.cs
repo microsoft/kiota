@@ -794,8 +794,8 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("get_uuid_value()", result);
         Assert.Contains("get_object_value(DummyClass)", result);
         Assert.Contains("get_collection_of_primitive_values(UUID)", result);
-        Assert.Contains("get_collection_of_object_values(Complex)", result);
-        Assert.Contains("get_enum_value(SomeEnum)", result);
+        Assert.Contains("get_collection_of_object_values(SomeComplexType)", result);
+        Assert.Contains("get_enum_value(EnumType)", result);
         Assert.Contains("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
@@ -909,6 +909,8 @@ public class CodeMethodWriterTests : IDisposable
     {
         setup();
         method.Documentation.Description = MethodDescription;
+        method.Documentation.DocumentationLabel = "see more";
+        method.Documentation.DocumentationLink = new("https://example.org/docs");
         var parameter = new CodeParameter
         {
             Documentation = new()
@@ -926,10 +928,11 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("\"\"\"", result);
         Assert.Contains(MethodDescription, result);
-        Assert.Contains("Args:", result);
-        Assert.Contains("param_name", result);
+        Assert.Contains("param param_name:", result);
         Assert.Contains(ParamDescription, result);
-        Assert.Contains("Returns:", result);
+        Assert.Contains("see more:", result);
+        Assert.Contains("https://example.org/docs", result);
+        Assert.Contains("Returns: Optional[Somecustomtype]", result);
         Assert.Contains("await", result);
     }
     [Fact]
@@ -937,6 +940,8 @@ public class CodeMethodWriterTests : IDisposable
     {
         setup();
         method.Documentation.Description = MethodDescription;
+        method.Documentation.DocumentationLabel = "see more";
+        method.Documentation.DocumentationLink = new("https://example.org/docs");
         method.IsAsync = false;
         var parameter = new CodeParameter
         {
@@ -955,9 +960,11 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("\"\"\"", result);
         Assert.Contains(MethodDescription, result);
-        Assert.Contains("Args:", result);
-        Assert.Contains("param_name", result);
+        Assert.Contains("param param_name:", result);
         Assert.Contains(ParamDescription, result);
+        Assert.Contains("see more:", result);
+        Assert.Contains("https://example.org/docs", result);
+        Assert.Contains("Returns: Optional[Somecustomtype]", result);
         Assert.DoesNotContain("await", result);
     }
     [Fact]
@@ -1481,6 +1488,27 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("This property has a description", result);
         Assert.Contains($"self.{propName}: Optional[str] = None", result);
         Assert.DoesNotContain("get_path_parameters(", result);
+    }
+    [Fact]
+    public void WritesWithUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RawUrlBuilder;
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        method.AddParameter(new CodeParameter
+        {
+            Name = "rawUrl",
+            Kind = CodeParameterKind.RawUrl,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"return {parentClass.Name.ToFirstCharacterUpperCase()}", result);
     }
     [Fact]
     public void WritesConstructorForReqestBuilder()

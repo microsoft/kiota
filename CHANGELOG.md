@@ -9,8 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for raw URL in the fluent API surface in CSharp, Go, Java, PHP, Python, Ruby, TypeScript. [#3199](https://github.com/microsoft/kiota/issues/3199)
+- Added support for external documentation links within descriptions in Python. [#2041](https://github.com/microsoft/kiota/issues/2041)
+- Added support for API manifests. [#3104](https://github.com/microsoft/kiota/issues/3104)
+- Added support for reserved path parameters. [#2320](https://github.com/microsoft/kiota/issues/2320)
+
 ### Changed
 
+- Fixed an issue where dependencies would not show up for any other language than CSharp in the vscode extension. [#3226](https://github.com/microsoft/kiota/issues/3226)
+- Multiple fixes to guarantee idempotency of subsequent runs. [#2442](https://github.com/microsoft/kiota/issues/2442)
+- Fixed issue with generating classes with Aliases(PHP)[microsoftgraph/msgraph-beta-sdk-php#197](https://github.com/microsoftgraph/msgraph-beta-sdk-php/pull/197)
+- Flattens the models namespaces in Ruby to avoid circular dependencies.
+- Adds ObjectId as a reserved keyword in Ruby to have memory management issues.
+- Replace Javax annotations in favor of Jakarta annotations for Java code generation. [#2810](https://github.com/microsoft/kiota/issues/2810)
+- RequestExecuters call overload methods reducing code generation size for Java. [#3150](https://github.com/microsoft/kiota/issues/3150)  
+- Remove URISyntaxException from Java generated RequestExecutors and RequestGenerators. [#3149](https://github.com/microsoft/kiota/issues/3149)
+- Adds 'Generated' annotation to generated Enums and Classes for Java. [#3106](https://github.com/microsoft/kiota/issues/3106)
+- Fixes uuid conversion to string value in PathParameters in Go. [#3106](https://github.com/microsoft/kiota/issues/3176)
+- Fixes a bug with incorrect reserved models renaming that occurs sometimes depending on the order of type processing [microsoftgraph/msgraph-sdk-dotnet/issues/2084](https://github.com/microsoftgraph/msgraph-sdk-dotnet/issues/2084)
+- Work around a System.ComandLine bug where adjacent matching command names would crash the CLI parser (CLI). [microsoftgraph/msgraph-cli#316](https://github.com/microsoftgraph/msgraph-cli/issues/316) [microsoftgraph/msgraph-cli#320](https://github.com/microsoftgraph/msgraph-cli/issues/320), [dotnet/command-line-api#2260](https://github.com/dotnet/command-line-api/issues/2260)
 
 ## [1.5.1] - 2023-08-08
 

@@ -16,6 +16,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             DisableActionOf(generatedCode,
             CodeParameterKind.RequestConfiguration);
@@ -172,8 +173,6 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "List[RequestOption]";
         else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
             currentProperty.Type.Name = "Dict[str, Union[str, List[str]]]";
-        else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameters))
-            currentProperty.Type.Name = $"{currentProperty.Parent?.Parent?.Name.ToFirstCharacterUpperCase()}.{currentProperty.Type.Name.ToFirstCharacterUpperCase()}";
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
             currentProperty.Type.Name = "Dict[str, Any]";

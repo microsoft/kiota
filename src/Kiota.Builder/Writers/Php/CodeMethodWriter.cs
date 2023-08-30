@@ -57,6 +57,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             case CodeMethodKind.RequestGenerator:
                 WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
                 break;
+            case CodeMethodKind.RawUrlBuilder:
+                WriteRawUrlBuilderBody(parentClass, codeElement, writer);
+                break;
             case CodeMethodKind.ClientConstructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 WriteApiConstructorBody(parentClass, codeElement, writer);
@@ -81,6 +84,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     {
         { CodeParameterKind.QueryParameter, CodePropertyKind.QueryParameters }, // Handles query parameter object as a constructor param in request config classes
     };
+    private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+    {
+        var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
+        var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
+        writer.WriteLine($"return new {parentClass.Name.ToFirstCharacterUpperCase()}(${rawUrlParameter.Name.ToFirstCharacterLowerCase()}, $this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()});");
+    }
 
     private static void WriteConstructorParentCall(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {

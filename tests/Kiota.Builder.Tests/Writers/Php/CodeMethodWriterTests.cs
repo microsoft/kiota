@@ -280,7 +280,7 @@ public class CodeMethodWriterTests : IDisposable
         }).First();
         codeMethod.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
         codeMethod.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
-        codeMethod.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error401 });
+        codeMethod.AddErrorMapping("401", new CodeType { Name = "Error401", TypeDefinition = error401 });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
         var result = stringWriter.ToString();
@@ -290,7 +290,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("RejectedPromise", result);
         Assert.Contains("@link https://learn.microsoft.com/ Learning", result);
         Assert.Contains("catch(Exception $ex)", result);
-        Assert.Contains("'403' => [Error403::class, 'createFromDiscriminatorValue']", result);
+        Assert.Contains("'401' => [Error401::class, 'createFromDiscriminatorValue']", result);
         Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, StreamInterface::class, $errorMappings);", result);
     }
 
@@ -350,7 +350,7 @@ public class CodeMethodWriterTests : IDisposable
         }).First();
         codeMethod.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
         codeMethod.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
-        codeMethod.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error401 });
+        codeMethod.AddErrorMapping("401", new CodeType { Name = "Error401", TypeDefinition = error401 });
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
         var result = stringWriter.ToString();
@@ -360,7 +360,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("RejectedPromise", result);
         Assert.Contains("@link https://learn.microsoft.com/ Learning", result);
         Assert.Contains("catch(Exception $ex)", result);
-        Assert.Contains("'403' => [Error403::class, 'createFromDiscriminatorValue']", result);
+        Assert.Contains("'401' => [Error401::class, 'createFromDiscriminatorValue']", result);
         Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, PhoneNumberPrefix::class, $errorMappings);", result);
     }
 
@@ -1291,6 +1291,27 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("if (is_array($pathParametersOrRawUrl)) {", result);
         Assert.Contains("$this->pathParameters = ['request-raw-url' => $pathParametersOrRawUrl];", result);
         Assert.Contains("$this->pathParameters = $urlTplParams;", result);
+    }
+    [Fact]
+    public void WritesWithUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RawUrlBuilder;
+        Assert.Throws<InvalidOperationException>(() => languageWriter.Write(method));
+        method.AddParameter(new CodeParameter
+        {
+            Name = "rawUrl",
+            Kind = CodeParameterKind.RawUrl,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
+        Assert.Throws<InvalidOperationException>(() => languageWriter.Write(method));
+        AddRequestProperties();
+        languageWriter.Write(method);
+        var result = stringWriter.ToString();
+        Assert.Contains($"return new {parentClass.Name.ToFirstCharacterUpperCase()}", result);
     }
 
     [Fact]

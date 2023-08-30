@@ -20,10 +20,10 @@ param (
 $version = $version.TrimStart("v")
 $packageJson = Get-Content $filePath | ConvertFrom-Json
 $packageJson.kiotaVersion = $version
-$extensionVersion = $version
+$fragments = $version.Split("-preview.")
+$versionParts = $fragments[0].Split(".")
+$updatedPatchVersion = $versionParts[2].TrimStart("0")
 if ($version -like "*-preview.*") {
-  $fragments = $version.Split("-preview.")
-  $versionParts = $fragments[0].Split(".")
   $sequenceNumber = $fragments[1].Substring(8).TrimStart("0")
   if ($sequenceNumber.Length -eq 1) {
     $sequenceNumber = "0$sequenceNumber"
@@ -36,16 +36,17 @@ if ($version -like "*-preview.*") {
   #   pp is the patch version without heading zeros
   #   yyMMdd is the current date
   #   ss is the sequence number from ADO build arguably that maxes us to 99 previews per day
-  $extensionVersion = $versionParts[0] + "." + $versionParts[1] + "." + $versionParts[2].TrimStart("0") + (Get-Date).ToString("yyMMdd") + $sequenceNumber
+  $updatedPatchVersion += (Get-Date).ToString("yyMMdd") + $sequenceNumber
 }
 else {
-  $versionParts = $version.Split(".")
-  $patchVersion = $versionParts[2].TrimStart("0")
-  if ([string]::IsNullOrWhiteSpace($patchVersion)) {
-    $patchVersion = "9"
+  if ($updatedPatchVersion -eq "1") {
+    $updatedPatchVersion = "100000002"
   }
-  $extensionVersion = $versionParts[0] + "." + $versionParts[1] + "." + $patchVersion + "99999999"
+  elseif ([string]::IsNullOrWhiteSpace($updatedPatchVersion)) {
+    $updatedPatchVersion = "100000001"
+  }
 }
+$extensionVersion = $versionParts[0] + "." + $versionParts[1] + "." + $updatedPatchVersion
 $packageJson.version = $extensionVersion
 $runtimeDependencies = $packageJson.runtimeDependencies
 

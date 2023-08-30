@@ -35,9 +35,15 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
     {
         get; init;
     }
+    public required Option<string> ManifestOption
+    {
+        get; init;
+    }
+
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
+        string manifest = context.ParseResult.GetValueForOption(ManifestOption) ?? string.Empty;
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         string searchTerm = context.ParseResult.GetValueForOption(SearchTermOption) ?? string.Empty;
         string version = context.ParseResult.GetValueForOption(VersionOption) ?? string.Empty;
@@ -55,7 +61,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
                 return 0;
             }
 
-            var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, searchTerm, version, loggerFactory, logger, cancellationToken);
+            var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, manifest, searchTerm, version, loggerFactory, logger, cancellationToken);
             if (statusCode.HasValue)
             {
                 return statusCode.Value;

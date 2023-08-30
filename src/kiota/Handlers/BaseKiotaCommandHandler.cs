@@ -229,13 +229,14 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         };
         DisplayHint("Hint: use kiota show to display a tree of paths present in the OpenAPI description.", example);
     }
-    protected void DisplayShowAdvancedHint(string searchTerm, string version, IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string? path = null)
+    protected void DisplayShowAdvancedHint(string searchTerm, string version, IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string? path = null, string? manifest = null)
     {
         if (!includePaths.Any() && !excludePaths.Any())
         {
             var example = path switch
             {
                 _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path} --include-path \"**/foo\"",
+                _ when !string.IsNullOrEmpty(manifest) => $"Example: kiota show -m {manifest} --include-path \"**/foo\"",
                 _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm} --include-path \"**/foo\"",
                 _ => $"Example: kiota show -k {searchTerm} -v {version} --include-path \"**/foo\"",
             };
@@ -256,25 +257,32 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
             DisplayHint("Hint: multiple matches found, use the key as the search term to display the details of a specific description.", example);
         }
     }
-    protected void DisplayGenerateHint(string path, IEnumerable<string> includedPaths, IEnumerable<string> excludedPaths)
+    protected void DisplayGenerateHint(string path, string manifest, IEnumerable<string> includedPaths, IEnumerable<string> excludedPaths)
     {
         var includedPathsSuffix = (includedPaths.Any() ? " -i " : string.Empty) + string.Join(" -i ", includedPaths.Select(static x => $"\"{x}\""));
         var excludedPathsSuffix = (excludedPaths.Any() ? " -e " : string.Empty) + string.Join(" -e ", excludedPaths.Select(static x => $"\"{x}\""));
-        var example = $"Example: kiota generate -l <language> -o <output path> -d {path}{includedPathsSuffix}{excludedPathsSuffix}";
+        var sourceArg = GetSourceArg(path, manifest);
+        var example = $"Example: kiota generate -l <language> -o <output path> {sourceArg}{includedPathsSuffix}{excludedPathsSuffix}";
         DisplayHint("Hint: use kiota generate to generate a client for the OpenAPI description.", example);
     }
-    protected void DisplayGenerateAdvancedHint(IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path)
+    protected void DisplayGenerateAdvancedHint(IEnumerable<string> includePaths, IEnumerable<string> excludePaths, string path, string manifest)
     {
         if (!includePaths.Any() && !excludePaths.Any())
         {
+            var sourceArg = GetSourceArg(path, manifest);
             DisplayHint("Hint: use the --include-path and --exclude-path options with glob patterns to filter the paths generated.",
-                        $"Example: kiota generate --include-path \"**/foo\" -d {path}");
+                        $"Example: kiota generate --include-path \"**/foo\" {sourceArg}");
         }
     }
-    protected void DisplayInfoHint(GenerationLanguage language, string path)
+    private static string GetSourceArg(string path, string manifest)
     {
+        return string.IsNullOrEmpty(manifest) ? $"-d {path}" : $"-m {manifest}";
+    }
+    protected void DisplayInfoHint(GenerationLanguage language, string path, string manifest)
+    {
+        var sourceArg = GetSourceArg(path, manifest);
         DisplayHint("Hint: use the info command to get the list of dependencies you need to add to your project.",
-                    $"Example: kiota info -d {path} -l {language}");
+                    $"Example: kiota info {sourceArg} -l {language}");
     }
     protected void DisplayCleanHint(string commandName)
     {

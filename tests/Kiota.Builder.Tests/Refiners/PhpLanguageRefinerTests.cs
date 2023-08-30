@@ -203,7 +203,7 @@ public class PhpLanguageRefinerTests
         {
             Name = "createFromDiscriminatorValue",
             Kind = CodeMethodKind.Factory,
-            ReturnType = new CodeType { TypeDefinition = modelClass, Name = "Entity" }
+            ReturnType = new CodeType { TypeDefinition = modelClass }
         };
         codeMethod.AddParameter(new CodeParameter
         {

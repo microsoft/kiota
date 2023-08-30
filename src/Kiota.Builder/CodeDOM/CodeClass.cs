@@ -45,7 +45,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         get; set;
     }
-    public CodeIndexer? Indexer => InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault(static x => !x.Deprecation?.IsDeprecated ?? true);
+    public CodeIndexer? Indexer => InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault(static x => !x.IsLegacyIndexer);
     public void AddIndexer(params CodeIndexer[] indexers)
     {
         if (indexers == null || Array.Exists(indexers, static x => x == null))
@@ -130,6 +130,10 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             }
             else throw new InvalidOperationException($"The element {name} could not be found in the class {Name}");
         }
+    }
+    public void RemoveMethodByKinds(params CodeMethodKind[] kinds)
+    {
+        RemoveChildElementByName(InnerChildElements.Where(x => x.Value is CodeMethod method && method.IsOfKind(kinds)).Select(static x => x.Key).ToArray());
     }
     private string ResolveUniquePropertyName(string name)
     {

@@ -97,14 +97,16 @@ public class TypeScriptLanguageRefinerTests
     [Fact]
     public async Task AddsExceptionImplementsOnErrorClasses()
     {
+        var apiErrorClassName = "ApiError";
         var model = TestHelper.CreateModelClass(root, "ErrorModel");
         model.IsErrorDefinition = true;
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
         var declaration = model.StartBlock;
 
-        Assert.Contains("ApiError", declaration.Usings.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
-        Assert.Contains("ApiError", declaration.Implements.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
+        Assert.True(declaration.Usings.First(x => x.Name.EqualsIgnoreCase(apiErrorClassName)).IsErasable);
+        Assert.Contains(apiErrorClassName, declaration.Usings.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
+        Assert.Contains(apiErrorClassName, declaration.Implements.Select(static x => x.Name), StringComparer.OrdinalIgnoreCase);
     }
     [Fact]
     public async Task InlineParentOnErrorClassesWhichAlreadyInherit()

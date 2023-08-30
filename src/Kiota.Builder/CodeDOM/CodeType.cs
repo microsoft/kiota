@@ -5,6 +5,17 @@ using System.Linq;
 namespace Kiota.Builder.CodeDOM;
 public class CodeType : CodeTypeBase, ICloneable
 {
+    public override string Name
+    {
+        get => IsExternal || TypeDefinition is null ? base.Name : TypeDefinition.Name;
+        set
+        {
+            if (!IsExternal && TypeDefinition is not null)
+                TypeDefinition.Name = value;
+            else
+                base.Name = value;
+        }
+    }
     public CodeElement? TypeDefinition
     {
         get;
@@ -25,7 +36,7 @@ public class CodeType : CodeTypeBase, ICloneable
             // e.g. var y = x.Clone(); var z = y.Clone(); y.GenericTypeParameterValues.Add(value);
             // shouldn't modify x.GenericTypeParameterValues or z.GenericTypeParameterValues
             GenericTypeParameterValues = new(GenericTypeParameterValues.ToList()),
-        }.BaseClone<CodeType>(this);
+        }.BaseClone<CodeType>(this, TypeDefinition is null || IsExternal);
     }
     public Collection<CodeType> GenericTypeParameterValues { get; init; } = new();
 }

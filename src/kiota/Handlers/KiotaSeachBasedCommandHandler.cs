@@ -7,9 +7,9 @@ namespace kiota.Handlers;
 
 internal abstract class KiotaSearchBasedCommandHandler : BaseKiotaCommandHandler
 {
-    protected async Task<(string, int?)> GetDescriptionFromSearchAsync(string openapi, string searchTerm, string version, ILoggerFactory loggerFactory, ILogger logger, CancellationToken cancellationToken)
+    protected async Task<(string, int?)> GetDescriptionFromSearchAsync(string openapi, string manifest, string searchTerm, string version, ILoggerFactory loggerFactory, ILogger logger, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(openapi) && !string.IsNullOrEmpty(searchTerm))
+        if (string.IsNullOrEmpty(openapi) && string.IsNullOrEmpty(manifest) && !string.IsNullOrEmpty(searchTerm))
         {
             logger.LogInformation("Searching for {searchTerm} in the OpenAPI description repository", searchTerm);
             var searcher = await GetKiotaSearcherAsync(loggerFactory, cancellationToken).ConfigureAwait(false);

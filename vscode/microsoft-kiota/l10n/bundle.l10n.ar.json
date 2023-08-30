@@ -32,5 +32,11 @@
   "Open a lock file": "افتح ملف قفل",
   "Filter the API description": "قم بتصفية وصف API",
   "Enter a filter": "أدخل عامل التصفية",
-  "Searching...": "جاري البحث..."
+  "Searching...": "جاري البحث...",
+  "A path or URL to an API manifest": "مسار أو عنوان URL لبيان واجهة برمجة التطبيقات",
+  "Open an API manifest": "افتح بيان واجهة برمجة التطبيقات",
+  "Invalid URL, please check the documentation for the supported URLs": "عنوان URL غير صالح ، يرجى التحقق من الوثائق الخاصة بعناوين URL المدعومة",
+  "No content found in the clipboard": "لم يتم العثور على محتوى في الحافظة",
+  "Invalid content found in the clipboard": "تم العثور على محتوى غير صالح في الحافظة",
+  "Select an API manifest key": "حدد مفتاح بيان واجهة برمجة التطبيقات"
 }

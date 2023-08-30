@@ -9,8 +9,7 @@ if ([string]::IsNullOrEmpty($language)) {
     exit 1
 }
 
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$testPath = Join-Path -Path $scriptPath -ChildPath $language
+$testPath = Join-Path -Path $PSScriptRoot -ChildPath $language
 
 Push-Location $testPath
 if ($language -eq "csharp") {
@@ -30,3 +29,9 @@ elseif ($language -eq "php") {
     Remove-Item composer.lock -ErrorAction SilentlyContinue
 }
 Pop-Location
+
+$archiveLocation = Join-Path -Path $PSScriptRoot -ChildPath "$language.zip"
+if (Test-Path $archiveLocation) {
+    Remove-Item $archiveLocation -Force -ErrorAction SilentlyContinue -Verbose
+}
+Compress-Archive -Path $testPath -DestinationPath $archiveLocation

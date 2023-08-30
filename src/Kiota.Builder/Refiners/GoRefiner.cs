@@ -58,9 +58,6 @@ public class GoRefiner : CommonLanguageRefiner
                 string.Empty,
                 "GetIsComposedType"
             );
-            AddRawUrlConstructorOverload(
-                generatedCode
-            );
             cancellationToken.ThrowIfCancellationRequested();
             RemoveModelPropertiesThatDependOnSubNamespaces(
                 generatedCode
@@ -250,7 +247,6 @@ public class GoRefiner : CommonLanguageRefiner
                         continue;
 
                     CodeType type = (codeType.Clone() as CodeType)!;
-                    type.Name = interfaceName;
                     type.TypeDefinition = existing;
                     property.Type = type;
                 }
@@ -316,18 +312,6 @@ public class GoRefiner : CommonLanguageRefiner
 
     private void FlattenGoParamsFileNames(CodeElement currentElement)
     {
-        if (currentElement is CodeProperty currentProp
-            && currentElement.Parent is CodeClass parentClass
-            && parentClass.IsOfKind(CodeClassKind.RequestConfiguration)
-            && currentProp.IsOfKind(CodePropertyKind.QueryParameters))
-        {
-            var nameList = getPathsName(parentClass, currentProp.Type.Name.ToFirstCharacterUpperCase());
-            var newTypeName = string.Join(string.Empty, nameList.Count > 1 ? nameList.Skip(1) : nameList);
-
-            var type = currentProp.Type;
-            type.Name = newTypeName;
-        }
-
         if (currentElement is CodeMethod codeMethod
             && codeMethod.IsOfKind(CodeMethodKind.RequestGenerator, CodeMethodKind.RequestExecutor))
         {
@@ -335,8 +319,6 @@ public class GoRefiner : CommonLanguageRefiner
             {
                 var nameList = getPathsName(param, param.Type.Name.ToFirstCharacterUpperCase());
                 var newTypeName = string.Join(string.Empty, nameList.Count > 1 ? nameList.Skip(1) : nameList);
-                param.Type.Name = newTypeName;
-
                 foreach (var typeDef in param.Type.AllTypes.Select(static x => x.TypeDefinition).Where(x => !string.IsNullOrEmpty(x?.Name) && !newTypeName.EndsWith(x.Name, StringComparison.OrdinalIgnoreCase)))
                     typeDef!.Name = newTypeName;
             }
@@ -504,7 +486,9 @@ public class GoRefiner : CommonLanguageRefiner
         "Duration",
         "TimeOnly",
         "DateOnly",
-        "string"
+        "string",
+        "UUID",
+        "Guid"
     };
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
@@ -516,7 +500,8 @@ public class GoRefiner : CommonLanguageRefiner
                                             !typeToSkipStrConv.Contains(x.Type.Name)),
             "strconv", "FormatBool"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) &&
-                    method.OriginalIndexer is CodeIndexer indexer && !indexer.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase),
+                    method.OriginalIndexer is CodeIndexer indexer && !indexer.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase)
+                    && !typeToSkipStrConv.Contains(indexer.IndexParameter.Type.Name),
             "strconv", "FormatInt"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             "github.com/microsoft/kiota-abstractions-go/serialization", "SerializationWriter"),
@@ -601,6 +586,12 @@ public class GoRefiner : CommonLanguageRefiner
 
             if (currentMethod.IsOfKind(CodeMethodKind.Factory))
                 currentMethod.ReturnType = new CodeType { Name = "Parsable", IsNullable = false, IsExternal = true };
+        }
+        else if (currentMethod.IsOfKind(CodeMethodKind.RawUrlBuilder))
+        {
+            currentMethod.ReturnType.IsNullable = true;
+            if (currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is CodeParameter codeParameter)
+                codeParameter.Type.IsNullable = false;
         }
         CorrectCoreTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(static x => x.Type)

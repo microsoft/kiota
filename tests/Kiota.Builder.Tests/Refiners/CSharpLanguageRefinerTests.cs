@@ -187,6 +187,56 @@ public class CSharpLanguageRefinerTests
         Assert.DoesNotContain("@", property.Name); // classname will be capitalized
     }
 
+    [Fact]
+    public async Task DoesNotEscapesReservedKeywordsForClassOrPropertyKindEnhanced()
+    {
+        // Arrange
+        var reservedModel = root.AddClass(new CodeClass
+        {
+            Name = "file", // this a keyword
+            Kind = CodeClassKind.Model,
+        }).First();
+        var reservedObjectModel = root.AddClass(new CodeClass
+        {
+            Name = "fileObject", // this a what the renaming of the keyword would cause
+            Kind = CodeClassKind.Model,
+        }).First();
+        var property = reservedModel.AddProperty(new CodeProperty
+        {
+            Name = "alias",// this a keyword
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        var secondProperty = reservedModel.AddProperty(new CodeProperty
+        {
+            Name = "file",// this a keyword
+            Type = new CodeType
+            {
+                TypeDefinition = reservedModel
+            }
+        }).First();
+        var thirdProperty = reservedModel.AddProperty(new CodeProperty
+        {
+            Name = "fileObject",// this a keyword
+            Type = new CodeType
+            {
+                TypeDefinition = reservedObjectModel
+            }
+        }).First();
+        // Act
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        // Assert
+        Assert.Equal("fileObject1", reservedModel.Name);// classes/models will be renamed if reserved without conflicts
+        Assert.Equal("fileObject", reservedObjectModel.Name);// original stays the same
+        Assert.Equal("alias", property.Name);// property names don't bring issue in dotnet
+        Assert.Equal("file", secondProperty.Name);// property names don't bring issue in dotnet
+        Assert.Equal("fileObject1", secondProperty.Type.Name);// property type was renamed 
+        Assert.Equal("fileObject", thirdProperty.Name);// property names don't bring issue in dotnet
+        Assert.Equal("fileObject", thirdProperty.Type.Name);// property type was renamed 
+
+    }
     [Theory]
     [InlineData("integer")]
     [InlineData("boolean")]
@@ -555,13 +605,19 @@ public class CSharpLanguageRefinerTests
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
+        var dateOnlyModel = root.AddClass(new CodeClass
+        {
+            Name = "DateOnly",
+            Kind = CodeClassKind.Model
+        }).First();
         var method = model.AddMethod(new CodeMethod
         {
             Name = "method",
             ReturnType = new CodeType
             {
                 Name = "DateOnly",
-                IsExternal = false// this is internal from the description
+                IsExternal = false,// this is internal from the description
+                TypeDefinition = dateOnlyModel
             },
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
@@ -576,13 +632,19 @@ public class CSharpLanguageRefinerTests
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
+        var timeOnlyModel = root.AddClass(new CodeClass
+        {
+            Name = "TimeOnly",
+            Kind = CodeClassKind.Model
+        }).First();
         var method = model.AddMethod(new CodeMethod
         {
             Name = "method",
             ReturnType = new CodeType
             {
                 Name = "TimeOnly",
-                IsExternal = false // this is internal from the description
+                IsExternal = false, // this is internal from the description
+                TypeDefinition = timeOnlyModel
             },
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);

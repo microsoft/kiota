@@ -13,13 +13,14 @@ import {
   LogLevel,
   parseGenerationLanguage,
 } from "./kiotaInterop";
-import { filterSteps, generateSteps, openSteps, searchLockSteps, searchSteps } from "./steps";
+import { filterSteps, generateSteps, openManifestSteps, openSteps, searchLockSteps, searchSteps, selectApiManifestKey } from "./steps";
 import { getKiotaVersion } from "./getKiotaVersion";
 import { searchDescription } from "./searchDescription";
 import { generateClient } from "./generateClient";
-import { getLanguageInformation } from "./getLanguageInformation";
+import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { updateClients } from "./updateClients";
+import { ApiManifest } from "./apiManifest";
 
 let kiotaStatusBarItem: vscode.StatusBarItem;
 let kiotaOutputChannel: vscode.LogOutputChannel;
@@ -27,6 +28,7 @@ const extensionId = "kiota";
 const focusCommandId = ".focus";
 const statusBarCommandId = `${extensionId}.status`;
 const treeViewId = `${extensionId}.openApiExplorer`;
+const treeViewFocusCommand = `${treeViewId}${focusCommandId}`;
 const dependenciesInfo = `${extensionId}.dependenciesInfo`;
 export const kiotaLockFile = "kiota-lock.json";
 
@@ -44,6 +46,48 @@ export async function activate(
   );
   const reporter = new TelemetryReporter(context.extension.packageJSON.telemetryInstrumentationKey);
   context.subscriptions.push(
+    vscode.window.registerUriHandler({
+      handleUri: async (uri: vscode.Uri) => {
+        if (uri.path === "/") {
+          return;
+        }
+        const queryParameters = getQueryParameters(uri);
+        if (uri.path.toLowerCase() === "/opendescription") {
+          reporter.sendTelemetryEvent("DeepLink.OpenDescription");
+          const descriptionUrl = queryParameters["descriptionurl"];
+          if (descriptionUrl) {
+            await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(descriptionUrl));
+            return;
+          }
+        }
+        if (uri.path.toLowerCase() === "/openmanifest") {
+          reporter.sendTelemetryEvent("DeepLink.OpenManifest");
+          const manifestUrl = queryParameters["manifesturl"];
+          const manifestContent = queryParameters["manifestcontent"];
+          const apiIdentifier = queryParameters["apiidentifier"];
+          const fromClipboard = queryParameters["fromclipboard"];
+          if (manifestUrl) {
+            await openTreeViewWithProgress(async () => {
+              const logs = await openApiTreeProvider.loadManifestFromUri(manifestUrl, apiIdentifier);
+              await exportLogsAndShowErrors(logs);
+            });
+            return;
+          } else if (manifestContent) {
+            await openTreeViewWithProgress(async () => {
+              const logs = await openApiTreeProvider.loadManifestFromContent(manifestContent, apiIdentifier);
+              await exportLogsAndShowErrors(logs);
+            });
+            return;
+          } else if (fromClipboard.toLowerCase() === "true") {
+            await openManifestFromClipboard(openApiTreeProvider, apiIdentifier!);
+            return;
+          }
+        }
+        void vscode.window.showErrorMessage(
+          vscode.l10n.t("Invalid URL, please check the documentation for the supported URLs")
+        );
+      }
+    }),
     reporter,
     registerCommandWithTelemetry(reporter, 
       `${extensionId}.searchLock`,
@@ -167,14 +211,13 @@ export async function activate(
           return result;
         });
         
-        languagesInformation = await getLanguageInformation(
+        languagesInformation = await getLanguageInformationForDescription(
           context,
-          language,
           openApiTreeProvider.descriptionUrl
         );
         if (languagesInformation) {
           dependenciesInfoProvider.update(languagesInformation, language);
-          await vscode.commands.executeCommand(`${dependenciesInfo}${focusCommandId}`);
+          await vscode.commands.executeCommand(treeViewFocusCommand);
         }
         if (typeof config.outputPath === "string" && !openApiTreeProvider.isLockFileLoaded && 
             vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 &&
@@ -198,8 +241,7 @@ export async function activate(
           return searchDescription(context, x);
         }));
         if (config.descriptionPath) {
-          await openApiTreeProvider.setDescriptionUrl(config.descriptionPath);
-          await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
+          await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(config.descriptionPath!));
         }
       }
     ),
@@ -216,10 +258,22 @@ export async function activate(
       async () => {
         const openState = await openSteps();
         if (openState.descriptionPath) {
-          await openApiTreeProvider.setDescriptionUrl(openState.descriptionPath);
-          await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
+          await openTreeViewWithProgress(() => openApiTreeProvider.setDescriptionUrl(openState.descriptionPath!));
         }
       }
+    ),
+    registerCommandWithTelemetry(reporter, 
+      `${treeViewId}.openManifestPath`,
+      async () => {
+        const openState = await openManifestSteps();
+        if (openState.manifestPath) {
+          await openTreeViewWithProgress(() => openApiTreeProvider.loadManifestFromUri(openState.manifestPath!));
+        }
+      }
+    ),
+    registerCommandWithTelemetry(reporter, 
+      `${treeViewId}.pasteManifest`,
+      () => openManifestFromClipboard(openApiTreeProvider, "")
     )
   );
 
@@ -283,6 +337,47 @@ export async function activate(
 
   context.subscriptions.push(disposable);
 }
+async function openManifestFromClipboard(openApiTreeProvider: OpenApiTreeProvider, apiIdentifier: string): Promise<void> {
+  await openTreeViewWithProgress(async () => {
+    const clipBoardContent = await vscode.env.clipboard.readText();
+    if (!clipBoardContent) {
+      await vscode.window.showErrorMessage(
+        vscode.l10n.t("No content found in the clipboard")
+      );
+      return;
+    }
+    try {
+      const decodedContent = Buffer.from(clipBoardContent, 'base64').toString('utf-8');
+      const deserializedContent = JSON.parse(decodedContent) as ApiManifest;
+      if (!apiIdentifier && deserializedContent.apiDependencies && Object.keys(deserializedContent.apiDependencies).length > 1) {
+        const apiKeys = Object.keys(deserializedContent.apiDependencies);
+        const selectKeyResult = await selectApiManifestKey(apiKeys);
+        if (selectKeyResult.selectedKey) {
+          apiIdentifier = selectKeyResult.selectedKey;
+        }
+      }
+    } catch (error) {
+      await vscode.window.showErrorMessage(
+        vscode.l10n.t("Invalid content found in the clipboard")
+      );
+      return;
+    }
+
+    const logs = await openApiTreeProvider.loadManifestFromContent(clipBoardContent, apiIdentifier);
+    await exportLogsAndShowErrors(logs);
+  });
+}
+function openTreeViewWithProgress<T>(callback: () => Promise<T>): Thenable<T> {
+  return vscode.window.withProgress({
+    location: vscode.ProgressLocation.Notification,
+    cancellable: false,
+    title: vscode.l10n.t("Loading...")
+  }, async (progress, _) => {
+    const result = await callback();
+    await vscode.commands.executeCommand(treeViewFocusCommand);
+    return result;
+  });
+}
 function registerCommandWithTelemetry(reporter: TelemetryReporter, command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable {
   return vscode.commands.registerCommand(command, (...args: any[]) => {
     const splatCommand = command.split('/');
@@ -307,14 +402,7 @@ async function showUpgradeWarningMessage(clientPath: string, context: vscode.Ext
 }
 
 async function loadLockFile(node: { fsPath: string }, openApiTreeProvider: OpenApiTreeProvider): Promise<void> {
-  await vscode.window.withProgress({
-    location: vscode.ProgressLocation.Notification,
-    cancellable: false,
-    title: vscode.l10n.t("Loading...")
-  }, (progress, _) => openApiTreeProvider.loadLockFile(node.fsPath));
-  if (openApiTreeProvider.descriptionUrl) {
-    await vscode.commands.executeCommand(`${treeViewId}${focusCommandId}`);
-  }
+  await openTreeViewWithProgress(() => openApiTreeProvider.loadLockFile(node.fsPath));
 }
 
 async function exportLogsAndShowErrors(result: KiotaLogEntry[]) : Promise<void> {
@@ -376,6 +464,20 @@ async function updateStatusBarItem(context: vscode.ExtensionContext): Promise<vo
     );
   }
   kiotaStatusBarItem.show();
+}
+
+function getQueryParameters(uri: vscode.Uri): Record<string, string> {
+  const query = uri.query;
+  if (!query) {
+    return {};
+  }
+  const queryParameters = (query.startsWith('?') ? query.substring(1) : query).split("&");
+  const parameters = {} as Record<string, string>;
+  queryParameters.forEach((element) => {
+    const keyValue = element.split("=");
+    parameters[keyValue[0].toLowerCase()] = decodeURIComponent(keyValue[1]);
+  });
+  return parameters;
 }
 
 // This method is called when your extension is deactivated

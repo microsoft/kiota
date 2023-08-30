@@ -27,12 +27,14 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                 writer.WriteLine("@property");
                 writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}(self) -> {returnType}:");
                 writer.IncreaseIndent();
-                conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
+                conventions.WriteLongDescription(codeElement.Documentation, writer);
                 _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.Type.Name, writer);
                 conventions.AddRequestBuilderBody(parentClass, returnType, writer);
                 writer.CloseBlock(string.Empty);
                 break;
             case CodePropertyKind.QueryParameters:
+                returnType = $"{codeElement.Parent?.Parent?.Name.ToFirstCharacterUpperCase()}.{codeElement.Type.Name.ToFirstCharacterUpperCase()}";
+                goto case CodePropertyKind.Headers;
             case CodePropertyKind.Headers:
             case CodePropertyKind.Options:
             case CodePropertyKind.QueryParameter:

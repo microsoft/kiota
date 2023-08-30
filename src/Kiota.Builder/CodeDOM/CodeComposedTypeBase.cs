@@ -36,12 +36,12 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
             _discriminatorInformation = value;
         }
     }
-    protected override TChildType BaseClone<TChildType>(CodeTypeBase source)
+    protected override TChildType BaseClone<TChildType>(CodeTypeBase source, bool cloneName = true)
     {
         ArgumentNullException.ThrowIfNull(source);
         if (source is not CodeComposedTypeBase sourceComposed)
             throw new InvalidCastException($"Cannot cast {source.GetType().Name} to {nameof(CodeComposedTypeBase)}");
-        base.BaseClone<TChildType>(source);
+        base.BaseClone<TChildType>(source, cloneName);
         if (sourceComposed.Types?.Any() ?? false)
             AddType(sourceComposed.Types.ToArray());
         DiscriminatorInformation = (DiscriminatorInformation)sourceComposed.DiscriminatorInformation.Clone();

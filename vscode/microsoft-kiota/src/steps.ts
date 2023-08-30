@@ -23,6 +23,52 @@ export async function openSteps() {
     return state;
 };
 
+export async function openManifestSteps() {
+    const state = {} as Partial<OpenManifestState>;
+    const title = l10n.t('Open an API manifest');
+    let step = 1;
+    let totalSteps = 1;
+    async function inputPathOrUrl(input: MultiStepInput, state: Partial<OpenManifestState>) {
+        state.manifestPath = await input.showInputBox({
+            title,
+            step: step++,
+            totalSteps: totalSteps,
+            value: state.manifestPath || '',
+            prompt: l10n.t('A path or URL to an API manifest'),
+            validate: validateIsNotEmpty,
+            shouldResume: shouldResume
+        });
+    }
+    await MultiStepInput.run(input => inputPathOrUrl(input, state), () => step-=2);
+    return state;
+};
+
+export async function selectApiManifestKey(keys: string[]) {
+    const state = {} as Partial<SelectApiManifestKey>;
+    let step = 1;
+    let totalSteps = 1;
+    const title = l10n.t('Select an API manifest key');
+    async function pickSearchResult(input: MultiStepInput, state: Partial<SelectApiManifestKey>) {
+        const items = keys.map(x => 
+        { 
+            return {
+                label: x,
+            } as QuickPickItem;
+        });
+        const pick = await input.showQuickPick({
+            title,
+            step: step++,
+            totalSteps: totalSteps,
+            placeholder: l10n.t('Select an API manifest key'),
+            items: items,
+            shouldResume: shouldResume
+        });
+        state.selectedKey = keys.find(x => x === pick?.label);
+    }
+    await MultiStepInput.run(input => pickSearchResult(input, state), () => step-=2);
+    return state;
+}
+
 export async function searchLockSteps() {
     const state = {} as Partial<SearchLockState>;
     let step = 1;
@@ -225,8 +271,16 @@ interface OpenState extends BaseStepsState {
     descriptionPath: string;
 }
 
+interface OpenManifestState extends BaseStepsState {
+    manifestPath: string;
+}
+
 interface SearchLockState extends BaseStepsState {
     lockFilePath: Uri;
+}
+
+interface SelectApiManifestKey extends BaseStepsState {
+    selectedKey: string;
 }
 
 interface GenerateState extends BaseStepsState {

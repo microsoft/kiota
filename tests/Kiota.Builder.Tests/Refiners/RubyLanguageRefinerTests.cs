@@ -299,5 +299,30 @@ public class RubyLanguageRefinerTests
         Assert.Single(model.Properties.Where(x => x.IsNameEscaped));
         Assert.Single(model.Methods.Where(x => x.IsOfKind(CodeMethodKind.QueryParametersMapper)));
     }
+    [Fact]
+    public async Task FlattensModelsNamespace()
+    {
+        var config = new GenerationConfiguration { Language = GenerationLanguage.Ruby };
+        var modelsNS = root.AddNamespace(config.ModelsNamespaceName);
+        var subModelsNS = modelsNS.AddNamespace($"{config.ModelsNamespaceName}.submodels");
+        subModelsNS.AddClass(new CodeClass
+        {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+        });
+        subModelsNS.AddEnum(new CodeEnum
+        {
+            Name = "someenum",
+        });
+        Assert.Empty(modelsNS.Classes);
+        Assert.Single(subModelsNS.Classes);
+        Assert.Empty(modelsNS.Enums);
+        Assert.Single(subModelsNS.Enums);
+        await ILanguageRefiner.Refine(config, root);
+        Assert.Single(modelsNS.Classes);
+        Assert.Empty(subModelsNS.Classes);
+        Assert.Single(modelsNS.Enums);
+        Assert.Empty(subModelsNS.Enums);
+    }
     #endregion
 }

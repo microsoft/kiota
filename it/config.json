@@ -154,6 +154,12 @@
         "Language": "python",
         "Rationale": "https://github.com/microsoft/kiota/issues/2957"
       }
+    ],
+    "IdempotencySuppressions": [
+      {
+        "Language": "typescript",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
+      }
     ]
   },
   "apisguru::twilio.com:api": {
@@ -216,6 +222,12 @@
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/2484"
       }
+    ],
+    "IdempotencySuppressions": [
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      }
     ]
   },
   "apisguru::stripe.com": {
@@ -243,6 +255,36 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      }
+    ],
+    "IdempotencySuppressions": [
+      {
+        "Language": "typescript",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
+      },
+      {
+        "Language": "go",
+        "Rationale": "https://github.com/microsoft/kiota/issues/3067"
+      },
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/3067"
+      },
+      {
+        "Language": "java",
+        "Rationale": "https://github.com/microsoft/kiota/issues/3067"
+      },
+      {
+        "Language": "csharp",
+        "Rationale": "https://github.com/microsoft/kiota/issues/3067"
+      },
+      {
+        "Language": "ruby",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      },
+      {
+        "Language": "python",
+        "Rationale": "https://github.com/microsoft/kiota/issues/3067"
       }
     ]
   },
@@ -279,6 +321,16 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      }
+    ],
+    "IdempotencySuppressions": [
+      {
+        "Language": "php",
+        "Rationale": "https://github.com/microsoft/kiota/issues/3067"
+      },
+      {
+        "Language": "typescript",
+        "Rationale": "https://github.com/microsoft/kiota/issues/1812"
       }
     ]
   }

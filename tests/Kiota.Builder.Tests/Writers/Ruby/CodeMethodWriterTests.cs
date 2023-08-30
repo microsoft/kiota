@@ -269,7 +269,7 @@ public class CodeMethodWriterTests : IDisposable
         }).First();
         method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
         method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
-        method.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error401 });
+        method.AddErrorMapping("401", new CodeType { Name = "Error401", TypeDefinition = error401 });
         AddRequestBodyParameters();
         writer.Write(method);
         var result = tw.ToString();
@@ -277,7 +277,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("error_mapping = Hash.new", result);
         Assert.Contains("error_mapping[\"4XX\"] = lambda {|pn| Error4XX.create_from_discriminator_value(pn) }", result);
         Assert.Contains("error_mapping[\"5XX\"] = lambda {|pn| Error5XX.create_from_discriminator_value(pn) }", result);
-        Assert.Contains("error_mapping[\"403\"] = lambda {|pn| Error403.create_from_discriminator_value(pn) }", result);
+        Assert.Contains("error_mapping[\"401\"] = lambda {|pn| Error401.create_from_discriminator_value(pn) }", result);
         Assert.Contains("send_async", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
@@ -796,6 +796,27 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"@{propName.ToSnakeCase()} = {defaultValue}", result);
+    }
+    [Fact]
+    public void WritesWithUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RawUrlBuilder;
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        method.AddParameter(new CodeParameter
+        {
+            Name = "rawUrl",
+            Kind = CodeParameterKind.RawUrl,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"return {parentClass.Name.ToFirstCharacterUpperCase()}.new", result);
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()

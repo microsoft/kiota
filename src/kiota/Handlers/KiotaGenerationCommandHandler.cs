@@ -69,6 +69,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         string output = context.ParseResult.GetValueForOption(OutputOption) ?? string.Empty;
         GenerationLanguage language = context.ParseResult.GetValueForOption(LanguageOption);
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
+        string manifest = context.ParseResult.GetValueForOption(ManifestOption) ?? string.Empty;
         bool backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         bool includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
@@ -84,6 +85,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
         AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
         AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
+        AssignIfNotNullOrEmpty(manifest, (c, s) => c.ApiManifestPath = s);
         AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
         AssignIfNotNullOrEmpty(namespaceName, (c, s) => c.ClientNamespaceName = s);
         Configuration.Generation.UsesBackingStore = backingStore;
@@ -109,6 +111,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
 
         Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
         Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
+        Configuration.Generation.ApiManifestPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.ApiManifestPath));
         Configuration.Generation.CleanOutput = cleanOutput;
         Configuration.Generation.ClearCache = clearCache;
 
@@ -129,8 +132,8 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
                     DisplaySuccess("Generation skipped as no changes were detected");
                     DisplayCleanHint("generate");
                 }
-                DisplayInfoHint(language, Configuration.Generation.OpenAPIFilePath);
-                DisplayGenerateAdvancedHint(includePatterns, excludePatterns, Configuration.Generation.OpenAPIFilePath);
+                DisplayInfoHint(language, Configuration.Generation.OpenAPIFilePath, Configuration.Generation.ApiManifestPath);
+                DisplayGenerateAdvancedHint(includePatterns, excludePatterns, Configuration.Generation.OpenAPIFilePath, Configuration.Generation.ApiManifestPath);
                 return 0;
             }
             catch (Exception ex)
@@ -154,6 +157,10 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         get; init;
     }
     public required Option<bool> ClearCacheOption
+    {
+        get; init;
+    }
+    public required Option<string> ManifestOption
     {
         get; init;
     }

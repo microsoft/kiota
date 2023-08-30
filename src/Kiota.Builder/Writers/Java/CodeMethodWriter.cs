@@ -17,13 +17,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
-        WriteMethodDocumentation(codeElement, writer);
         if (codeElement.IsAsync &&
             codeElement.IsOfKind(CodeMethodKind.RequestExecutor) &&
             returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
             returnType = "Void"; //generic type for the future
-        writer.WriteLine(codeElement.ReturnType.IsNullable && !codeElement.IsAsync ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
-        var signatureReturnType = WriteMethodPrototype(codeElement, writer, returnType);
+        WriteMethodDocumentation(codeElement, writer, returnType);
+        WriteMethodPrototype(codeElement, writer, returnType);
         writer.IncreaseIndent();
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
@@ -42,19 +41,25 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 WriteIndexerBody(codeElement, parentClass, writer, returnType);
                 break;
             case CodeMethodKind.RequestGenerator when codeElement.IsOverload:
-                WriteGeneratorMethodCall(codeElement, requestParams, parentClass, writer, "return ");
+                WriteGeneratorOrExecutorMethodCall(codeElement, requestParams, parentClass, writer, "return ", CodeMethodKind.RequestGenerator);
                 break;
             case CodeMethodKind.RequestGenerator when !codeElement.IsOverload:
                 WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
                 break;
-            case CodeMethodKind.RequestExecutor:
-                WriteRequestExecutorBody(codeElement, requestParams, parentClass, writer, signatureReturnType);
+            case CodeMethodKind.RequestExecutor when codeElement.IsOverload:
+                WriteGeneratorOrExecutorMethodCall(codeElement, requestParams, parentClass, writer, "return ", CodeMethodKind.RequestExecutor);
+                break;
+            case CodeMethodKind.RequestExecutor when !codeElement.IsOverload:
+                WriteRequestExecutorBody(codeElement, requestParams, parentClass, writer);
                 break;
             case CodeMethodKind.Getter:
                 WriteGetterBody(codeElement, writer, parentClass);
                 break;
             case CodeMethodKind.Setter:
                 WriteSetterBody(codeElement, writer, parentClass);
+                break;
+            case CodeMethodKind.RawUrlBuilder:
+                WriteRawUrlBuilderBody(parentClass, codeElement, writer);
                 break;
             case CodeMethodKind.ClientConstructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
@@ -85,6 +90,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 break;
         }
         writer.CloseBlock();
+    }
+    private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+    {
+        var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
+        var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
+        writer.WriteLine($"return new {parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToFirstCharacterLowerCase()}, {requestAdapterProperty.Name.ToFirstCharacterLowerCase()});");
     }
     private const string ResultVarName = "result";
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
@@ -352,7 +363,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if (parentClass.GetBackingStoreProperty() is CodeProperty backingStore)
             writer.WriteLine($"this.get{backingStore.Name.ToFirstCharacterUpperCase()}().set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value);");
         else
-            writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value;");
+        {
+            string value = "PeriodAndDuration".Equals(codeElement.AccessedProperty?.Type?.Name, StringComparison.OrdinalIgnoreCase) ? "PeriodAndDuration.ofPeriodAndDuration(value);" : "value;";
+            writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = {value}");
+
+        }
     }
     private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
@@ -458,14 +473,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.WriteLine($"return {DeserializerVarName};");
     }
     private const string FactoryMethodName = "createFromDiscriminatorValue";
-    private const string ExecuterExceptionVar = "executionException";
-    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string signatureReturnType)
+    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, false);
-        writer.WriteLine("try {");
-        writer.IncreaseIndent();
-        WriteGeneratorMethodCall(codeElement, requestParams, parentClass, writer, $"final RequestInformation {RequestInfoVarName} = ");
+        WriteGeneratorOrExecutorMethodCall(codeElement, requestParams, parentClass, writer, $"final RequestInformation {RequestInfoVarName} = ", CodeMethodKind.RequestGenerator);
         var sendMethodName = GetSendRequestMethodName(codeElement.ReturnType.IsCollection, returnType, codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeEnum);
         var errorMappingVarName = "null";
         if (codeElement.ErrorMappings.Any())
@@ -479,12 +491,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         }
         var factoryParameter = codeElement.ReturnType is CodeType returnCodeType && returnCodeType.TypeDefinition is CodeClass ? $"{returnType}::{FactoryMethodName}" : $"{returnType}.class";
         writer.WriteLine($"return this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {errorMappingVarName});");
-        writer.DecreaseIndent();
-        writer.StartBlock("} catch (URISyntaxException ex) {");
-        writer.WriteLine($"final java.util.concurrent.CompletableFuture<{signatureReturnType}> {ExecuterExceptionVar} = new java.util.concurrent.CompletableFuture<{signatureReturnType}>();");
-        writer.WriteLine($"{ExecuterExceptionVar}.completeExceptionally(ex);");
-        writer.WriteLine($"return {ExecuterExceptionVar};");
-        writer.CloseBlock();
     }
     private string GetSendRequestMethodName(bool isCollection, string returnType, bool isEnum)
     {
@@ -503,11 +509,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     }
     private const string RequestInfoVarName = "requestInfo";
     private const string RequestConfigVarName = "requestConfig";
-    private static void WriteGeneratorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix)
+    private static void WriteGeneratorOrExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix, CodeMethodKind codeMethodKind)
     {
-        var generatorMethodName = parentClass
+        var methodName = parentClass
                                             .Methods
-                                            .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
+                                            .FirstOrDefault(x => x.IsOfKind(codeMethodKind) && x.HttpMethod == codeElement.HttpMethod)
                                             ?.Name
                                             ?.ToFirstCharacterLowerCase();
         var paramsList = new[] { requestParams.requestBody, requestParams.requestConfiguration };
@@ -517,7 +523,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var skipIndex = requestParams.requestBody == null ? 1 : 0;
         requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "null"));
         var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x, y) => $"{x}, {y}") : string.Empty;
-        writer.WriteLine($"{prefix}{generatorMethodName}({paramsCall});");
+        writer.WriteLine($"{prefix}{methodName}({paramsCall});");
     }
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)
     {
@@ -658,7 +664,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}({serializationKey}, {dataToSerialize});");
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
-    private string WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType)
+    private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType)
     {
         var accessModifier = conventions.GetAccessModifier(code.Access);
         var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
@@ -670,27 +676,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             _ => code.Name.ToFirstCharacterLowerCase()
         };
         var parameters = string.Join(", ", code.Parameters.OrderBy(static x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)));
-        var throwableDeclarations = code.Kind switch
-        {
-            CodeMethodKind.RequestGenerator => "throws URISyntaxException ",
-            _ => string.Empty
-        };
         var collectionCorrectedReturnType = code.ReturnType.IsArray && code.IsOfKind(CodeMethodKind.RequestExecutor) ?
                                             $"Iterable<{returnType.StripArraySuffix()}>" :
                                             returnType;
         var finalReturnType = isConstructor ? string.Empty : $" {returnTypeAsyncPrefix}{collectionCorrectedReturnType}{returnTypeAsyncSuffix}";
         var staticModifier = code.IsStatic ? " static" : string.Empty;
         conventions.WriteDeprecatedAnnotation(code, writer);
-        writer.WriteLine($"{accessModifier}{staticModifier}{finalReturnType} {methodName}({parameters}) {throwableDeclarations}{{");
-        return collectionCorrectedReturnType;
+        writer.WriteLine($"{accessModifier}{staticModifier}{finalReturnType} {methodName}({parameters}) {{");
     }
-    private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
+    private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, string returnType)
     {
-        var returnRemark = code.IsAsync switch
+        var returnVoid = returnType.Equals("void", StringComparison.OrdinalIgnoreCase);
+        // Void returns, this includes constructors, should not have a return statement in the JavaDocs.
+        var returnRemark = returnVoid ? string.Empty : (code.IsAsync switch
         {
             true => $"@return a CompletableFuture of {code.ReturnType.Name}",
             false => $"@return a {code.ReturnType.Name}",
-        };
+        });
         conventions.WriteLongDescription(code,
                                         writer,
                                         code.Parameters
@@ -698,7 +700,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                             .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                                             .Select(x => $"@param {x.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(x.Documentation.Description)}")
                                             .Union(new[] { returnRemark }));
-
+        if (!returnVoid || code.IsAsync) //Nullable/Nonnull annotations for returns are a part of Method Documentation
+            writer.WriteLine(code.ReturnType.IsNullable && !code.IsAsync ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
     }
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method)
     {

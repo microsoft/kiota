@@ -152,11 +152,66 @@ jobs:
         if: always()
         with:
           name: generation-results-${{ matrix.language }}-${{ steps.replace_url.outputs.ARTKEY }}
-          path: it/${{ matrix.language }}
+          path: it/${{ matrix.language }}.zip
+
+  idempotency:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - java
+          - csharp
+          - go
+          - typescript
+          - ruby
+          - php
+          - python
+        description:
+          - "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml"
+          - "./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml"
+          - "oas::petstore"
+          - "apisguru::twitter.com:current"
+          - "apisguru::notion.com"
+          - "apisguru::stripe.com"
+          - "https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml"
+          - "apisguru::meraki.com"
+          - "https://developers.pipedrive.com/docs/api/v1/openapi.yaml"
+          - "apisguru::twilio.com:api"
+          - "apisguru::docusign.net"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: generator
+          path: publish
+      - run: chmod a+x ./publish/kiota
+      - name: Check if test is suppressed
+        id: check-suppressed
+        run: |
+          $isSuppressed = . ./it/get-is-suppressed.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }} -kind idempotency
+          Write-Output "IS_SUPPRESSED=$($isSuppressed.ToString().ToLowerInvariant())" >> $Env:GITHUB_OUTPUT
+        shell: pwsh
+      - name: Verify idempotency
+        shell: pwsh
+        run: ./it/compare-generation.ps1 -descriptionUrl ${{ matrix.description }} -language ${{ matrix.language }}
+        continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
+      - id: replace_url
+        if: always()
+        run: |
+          ORIGINAL="${{ matrix.description }}"
+          REPLACED="${ORIGINAL//[-:<>|\*\?\\\/\.]/_}"
+          echo "ARTKEY=$REPLACED" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: idempotency-${{ matrix.language }}-${{ steps.replace_url.outputs.ARTKEY }}
+          path: idempotency-folder*.zip
 
   cleanup:
     runs-on: ubuntu-latest
-    needs: [integration]
+    needs: [integration, idempotency]
     steps:
       - uses: jimschubert/delete-artifacts-action@v1
         with:

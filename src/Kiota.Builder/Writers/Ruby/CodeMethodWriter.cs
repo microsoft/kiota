@@ -51,6 +51,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 WriteApiConstructorBody(parentClass, codeElement, writer);
                 break;
+            case CodeMethodKind.RawUrlBuilder:
+                WriteRawUrlBuilderBody(parentClass, codeElement, writer);
+                break;
             case CodeMethodKind.Constructor:
                 WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 break;
@@ -70,6 +73,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 break;
         }
         writer.CloseBlock("end");
+    }
+    private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+    {
+        var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
+        var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
+        writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}.new({rawUrlParameter.Name.ToSnakeCase()}, @{requestAdapterProperty.Name.ToSnakeCase()})");
     }
     private const string DiscriminatorMappingVarName = "mapping_value";
     private const string NodeVarName = "mapping_value_node";

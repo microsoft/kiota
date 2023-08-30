@@ -32,7 +32,7 @@ function Get-LatestMavenVersion {
     param(
         [string]$packageId
     )
-    $url = "https://repo1.maven.org/maven2/$($packageId.Replace(":", "/").Replace(".", "/"))/maven-metadata.xml"
+    $url = "https://repo1.maven.org/maven2/$($packageId.Replace(":", "/").Replace(".", "/").Replace("|", "."))/maven-metadata.xml"
     $response = Invoke-RestMethod -Uri $url -Method Get
     $response.metadata.versioning.latest
 }
@@ -104,11 +104,8 @@ function Retry-Command {
     }
 }
 
-# Get current script directory
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-
 # Read the appsettings.json file
-$mainSettings = Join-Path -Path $scriptPath -ChildPath "..\src\kiota\appsettings.json"
+$mainSettings = Join-Path -Path $PSScriptRoot -ChildPath "..\src\kiota\appsettings.json"
 $appSettings = Get-Content -Path $mainSettings -Raw | ConvertFrom-Json
 
 foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name | Sort-Object)) {
@@ -117,7 +114,7 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
         foreach ($dependency in $language.Dependencies) {
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestNugetVersion -packageId $dependency.Name
-                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
+                Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
                 $dependency.Version = $latestVersion
             }
         }
@@ -126,7 +123,7 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
         foreach ($dependency in $language.Dependencies) {
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestGithubRelease -packageId $dependency.Name
-                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
+                Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
                 $dependency.Version = $latestVersion
             }
         }
@@ -135,7 +132,7 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
         foreach ($dependency in $language.Dependencies) {
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestNpmVersion -packageId $dependency.Name
-                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
+                Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
                 $dependency.Version = $latestVersion
             }
         }
@@ -143,8 +140,8 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
     elseif ($languageName -eq "Java") {
         foreach ($dependency in $language.Dependencies) {
             Retry-Command -ScriptBlock {
-                $latestVersion = Get-LatestMavenVersion -packageId $dependency.Name
-                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
+                $latestVersion = Get-LatestMavenVersion -packageId $dependency.Name.Replace("jakarta.annotation:jakarta.annotation-api", "jakarta/annotation.jakarta|annotation-api")
+                Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
                 $dependency.Version = $latestVersion
             }
         }
@@ -153,7 +150,7 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
         foreach ($dependency in $language.Dependencies) {
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestComposerVersion -packageId $dependency.Name
-                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
+                Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
                 $dependency.Version = $latestVersion
             }
         }
@@ -162,7 +159,7 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
         foreach ($dependency in $language.Dependencies) {
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestPypiVersion -packageId $dependency.Name
-                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
+                Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
                 $dependency.Version = $latestVersion
             }
         }
@@ -171,7 +168,7 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
         foreach ($dependency in $language.Dependencies) {
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestRubygemVersion -packageId $dependency.Name
-                Write-Information "Updating $($dependency.PackageId) from $($dependency.Version) to $latestVersion"
+                Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
                 $dependency.Version = $latestVersion
             }
         }

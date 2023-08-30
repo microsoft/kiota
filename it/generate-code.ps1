@@ -16,18 +16,17 @@ if ([string]::IsNullOrEmpty($language)) {
     exit 1
 }
 
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$additionalArgumentCmd = Join-Path -Path $scriptPath -ChildPath "get-additional-arguments.ps1"
+$additionalArgumentCmd = Join-Path -Path $PSScriptRoot -ChildPath "get-additional-arguments.ps1"
 $additionalArguments = Invoke-Expression "$additionalArgumentCmd -descriptionUrl $descriptionUrl -language $language"
-$rootPath = Join-Path -Path $scriptPath -ChildPath ".."
+$rootPath = Join-Path -Path $PSScriptRoot -ChildPath ".."
 
+$Env:KIOTA_TUTORIAL_ENABLED = "false"
 $executableName = "kiota"
 if ($IsWindows) {
     $executableName = "kiota.exe"
 }
 
-switch ($dev)
-{
+switch ($dev) {
     $true {
         Write-Warning "Using kiota in dev mode"
         $kiotaExec = Join-Path -Path $rootPath -ChildPath "src" -AdditionalChildPath "kiota", "bin", "Debug", "net7.0", $executableName
@@ -39,16 +38,18 @@ switch ($dev)
     }
 }
 
-$targetOpenapiPath = Join-Path -Path $scriptPath -ChildPath "openapi.yaml"
+$targetOpenapiPath = Join-Path -Path $PSScriptRoot -ChildPath "openapi.yaml"
 if (Test-Path $targetOpenapiPath) {
     Remove-Item $targetOpenapiPath
 }
 
 if ($descriptionUrl.StartsWith("./")) {
     Copy-Item -Path $descriptionUrl -Destination $targetOpenapiPath -Force
-} elseif ($descriptionUrl.StartsWith("http")) {
+}
+elseif ($descriptionUrl.StartsWith("http")) {
     Invoke-WebRequest -Uri $descriptionUrl -OutFile $targetOpenapiPath
-} else {
+}
+else {
     Start-Process "$kiotaExec" -ArgumentList "download ${descriptionUrl} --clean-output --output $targetOpenapiPath" -Wait -NoNewWindow    
 }
 

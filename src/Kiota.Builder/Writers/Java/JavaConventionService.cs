@@ -11,6 +11,7 @@ using Kiota.Builder.Refiners;
 namespace Kiota.Builder.Writers.Java;
 public class JavaConventionService : CommonLanguageConventionService
 {
+    internal static string AutoGenerationHeader => "@jakarta.annotation.Generated(\"com.microsoft.kiota\")";
     private const string InternalStreamTypeName = "InputStream";
     public override string StreamTypeName => InternalStreamTypeName;
     private const string InternalVoidTypeName = "Void";
@@ -34,7 +35,7 @@ public class JavaConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var nullKeyword = parameter.Optional ? "Nullable" : "Nonnull";
-        var nullAnnotation = parameter.Type.IsNullable ? $"@javax.annotation.{nullKeyword} " : string.Empty;
+        var nullAnnotation = parameter.Type.IsNullable ? $"@jakarta.annotation.{nullKeyword} " : string.Empty;
         return $"{nullAnnotation}final {GetTypeString(parameter.Type, targetElement)} {parameter.Name.ToFirstCharacterLowerCase()}";
     }
 

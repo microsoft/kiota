@@ -19,6 +19,7 @@ public class PhpRefiner : CommonLanguageRefiner
     {
         return Task.Run(() =>
         {
+            RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
             AddInnerClasses(generatedCode,
                 true,
                 string.Empty,
@@ -222,9 +223,9 @@ public class PhpRefiner : CommonLanguageRefiner
             currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
             currentProperty.DefaultValue = "[]";
         }
-        else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))
+        else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder) && currentProperty.Type is CodeType rbTypeDef && rbTypeDef.TypeDefinition is not null)
         {
-            currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
+            rbTypeDef.TypeDefinition.Name = rbTypeDef.TypeDefinition.Name.ToFirstCharacterUpperCase();
         }
         else if (currentProperty.Type.Name?.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) ?? false)
         {
@@ -297,7 +298,6 @@ public class PhpRefiner : CommonLanguageRefiner
                     .Select(x => x.ToFirstCharacterUpperCase())
                     .ToArray());
                 usingElement.Alias = $"{(string.IsNullOrEmpty(replacement) ? string.Empty : $"\\{replacement}")}\\{usingElement.Declaration!.TypeDefinition!.Name.ToFirstCharacterUpperCase()}";
-                usingElement.Declaration.Name = usingElement.Alias;
             }
         }
         CrawlTree(currentElement, AliasUsingWithSameSymbol);

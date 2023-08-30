@@ -238,6 +238,7 @@ public class GoConventionService : CommonLanguageConventionService
             "float" or "double" or "decimal" or "float64" or "float32" => $"{StrConvHash}.FormatFloat({reference}, 'E', -1, 64)",
             "DateTimeOffset" or "Time" => $"({reference}).Format({TimeFormatHash}.RFC3339)", // default to using ISO 8601
             "ISODuration" or "TimeSpan" or "TimeOnly" or "DateOnly" => $"({reference}).String()",
+            "Guid" or "UUID" => $"{reference}.String()",
             _ => reference,
         };
     }

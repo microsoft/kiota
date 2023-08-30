@@ -17,7 +17,7 @@ public class CodePropertyWriterTests : IDisposable
     private readonly CodeClass parentClass;
     private readonly CodeNamespace rootNamespace;
     private const string PropertyName = "PropertyName";
-    private const string TypeName = "Somecustomtype";
+    private const string TypeName = "SomeCustomClass";
     public CodePropertyWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);
@@ -102,7 +102,7 @@ public class CodePropertyWriterTests : IDisposable
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains("get { return BackingStore?.Get<Somecustomtype>(\"propertyName\"); }", result);
+        Assert.Contains("get { return BackingStore?.Get<SomeCustomClass>(\"propertyName\"); }", result);
         Assert.Contains("set { BackingStore?.Set(\"propertyName\", value);", result);
     }
     [Fact]
@@ -112,7 +112,7 @@ public class CodePropertyWriterTests : IDisposable
         property.Kind = CodePropertyKind.AdditionalData;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains("get { return BackingStore?.Get<Somecustomtype>(\"propertyName\"); }", result);
+        Assert.Contains("get { return BackingStore?.Get<SomeCustomClass>(\"propertyName\"); }", result);
         Assert.Contains("set { BackingStore?.Set(\"propertyName\", value);", result);
     }
     [Fact]
@@ -205,8 +205,8 @@ public class CodePropertyWriterTests : IDisposable
         var result = tw.ToString();
 
         // Assert: properties types are disambiguated.
-        Assert.Contains("namespaceLevelOne.Somecustomtype", result);
-        Assert.Contains("defaultNamespace.Somecustomtype", result);
+        Assert.Contains("namespaceLevelOne.SomeCustomClass", result);
+        Assert.Contains("defaultNamespace.SomeCustomClass", result);
     }
     [Fact]
     public void WritesDeprecationInformation()

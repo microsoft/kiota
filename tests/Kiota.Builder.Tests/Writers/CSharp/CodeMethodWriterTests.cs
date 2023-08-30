@@ -464,7 +464,7 @@ public class CodeMethodWriterTests : IDisposable
         }).First();
         method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
         method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
-        method.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error401 });
+        method.AddErrorMapping("401", new CodeType { Name = "Error401", TypeDefinition = error401 });
         AddRequestBodyParameters();
         writer.Write(method);
         var result = tw.ToString();
@@ -472,7 +472,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
         Assert.Contains("{\"4XX\", Error4XX.CreateFromDiscriminatorValue},", result);
         Assert.Contains("{\"5XX\", Error5XX.CreateFromDiscriminatorValue},", result);
-        Assert.Contains("{\"403\", Error403.CreateFromDiscriminatorValue},", result);
+        Assert.Contains("{\"401\", Error401.CreateFromDiscriminatorValue},", result);
         Assert.Contains("SendAsync", result);
         Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
         Assert.Contains(AsyncKeyword, result);
@@ -1009,9 +1009,12 @@ public class CodeMethodWriterTests : IDisposable
         AddRequestBodyParameters(true);
         method.AcceptedResponseTypes.Add("application/json");
         var bodyParameter = method.Parameters.OfKind(CodeParameterKind.RequestBody);
-        bodyParameter.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
-        bodyParameter.Type.Name = "string";
-        bodyParameter.Type.AllTypes.First().TypeDefinition = null;
+        bodyParameter.Type = new CodeType
+        {
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+            IsExternal = true,
+            Name = "string",
+        };
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("SetContentFromScalarCollection", result);
@@ -1399,6 +1402,27 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {defaultValue}", result);
+    }
+    [Fact]
+    public void WritesWithUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RawUrlBuilder;
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        method.AddParameter(new CodeParameter
+        {
+            Name = "rawUrl",
+            Kind = CodeParameterKind.RawUrl,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"return new {parentClass.Name.ToFirstCharacterUpperCase()}", result);
     }
     [Fact]
     public void WritesConstructorWithEnumValue()

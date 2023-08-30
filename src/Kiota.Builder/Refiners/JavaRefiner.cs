@@ -63,7 +63,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 SerializationNamespaceName,
                 "ComposedTypeWrapper"
             );
-            AddRawUrlConstructorOverload(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true, true);
@@ -209,8 +208,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             "java.util", "HashMap"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             AbstractionsNamespaceName, "RequestInformation", "RequestOption", "HttpMethod"),
-        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            "java.net", "URISyntaxException"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             "java.util", "Collection", "Map"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),

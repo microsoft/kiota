@@ -690,7 +690,7 @@ public class CodeMethodWriterTests : IDisposable
         }).First();
         method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
         method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
-        method.AddErrorMapping("403", new CodeType { Name = "Error403", TypeDefinition = error401 });
+        method.AddErrorMapping("401", new CodeType { Name = "Error401", TypeDefinition = error401 });
         AddRequestBodyParameters();
         method.AddParameter(new CodeParameter
         {
@@ -699,11 +699,7 @@ public class CodeMethodWriterTests : IDisposable
             Type = new CodeType
             {
                 Name = "context.Context",
-                TypeDefinition = new CodeClass
-                {
-                    Name = "CancellationToken",
-                },
-                IsExternal = false,
+                IsExternal = true,
                 IsNullable = false,
             },
             Optional = false,
@@ -714,7 +710,7 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains($"errorMapping := {AbstractionsPackageHash}.ErrorMappings", result);
         Assert.Contains("\"4XX\": CreateError4XXFromDiscriminatorValue", result);
         Assert.Contains("\"5XX\": CreateError5XXFromDiscriminatorValue", result);
-        Assert.Contains("\"403\": CreateError403FromDiscriminatorValue", result);
+        Assert.Contains("\"401\": CreateError401FromDiscriminatorValue", result);
         Assert.Contains("ctx context.Context,", result);
         Assert.Contains("m.BaseRequestBuilder.RequestAdapter.Send(ctx,", result);
         Assert.Contains("return res.(", result);
@@ -953,6 +949,42 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("return NewChildModel(), nil", result);
         Assert.Contains("return NewParentModel(), nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesIndexerWithUuidParam()
+    {
+
+        setup();
+        AddRequestProperties();
+        parentClass.AddIndexer(new CodeIndexer
+        {
+            Name = "indx",
+            ReturnType = new CodeType
+            {
+                Name = "Somecustomtype",
+            },
+            IndexParameter = new()
+            {
+                Name = "id",
+                SerializationName = "id",
+                Type = new CodeType
+                {
+                    Name = "UUID",
+                    IsNullable = true,
+                },
+            }
+        });
+        if (parentClass.Indexer is null)
+            throw new InvalidOperationException("Indexer is null");
+        var methodForTest = parentClass.AddMethod(CodeMethod.FromIndexer(parentClass.Indexer, static x => $"With{x.ToFirstCharacterUpperCase()}", static x => x.ToFirstCharacterLowerCase(), false)).First();
+        writer.Write(methodForTest);
+        var result = tw.ToString();
+        Assert.Contains("m.BaseRequestBuilder.RequestAdapter", result);
+        Assert.Contains("WithId(id i561e97a8befe7661a44c8f54600992b4207a3a0cf6770e5559949bc276de2e22.UUID)(Somecustomtype)", result);
+        Assert.Contains("m.BaseRequestBuilder.PathParameters", result);
+        Assert.Contains("[\"id\"] = id.String()", result);
+        Assert.Contains("return", result);
+        Assert.Contains("NewSomecustomtypeInternal(urlTplParams, m.BaseRequestBuilder.RequestAdapter)", result); // checking the parameter is passed to the constructor
     }
     [Fact]
     public void DoesntWriteFactorySwitchOnMissingParameter()
@@ -1283,9 +1315,9 @@ public class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("res := make([]string, len(val))", result);
         Assert.Contains("res[i] = *(v.(*string))", result);
-        Assert.Contains("res := make([]Complex, len(val))", result);
-        Assert.Contains("res[i] = *(v.(*Complex))", result);
-        Assert.Contains("m.SetDummyEnumCollection(val.(*SomeEnum))", result);
+        Assert.Contains("res := make([]SomeComplexType, len(val))", result);
+        Assert.Contains("res[i] = *(v.(*SomeComplexType))", result);
+        Assert.Contains("m.SetDummyEnumCollection(val.(*EnumType))", result);
         Assert.Contains("m.SetDummyProp(val)", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
@@ -1741,6 +1773,27 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains($"m.Set{propName.ToFirstCharacterUpperCase()}({defaultValue})", result);
         Assert.Contains("NewBaseRequestBuilder", result);
+    }
+    [Fact]
+    public void WritesWithUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RawUrlBuilder;
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        method.AddParameter(new CodeParameter
+        {
+            Name = "rawUrl",
+            Kind = CodeParameterKind.RawUrl,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"return New{parentClass.Name.ToFirstCharacterUpperCase()}", result);
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()

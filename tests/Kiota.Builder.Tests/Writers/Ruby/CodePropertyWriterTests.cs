@@ -19,7 +19,7 @@ public class CodePropertyWriterTests : IDisposable
     private readonly CodeClass EmptyClass;
     private readonly CodeProperty emptyProperty;
     private const string PropertyName = "propertyName";
-    private const string TypeName = "Somecustomtype";
+    private const string TypeName = "SomeCustomClass";
     private const string RootNamespaceName = "RootNamespace";
     public CodePropertyWriterTests()
     {
@@ -103,7 +103,7 @@ public class CodePropertyWriterTests : IDisposable
         writer.Write(property);
         var result = tw.ToString();
         Assert.Contains($"def {PropertyName.ToSnakeCase()}", result);
-        Assert.Contains($"{RootNamespaceName}::{TypeName}.new", result);
+        Assert.Contains($"{RootNamespaceName}::ParentClass.new", result);
         Assert.Contains("request_adapter", result);
         Assert.Contains("path_parameters", result);
     }

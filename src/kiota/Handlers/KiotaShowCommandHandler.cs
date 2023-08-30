@@ -41,9 +41,15 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
     {
         get; init;
     }
+    public required Option<string> ManifestOption
+    {
+        get; init;
+    }
+
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
+        string manifest = context.ParseResult.GetValueForOption(ManifestOption) ?? string.Empty;
         string searchTerm = context.ParseResult.GetValueForOption(SearchTermOption) ?? string.Empty;
         string version = context.ParseResult.GetValueForOption(VersionOption) ?? string.Empty;
         uint maxDepth = context.ParseResult.GetValueForOption(MaxDepthOption);
@@ -58,8 +64,8 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken);
-            var descriptionProvided = !string.IsNullOrEmpty(openapi) && string.IsNullOrEmpty(searchTerm);
-            var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, searchTerm, version, loggerFactory, logger, cancellationToken);
+            var descriptionProvided = (!string.IsNullOrEmpty(openapi) || !string.IsNullOrEmpty(manifest)) && string.IsNullOrEmpty(searchTerm);
+            var (searchResultDescription, statusCode) = await GetDescriptionFromSearchAsync(openapi, manifest, searchTerm, version, loggerFactory, logger, cancellationToken);
             if (statusCode.HasValue)
             {
                 return statusCode.Value;
@@ -68,12 +74,13 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             {
                 openapi = searchResultDescription;
             }
-            if (string.IsNullOrEmpty(openapi))
+            if (string.IsNullOrEmpty(openapi) && string.IsNullOrEmpty(manifest))
             {
                 logger.LogError("no description provided");
                 return 1;
             }
             Configuration.Generation.OpenAPIFilePath = openapi;
+            Configuration.Generation.ApiManifestPath = manifest;
             Configuration.Generation.IncludePatterns = includePatterns.ToHashSet();
             Configuration.Generation.ExcludePatterns = excludePatterns.ToHashSet();
             Configuration.Generation.ClearCache = clearCache;
@@ -87,10 +94,10 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
                 var tree = builder.ToString();
                 Console.Write(tree);
                 if (descriptionProvided)
-                    DisplayShowAdvancedHint(string.Empty, string.Empty, includePatterns, excludePatterns, openapi);
+                    DisplayShowAdvancedHint(string.Empty, string.Empty, includePatterns, excludePatterns, openapi, manifest);
                 else
-                    DisplayShowAdvancedHint(searchTerm, version, includePatterns, excludePatterns, openapi);
-                DisplayGenerateHint(openapi, includePatterns, excludePatterns);
+                    DisplayShowAdvancedHint(searchTerm, version, includePatterns, excludePatterns, openapi, manifest);
+                DisplayGenerateHint(openapi, manifest, includePatterns, excludePatterns);
             }
             catch (Exception ex)
             {
