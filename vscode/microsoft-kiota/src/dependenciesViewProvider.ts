@@ -21,11 +21,10 @@ export class DependenciesViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
     }
     public update(languagesInformation: LanguagesInformation, language: KiotaGenerationLanguage) {
-        const languageInformation = languagesInformation[generationLanguageToString(language)];
-        this._languageInformation = languageInformation;
+        this._languageInformation = languagesInformation[generationLanguageToString(language)];
         this._language = language;
         if(this._view) {
-            this._view.show?.(true);
+            this._view.show(true);
             this._view.webview.html = this._getHtmlForWebview(this._view.webview);
         }
     }

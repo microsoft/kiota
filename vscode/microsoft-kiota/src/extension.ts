@@ -17,7 +17,7 @@ import { filterSteps, generateSteps, openManifestSteps, openSteps, searchLockSte
 import { getKiotaVersion } from "./getKiotaVersion";
 import { searchDescription } from "./searchDescription";
 import { generateClient } from "./generateClient";
-import { getLanguageInformation } from "./getLanguageInformation";
+import { getLanguageInformation, getLanguageInformationForDescription } from "./getLanguageInformation";
 import { DependenciesViewProvider } from "./dependenciesViewProvider";
 import { updateClients } from "./updateClients";
 import { ApiManifest } from "./apiManifest";
@@ -211,9 +211,8 @@ export async function activate(
           return result;
         });
         
-        languagesInformation = await getLanguageInformation(
+        languagesInformation = await getLanguageInformationForDescription(
           context,
-          language,
           openApiTreeProvider.descriptionUrl
         );
         if (languagesInformation) {
