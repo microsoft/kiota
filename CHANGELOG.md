@@ -16,8 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed an issue where dependencies would not show up for any other language than CSharp in the vscode extension. [#3226](https://github.com/microsoft/kiota/issues/3226)
 - Multiple fixes to guarantee idempotency of subsequent runs. [#2442](https://github.com/microsoft/kiota/issues/2442)
-- Fix issue with generating classes with Aliases(PHP)[microsoftgraph/msgraph-beta-sdk-php#197](https://github.com/microsoftgraph/msgraph-beta-sdk-php/pull/197)
+- Fixed issue with generating classes with Aliases(PHP)[microsoftgraph/msgraph-beta-sdk-php#197](https://github.com/microsoftgraph/msgraph-beta-sdk-php/pull/197)
 - Flattens the models namespaces in Ruby to avoid circular dependencies.
 - Adds ObjectId as a reserved keyword in Ruby to have memory management issues.
 - Replace Javax annotations in favor of Jakarta annotations for Java code generation. [#2810](https://github.com/microsoft/kiota/issues/2810)
