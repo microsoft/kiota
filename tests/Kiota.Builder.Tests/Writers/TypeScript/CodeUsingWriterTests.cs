@@ -41,7 +41,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
-        Assert.Contains("import {Bar as baz} from", result);
+        Assert.Contains("import { Bar as baz } from", result);
     }
     [Fact]
     public void DoesntAliasRegularSymbols()
@@ -62,7 +62,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
-        Assert.Contains("import {Bar} from", result);
+        Assert.Contains("import { Bar } from", result);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
-        Assert.Contains("import type {Bar} from", result);
+        Assert.Contains("import { type Bar } from", result);
     }
 
     [Fact]
@@ -109,6 +109,75 @@ public class CodeUsingWriterTests
         };
         usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
         var result = tw.ToString();
-        Assert.Contains("import type {Bar} from", result);
+        Assert.Contains("import { type Bar } from", result);
+    }
+
+    [Fact]
+    public void WritesImportTypeStatementForRequestConfiguration()
+    {
+        var usingWriter = new CodeUsingWriter("foo");
+        var codeClass = root.AddClass(new CodeClass
+        {
+            Name = "bar",
+            Kind = CodeClassKind.RequestConfiguration
+        }).First();
+        var us = new CodeUsing
+        {
+            Name = "bar",
+            Declaration = new CodeType
+            {
+                Name = codeClass.Name,
+                TypeDefinition = codeClass,
+            }
+        };
+        usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
+        var result = tw.ToString();
+        Assert.Contains("import { type Bar } from", result);
+    }
+
+    [Fact]
+    public void WritesImportTypeStatementForQueryParameters()
+    {
+        var usingWriter = new CodeUsingWriter("foo");
+        var codeClass = root.AddClass(new CodeClass
+        {
+            Name = "bar",
+            Kind = CodeClassKind.QueryParameters
+        }).First();
+        var us = new CodeUsing
+        {
+            Name = "bar",
+            Declaration = new CodeType
+            {
+                Name = codeClass.Name,
+                TypeDefinition = codeClass,
+            }
+        };
+        usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
+        var result = tw.ToString();
+        Assert.Contains("import { type Bar } from", result);
+    }
+
+    [Fact]
+    public void WritesImportTypeStatementForModel()
+    {
+        var usingWriter = new CodeUsingWriter("foo");
+        var codeClass = root.AddClass(new CodeClass
+        {
+            Name = "bar",
+            Kind = CodeClassKind.Model
+        }).First();
+        var us = new CodeUsing
+        {
+            Name = "bar",
+            Declaration = new CodeType
+            {
+                Name = codeClass.Name,
+                TypeDefinition = codeClass,
+            }
+        };
+        usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
+        var result = tw.ToString();
+        Assert.Contains("import { type Bar } from", result);
     }
 }
