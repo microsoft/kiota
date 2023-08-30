@@ -167,17 +167,16 @@ internal class Server : IServer
     {
         return Configuration.Languages;
     }
-    public Task<LanguagesInformation> InfoAsync(GenerationLanguage language, string descriptionPath, CancellationToken cancellationToken)
+    public Task<LanguagesInformation> InfoForDescriptionAsync(string descriptionPath, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(descriptionPath);
-        return InfoInternalAsync(language, descriptionPath, cancellationToken);
+        return InfoInternalAsync(descriptionPath, cancellationToken);
     }
-    private async Task<LanguagesInformation> InfoInternalAsync(GenerationLanguage language, string descriptionPath, CancellationToken cancellationToken)
+    private async Task<LanguagesInformation> InfoInternalAsync(string descriptionPath, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
         configuration.OpenAPIFilePath = GetAbsolutePath(descriptionPath);
-        configuration.Language = language;
         var builder = new KiotaBuilder(logger, configuration, httpClient);
         var result = await builder.GetLanguagesInformationAsync(cancellationToken);
         if (result is not null) return result;
