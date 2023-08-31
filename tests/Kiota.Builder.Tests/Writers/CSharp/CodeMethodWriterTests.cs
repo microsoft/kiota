@@ -1428,13 +1428,14 @@ public class CodeMethodWriterTests : IDisposable
     public void WritesConstructorWithEnumValue()
     {
         setup();
+        var modelsNamespace = root.AddNamespace("models");
         method.Kind = CodeMethodKind.Constructor;
         var defaultValue = "1024x1024";
         var propName = "size";
-        var codeEnum = new CodeEnum
+        var codeEnum = modelsNamespace.AddEnum(new CodeEnum
         {
             Name = "pictureSize"
-        };
+        }).First();
         parentClass.AddProperty(new CodeProperty
         {
             Name = propName,
@@ -1451,13 +1452,14 @@ public class CodeMethodWriterTests : IDisposable
     public void WritesConstructorAndIncludesSanitizedEnumValue()
     {
         setup();
+        var modelsNamespace = root.AddNamespace("models");
         method.Kind = CodeMethodKind.Constructor;
         var defaultValue = "/";
         var propName = "size";
-        var codeEnum = new CodeEnum
+        var codeEnum = modelsNamespace.AddEnum(new CodeEnum
         {
             Name = "pictureSize"
-        };
+        }).First();
         parentClass.AddProperty(new CodeProperty
         {
             Name = propName,
