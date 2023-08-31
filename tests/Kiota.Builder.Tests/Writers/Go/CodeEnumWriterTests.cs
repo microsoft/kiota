@@ -34,7 +34,7 @@ public class CodeEnumWriterTests : IDisposable
         GC.SuppressFinalize(this);
     }
     [Fact]
-    public void WritesEnum()
+    public void WritesSingleValueEnum()
     {
         const string optionName = "option1";
         currentEnum.AddOption(new CodeEnumOption { Name = optionName });
@@ -45,7 +45,8 @@ public class CodeEnumWriterTests : IDisposable
         Assert.Contains($"{EnumName.ToFirstCharacterUpperCase()} = iota", result);
         Assert.Contains("func (i", result);
         Assert.Contains("String() string {", result);
-        Assert.Contains("return []string{", result);
+        Assert.Contains("return []string{\"option1\"}[i]", result);
+        Assert.Contains("result = OPTION1_SOMEENUM", result);
         Assert.Contains("[i]", result);
         Assert.Contains("func Parse", result);
         Assert.Contains("(v string) (any, error)", result);
@@ -54,6 +55,46 @@ public class CodeEnumWriterTests : IDisposable
         Assert.Contains("result :=", result);
         Assert.Contains("return &result, nil", result);
         Assert.Contains("return 0, errors.New(\"Unknown ", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+        Assert.Contains(optionName.ToUpperInvariant(), result);
+        Assert.Contains("func (i SomeEnum) isMultiValue() bool {", result);
+        Assert.Contains("return false", result);
+    }
+    [Fact]
+    public void WritesMultiValueEnum()
+    {
+        var root = CodeNamespace.InitRootNamespace();
+        var myEnum = root.AddEnum(new CodeEnum
+        {
+            Name = "MultiValueEnum",
+            Flags = true
+        }).First();
+        const string optionName = "option1";
+        myEnum.AddOption(new CodeEnumOption { Name = optionName });
+        writer.Write(myEnum);
+
+        var result = tw.ToString();
+        Assert.Contains($"type MultiValueEnum int", result);
+        Assert.Contains("const (", result);
+        Assert.Contains("OPTION1_MULTIVALUEENUM MultiValueEnum = iota", result);
+        Assert.Contains("func (i", result);
+        Assert.Contains("String() string {", result);
+        Assert.Contains("for p := MultiValueEnum(1); p <= OPTION1_MULTIVALUEENUM; p <<= 1 {", result);
+        Assert.Contains("if i&p == p {", result);
+        Assert.Contains("values = append(values, []string{\"option1\"}[p])", result);
+        Assert.Contains("for _, str := range values {", result);
+        Assert.Contains("strings.Join(values", result);
+        Assert.Contains("result |= OPTION1_MULTIVALUEENUM", result);
+        Assert.Contains("[i]", result);
+        Assert.Contains("func Parse", result);
+        Assert.Contains("(v string) (any, error)", result);
+        Assert.Contains("switch str", result);
+        Assert.Contains("default", result);
+        Assert.Contains("result :=", result);
+        Assert.Contains("return &result, nil", result);
+        Assert.Contains("return 0, errors.New(\"Unknown ", result);
+        Assert.Contains("func (i MultiValueEnum) isMultiValue() bool {", result);
+        Assert.Contains("return true", result);
         AssertExtensions.CurlyBracesAreClosed(result);
         Assert.Contains(optionName.ToUpperInvariant(), result);
     }

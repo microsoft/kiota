@@ -901,9 +901,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                     return $"GetCollectionOfEnumValues({conventions.GetImportedStaticMethodName(propType, parentClass, "Parse")})";
                 else
                     return $"GetCollectionOfObjectValues({GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)})";
-            if (currentType.TypeDefinition is CodeEnum currentEnum)
+            if (currentType.TypeDefinition is CodeEnum)
             {
-                return $"GetEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({conventions.GetImportedStaticMethodName(propType, parentClass, "Parse")})";
+                return $"GetEnumValue({conventions.GetImportedStaticMethodName(propType, parentClass, "Parse")})";
             }
         }
         return propertyTypeNameWithoutImportSymbol switch
