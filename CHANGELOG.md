@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes uuid conversion to string value in PathParameters in Go. [#3106](https://github.com/microsoft/kiota/issues/3176)
 - Fixes a bug with incorrect reserved models renaming that occurs sometimes depending on the order of type processing [microsoftgraph/msgraph-sdk-dotnet/issues/2084](https://github.com/microsoftgraph/msgraph-sdk-dotnet/issues/2084)
 - Work around a System.ComandLine bug where adjacent matching command names would crash the CLI parser (CLI). [microsoftgraph/msgraph-cli#316](https://github.com/microsoftgraph/msgraph-cli/issues/316) [microsoftgraph/msgraph-cli#320](https://github.com/microsoftgraph/msgraph-cli/issues/320), [dotnet/command-line-api#2260](https://github.com/dotnet/command-line-api/issues/2260)
+- Fixes a bug in dotnet where enums types would not be fully disambiguated when initialized in constructor with default values and existing conflicting property exists [#3233]
 
 ## [1.5.1] - 2023-08-08
 
