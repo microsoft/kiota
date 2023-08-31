@@ -1472,6 +1472,31 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {codeEnum.Name.ToFirstCharacterUpperCase()}.{defaultValue.CleanupSymbolName()}", result);//ensure symbol is cleaned up
     }
     [Fact]
+    public void WritesConstructorAndDisambiguatesEnumType()
+    {
+        setup();
+        var modelsNamespace = root.AddNamespace("models");
+        method.Kind = CodeMethodKind.Constructor;
+        var defaultValue = "first";
+        var propName = "testEnum";
+        var codeEnum = modelsNamespace.AddEnum(new CodeEnum
+        {
+            Name = "testEnum"// same type name as property definition
+        }).First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = codeEnum }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+        Assert.Contains("models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
+        Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
+    }
+    [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
     {
         setup();

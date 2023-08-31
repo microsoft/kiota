@@ -765,7 +765,8 @@ public partial class KiotaBuilder
         // Add methods for Operations
         if (currentNode.HasOperations(Constants.DefaultOpenApiLabel))
         {
-            CreateWithUrlMethod(currentNode, codeClass);
+            if (!isApiClientClass) // do not generate for API client clas with operations as the class won't have the rawUrl constructor.
+                CreateWithUrlMethod(currentNode, codeClass);
             foreach (var operation in currentNode
                                     .PathItems[Constants.DefaultOpenApiLabel]
                                     .Operations)
