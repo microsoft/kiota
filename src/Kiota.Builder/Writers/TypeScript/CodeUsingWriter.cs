@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Extensions;
-using Microsoft.Kiota.Abstractions;
 
 namespace Kiota.Builder.Writers.TypeScript;
 public class CodeUsingWriter
