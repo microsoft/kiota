@@ -209,6 +209,8 @@ components:
         Assert.NotNull(modelsNS);
         var enumDef = modelsNS.FindChildByName<CodeEnum>("StorageAccountType", false);
         Assert.NotNull(enumDef);
+        Assert.False(enumDef.Flags);
+        Assert.Empty(enumDef.Style);
         var firstOption = enumDef.Options.First();
         Assert.Equal("+1", firstOption.SerializationName);
         Assert.Equal("plus_1", firstOption.Name);
@@ -222,6 +224,58 @@ components:
         Assert.Equal("StandardLocalRedundancy", thirdOption.Name);
         Assert.NotEmpty(thirdOption.Documentation.Description);
         Assert.Single(enumDef.Options.Where(static x => x.Name.Equals("Premium_LRS", StringComparison.OrdinalIgnoreCase)));
+    }
+    
+        [Fact]
+    public async Task ParsesEnumFlagsInformation()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /enumeration:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageAccount'
+components:
+  schemas:
+    StorageAccount:
+      type: object
+      properties:
+        accountType:
+          $ref: '#/components/schemas/StorageAccountType'
+    StorageAccountType:
+      type: string
+      enum:
+        - Standard_LRS
+        - Standard_ZRS
+        - Standard_GRS
+        - Standard_RAGRS
+        - Premium_LRS
+        - Premium_LRS
+      x-ms-enum-flags:
+        isFlags: true
+        style: simple");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var enumDef = modelsNS.FindChildByName<CodeEnum>("StorageAccountType", false);
+        Assert.NotNull(enumDef);
+        Assert.True(enumDef.Flags);
+        Assert.Equal("simple",enumDef.Style);
     }
     [Theory]
     [InlineData("description: 'Represents an Azure Active Directory user.'")]
