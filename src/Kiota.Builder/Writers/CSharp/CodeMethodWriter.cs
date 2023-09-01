@@ -248,9 +248,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .ThenBy(static x => x.Name))
         {
             var defaultValue = propWithDefault.DefaultValue;
-            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum)
             {
-                defaultValue = $"{enumDefinition.Name.ToFirstCharacterUpperCase()}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
+                defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
             }
             writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {defaultValue};");
         }
