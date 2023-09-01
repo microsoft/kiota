@@ -225,8 +225,8 @@ components:
         Assert.NotEmpty(thirdOption.Documentation.Description);
         Assert.Single(enumDef.Options.Where(static x => x.Name.Equals("Premium_LRS", StringComparison.OrdinalIgnoreCase)));
     }
-    
-        [Fact]
+
+    [Fact]
     public async Task ParsesEnumFlagsInformation()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
@@ -275,7 +275,7 @@ components:
         var enumDef = modelsNS.FindChildByName<CodeEnum>("StorageAccountType", false);
         Assert.NotNull(enumDef);
         Assert.True(enumDef.Flags);
-        Assert.Equal("simple",enumDef.Style);
+        Assert.Equal("simple", enumDef.Style);
     }
     [Theory]
     [InlineData("description: 'Represents an Azure Active Directory user.'")]
