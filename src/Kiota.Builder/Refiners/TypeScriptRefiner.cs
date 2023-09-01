@@ -112,7 +112,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static x =>
                 {
                     var result = new List<CodeUsing>() {
-                        new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } }
+                        new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true }, IsErasable = true }
                     };
                     if (x.Parent?.Parent != null)
                         result.Add(new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } });
