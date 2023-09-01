@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -13,11 +12,10 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
         get; set;
     }
 
-    public string Style
+    public EnumStyle Style
     {
-        get;
-        set;
-    } = string.Empty;
+        get; init;
+    }
 
     public CodeDocumentation Documentation { get; set; } = new();
     private readonly ConcurrentQueue<CodeEnumOption> OptionsInternal = new(); // this structure is used to maintain the order of the options
@@ -43,4 +41,9 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
     {
         get; set;
     }
+}
+
+public enum EnumStyle
+{
+    Simple = 0 // Default
 }
