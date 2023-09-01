@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for external documentation links within descriptions in Python. [#2041](https://github.com/microsoft/kiota/issues/2041)
 - Added support for API manifests. [#3104](https://github.com/microsoft/kiota/issues/3104)
 - Added support for reserved path parameters. [#2320](https://github.com/microsoft/kiota/issues/2320)
-- Added support for csv values in enums using a mask.
+- Added support for csv enum values in enums using a mask in Go.
+- Added support for `x-ms-enum-flags` extension in Generator to enable generation of bitwise(flagged) enum values[#3237](https://github.com/microsoft/kiota/issues/3237).
 
 ### Changed
 

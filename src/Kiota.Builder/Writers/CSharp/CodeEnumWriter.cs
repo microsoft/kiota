@@ -29,9 +29,9 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
                 writer.WriteLine(x);
             writer.StartBlock($"namespace {codeNamespace.Name} {{");
         }
+        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         if (codeElement.Flags)
             writer.WriteLine("[Flags]");
-        conventions.WriteShortDescription(codeElement.Documentation.Description, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
         writer.StartBlock($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
         var idx = 0;
