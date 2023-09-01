@@ -12,6 +12,13 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
     {
         get; set;
     }
+
+    public string Style
+    {
+        get;
+        set;
+    } = string.Empty;
+
     public CodeDocumentation Documentation { get; set; } = new();
     private readonly ConcurrentQueue<CodeEnumOption> OptionsInternal = new(); // this structure is used to maintain the order of the options
 

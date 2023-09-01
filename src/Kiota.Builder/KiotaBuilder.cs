@@ -471,6 +471,10 @@ public partial class KiotaBuilder
                 {
                     OpenApiReservedParameterExtension.Name,
                     static (i, _ ) => OpenApiReservedParameterExtension.Parse(i)
+                },
+                {
+                    OpenApiEnumFlagsExtension.Name,
+                    static (i, _ ) => OpenApiEnumFlagsExtension.Parse(i)
                 }
             },
             RuleSet = ruleSet,
@@ -1753,9 +1757,17 @@ public partial class KiotaBuilder
             if (schema.IsEnum())
             {
                 var schemaDescription = schema.Description.CleanupDescription();
+                OpenApiEnumFlagsExtension? enumFlagsExtension = null;
+                if (schema.Extensions.TryGetValue(OpenApiEnumFlagsExtension.Name, out var rawExtension) &&
+                    rawExtension is OpenApiEnumFlagsExtension flagsExtension)
+                {
+                    enumFlagsExtension = flagsExtension;
+                }
                 var newEnum = new CodeEnum
                 {
-                    Name = declarationName,//TODO set the flag property
+                    Name = declarationName,
+                    Flags = enumFlagsExtension?.IsFlags ?? false,
+                    Style = enumFlagsExtension?.Style ?? string.Empty,
                     Documentation = new()
                     {
                         Description = !string.IsNullOrEmpty(schemaDescription) || !string.IsNullOrEmpty(schema.Reference?.Id) ?
