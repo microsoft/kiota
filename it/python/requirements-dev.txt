@@ -42,7 +42,7 @@ pluggy==1.3.0 ; python_version >= '3.7'
 
 pylint==2.17.5
 
-pytest==7.4.0
+pytest==7.4.1
 
 pytest-asyncio==0.21.1
 
@@ -98,7 +98,7 @@ httpx[http2]==0.24.1
 
 hyperframe==6.0.1 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==0.8.0
+microsoft-kiota-abstractions==0.8.1
 
 microsoft-kiota-authentication-azure==0.2.0
 
