@@ -1767,7 +1767,6 @@ public partial class KiotaBuilder
                 {
                     Name = declarationName,
                     Flags = enumFlagsExtension?.IsFlags ?? false,
-                    Style = Enum.TryParse<EnumStyle>(enumFlagsExtension?.Style ?? string.Empty, out var style) ? style : EnumStyle.Simple,
                     Documentation = new()
                     {
                         Description = !string.IsNullOrEmpty(schemaDescription) || !string.IsNullOrEmpty(schema.Reference?.Id) ?

@@ -12,11 +12,6 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
         get; set;
     }
 
-    public EnumStyle Style
-    {
-        get; init;
-    }
-
     public CodeDocumentation Documentation { get; set; } = new();
     private readonly ConcurrentQueue<CodeEnumOption> OptionsInternal = new(); // this structure is used to maintain the order of the options
 
@@ -41,9 +36,4 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
     {
         get; set;
     }
-}
-
-public enum EnumStyle
-{
-    Simple = 0 // Default
 }
