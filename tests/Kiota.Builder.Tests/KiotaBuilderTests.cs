@@ -210,7 +210,6 @@ components:
         var enumDef = modelsNS.FindChildByName<CodeEnum>("StorageAccountType", false);
         Assert.NotNull(enumDef);
         Assert.False(enumDef.Flags);
-        Assert.Equal(EnumStyle.Simple, enumDef.Style);
         var firstOption = enumDef.Options.First();
         Assert.Equal("+1", firstOption.SerializationName);
         Assert.Equal("plus_1", firstOption.Name);
@@ -275,7 +274,6 @@ components:
         var enumDef = modelsNS.FindChildByName<CodeEnum>("StorageAccountType", false);
         Assert.NotNull(enumDef);
         Assert.True(enumDef.Flags);
-        Assert.Equal(EnumStyle.Simple, enumDef.Style);
     }
     [Theory]
     [InlineData("description: 'Represents an Azure Active Directory user.'")]

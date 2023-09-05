@@ -28,13 +28,6 @@ public class OpenApiEnumFlagsExtension : IOpenApiExtension
     {
         get; set;
     }
-    /// <summary>
-    /// The serialization style of the flagged enum.
-    /// </summary>
-    public string? Style
-    {
-        get; set;
-    }
     /// <inheritdoc />
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
     {
@@ -43,7 +36,6 @@ public class OpenApiEnumFlagsExtension : IOpenApiExtension
 
         writer.WriteStartObject();
         writer.WriteProperty(nameof(IsFlags).ToFirstCharacterLowerCase(), IsFlags);
-        writer.WriteProperty(nameof(Style).ToFirstCharacterLowerCase(), Style);
         writer.WriteEndObject();
     }
 
@@ -54,10 +46,6 @@ public class OpenApiEnumFlagsExtension : IOpenApiExtension
         if (rawObject.TryGetValue("isFlags", out var flagsValue) && flagsValue is OpenApiBoolean isFlags)
         {
             extension.IsFlags = isFlags.Value;
-        }
-        if (rawObject.TryGetValue("style", out var styleValue) && styleValue is OpenApiString style)
-        {
-            extension.Style = style.Value;
         }
         return extension;
     }
