@@ -10,6 +10,9 @@ import java.awt.*;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * this class creates the dialog window for searchResult
+ */
 public class SearchResultsDialog extends DialogWrapper {
     private final Map<String, KiotaSearchResultItem> resultsMap;
     private String selectedValue = null;

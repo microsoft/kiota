@@ -7,7 +7,4 @@ public class KiotaSearchResult extends KiotaLoggedResult {
     public Map<String, KiotaSearchResultItem> getResults() {
         return results;
     }
-    public void setResults(Map<String, KiotaSearchResultItem> results) {
-        this.results = results;
-    }
 }

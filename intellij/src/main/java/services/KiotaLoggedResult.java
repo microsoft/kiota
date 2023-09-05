@@ -6,7 +6,5 @@ public class KiotaLoggedResult {
     public List<KiotaLogEntry> getLogs() {
         return logs;
     }
-    public void setLogs(List<KiotaLogEntry> logs) {
-        this.logs = logs;
-    }
+
 }
