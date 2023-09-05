@@ -168,6 +168,12 @@ public class GoRefiner : CommonLanguageRefiner
             CorrectTypes(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, $"{conventions.StoreHash}.BackingStoreFactoryInstance()", false);
             CorrectBackingStoreTypes(generatedCode);
+            ReplacePropertyNames(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.QueryParameter,
+                },
+                static s => s.ToFirstCharacterUpperCase());
             GenerateCodeFiles(generatedCode);
         }, cancellationToken);
     }

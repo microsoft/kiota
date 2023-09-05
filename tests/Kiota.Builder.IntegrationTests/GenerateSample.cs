@@ -163,4 +163,42 @@ public class GenerateSample : IDisposable
 
         Assert.Contains("get_query_parameter", fullText);
     }
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Go)]
+    [Theory]
+    public async Task GeneratesUritemplateHints(GenerationLanguage language)
+    {
+        var logger = LoggerFactory.Create(builder =>
+        {
+        }).CreateLogger<KiotaBuilder>();
+
+        var OutputPath = $".\\Generated\\GeneratesUritemplateHints\\{language}";
+        var configuration = new GenerationConfiguration
+        {
+            Language = language,
+            OpenAPIFilePath = "GeneratesUritemplateHints.yaml",
+            OutputPath = OutputPath,
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+
+        var fullText = "";
+        foreach (var file in Directory.GetFiles(OutputPath, "*.*", SearchOption.AllDirectories))
+        {
+            fullText += File.ReadAllText(file);
+        }
+
+        if (language == GenerationLanguage.CSharp)
+        {
+            Assert.Contains("[QueryParameter(\"startDateTime\")]", fullText);
+        }
+        else if (language == GenerationLanguage.Go)
+        {
+            Assert.Contains("`uriparametername:\"startDateTime\"`", fullText);
+        }
+        else
+        {
+            throw new Exception($"Please implement a test-case for ${language}");
+        }
+    }
 }
