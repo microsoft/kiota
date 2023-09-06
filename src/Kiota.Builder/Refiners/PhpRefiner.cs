@@ -123,7 +123,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     CodePropertyKind.Custom,
                     CodePropertyKind.QueryParameter,
                 },
-                static s => s.ToCamelCase(UnderscoreArray));
+                static s => s.ToCamelCase(UnderscoreArray).ToFirstCharacterLowerCase());
         }, cancellationToken);
     }
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)

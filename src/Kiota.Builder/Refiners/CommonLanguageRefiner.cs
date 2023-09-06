@@ -143,10 +143,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             current.Parent is CodeClass parentClass &&
             currentProperty.Access == AccessModifier.Public)
         {
-            if (string.IsNullOrEmpty(currentProperty.SerializationName))
+            var refinedName = refineAccessorName(currentProperty.Name);
+
+            if (string.IsNullOrEmpty(currentProperty.SerializationName) && !refinedName.Equals(currentProperty.Name, StringComparison.Ordinal))
                 currentProperty.SerializationName = currentProperty.Name;
 
-            var refinedName = refineAccessorName(currentProperty.Name);
             if (!parentClass.Properties.Any(property => refinedName.Equals(property.Name, StringComparison.OrdinalIgnoreCase)))// ensure the refinement won't generate a duplicate
                 parentClass.RenameChildElement(currentProperty.Name, refinedName);
         }
