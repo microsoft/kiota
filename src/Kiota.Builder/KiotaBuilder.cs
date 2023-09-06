@@ -453,35 +453,10 @@ public partial class KiotaBuilder
             ruleSet.AddKiotaValidationRules(config);
         var settings = new OpenApiReaderSettings
         {
-            ExtensionParsers = new()
-            {
-                {
-                    OpenApiPagingExtension.Name,
-                    static (i, _) => OpenApiPagingExtension.Parse(i)
-                },
-                {
-                    OpenApiEnumValuesDescriptionExtension.Name,
-                    static (i, _ ) => OpenApiEnumValuesDescriptionExtension.Parse(i)
-                },
-                {
-                    OpenApiKiotaExtension.Name,
-                    static (i, _ ) => OpenApiKiotaExtension.Parse(i)
-                },
-                {
-                    OpenApiDeprecationExtension.Name,
-                    static (i, _ ) => OpenApiDeprecationExtension.Parse(i)
-                },
-                {
-                    OpenApiReservedParameterExtension.Name,
-                    static (i, _ ) => OpenApiReservedParameterExtension.Parse(i)
-                },
-                {
-                    OpenApiEnumFlagsExtension.Name,
-                    static (i, _ ) => OpenApiEnumFlagsExtension.Parse(i)
-                }
-            },
             RuleSet = ruleSet,
         };
+        settings.AddMicrosoftExtensionParsers();
+        settings.ExtensionParsers.TryAdd(OpenApiKiotaExtension.Name, static (i, _) => OpenApiKiotaExtension.Parse(i));
         try
         {
             var rawUri = config.OpenAPIFilePath.TrimEnd(ForwardSlash);
