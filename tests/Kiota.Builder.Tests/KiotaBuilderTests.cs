@@ -10,11 +10,11 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.OpenApiExtensions;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
+using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 

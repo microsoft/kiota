@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers;
-internal class CodeTypeComparer : IComparer<CodeTypeBase>
+internal sealed class CodeTypeComparer : IComparer<CodeTypeBase>
 {
     private readonly bool OrderByDesc;
     public CodeTypeComparer(bool orderByDesc = false)
