@@ -1148,6 +1148,11 @@ public partial class KiotaBuilder
             ReadOnly = propertySchema?.ReadOnly ?? false,
             Type = resultType,
             Deprecation = propertySchema?.GetDeprecationInformation(),
+            IsPrimaryErrorMessage = kind == CodePropertyKind.Custom &&
+                                        propertySchema is not null &&
+                                        propertySchema.Extensions.TryGetValue(OpenApiPrimaryErrorMessageExtension.Name, out var openApiExtension) &&
+                                        openApiExtension is OpenApiPrimaryErrorMessageExtension primaryErrorMessageExtension &&
+                                        primaryErrorMessageExtension.IsPrimaryErrorMessage
         };
         if (prop.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
             !propertyName.Equals(childIdentifier, StringComparison.Ordinal))

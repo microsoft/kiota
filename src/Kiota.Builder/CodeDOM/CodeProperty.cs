@@ -110,6 +110,13 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     {
         get; set;
     }
+    /// <summary>
+    /// Indicates if the property is the primary error message for the error/exception type.
+    /// </summary>
+    public bool IsPrimaryErrorMessage
+    {
+        get; set;
+    }
 
     public object Clone()
     {
@@ -130,6 +137,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
             NamePrefix = NamePrefix,
             OriginalPropertyFromBaseType = OriginalPropertyFromBaseType?.Clone() as CodeProperty,
             Deprecation = Deprecation,
+            IsPrimaryErrorMessage = IsPrimaryErrorMessage,
         };
         return property;
     }
