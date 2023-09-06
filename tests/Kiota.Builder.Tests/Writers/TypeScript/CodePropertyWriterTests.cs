@@ -94,4 +94,23 @@ public class CodePropertyWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("[]", result);
     }
+    [Fact]
+    public void WritesCollectionFlagEnumsAsOneDimensionalArray()
+    {
+        property.Kind = CodePropertyKind.Custom;
+        property.Type = new CodeType
+        {
+            Name = "customEnum",
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array
+        };
+        (property.Type as CodeType).TypeDefinition = new CodeEnum
+        {
+            Name = "customEnumType",
+            Flags = true,//this is not expected for a collection. So treat as enum collection
+        };
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("[]", result);
+        Assert.DoesNotContain("[] []", result);
+    }
 }
