@@ -98,7 +98,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     /// <inheritdoc/>
     public bool IsNameEscaped
     {
-        get => !string.IsNullOrEmpty(SerializationName);
+        get => !string.IsNullOrEmpty(SerializationName) && SerializationName != Name;
     }
     /// <inheritdoc/>
     public string WireName => IsNameEscaped ? SerializationName : Name.ToFirstCharacterLowerCase();
