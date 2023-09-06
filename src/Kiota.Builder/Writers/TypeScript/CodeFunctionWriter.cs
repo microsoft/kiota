@@ -163,7 +163,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     private string? GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
     {
         if (propType.TypeDefinition is CodeEnum currentEnum)
-            return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}>";
+            return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}{(currentEnum.Flags && !propType.IsCollection ? "[]" : string.Empty)}>";
         else if (conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase))
             return "writeByteArrayValue";
         else if (propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)

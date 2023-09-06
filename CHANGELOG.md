@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Work around a System.ComandLine bug where adjacent matching command names would crash the CLI parser (CLI). [microsoftgraph/msgraph-cli#316](https://github.com/microsoftgraph/msgraph-cli/issues/316) [microsoftgraph/msgraph-cli#320](https://github.com/microsoftgraph/msgraph-cli/issues/320), [dotnet/command-line-api#2260](https://github.com/dotnet/command-line-api/issues/2260)
 - Aggregate typescript import statements by source [#3232](https://github.com/microsoft/kiota/issues/3232)
 - Fixes a bug in dotnet where enums types would not be fully disambiguated when initialized in constructor with default values and existing conflicting property exists [#3233]
+- Fixes a bug in generation of flagged enum properties and their serializer/deserializer functions in typescript [https://github.com/microsoft/kiota/issues/3260]
 
 ## [1.5.1] - 2023-08-08
 
