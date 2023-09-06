@@ -83,6 +83,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplacePropertyNames(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
+                    CodePropertyKind.QueryParameter,
                 },
                 static s => s.ToPascalCase(UnderscoreArray));
             DisambiguatePropertiesWithClassNames(generatedCode);

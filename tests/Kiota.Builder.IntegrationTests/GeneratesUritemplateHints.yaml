@@ -7,9 +7,13 @@ paths:
   /api/something/v1:
     get:
       parameters:
-        - name: "ifExists"
+        - name: "startDateTime"
           schema:
-            type: boolean
+            type: string
+          in: "query"
+        - name: "EndDateTime"
+          schema:
+            type: string
           in: "query"
       responses:
         "200":

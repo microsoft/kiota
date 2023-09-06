@@ -136,20 +136,26 @@ public class GenerateSample : IDisposable
 
         Assert.Empty(Directory.GetFiles(OutputPath, "*_*", SearchOption.AllDirectories));
     }
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Go)]
+    [InlineData(GenerationLanguage.Java)]
+    [InlineData(GenerationLanguage.PHP)]
     [InlineData(GenerationLanguage.Python)]
     [InlineData(GenerationLanguage.Ruby)]
+    // [InlineData(GenerationLanguage.TypeScript)] // TODO: the "getQueryParameter" is added to the interface V1RequestBuilderGetQueryParameters but is not getting written because removed by ReplaceRequestConfigurationsQueryParamsWithInterfaces in the refiner
+    // [InlineData(GenerationLanguage.Swift)] // TODO: incomplete
     [Theory]
-    public async Task GeneratesQueryParametersMapper(GenerationLanguage language)
+    public async Task GeneratesUritemplateHints(GenerationLanguage language)
     {
         var logger = LoggerFactory.Create(builder =>
         {
         }).CreateLogger<KiotaBuilder>();
 
-        var OutputPath = $".\\Generated\\GeneratesQueryParametersMapper\\{language}";
+        var OutputPath = $".\\Generated\\GeneratesUritemplateHints\\{language}";
         var configuration = new GenerationConfiguration
         {
             Language = language,
-            OpenAPIFilePath = "GeneratesQueryMappers.yaml",
+            OpenAPIFilePath = "GeneratesUritemplateHints.yaml",
             OutputPath = OutputPath,
             CleanOutput = true,
         };
@@ -161,6 +167,31 @@ public class GenerateSample : IDisposable
             fullText += File.ReadAllText(file);
         }
 
-        Assert.Contains("get_query_parameter", fullText);
+        switch (language)
+        {
+            case GenerationLanguage.CSharp:
+                Assert.Contains("[QueryParameter(\"startDateTime\")]", fullText);
+                break;
+            case GenerationLanguage.Go:
+                Assert.Contains("`uriparametername:\"startDateTime\"`", fullText);
+                break;
+            case GenerationLanguage.Java:
+                Assert.Contains("@QueryParameter(name = \"EndDateTime\")", fullText);
+                break;
+            case GenerationLanguage.PHP:
+                Assert.Contains("@QueryParameter(\"EndDateTime\")", fullText);
+                break;
+            case GenerationLanguage.Python:
+                Assert.Contains("get_query_parameter", fullText);
+                Assert.Contains("if original_name == \"end_date_time\":", fullText);
+                break;
+            case GenerationLanguage.Ruby:
+                Assert.Contains("get_query_parameter", fullText);
+                Assert.Contains("when \"start_date_time\"", fullText);
+                break;
+            default:
+                throw new Exception($"Please implement a test-case for {language}");
+
+        }
     }
 }

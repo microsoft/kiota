@@ -46,7 +46,7 @@
     <None Update="NoUnderscoresInModel.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="GeneratesQueryMappers.yaml">
+    <None Update="GeneratesUritemplateHints.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

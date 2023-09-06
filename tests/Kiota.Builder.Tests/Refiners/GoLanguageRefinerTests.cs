@@ -767,12 +767,12 @@ public class GoLanguageRefinerTests
         }).First();
         var property = model.AddProperty(new CodeProperty
         {
-            Name = "select",
+            Name = "Select",
             Type = new CodeType { Name = "string" },
             Access = AccessModifier.Public,
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Equal("select", property.Name);
+        Assert.Equal("Select", property.Name);
         Assert.False(property.IsNameEscaped);
     }
     [Fact]
