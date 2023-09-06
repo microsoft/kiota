@@ -4,7 +4,7 @@ Kiota IntelliJ plugin is used to generate an API client to call any OpenAPI desc
 One of the goals of the project is to provide the best code generator support possible for OpenAPI and JSON Schema features from IntelliJ platform.
 <!-- Plugin description end -->
 
-This readme documents how to get started with the Kiota Intellij plugin
+This plugin is built upon[`intellij-platform-plugin-template`](https://github.com/JetBrains/intellij-platform-plugin-template). This readme documents how to get started with the Kiota Intellij plugin
 # Getting Started
 ## Installation ##
 **Gradle** : Visit the [Gradle Webside](https://gradle.org/install/) and install Gradle `version 7.4`   
