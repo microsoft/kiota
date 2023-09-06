@@ -10,12 +10,10 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.panels.VerticalLayout;
 import services.*;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
 import java.io.File;
 import com.intellij.icons.AllIcons;
 import java.io.IOException;
@@ -31,19 +29,27 @@ public class MyToolWindow {
     GenerateClientHandler generateClientHandler;
 
     SearchDescriptionHandler searchDescriptionHandler;
+    LanguageInfoHandler infoHandler;
     JButton searchIconLabel;
+    String descriptionPath;
+    String output;
+    String clientClass;
+    String clientClassNamespace;
+    KiotaGenerationLanguage selectedLanguage;
+
+
     public MyToolWindow(ToolWindow toolWindow) {
         ParentPanel = new JBPanel<>();
         versionHandler = new VersionHandler();
         generateClientHandler = new GenerateClientHandler();
         searchDescriptionHandler = new SearchDescriptionHandler();
+        infoHandler = new LanguageInfoHandler();
     }
 
     /**
      * @return parentpanel
-     * @throws IOException
      */
-    public JComponent Addpanel() throws IOException {
+    public JComponent AddPanel() throws IOException {
         ParentPanel.setLayout(new BorderLayout());
         ParentPanel.add(getInput(), BorderLayout.CENTER);
         ParentPanel.add(getversion(), BorderLayout.SOUTH);
@@ -52,8 +58,8 @@ public class MyToolWindow {
 
     /**
      * This method displays version of kiota.
+     *
      * @return versionpanel
-     * @throws IOException
      */
     public JComponent getversion() throws IOException {
         JBPanel<JBPanel<?>> versionPanel = new JBPanel<>();
@@ -63,7 +69,6 @@ public class MyToolWindow {
         versionPanel.add(versionLabel, BorderLayout.CENTER);
         return versionPanel;
     }
-
     /**
      * this method sets the client(UI) to get input from user and creates button with their function
      * @return panel
@@ -79,8 +84,9 @@ public class MyToolWindow {
         TextFieldWithBrowseButton outputpath = new TextFieldWithBrowseButton();
         JTextField clientClassField = new JTextField();
         JTextField postClientNameField = new JTextField();
+        JLabel label = new JLabel("Hello");
+        clientClassField.add(label);
 
-        // Input labels
         //LabeledComponent<TextFieldWithBrowseButton> yamlFilePath_label = LabeledComponent.create(yamlFilePathField, "Enter a path to an openAPI description");
         JLabel yamlFilePathLabel = new JLabel("Enter a path to an openAPI description");
         yamlFilePathLabel.setLabelFor(yamlFilePathField);
@@ -110,64 +116,63 @@ public class MyToolWindow {
         progressBarPanel.add(progressBar);
         generateButtonPanel.add(progressBarPanel);
         progressBar.setVisible(false);
-        generateButton.addActionListener(new ActionListener() {  // generatebutton action listener
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                generateButton.setVisible(false);
-                progressBar.setVisible(true);
-                progressBarPanel.removeAll(); // Clear any previous components
-                progressBarPanel.add(progressBar); // Add the progress bar
+        // generatebutton action listener
+        generateButton.addActionListener(e -> {
+            generateButton.setVisible(false);
+            progressBar.setVisible(true);
+            progressBarPanel.removeAll();
+            progressBarPanel.add(progressBar);
 
-                // perform the generation in a separate thread
-                SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-                    @Override
-                    protected Void doInBackground() throws Exception {
-                        String descriptionPath = yamlFilePathField.getText();
-                        String output = outputpath.getText();
-                        String clientClass = clientClassField.getText();
-                        String clientClassNamespace = postClientNameField.getText();
-                        KiotaGenerationLanguage selectedLanguage = (KiotaGenerationLanguage) languageComboBox.getSelectedItem();
-                        generateClientHandler.generateclient(descriptionPath, output, selectedLanguage, include, exclude, clientClass, clientClassNamespace);
-                        return null;
-                    }
+            // perform the generation in a separate thread
+            SwingWorker<Void, Void> worker = new SwingWorker<>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    descriptionPath = yamlFilePathField.getText();
+                    output = outputpath.getText();
+                    clientClass = clientClassField.getText();
+                    clientClassNamespace = postClientNameField.getText();
+                    selectedLanguage = (KiotaGenerationLanguage) languageComboBox.getSelectedItem();
+                    generateClientHandler.generateclient(descriptionPath, output, selectedLanguage, include, exclude, clientClass, clientClassNamespace);
+                    return null;
+                }
 
-                    @Override
-                    protected void done() {
-                        // Generation is complete, re-enable the button
-                        progressBarPanel.setVisible(true);
-                        Object response = generateClientHandler.getResponse();
-                        String responseString = response.toString();
+                @Override
+                protected void done() {
+                    // Generation is complete, re-enable the buttons;
+                    progressBarPanel.setVisible(true);
+                    Object response = generateClientHandler.getResponse();
+                    String responseString = response.toString();
 
-                        Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-                        if (openProjects.length > 0) {
-                            Project currentProject = openProjects[0]; // Get the first open project
+                    Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+                    if (openProjects.length > 0) {
+                        Project currentProject = openProjects[0]; // Get the first open project
 
-                            if (responseString.contains("error generating the client")) {
-                                showStickyNotification(currentProject, "Error generating the client. " + responseString, NotificationType.ERROR);
-                                progressBar.setVisible(false);
-                                progressBar.setEnabled(false);
-                                generateButton.setVisible(true);
-                            } else if (responseString.contains("completed")) {
-                                showStickyNotification(currentProject, "Generation completed successfully! ", NotificationType.INFORMATION);
-                                progressBar.setVisible(false);
-                                generateButton.setVisible(true);
-                            } else {
-                                showStickyNotification(currentProject, "An error occurred during generation" + responseString, NotificationType.ERROR);
-                                progressBar.setVisible(false);
-                                progressBar.setEnabled(false);
-                                generateButton.setVisible(true);
-                            }
+                        if (responseString.contains("error generating the client")) {
+                            showStickyNotification(currentProject, "Error generating the client. " + responseString, NotificationType.ERROR);
+                            progressBar.setVisible(false);
+                            progressBar.setEnabled(false);
+                            generateButton.setVisible(true);
+                        } else if (responseString.contains("completed")) {
+                            showStickyNotification(currentProject, "Generation completed successfully! ", NotificationType.INFORMATION);
+                            showInformationDialog(descriptionPath, selectedLanguage);
+                            progressBar.setVisible(false);
+                            generateButton.setVisible(true);
+                        } else {
+                            showStickyNotification(currentProject, "An error occurred during generation" + responseString, NotificationType.ERROR);
+                            progressBar.setVisible(false);
+                            progressBar.setEnabled(false);
+                            generateButton.setVisible(true);
                         }
                     }
+                }
 
-                    private void showStickyNotification(Project project, String message, NotificationType type) {
-                        Notification notification = NOTIFICATION_GROUP.createNotification(message, type);
-                        notification.setImportant(true); // Make it sticky
-                        notification.notify(project);
-                    }
-                };
-                worker.execute();
-            }
+                private void showStickyNotification(Project project, String message, NotificationType type) {
+                    Notification notification = NOTIFICATION_GROUP.createNotification(message, type);
+                    notification.setImportant(true);
+                    notification.notify(project);
+                }
+            };
+            worker.execute();
         });
 
 
@@ -253,5 +258,15 @@ public class MyToolWindow {
             JOptionPane.showMessageDialog(null, "No search results found.", "Search Results", JOptionPane.INFORMATION_MESSAGE);
         }
         return null;
+    }
+
+    private void showInformationDialog(String TheDescription, KiotaGenerationLanguage language){
+        LanguagesInformation info = infoHandler.InfoForDescription(TheDescription);
+        Map<String, LanguageInformation> languages =info.getLanguages();
+        if(!languages.isEmpty()){
+            LanguageInfoPopup languageInfoPopup = new LanguageInfoPopup(languages,language);
+            languageInfoPopup.setSize(700, 500);
+            languageInfoPopup.show();
+        }
     }
 }
