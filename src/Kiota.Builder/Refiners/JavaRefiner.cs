@@ -69,6 +69,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplacePropertyNames(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
+                    CodePropertyKind.QueryParameter,
                 },
                 static s => s.ToCamelCase(UnderscoreArray));
             AddGetterAndSetterMethods(generatedCode,

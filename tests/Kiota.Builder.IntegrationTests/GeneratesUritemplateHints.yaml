@@ -11,6 +11,10 @@ paths:
           schema:
             type: string
           in: "query"
+        - name: "EndDateTime"
+          schema:
+            type: string
+          in: "query"
       responses:
         "200":
           description: "something"

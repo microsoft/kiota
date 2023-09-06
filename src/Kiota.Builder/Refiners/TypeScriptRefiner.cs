@@ -137,6 +137,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 factoryNameCallbackFromType
             );
+            ReplacePropertyNames(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.QueryParameter,
+                },
+                static s => s.ToCamelCase(UnderscoreArray));
             AddQueryParameterMapperMethod(
                 generatedCode
             );

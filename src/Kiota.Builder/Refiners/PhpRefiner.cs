@@ -118,6 +118,12 @@ public class PhpRefiner : CommonLanguageRefiner
             // Because constructors are not added to Query parameter classes by default
             ReplaceReservedExceptionPropertyNames(generatedCode, new PhpExceptionsReservedNamesProvider(),
                 static x => $"escaped{x.ToFirstCharacterUpperCase()}");
+            ReplacePropertyNames(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.QueryParameter,
+                },
+                static s => s.ToCamelCase(UnderscoreArray));
         }, cancellationToken);
     }
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
