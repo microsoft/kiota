@@ -1803,6 +1803,14 @@ paths:
                                             {
                                                 "errorId", new OpenApiSchema{
                                                     Type = "string",
+                                                    Extensions = new Dictionary<string, IOpenApiExtension>
+                                                    {
+                                                        { OpenApiPrimaryErrorMessageExtension.Name,
+                                                                new OpenApiPrimaryErrorMessageExtension {
+                                                                    IsPrimaryErrorMessage = true
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -1823,6 +1831,14 @@ paths:
                                             {
                                                 "serviceErrorId", new OpenApiSchema{
                                                     Type = "string",
+                                                    Extensions = new Dictionary<string, IOpenApiExtension>
+                                                    {
+                                                        { OpenApiPrimaryErrorMessageExtension.Name,
+                                                                new OpenApiPrimaryErrorMessageExtension {
+                                                                    IsPrimaryErrorMessage = true
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -1842,6 +1858,19 @@ paths:
                                         Properties = new Dictionary<string, OpenApiSchema> {
                                             {
                                                 "authenticationRealm", new OpenApiSchema{
+                                                    Type = "string",
+                                                    Extensions = new Dictionary<string, IOpenApiExtension>
+                                                    {
+                                                        { OpenApiPrimaryErrorMessageExtension.Name,
+                                                                new OpenApiPrimaryErrorMessageExtension {
+                                                                    IsPrimaryErrorMessage = true
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "authenticationCode", new OpenApiSchema{
                                                     Type = "string",
                                                 }
                                             }
@@ -1867,15 +1896,24 @@ paths:
         var errorType401 = codeModel.FindChildByName<CodeClass>("tasks401Error");
         Assert.NotNull(errorType401);
         Assert.True(errorType401.IsErrorDefinition);
-        Assert.NotNull(errorType401.FindChildByName<CodeProperty>("authenticationRealm"));
+        var error401Property = errorType401.FindChildByName<CodeProperty>("authenticationCode", false);
+        Assert.NotNull(error401Property);
+        Assert.False(error401Property.IsPrimaryErrorMessage);
+        var errorType401MainProperty = errorType401.FindChildByName<CodeProperty>("authenticationRealm", false);
+        Assert.NotNull(errorType401MainProperty);
+        Assert.True(errorType401MainProperty.IsPrimaryErrorMessage);
         var errorType4XX = codeModel.FindChildByName<CodeClass>("tasks4XXError");
         Assert.NotNull(errorType4XX);
         Assert.True(errorType4XX.IsErrorDefinition);
-        Assert.NotNull(errorType4XX.FindChildByName<CodeProperty>("errorId"));
+        var errorType4XXProperty = errorType4XX.FindChildByName<CodeProperty>("errorId", false);
+        Assert.NotNull(errorType4XXProperty);
+        Assert.True(errorType4XXProperty.IsPrimaryErrorMessage);
         var errorType5XX = codeModel.FindChildByName<CodeClass>("tasks5XXError");
         Assert.NotNull(errorType5XX);
         Assert.True(errorType5XX.IsErrorDefinition);
-        Assert.NotNull(errorType5XX.FindChildByName<CodeProperty>("serviceErrorId"));
+        var errorType5XXProperty = errorType5XX.FindChildByName<CodeProperty>("serviceErrorId", false);
+        Assert.NotNull(errorType5XXProperty);
+        Assert.True(errorType5XXProperty.IsPrimaryErrorMessage);
     }
     [Fact]
     public void IgnoresErrorCodesWithNoSchema()
