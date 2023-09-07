@@ -137,9 +137,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         ArgumentNullException.ThrowIfNull(refineAccessorName);
         if (!(propertyKindsToReplace?.Any() ?? true)) return;
-        if (current is CodeProperty currentProperty1)
-            Console.WriteLine("-> PROPERTY " + currentProperty1.Name + " " + currentProperty1.Kind + " - " + currentProperty1.ExistsInBaseType + " " + current.Parent);
-
         if (current is CodeProperty currentProperty &&
             !currentProperty.ExistsInBaseType &&
             propertyKindsToReplace!.Contains(currentProperty.Kind) &&
