@@ -39,7 +39,7 @@ public class JavaConventionService : CommonLanguageConventionService
         var parameterType = GetTypeString(parameter.Type, targetElement);
         if (parameter.Type is CodeType { TypeDefinition: CodeEnum { Flags: true }, IsCollection: false })
             parameterType = $"EnumSet<{parameterType}>";
-        return $"{nullAnnotation}final {parameterType} {parameter.Name.ToFirstCharacterLowerCase()}";
+        return $"{nullAnnotation}final {parameterType} {parameter.Name}";
     }
 
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
@@ -83,14 +83,14 @@ public class JavaConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(type);
         return type.Name switch
         {
-            "int64" => "Long",
+            "Int64" => "Long",
             "sbyte" => "Short",
             "decimal" => "BigDecimal",
             "void" or "boolean" when !type.IsNullable => type.Name, //little casing hack
             "binary" or "base64" or "base64url" => "byte[]",
             "Guid" => "UUID",
             _ when type.Name.Contains('.', StringComparison.OrdinalIgnoreCase) => type.Name, // casing
-            _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
+            _ => type.Name is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
         };
     }
     public override void WriteShortDescription(string description, LanguageWriter writer)
@@ -133,7 +133,7 @@ public class JavaConventionService : CommonLanguageConventionService
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
         var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) ? pathParametersProperty?.Name : urlTemplateVarName;
-        var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+        var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}";
         writer.WriteLines($"return new {returnType}({urlTemplateParams}, {requestAdapterProp?.Name}{pathParametersSuffix});");
     }
     public override string TempDictionaryVarName => "urlTplParams";

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Java;
+using Microsoft.VisualBasic;
 
 namespace Kiota.Builder.Refiners;
 public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -17,6 +19,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            CorrectCommonNames(generatedCode);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
@@ -52,7 +55,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 true,
-                static x => $"By{x.ToFirstCharacterUpperCase()}",
+                static x => $"by{x.ToFirstCharacterUpperCase()}",
                 static x => x.ToFirstCharacterLowerCase(),
                 GenerationLanguage.Java);
             cancellationToken.ThrowIfCancellationRequested();
@@ -69,7 +72,9 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplacePropertyNames(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
                     CodePropertyKind.QueryParameter,
+                    CodePropertyKind.RequestBuilder,
                 },
                 static s => s.ToCamelCase(UnderscoreArray).ToFirstCharacterLowerCase());
             AddGetterAndSetterMethods(generatedCode,
@@ -78,7 +83,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.BackingStore,
                 },
-                static (_, s) => s.ToCamelCase(UnderscoreArray),
+                static (_, s) => s.ToCamelCase(UnderscoreArray).ToFirstCharacterUpperCase(),
                 _configuration.UsesBackingStore,
                 true,
                 "get",
@@ -250,6 +255,19 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsNamespaceName, MultipartBodyClassName)
     };
     private const string MultipartBodyClassName = "MultipartBody";
+    private static void CorrectCommonNames(CodeElement currentElement)
+    {
+        if (currentElement is CodeMethod m)
+        {
+            m.Name = m.Name.ToFirstCharacterLowerCase();
+        }
+        else if (currentElement is CodeIndexer i)
+        {
+            i.IndexParameter.Name = i.IndexParameter.Name.ToFirstCharacterLowerCase();
+        }
+
+        CrawlTree(currentElement, element => CorrectCommonNames(element));
+    }
     private static void CorrectPropertyType(CodeProperty currentProperty)
     {
         if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
@@ -277,6 +295,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "new HashMap<>()";
         }
+        currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block)
@@ -317,6 +336,9 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                                 .Select(static x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
+
+        currentMethod.Parameters.ToList().ForEach(static x => x.Type.Name = x.Type.Name.ToFirstCharacterUpperCase());
+        currentMethod.ReturnType.Name = currentMethod.ReturnType.Name.ToFirstCharacterUpperCase();
     }
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase) {
     {"DateTimeOffset", ("OffsetDateTime", new CodeUsing {

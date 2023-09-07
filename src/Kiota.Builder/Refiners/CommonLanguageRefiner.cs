@@ -137,6 +137,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         ArgumentNullException.ThrowIfNull(refineAccessorName);
         if (!(propertyKindsToReplace?.Any() ?? true)) return;
+        if (current is CodeProperty currentProperty1)
+            Console.WriteLine("-> PROPERTY " + currentProperty1.Name + " " + currentProperty1.Kind + " - " + currentProperty1.ExistsInBaseType + " " + current.Parent);
+
         if (current is CodeProperty currentProperty &&
             !currentProperty.ExistsInBaseType &&
             propertyKindsToReplace!.Contains(currentProperty.Kind) &&
@@ -145,11 +148,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             var refinedName = refineAccessorName(currentProperty.Name);
 
-            if (string.IsNullOrEmpty(currentProperty.SerializationName) && !refinedName.Equals(currentProperty.Name, StringComparison.Ordinal))
-                currentProperty.SerializationName = currentProperty.Name;
+            if (!refinedName.Equals(currentProperty.Name, StringComparison.Ordinal) &&
+                !parentClass.Properties.Any(property => !property.Name.Equals(property.Name, StringComparison.Ordinal) && refinedName.Equals(property.Name, StringComparison.OrdinalIgnoreCase)))// ensure the refinement won't generate a duplicate
+            {
+                if (string.IsNullOrEmpty(currentProperty.SerializationName))
+                    currentProperty.SerializationName = currentProperty.Name;
 
-            if (!parentClass.Properties.Any(property => refinedName.Equals(property.Name, StringComparison.OrdinalIgnoreCase)))// ensure the refinement won't generate a duplicate
                 parentClass.RenameChildElement(currentProperty.Name, refinedName);
+            }
         }
         CrawlTree(current, x => ReplacePropertyNames(x, propertyKindsToReplace!, refineAccessorName));
     }
@@ -182,13 +188,13 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 ReturnType = (CodeTypeBase)currentProperty.Type.Clone(),
                 Documentation = new()
                 {
-                    Description = $"Gets the {currentProperty.WireName} property value. {currentProperty.Documentation.Description}",
+                    Description = $"Gets the {currentProperty.Name} property value. {currentProperty.Documentation.Description}",
                 },
                 AccessedProperty = currentProperty,
                 Deprecation = currentProperty.Deprecation,
             }).First();
             currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
-            var setter = parentClass.AddMethod(new CodeMethod
+            currentProperty.Setter = parentClass.AddMethod(new CodeMethod
             {
                 Name = $"set-{accessorName}",
                 Access = AccessModifier.Public,
@@ -196,7 +202,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Kind = CodeMethodKind.Setter,
                 Documentation = new()
                 {
-                    Description = $"Sets the {currentProperty.WireName} property value. {currentProperty.Documentation.Description}",
+                    Description = $"Sets the {currentProperty.Name} property value. {currentProperty.Documentation.Description}",
                 },
                 AccessedProperty = currentProperty,
                 ReturnType = new CodeType
@@ -207,10 +213,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 },
                 Deprecation = currentProperty.Deprecation,
             }).First();
-            setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
-            currentProperty.Setter = setter;
+            currentProperty.Setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
 
-            setter.AddParameter(new CodeParameter
+            currentProperty.Setter.AddParameter(new CodeParameter
             {
                 Name = "value",
                 Kind = CodeParameterKind.SetterValue,

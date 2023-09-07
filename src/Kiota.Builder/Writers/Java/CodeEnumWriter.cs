@@ -14,7 +14,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
         var enumOptions = codeElement.Options.ToArray();
         if (!enumOptions.Any())
             return;
-        var enumName = codeElement.Name.ToFirstCharacterUpperCase();
+        var enumName = codeElement.Name;
         writer.WriteLines($"package {(codeElement.Parent as CodeNamespace)?.Name};",
             string.Empty,
             "import com.microsoft.kiota.serialization.ValuedEnum;",
@@ -29,7 +29,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
         foreach (var enumOption in enumOptions)
         {
             conventions.WriteShortDescription(enumOption.Documentation.Description, writer);
-            writer.WriteLine($"{enumOption.Name.ToFirstCharacterUpperCase()}(\"{enumOption.SerializationName}\"){(enumOption == lastEnumOption ? ";" : ",")}");
+            writer.WriteLine($"{enumOption.Name}(\"{enumOption.SerializationName}\"){(enumOption == lastEnumOption ? ";" : ",")}");
         }
         writer.WriteLines("public final String value;",
             $"{enumName}(final String value) {{");
@@ -46,7 +46,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
                         "switch(searchValue) {");
         writer.IncreaseIndent();
         writer.Write(enumOptions
-                    .Select(x => $"case \"{x.WireName}\": return {x.Name.ToFirstCharacterUpperCase()};")
+                    .Select(x => $"case \"{x.WireName}\": return {x.Name};")
                     .Aggregate((x, y) => $"{x}{LanguageWriter.NewLine}{writer.GetIndent()}{y}") + LanguageWriter.NewLine);
         writer.WriteLine("default: return null;");
         writer.CloseBlock();

@@ -23,7 +23,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
                 throw new InvalidOperationException("Error message overrides are implemented with methods in Java.");
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine("@jakarta.annotation.Nonnull");
-                writer.StartBlock($"{conventions.GetAccessModifier(codeElement.Access)} {returnType} {codeElement.Name.ToFirstCharacterLowerCase()}() {{");
+                writer.StartBlock($"{conventions.GetAccessModifier(codeElement.Access)} {returnType} {codeElement.Name}() {{");
                 conventions.AddRequestBuilderBody(parentClass, returnType, writer);
                 writer.CloseBlock();
                 break;
@@ -41,7 +41,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
                     returnType = $"EnumSet<{returnType}>";
                 if (codeElement.Access != AccessModifier.Private)
                     writer.WriteLine(codeElement.Type.IsNullable ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {returnType} {codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{defaultValue};");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {returnType} {codeElement.NamePrefix}{codeElement.Name}{defaultValue};");
                 break;
         }
 
