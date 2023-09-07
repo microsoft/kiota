@@ -48,6 +48,45 @@ public class ProprietableBlockExtensions
         Assert.Equal("Prop1", result);
     }
     [Fact]
+    public void GetsNothingOnNoPrimaryMessage()
+    {
+        // Given
+        var block = new CodeClass
+        {
+            Name = "testClass",
+        };
+        block.AddProperty(
+            new CodeProperty
+            {
+                Name = "prop1",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType
+                {
+                    Name = "string",
+                }
+            },
+            new CodeProperty
+            {
+                Name = "prop2",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType
+                {
+                    Name = "string",
+                }
+            }
+        );
+
+        // When
+        var result = block.GetPrimaryMessageCodePath(
+            static x => x.Name.ToFirstCharacterUpperCase(),
+            static x => x.Name.ToFirstCharacterUpperCase(),
+            "?."
+        );
+
+        // Then
+        Assert.Empty(result);
+    }
+    [Fact]
     public void GetsTheCodePathForANestedProperty()
     {
         // Given
