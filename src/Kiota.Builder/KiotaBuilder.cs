@@ -507,7 +507,7 @@ public partial class KiotaBuilder
                                 .ToArray();
         if (distinctKeys.FirstOrDefault() is not string longestKey) return string.Empty;
         var candidate = string.Empty;
-        var longestKeySegments = longestKey?.Split(NsNameSeparator, StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>();
+        var longestKeySegments = longestKey.Split(NsNameSeparator, StringSplitOptions.RemoveEmptyEntries);
         foreach (var segment in longestKeySegments)
         {
             var testValue = (candidate + NsNameSeparator + segment).Trim(NsNameSeparator);
