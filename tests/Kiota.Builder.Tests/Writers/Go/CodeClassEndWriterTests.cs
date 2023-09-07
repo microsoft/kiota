@@ -17,13 +17,14 @@ public class CodeClassEndWriterTests : IDisposable
     private readonly LanguageWriter writer;
     private readonly CodeBlockEndWriter codeElementWriter;
     private readonly CodeClass parentClass;
+    private readonly CodeNamespace root;
     public CodeClassEndWriterTests()
     {
         codeElementWriter = new CodeBlockEndWriter();
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
-        var root = CodeNamespace.InitRootNamespace();
+        root = CodeNamespace.InitRootNamespace();
         parentClass = new CodeClass
         {
             Name = "parentClass"
@@ -44,13 +45,62 @@ public class CodeClassEndWriterTests : IDisposable
         }).First();
         codeElementWriter.WriteCodeElement(child.EndBlock, writer);
         var result = tw.ToString();
-        Assert.Equal(1, result.Count(x => x == '}'));
+        Assert.Equal(1, result.Count(static x => x == '}'));
     }
     [Fact]
     public void ClosesNonNestedClasses()
     {
         codeElementWriter.WriteCodeElement(parentClass.EndBlock, writer);
         var result = tw.ToString();
-        Assert.Equal(1, result.Count(x => x == '}'));
+        Assert.Equal(1, result.Count(static x => x == '}'));
+    }
+    [Fact]
+    public void WritesMessageOverrideOnPrimary()
+    {
+        // Given
+        parentClass.IsErrorDefinition = true;
+        var prop1 = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "prop1",
+            Kind = CodePropertyKind.Custom,
+            IsPrimaryErrorMessage = true,
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        }).First();
+        parentClass.AddMethod(new CodeMethod
+        {
+            Name = "GetProp1",
+            Kind = CodeMethodKind.Getter,
+            ReturnType = prop1.Type,
+            Access = AccessModifier.Public,
+            AccessedProperty = prop1,
+            IsAsync = false,
+            IsStatic = false,
+        });
+        var parentInterface = root.AddInterface(new CodeInterface
+        {
+            Name = "parentInterface",
+            OriginalClass = parentClass,
+        }).First();
+        parentInterface.AddMethod(new CodeMethod
+        {
+            Name = "GetProp1",
+            Kind = CodeMethodKind.Getter,
+            ReturnType = prop1.Type,
+            Access = AccessModifier.Public,
+            AccessedProperty = prop1,
+            IsAsync = false,
+            IsStatic = false,
+        });
+
+        // When
+        codeElementWriter.WriteCodeElement(parentInterface.EndBlock, writer);
+        var result = tw.ToString();
+
+        // Then
+        Assert.Contains("Error() string {", result);
+        Assert.Contains("return *(e.GetProp1()", result);
     }
 }
