@@ -198,6 +198,13 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         return AddRange(codeInterfaces);
     }
     public CodeClass? BaseClass => StartBlock.Inherits?.TypeDefinition as CodeClass;
+    /// <summary>
+    /// The interface associated with this class, if any.
+    /// </summary>
+    public CodeInterface? AssociatedInterface
+    {
+        get; set;
+    }
     public bool DerivesFrom(CodeClass codeClass)
     {
         ArgumentNullException.ThrowIfNull(codeClass);

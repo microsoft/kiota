@@ -57,6 +57,11 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
                 break;
+            case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition && parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterUpperCase(), static x => x.Name.ToFirstCharacterUpperCase(), "?.") is string primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath):
+                writer.WriteLine($"public override string Message {{ get => {primaryMessageCodePath} ?? string.Empty; }}");
+                break;
+            case CodePropertyKind.ErrorMessageOverride:
+                throw new InvalidOperationException($"The property {codeElement.Name} is of kind {nameof(CodePropertyKind.ErrorMessageOverride)} but its parent is not an error definition or the code path to the error message could not be found");
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                 writer.WriteLine($"[QueryParameter(\"{codeElement.SerializationName}\")]");
                 goto default;

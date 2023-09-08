@@ -84,6 +84,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 throw new InvalidOperationException("getters and setters are automatically added on fields in dotnet");
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
+            case CodeMethodKind.ErrorMessageOverride:
+                throw new InvalidOperationException("ErrorMessageOverride is not supported as the error message is implemented by a property.");
             case CodeMethodKind.CommandBuilder:
                 var origParams = codeElement.OriginalMethod?.Parameters ?? codeElement.Parameters;
                 requestBodyParam = origParams.OfKind(CodeParameterKind.RequestBody);
@@ -398,7 +400,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             (_, true) => "var collectionResult = ",
             (_, _) => "return ",
         };
-        writer.WriteLine($"{prefix}await RequestAdapter.{GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, {errorMappingVarName}, cancellationToken);");
+        writer.WriteLine($"{prefix}await RequestAdapter.{GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, {errorMappingVarName}, cancellationToken).ConfigureAwait(false);");
         if (codeElement.ReturnType.IsCollection)
             writer.WriteLine("return collectionResult?.ToList();");
     }

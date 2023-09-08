@@ -19,6 +19,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, GoConventionSe
         {
             case CodePropertyKind.RequestBuilder:
                 throw new InvalidOperationException("RequestBuilders are as properties are not supported in Go and should be replaced by methods by the refiner.");
+            case CodePropertyKind.ErrorMessageOverride:
+                throw new InvalidOperationException("Error message overrides are implemented with methods in Go.");
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                 suffix = $" `uriparametername:\"{codeElement.SerializationName}\"`";
                 goto default;

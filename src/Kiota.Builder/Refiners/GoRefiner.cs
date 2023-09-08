@@ -174,6 +174,10 @@ public class GoRefiner : CommonLanguageRefiner
                     CodePropertyKind.QueryParameter,
                 },
                 static s => s.ToFirstCharacterUpperCase());
+            AddPrimaryErrorMessage(generatedCode,
+                "Error",
+                () => new CodeType { Name = "string", IsNullable = false }
+            );
             GenerateCodeFiles(generatedCode);
         }, cancellationToken);
     }

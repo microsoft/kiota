@@ -2057,4 +2057,71 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("return true", result, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("error", result, StringComparison.OrdinalIgnoreCase);
     }
+    [Fact]
+    public void WritesMessageOverrideOnPrimary()
+    {
+        // Given
+        parentClass = root.AddClass(new CodeClass
+        {
+            Name = "parentClass",
+            IsErrorDefinition = true,
+            Kind = CodeClassKind.Model,
+        }).First();
+        var prop1 = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "prop1",
+            Kind = CodePropertyKind.Custom,
+            IsPrimaryErrorMessage = true,
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        }).First();
+        parentClass.AddMethod(new CodeMethod
+        {
+            Name = "GetProp1",
+            Kind = CodeMethodKind.Getter,
+            ReturnType = prop1.Type,
+            Access = AccessModifier.Public,
+            AccessedProperty = prop1,
+            IsAsync = false,
+            IsStatic = false,
+        });
+        var method = parentClass.AddMethod(new CodeMethod
+        {
+            Kind = CodeMethodKind.ErrorMessageOverride,
+            ReturnType = new CodeType
+            {
+                Name = "string",
+                IsNullable = false,
+            },
+            IsAsync = false,
+            IsStatic = false,
+            Name = "Error"
+        }).First();
+        var parentInterface = root.AddInterface(new CodeInterface
+        {
+            Name = "parentInterface",
+            OriginalClass = parentClass,
+        }).First();
+        parentInterface.AddMethod(new CodeMethod
+        {
+            Name = "GetProp1",
+            Kind = CodeMethodKind.Getter,
+            ReturnType = prop1.Type,
+            Access = AccessModifier.Public,
+            AccessedProperty = prop1,
+            IsAsync = false,
+            IsStatic = false,
+        });
+        parentClass.AssociatedInterface = parentInterface;
+
+        // When
+        writer.Write(method);
+        var result = tw.ToString();
+
+        // Then
+        Assert.Contains("Error()(string) {", result);
+        Assert.Contains("return *(m.GetProp1()", result);
+    }
 }

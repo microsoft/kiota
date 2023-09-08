@@ -16,6 +16,11 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            AddPrimaryErrorMessage(generatedCode,
+                "Message",
+                () => new CodeType { Name = "string", IsNullable = false },
+                true
+            );
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {

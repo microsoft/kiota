@@ -1150,8 +1150,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         var interfaceName = interfaceNamingCallback.Invoke(modelClass);
         var targetNS = modelClass.GetImmediateParentOfType<CodeNamespace>();
-        var existing = targetNS.FindChildByName<CodeInterface>(interfaceName, false);
-        if (existing != null)
+        if (targetNS.FindChildByName<CodeInterface>(interfaceName, false) is { } existing)
             return existing;
         var parentClass = modelClass.Parent as CodeClass;
         var insertValue = new CodeInterface
@@ -1160,6 +1159,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             Kind = CodeInterfaceKind.Model,
             OriginalClass = modelClass,
         };
+        modelClass.AssociatedInterface = insertValue;
         var inter = parentClass != null ?
                         parentClass.AddInnerInterface(insertValue).First() :
                         targetNS.AddInterface(insertValue).First();
@@ -1461,5 +1461,42 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
 
         CrawlTree(currentElement, x => RemoveRequestConfigurationClasses(x, configurationParameterTypeUsing, defaultValueForGenericTypeParam));
+    }
+    internal static void AddPrimaryErrorMessage(CodeElement currentElement, string name, Func<CodeType> type, bool asProperty = false)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.IsErrorDefinition)
+        {
+            if (asProperty)
+            {
+                currentClass.AddProperty(new CodeProperty
+                {
+                    Name = name,
+                    Access = AccessModifier.Public,
+                    Kind = CodePropertyKind.ErrorMessageOverride,
+                    Type = type(),
+                    Documentation = new()
+                    {
+                        Description = "The primary error message.",
+                    },
+                });
+            }
+            else
+            {
+                currentClass.AddMethod(new CodeMethod
+                {
+                    Name = name,
+                    Access = AccessModifier.Public,
+                    Kind = CodeMethodKind.ErrorMessageOverride,
+                    ReturnType = type(),
+                    IsAsync = false,
+                    IsStatic = false,
+                    Documentation = new()
+                    {
+                        Description = "The primary error message.",
+                    },
+                });
+            }
+        }
+        CrawlTree(currentElement, x => AddPrimaryErrorMessage(x, name, type, asProperty));
     }
 }

@@ -34,6 +34,10 @@ public enum CodePropertyKind
     /// The request middleware options. Used when request parameters are wrapped in a class.
     /// </summary>
     Options,
+    /// <summary>
+    /// The override for the error message for the error/exception type.
+    /// </summary>
+    ErrorMessageOverride
 }
 
 public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement, IAlternativeName, ICloneable, IDeprecableElement

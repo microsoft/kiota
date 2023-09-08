@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -40,9 +38,5 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
         conventions.WriteLongDescription(parentClass.Documentation, writer);
         conventions.WriteDeprecationAttribute(parentClass, writer);
         writer.StartBlock($"public class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}{{");
-        if (parentClass.IsErrorDefinition && parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterUpperCase(), static x => x.Name.ToFirstCharacterUpperCase(), "?.") is string primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
-        {
-            writer.WriteLine($"public override string Message {{ get => {primaryMessageCodePath} ?? string.Empty; }}");
-        }
     }
 }
