@@ -700,6 +700,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var props = classModelChildItems.OfType<CodeProperty>();
         ProcessModelClassDeclaration(modelClass, modelInterface, interfaceNamingCallback);
         ProcessModelClassProperties(modelClass, modelInterface, props, interfaceNamingCallback);
+        modelClass.AssociatedInterface = modelInterface;
         return modelInterface;
     }
 

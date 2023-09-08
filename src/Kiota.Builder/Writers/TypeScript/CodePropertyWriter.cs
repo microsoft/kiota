@@ -22,8 +22,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
             case CodeInterface:
                 WriteCodePropertyForInterface(codeElement, writer, returnType, isFlagEnum);
                 break;
-            default:
-                WriteCodePropertyForClass(codeElement, writer, returnType, isFlagEnum);
+            case CodeClass codeClass:
+                WriteCodePropertyForClass(codeElement, codeClass, writer, returnType, isFlagEnum);
                 break;
         }
     }
@@ -33,14 +33,15 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
         writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}?: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)};");
     }
 
-    private void WriteCodePropertyForClass(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)
+    private void WriteCodePropertyForClass(CodeProperty codeElement, CodeClass parentClass, LanguageWriter writer, string returnType, bool isFlagEnum)
     {
         switch (codeElement.Kind)
         {
+            case CodePropertyKind.ErrorMessageOverride:
+                throw new InvalidOperationException($"Primary message mapping is done in deserializer function in TypeScript.");
             case CodePropertyKind.RequestBuilder:
                 writer.StartBlock($"{conventions.GetAccessModifier(codeElement.Access)} get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");
-                if (codeElement.Parent is CodeClass parentClass)
-                    conventions.AddRequestBuilderBody(parentClass, returnType, writer);
+                conventions.AddRequestBuilderBody(parentClass, returnType, writer);
                 writer.CloseBlock();
                 break;
             default:
