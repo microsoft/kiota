@@ -52,7 +52,7 @@
       "args": [
         "generate",
         "--openapi",
-        "C:/sources/github/msgraph-sdk-powershell/openApiDocs/v1.0/Mail.yml",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
         "--language",
         "csharp",
         "-o",
@@ -115,7 +115,7 @@
       "args": [
         "generate",
         "--openapi",
-        "C:/sources/github/msgraph-sdk-powershell/openApiDocs/v1.0/Mail.yml",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
         "--language",
         "go",
         "-o",
