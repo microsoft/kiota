@@ -260,7 +260,7 @@
     "@types/glob": "^8.0.1",
     "@types/mocha": "^10.0.1",
     "@types/node": "20.x",
-    "@types/vscode": "^1.81.0",
+    "@types/vscode": "^1.82.0",
     "@typescript-eslint/eslint-plugin": "^6.6.0",
     "@typescript-eslint/parser": "^6.6.0",
     "@vscode/test-electron": "^2.3.4",
