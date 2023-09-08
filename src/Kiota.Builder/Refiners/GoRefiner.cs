@@ -176,7 +176,7 @@ public class GoRefiner : CommonLanguageRefiner
                 static s => s.ToFirstCharacterUpperCase());
             AddPrimaryErrorMessage(generatedCode,
                 "Error",
-                () => new CodeType { Name = "string", IsNullable = false }
+                () => new CodeType { Name = "string", IsNullable = false, IsExternal = true }
             );
             GenerateCodeFiles(generatedCode);
         }, cancellationToken);

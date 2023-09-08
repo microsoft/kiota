@@ -18,7 +18,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             AddPrimaryErrorMessage(generatedCode,
                 "Message",
-                () => new CodeType { Name = "string", IsNullable = false },
+                () => new CodeType { Name = "string", IsNullable = false, IsExternal = true },
                 true
             );
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
