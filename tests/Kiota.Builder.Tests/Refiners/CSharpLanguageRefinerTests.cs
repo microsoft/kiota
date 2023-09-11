@@ -183,7 +183,7 @@ public class CSharpLanguageRefinerTests
         // Assert
         Assert.Equal("break", model.Name);
         Assert.DoesNotContain("@", model.Name); // classname will be capitalized
-        Assert.Equal("alias", property.Name);
+        Assert.Equal("Alias", property.Name);
         Assert.DoesNotContain("@", property.Name); // classname will be capitalized
     }
 

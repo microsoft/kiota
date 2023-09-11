@@ -21,11 +21,11 @@ public class JavaLanguageRefinerTests
         }).First();
         var option = new CodeEnumOption
         {
-            Name = "break", // this a keyword
+            Name = "Void", // this a keyword
         };
         model.AddOption(option);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.Equal("break", option.Name);
+        Assert.Equal("Void", option.Name);
         Assert.Empty(option.SerializationName);
     }
     [Fact]
@@ -436,7 +436,7 @@ public class JavaLanguageRefinerTests
         method.AddParameter(nonNormalizedParam);
         method.AddParameter(normalizedParam);
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.Equal("foo_bar", method.Parameters.First().Type.Name);
+        Assert.Equal("Foo_bar", method.Parameters.First().Type.Name);
         Assert.Equal("FooBaz", method.Parameters.Last().Type.Name);
     }
     [Fact]

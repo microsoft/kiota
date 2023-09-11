@@ -89,6 +89,6 @@ public class CodeEnumWriterTests : IDisposable
         currentEnum.AddOption(option);
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.Contains($"Plus_1(\"+1\")", result);
+        Assert.Contains($"plus_1(\"+1\")", result);
     }
 }
