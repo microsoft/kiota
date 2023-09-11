@@ -2074,7 +2074,7 @@ public class CodeMethodWriterTests : IDisposable
             Kind = CodeMethodKind.ErrorMessageOverride,
             ReturnType = new CodeType
             {
-                Name = "string",
+                Name = "String",
                 IsNullable = false,
             },
             IsAsync = false,

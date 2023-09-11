@@ -16,9 +16,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
 
-        var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
-        if (codeElement.ReturnType is CodeType { TypeDefinition: CodeEnum { Flags: true }, IsCollection: false })
-            returnType = $"EnumSet<{returnType}>";
         var baseReturnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var finalReturnType = GetFinalReturnType(codeElement, baseReturnType);
         WriteMethodDocumentation(codeElement, writer, baseReturnType, finalReturnType);
@@ -681,6 +678,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private string GetFinalReturnType(CodeMethod code, string returnType)
     {
         var voidType = code.IsAsync ? "Void" : "void";
+        if (code.ReturnType is CodeType { TypeDefinition: CodeEnum { Flags: true }, IsCollection: false })
+            returnType = $"EnumSet<{returnType}>";
         var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
         var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
         var reType = returnType.Equals("void", StringComparison.OrdinalIgnoreCase) ? voidType : returnType;
