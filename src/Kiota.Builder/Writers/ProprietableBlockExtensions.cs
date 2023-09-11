@@ -16,7 +16,7 @@ internal static class ProprietableBlockExtensions
     {
         if (block is CodeInterface currentInterface)
         {
-            if (currentInterface.Methods.FirstOrDefault(x => isGetterMethod(x) && x.AccessedProperty is not null && isPrimaryErrorMessage(x.AccessedProperty)) is CodeMethod primaryErrorMessageMethod)
+            if (currentInterface.Methods.FirstOrDefault(static x => isGetterMethod(x) && x.AccessedProperty is not null && isPrimaryErrorMessage(x.AccessedProperty)) is CodeMethod primaryErrorMessageMethod)
                 return methodNameNormalization(primaryErrorMessageMethod);
             else if (currentInterface.Properties.FirstOrDefault(isPrimaryErrorMessage) is CodeProperty primaryErrorMessageProperty)
                 return propertyNameNormalization(primaryErrorMessageProperty);
@@ -34,7 +34,7 @@ internal static class ProprietableBlockExtensions
         }
         else if (block is CodeClass currentClass)
         {
-            if (currentClass.Methods.FirstOrDefault(x => isGetterMethod(x) && x.AccessedProperty is not null && isPrimaryErrorMessage(x.AccessedProperty)) is CodeMethod primaryErrorMessageMethod)
+            if (currentClass.Methods.FirstOrDefault(static x => isGetterMethod(x) && x.AccessedProperty is not null && isPrimaryErrorMessage(x.AccessedProperty)) is CodeMethod primaryErrorMessageMethod)
                 return methodNameNormalization(primaryErrorMessageMethod);
             else if (currentClass.Properties.FirstOrDefault(isPrimaryErrorMessage) is CodeProperty primaryErrorMessageProperty)
                 return propertyNameNormalization(primaryErrorMessageProperty);

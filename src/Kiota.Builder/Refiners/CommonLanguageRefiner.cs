@@ -1464,7 +1464,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     }
     internal static void AddPrimaryErrorMessage(CodeElement currentElement, string name, Func<CodeType> type, bool asProperty = false)
     {
-        if (currentElement is CodeClass currentClass && currentClass.IsErrorDefinition)
+        if (currentElement is CodeClass { IsErrorDefinition: true } currentClass)
         {
             if (asProperty)
             {
