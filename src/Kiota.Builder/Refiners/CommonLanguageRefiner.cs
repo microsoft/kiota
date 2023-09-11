@@ -146,7 +146,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var refinedName = refineAccessorName(currentProperty.Name);
 
             if (!refinedName.Equals(currentProperty.Name, StringComparison.Ordinal) &&
-                !parentClass.Properties.Any(property => !property.Name.Equals(property.Name, StringComparison.Ordinal) && refinedName.Equals(property.Name, StringComparison.Ordinal)))// ensure the refinement won't generate a duplicate
+                !parentClass.Properties.Any(property => !currentProperty.Name.Equals(property.Name, StringComparison.Ordinal) &&
+                    refinedName.Equals(property.Name, StringComparison.OrdinalIgnoreCase)))// ensure the refinement won't generate a duplicate
             {
                 if (string.IsNullOrEmpty(currentProperty.SerializationName))
                     currentProperty.SerializationName = currentProperty.Name;
