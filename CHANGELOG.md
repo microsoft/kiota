@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Aggregate typescript import statements by source [#3232](https://github.com/microsoft/kiota/issues/3232)
 - Fixes a bug in dotnet where enums types would not be fully disambiguated when initialized in constructor with default values and existing conflicting property exists [#3233]
 - Fixes a bug in generation of flagged enum properties and their serializer/deserializer functions in typescript [https://github.com/microsoft/kiota/issues/3260]
+- Fixes missing EnumSet types in method parameter and return types in Java [https://github.com/microsoft/kiota/issues/3272]
 
 ## [1.5.1] - 2023-08-08
 

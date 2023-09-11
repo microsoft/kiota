@@ -35,7 +35,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
                 defaultValue = $" = new {returnType}()";
                 goto default;
             default:
-                if (codeElement.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum enumType && enumType.Flags)
+                if (codeElement.Type is CodeType { TypeDefinition: CodeEnum { Flags: true }, IsCollection: false })
                     returnType = $"EnumSet<{returnType}>";
                 if (codeElement.Access != AccessModifier.Private)
                     writer.WriteLine(codeElement.Type.IsNullable ? "@jakarta.annotation.Nullable" : "@jakarta.annotation.Nonnull");

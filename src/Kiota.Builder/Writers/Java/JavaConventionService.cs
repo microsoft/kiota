@@ -36,7 +36,10 @@ public class JavaConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(parameter);
         var nullKeyword = parameter.Optional ? "Nullable" : "Nonnull";
         var nullAnnotation = parameter.Type.IsNullable ? $"@jakarta.annotation.{nullKeyword} " : string.Empty;
-        return $"{nullAnnotation}final {GetTypeString(parameter.Type, targetElement)} {parameter.Name.ToFirstCharacterLowerCase()}";
+        var parameterType = GetTypeString(parameter.Type, targetElement);
+        if (parameter.Type is CodeType { TypeDefinition: CodeEnum { Flags: true }, IsCollection: false })
+            parameterType = $"EnumSet<{parameterType}>";
+        return $"{nullAnnotation}final {parameterType} {parameter.Name.ToFirstCharacterLowerCase()}";
     }
 
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
