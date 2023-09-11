@@ -62,7 +62,7 @@ $tmpFolder1 = New-TemporaryDirectory
 $tmpFolder2 = New-TemporaryDirectory
 
 Start-Process "$kiotaExec" -ArgumentList "generate --clean-output --language ${language} --openapi ${targetOpenapiPath} --dvr all --output $tmpFolder1" -Wait -NoNewWindow
-Start-Process "src/kiota/bin/Debug/net7.0/kiota" -ArgumentList "generate --clean-output --language ${language} --openapi ${targetOpenapiPath} --dvr all --output $tmpFolder2" -Wait -NoNewWindow
+Start-Process "$kiotaExec" -ArgumentList "generate --clean-output --language ${language} --openapi ${targetOpenapiPath} --dvr all --output $tmpFolder2" -Wait -NoNewWindow
 
 # Remove variable output files
 Remove-Item (Join-Path -Path $tmpFolder1 -ChildPath "kiota-lock.json")
@@ -81,10 +81,8 @@ Get-FileHash -InputStream ([IO.MemoryStream]::new([char[]]$HashString1))
 $HashString2 = (Get-ChildItem $tmpFolder2 -Recurse | where { ! $_.PSIsContainer } | Get-FileHash -Algorithm MD5).Hash | Out-String
 Get-FileHash -InputStream ([IO.MemoryStream]::new([char[]]$HashString2))
 
-Write-Output "Folder Old: $tmpFolder1"
-Write-Output "Folder New: $tmpFolder2"
-
-diff --color -r "$tmpFolder1" "$tmpFolder2"
+Write-Output "Folder 1: $tmpFolder1"
+Write-Output "Folder 2: $tmpFolder2"
 
 if ($HashString1 -eq $HashString2) {
     Write-Output "The content of the folders is identical"
