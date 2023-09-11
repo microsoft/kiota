@@ -1723,10 +1723,10 @@ public class CodeMethodWriterTests : IDisposable
         setup();
         var codeEnumType = new CodeType
         {
-            Name = "customEnum", 
+            Name = "customEnum",
             TypeDefinition = new CodeEnum
             {
-                Name = "customEnumType", 
+                Name = "customEnumType",
                 Flags = true
             }
         };
