@@ -1839,7 +1839,7 @@ public partial class KiotaBuilder
         // Add the class to the namespace after the serialization members
         // as other threads looking for the existence of the class may find the class but the additional data/backing store properties may not be fully populated causing duplication
         var includeAdditionalDataProperties = config.IncludeAdditionalData && schema.AdditionalPropertiesAllowed;
-        AddSerializationMembers(newClassStub, includeAdditionalDataProperties, config.UsesBackingStore);
+        AddSerializationMembers(newClassStub, includeAdditionalDataProperties, config.UsesBackingStore, static s => s);
 
         var newClass = currentNamespace.AddClass(newClassStub).First();
         var lifecycle = classLifecycles.GetOrAdd(currentNamespace.Name + "." + declarationName, static n => new());
@@ -1870,7 +1870,7 @@ public partial class KiotaBuilder
                                     type.TypeDefinition is CodeClass definition &&
                                     definition.DerivesFrom(newClass)); // only the mappings that derive from the current class
 
-        AddDiscriminatorMethod(newClass, schema.GetDiscriminatorPropertyName(), mappings);
+        AddDiscriminatorMethod(newClass, schema.GetDiscriminatorPropertyName(), mappings, static s => s);
         return newClass;
     }
     private IEnumerable<KeyValuePair<string, CodeTypeBase>> GetDiscriminatorMappings(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace currentNamespace, CodeClass? baseClass)
@@ -2012,11 +2012,11 @@ public partial class KiotaBuilder
     {
         openApiDocument?.InitializeInheritanceIndex(inheritanceIndex);
     }
-    internal static void AddDiscriminatorMethod(CodeClass newClass, string discriminatorPropertyName, IEnumerable<KeyValuePair<string, CodeTypeBase>> discriminatorMappings)
+    internal static void AddDiscriminatorMethod(CodeClass newClass, string discriminatorPropertyName, IEnumerable<KeyValuePair<string, CodeTypeBase>> discriminatorMappings, Func<string, string> refineMethodName)
     {
         var factoryMethod = new CodeMethod
         {
-            Name = "CreateFromDiscriminatorValue",
+            Name = refineMethodName("CreateFromDiscriminatorValue"),
             Documentation = new()
             {
                 Description = "Creates a new instance of the appropriate class based on discriminator value",
@@ -2107,14 +2107,14 @@ public partial class KiotaBuilder
     internal const string BackedModelInterface = "IBackedModel";
     private const string ParseNodeInterface = "IParseNode";
     internal const string AdditionalHolderInterface = "IAdditionalDataHolder";
-    internal static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties, bool usesBackingStore)
+    internal static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties, bool usesBackingStore, Func<string, string> refineMethodName)
     {
         var serializationPropsType = $"IDictionary<string, Action<{ParseNodeInterface}>>";
         if (!model.ContainsMember(FieldDeserializersMethodName))
         {
             var deserializeProp = new CodeMethod
             {
-                Name = FieldDeserializersMethodName,
+                Name = refineMethodName(FieldDeserializersMethodName),
                 Kind = CodeMethodKind.Deserializer,
                 Access = AccessModifier.Public,
                 Documentation = new()
@@ -2136,7 +2136,7 @@ public partial class KiotaBuilder
         {
             var serializeMethod = new CodeMethod
             {
-                Name = SerializeMethodName,
+                Name = refineMethodName(SerializeMethodName),
                 Kind = CodeMethodKind.Serializer,
                 IsAsync = false,
                 Documentation = new()

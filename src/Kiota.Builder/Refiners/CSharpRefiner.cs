@@ -51,6 +51,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
+                static s => s,
                 true,
                 AbstractionsNamespaceName,
                 "IComposedTypeWrapper"

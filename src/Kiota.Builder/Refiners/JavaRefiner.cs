@@ -62,6 +62,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
+                s => s.ToFirstCharacterLowerCase(),
                 true,
                 SerializationNamespaceName,
                 "ComposedTypeWrapper"
@@ -264,6 +265,20 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if (currentElement is CodeIndexer i)
         {
             i.IndexParameter.Name = i.IndexParameter.Name.ToFirstCharacterLowerCase();
+        }
+        else if (currentElement is CodeEnum e)
+        {
+            foreach (var option in e.Options)
+            {
+                if (!string.IsNullOrEmpty(option.Name) && Char.IsLower(option.Name[0]))
+                {
+                    if (string.IsNullOrEmpty(option.SerializationName))
+                    {
+                        option.SerializationName = option.Name;
+                    }
+                    option.Name = option.Name.ToFirstCharacterUpperCase();
+                }
+            }
         }
 
         CrawlTree(currentElement, element => CorrectCommonNames(element));

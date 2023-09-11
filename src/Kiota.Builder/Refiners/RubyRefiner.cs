@@ -56,7 +56,8 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, true);
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
-                _configuration.UsesBackingStore
+                _configuration.UsesBackingStore,
+                static s => s
             );
             cancellationToken.ThrowIfCancellationRequested();
             AddParsableImplementsForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
