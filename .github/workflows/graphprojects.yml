@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
+        uses: tibdex/github-app-token@0914d50df753bbc42180d982a6550f195390069f
         with:
           app_id: ${{ secrets.GRAPHBOT_APP_ID }}
           private_key: ${{ secrets.GRAPHBOT_APP_PEM }}
