@@ -78,11 +78,25 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             case CodeMethodKind.ComposedTypeMarker:
                 WriteComposedTypeMarkerBody(writer);
                 break;
+            case CodeMethodKind.ErrorMessageOverride:
+                WriteErrorMethodOverride(parentClass, writer);
+                break;
             default:
                 writer.WriteLine("return nil");
                 break;
         }
         writer.CloseBlock();
+    }
+    private static void WriteErrorMethodOverride(CodeClass parentClass, LanguageWriter writer)
+    {
+        if (parentClass.AssociatedInterface is not null && parentClass.IsErrorDefinition && parentClass.AssociatedInterface.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterUpperCase(), static x => x.Name.ToFirstCharacterUpperCase() + "()") is string primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
+        {
+            writer.WriteLine($"return *(m.{primaryMessageCodePath})");
+        }
+        else
+        {
+            writer.WriteLine("return m.ApiError.Error()");
+        }
     }
     private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
     {
@@ -422,7 +436,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                             CodeMethodKind.RequestBuilderBackwardCompatibility,
                                             CodeMethodKind.RawUrlConstructor,
                                             CodeMethodKind.ComposedTypeMarker,
-                                            CodeMethodKind.RawUrlBuilder) || code.IsAsync ?
+                                            CodeMethodKind.RawUrlBuilder,
+                                            CodeMethodKind.ErrorMessageOverride) || code.IsAsync ?
                                                 string.Empty :
                                                 "error";
         if (!string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration))

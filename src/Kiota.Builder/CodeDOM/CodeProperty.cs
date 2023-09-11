@@ -34,6 +34,10 @@ public enum CodePropertyKind
     /// The request middleware options. Used when request parameters are wrapped in a class.
     /// </summary>
     Options,
+    /// <summary>
+    /// The override for the error message for the error/exception type.
+    /// </summary>
+    ErrorMessageOverride
 }
 
 public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement, IAlternativeName, ICloneable, IDeprecableElement
@@ -110,6 +114,13 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     {
         get; set;
     }
+    /// <summary>
+    /// Indicates if the property is the primary error message for the error/exception type.
+    /// </summary>
+    public bool IsPrimaryErrorMessage
+    {
+        get; set;
+    }
 
     public object Clone()
     {
@@ -130,6 +141,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
             NamePrefix = NamePrefix,
             OriginalPropertyFromBaseType = OriginalPropertyFromBaseType?.Clone() as CodeProperty,
             Deprecation = Deprecation,
+            IsPrimaryErrorMessage = IsPrimaryErrorMessage,
         };
         return property;
     }

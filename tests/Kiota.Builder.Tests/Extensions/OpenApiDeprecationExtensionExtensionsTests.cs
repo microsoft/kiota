@@ -3,8 +3,8 @@
 using System;
 using System.Collections.Generic;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi.Interfaces;
+using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 using Xunit;

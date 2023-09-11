@@ -77,6 +77,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 throw new InvalidOperationException("RawUrlConstructor is not supported as typescript relies on union types.");
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
+            case CodeMethodKind.ErrorMessageOverride:
+                throw new InvalidOperationException("ErrorMessageOverride is not supported as the error message is implemented by the deserializer function in typescript.");
             default:
                 WriteDefaultMethodBody(codeElement, writer);
                 break;

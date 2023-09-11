@@ -216,5 +216,37 @@ public class CodePropertyWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("[Obsolete(\"deprecation message as of v1.0 on 2021-01-01 and will be removed 2023-01-01\")]", result);
     }
+    [Fact]
+    public void WritesMessageOverrideOnPrimary()
+    {
+        // Given
+        parentClass.IsErrorDefinition = true;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "prop1",
+            Kind = CodePropertyKind.Custom,
+            IsPrimaryErrorMessage = true,
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+        var overrideProperty = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "Message",
+            Kind = CodePropertyKind.ErrorMessageOverride,
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        }).First();
+
+        // When
+        writer.Write(overrideProperty);
+        var result = tw.ToString();
+
+        // Then
+        Assert.Contains("public override string Message { get => Prop1 ?? string.Empty; }", result);
+    }
 }
 

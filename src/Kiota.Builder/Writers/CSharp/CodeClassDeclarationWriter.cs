@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -14,6 +12,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
+        if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException($"The provided code element {codeElement.Name} doesn't have a parent of type {nameof(CodeClass)}");
+
         if (codeElement.Parent?.Parent is CodeNamespace)
         {
             writer.WriteLine(AutoGenerationHeader);
@@ -35,12 +35,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
                                         .Select(static x => x.ToFirstCharacterUpperCase())
                                         .ToArray();
         var derivation = derivedTypes.Any() ? ": " + derivedTypes.Aggregate(static (x, y) => $"{x}, {y}") + " " : string.Empty;
-        if (codeElement.Parent is CodeClass parentClass)
-        {
-            conventions.WriteLongDescription(parentClass.Documentation, writer);
-            conventions.WriteDeprecationAttribute(parentClass, writer);
-        }
-        writer.WriteLine($"public class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}{{");
-        writer.IncreaseIndent();
+        conventions.WriteLongDescription(parentClass.Documentation, writer);
+        conventions.WriteDeprecationAttribute(parentClass, writer);
+        writer.StartBlock($"public class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}{{");
     }
 }

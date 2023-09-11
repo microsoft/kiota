@@ -38,6 +38,10 @@ public enum CodeMethodKind
     /// Fluent API method returning a request builder with a set raw URL. depends on the RawUrlConstructor.
     /// </summary>
     RawUrlBuilder,
+    /// <summary>
+    /// The override for the error message for the error/exception type.
+    /// </summary>
+    ErrorMessageOverride
 }
 public enum HttpMethod
 {

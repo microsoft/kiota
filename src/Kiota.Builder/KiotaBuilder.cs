@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -24,15 +25,16 @@ using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Validation;
 using Kiota.Builder.Writers;
-
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.ApiManifest;
+using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Microsoft.OpenApi.Services;
 using Microsoft.OpenApi.Validations;
 using HttpMethod = Kiota.Builder.CodeDOM.HttpMethod;
+[assembly: InternalsVisibleTo("Kiota.Builder.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100957cb48387b2a5f54f5ce39255f18f26d32a39990db27cf48737afc6bc62759ba996b8a2bfb675d4e39f3d06ecb55a178b1b4031dcb2a767e29977d88cce864a0d16bfc1b3bebb0edf9fe285f10fffc0a85f93d664fa05af07faa3aad2e545182dbf787e3fd32b56aca95df1a3c4e75dec164a3f1a4c653d971b01ffc39eb3c4")]
 
 namespace Kiota.Builder;
 
@@ -450,35 +452,10 @@ public partial class KiotaBuilder
             ruleSet.AddKiotaValidationRules(config);
         var settings = new OpenApiReaderSettings
         {
-            ExtensionParsers = new()
-            {
-                {
-                    OpenApiPagingExtension.Name,
-                    static (i, _) => OpenApiPagingExtension.Parse(i)
-                },
-                {
-                    OpenApiEnumValuesDescriptionExtension.Name,
-                    static (i, _ ) => OpenApiEnumValuesDescriptionExtension.Parse(i)
-                },
-                {
-                    OpenApiKiotaExtension.Name,
-                    static (i, _ ) => OpenApiKiotaExtension.Parse(i)
-                },
-                {
-                    OpenApiDeprecationExtension.Name,
-                    static (i, _ ) => OpenApiDeprecationExtension.Parse(i)
-                },
-                {
-                    OpenApiReservedParameterExtension.Name,
-                    static (i, _ ) => OpenApiReservedParameterExtension.Parse(i)
-                },
-                {
-                    OpenApiEnumFlagsExtension.Name,
-                    static (i, _ ) => OpenApiEnumFlagsExtension.Parse(i)
-                }
-            },
             RuleSet = ruleSet,
         };
+        settings.AddMicrosoftExtensionParsers();
+        settings.ExtensionParsers.TryAdd(OpenApiKiotaExtension.Name, static (i, _) => OpenApiKiotaExtension.Parse(i));
         try
         {
             var rawUri = config.OpenAPIFilePath.TrimEnd(ForwardSlash);
@@ -530,7 +507,7 @@ public partial class KiotaBuilder
                                 .ToArray();
         if (distinctKeys.FirstOrDefault() is not string longestKey) return string.Empty;
         var candidate = string.Empty;
-        var longestKeySegments = longestKey?.Split(NsNameSeparator, StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>();
+        var longestKeySegments = longestKey.Split(NsNameSeparator, StringSplitOptions.RemoveEmptyEntries);
         foreach (var segment in longestKeySegments)
         {
             var testValue = (candidate + NsNameSeparator + segment).Trim(NsNameSeparator);
@@ -1170,6 +1147,11 @@ public partial class KiotaBuilder
             ReadOnly = propertySchema?.ReadOnly ?? false,
             Type = resultType,
             Deprecation = propertySchema?.GetDeprecationInformation(),
+            IsPrimaryErrorMessage = kind == CodePropertyKind.Custom &&
+                                        propertySchema is not null &&
+                                        propertySchema.Extensions.TryGetValue(OpenApiPrimaryErrorMessageExtension.Name, out var openApiExtension) &&
+                                        openApiExtension is OpenApiPrimaryErrorMessageExtension primaryErrorMessageExtension &&
+                                        primaryErrorMessageExtension.IsPrimaryErrorMessage
         };
         if (prop.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
             !propertyName.Equals(childIdentifier, StringComparison.Ordinal))

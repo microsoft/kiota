@@ -135,6 +135,10 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             RemoveHandlerFromRequestBuilder(generatedCode);
             SplitLongDiscriminatorMethods(generatedCode);
+            AddPrimaryErrorMessage(generatedCode,
+                "getMessage",
+                () => new CodeType { Name = "string", IsNullable = false, IsExternal = true }
+            );
         }, cancellationToken);
     }
     private const int MaxDiscriminatorLength = 500;

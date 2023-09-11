@@ -17,13 +17,14 @@ public class CodeClassEndWriterTests : IDisposable
     private readonly LanguageWriter writer;
     private readonly CodeBlockEndWriter codeElementWriter;
     private readonly CodeClass parentClass;
+    private readonly CodeNamespace root;
     public CodeClassEndWriterTests()
     {
         codeElementWriter = new CodeBlockEndWriter();
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
-        var root = CodeNamespace.InitRootNamespace();
+        root = CodeNamespace.InitRootNamespace();
         parentClass = new CodeClass
         {
             Name = "parentClass"
@@ -44,13 +45,13 @@ public class CodeClassEndWriterTests : IDisposable
         }).First();
         codeElementWriter.WriteCodeElement(child.EndBlock, writer);
         var result = tw.ToString();
-        Assert.Equal(1, result.Count(x => x == '}'));
+        Assert.Equal(1, result.Count(static x => x == '}'));
     }
     [Fact]
     public void ClosesNonNestedClasses()
     {
         codeElementWriter.WriteCodeElement(parentClass.EndBlock, writer);
         var result = tw.ToString();
-        Assert.Equal(1, result.Count(x => x == '}'));
+        Assert.Equal(1, result.Count(static x => x == '}'));
     }
 }

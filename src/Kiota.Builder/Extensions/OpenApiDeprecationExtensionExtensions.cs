@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
-using Kiota.Builder.OpenApiExtensions;
+using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
 

@@ -19,6 +19,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
         conventions.WriteDeprecatedAnnotation(codeElement, writer);
         switch (codeElement.Kind)
         {
+            case CodePropertyKind.ErrorMessageOverride:
+                throw new InvalidOperationException("Error message overrides are implemented with methods in Java.");
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine("@jakarta.annotation.Nonnull");
                 writer.StartBlock($"{conventions.GetAccessModifier(codeElement.Access)} {returnType} {codeElement.Name.ToFirstCharacterLowerCase()}() {{");

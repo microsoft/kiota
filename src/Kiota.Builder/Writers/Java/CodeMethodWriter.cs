@@ -85,6 +85,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             case CodeMethodKind.Factory when codeElement.IsOverload:
                 WriteFactoryOverloadMethod(codeElement, parentClass, writer);
                 break;
+            case CodeMethodKind.ErrorMessageOverride:
+                WriteErrorMethodOverride(parentClass, writer);
+                break;
             case CodeMethodKind.ComposedTypeMarker:
                 throw new InvalidOperationException("ComposedTypeMarker is not required as interface is explicitly implemented.");
             default:
@@ -92,6 +95,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 break;
         }
         writer.CloseBlock();
+    }
+    private static void WriteErrorMethodOverride(CodeClass parentClass, LanguageWriter writer)
+    {
+        if (parentClass.IsErrorDefinition && parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterLowerCase(), static x => x.Name.ToFirstCharacterLowerCase() + "()") is string primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
+        {
+            writer.WriteLine($"return this.{primaryMessageCodePath};");
+        }
+        else
+        {
+            writer.WriteLine("return super.getMessage();");
+        }
     }
     private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
     {
@@ -684,6 +698,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var finalReturnType = isConstructor ? string.Empty : $" {returnTypeAsyncPrefix}{collectionCorrectedReturnType}{returnTypeAsyncSuffix}";
         var staticModifier = code.IsStatic ? " static" : string.Empty;
         conventions.WriteDeprecatedAnnotation(code, writer);
+        if (code.Kind is CodeMethodKind.ErrorMessageOverride)
+        {
+            writer.WriteLine($"@Override");
+        }
         writer.WriteLine($"{accessModifier}{staticModifier}{finalReturnType} {methodName}({parameters}) {{");
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, string returnType)

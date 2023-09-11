@@ -171,8 +171,7 @@ public class PhpConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(writer);
         var joined = string.Empty;
-        var codeParameters = pathParameters?.ToList();
-        if (pathParameters != null && (codeParameters?.Any() ?? false))
+        if (pathParameters?.ToList() is { } codeParameters && codeParameters.Any())
         {
             joined = $", {string.Join(", ", codeParameters.Select(static x => $"${x.Name.ToFirstCharacterLowerCase()}"))}";
         }

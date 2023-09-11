@@ -368,4 +368,52 @@ public class CodeFunctionWriterTests : IDisposable
         Assert.NotNull(serializeFunction);
         Assert.Contains("createError4XXFromDiscriminatorValue", declaration.Usings.Select(x => x.Declaration?.Name));
     }
+    [Fact]
+    public async Task WritesMessageOverrideOnPrimary()
+    {
+        // Given
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        parentClass.IsErrorDefinition = true;
+        parentClass.AddMethod(new CodeMethod
+        {
+            Kind = CodeMethodKind.Deserializer,
+            Name = "deserializer",
+            ReturnType = new CodeType
+            {
+                Name = "Dictionary",
+            },
+        }, new CodeMethod
+        {
+            Name = "Serializer",
+            Kind = CodeMethodKind.Serializer,
+            ReturnType = new CodeType
+            {
+                Name = "void",
+            },
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "prop1",
+            Kind = CodePropertyKind.Custom,
+            IsPrimaryErrorMessage = true,
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var function = root.FindChildByName<CodeFunction>("deserializeIntoODataError");
+
+        // When
+        writer.Write(function);
+        var result = tw.ToString();
+
+        // Then
+        Assert.Contains("oDataError.message = oDataError.prop1 ?? \"\"", result);
+    }
 }

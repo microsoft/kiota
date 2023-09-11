@@ -57,6 +57,12 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
                 break;
+            case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:
+                if (parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterUpperCase(), static x => x.Name.ToFirstCharacterUpperCase(), "?.") is string primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
+                    writer.WriteLine($"public override {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ get => {primaryMessageCodePath} ?? string.Empty; }}");
+                else
+                    writer.WriteLine($"public override {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ get => base.Message; }}");
+                break;
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                 writer.WriteLine($"[QueryParameter(\"{codeElement.SerializationName}\")]");
                 goto default;

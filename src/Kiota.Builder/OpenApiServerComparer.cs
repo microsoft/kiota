@@ -6,7 +6,7 @@ using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder;
 
-internal partial class OpenApiServerComparer : IEqualityComparer<OpenApiServer>
+internal sealed partial class OpenApiServerComparer : IEqualityComparer<OpenApiServer>
 {
     private static readonly Regex _protocolCleanupRegex = GetCleanupRegex();
     [GeneratedRegex("^https?://", RegexOptions.IgnoreCase | RegexOptions.Compiled, 200)]
