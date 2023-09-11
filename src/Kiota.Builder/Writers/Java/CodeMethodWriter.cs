@@ -17,6 +17,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
+        if (codeElement.ReturnType is CodeType { TypeDefinition: CodeEnum { Flags: true }, IsCollection: false })
+            returnType = $"EnumSet<{returnType}>";
         if (codeElement.IsAsync &&
             codeElement.IsOfKind(CodeMethodKind.RequestExecutor) &&
             returnType.Equals("void", StringComparison.OrdinalIgnoreCase))

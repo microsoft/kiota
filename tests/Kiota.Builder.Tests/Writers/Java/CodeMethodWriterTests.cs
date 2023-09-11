@@ -1718,6 +1718,32 @@ public class CodeMethodWriterTests : IDisposable
         Assert.Contains("this.someProperty = value", result);
     }
     [Fact]
+    public void WritesGetterToFieldWithEnumSetParameter()
+    {
+        setup();
+        var codeEnumType = new CodeType
+        {
+            Name = "customEnum",
+            TypeDefinition = new CodeEnum
+            {
+                Name = "customEnumType",
+                Flags = true
+            }
+        };
+        method.AccessedProperty = new CodeProperty
+        {
+            Name = "someProperty",
+            Type = codeEnumType
+        };
+        (method.Parent as CodeClass)?.AddProperty(method.AccessedProperty);
+        method.Kind = CodeMethodKind.Getter;
+        method.ReturnType = codeEnumType;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("this.someProperty", result);
+        Assert.Contains("EnumSet<", result);
+    }
+    [Fact]
     public void WritePeriodAndDurationSetterToField()
     {
         setup();
