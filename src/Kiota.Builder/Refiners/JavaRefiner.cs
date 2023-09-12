@@ -141,7 +141,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             SplitLongDiscriminatorMethods(generatedCode);
             AddPrimaryErrorMessage(generatedCode,
                 "getMessage",
-                () => new CodeType { Name = "string", IsNullable = false, IsExternal = true }
+                () => new CodeType { Name = "String", IsNullable = false, IsExternal = true }
             );
         }, cancellationToken);
     }
