@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Localhost based descriptions are not cached anymore to facilitate development workflows. [#3316](https://github.com/microsoft/kiota/issues/3316)
 - Changed parameter order in with_url method body to match the signature of RequestBuilder constructor in Python. [#3328](https://github.com/microsoft/kiota/issues/3328
 - Removed redundant undefined qualifier in TypeScript for properties. [#3244](https://github.com/microsoft/kiota/issues/3244)
+- The default status code response is now used as 4XX and 5XX when those class responses are not provided in the description. [#3245](https://github.com/microsoft/kiota/issues/3245)
 
 ## [1.6.1] - 2023-09-11
 

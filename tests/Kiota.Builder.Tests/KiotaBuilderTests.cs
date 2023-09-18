@@ -2089,6 +2089,115 @@ paths:
         Assert.Null(codeModel.FindChildByName<CodeClass>("tasks5XXError"));
     }
     [Fact]
+    public void UsesDefaultAs4XXAnd5XXWhenAbsent()
+    {
+        var errorSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "errorId", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "microsoft.graph.error",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var errorResponse = new OpenApiResponse
+        {
+            Content =
+            {
+                ["application/json"] = new OpenApiMediaType
+                {
+                    Schema = errorSchema
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "microsoft.graph.error",
+                Type = ReferenceType.Response
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["tasks"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content =
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
+                                                Type = "object",
+                                                Properties = new Dictionary<string, OpenApiSchema> {
+                                                    {
+                                                        "progress", new OpenApiSchema{
+                                                            Type = "string",
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                ["default"] = errorResponse,
+                                ["401"] = errorResponse
+                            }
+                        }
+                    }
+                }
+            },
+            Components = new OpenApiComponents
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "microsoft.graph.error", errorSchema
+                    }
+                },
+                Responses = new Dictionary<string, OpenApiResponse> {
+                    {
+                        "microsoft.graph.error", errorResponse
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var executorMethod = codeModel.FindChildByName<CodeMethod>("get");
+        Assert.NotNull(executorMethod);
+        Assert.NotEmpty(executorMethod.ErrorMappings);
+        var keys = executorMethod.ErrorMappings.Select(static x => x.Key).ToHashSet();
+        Assert.Contains("4XX", keys);
+        Assert.Contains("401", keys);
+        Assert.Contains("5XX", keys);
+        var errorType = codeModel.FindChildByName<CodeClass>("Error");
+        Assert.NotNull(errorType);
+        Assert.True(errorType.IsErrorDefinition);
+        Assert.NotNull(errorType.FindChildByName<CodeProperty>("errorId"));
+
+        Assert.Null(codeModel.FindChildByName<CodeClass>("tasks401Error"));
+        Assert.Null(codeModel.FindChildByName<CodeClass>("tasks4XXError"));
+        Assert.Null(codeModel.FindChildByName<CodeClass>("tasks5XXError"));
+    }
+    [Fact]
     public void DoesntAddPropertyHolderOnNonAdditionalModels()
     {
         var weatherForecastSchema = new OpenApiSchema
