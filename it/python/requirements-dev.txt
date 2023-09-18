@@ -114,7 +114,7 @@ msal-extensions==1.0.0
 
 multidict==6.0.4 ; python_version >= '3.7'
 
-portalocker==2.7.0 ; python_version >= '3.5' and platform_system == 'Windows'
+portalocker==2.8.2 ; python_version >= '3.5' and platform_system == 'Windows'
 
 pycparser==2.21
 
