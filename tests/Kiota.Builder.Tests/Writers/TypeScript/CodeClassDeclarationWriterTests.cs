@@ -37,6 +37,14 @@ public class CodeClassDeclarationWriterTests : IDisposable
         GC.SuppressFinalize(this);
     }
     [Fact]
+    public void WritesAutoGenerationStart()
+    {
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains("// eslint-disable", result);
+        Assert.Contains("// tslint:disable", result);
+    }
+    [Fact]
     public void WritesSimpleDeclaration()
     {
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
