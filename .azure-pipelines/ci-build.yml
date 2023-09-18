@@ -116,11 +116,11 @@ stages:
           - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
             displayName: "Get Kiota's version-number from .csproj"
 
-          - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion) -check
+          - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion)
             condition: eq(variables['isPrerelease'], 'false')
             displayName: "Get release notes from CHANGELOG.md"
 
-          - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased -check
+          - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased
             condition: eq(variables['isPrerelease'], 'true')
           
           # Build the Product project
@@ -600,10 +600,10 @@ stages:
                   displayName: "Set version suffix"
                 - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                   displayName: "Get Kiota's version-number from .csproj"
-                - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion)
+                - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion) -createNotes
                   condition: eq(variables['isPrerelease'], 'false')
                   displayName: "Get release notes from CHANGELOG.md"
-                - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased
+                - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased -createNotes
                   condition: eq(variables['isPrerelease'], 'true')
                   displayName: "Get release notes from CHANGELOG.md"
                 - task: GitHubRelease@1

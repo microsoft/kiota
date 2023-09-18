@@ -4,7 +4,7 @@ param (
     $version,
     [switch]
     [bool]
-    $check
+    $createNotes
 )
 
 $version = $version.TrimStart("v")
@@ -23,7 +23,7 @@ $releaseNotes = $changeLogContent.Substring($headerLineNumber, $endLineNumber - 
 if ($version -eq "Unreleased" -and [string]::IsNullOrWhiteSpace($releaseNotes.Replace("### Changed", "").Replace("### Added", ""))) {
     throw "Version $version not found in CHANGELOG.md make sure you've updated the changelog"
 }
-if ($check -eq $false) {
+if ($createNotes -eq $true) {
     $targetFile = Join-Path (Split-Path $changelogPath -Parent) "release-notes.txt"
     Set-Content -Path $targetFile -Value $releaseNotes -Verbose
 }
