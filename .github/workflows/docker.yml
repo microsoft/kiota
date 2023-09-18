@@ -50,12 +50,12 @@ jobs:
         shell: pwsh
         name: "Get Kiota's version-number from .csproj"
 
-      - run: ./scripts/get-release-notes.ps1 -version "${{ steps.getversion.outputs.version }}"
+      - run: ./scripts/get-release-notes.ps1 -version "${{ steps.getversion.outputs.version }}" -check
         if: ${{!contains(github.ref, env.PREVIEW_BRANCH)}}
         name: "Get release notes from CHANGELOG.md"
         shell: pwsh
 
-      - run: ./scripts/get-release-notes.ps1 -version Unreleased
+      - run: ./scripts/get-release-notes.ps1 -version Unreleased -check
         if: contains(github.ref, env.PREVIEW_BRANCH)
         name: "Get release notes from CHANGELOG.md"
         shell: pwsh
