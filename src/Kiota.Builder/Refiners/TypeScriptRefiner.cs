@@ -198,7 +198,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         }
         String modelName = codeInterface.Name;
-        codeNamespace.TryAddCodeFileWithChildren(modelName, functions.ToArray());
+        codeNamespace.TryAddCodeFile(modelName, functions.ToArray());
     }
 
     private static void GenerateRequestBuilderCodeFile(CodeClass codeClass, CodeNamespace codeNamespace)
@@ -232,7 +232,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         elements.AddRange(queryParamClasses);
         elements.AddRange(configClasses);
 
-        codeNamespace.TryAddCodeFileWithChildren(codeClass.Name, elements.ToArray());
+        codeNamespace.TryAddCodeFile(codeClass.Name, elements.ToArray());
     }
 
     private static void CorrectCodeFileUsing(CodeElement currentElement)

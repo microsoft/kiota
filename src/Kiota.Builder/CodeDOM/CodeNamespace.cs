@@ -30,7 +30,8 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
             StartBlock.Name = name;
         }
     }
-    public CodeFile TryAddCodeFileWithChildren(string fileName, CodeElement[] children)
+
+    public CodeFile TryAddCodeFile(string fileName, params CodeElement[] children)
     {
         var file = FindChildByName<CodeFile>(fileName, false) ?? new CodeFile { Name = fileName };
         RemoveChildElement(children);
@@ -41,11 +42,6 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
             AddRange(file);
 
         return file;
-    }
-
-    public CodeFile TryAddCodeFile(string fileName, params CodeElement[] children)
-    {
-        return TryAddCodeFileWithChildren(fileName, children);
     }
 
     public bool IsParentOf(CodeNamespace childNamespace)
