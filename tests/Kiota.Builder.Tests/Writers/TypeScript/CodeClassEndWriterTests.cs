@@ -19,8 +19,8 @@ public class CodeClassEndWriterTests : IDisposable
     private readonly CodeClass parentClass;
     public CodeClassEndWriterTests()
     {
-        codeElementWriter = new CodeBlockEndWriter();
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
+        codeElementWriter = new CodeBlockEndWriter(new(writer));
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();
@@ -45,12 +45,16 @@ public class CodeClassEndWriterTests : IDisposable
         codeElementWriter.WriteCodeElement(child.EndBlock, writer);
         var result = tw.ToString();
         Assert.Equal(1, result.Count(x => x == '}'));
+        Assert.DoesNotContain("// eslint-enable", result);
+        Assert.DoesNotContain("// tslint:enable", result);
     }
     [Fact]
     public void ClosesNonNestedClasses()
     {
         codeElementWriter.WriteCodeElement(parentClass.EndBlock, writer);
         var result = tw.ToString();
+        Assert.Contains("// eslint-enable", result);
+        Assert.Contains("// tslint:enable", result);
         Assert.Equal(1, result.Count(x => x == '}'));
     }
 }

@@ -34,6 +34,31 @@ public class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task WritesAutoGenerationStart()
+    {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass", true);
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        writer.Write(serializeFunction);
+        var result = tw.ToString();
+        Assert.Contains("// eslint-disable", result);
+        Assert.Contains("// tslint:disable", result);
+    }
+    [Fact]
+    public async Task WritesAutoGenerationEnd()
+    {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass", true);
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        writer.Write(serializeFunction);
+        var result = tw.ToString();
+        Assert.DoesNotContain("// eslint-enable", result); //written by code end block writer
+        Assert.DoesNotContain("// tslint:enable", result);
+    }
+
+    [Fact]
     public async Task WritesModelFactoryBody()
     {
         var parentModel = TestHelper.CreateModelClass(root, "parentModel");
