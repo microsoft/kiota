@@ -1509,6 +1509,7 @@ public class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"return {parentClass.Name.ToFirstCharacterUpperCase()}", result);
+        Assert.Contains("request_adapter, raw_url", result);
     }
     [Fact]
     public void WritesConstructorForReqestBuilder()
