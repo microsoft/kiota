@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Localhost based descriptions are not cached anymore to facilitate development workflows. [#3316](https://github.com/microsoft/kiota/issues/3316)
+- Adds codes files in typescript to reduce number of generated files. [#2116](https://github.com/microsoft/kiota/issues/2116)
+
 
 ## [1.6.1] - 2023-09-11
 
