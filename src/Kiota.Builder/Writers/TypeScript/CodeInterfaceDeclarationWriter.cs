@@ -17,7 +17,7 @@ public class CodeInterfaceDeclarationWriter : BaseElementWriter<InterfaceDeclara
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
-        
+
         var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
         if (codeElement.Parent?.Parent is CodeNamespace)
         {

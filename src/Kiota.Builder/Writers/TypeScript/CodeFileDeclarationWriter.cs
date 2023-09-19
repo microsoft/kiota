@@ -6,7 +6,11 @@ namespace Kiota.Builder.Writers.TypeScript;
 
 public class CodeFileDeclarationWriter : BaseElementWriter<CodeFileDeclaration, TypeScriptConventionService>
 {
-    public CodeFileDeclarationWriter(TypeScriptConventionService conventionService) : base(conventionService) { }
+    private readonly CodeUsingWriter _codeUsingWriter;
+    public CodeFileDeclarationWriter(TypeScriptConventionService conventionService, string clientNamespaceName) : base(conventionService)
+    {
+        _codeUsingWriter = new(clientNamespaceName);
+    }
 
     public override void WriteCodeElement(CodeFileDeclaration codeElement, LanguageWriter writer)
     {
@@ -15,7 +19,6 @@ public class CodeFileDeclarationWriter : BaseElementWriter<CodeFileDeclaration, 
 
         if (codeElement.Parent is CodeFile cf && cf.Parent is CodeNamespace ns)
         {
-            CodeUsingWriter codeUsingWriter = new(ns.Name);
             var usings = cf.GetChildElements().SelectMany(static x =>
                 {
                     var startBlockUsings = x switch
@@ -28,7 +31,15 @@ public class CodeFileDeclarationWriter : BaseElementWriter<CodeFileDeclaration, 
                     return startBlockUsings;
                 }
             );
-            codeUsingWriter.WriteCodeElement(usings, ns, writer);
+            try
+            {
+                _codeUsingWriter.WriteCodeElement(usings, ns, writer);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
     }
 

@@ -184,16 +184,17 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
                 {
                     var exists = codeFunction.OriginalLocalMethod.Parameters
-                        .Any(x => x?.Type?.Name == codeInterface.Name);
+                        .Any(x => x?.Type?.Name?.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase) ?? false);
 
                     if (exists)
                         functions.Add(codeFunction);
 
                 }
-                else if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Factory))
+                else if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Factory) &&
+                         codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&
+                         codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace))
                 {
-                    if (codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) && codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace))
-                        functions.Add(codeFunction);
+                    functions.Add(codeFunction);
                 }
             }
         }
@@ -208,24 +209,24 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .SelectMany(static x => x.Parameters)
             .Where(static x => x.IsOfKind(CodeParameterKind.RequestConfiguration))
             .Select(static x => x?.Type?.Name)
-            .Where(static x => x != null)
-            .Select(static x => x!)
+            .Where(static x => !string.IsNullOrEmpty(x))
+            .OfType<string>()
             .ToList();
 
         List<CodeInterface> configClasses = codeNamespace.FindChildrenByName<CodeInterface>(elementNames, false)
             .Where(static x => x != null)
-            .Select(static x => x!)
+            .OfType<CodeInterface>()
             .ToList();
 
         List<string> queryParamClassNames = configClasses.Where(x => x != null)
             .Select(static w => w.GetPropertyOfKind(CodePropertyKind.QueryParameters)?.Type?.Name)
-            .Where(static s => s != null)
-            .Select(static s => s!)
+            .Where(static x => !string.IsNullOrEmpty(x))
+            .OfType<string>()
             .ToList();
 
         List<CodeInterface> queryParamClasses = codeNamespace.FindChildrenByName<CodeInterface>(queryParamClassNames, false)
             .Where(static x => x != null)
-            .Select(static x => x!)
+            .OfType<CodeInterface>()
             .ToList();
 
         List<CodeElement> elements = new List<CodeElement> { codeClass };

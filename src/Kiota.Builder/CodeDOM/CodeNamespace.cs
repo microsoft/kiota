@@ -169,7 +169,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
         ArgumentException.ThrowIfNullOrEmpty(namespacePrefix);
         if (this == importNamespace || Name.Equals(importNamespace.Name, StringComparison.OrdinalIgnoreCase)) // we're in the same namespace
             return new();
-        var prefixLength = (namespacePrefix.Length > Math.Min(Name.Length, importNamespace.Name.Length) ? 0 : namespacePrefix.Length);
+        var prefixLength = namespacePrefix.Length;
         var currentNamespaceSegments = Name[prefixLength..]
                                 .Split(separator, StringSplitOptions.RemoveEmptyEntries);
         var importNamespaceSegments = importNamespace
