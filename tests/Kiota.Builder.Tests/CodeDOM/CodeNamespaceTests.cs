@@ -138,4 +138,17 @@ public class CodeNamespaceTests
         Assert.True(child.IsParentOf(grandchild));
         Assert.False(grandchild.IsParentOf(child));
     }
+
+    [Fact]
+    public void GetDifferential()
+    {
+
+        var root = CodeNamespace.InitRootNamespace();
+        root.Name = "Nyt.model.item";
+        var child1 = root.AddNamespace("Nyt.model.item");
+        var child2 = root.AddNamespace("Nyt.model");
+
+
+        child1.GetDifferential(child2, child1.Name, '.');
+    }
 }

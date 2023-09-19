@@ -22,8 +22,11 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         ArgumentNullException.ThrowIfNull(codeElement);
         if (codeElement.OriginalLocalMethod == null) throw new InvalidOperationException($"{nameof(codeElement.OriginalLocalMethod)} should not be null");
         ArgumentNullException.ThrowIfNull(writer);
-        if (codeElement.Parent is not CodeNamespace) throw new InvalidOperationException("the parent of a function should be a namespace");
-        _codeUsingWriter.WriteCodeElement(codeElement.StartBlock.Usings, codeElement.GetImmediateParentOfType<CodeNamespace>(), writer);
+        if (codeElement.Parent is not CodeNamespace && codeElement.Parent is not CodeFile) throw new InvalidOperationException("the parent of a function should be a namespace or file");
+
+        if (codeElement.Parent is CodeNamespace)
+            _codeUsingWriter.WriteCodeElement(codeElement.StartBlock.Usings, codeElement.GetImmediateParentOfType<CodeNamespace>(), writer);
+
         var codeMethod = codeElement.OriginalLocalMethod;
 
         var returnType = codeMethod.Kind != CodeMethodKind.Factory ? conventions.GetTypeString(codeMethod.ReturnType, codeElement) : string.Empty;
@@ -85,11 +88,12 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
     private string getDeserializationFunction(CodeElement codeElement, string returnType)
     {
-        if (codeElement.Parent is not CodeNamespace codeNamespace)
+        var parent = codeElement.Parent switch
         {
-            throw new InvalidOperationException($"{codeElement.Name} does not have a parent namespace");
-        }
-        var parent = codeNamespace.FindChildByName<CodeFunction>($"deserializeInto{returnType}");
+            CodeNamespace codeNamespace => codeNamespace.FindChildByName<CodeFunction>($"deserializeInto{returnType}"),
+            CodeFile codeFile => codeFile.FindChildByName<CodeFunction>($"deserializeInto{returnType}"),
+            _ => throw new InvalidOperationException($"{codeElement.Name} does not have a parent namespace or file")
+        };
 
         return conventions.GetTypeString(new CodeType { TypeDefinition = parent }, codeElement, false);
     }

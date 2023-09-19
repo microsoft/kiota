@@ -122,6 +122,16 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
 
         return Enumerable.Empty<T>();
     }
+
+    public IEnumerable<T?> FindChildrenByName<T>(IEnumerable<string> childrenName, bool findInChildElements = true) where T : ICodeElement
+    {
+        if (childrenName == null)
+            throw new ArgumentNullException(nameof(childrenName));
+
+        return childrenName.Where(x => !string.IsNullOrEmpty(x))
+            .Select(x => this.FindChildByName<T>(x, findInChildElements));
+    }
+
     public T? FindChildByName<T>(string childName, bool findInChildElements = true) where T : ICodeElement
     {
         ArgumentException.ThrowIfNullOrEmpty(childName);
