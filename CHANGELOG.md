@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Localhost based descriptions are not cached anymore to facilitate development workflows. [#3316](https://github.com/microsoft/kiota/issues/3316)
+- Changed parameter order in with_url method body to match the signature of RequestBuilder constructor in Python. [#3328](https://github.com/microsoft/kiota/issues/3328
 - Removed redundant undefined qualifier in TypeScript for properties. [#3244](https://github.com/microsoft/kiota/issues/3244)
 
 ## [1.6.1] - 2023-09-11
