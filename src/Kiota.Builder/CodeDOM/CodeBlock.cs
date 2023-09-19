@@ -128,7 +128,7 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
         if (childrenName == null)
             throw new ArgumentNullException(nameof(childrenName));
 
-        return childrenName.Where(x => !string.IsNullOrEmpty(x))
+        return childrenName.Where(static x => !string.IsNullOrEmpty(x))
             .Select(x => this.FindChildByName<T>(x, findInChildElements));
     }
 

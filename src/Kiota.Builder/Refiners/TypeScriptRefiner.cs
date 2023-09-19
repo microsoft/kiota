@@ -176,6 +176,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
     {
         List<CodeElement> functions = new List<CodeElement> { codeInterface };
+
         foreach (var element in codeNamespace.GetChildElements(true))
         {
             if (element is CodeFunction codeFunction)
@@ -183,9 +184,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
                 {
                     var exists = codeFunction.OriginalLocalMethod.Parameters
-                        .Where(x => x?.Type?.Name == codeInterface.Name)
-                        .ToList()
-                        .Any();
+                        .Any(x => x?.Type?.Name == codeInterface.Name);
 
                     if (exists)
                         functions.Add(codeFunction);
@@ -205,30 +204,29 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void GenerateRequestBuilderCodeFile(CodeClass codeClass, CodeNamespace codeNamespace)
     {
         List<String> elementNames = codeClass.Methods
-            .Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator))
-            .SelectMany(x => x.Parameters)
-            .Where(x => x.IsOfKind(CodeParameterKind.RequestConfiguration))
-            .Select(x => x?.Type?.Name)
-            .Where(x => x != null)
-            .Select(x => x!)
+            .Where(static x => x.IsOfKind(CodeMethodKind.RequestGenerator))
+            .SelectMany(static x => x.Parameters)
+            .Where(static x => x.IsOfKind(CodeParameterKind.RequestConfiguration))
+            .Select(static x => x?.Type?.Name)
+            .Where(static x => x != null)
+            .Select(static x => x!)
             .ToList();
 
         List<CodeInterface> configClasses = codeNamespace.FindChildrenByName<CodeInterface>(elementNames, false)
-            .Where(x => x != null)
-            .Select(x => x!)
+            .Where(static x => x != null)
+            .Select(static x => x!)
             .ToList();
 
         List<string> queryParamClassNames = configClasses.Where(x => x != null)
             .Select(static w => w.GetPropertyOfKind(CodePropertyKind.QueryParameters)?.Type?.Name)
-            .Where(s => s != null)
-            .Select(s => s!)
+            .Where(static s => s != null)
+            .Select(static s => s!)
             .ToList();
 
         List<CodeInterface> queryParamClasses = codeNamespace.FindChildrenByName<CodeInterface>(queryParamClassNames, false)
-            .Where(x => x != null)
-            .Select(x => x!)
+            .Where(static x => x != null)
+            .Select(static x => x!)
             .ToList();
-
 
         List<CodeElement> elements = new List<CodeElement> { codeClass };
         elements.AddRange(queryParamClasses);

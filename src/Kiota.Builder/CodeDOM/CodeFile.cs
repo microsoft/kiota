@@ -24,7 +24,7 @@ public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
     public IEnumerable<T> GetChildrenOfType<T>() where T : CodeElement
     {
         return InnerChildElements.Values.Where(y => y is T)
-            .Select(x => (x as T)!)
+            .Select(static x => (x as T)!)
             .ToList();
     }
 }
