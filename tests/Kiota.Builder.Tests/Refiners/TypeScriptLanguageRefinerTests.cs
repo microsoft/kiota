@@ -741,7 +741,7 @@ public class TypeScriptLanguageRefinerTests
 
         var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
         Assert.NotNull(codeFile); // codefile exists
-        
+
         // model , interface, deserializer, serializer should be direct descendant of the codefile
         Assert.NotNull(codeFile.FindChildByName<CodeFunction>($"DeserializeInto{model.Name.ToFirstCharacterUpperCase()}", false));
         Assert.NotNull(codeFile.FindChildByName<CodeFunction>($"Serialize{model.Name.ToFirstCharacterUpperCase()}", false));
