@@ -114,7 +114,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     {
         var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
-        writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToSnakeCase()}, self.{requestAdapterProperty.Name.ToSnakeCase()})");
+        writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}(self.{requestAdapterProperty.Name.ToSnakeCase()}, {rawUrlParameter.Name.ToSnakeCase()})");
     }
     private const string DiscriminatorMappingVarName = "mapping_value";
 

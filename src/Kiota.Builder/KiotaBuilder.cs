@@ -1224,31 +1224,44 @@ public partial class KiotaBuilder
     private const string RequestBodyPlainTextContentType = "text/plain";
     private static readonly HashSet<string> noContentStatusCodes = new() { "201", "202", "204", "205" };
     private static readonly HashSet<string> errorStatusCodes = new(Enumerable.Range(400, 599).Select(static x => x.ToString(CultureInfo.InvariantCulture))
-                                                                                 .Concat(new[] { "4XX", "5XX" }), StringComparer.OrdinalIgnoreCase);
-
+                                                                                 .Concat(new[] { FourXXError, FiveXXError }), StringComparer.OrdinalIgnoreCase);
+    private const string FourXXError = "4XX";
+    private const string FiveXXError = "5XX";
     private void AddErrorMappingsForExecutorMethod(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeMethod executorMethod)
     {
         foreach (var response in operation.Responses.Where(x => errorStatusCodes.Contains(x.Key)))
         {
-            var errorCode = response.Key.ToUpperInvariant();
-            var errorSchema = response.Value.GetResponseSchema(config.StructuredMimeTypes);
-            if (errorSchema != null && modelsNamespace != null)
+            if (response.Value.GetResponseSchema(config.StructuredMimeTypes) is { } schema)
             {
-                var parentElement = string.IsNullOrEmpty(response.Value.Reference?.Id) && string.IsNullOrEmpty(errorSchema.Reference?.Id)
-                    ? (CodeElement)executorMethod
-                    : modelsNamespace;
-                var errorType = CreateModelDeclarations(currentNode, errorSchema, operation, parentElement, $"{errorCode}Error", response: response.Value);
-                if (errorType is CodeType codeType &&
-                    codeType.TypeDefinition is CodeClass codeClass &&
-                    !codeClass.IsErrorDefinition)
-                {
-                    codeClass.IsErrorDefinition = true;
-                }
-                if (errorType is null)
-                    logger.LogWarning("Could not create error type for {Error} in {Operation}", errorCode, operation.OperationId);
-                else
-                    executorMethod.AddErrorMapping(errorCode, errorType);
+                AddErrorMappingToExecutorMethod(currentNode, operation, executorMethod, schema, response.Value, response.Key.ToUpperInvariant());
             }
+        }
+        if (operation.Responses.TryGetValue("default", out var defaultResponse) && defaultResponse.GetResponseSchema(config.StructuredMimeTypes) is { } errorSchema)
+        {
+            if (!executorMethod.HasErrorMappingCode(FourXXError))
+                AddErrorMappingToExecutorMethod(currentNode, operation, executorMethod, errorSchema, defaultResponse, FourXXError);
+            if (!executorMethod.HasErrorMappingCode(FiveXXError))
+                AddErrorMappingToExecutorMethod(currentNode, operation, executorMethod, errorSchema, defaultResponse, FiveXXError);
+        }
+    }
+    private void AddErrorMappingToExecutorMethod(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeMethod executorMethod, OpenApiSchema errorSchema, OpenApiResponse response, string errorCode)
+    {
+        if (modelsNamespace != null)
+        {
+            var parentElement = string.IsNullOrEmpty(response.Reference?.Id) && string.IsNullOrEmpty(errorSchema.Reference?.Id)
+                ? (CodeElement)executorMethod
+                : modelsNamespace;
+            var errorType = CreateModelDeclarations(currentNode, errorSchema, operation, parentElement, $"{errorCode}Error", response: response);
+            if (errorType is CodeType codeType &&
+                codeType.TypeDefinition is CodeClass codeClass &&
+                !codeClass.IsErrorDefinition)
+            {
+                codeClass.IsErrorDefinition = true;
+            }
+            if (errorType is null)
+                logger.LogWarning("Could not create error type for {Error} in {Operation}", errorCode, operation.OperationId);
+            else
+                executorMethod.AddErrorMapping(errorCode, errorType);
         }
     }
     private CodeTypeBase? GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, OpenApiSchema? schema, OpenApiOperation operation, CodeClass parentClass)

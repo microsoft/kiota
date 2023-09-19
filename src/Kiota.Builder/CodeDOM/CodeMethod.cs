@@ -263,6 +263,11 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             return errorMappings.OrderBy(static x => x.Key);
         }
     }
+    public bool HasErrorMappingCode(string code)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(code);
+        return errorMappings.ContainsKey(code);
+    }
 
     public DeprecationInformation? Deprecation
     {

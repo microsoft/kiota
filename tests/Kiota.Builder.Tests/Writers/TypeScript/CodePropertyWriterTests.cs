@@ -75,7 +75,8 @@ public class CodePropertyWriterTests : IDisposable
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains($"{PropertyName}?: {TypeName} | undefined", result);
+        Assert.Contains($"{PropertyName}?: {TypeName}", result);
+        Assert.DoesNotContain("| undefined", result); // redundant with ?
     }
     [Fact]
     public void WritesFlagEnums()
