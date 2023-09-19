@@ -637,5 +637,123 @@ public class TypeScriptLanguageRefinerTests
         Assert.DoesNotContain(testNS.Classes, x => x.Name == "requestConfig");
         Assert.DoesNotContain(testNS.Classes, x => x.Name == "queryParams");
     }
+
+
+    [Fact]
+    public async Task GeneratesCodeFiles()
+    {
+        var model = TestHelper.CreateModelClass(root);
+
+        model.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            IsAsync = false,
+            IsStatic = true,
+            ReturnType = new CodeType
+            {
+                Name = "void",
+                TypeDefinition = model
+            },
+        }); ;
+        model.AddProperty(new CodeProperty
+        {
+            Name = "core",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = HttpCoreDefaultName
+            }
+        }, new()
+        {
+            Name = "someDate",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = DateTimeOffsetDefaultName,
+            }
+        }, new()
+        {
+            Name = "additionalData",
+            Kind = CodePropertyKind.AdditionalData,
+            Type = new CodeType
+            {
+                Name = AdditionalDataDefaultName
+            }
+        }, new()
+        {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = PathParametersDefaultName
+            },
+            DefaultValue = PathParametersDefaultValue
+        });
+        var executorMethod = model.AddMethod(new CodeMethod
+        {
+            Name = "executor",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        const string serializerDefaultName = "ISerializationWriter";
+        var serializationMethod = model.AddMethod(new CodeMethod
+        {
+            Name = "seriailization",
+            Kind = CodeMethodKind.Serializer,
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        serializationMethod.AddParameter(new CodeParameter
+        {
+            Name = serializerDefaultName,
+            Kind = CodeParameterKind.Serializer,
+            Type = new CodeType
+            {
+                Name = serializerDefaultName,
+            }
+        });
+        var constructorMethod = model.AddMethod(new CodeMethod
+        {
+            Name = "constructor",
+            Kind = CodeMethodKind.Constructor,
+            ReturnType = new CodeType
+            {
+                Name = "void"
+            }
+        }).First();
+        constructorMethod.AddParameter(new CodeParameter
+        {
+            Name = "pathParameters",
+            Kind = CodeParameterKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = PathParametersDefaultName
+            },
+        });
+
+        await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+
+        var codeFile = root.FindChildByName<CodeFile>(model.Name.ToFirstCharacterUpperCase());
+        Assert.NotNull(codeFile); // codefile exists
+        
+        // model , interface, deserializer, serializer should be direct descendant of the codefile
+        Assert.NotNull(codeFile.FindChildByName<CodeFunction>($"DeserializeInto{model.Name.ToFirstCharacterUpperCase()}", false));
+        Assert.NotNull(codeFile.FindChildByName<CodeFunction>($"Serialize{model.Name.ToFirstCharacterUpperCase()}", false));
+        Assert.NotNull(codeFile.FindChildByName<CodeFunction>($"create{model.Name.ToFirstCharacterUpperCase()}FromDiscriminatorValue", false));
+        Assert.NotNull(codeFile.FindChildByName<CodeInterface>($"{model.Name.ToFirstCharacterUpperCase()}", false));
+
+        // model , interface, deserializer, serializer should be a direct descendant of the namespace
+        Assert.NotNull(root.FindChildByName<CodeFunction>($"DeserializeInto{model.Name.ToFirstCharacterUpperCase()}", false));
+        Assert.NotNull(root.FindChildByName<CodeFunction>($"Serialize{model.Name.ToFirstCharacterUpperCase()}", false));
+        Assert.NotNull(root.FindChildByName<CodeFunction>($"create{model.Name.ToFirstCharacterUpperCase()}FromDiscriminatorValue", false));
+        Assert.NotNull(root.FindChildByName<CodeInterface>($"{model.Name.ToFirstCharacterUpperCase()}", false));
+
+    }
     #endregion
 }
