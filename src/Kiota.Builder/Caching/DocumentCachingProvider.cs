@@ -84,12 +84,17 @@ public class DocumentCachingProvider
             responseMessage.EnsureSuccessStatusCode();
             content = new MemoryStream();
             await responseMessage.Content.CopyToAsync(content, token).ConfigureAwait(false);
+            if (documentUri.IsLoopback)
+                Logger.LogInformation("skipping cache write for URI {Uri} as it is a loopback address", documentUri);
+            else
+            {
 #pragma warning disable CA2007
-            await using var fileStream = File.Create(target);
+                await using var fileStream = File.Create(target);
 #pragma warning restore CA2007
-            content.Position = 0;
-            await content.CopyToAsync(fileStream, token).ConfigureAwait(false);
-            await fileStream.FlushAsync(token).ConfigureAwait(false);
+                content.Position = 0;
+                await content.CopyToAsync(fileStream, token).ConfigureAwait(false);
+                await fileStream.FlushAsync(token).ConfigureAwait(false);
+            }
             content.Position = 0;
             return content;
         }

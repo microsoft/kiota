@@ -140,7 +140,6 @@ public class GitHubSearchProvider : ISearchProvider
         using var reader = new StreamReader(document);
         return _deserializer.Value.Deserialize<T>(reader);
     }
-    private const string DownloadUrlKey = "download_url";
     private async Task<IEnumerable<Tuple<string, SearchResult>>> GetSearchResultsFromRepo(GitHubClient.GitHubClient gitHubClient, string? org, string? repo, string fileName, string accept, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(org) || string.IsNullOrEmpty(repo))
@@ -148,7 +147,7 @@ public class GitHubSearchProvider : ISearchProvider
         try
         {
             var response = await gitHubClient.Repos[org][repo].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            if (response == null || !response.AdditionalData.TryGetValue(DownloadUrlKey, out var rawDownloadUrl) || rawDownloadUrl is not string downloadUrl || string.IsNullOrEmpty(downloadUrl))
+            if (response == null || response.DownloadUrl is not string downloadUrl || string.IsNullOrEmpty(downloadUrl))
                 return Enumerable.Empty<Tuple<string, SearchResult>>();
             var targetUrl = new Uri(downloadUrl);
 #pragma warning disable CA2007
@@ -220,7 +219,7 @@ public class GitHubSearchProvider : ISearchProvider
         {
             var fileName = originalUrl.TrimStart('/');
             var response = await gitHubClient.Repos[org][repo].Contents[fileName].GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            if (response != null && response.AdditionalData.TryGetValue(DownloadUrlKey, out var rawDownloadUrl) && rawDownloadUrl is string downloadUrl && !string.IsNullOrEmpty(downloadUrl))
+            if (response != null && response.DownloadUrl is string downloadUrl && !string.IsNullOrEmpty(downloadUrl))
                 return new Tuple<string, string?>(originalUrl, downloadUrl);
         }
         catch (BasicError)
