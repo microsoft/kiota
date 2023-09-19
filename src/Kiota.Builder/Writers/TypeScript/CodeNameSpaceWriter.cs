@@ -21,6 +21,7 @@ public class CodeNameSpaceWriter : BaseElementWriter<CodeNamespace, TypeScriptCo
         writer.WriteLines(codeElement.Enums
                                     .Concat<CodeElement>(codeElement.Functions)
                                     .Concat(codeElement.Interfaces)
+                                    .Concat(codeElement.Files)
                                     .OrderBy(static x => x is CodeEnum ? 0 : 1)
                                     .ThenBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                                     .Select(static x => x.Name.ToFirstCharacterLowerCase())

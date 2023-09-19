@@ -30,8 +30,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
             StartBlock.Name = name;
         }
     }
-
-    public CodeFile TryAddCodeFile(string fileName, params CodeElement[] children)
+    public CodeFile TryAddCodeFileWithChildren(string fileName, CodeElement[] children)
     {
         var file = FindChildByName<CodeFile>(fileName, false) ?? new CodeFile { Name = fileName };
         RemoveChildElement(children);
@@ -42,6 +41,11 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
             AddRange(file);
 
         return file;
+    }
+
+    public CodeFile TryAddCodeFile(string fileName, params CodeElement[] children)
+    {
+        return TryAddCodeFileWithChildren(fileName, children);
     }
 
     public bool IsParentOf(CodeNamespace childNamespace)
@@ -70,6 +74,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     public IEnumerable<CodeEnum> Enums => InnerChildElements.Values.OfType<CodeEnum>();
     public IEnumerable<CodeFunction> Functions => InnerChildElements.Values.OfType<CodeFunction>();
     public IEnumerable<CodeInterface> Interfaces => InnerChildElements.Values.OfType<CodeInterface>();
+    public IEnumerable<CodeFile> Files => InnerChildElements.Values.OfType<CodeFile>();
     public CodeNamespace? FindNamespaceByName(string nsName)
     {
         ArgumentException.ThrowIfNullOrEmpty(nsName);
@@ -168,7 +173,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
         ArgumentException.ThrowIfNullOrEmpty(namespacePrefix);
         if (this == importNamespace || Name.Equals(importNamespace.Name, StringComparison.OrdinalIgnoreCase)) // we're in the same namespace
             return new();
-        var prefixLength = namespacePrefix.Length;
+        var prefixLength = (namespacePrefix.Length > Math.Min(Name.Length, importNamespace.Name.Length) ? 0 : namespacePrefix.Length);
         var currentNamespaceSegments = Name[prefixLength..]
                                 .Split(separator, StringSplitOptions.RemoveEmptyEntries);
         var importNamespaceSegments = importNamespace

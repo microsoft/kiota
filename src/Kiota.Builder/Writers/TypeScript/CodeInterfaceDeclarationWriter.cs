@@ -20,7 +20,9 @@ namespace Kiota.Builder.Writers.TypeScript
             ArgumentNullException.ThrowIfNull(writer);
 
             var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
-            _codeUsingWriter.WriteCodeElement(codeElement.Usings, parentNamespace, writer);
+
+            if (codeElement.Parent?.Parent is not CodeFile)
+                _codeUsingWriter.WriteCodeElement(codeElement.Usings, parentNamespace, writer);
 
             var derivation = codeElement.Implements.Any() ? $" extends {codeElement.Implements.Select(static x => x.Name).Aggregate(static (x, y) => x + ", " + y)}" : string.Empty;
             writer.StartBlock($"export interface {codeElement.Name.ToFirstCharacterUpperCase()}{derivation} {{");

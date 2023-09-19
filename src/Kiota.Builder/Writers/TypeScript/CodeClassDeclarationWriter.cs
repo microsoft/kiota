@@ -17,7 +17,9 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ty
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
         var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
-        _codeUsingWriter.WriteCodeElement(codeElement.Usings, parentNamespace, writer);
+
+        if (codeElement.Parent?.Parent is not CodeFile)
+            _codeUsingWriter.WriteCodeElement(codeElement.Usings, parentNamespace, writer);
 
         var inheritSymbol = codeElement.Inherits is null ? string.Empty : conventions.GetTypeString(codeElement.Inherits, codeElement);
         var derivation = (string.IsNullOrEmpty(inheritSymbol) ? string.Empty : $" extends {inheritSymbol}") +

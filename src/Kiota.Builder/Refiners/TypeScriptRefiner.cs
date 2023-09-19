@@ -148,9 +148,144 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             );
             IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
             AliasUsingsWithSameSymbol(generatedCode);
+            GenerateCodeFiles(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
     }
+
+    private void GenerateCodeFiles(CodeElement currentElement)
+    {
+        MergeElementsToFile(currentElement);
+        CorrectCodeFileUsing(currentElement);
+    }
+
+    private void MergeElementsToFile(CodeElement currentElement)
+    {
+        // create all request builders as a code file with the functions
+        if (currentElement is CodeInterface codeInterface && codeInterface.IsOfKind(CodeInterfaceKind.Model) && currentElement.Parent is CodeNamespace codeNamespace)
+        {
+            GenerateModelCodeFile(codeInterface, codeNamespace);
+        }
+        if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder) && currentElement.Parent is CodeNamespace namespaceOfRequestBuilder)
+        {
+            GenerateRequestBuilderCodeFile(currentClass, namespaceOfRequestBuilder);
+        }
+        CrawlTree(currentElement, MergeElementsToFile);
+    }
+
+    private static void GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
+    {
+        List<CodeElement> functions = new List<CodeElement> { codeInterface };
+        foreach (var element in codeNamespace.GetChildElements(true))
+        {
+            if (element is CodeFunction codeFunction)
+            {
+                if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
+                {
+                    var exists = codeFunction.OriginalLocalMethod.Parameters
+                        .Where(x => x?.Type?.Name == codeInterface.Name)
+                        .ToList()
+                        .Any();
+
+                    if (exists)
+                        functions.Add(codeFunction);
+
+                }
+                else if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Factory))
+                {
+                    if (codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) && codeFunction.OriginalMethodParentClass.IsChildOf(codeNamespace))
+                        functions.Add(codeFunction);
+                }
+            }
+        }
+        String modelName = codeInterface.Name;
+        codeNamespace.TryAddCodeFileWithChildren(modelName, functions.ToArray());
+    }
+
+    private static void GenerateRequestBuilderCodeFile(CodeClass codeClass, CodeNamespace codeNamespace)
+    {
+        List<String> elementNames = codeClass.Methods
+            .Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator))
+            .SelectMany(x => x.Parameters)
+            .Where(x => x.IsOfKind(CodeParameterKind.RequestConfiguration))
+            .Select(x => x?.Type?.Name)
+            .Where(x => x != null)
+            .Select(x => x!)
+            .ToList();
+
+        List<CodeInterface> configClasses = codeNamespace.FindChildrenByName<CodeInterface>(elementNames, false)
+            .Where(x => x != null)
+            .Select(x => x!)
+            .ToList();
+
+        List<string> queryParamClassNames = configClasses.Where(x => x != null)
+            .Select(static w => w.GetPropertyOfKind(CodePropertyKind.QueryParameters)?.Type?.Name)
+            .Where(s => s != null)
+            .Select(s => s!)
+            .ToList();
+
+        List<CodeInterface> queryParamClasses = codeNamespace.FindChildrenByName<CodeInterface>(queryParamClassNames, false)
+            .Where(x => x != null)
+            .Select(x => x!)
+            .ToList();
+
+
+        List<CodeElement> elements = new List<CodeElement> { codeClass };
+        elements.AddRange(queryParamClasses);
+        elements.AddRange(configClasses);
+
+        codeNamespace.TryAddCodeFileWithChildren(codeClass.Name, elements.ToArray());
+    }
+
+    private static void CorrectCodeFileUsing(CodeElement currentElement)
+    {
+        // if element is a code file eliminate using references to the same file
+        if (currentElement is CodeFile codeFile && codeFile.Parent is CodeNamespace codeNamespace)
+        {
+            // correct the using values
+            // eliminate the using refering the elements in the same file
+
+            HashSet<string> elementSet = codeFile.GetChildElements(true).Select(x => x.Name.ToLowerInvariant()).ToHashSet();
+            foreach (var element in codeFile.GetChildElements(true))
+            {
+                var startBlockUsings = element switch
+                {
+                    CodeFunction f => f.StartBlock.Usings,
+                    CodeInterface ci => ci.Usings,
+                    CodeEnum ce => ce.Usings,
+                    CodeClass cc => cc.Usings,
+                    _ => Enumerable.Empty<CodeUsing>()
+                };
+
+                var foundUsings = startBlockUsings
+                    .Where(static x => x.Declaration != null && x.Declaration.TypeDefinition != null)
+                    .Where(y => y.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>() == codeNamespace)
+                    .Where(y => elementSet.Contains(y.Declaration!.TypeDefinition!.Name.ToLowerInvariant()));
+
+                foreach (var x in foundUsings)
+                {
+                    switch (element)
+                    {
+                        case CodeFunction ci:
+                            ci.RemoveUsingsByDeclarationName(x.Declaration?.Name!);
+                            break;
+                        case CodeInterface ci:
+                            ci.RemoveUsingsByDeclarationName(x.Declaration?.Name!);
+                            break;
+                        case CodeEnum ci:
+                            ci.RemoveUsingsByDeclarationName(x.Declaration?.Name!);
+                            break;
+                        case CodeClass ci:
+                            ci.RemoveUsingsByDeclarationName(x.Declaration?.Name!);
+                            break;
+                    }
+                }
+            }
+        }
+
+        CrawlTree(currentElement, CorrectCodeFileUsing);
+    }
+
     private static void AliasCollidingSymbols(IEnumerable<CodeUsing> usings, string currentSymbolName)
     {
         var enumeratedUsings = usings.ToArray();

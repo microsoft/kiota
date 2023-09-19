@@ -17,9 +17,16 @@ public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
     }
 
     public IEnumerable<CodeUsing> AllUsingsFromChildElements => GetChildElements()
-            .SelectMany(static x => x.GetChildElements())
-            .OfType<ProprietableBlockDeclaration>()
-            .SelectMany(static x => x.Usings);
+        .SelectMany(static x => x.GetChildElements())
+        .OfType<ProprietableBlockDeclaration>()
+        .SelectMany(static x => x.Usings);
+
+    public IEnumerable<T> GetChildrenOfType<T>() where T : CodeElement
+    {
+        return InnerChildElements.Values.Where(y => y is T)
+            .Select(x => (x as T)!)
+            .ToList();
+    }
 }
 public class CodeFileDeclaration : ProprietableBlockDeclaration
 {

@@ -9,6 +9,6 @@ public class TypeScriptCodeRenderer : CodeRenderer
     public override bool ShouldRenderNamespaceFile(CodeNamespace codeNamespace)
     {
         if (codeNamespace is null) return false;
-        return codeNamespace.Interfaces.Any();
+        return codeNamespace.Interfaces.Any() || codeNamespace.Files.Where(x => x.GetChildrenOfType<CodeInterface>().Any()).Any();
     }
 }
