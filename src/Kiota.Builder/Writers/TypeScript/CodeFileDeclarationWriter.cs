@@ -31,15 +31,7 @@ public class CodeFileDeclarationWriter : BaseElementWriter<CodeFileDeclaration, 
                     return startBlockUsings;
                 }
             );
-            try
-            {
-                _codeUsingWriter.WriteCodeElement(usings, ns, writer);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            _codeUsingWriter.WriteCodeElement(usings, ns, writer);
         }
     }
 

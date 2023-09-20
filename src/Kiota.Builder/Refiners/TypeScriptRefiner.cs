@@ -244,7 +244,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             // correct the using values
             // eliminate the using refering the elements in the same file
 
-            HashSet<string> elementSet = codeFile.GetChildElements(true).Select(x => x.Name.ToLowerInvariant()).ToHashSet();
+            HashSet<string> elementSet = codeFile.GetChildElements(true).Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             foreach (var element in codeFile.GetChildElements(true))
             {
                 var startBlockUsings = element switch
@@ -259,23 +259,24 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 var foundUsings = startBlockUsings
                     .Where(static x => x.Declaration != null && x.Declaration.TypeDefinition != null)
                     .Where(y => y.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>() == codeNamespace)
-                    .Where(y => elementSet.Contains(y.Declaration!.TypeDefinition!.Name.ToLowerInvariant()));
+                    .Where(y => elementSet.Contains(y.Declaration!.TypeDefinition!.Name));
 
                 foreach (var x in foundUsings)
                 {
+                    var declarationName = x.Declaration!.Name;
                     switch (element)
                     {
                         case CodeFunction ci:
-                            ci.RemoveUsingsByDeclarationName(x.Declaration?.Name!);
+                            ci.RemoveUsingsByDeclarationName(declarationName);
                             break;
                         case CodeInterface ci:
-                            ci.RemoveUsingsByDeclarationName(x.Declaration?.Name!);
+                            ci.RemoveUsingsByDeclarationName(declarationName);
                             break;
                         case CodeEnum ci:
-                            ci.RemoveUsingsByDeclarationName(x.Declaration?.Name!);
+                            ci.RemoveUsingsByDeclarationName(declarationName);
                             break;
                         case CodeClass ci:
-                            ci.RemoveUsingsByDeclarationName(x.Declaration?.Name!);
+                            ci.RemoveUsingsByDeclarationName(declarationName);
                             break;
                     }
                 }
