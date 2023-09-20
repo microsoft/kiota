@@ -278,7 +278,7 @@
     "adm-zip": "^0.5.10",
     "is-online": "^10.0.0",
     "original-fs": "^1.2.0",
-    "vscode-jsonrpc": "^8.1.0"
+    "vscode-jsonrpc": "^8.2.0"
   },
   "preview": true,
   "runtimeDependencies": [
