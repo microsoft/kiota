@@ -20,7 +20,7 @@ public class CodeClassEndWriterTests : IDisposable
     public CodeClassEndWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
-        codeElementWriter = new CodeBlockEndWriter(new(writer));
+        codeElementWriter = new CodeBlockEndWriter(new());
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();

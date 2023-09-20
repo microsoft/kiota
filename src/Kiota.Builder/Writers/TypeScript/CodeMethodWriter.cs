@@ -12,7 +12,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     {
         _usesBackingStore = usesBackingStore;
     }
-    private TypeScriptConventionService? localConventions;
     private readonly bool _usesBackingStore;
 
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
@@ -23,8 +22,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         if (codeElement.Parent is CodeFunction) return;
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
 
-        localConventions = new TypeScriptConventionService(writer); //because we allow inline type definitions for methods parameters
-        var returnType = localConventions.GetTypeString(codeElement.ReturnType, codeElement);
+        var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var isVoid = "void".EqualsIgnoreCase(returnType);
         WriteMethodDocumentation(codeElement, writer, isVoid);
         WriteMethodPrototype(codeElement, writer, returnType, isVoid);
@@ -126,10 +124,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer)
     {
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
-            localConventions != null &&
             codeElement.OriginalIndexer != null)
         {
-            localConventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"this.{pathParametersProperty.Name}",
+            conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"this.{pathParametersProperty.Name}",
                 parameters: (codeElement.OriginalIndexer.IndexParameter.Type, codeElement.OriginalIndexer.IndexParameter.SerializationName, codeElement.OriginalIndexer.IndexParameter.Name.ToFirstCharacterLowerCase()));
         }
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
@@ -242,7 +239,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 currentMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.PathParameters)) is CodeParameter pathParametersParam &&
                 parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
         {
-            localConventions?.AddParametersAssignment(writer,
+            conventions.AddParametersAssignment(writer,
                                                 pathParametersParam.Type.AllTypes.OfType<CodeType>().First(),
                                                 pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                 $"this.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}",
@@ -385,7 +382,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
     private void ComposeContentInRequestGeneratorBody(CodeParameter requestBody, CodeProperty requestAdapterProperty, string contentType, LanguageWriter writer)
     {
-        if (requestBody.Type.Name.Equals(localConventions?.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+        if (requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
         {
             writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestBody.Name});");
             return;
@@ -423,8 +420,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid)
     {
-        if (localConventions != null)
-            WriteMethodPrototypeInternal(code, writer, returnType, isVoid, localConventions, false);
+        WriteMethodPrototypeInternal(code, writer, returnType, isVoid, conventions, false);
     }
     internal static void WriteMethodPrototypeInternal(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid, TypeScriptConventionService pConventions, bool isFunction)
     {
@@ -455,9 +451,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     }
     private string GetFactoryMethodName(CodeTypeBase targetClassType, CodeMethod currentElement, LanguageWriter writer)
     {
-        if (localConventions == null) throw new InvalidOperationException("localConventions is null");
-        var returnType = localConventions.GetTypeString(targetClassType, currentElement, false, writer);
-        var targetClassName = localConventions.TranslateType(targetClassType);
+        var returnType = conventions.GetTypeString(targetClassType, currentElement, false, writer);
+        var targetClassName = conventions.TranslateType(targetClassType);
         var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
         if (targetClassName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
             return resultName;
@@ -466,7 +461,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
             parentNamespace.FindChildByName<CodeFunction>(resultName) is CodeFunction factoryMethod)
         {
-            var methodName = localConventions.GetTypeString(new CodeType
+            var methodName = conventions.GetTypeString(new CodeType
             {
                 Name = resultName,
                 TypeDefinition = factoryMethod
