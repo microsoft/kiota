@@ -7,7 +7,7 @@ public class TypeScriptWriter : LanguageWriter
     public TypeScriptWriter(string rootPath, string clientNamespaceName, bool usesBackingStore = false)
     {
         PathSegmenter = new TypeScriptPathSegmenter(rootPath, clientNamespaceName);
-        var conventionService = new TypeScriptConventionService(this);
+        var conventionService = new TypeScriptConventionService();
         AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
         AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));

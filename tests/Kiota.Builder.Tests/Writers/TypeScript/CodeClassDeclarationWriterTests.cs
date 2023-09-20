@@ -20,7 +20,7 @@ public class CodeClassDeclarationWriterTests : IDisposable
     public CodeClassDeclarationWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
-        codeElementWriter = new CodeClassDeclarationWriter(new TypeScriptConventionService(writer), "graphtests");
+        codeElementWriter = new CodeClassDeclarationWriter(new TypeScriptConventionService(), "graphtests");
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         var root = CodeNamespace.InitRootNamespace();

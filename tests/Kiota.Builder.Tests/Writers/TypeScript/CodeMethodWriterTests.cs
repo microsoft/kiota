@@ -131,7 +131,6 @@ public class CodeMethodWriterTests : IDisposable
             {
                 Name = "RequestConfig",
                 TypeDefinition = requestConfigClass,
-                ActionOf = true,
             },
             Optional = true,
         });
@@ -392,7 +391,7 @@ public class CodeMethodWriterTests : IDisposable
     [Fact]
     public void Defensive()
     {
-        var codeMethodWriter = new CodeMethodWriter(new TypeScriptConventionService(writer), false);
+        var codeMethodWriter = new CodeMethodWriter(new TypeScriptConventionService(), false);
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
         Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
         var originalParent = method.Parent;
