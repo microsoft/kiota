@@ -21,14 +21,13 @@ public class CodeFileDeclarationWriter : BaseElementWriter<CodeFileDeclaration, 
         {
             var usings = cf.GetChildElements().SelectMany(static x =>
                 {
-                    var startBlockUsings = x switch
+                    return x switch
                     {
                         CodeFunction f => f.StartBlock.Usings,
                         CodeInterface ci => ci.Usings,
                         CodeClass cc => cc.Usings,
                         _ => Enumerable.Empty<CodeUsing>()
                     };
-                    return startBlockUsings;
                 }
             );
             _codeUsingWriter.WriteCodeElement(usings, ns, writer);

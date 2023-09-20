@@ -6,10 +6,6 @@ namespace Kiota.Builder.CodeDOM;
 
 public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
 {
-    public IEnumerable<CodeNamespace> Namespaces => InnerChildElements.Values.OfType<CodeNamespace>();
-    public IEnumerable<CodeClass> Classes => InnerChildElements.Values.OfType<CodeClass>();
-    public IEnumerable<CodeEnum> Enums => InnerChildElements.Values.OfType<CodeEnum>();
-    public IEnumerable<CodeFunction> Functions => InnerChildElements.Values.OfType<CodeFunction>();
     public IEnumerable<CodeInterface> Interfaces => InnerChildElements.Values.OfType<CodeInterface>();
 
     public IEnumerable<T> AddElements<T>(params T[] elements) where T : CodeElement

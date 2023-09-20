@@ -181,14 +181,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             if (element is CodeFunction codeFunction)
             {
-                if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer))
+                if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer) &&
+                    codeFunction.OriginalLocalMethod.Parameters
+                        .Any(x => x?.Type?.Name?.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase) ?? false))
                 {
-                    var exists = codeFunction.OriginalLocalMethod.Parameters
-                        .Any(x => x?.Type?.Name?.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase) ?? false);
-
-                    if (exists)
-                        functions.Add(codeFunction);
-
+                    functions.Add(codeFunction);
                 }
                 else if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Factory) &&
                          codeInterface.Name.EqualsIgnoreCase(codeFunction.OriginalMethodParentClass.Name) &&
@@ -198,8 +195,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 }
             }
         }
-        String modelName = codeInterface.Name;
-        codeNamespace.TryAddCodeFile(modelName, functions.ToArray());
+
+        codeNamespace.TryAddCodeFile(codeInterface.Name, functions.ToArray());
     }
 
     private static void GenerateRequestBuilderCodeFile(CodeClass codeClass, CodeNamespace codeNamespace)
