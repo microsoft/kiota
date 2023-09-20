@@ -256,9 +256,10 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     private const string MultipartBodyClassName = "MultipartBody";
     private static void CorrectCommonNames(CodeElement currentElement)
     {
-        if (currentElement is CodeMethod m)
+        if (currentElement is CodeMethod m &&
+            currentElement.Parent is CodeClass parentClass)
         {
-            m.Name = m.Name.ToFirstCharacterLowerCase();
+            parentClass.RenameChildElement(m.Name, m.Name.ToFirstCharacterLowerCase());
         }
         else if (currentElement is CodeIndexer i)
         {

@@ -186,7 +186,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 ReturnType = (CodeTypeBase)currentProperty.Type.Clone(),
                 Documentation = new()
                 {
-                    Description = $"Gets the {currentProperty.Name} property value. {currentProperty.Documentation.Description}",
+                    Description = $"Gets the {currentProperty.WireName} property value. {currentProperty.Documentation.Description}",
                 },
                 AccessedProperty = currentProperty,
                 Deprecation = currentProperty.Deprecation,
@@ -200,7 +200,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Kind = CodeMethodKind.Setter,
                 Documentation = new()
                 {
-                    Description = $"Sets the {currentProperty.Name} property value. {currentProperty.Documentation.Description}",
+                    Description = $"Sets the {currentProperty.WireName} property value. {currentProperty.Documentation.Description}",
                 },
                 AccessedProperty = currentProperty,
                 ReturnType = new CodeType
