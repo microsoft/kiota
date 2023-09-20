@@ -263,28 +263,8 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/1812"
       },
       {
-        "Language": "go",
-        "Rationale": "https://github.com/microsoft/kiota/issues/3067"
-      },
-      {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/3067"
-      },
-      {
-        "Language": "java",
-        "Rationale": "https://github.com/microsoft/kiota/issues/3067"
-      },
-      {
-        "Language": "csharp",
-        "Rationale": "https://github.com/microsoft/kiota/issues/3067"
-      },
-      {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
-      },
-      {
-        "Language": "python",
-        "Rationale": "https://github.com/microsoft/kiota/issues/3067"
       }
     ]
   },
@@ -324,10 +304,6 @@
       }
     ],
     "IdempotencySuppressions": [
-      {
-        "Language": "php",
-        "Rationale": "https://github.com/microsoft/kiota/issues/3067"
-      },
       {
         "Language": "typescript",
         "Rationale": "https://github.com/microsoft/kiota/issues/1812"
