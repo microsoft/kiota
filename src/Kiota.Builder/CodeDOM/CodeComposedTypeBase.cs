@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,16 +9,26 @@ namespace Kiota.Builder.CodeDOM;
 /// </summary>
 public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInformationHolder
 {
+    private static string NormalizeKey(CodeType codeType) => $"{codeType.Name}_{codeType.CollectionKind}";
     public void AddType(params CodeType[] codeTypes)
     {
+        ArgumentNullException.ThrowIfNull(codeTypes);
+        if (codeTypes.Any(x => x == null))
+            throw new ArgumentNullException(nameof(codeTypes), "One of the provided types was null");
         EnsureElementsAreChildren(codeTypes);
-        foreach (var codeType in codeTypes.Where(x => x != null && !Types.Contains(x)))
-            types.Add(codeType);
+        foreach (var codeType in codeTypes)
+            if (!types.TryAdd(NormalizeKey(codeType), codeType))
+                throw new InvalidOperationException($"The type {codeType.Name} was already added");
     }
-    private readonly List<CodeType> types = new();
+    public bool ContainsType(CodeType codeType)
+    {
+        ArgumentNullException.ThrowIfNull(codeType);
+        return types.ContainsKey(NormalizeKey(codeType));
+    }
+    private readonly ConcurrentDictionary<string, CodeType> types = new(StringComparer.OrdinalIgnoreCase);
     public IEnumerable<CodeType> Types
     {
-        get => types;
+        get => types.Values.OrderBy(NormalizeKey, StringComparer.OrdinalIgnoreCase);
     }
     private DiscriminatorInformation? _discriminatorInformation;
     /// <inheritdoc />

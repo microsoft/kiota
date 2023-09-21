@@ -336,8 +336,8 @@ components:
         Assert.Equal("directoryObject_deletedDateTime", unionType.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(3, unionType.Types.Count());
         Assert.Equal("DateTimeOffset", unionType.Types.First().Name, StringComparer.OrdinalIgnoreCase);
-        Assert.Equal("int64", unionType.Types.ElementAt(1).Name, StringComparer.OrdinalIgnoreCase);
-        Assert.Equal("directoryObject_deletedDateTimeMember1", unionType.Types.ElementAt(2).Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("directoryObject_deletedDateTimeMember1", unionType.Types.ElementAt(1).Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("int64", unionType.Types.ElementAt(2).Name, StringComparer.OrdinalIgnoreCase);
         Assert.Null(modelsNS.FindChildByName<CodeClass>("users"));
     }
     [Theory]

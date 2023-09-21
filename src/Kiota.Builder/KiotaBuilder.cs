@@ -1654,16 +1654,18 @@ public partial class KiotaBuilder
             if (string.IsNullOrEmpty(className))
                 if (GetPrimitiveType(currentSchema) is CodeType primitiveType && !string.IsNullOrEmpty(primitiveType.Name))
                 {
-                    unionType.AddType(primitiveType);
+                    if (!unionType.ContainsType(primitiveType))
+                        unionType.AddType(primitiveType);
                     continue;
                 }
                 else
                     className = $"{unionType.Name}Member{++membersWithNoName}";
-            var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace);
-            unionType.AddType(new CodeType
+            var declarationType = new CodeType
             {
-                TypeDefinition = codeDeclaration,
-            });
+                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace),
+            };
+            if (!unionType.ContainsType(declarationType))
+                unionType.AddType(declarationType);
         }
         return unionType;
     }
@@ -2067,9 +2069,7 @@ public partial class KiotaBuilder
                     .Select(x =>
                     {
                         var propertySchema = x.Value;
-                        var className = propertySchema.GetSchemaName().CleanupSymbolName();
-                        if (string.IsNullOrEmpty(className))
-                            className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
+                        var className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
                         var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
                         var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
                                             rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
