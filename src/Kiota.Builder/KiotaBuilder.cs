@@ -1265,11 +1265,50 @@ public partial class KiotaBuilder
                 executorMethod.AddErrorMapping(errorCode, errorType);
         }
     }
-    private CodeTypeBase? GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, OpenApiSchema? schema, OpenApiOperation operation, CodeClass parentClass, OperationType operationType)
+    private (CodeTypeBase?, CodeTypeBase?) GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, OpenApiSchema? schema, OpenApiOperation operation, CodeClass parentClass, OperationType operationType)
     {
         if (schema != null)
         {
-            return CreateModelDeclarations(currentNode, schema, operation, parentClass, $"{operationType}Response");
+            var suffix = $"{operationType}Response";
+            var modelType = CreateModelDeclarations(currentNode, schema, operation, parentClass, suffix);
+            if (modelType is not null && config.Language is GenerationLanguage.CSharp or GenerationLanguage.Go && modelType.Name.EndsWith(suffix, StringComparison.Ordinal))
+            { //TODO remove for v2
+                var obsoleteTypeName = modelType.Name[..^suffix.Length] + "Response";
+                if (modelType is CodeType codeType &&
+                    codeType.TypeDefinition is CodeClass codeClass)
+                {
+                    var obsoleteClassDefinition = new CodeClass
+                    {
+                        Kind = CodeClassKind.Model,
+                        Name = obsoleteTypeName,
+                        Deprecation = new($"This class is obsolete. Use {modelType.Name} instead.", IsDeprecated: true),
+                    };
+                    obsoleteClassDefinition.StartBlock.Inherits = codeType;
+                    var obsoleteClass = codeClass.Parent switch
+                    {
+                        CodeClass modelParentClass => modelParentClass.AddInnerClass(obsoleteClassDefinition).First(),
+                        CodeNamespace modelParentNamespace => modelParentNamespace.AddClass(obsoleteClassDefinition).First(),
+                        _ => throw new InvalidOperationException("Could not find a valid parent for the obsolete class")
+                    };
+                    return (modelType, new CodeType
+                    {
+                        TypeDefinition = obsoleteClass,
+                    });
+                }
+                else if (modelType is CodeComposedTypeBase codeComposedTypeBase)
+                {
+                    var obsoleteComposedType = codeComposedTypeBase switch
+                    {
+                        CodeUnionType u => (CodeComposedTypeBase)u.Clone(),
+                        CodeIntersectionType i => (CodeComposedTypeBase)i.Clone(),
+                        _ => throw new InvalidOperationException("Could not create an obsolete composed type"),
+                    };
+                    obsoleteComposedType.Name = obsoleteTypeName;
+                    obsoleteComposedType.Deprecation = new($"This class is obsolete. Use {modelType.Name} instead.", IsDeprecated: true);
+                    return (modelType, obsoleteComposedType);
+                }
+            }
+            return (modelType, null);
         }
         else
         {
@@ -1280,7 +1319,7 @@ public partial class KiotaBuilder
                 returnType = "string";
             else
                 returnType = "binary";
-            return new CodeType { Name = returnType, IsExternal = true, };
+            return (new CodeType { Name = returnType, IsExternal = true, }, null);
         }
     }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
@@ -1301,6 +1340,7 @@ public partial class KiotaBuilder
             var schema = operation.GetResponseSchema(config.StructuredMimeTypes);
             var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
             var deprecationInformation = operation.GetDeprecationInformation();
+            var returnTypes = GetExecutorMethodReturnType(currentNode, schema, operation, parentClass, operationType);
             var executorMethod = new CodeMethod
             {
                 Name = operationType.ToString(),
@@ -1316,7 +1356,7 @@ public partial class KiotaBuilder
                                     operation.Summary)
                                     .CleanupDescription(),
                 },
-                ReturnType = GetExecutorMethodReturnType(currentNode, schema, operation, parentClass, operationType) ?? throw new InvalidSchemaException(),
+                ReturnType = returnTypes.Item1 ?? throw new InvalidSchemaException(),
                 Deprecation = deprecationInformation,
             };
 
@@ -1334,6 +1374,21 @@ public partial class KiotaBuilder
             AddRequestConfigurationProperties(parameterClass, requestConfigClass);
             AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, executorMethod);
             parentClass.AddMethod(executorMethod);
+            if (returnTypes.Item2 is not null)
+            { //TODO remove for v2
+                var additionalExecutorMethod = (CodeMethod)executorMethod.Clone();
+                additionalExecutorMethod.ReturnType = returnTypes.Item2;
+                additionalExecutorMethod.OriginalMethod = executorMethod;
+                var newName = config.Language switch
+                {
+                    GenerationLanguage.Go => $"{executorMethod.Name}As{executorMethod.ReturnType.Name.ToFirstCharacterUpperCase()}",
+                    _ => executorMethod.Name,
+                };
+                additionalExecutorMethod.Deprecation = new($"This method is obsolete. Use {newName} instead.", IsDeprecated: true);
+                if (config.Language is GenerationLanguage.Go)
+                    parentClass.RenameChildElement(executorMethod.Name, newName);
+                parentClass.AddMethod(additionalExecutorMethod);
+            }
 
             var cancellationParam = new CodeParameter
             {
