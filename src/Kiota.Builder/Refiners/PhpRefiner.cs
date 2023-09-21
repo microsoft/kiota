@@ -43,6 +43,7 @@ public class PhpRefiner : CommonLanguageRefiner
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
+                static s => s,
                 false);
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}", new HashSet<Type> { typeof(CodeEnumOption) });
             AddQueryParameterFactoryMethod(generatedCode);

@@ -32,7 +32,8 @@ public class SwiftRefiner : CommonLanguageRefiner
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(
                 generatedCode,
-                _configuration.UsesBackingStore
+                _configuration.UsesBackingStore,
+                static s => s
             );
             cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(

@@ -53,6 +53,7 @@ public class GoRefiner : CommonLanguageRefiner
             ConvertUnionTypesToWrapper(
                 generatedCode,
                 _configuration.UsesBackingStore,
+                static s => s,
                 true,
                 string.Empty,
                 string.Empty,

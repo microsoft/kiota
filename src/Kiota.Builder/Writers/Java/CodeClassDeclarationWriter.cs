@@ -21,8 +21,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ja
                 .Where(static x => x.Declaration != null)
                 .Where(x => x.Declaration!.IsExternal || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
                 .Select(static x => x.Declaration!.IsExternal ?
-                                    $"import {x.Declaration.Name}.{x.Name.ToFirstCharacterUpperCase()};" :
-                                    $"import {x.Name}.{x.Declaration.Name.ToFirstCharacterUpperCase()};")
+                                    $"import {x.Declaration.Name}.{x.Name};" :
+                                    $"import {x.Name}.{x.Declaration.Name};")
                 .Distinct()
                 .GroupBy(static x => x.Split('.').Last(), StringComparer.OrdinalIgnoreCase)
                 .Select(static x => x.First()) // we don't want to import the same symbol twice
@@ -30,13 +30,13 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ja
                 .ToList()
                 .ForEach(x => writer.WriteLine(x));
         }
-        var derivation = (codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +
+        var derivation = (codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name}") +
                         (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}");
         if (codeElement.Parent is CodeClass parentClass)
             conventions.WriteLongDescription(parentClass, writer);
         var innerClassStatic = codeElement.Parent is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) && currentClass.Parent is CodeClass ? "static " : string.Empty; //https://stackoverflow.com/questions/47541459/no-enclosing-instance-is-accessible-must-qualify-the-allocation-with-an-enclosi
         writer.WriteLine(JavaConventionService.AutoGenerationHeader);
-        writer.WriteLine($"public {innerClassStatic}class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation} {{");
+        writer.WriteLine($"public {innerClassStatic}class {codeElement.Name}{derivation} {{");
         writer.IncreaseIndent();
     }
 }

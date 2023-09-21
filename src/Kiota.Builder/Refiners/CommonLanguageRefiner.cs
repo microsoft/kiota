@@ -145,11 +145,15 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             var refinedName = refineAccessorName(currentProperty.Name);
 
-            if (string.IsNullOrEmpty(currentProperty.SerializationName) && !refinedName.Equals(currentProperty.Name, StringComparison.Ordinal))
-                currentProperty.SerializationName = currentProperty.Name;
+            if (!refinedName.Equals(currentProperty.Name, StringComparison.Ordinal) &&
+                !parentClass.Properties.Any(property => !currentProperty.Name.Equals(property.Name, StringComparison.Ordinal) &&
+                    refinedName.Equals(property.Name, StringComparison.OrdinalIgnoreCase)))// ensure the refinement won't generate a duplicate
+            {
+                if (string.IsNullOrEmpty(currentProperty.SerializationName))
+                    currentProperty.SerializationName = currentProperty.Name;
 
-            if (!parentClass.Properties.Any(property => refinedName.Equals(property.Name, StringComparison.OrdinalIgnoreCase)))// ensure the refinement won't generate a duplicate
                 parentClass.RenameChildElement(currentProperty.Name, refinedName);
+            }
         }
         CrawlTree(current, x => ReplacePropertyNames(x, propertyKindsToReplace!, refineAccessorName));
     }
@@ -188,7 +192,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Deprecation = currentProperty.Deprecation,
             }).First();
             currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
-            var setter = parentClass.AddMethod(new CodeMethod
+            currentProperty.Setter = parentClass.AddMethod(new CodeMethod
             {
                 Name = $"set-{accessorName}",
                 Access = AccessModifier.Public,
@@ -207,10 +211,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 },
                 Deprecation = currentProperty.Deprecation,
             }).First();
-            setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
-            currentProperty.Setter = setter;
+            currentProperty.Setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
 
-            setter.AddParameter(new CodeParameter
+            currentProperty.Setter.AddParameter(new CodeParameter
             {
                 Name = "value",
                 Kind = CodeParameterKind.SetterValue,
@@ -440,30 +443,33 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration, isNullable));
     }
-    protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, bool supportInnerClasses = true, string markerInterfaceNamespace = "", string markerInterfaceName = "", string markerMethodName = "")
+    protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, Func<string, string> refineMethodName, bool supportInnerClasses = true, string markerInterfaceNamespace = "", string markerInterfaceName = "", string markerMethodName = "")
     {
         ArgumentNullException.ThrowIfNull(currentElement);
+        ArgumentNullException.ThrowIfNull(refineMethodName);
         if (currentElement.Parent is CodeClass parentClass)
         {
             if (currentElement is CodeMethod currentMethod)
             {
+                currentMethod.Name = refineMethodName(currentMethod.Name);
+
                 if (currentMethod.ReturnType is CodeComposedTypeBase currentUnionType)
-                    currentMethod.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName);
+                    currentMethod.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, refineMethodName, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName);
                 if (currentMethod.Parameters.Any(static x => x.Type is CodeComposedTypeBase))
                     foreach (var currentParameter in currentMethod.Parameters.Where(static x => x.Type is CodeComposedTypeBase))
-                        currentParameter.Type = ConvertComposedTypeToWrapper(parentClass, (CodeComposedTypeBase)currentParameter.Type, usesBackingStore, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName);
+                        currentParameter.Type = ConvertComposedTypeToWrapper(parentClass, (CodeComposedTypeBase)currentParameter.Type, usesBackingStore, refineMethodName, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName);
                 if (currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeComposedTypeBase>().Any())
                     foreach (var errorUnionType in currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeComposedTypeBase>())
-                        currentMethod.ReplaceErrorMapping(errorUnionType, ConvertComposedTypeToWrapper(parentClass, errorUnionType, usesBackingStore, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName));
+                        currentMethod.ReplaceErrorMapping(errorUnionType, ConvertComposedTypeToWrapper(parentClass, errorUnionType, usesBackingStore, refineMethodName, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName));
             }
             else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeComposedTypeBase currentUnionType)
-                currentIndexer.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName);
+                currentIndexer.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, refineMethodName, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName);
             else if (currentElement is CodeProperty currentProperty && currentProperty.Type is CodeComposedTypeBase currentPropUnionType)
-                currentProperty.Type = ConvertComposedTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName);
+                currentProperty.Type = ConvertComposedTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, refineMethodName, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName);
         }
-        CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName));
+        CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, refineMethodName, supportInnerClasses, markerInterfaceNamespace, markerInterfaceName, markerMethodName));
     }
-    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, bool supportsInnerClasses, string markerInterfaceNamespace, string markerInterfaceName, string markerMethodName)
+    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeComposedType, bool usesBackingStore, Func<string, string> refineMethodName, bool supportsInnerClasses, string markerInterfaceNamespace, string markerInterfaceName, string markerMethodName)
     {
         ArgumentNullException.ThrowIfNull(codeClass);
         ArgumentNullException.ThrowIfNull(codeComposedType);
@@ -528,7 +534,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if (codeComposedType.Types.All(static x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
                                 x.TypeDefinition is CodeEnum || x.TypeDefinition is null))
         {
-            KiotaBuilder.AddSerializationMembers(newClass, false, usesBackingStore);
+            KiotaBuilder.AddSerializationMembers(newClass, false, usesBackingStore, refineMethodName);
             newClass.Kind = CodeClassKind.Model;
         }
         newClass.OriginalComposedType = codeComposedType;
@@ -569,7 +575,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             });
         }
         // Add the discriminator function to the wrapper as it will be referenced. 
-        KiotaBuilder.AddDiscriminatorMethod(newClass, codeComposedType.DiscriminatorInformation.DiscriminatorPropertyName, codeComposedType.DiscriminatorInformation.DiscriminatorMappings);
+        KiotaBuilder.AddDiscriminatorMethod(newClass, codeComposedType.DiscriminatorInformation.DiscriminatorPropertyName, codeComposedType.DiscriminatorInformation.DiscriminatorMappings, refineMethodName);
         return new CodeType
         {
             Name = newClass.Name,

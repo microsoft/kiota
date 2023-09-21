@@ -122,7 +122,7 @@ public class CSharpLanguageRefinerTests
         };
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
 
-        Assert.Contains(model.Properties, x => x.Name.Equals("otherProp"));
+        Assert.Contains(model.Properties, x => x.Name.Equals("OtherProp"));
         Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));
         Assert.Contains(model.Usings, x => x.Name.Equals("otherNs"));
     }
@@ -183,7 +183,7 @@ public class CSharpLanguageRefinerTests
         // Assert
         Assert.Equal("break", model.Name);
         Assert.DoesNotContain("@", model.Name); // classname will be capitalized
-        Assert.Equal("alias", property.Name);
+        Assert.Equal("Alias", property.Name);
         Assert.DoesNotContain("@", property.Name); // classname will be capitalized
     }
 
@@ -230,10 +230,10 @@ public class CSharpLanguageRefinerTests
         // Assert
         Assert.Equal("fileObject1", reservedModel.Name);// classes/models will be renamed if reserved without conflicts
         Assert.Equal("fileObject", reservedObjectModel.Name);// original stays the same
-        Assert.Equal("alias", property.Name);// property names don't bring issue in dotnet
-        Assert.Equal("file", secondProperty.Name);// property names don't bring issue in dotnet
+        Assert.Equal("Alias", property.Name);// property names don't bring issue in dotnet
+        Assert.Equal("File", secondProperty.Name);// property names don't bring issue in dotnet
         Assert.Equal("fileObject1", secondProperty.Type.Name);// property type was renamed 
-        Assert.Equal("fileObject", thirdProperty.Name);// property names don't bring issue in dotnet
+        Assert.Equal("FileObject", thirdProperty.Name);// property names don't bring issue in dotnet
         Assert.Equal("fileObject", thirdProperty.Type.Name);// property type was renamed 
 
     }
@@ -494,7 +494,7 @@ public class CSharpLanguageRefinerTests
             }
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
-        Assert.Equal("modelProp", propToAdd.Name);
+        Assert.Equal("ModelProp", propToAdd.Name);
         Assert.Equal("model", propToAdd.SerializationName);
     }
     [Fact]
@@ -530,7 +530,7 @@ public class CSharpLanguageRefinerTests
             }
         }).First();
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
-        Assert.Equal("summary", firstProperty.Name);// remains as is. No refinement needed
+        Assert.Equal("Summary", firstProperty.Name);// remains as is. No refinement needed
         Assert.Equal("_summary", secondProperty.Name);// No refinement as it will create a duplicate with firstProperty
         Assert.Equal("Replaced", thirdProperty.Name);// Base case. Proper refinements
     }

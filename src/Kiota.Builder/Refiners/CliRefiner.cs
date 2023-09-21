@@ -53,7 +53,8 @@ public class CliRefiner : CSharpRefiner, ILanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
-                _configuration.UsesBackingStore
+                _configuration.UsesBackingStore,
+                static s => s
             );
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             cancellationToken.ThrowIfCancellationRequested();

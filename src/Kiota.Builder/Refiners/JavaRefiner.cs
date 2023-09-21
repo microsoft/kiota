@@ -17,6 +17,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            CorrectCommonNames(generatedCode);
             MoveRequestBuilderPropertiesToBaseType(generatedCode,
                 new CodeUsing
                 {
@@ -52,13 +53,14 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
                 true,
-                static x => $"By{x.ToFirstCharacterUpperCase()}",
+                static x => $"by{x.ToFirstCharacterUpperCase()}",
                 static x => x.ToFirstCharacterLowerCase(),
                 GenerationLanguage.Java);
             cancellationToken.ThrowIfCancellationRequested();
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
+                s => s.ToFirstCharacterLowerCase(),
                 true,
                 SerializationNamespaceName,
                 "ComposedTypeWrapper"
@@ -69,7 +71,9 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplacePropertyNames(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
                     CodePropertyKind.QueryParameter,
+                    CodePropertyKind.RequestBuilder,
                 },
                 static s => s.ToCamelCase(UnderscoreArray).ToFirstCharacterLowerCase());
             AddGetterAndSetterMethods(generatedCode,
@@ -78,7 +82,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.BackingStore,
                 },
-                static (_, s) => s.ToCamelCase(UnderscoreArray),
+                static (_, s) => s.ToCamelCase(UnderscoreArray).ToFirstCharacterUpperCase(),
                 _configuration.UsesBackingStore,
                 true,
                 "get",
@@ -137,7 +141,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             SplitLongDiscriminatorMethods(generatedCode);
             AddPrimaryErrorMessage(generatedCode,
                 "getMessage",
-                () => new CodeType { Name = "string", IsNullable = false, IsExternal = true }
+                () => new CodeType { Name = "String", IsNullable = false, IsExternal = true }
             );
         }, cancellationToken);
     }
@@ -250,6 +254,34 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsNamespaceName, MultipartBodyClassName)
     };
     private const string MultipartBodyClassName = "MultipartBody";
+    private static void CorrectCommonNames(CodeElement currentElement)
+    {
+        if (currentElement is CodeMethod m &&
+            currentElement.Parent is CodeClass parentClass)
+        {
+            parentClass.RenameChildElement(m.Name, m.Name.ToFirstCharacterLowerCase());
+        }
+        else if (currentElement is CodeIndexer i)
+        {
+            i.IndexParameter.Name = i.IndexParameter.Name.ToFirstCharacterLowerCase();
+        }
+        else if (currentElement is CodeEnum e)
+        {
+            foreach (var option in e.Options)
+            {
+                if (!string.IsNullOrEmpty(option.Name) && Char.IsLower(option.Name[0]))
+                {
+                    if (string.IsNullOrEmpty(option.SerializationName))
+                    {
+                        option.SerializationName = option.Name;
+                    }
+                    option.Name = option.Name.ToFirstCharacterUpperCase();
+                }
+            }
+        }
+
+        CrawlTree(currentElement, element => CorrectCommonNames(element));
+    }
     private static void CorrectPropertyType(CodeProperty currentProperty)
     {
         if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
@@ -277,6 +309,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "new HashMap<>()";
         }
+        currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block)
@@ -317,6 +350,9 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                                 .Select(static x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
+
+        currentMethod.Parameters.ToList().ForEach(static x => x.Type.Name = x.Type.Name.ToFirstCharacterUpperCase());
+        currentMethod.ReturnType.Name = currentMethod.ReturnType.Name.ToFirstCharacterUpperCase();
     }
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase) {
     {"DateTimeOffset", ("OffsetDateTime", new CodeUsing {
