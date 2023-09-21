@@ -102,7 +102,6 @@ public class PhpRefiner : CommonLanguageRefiner
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             CorrectBackingStoreSetterParam(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton::getInstance()->createBackingStore()");
-            RemoveHandlerFromRequestBuilder(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             AliasUsingWithSameSymbol(generatedCode);
             RemoveRequestConfigurationClassesCommonProperties(generatedCode,

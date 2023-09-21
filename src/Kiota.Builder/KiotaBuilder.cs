@@ -1334,21 +1334,6 @@ public partial class KiotaBuilder
             AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, executorMethod);
             parentClass.AddMethod(executorMethod);
 
-#pragma warning disable CS0618
-            var handlerParam = new CodeParameter
-            {
-                Name = "responseHandler",
-                Optional = true,
-                Kind = CodeParameterKind.ResponseHandler,
-                Documentation = new()
-                {
-                    Description = "Response handler to use in place of the default response handling provided by the core service",
-                },
-                Type = new CodeType { Name = "IResponseHandler", IsExternal = true },
-            };
-            executorMethod.AddParameter(handlerParam);// Add response handler parameter
-#pragma warning restore CS0618
-
             var cancellationParam = new CodeParameter
             {
                 Name = "cancellationToken",

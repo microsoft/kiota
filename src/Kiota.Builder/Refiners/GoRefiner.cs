@@ -164,7 +164,6 @@ public class GoRefiner : CommonLanguageRefiner
                 generatedCode,
                 x => $"{x.Name}able"
             );
-            RemoveHandlerFromRequestBuilder(generatedCode);
             AddContextParameterToGeneratorMethods(generatedCode);
             CorrectTypes(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, $"{conventions.StoreHash}.BackingStoreFactoryInstance()", false);
