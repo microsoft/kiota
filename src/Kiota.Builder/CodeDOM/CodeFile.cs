@@ -6,6 +6,8 @@ namespace Kiota.Builder.CodeDOM;
 
 public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
 {
+    public IEnumerable<CodeInterface> Interfaces => InnerChildElements.Values.OfType<CodeInterface>().OrderBy(static x => x.Name, StringComparer.Ordinal);
+
     public IEnumerable<T> AddElements<T>(params T[] elements) where T : CodeElement
     {
         if (elements == null || elements.Any(static x => x == null))
@@ -17,9 +19,9 @@ public class CodeFile : CodeBlock<CodeFileDeclaration, CodeFileBlockEnd>
     }
 
     public IEnumerable<CodeUsing> AllUsingsFromChildElements => GetChildElements()
-            .SelectMany(static x => x.GetChildElements())
-            .OfType<ProprietableBlockDeclaration>()
-            .SelectMany(static x => x.Usings);
+        .SelectMany(static x => x.GetChildElements())
+        .OfType<ProprietableBlockDeclaration>()
+        .SelectMany(static x => x.Usings);
 }
 public class CodeFileDeclaration : ProprietableBlockDeclaration
 {

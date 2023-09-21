@@ -70,6 +70,7 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     public IEnumerable<CodeEnum> Enums => InnerChildElements.Values.OfType<CodeEnum>();
     public IEnumerable<CodeFunction> Functions => InnerChildElements.Values.OfType<CodeFunction>();
     public IEnumerable<CodeInterface> Interfaces => InnerChildElements.Values.OfType<CodeInterface>();
+    public IEnumerable<CodeFile> Files => InnerChildElements.Values.OfType<CodeFile>();
     public CodeNamespace? FindNamespaceByName(string nsName)
     {
         ArgumentException.ThrowIfNullOrEmpty(nsName);

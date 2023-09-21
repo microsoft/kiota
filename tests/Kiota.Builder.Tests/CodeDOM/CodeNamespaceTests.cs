@@ -138,4 +138,5 @@ public class CodeNamespaceTests
         Assert.True(child.IsParentOf(grandchild));
         Assert.False(grandchild.IsParentOf(child));
     }
+
 }
