@@ -13,7 +13,7 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
     public void AddType(params CodeType[] codeTypes)
     {
         ArgumentNullException.ThrowIfNull(codeTypes);
-        if (codeTypes.Any(x => x == null))
+        if (Array.Exists(codeTypes, static x => x == null))
             throw new ArgumentNullException(nameof(codeTypes), "One of the provided types was null");
         EnsureElementsAreChildren(codeTypes);
         foreach (var codeType in codeTypes)

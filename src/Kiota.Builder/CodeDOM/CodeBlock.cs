@@ -101,20 +101,16 @@ public class CodeBlock<TBlockDeclaration, TBlockEnd> : CodeElement, IBlock where
                 }
             }
         }
-        else if (element is CodeProperty currentProperty)
-        {
-            if (currentProperty.Kind is CodePropertyKind.Custom &&
+        else if (element is CodeProperty currentProperty &&
+                currentProperty.Kind is CodePropertyKind.Custom &&
                 returnedValue is CodeClass returnedClass && returnedClass.Kind is CodeClassKind.Model &&
                 InnerChildElements.TryAdd($"{element.Name}-property", currentProperty))
-                return element; // inline type property: transforming union type to wrapper class
-        }
-        else if (element is CodeClass currentClass)
-        {
-            if (currentClass.Kind is CodeClassKind.Model &&
+            return element; // inline type property: transforming union type to wrapper class
+        else if (element is CodeClass currentClass &&
+                currentClass.Kind is CodeClassKind.Model &&
                 returnedValue is CodeProperty returnedProperty && returnedProperty.Kind is CodePropertyKind.Custom &&
                 InnerChildElements.TryAdd($"{element.Name}-model", currentClass))
-                return element; // inline type property: transforming wrapper class to union type
-        }
+            return element; // inline type property: transforming wrapper class to union type
 
         if (element.GetType() == returnedValue.GetType())
             return (T)returnedValue;
