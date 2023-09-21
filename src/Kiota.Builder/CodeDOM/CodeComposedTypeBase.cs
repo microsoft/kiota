@@ -7,7 +7,7 @@ namespace Kiota.Builder.CodeDOM;
 /// <summary>
 /// The base class for composed types like union or exclusion.
 /// </summary>
-public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInformationHolder
+public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInformationHolder, IDeprecableElement
 {
     private static string NormalizeKey(CodeType codeType) => $"{codeType.Name}_{codeType.CollectionKind}";
     public void AddType(params CodeType[] codeTypes)
@@ -56,6 +56,7 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
         if (sourceComposed.Types?.Any() ?? false)
             AddType(sourceComposed.Types.ToArray());
         DiscriminatorInformation = (DiscriminatorInformation)sourceComposed.DiscriminatorInformation.Clone();
+        Deprecation = sourceComposed.Deprecation;
         return this is TChildType casted ? casted : throw new InvalidCastException($"Cannot cast {GetType().Name} to {typeof(TChildType).Name}");
     }
     /// <summary>
@@ -64,5 +65,10 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
     public CodeNamespace? TargetNamespace
     {
         get; set;
+    }
+    public DeprecationInformation? Deprecation
+    {
+        get;
+        set;
     }
 }
