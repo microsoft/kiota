@@ -486,6 +486,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 {
                     Description = description,
                 },
+                Deprecation = codeComposedType.Deprecation,
             }).Last();
         }
         else if (codeComposedType.TargetNamespace is CodeNamespace targetNamespace)
