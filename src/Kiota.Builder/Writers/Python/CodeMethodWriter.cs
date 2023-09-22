@@ -345,11 +345,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                             var (name, identName) = parameter;
                             writer.WriteLine($"{pathParametersParameter.Name.ToSnakeCase()}['{name}'] = str({identName})");
                         }
+                        writer.DecreaseIndent();
                     }
-                    writer.DecreaseIndent();
                     writer.WriteLine($"super().__init__({requestAdapterParameter.Name.ToSnakeCase()}, {urlTemplateProperty.DefaultValue ?? ""}, {pathParametersParameter.Name.ToSnakeCase()})");
                 }
-
                 else
                     writer.WriteLine($"super().__init__({requestAdapterParameter.Name.ToSnakeCase()}, {urlTemplateProperty.DefaultValue ?? ""}, None)");
             }
