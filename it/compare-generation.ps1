@@ -97,15 +97,15 @@ if ($HashString1 -eq $HashString2) {
 else {
     Write-Host "The content of the folders is NOT identical"
     $resultsFolder = Join-Path -Path $rootPath -ChildPath "idempotency-results"
-    $archivePath1 = Join-Path $resultsFolder -ChildPath "idempotency-folder1.zip"
-    $archivePath2 = Join-Path $resultsFolder -ChildPath "idempotency-folder2.zip"
-
     if (Test-Path $resultsFolder) {
         Remove-Item $resultsFolder -Force -Verbose -Recurse
     }
     New-Item -ItemType Directory -Path $resultsFolder -Force
 
     if ($dev -eq $false) {
+        $archivePath1 = Join-Path $resultsFolder -ChildPath "idempotency-folder1.zip"
+        $archivePath2 = Join-Path $resultsFolder -ChildPath "idempotency-folder2.zip"
+
         Write-Host "Creating archives at location $archivePath1 and $archivePath2"
         Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath1 -Force
         Compress-Archive -Path $tmpFolder2 -DestinationPath $archivePath2 -Force
