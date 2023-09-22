@@ -137,7 +137,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ParseNode",
                 addUsings: true
             );
-            RemoveHandlerFromRequestBuilder(generatedCode);
             SplitLongDiscriminatorMethods(generatedCode);
             AddPrimaryErrorMessage(generatedCode,
                 "getMessage",

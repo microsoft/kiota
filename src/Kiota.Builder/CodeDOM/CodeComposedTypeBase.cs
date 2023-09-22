@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,18 +7,28 @@ namespace Kiota.Builder.CodeDOM;
 /// <summary>
 /// The base class for composed types like union or exclusion.
 /// </summary>
-public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInformationHolder
+public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInformationHolder, IDeprecableElement
 {
+    private static string NormalizeKey(CodeType codeType) => $"{codeType.Name}_{codeType.CollectionKind}";
     public void AddType(params CodeType[] codeTypes)
     {
+        ArgumentNullException.ThrowIfNull(codeTypes);
+        if (Array.Exists(codeTypes, static x => x == null))
+            throw new ArgumentNullException(nameof(codeTypes), "One of the provided types was null");
         EnsureElementsAreChildren(codeTypes);
-        foreach (var codeType in codeTypes.Where(x => x != null && !Types.Contains(x)))
-            types.Add(codeType);
+        foreach (var codeType in codeTypes)
+            if (!types.TryAdd(NormalizeKey(codeType), codeType))
+                throw new InvalidOperationException($"The type {codeType.Name} was already added");
     }
-    private readonly List<CodeType> types = new();
+    public bool ContainsType(CodeType codeType)
+    {
+        ArgumentNullException.ThrowIfNull(codeType);
+        return types.ContainsKey(NormalizeKey(codeType));
+    }
+    private readonly ConcurrentDictionary<string, CodeType> types = new(StringComparer.OrdinalIgnoreCase);
     public IEnumerable<CodeType> Types
     {
-        get => types;
+        get => types.Values.OrderBy(NormalizeKey, StringComparer.OrdinalIgnoreCase);
     }
     private DiscriminatorInformation? _discriminatorInformation;
     /// <inheritdoc />
@@ -45,6 +56,7 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
         if (sourceComposed.Types?.Any() ?? false)
             AddType(sourceComposed.Types.ToArray());
         DiscriminatorInformation = (DiscriminatorInformation)sourceComposed.DiscriminatorInformation.Clone();
+        Deprecation = sourceComposed.Deprecation;
         return this is TChildType casted ? casted : throw new InvalidCastException($"Cannot cast {GetType().Name} to {typeof(TChildType).Name}");
     }
     /// <summary>
@@ -53,5 +65,10 @@ public abstract class CodeComposedTypeBase : CodeTypeBase, IDiscriminatorInforma
     public CodeNamespace? TargetNamespace
     {
         get; set;
+    }
+    public DeprecationInformation? Deprecation
+    {
+        get;
+        set;
     }
 }

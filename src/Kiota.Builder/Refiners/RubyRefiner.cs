@@ -122,7 +122,6 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ParseNode",
                 addUsings: true
             );
-            RemoveHandlerFromRequestBuilder(generatedCode);
         }, cancellationToken);
     }
     private static void ShortenLongNamespaceNames(CodeElement currentElement)

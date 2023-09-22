@@ -28,15 +28,12 @@ public class BaseCodeParameterOrderComparer : BaseStringComparisonComparer<CodeP
             CodeParameterKind.Path => 4,
             CodeParameterKind.RequestConfiguration => 5,
             CodeParameterKind.RequestBody => 6,
-#pragma warning disable CS0618
-            CodeParameterKind.ResponseHandler => 7,
-#pragma warning restore CS0618
-            CodeParameterKind.Serializer => 8,
-            CodeParameterKind.BackingStore => 9,
-            CodeParameterKind.SetterValue => 10,
-            CodeParameterKind.ParseNode => 11,
-            CodeParameterKind.Custom => 12,
-            _ => 13,
+            CodeParameterKind.Serializer => 7,
+            CodeParameterKind.BackingStore => 8,
+            CodeParameterKind.SetterValue => 9,
+            CodeParameterKind.ParseNode => 10,
+            CodeParameterKind.Custom => 11,
+            _ => 12,
         };
     }
     private const int OptionalWeight = 10000;

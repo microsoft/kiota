@@ -127,7 +127,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var includeElse = false;
         foreach (var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .OrderBy(static x => x, CodePropertyTypeForwardComparer)
-                                            .ThenBy(static x => x.Name))
+                                            .ThenBy(static x => x.Name, StringComparer.Ordinal))
         {
             if (property.Type is CodeType propertyType)
                 if (propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection)
@@ -159,7 +159,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         foreach (var property in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                             .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
                                             .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
-                                            .ThenBy(static x => x.Name))
+                                            .ThenBy(static x => x.Name, StringComparer.Ordinal))
         {
             if (property.Type is CodeType propertyType)
             {
@@ -331,7 +331,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         foreach (var otherProp in parentClass
                                         .GetPropertiesOfKind(CodePropertyKind.Custom)
                                         .Where(static x => !x.ExistsInBaseType)
-                                        .OrderBy(static x => x.Name))
+                                        .OrderBy(static x => x.Name, StringComparer.Ordinal))
         {
             writer.WriteLine($"{{\"{otherProp.WireName}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
         }

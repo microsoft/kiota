@@ -122,7 +122,6 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 addUsings: true,
                 includeParentNamespace: true
             );
-            RemoveHandlerFromRequestBuilder(generatedCode);
         }, cancellationToken);
     }
 
