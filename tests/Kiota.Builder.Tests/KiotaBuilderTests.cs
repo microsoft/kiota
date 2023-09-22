@@ -4682,9 +4682,14 @@ paths:
         var codeModel = builder.CreateSourceModel(node);
         var modelsSubNS = codeModel.FindNamespaceByName("TestSdk.answer");
         Assert.NotNull(modelsSubNS);
-        var responseClass = modelsSubNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model));
+        var responseClass = modelsSubNS.FindChildByName<CodeClass>("AnswerGetResponse", false);
         Assert.NotNull(responseClass);
         Assert.Equal("some description", responseClass.Documentation.Description);
+
+        var obsoleteResponseClass = modelsSubNS.FindChildByName<CodeClass>("AnswerResponse", false);
+        Assert.NotNull(obsoleteResponseClass);
+        Assert.Equal("some description", obsoleteResponseClass.Documentation.Description);
+        Assert.True(obsoleteResponseClass.Deprecation.IsDeprecated);
 
         responseClass = modelsSubNS.Classes.FirstOrDefault(c => c.IsOfKind(CodeClassKind.RequestBuilder));
         Assert.NotNull(responseClass);
