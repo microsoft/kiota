@@ -86,7 +86,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             Configuration.Generation.ClearCache = clearCache;
             try
             {
-                var urlTreeNode = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GetUrlTreeNodeAsync(cancellationToken);
+                var urlTreeNode = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GetUrlTreeNodeAsync(cancellationToken).ConfigureAwait(false);
 
                 var builder = new StringBuilder();
                 if (urlTreeNode != null)
@@ -96,7 +96,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
                 if (descriptionProvided)
                     DisplayShowAdvancedHint(string.Empty, string.Empty, includePatterns, excludePatterns, openapi, manifest);
                 else
-                    DisplayShowAdvancedHint(searchTerm, version, includePatterns, excludePatterns, openapi, manifest);
+                    DisplayShowAdvancedHint(searchTerm, version, includePatterns, excludePatterns, openapi);
                 DisplayGenerateHint(openapi, manifest, includePatterns, excludePatterns);
             }
             catch (Exception ex)

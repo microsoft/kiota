@@ -100,7 +100,7 @@ internal class Server : IServer
         var configuration = Configuration.Generation;
         configuration.ApiManifestPath = $"{manifestPath}#{apiIdentifier}";
         var builder = new KiotaBuilder(logger, configuration, httpClient);
-        var manifestResult = await builder.GetApiManifestDetailsAsync(cancellationToken);
+        var manifestResult = await builder.GetApiManifestDetailsAsync(cancellationToken: cancellationToken);
         return new ManifestResult(logger.LogEntries,
                             manifestResult?.Item1,
                             manifestResult?.Item2.ToArray());

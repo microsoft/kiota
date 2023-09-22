@@ -223,7 +223,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     {
         var example = path switch
         {
-            _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path}",
+            _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d \"{path}\"",
             _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm}",
             _ => $"Example: kiota show -k {searchTerm} -v {version}",
         };
@@ -235,8 +235,8 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         {
             var example = path switch
             {
-                _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d {path} --include-path \"**/foo\"",
-                _ when !string.IsNullOrEmpty(manifest) => $"Example: kiota show -m {manifest} --include-path \"**/foo\"",
+                _ when !string.IsNullOrEmpty(path) => $"Example: kiota show -d \"{path}\" --include-path \"**/foo\"",
+                _ when !string.IsNullOrEmpty(manifest) => $"Example: kiota show -m \"{manifest}\" --include-path \"**/foo\"",
                 _ when string.IsNullOrEmpty(version) => $"Example: kiota show -k {searchTerm} --include-path \"**/foo\"",
                 _ => $"Example: kiota show -k {searchTerm} -v {version} --include-path \"**/foo\"",
             };
@@ -276,7 +276,7 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     }
     private static string GetSourceArg(string path, string manifest)
     {
-        return string.IsNullOrEmpty(manifest) ? $"-d {path}" : $"-m {manifest}";
+        return string.IsNullOrEmpty(manifest) ? $"-d \"{path}\"" : $"-m \"{manifest}\"";
     }
     protected void DisplayInfoHint(GenerationLanguage language, string path, string manifest)
     {
