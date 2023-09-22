@@ -4,6 +4,7 @@ using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
+using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Writers.Python;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionService>
@@ -331,7 +332,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
             {
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
+                {
+                    writer.StartBlock($"if isinstance({pathParametersParameter.Name.ToSnakeCase()}, dict):");
+                    currentMethod.Parameters.Where(static parameter => parameter.IsOfKind(CodeParameterKind.Path)).ToList()
+                        .ForEach(parameter =>
+                        {
+                            var key = String.IsNullOrEmpty(parameter.SerializationName)
+                                ? parameter.Name
+                                : parameter.SerializationName;
+                            writer.WriteLine($"{pathParametersParameter.Name.ToSnakeCase()}['{key}'] = str({parameter.Name.ToSnakeCase()})");
+                        });
+                    writer.DecreaseIndent();
                     writer.WriteLine($"super().__init__({requestAdapterParameter.Name.ToSnakeCase()}, {urlTemplateProperty.DefaultValue ?? ""}, {pathParametersParameter.Name.ToSnakeCase()})");
+                }
+
                 else
                     writer.WriteLine($"super().__init__({requestAdapterParameter.Name.ToSnakeCase()}, {urlTemplateProperty.DefaultValue ?? ""}, None)");
             }
