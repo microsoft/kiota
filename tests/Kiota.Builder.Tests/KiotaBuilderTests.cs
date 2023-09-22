@@ -4691,9 +4691,11 @@ paths:
         Assert.Equal("some description", obsoleteResponseClass.Documentation.Description);
         Assert.True(obsoleteResponseClass.Deprecation.IsDeprecated);
 
-        responseClass = modelsSubNS.Classes.FirstOrDefault(c => c.IsOfKind(CodeClassKind.RequestBuilder));
-        Assert.NotNull(responseClass);
-        Assert.Equal("some path item description", responseClass.Documentation.Description);
+        var requestBuilderClass = modelsSubNS.Classes.FirstOrDefault(c => c.IsOfKind(CodeClassKind.RequestBuilder));
+        Assert.NotNull(requestBuilderClass);
+        Assert.Equal("some path item description", requestBuilderClass.Documentation.Description);
+
+        Assert.Equal(2, requestBuilderClass.Methods.Where(static x => x.Kind is CodeMethodKind.RequestExecutor).Count());
 
         var responseProperty = codeModel.FindNamespaceByName("TestSdk").Classes.SelectMany(c => c.Properties).FirstOrDefault(p => p.Kind == CodePropertyKind.RequestBuilder);
         Assert.NotNull(responseProperty);

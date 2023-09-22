@@ -1375,21 +1375,6 @@ public partial class KiotaBuilder
             AddRequestConfigurationProperties(parameterClass, requestConfigClass);
             AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, executorMethod);
             parentClass.AddMethod(executorMethod);
-            if (returnTypes.Item2 is not null)
-            { //TODO remove for v2
-                var additionalExecutorMethod = (CodeMethod)executorMethod.Clone();
-                additionalExecutorMethod.ReturnType = returnTypes.Item2;
-                additionalExecutorMethod.OriginalMethod = executorMethod;
-                var newName = config.Language switch
-                {
-                    GenerationLanguage.Go => $"{executorMethod.Name}As{executorMethod.ReturnType.Name.ToFirstCharacterUpperCase()}",
-                    _ => executorMethod.Name,
-                };
-                additionalExecutorMethod.Deprecation = new($"This method is obsolete. Use {newName} instead.", IsDeprecated: true);
-                if (config.Language is GenerationLanguage.Go)
-                    parentClass.RenameChildElement(executorMethod.Name, newName);
-                parentClass.AddMethod(additionalExecutorMethod);
-            }
 
             var cancellationParam = new CodeParameter
             {
@@ -1403,6 +1388,26 @@ public partial class KiotaBuilder
                 Type = new CodeType { Name = "CancellationToken", IsExternal = true },
             };
             executorMethod.AddParameter(cancellationParam);// Add cancellation token parameter
+
+            if (returnTypes.Item2 is not null)
+            { //TODO remove for v2
+                var additionalExecutorMethod = (CodeMethod)executorMethod.Clone();
+                additionalExecutorMethod.ReturnType = returnTypes.Item2;
+                additionalExecutorMethod.OriginalMethod = executorMethod;
+                var newName = config.Language switch
+                {
+                    GenerationLanguage.Go => $"{executorMethod.Name}As{executorMethod.ReturnType.Name.ToFirstCharacterUpperCase()}",
+                    _ => $"{executorMethod.Name}-back-compatible",
+                };
+                additionalExecutorMethod.Deprecation = new($"This method is obsolete. Use {newName} instead.", IsDeprecated: true);
+                if (config.Language is GenerationLanguage.Go)
+                    parentClass.RenameChildElement(executorMethod.Name, newName);
+                else
+                    additionalExecutorMethod.Name = newName; // So it doesn't get trimmed
+                parentClass.AddMethod(additionalExecutorMethod);
+                if (config.Language is GenerationLanguage.CSharp)
+                    additionalExecutorMethod.Name = executorMethod.Name;
+            }
             logger.LogTrace("Creating method {Name} of {Type}", executorMethod.Name, executorMethod.ReturnType);
 
             var generatorMethod = new CodeMethod
