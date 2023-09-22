@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Reflection.Metadata;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.Models;
@@ -333,15 +333,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             {
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
                 {
-                    writer.StartBlock($"if isinstance({pathParametersParameter.Name.ToSnakeCase()}, dict):");
-                    currentMethod.Parameters.Where(static parameter => parameter.IsOfKind(CodeParameterKind.Path)).ToList()
-                        .ForEach(parameter =>
+                    var pathParameters = currentMethod.Parameters
+                                                                .Where(static x => x.IsOfKind(CodeParameterKind.Path))
+                                                                .Select(static x => (string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToSnakeCase()))
+                                                                .ToArray();
+                    if (pathParameters.Any())
+                    {
+                        writer.StartBlock($"if isinstance({pathParametersParameter.Name.ToSnakeCase()}, dict):");
+                        foreach (var parameter in pathParameters)
                         {
-                            var key = String.IsNullOrEmpty(parameter.SerializationName)
-                                ? parameter.Name
-                                : parameter.SerializationName;
-                            writer.WriteLine($"{pathParametersParameter.Name.ToSnakeCase()}['{key}'] = str({parameter.Name.ToSnakeCase()})");
-                        });
+                            var (name, identName) = parameter;
+                            writer.WriteLine($"{pathParametersParameter.Name.ToSnakeCase()}['{name}'] = str({identName})");
+                        }
+                    }
                     writer.DecreaseIndent();
                     writer.WriteLine($"super().__init__({requestAdapterParameter.Name.ToSnakeCase()}, {urlTemplateProperty.DefaultValue ?? ""}, {pathParametersParameter.Name.ToSnakeCase()})");
                 }
