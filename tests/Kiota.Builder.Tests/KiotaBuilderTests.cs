@@ -275,6 +275,71 @@ components:
         Assert.NotNull(enumDef);
         Assert.True(enumDef.Flags);
     }
+    [Fact]
+    public async Task NamesComponentsInlineSchemasProperly()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /users:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.directoryObject'
+components:
+  schemas:
+    microsoft.graph.directoryObject:
+      title: directoryObject
+      type: object
+      properties:
+        deletedDateTime:
+          oneOf:
+            - type: string
+              pattern: '^[0-9]{4,}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]{1,12})?(Z|[+-][0-9][0-9]:[0-9][0-9])$'
+              format: date-time
+              nullable: true
+            - type: number
+              format: int64
+            - type: object
+              properties:
+                day:
+                  type: integer
+                  format: int32
+                month:
+                  type: integer
+                  format: int32
+                year:
+                  type: integer
+                  format: int32");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models.microsoft.graph");
+        Assert.NotNull(modelsNS);
+        var doClass = modelsNS.FindChildByName<CodeClass>("DirectoryObject", false);
+        Assert.NotNull(doClass);
+        var deletedDateTimeProperty = doClass.FindChildByName<CodeProperty>("DeletedDateTime", false);
+        Assert.NotNull(deletedDateTimeProperty);
+        var unionType = deletedDateTimeProperty.Type as CodeUnionType;
+        Assert.NotNull(unionType);
+        Assert.Equal("directoryObject_deletedDateTime", unionType.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(3, unionType.Types.Count());
+        Assert.Equal("DateTimeOffset", unionType.Types.First().Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("directoryObject_deletedDateTimeMember1", unionType.Types.ElementAt(1).Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("int64", unionType.Types.ElementAt(2).Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Null(modelsNS.FindChildByName<CodeClass>("users"));
+    }
     [Theory]
     [InlineData("description: 'Represents an Azure Active Directory user.'")]
     [InlineData("title: 'user'")]

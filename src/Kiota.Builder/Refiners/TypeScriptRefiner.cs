@@ -17,7 +17,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             cancellationToken.ThrowIfCancellationRequested();
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
-            RemoveHandlerFromRequestBuilder(generatedCode);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), static x => $"{x}Escaped");
             ReplaceReservedExceptionPropertyNames(generatedCode, new TypeScriptExceptionsReservedNamesProvider(), static x => $"{x}Escaped");
             MoveRequestBuilderPropertiesToBaseType(generatedCode,

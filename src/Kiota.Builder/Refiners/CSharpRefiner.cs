@@ -107,7 +107,6 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 "IParseNode"
             );
-            RemoveHandlerFromRequestBuilder(generatedCode);
         }, cancellationToken);
     }
     protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement)

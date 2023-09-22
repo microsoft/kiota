@@ -183,7 +183,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     }
     public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
     {
-        if (codeClasses == null || codeClasses.Any(x => x == null))
+        if (codeClasses == null || codeClasses.Any(static x => x == null))
             throw new ArgumentNullException(nameof(codeClasses));
         if (!codeClasses.Any())
             throw new ArgumentOutOfRangeException(nameof(codeClasses));

@@ -1334,21 +1334,6 @@ public partial class KiotaBuilder
             AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, executorMethod);
             parentClass.AddMethod(executorMethod);
 
-#pragma warning disable CS0618
-            var handlerParam = new CodeParameter
-            {
-                Name = "responseHandler",
-                Optional = true,
-                Kind = CodeParameterKind.ResponseHandler,
-                Documentation = new()
-                {
-                    Description = "Response handler to use in place of the default response handling provided by the core service",
-                },
-                Type = new CodeType { Name = "IResponseHandler", IsExternal = true },
-            };
-            executorMethod.AddParameter(handlerParam);// Add response handler parameter
-#pragma warning restore CS0618
-
             var cancellationParam = new CodeParameter
             {
                 Name = "cancellationToken",
@@ -1602,9 +1587,9 @@ public partial class KiotaBuilder
         if (parentSchema.Items?.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Items.Reference.Id;
         return parentSchema.GetSchemaReferenceIds().FirstOrDefault(refId => refId.EndsWith(title, StringComparison.OrdinalIgnoreCase));
     }
-    private CodeTypeBase CreateComposedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string suffixForInlineSchema, CodeNamespace codeNamespace, bool isRequestBody)
+    private CodeTypeBase CreateComposedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string suffixForInlineSchema, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema)
     {
-        var typeName = currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: suffixForInlineSchema, schema: schema, requestBody: isRequestBody).CleanupSymbolName();
+        var typeName = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: suffixForInlineSchema, schema: schema, requestBody: isRequestBody).CleanupSymbolName() : typeNameForInlineSchema;
         var typesCount = schema.AnyOf?.Count ?? schema.OneOf?.Count ?? 0;
         if (typesCount == 1 && schema.Nullable && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf
             typesCount == 2 && (schema.AnyOf?.Any(static x => // nullable on a schema in the anyOf
@@ -1654,16 +1639,18 @@ public partial class KiotaBuilder
             if (string.IsNullOrEmpty(className))
                 if (GetPrimitiveType(currentSchema) is CodeType primitiveType && !string.IsNullOrEmpty(primitiveType.Name))
                 {
-                    unionType.AddType(primitiveType);
+                    if (!unionType.ContainsType(primitiveType))
+                        unionType.AddType(primitiveType);
                     continue;
                 }
                 else
                     className = $"{unionType.Name}Member{++membersWithNoName}";
-            var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace);
-            unionType.AddType(new CodeType
+            var declarationType = new CodeType
             {
-                TypeDefinition = codeDeclaration,
-            });
+                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace),
+            };
+            if (!unionType.ContainsType(declarationType))
+                unionType.AddType(declarationType);
         }
         return unionType;
     }
@@ -1696,7 +1683,7 @@ public partial class KiotaBuilder
         if ((schema.IsInclusiveUnion() || schema.IsExclusiveUnion()) && string.IsNullOrEmpty(schema.Format)
             && !schema.IsODataPrimitiveType())
         { // OData types are oneOf string, type + format, enum
-            return CreateComposedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody);
+            return CreateComposedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody, typeNameForInlineSchema);
         }
 
         if (schema.IsObject() || schema.Properties.Any() || schema.IsEnum() || !string.IsNullOrEmpty(schema.AdditionalProperties?.Type))
@@ -2067,9 +2054,7 @@ public partial class KiotaBuilder
                     .Select(x =>
                     {
                         var propertySchema = x.Value;
-                        var className = propertySchema.GetSchemaName().CleanupSymbolName();
-                        if (string.IsNullOrEmpty(className))
-                            className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
+                        var className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
                         var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
                         var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
                                             rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
