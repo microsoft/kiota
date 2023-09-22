@@ -449,4 +449,4 @@ reports/
 samples/
 it/openapi.yaml
 
-idempotency*.zip
+idempotency-results/

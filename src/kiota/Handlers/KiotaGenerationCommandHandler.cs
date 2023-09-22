@@ -124,7 +124,8 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
 
             try
             {
-                var result = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GenerateClientAsync(cancellationToken);
+                var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient);
+                var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
                     DisplaySuccess("Generation completed successfully");
                 else
@@ -132,8 +133,10 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
                     DisplaySuccess("Generation skipped as no changes were detected");
                     DisplayCleanHint("generate");
                 }
-                DisplayInfoHint(language, Configuration.Generation.OpenAPIFilePath, Configuration.Generation.ApiManifestPath);
-                DisplayGenerateAdvancedHint(includePatterns, excludePatterns, Configuration.Generation.OpenAPIFilePath, Configuration.Generation.ApiManifestPath);
+                var manifestResult = await builder.GetApiManifestDetailsAsync(true, cancellationToken).ConfigureAwait(false);
+                var manifestPath = manifestResult is null ? string.Empty : Configuration.Generation.ApiManifestPath;
+                DisplayInfoHint(language, Configuration.Generation.OpenAPIFilePath, manifestPath);
+                DisplayGenerateAdvancedHint(includePatterns, excludePatterns, Configuration.Generation.OpenAPIFilePath, manifestPath);
                 return 0;
             }
             catch (Exception ex)
