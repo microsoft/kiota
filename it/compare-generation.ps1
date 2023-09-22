@@ -95,21 +95,21 @@ if ($HashString1 -eq $HashString2) {
     Exit 0
 }
 else {
-    Write-Error "The content of the folders is NOT identical"
-    $archivePath1 = Join-Path $rootPath -ChildPath "idempotency-folder1.zip"
-    $archivePath2 = Join-Path $rootPath -ChildPath "idempotency-folder2.zip"
-
-    if (Test-Path $archivePath1) {
-        Remove-Item $archivePath1 -Force -Verbose
+    Write-Host "The content of the folders is NOT identical"
+    $resultsFolder = Join-Path -Path $rootPath -ChildPath "idempotency-results"
+    if (Test-Path $resultsFolder) {
+        Remove-Item $resultsFolder -Force -Verbose -Recurse
     }
-    if (Test-Path $archivePath2) {
-        Remove-Item $archivePath2 -Force -Verbose
-    }
+    New-Item -ItemType Directory -Path $resultsFolder -Force
 
     if ($dev -eq $false) {
+        $archivePath1 = Join-Path $resultsFolder -ChildPath "idempotency-folder1.zip"
+        $archivePath2 = Join-Path $resultsFolder -ChildPath "idempotency-folder2.zip"
+
         Write-Host "Creating archives at location $archivePath1 and $archivePath2"
-        Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath1
-        Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath2
+        Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath1 -Force
+        Compress-Archive -Path $tmpFolder2 -DestinationPath $archivePath2 -Force
     }
+    Write-Error "Comparison failed as the generated code is NOT identical"
     Exit 1
 }

@@ -9,12 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for tracing in Python. [#1872](https://github.com/microsoft/kiota/issues/1872)
 - Added auto-generated comment for TypeScript generation. [#3244](https://github.com/microsoft/kiota/issues/3244)
 
 ### Changed
 
 - Updated constructor for request builders in Python to set passed path parameters. [#3352](https://github.com/microsoft/kiota/issues/3352)
 - Localhost based descriptions are not cached anymore to facilitate development workflows. [#3316](https://github.com/microsoft/kiota/issues/3316)
+- Fixed a bug where the hints would miss quotes for paths and always use the API manifest. [#3342](https://github.com/microsoft/kiota/issues/3342)
 - Fixed a bug where inline composed types for components schemas would have the wrong name. [#3067](https://github.com/microsoft/kiota/issues/3067)
 - Changed parameter order in with_url method body to match the signature of RequestBuilder constructor in Python. [#3328](https://github.com/microsoft/kiota/issues/3328)
 - Removed redundant undefined qualifier in TypeScript for properties. [#3244](https://github.com/microsoft/kiota/issues/3244)

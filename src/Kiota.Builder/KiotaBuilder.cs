@@ -91,7 +91,7 @@ public partial class KiotaBuilder
             rawValue = '/' + rawValue;
         return rawValue.Split('?', StringSplitOptions.RemoveEmptyEntries)[0];
     }
-    public async Task<Tuple<string, IEnumerable<string>>?> GetApiManifestDetailsAsync(CancellationToken cancellationToken)
+    public async Task<Tuple<string, IEnumerable<string>>?> GetApiManifestDetailsAsync(bool skipErrorLog = false, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -129,7 +129,8 @@ public partial class KiotaBuilder
         catch (Exception ex)
 #pragma warning restore CA1031
         {
-            logger.LogCritical("error getting the API manifest: {ExceptionMessage}", ex.Message);
+            if (!skipErrorLog)
+                logger.LogCritical("error getting the API manifest: {ExceptionMessage}", ex.Message);
             return null;
         }
     }
@@ -140,7 +141,7 @@ public partial class KiotaBuilder
         if (config.ShouldGetApiManifest)
         {
             sw.Start();
-            var manifestDetails = await GetApiManifestDetailsAsync(cancellationToken).ConfigureAwait(false);
+            var manifestDetails = await GetApiManifestDetailsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             if (manifestDetails is not null)
             {
                 inputPath = manifestDetails.Item1;
