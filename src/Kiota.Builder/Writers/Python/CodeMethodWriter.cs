@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
-using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Writers.Python;
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionService>
