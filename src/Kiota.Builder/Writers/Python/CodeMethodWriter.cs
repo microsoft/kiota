@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -331,7 +330,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
             {
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
+                {
+                    var pathParameters = currentMethod.Parameters
+                                                                .Where(static x => x.IsOfKind(CodeParameterKind.Path))
+                                                                .Select(static x => (string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToSnakeCase()))
+                                                                .ToArray();
+                    if (pathParameters.Any())
+                    {
+                        writer.StartBlock($"if isinstance({pathParametersParameter.Name.ToSnakeCase()}, dict):");
+                        foreach (var parameter in pathParameters)
+                        {
+                            var (name, identName) = parameter;
+                            writer.WriteLine($"{pathParametersParameter.Name.ToSnakeCase()}['{name}'] = str({identName})");
+                        }
+                        writer.DecreaseIndent();
+                    }
                     writer.WriteLine($"super().__init__({requestAdapterParameter.Name.ToSnakeCase()}, {urlTemplateProperty.DefaultValue ?? ""}, {pathParametersParameter.Name.ToSnakeCase()})");
+                }
                 else
                     writer.WriteLine($"super().__init__({requestAdapterParameter.Name.ToSnakeCase()}, {urlTemplateProperty.DefaultValue ?? ""}, None)");
             }
