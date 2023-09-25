@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as Mocha from 'mocha';
-import {glob} from 'glob';
+import { __promisify__ } from 'glob';
 
 export async function run(): Promise<void> {
 	// Create the mocha test
@@ -10,8 +10,7 @@ export async function run(): Promise<void> {
 	});
 
 	const testsRoot = path.resolve(__dirname, '..');
-
-    const files = await glob('**/**.test.js', { cwd: testsRoot });
+    const files = await __promisify__('**/**.test.js', { cwd: testsRoot });
 
     // Add files to the test suite
     files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
