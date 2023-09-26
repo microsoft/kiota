@@ -1284,6 +1284,10 @@ public partial class KiotaBuilder
                         Deprecation = new($"This class is obsolete. Use {modelType.Name} instead.", IsDeprecated: true),
                         Documentation = (CodeDocumentation)codeClass.Documentation.Clone()
                     };
+                    var originalFactoryMethod = codeClass.Methods.First(static x => x.Kind is CodeMethodKind.Factory);
+                    var obsoleteFactoryMethod = (CodeMethod)originalFactoryMethod.Clone();
+                    obsoleteFactoryMethod.ReturnType = new CodeType { Name = obsoleteTypeName, TypeDefinition = obsoleteClassDefinition };
+                    obsoleteClassDefinition.AddMethod(obsoleteFactoryMethod);
                     obsoleteClassDefinition.StartBlock.Inherits = codeType;
                     var obsoleteClass = codeClass.Parent switch
                     {
