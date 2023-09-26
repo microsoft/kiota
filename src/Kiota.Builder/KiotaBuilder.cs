@@ -1394,19 +1394,10 @@ public partial class KiotaBuilder
                 var additionalExecutorMethod = (CodeMethod)executorMethod.Clone();
                 additionalExecutorMethod.ReturnType = returnTypes.Item2;
                 additionalExecutorMethod.OriginalMethod = executorMethod;
-                var newName = config.Language switch
-                {
-                    GenerationLanguage.Go => $"{executorMethod.Name}As{executorMethod.ReturnType.Name.ToFirstCharacterUpperCase()}",
-                    _ => $"{executorMethod.Name}-back-compatible",
-                };
+                var newName = $"{executorMethod.Name}As{executorMethod.ReturnType.Name.ToFirstCharacterUpperCase()}";
                 additionalExecutorMethod.Deprecation = new($"This method is obsolete. Use {newName} instead.", IsDeprecated: true);
-                if (config.Language is GenerationLanguage.Go)
-                    parentClass.RenameChildElement(executorMethod.Name, newName);
-                else
-                    additionalExecutorMethod.Name = newName; // So it doesn't get trimmed
+                parentClass.RenameChildElement(executorMethod.Name, newName);
                 parentClass.AddMethod(additionalExecutorMethod);
-                if (config.Language is GenerationLanguage.CSharp)
-                    additionalExecutorMethod.Name = executorMethod.Name;
             }
             logger.LogTrace("Creating method {Name} of {Type}", executorMethod.Name, executorMethod.ReturnType);
 
