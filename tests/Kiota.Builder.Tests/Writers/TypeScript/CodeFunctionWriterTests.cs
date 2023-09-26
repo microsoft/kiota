@@ -42,8 +42,8 @@ public class CodeFunctionWriterTests : IDisposable
         var serializeFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
-        Assert.Contains("// eslint-disable", result);
-        Assert.Contains("// tslint:disable", result);
+        Assert.DoesNotContain("// eslint-disable", result);
+        Assert.DoesNotContain("// tslint:disable", result);
     }
     [Fact]
     public async Task WritesAutoGenerationEnd()
