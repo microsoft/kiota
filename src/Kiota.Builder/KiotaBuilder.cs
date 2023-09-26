@@ -1288,7 +1288,7 @@ public partial class KiotaBuilder
                     var obsoleteFactoryMethod = (CodeMethod)originalFactoryMethod.Clone();
                     obsoleteFactoryMethod.ReturnType = new CodeType { Name = obsoleteTypeName, TypeDefinition = obsoleteClassDefinition };
                     obsoleteClassDefinition.AddMethod(obsoleteFactoryMethod);
-                    obsoleteClassDefinition.StartBlock.Inherits = codeType;
+                    obsoleteClassDefinition.StartBlock.Inherits = (CodeType)codeType.Clone();
                     var obsoleteClass = codeClass.Parent switch
                     {
                         CodeClass modelParentClass => modelParentClass.AddInnerClass(obsoleteClassDefinition).First(),
