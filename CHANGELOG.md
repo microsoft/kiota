@@ -11,12 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added support for tracing in Python. [#1872](https://github.com/microsoft/kiota/issues/1872)
 - Added auto-generated comment for TypeScript generation. [#3244](https://github.com/microsoft/kiota/issues/3244)
-- Added a new switch to exclude all assets generated only for backward compatibility. [#2953](https://github.com/microsoft/kiota/issues/2953)
+- Added a new switch to exclude all assets generated only for backward compatibility. [#2952](https://github.com/microsoft/kiota/issues/2952)
 
 ### Changed
 
 - Updated constructor for request builders in Python to set passed path parameters. [#3352](https://github.com/microsoft/kiota/issues/3352)
-- Fixed naming convention for inline response types. [#2953](https://github.com/microsoft/kiota/issues/2953)
+- Fixed naming convention for inline response types. [#2952](https://github.com/microsoft/kiota/issues/2952)
 - Localhost based descriptions are not cached anymore to facilitate development workflows. [#3316](https://github.com/microsoft/kiota/issues/3316)
 - Fixed a bug where the hints would miss quotes for paths and always use the API manifest. [#3342](https://github.com/microsoft/kiota/issues/3342)
 - Fixed a bug where inline composed types for components schemas would have the wrong name. [#3067](https://github.com/microsoft/kiota/issues/3067)

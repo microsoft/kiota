@@ -259,10 +259,6 @@
     ],
     "IdempotencySuppressions": [
       {
-        "Language": "csharp",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2952"
-      },
-      {
         "Language": "go",
         "Rationale": "https://github.com/microsoft/kiota/issues/2834"
       },
