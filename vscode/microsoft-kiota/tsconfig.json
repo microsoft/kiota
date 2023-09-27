@@ -1,10 +1,14 @@
 {
 	"compilerOptions": {
-		"module": "commonjs",
+    "forceConsistentCasingInFileNames": true,
+		"module": "CommonJS",
 		"target": "ES2020",
 		"lib": [
 			"ES2020"
 		],
+    "paths": {
+      "glob": ["./node_modules/glob/dist/commonjs"] // https://github.com/isaacs/node-glob/issues/557
+    },
 		"sourceMap": true,
 		"rootDir": "src",
 		"strict": true   /* enable all strict type-checking options */
