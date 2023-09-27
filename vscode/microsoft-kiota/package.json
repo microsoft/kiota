@@ -257,7 +257,6 @@
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.2",
-    "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "20.x",
     "@types/vscode": "^1.82.0",
