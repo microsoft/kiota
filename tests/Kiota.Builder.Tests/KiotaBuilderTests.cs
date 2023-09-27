@@ -4636,8 +4636,10 @@ paths:
         Assert.NotNull(executorMethod);
         Assert.Equal("myobject", executorMethod.ReturnType.Name);
     }
-    [Fact]
-    public void ModelsUseDescriptionWhenAvailable()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ModelsUseDescriptionWhenAvailable(bool excludeBackwardCompatible)
     {
         var document = new OpenApiDocument
         {
@@ -4677,7 +4679,7 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost", ExcludeBackwardCompatible = excludeBackwardCompatible }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsSubNS = codeModel.FindNamespaceByName("TestSdk.answer");
@@ -4687,17 +4689,25 @@ paths:
         Assert.Equal("some description", responseClass.Documentation.Description);
 
         var obsoleteResponseClass = modelsSubNS.FindChildByName<CodeClass>("AnswerResponse", false);
-        Assert.NotNull(obsoleteResponseClass);
-        Assert.Equal("some description", obsoleteResponseClass.Documentation.Description);
-        Assert.True(obsoleteResponseClass.Deprecation.IsDeprecated);
+        if (excludeBackwardCompatible)
+            Assert.Null(obsoleteResponseClass);
+        else
+        {
+            Assert.NotNull(obsoleteResponseClass);
+            Assert.Equal("some description", obsoleteResponseClass.Documentation.Description);
+            Assert.True(obsoleteResponseClass.Deprecation.IsDeprecated);
+        }
 
-        var requestBuilderClass = modelsSubNS.Classes.FirstOrDefault(c => c.IsOfKind(CodeClassKind.RequestBuilder));
+        var requestBuilderClass = modelsSubNS.Classes.FirstOrDefault(static c => c.IsOfKind(CodeClassKind.RequestBuilder));
         Assert.NotNull(requestBuilderClass);
         Assert.Equal("some path item description", requestBuilderClass.Documentation.Description);
 
-        Assert.Equal(2, requestBuilderClass.Methods.Where(static x => x.Kind is CodeMethodKind.RequestExecutor).Count());
+        if (excludeBackwardCompatible)
+            Assert.Single(requestBuilderClass.Methods.Where(static x => x.Kind is CodeMethodKind.RequestExecutor));
+        else
+            Assert.Equal(2, requestBuilderClass.Methods.Where(static x => x.Kind is CodeMethodKind.RequestExecutor).Count());
 
-        var responseProperty = codeModel.FindNamespaceByName("TestSdk").Classes.SelectMany(c => c.Properties).FirstOrDefault(p => p.Kind == CodePropertyKind.RequestBuilder);
+        var responseProperty = codeModel.FindNamespaceByName("TestSdk").Classes.SelectMany(c => c.Properties).FirstOrDefault(static p => p.Kind == CodePropertyKind.RequestBuilder);
         Assert.NotNull(responseProperty);
         Assert.Equal("some path item description", responseProperty.Documentation.Description);
     }

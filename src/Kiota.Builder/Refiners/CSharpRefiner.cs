@@ -31,22 +31,23 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                         IsExternal = true
                     }
                 });
-            //TODO uncomment on the next major version
-            // RemoveRequestConfigurationClasses(generatedCode,
-            //     new CodeUsing
-            //     {
-            //         Name = "RequestConfiguration",
-            //         Declaration = new CodeType
-            //         {
-            //             Name = AbstractionsNamespaceName,
-            //             IsExternal = true
-            //         }
-            //     },
-            //     new CodeType
-            //     {
-            //         Name = "DefaultQueryParameters",
-            //         IsExternal = true,
-            //     });
+            //TODO remove the condition for v2
+            if (_configuration.ExcludeBackwardCompatible)
+                RemoveRequestConfigurationClasses(generatedCode,
+                    new CodeUsing
+                    {
+                        Name = "RequestConfiguration",
+                        Declaration = new CodeType
+                        {
+                            Name = AbstractionsNamespaceName,
+                            IsExternal = true
+                        }
+                    },
+                    new CodeType
+                    {
+                        Name = "DefaultQueryParameters",
+                        IsExternal = true,
+                    });
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,

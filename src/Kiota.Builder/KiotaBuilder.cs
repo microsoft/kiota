@@ -1113,7 +1113,7 @@ public partial class KiotaBuilder
             IndexParameter = parameter,
         }};
 
-        if (!"string".Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase))
+        if (!"string".Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase) && config.IncludeBackwardCompatible)
         { // adding a second indexer for the string version of the parameter so we keep backward compatibility
             //TODO remove for v2
             var backCompatibleValue = (CodeIndexer)result[0].Clone();
@@ -1271,7 +1271,7 @@ public partial class KiotaBuilder
         {
             var suffix = $"{operationType}Response";
             var modelType = CreateModelDeclarations(currentNode, schema, operation, parentClass, suffix);
-            if (modelType is not null && config.Language is GenerationLanguage.CSharp or GenerationLanguage.Go && modelType.Name.EndsWith(suffix, StringComparison.Ordinal))
+            if (modelType is not null && config.IncludeBackwardCompatible && config.Language is GenerationLanguage.CSharp or GenerationLanguage.Go && modelType.Name.EndsWith(suffix, StringComparison.Ordinal))
             { //TODO remove for v2
                 var obsoleteTypeName = modelType.Name[..^suffix.Length] + "Response";
                 if (modelType is CodeType codeType &&
@@ -1393,7 +1393,7 @@ public partial class KiotaBuilder
             };
             executorMethod.AddParameter(cancellationParam);// Add cancellation token parameter
 
-            if (returnTypes.Item2 is not null)
+            if (returnTypes.Item2 is not null && config.IncludeBackwardCompatible)
             { //TODO remove for v2
                 var additionalExecutorMethod = (CodeMethod)executorMethod.Clone();
                 additionalExecutorMethod.ReturnType = returnTypes.Item2;
