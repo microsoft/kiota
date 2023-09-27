@@ -34,12 +34,12 @@ public class CodeFileDeclarationWriter : BaseElementWriter<CodeFileDeclaration, 
 
             // remove duplicate using, keep a single using for each internal type in the same namespace
             var enumeratedUsing = usings.ToArray();
-            var filteredUsing = enumeratedUsing.Where(x => x.IsExternal)
+            var filteredUsing = enumeratedUsing.Where(static x => x.IsExternal)
                 .Union(enumeratedUsing.ToArray()
-                    .Where(x => x is { IsExternal: false, Declaration.TypeDefinition: not null })
-                    .GroupBy(x =>
+                    .Where(static x => x is { IsExternal: false, Declaration.TypeDefinition: not null })
+                    .GroupBy(static x =>
                         $"{x.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name}.{x.Declaration?.Name.ToLowerInvariant()}")
-                    .Select(x => x.First()));
+                    .Select(static x => x.OrderBy(static x => x.Parent?.Name).First()));
 
             _codeUsingWriter.WriteCodeElement(filteredUsing, ns, writer);
         }
