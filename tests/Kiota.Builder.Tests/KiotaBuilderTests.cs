@@ -6946,10 +6946,10 @@ components:
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel.FindChildByName<CodeClass>("Linkable"));
         var classificationClass = codeModel.FindChildByName<CodeClass>("GroupClassification");
-        Assert.Single(classificationClass.Properties.Where(x => x.Name.Equals("description", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(classificationClass.Properties.Where(static x => x.Name.Equals("description", StringComparison.OrdinalIgnoreCase)));
         Assert.NotNull(classificationClass);
         var classificationPrimerClass = codeModel.FindChildByName<CodeClass>("GroupClassificationPrimer");
         Assert.NotNull(classificationPrimerClass);
-        Assert.Single(classificationPrimerClass.Properties.Where(x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase)));
+        Assert.Single(classificationPrimerClass.Properties.Where(static x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase)));
     }
 }
