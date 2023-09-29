@@ -80,7 +80,7 @@ azure-core==1.29.4 ; python_version >= '3.7'
 
 azure-identity==1.14.0
 
-cffi==1.15.1
+cffi==1.16.0
 
 cryptography==41.0.4 ; python_version >= '3.7'
 
