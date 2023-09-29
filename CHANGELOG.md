@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated constructor for request builders in Python to set passed path parameters. [#3352](https://github.com/microsoft/kiota/issues/3352)
+- Fixed inherited type definition generation where some cases would not generate properly. [#2745](https://github.com/microsoft/kiota/issues/2745)
 - Fixed naming convention for inline response types. [#2952](https://github.com/microsoft/kiota/issues/2952)
 - Localhost based descriptions are not cached anymore to facilitate development workflows. [#3316](https://github.com/microsoft/kiota/issues/3316)
 - Fixed a bug where the hints would miss quotes for paths and always use the API manifest. [#3342](https://github.com/microsoft/kiota/issues/3342)

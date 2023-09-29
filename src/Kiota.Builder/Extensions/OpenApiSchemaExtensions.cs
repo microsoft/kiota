@@ -30,12 +30,15 @@ public static class OpenApiSchemaExtensions
             return new[] { schema.Xml.Name };
         return Enumerable.Empty<string>();
     }
+    internal static IEnumerable<OpenApiSchema> FlattenSchemaIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter)
+    {
+        return schemas.Count == 1 && string.IsNullOrEmpty(schemas[0].Title) ?
+                    schemas.FlattenEmptyEntries(subsequentGetter, 1) :
+                    schemas;
+    }
     private static IEnumerable<string> FlattenIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter)
     {
-        return (schemas.Count == 1 && string.IsNullOrEmpty(schemas[0].Title) ?
-                    schemas.FlattenEmptyEntries(subsequentGetter, 1) :
-                    schemas)
-            .Select(static x => x.Title).Where(static x => !string.IsNullOrEmpty(x));
+        return schemas.FlattenSchemaIfRequired(subsequentGetter).Where(static x => !string.IsNullOrEmpty(x.Title)).Select(static x => x.Title);
     }
 
     public static string GetSchemaName(this OpenApiSchema schema)
@@ -154,7 +157,7 @@ public static class OpenApiSchemaExtensions
 
         return Enumerable.Empty<string>();
     }
-    internal static IEnumerable<OpenApiSchema> FlattenEmptyEntries(this IEnumerable<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter, int? maxDepth = default)
+    private static IEnumerable<OpenApiSchema> FlattenEmptyEntries(this IEnumerable<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter, int? maxDepth = default)
     {
         if (schemas == null) return Enumerable.Empty<OpenApiSchema>();
         ArgumentNullException.ThrowIfNull(subsequentGetter);

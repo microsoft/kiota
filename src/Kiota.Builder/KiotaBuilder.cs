@@ -1608,7 +1608,7 @@ public partial class KiotaBuilder
     }
     private CodeTypeBase CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody)
     {
-        var allOfs = schema.AllOf.FlattenEmptyEntries(static x => x.AllOf);
+        var allOfs = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf);
         CodeElement? codeDeclaration = null;
         var className = string.Empty;
         var codeNamespaceFromParent = GetShortestNamespace(codeNamespace, schema);

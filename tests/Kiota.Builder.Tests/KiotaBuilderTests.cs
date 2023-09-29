@@ -6866,4 +6866,107 @@ components:
         var addressClass = codeModel.FindChildByName<CodeClass>("Address");
         Assert.NotNull(addressClass);
     }
+    [Fact]
+    public async Task ComplexInheritanceStructures()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: Broken inheritance
+  version: '1'
+servers:
+- url: http://localhost
+paths:
+  '/groupclassification':
+    get:
+      summary: Example
+      description: Example
+      responses:
+        '200':
+          description: default response
+          content:
+            application/vnd.topicus.keyhub+json;version=latest:
+              schema:
+                '$ref': '#/components/schemas/group.GroupClassification'
+components:
+  schemas:
+    Linkable:
+      required:
+      - '$type'
+      type: object
+      properties:
+        '$type':
+          type: string
+      discriminator:
+        propertyName: '$type'
+        mapping:
+          group.GroupPrimer: '#/components/schemas/group.GroupPrimer'
+          group.GroupClassificationPrimer: '#/components/schemas/group.GroupClassificationPrimer'
+          group.GroupClassification: '#/components/schemas/group.GroupClassification'
+    group.GroupPrimer:
+      allOf:
+      - '$ref': '#/components/schemas/Linkable'
+      - type: object
+        properties:
+          markers:
+            '$ref': '#/components/schemas/mark.ItemMarkers'
+    NonLinkable:
+      required:
+      - '$type'
+      type: object
+      properties:
+        '$type':
+          type: string
+      discriminator:
+        propertyName: '$type'
+        mapping:
+          mark.ItemMarkers: '#/components/schemas/mark.ItemMarkers'
+          group.GroupsAuditStats: '#/components/schemas/group.GroupsAuditStats'
+    mark.ItemMarkers:
+      allOf:
+      - '$ref': '#/components/schemas/NonLinkable'
+      - type: object
+    group.GroupClassificationPrimer:
+      allOf:
+      - '$ref': '#/components/schemas/Linkable'
+      - required:
+        - '$type'
+        - name
+        type: object
+        properties:
+          '$type':
+            type: string
+          name:
+            type: string
+        discriminator:
+          propertyName: '$type'
+          mapping:
+            group.GroupClassification: '#/components/schemas/group.GroupClassification'
+    group.GroupClassification:
+      allOf:
+      - '$ref': '#/components/schemas/group.GroupClassificationPrimer'
+      - type: object
+        properties:
+          description:
+            type: string
+    group.GroupsAuditStats:
+      allOf:
+      - '$ref': '#/components/schemas/NonLinkable'
+      - type: object
+        properties:
+          classification:
+            '$ref': '#/components/schemas/group.GroupClassification'");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel.FindChildByName<CodeClass>("Linkable"));
+        var classificationClass = codeModel.FindChildByName<CodeClass>("GroupClassification");
+        Assert.Single(classificationClass.Properties.Where(static x => x.Name.Equals("description", StringComparison.OrdinalIgnoreCase)));
+        Assert.NotNull(classificationClass);
+        var classificationPrimerClass = codeModel.FindChildByName<CodeClass>("GroupClassificationPrimer");
+        Assert.NotNull(classificationPrimerClass);
+        Assert.Single(classificationPrimerClass.Properties.Where(static x => x.Name.Equals("name", StringComparison.OrdinalIgnoreCase)));
+    }
 }
