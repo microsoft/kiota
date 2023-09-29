@@ -1442,7 +1442,7 @@ public partial class KiotaBuilder
         {
             Name = codeName,
             SerializationName = codeName.Equals(x.Name, StringComparison.Ordinal) ? string.Empty : x.Name,
-            Type = GetQueryParameterType(x.Schema),
+            Type = x.Schema is null ? GetDefaultQueryParameterType() : GetQueryParameterType(x.Schema),
             Documentation = new()
             {
                 Description = x.Description.CleanupDescription(),
@@ -2320,6 +2320,15 @@ public partial class KiotaBuilder
         {
             logger.LogWarning("Ignoring duplicate parameter {Name}", parameter.Name);
         }
+    }
+
+    private static CodeType GetDefaultQueryParameterType()
+    {
+        return new()
+        {
+            IsExternal = true,
+            Name = "string",
+        };
     }
     private static CodeType GetQueryParameterType(OpenApiSchema schema) =>
         new()
