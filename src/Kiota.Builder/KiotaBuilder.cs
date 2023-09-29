@@ -1113,7 +1113,7 @@ public partial class KiotaBuilder
             IndexParameter = parameter,
         }};
 
-        if (!"string".Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase))
+        if (!"string".Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase) && config.IncludeBackwardCompatible)
         { // adding a second indexer for the string version of the parameter so we keep backward compatibility
             //TODO remove for v2
             var backCompatibleValue = (CodeIndexer)result[0].Clone();
@@ -1265,11 +1265,55 @@ public partial class KiotaBuilder
                 executorMethod.AddErrorMapping(errorCode, errorType);
         }
     }
-    private CodeTypeBase? GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, OpenApiSchema? schema, OpenApiOperation operation, CodeClass parentClass)
+    private (CodeTypeBase?, CodeTypeBase?) GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, OpenApiSchema? schema, OpenApiOperation operation, CodeClass parentClass, OperationType operationType)
     {
         if (schema != null)
         {
-            return CreateModelDeclarations(currentNode, schema, operation, parentClass, "Response");
+            var suffix = $"{operationType}Response";
+            var modelType = CreateModelDeclarations(currentNode, schema, operation, parentClass, suffix);
+            if (modelType is not null && config.IncludeBackwardCompatible && config.Language is GenerationLanguage.CSharp or GenerationLanguage.Go && modelType.Name.EndsWith(suffix, StringComparison.Ordinal))
+            { //TODO remove for v2
+                var obsoleteTypeName = modelType.Name[..^suffix.Length] + "Response";
+                if (modelType is CodeType codeType &&
+                    codeType.TypeDefinition is CodeClass codeClass)
+                {
+                    var obsoleteClassDefinition = new CodeClass
+                    {
+                        Kind = CodeClassKind.Model,
+                        Name = obsoleteTypeName,
+                        Deprecation = new($"This class is obsolete. Use {modelType.Name} instead.", IsDeprecated: true),
+                        Documentation = (CodeDocumentation)codeClass.Documentation.Clone()
+                    };
+                    var originalFactoryMethod = codeClass.Methods.First(static x => x.Kind is CodeMethodKind.Factory);
+                    var obsoleteFactoryMethod = (CodeMethod)originalFactoryMethod.Clone();
+                    obsoleteFactoryMethod.ReturnType = new CodeType { Name = obsoleteTypeName, TypeDefinition = obsoleteClassDefinition };
+                    obsoleteClassDefinition.AddMethod(obsoleteFactoryMethod);
+                    obsoleteClassDefinition.StartBlock.Inherits = (CodeType)codeType.Clone();
+                    var obsoleteClass = codeClass.Parent switch
+                    {
+                        CodeClass modelParentClass => modelParentClass.AddInnerClass(obsoleteClassDefinition).First(),
+                        CodeNamespace modelParentNamespace => modelParentNamespace.AddClass(obsoleteClassDefinition).First(),
+                        _ => throw new InvalidOperationException("Could not find a valid parent for the obsolete class")
+                    };
+                    return (modelType, new CodeType
+                    {
+                        TypeDefinition = obsoleteClass,
+                    });
+                }
+                else if (modelType is CodeComposedTypeBase codeComposedTypeBase)
+                {
+                    var obsoleteComposedType = codeComposedTypeBase switch
+                    {
+                        CodeUnionType u => (CodeComposedTypeBase)u.Clone(),
+                        CodeIntersectionType i => (CodeComposedTypeBase)i.Clone(),
+                        _ => throw new InvalidOperationException("Could not create an obsolete composed type"),
+                    };
+                    obsoleteComposedType.Name = obsoleteTypeName;
+                    obsoleteComposedType.Deprecation = new($"This class is obsolete. Use {modelType.Name} instead.", IsDeprecated: true);
+                    return (modelType, obsoleteComposedType);
+                }
+            }
+            return (modelType, null);
         }
         else
         {
@@ -1280,7 +1324,7 @@ public partial class KiotaBuilder
                 returnType = "string";
             else
                 returnType = "binary";
-            return new CodeType { Name = returnType, IsExternal = true, };
+            return (new CodeType { Name = returnType, IsExternal = true, }, null);
         }
     }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
@@ -1301,6 +1345,7 @@ public partial class KiotaBuilder
             var schema = operation.GetResponseSchema(config.StructuredMimeTypes);
             var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
             var deprecationInformation = operation.GetDeprecationInformation();
+            var returnTypes = GetExecutorMethodReturnType(currentNode, schema, operation, parentClass, operationType);
             var executorMethod = new CodeMethod
             {
                 Name = operationType.ToString(),
@@ -1316,7 +1361,7 @@ public partial class KiotaBuilder
                                     operation.Summary)
                                     .CleanupDescription(),
                 },
-                ReturnType = GetExecutorMethodReturnType(currentNode, schema, operation, parentClass) ?? throw new InvalidSchemaException(),
+                ReturnType = returnTypes.Item1 ?? throw new InvalidSchemaException(),
                 Deprecation = deprecationInformation,
             };
 
@@ -1347,6 +1392,17 @@ public partial class KiotaBuilder
                 Type = new CodeType { Name = "CancellationToken", IsExternal = true },
             };
             executorMethod.AddParameter(cancellationParam);// Add cancellation token parameter
+
+            if (returnTypes.Item2 is not null && config.IncludeBackwardCompatible)
+            { //TODO remove for v2
+                var additionalExecutorMethod = (CodeMethod)executorMethod.Clone();
+                additionalExecutorMethod.ReturnType = returnTypes.Item2;
+                additionalExecutorMethod.OriginalMethod = executorMethod;
+                var newName = $"{executorMethod.Name}As{executorMethod.ReturnType.Name.ToFirstCharacterUpperCase()}";
+                additionalExecutorMethod.Deprecation = new($"This method is obsolete. Use {newName} instead.", IsDeprecated: true);
+                parentClass.RenameChildElement(executorMethod.Name, newName);
+                parentClass.AddMethod(additionalExecutorMethod);
+            }
             logger.LogTrace("Creating method {Name} of {Type}", executorMethod.Name, executorMethod.ReturnType);
 
             var generatorMethod = new CodeMethod

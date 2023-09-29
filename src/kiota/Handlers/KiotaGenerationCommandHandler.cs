@@ -71,6 +71,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
         string manifest = context.ParseResult.GetValueForOption(ManifestOption) ?? string.Empty;
         bool backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
+        bool excludeBackwardCompatible = context.ParseResult.GetValueForOption(ExcludeBackwardCompatibleOption);
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         bool includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
@@ -89,6 +90,7 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
         AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
         AssignIfNotNullOrEmpty(namespaceName, (c, s) => c.ClientNamespaceName = s);
         Configuration.Generation.UsesBackingStore = backingStore;
+        Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible;
         Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
         Configuration.Generation.Language = language;
         if (serializer.Any())
@@ -166,5 +168,10 @@ internal class KiotaGenerationCommandHandler : BaseKiotaCommandHandler
     public required Option<string> ManifestOption
     {
         get; init;
+    }
+    public required Option<bool> ExcludeBackwardCompatibleOption
+    {
+        get;
+        set;
     }
 }

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using kiota.Handlers;
 using kiota.Rpc;
@@ -11,7 +10,6 @@ using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Validation;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Validations;
 
 namespace kiota;
 public static class KiotaHost
@@ -344,6 +342,9 @@ public static class KiotaHost
         var backingStoreOption = new Option<bool>("--backing-store", () => defaultConfiguration.UsesBackingStore, "Enables backing store for models.");
         backingStoreOption.AddAlias("-b");
 
+        var excludeBackwardCompatible = new Option<bool>("--exclude-backward-compatible", () => defaultConfiguration.ExcludeBackwardCompatible, "Excludes backward compatible and obsolete assets from the generated result. Should be used for new clients.");
+        excludeBackwardCompatible.AddAlias("--ebc");
+
         var additionalDataOption = new Option<bool>("--additional-data", () => defaultConfiguration.IncludeAdditionalData, "Will include the 'AdditionalData' property for models.");
         additionalDataOption.AddAlias("--ad");
 
@@ -384,6 +385,7 @@ public static class KiotaHost
             namespaceOption,
             logLevelOption,
             backingStoreOption,
+            excludeBackwardCompatible,
             additionalDataOption,
             serializerOption,
             deserializerOption,
@@ -404,6 +406,7 @@ public static class KiotaHost
             NamespaceOption = namespaceOption,
             LogLevelOption = logLevelOption,
             BackingStoreOption = backingStoreOption,
+            ExcludeBackwardCompatibleOption = excludeBackwardCompatible,
             AdditionalDataOption = additionalDataOption,
             SerializerOption = serializerOption,
             DeserializerOption = deserializerOption,

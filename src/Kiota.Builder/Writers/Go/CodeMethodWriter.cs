@@ -42,7 +42,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             case CodeMethodKind.RequestGenerator when !codeElement.IsOverload:
                 WriteRequestGeneratorBody(codeElement, requestParams, writer, parentClass);
                 break;
-            case CodeMethodKind.RequestExecutor when !codeElement.IsOverload:
+            case CodeMethodKind.RequestExecutor when !codeElement.IsOverload || (codeElement.Deprecation?.IsDeprecated ?? false): //TODO remove deprecation condition for v2
                 WriteRequestExecutorBody(codeElement, requestParams, returnType, parentClass, writer);
                 break;
             case CodeMethodKind.Getter:

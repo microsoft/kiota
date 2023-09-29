@@ -45,6 +45,13 @@ public class KiotaLock
         get; set;
     }
     /// <summary>
+    /// Whether backward compatible code was excluded for this client.
+    /// </summary>
+    public bool ExcludeBackwardCompatible
+    {
+        get; set;
+    }
+    /// <summary>
     /// Whether additional data was used for this client.
     /// </summary>
     public bool IncludeAdditionalData
@@ -89,6 +96,7 @@ public class KiotaLock
         if (Enum.TryParse<GenerationLanguage>(Language, out var parsedLanguage))
             config.Language = parsedLanguage;
         config.UsesBackingStore = UsesBackingStore;
+        config.ExcludeBackwardCompatible = ExcludeBackwardCompatible;
         config.IncludeAdditionalData = IncludeAdditionalData;
         config.Serializers = Serializers;
         config.Deserializers = Deserializers;
@@ -115,6 +123,7 @@ public class KiotaLock
         ClientClassName = config.ClientClassName;
         ClientNamespaceName = config.ClientNamespaceName;
         UsesBackingStore = config.UsesBackingStore;
+        ExcludeBackwardCompatible = config.ExcludeBackwardCompatible;
         IncludeAdditionalData = config.IncludeAdditionalData;
         Serializers = config.Serializers;
         Deserializers = config.Deserializers;

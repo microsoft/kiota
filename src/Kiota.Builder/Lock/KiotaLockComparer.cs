@@ -21,14 +21,15 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
     {
         if (obj == null) return 0;
         return
-            _stringIEnumerableDeepComparer.GetHashCode(obj.DisabledValidationRules?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 47 +
-            obj.KiotaVersion.GetHashCode(StringComparison.OrdinalIgnoreCase) * 43 +
-            obj.LockFileVersion.GetHashCode(StringComparison.OrdinalIgnoreCase) * 41 +
-            (string.IsNullOrEmpty(obj.DescriptionLocation) ? 0 : obj.DescriptionLocation.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 37 +
-            (string.IsNullOrEmpty(obj.DescriptionHash) ? 0 : obj.DescriptionHash.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 31 +
-            (string.IsNullOrEmpty(obj.ClientClassName) ? 0 : obj.ClientClassName.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 29 +
-            (string.IsNullOrEmpty(obj.ClientNamespaceName) ? 0 : obj.ClientNamespaceName.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 23 +
-            (string.IsNullOrEmpty(obj.Language) ? 0 : obj.Language.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 19 +
+            _stringIEnumerableDeepComparer.GetHashCode(obj.DisabledValidationRules?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 53 +
+            obj.KiotaVersion.GetHashCode(StringComparison.OrdinalIgnoreCase) * 47 +
+            obj.LockFileVersion.GetHashCode(StringComparison.OrdinalIgnoreCase) * 43 +
+            (string.IsNullOrEmpty(obj.DescriptionLocation) ? 0 : obj.DescriptionLocation.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 41 +
+            (string.IsNullOrEmpty(obj.DescriptionHash) ? 0 : obj.DescriptionHash.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 37 +
+            (string.IsNullOrEmpty(obj.ClientClassName) ? 0 : obj.ClientClassName.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 31 +
+            (string.IsNullOrEmpty(obj.ClientNamespaceName) ? 0 : obj.ClientNamespaceName.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 29 +
+            (string.IsNullOrEmpty(obj.Language) ? 0 : obj.Language.GetHashCode(StringComparison.OrdinalIgnoreCase)) * 23 +
+            obj.ExcludeBackwardCompatible.GetHashCode() * 19 +
             obj.UsesBackingStore.GetHashCode() * 17 +
             obj.IncludeAdditionalData.GetHashCode() * 13 +
             _stringIEnumerableDeepComparer.GetHashCode(obj.Serializers?.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>()) * 11 +

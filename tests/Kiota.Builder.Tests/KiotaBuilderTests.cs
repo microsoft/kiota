@@ -1112,7 +1112,7 @@ paths:
         var codeModel = builder.CreateSourceModel(node);
         var userClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("user");
         Assert.NotNull(userClass);
-        var userResponseClass = codeModel.FindNamespaceByName("ApiSdk.users.item").FindChildByName<CodeClass>("UsersResponse", false);
+        var userResponseClass = codeModel.FindNamespaceByName("ApiSdk.users.item").FindChildByName<CodeClass>("UsersGetResponse", false);
         Assert.NotNull(userResponseClass);
         var valueProp = userResponseClass.FindChildByName<CodeProperty>("value", false);
         Assert.NotNull(valueProp);
@@ -1613,9 +1613,9 @@ paths:
         var codeModel = builder.CreateSourceModel(node);
         var resourceClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("resource");
         var itemsNS = codeModel.FindNamespaceByName("ApiSdk.resource.item");
-        var responseClass = itemsNS.FindChildByName<CodeClass>("ResourceResponse");
-        var derivedResourceClass = itemsNS.FindChildByName<CodeClass>("ResourceResponse_derivedResource");
-        var derivedResourceInfoClass = itemsNS.FindChildByName<CodeClass>("ResourceResponse_derivedResource_info");
+        var responseClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse");
+        var derivedResourceClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse_derivedResource");
+        var derivedResourceInfoClass = itemsNS.FindChildByName<CodeClass>("ResourceGetResponse_derivedResource_info");
 
 
         Assert.NotNull(resourceClass);
@@ -3455,7 +3455,7 @@ paths:
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Assert.Contains("simpleObject", typeNames);
-        Assert.Contains("unionTypeResponseMember1", typeNames);
+        Assert.Contains("unionTypeGetResponseMember1", typeNames);
     }
     [Fact]
     public void IntersectionOfPrimitiveTypesWorks()
@@ -3614,7 +3614,7 @@ paths:
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Assert.Contains("simpleObject", typeNames);
-        Assert.Contains("unionTypeResponseMember1", typeNames);
+        Assert.Contains("unionTypeGetResponseMember1", typeNames);
     }
     [Fact]
     public void InheritedTypeWithInlineSchemaWorks()
@@ -4636,8 +4636,10 @@ paths:
         Assert.NotNull(executorMethod);
         Assert.Equal("myobject", executorMethod.ReturnType.Name);
     }
-    [Fact]
-    public void ModelsUseDescriptionWhenAvailable()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ModelsUseDescriptionWhenAvailable(bool excludeBackwardCompatible)
     {
         var document = new OpenApiDocument
         {
@@ -4677,20 +4679,35 @@ paths:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost", ExcludeBackwardCompatible = excludeBackwardCompatible }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsSubNS = codeModel.FindNamespaceByName("TestSdk.answer");
         Assert.NotNull(modelsSubNS);
-        var responseClass = modelsSubNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model));
+        var responseClass = modelsSubNS.FindChildByName<CodeClass>("AnswerGetResponse", false);
         Assert.NotNull(responseClass);
         Assert.Equal("some description", responseClass.Documentation.Description);
 
-        responseClass = modelsSubNS.Classes.FirstOrDefault(c => c.IsOfKind(CodeClassKind.RequestBuilder));
-        Assert.NotNull(responseClass);
-        Assert.Equal("some path item description", responseClass.Documentation.Description);
+        var obsoleteResponseClass = modelsSubNS.FindChildByName<CodeClass>("AnswerResponse", false);
+        if (excludeBackwardCompatible)
+            Assert.Null(obsoleteResponseClass);
+        else
+        {
+            Assert.NotNull(obsoleteResponseClass);
+            Assert.Equal("some description", obsoleteResponseClass.Documentation.Description);
+            Assert.True(obsoleteResponseClass.Deprecation.IsDeprecated);
+        }
 
-        var responseProperty = codeModel.FindNamespaceByName("TestSdk").Classes.SelectMany(c => c.Properties).FirstOrDefault(p => p.Kind == CodePropertyKind.RequestBuilder);
+        var requestBuilderClass = modelsSubNS.Classes.FirstOrDefault(static c => c.IsOfKind(CodeClassKind.RequestBuilder));
+        Assert.NotNull(requestBuilderClass);
+        Assert.Equal("some path item description", requestBuilderClass.Documentation.Description);
+
+        if (excludeBackwardCompatible)
+            Assert.Single(requestBuilderClass.Methods.Where(static x => x.Kind is CodeMethodKind.RequestExecutor));
+        else
+            Assert.Equal(2, requestBuilderClass.Methods.Where(static x => x.Kind is CodeMethodKind.RequestExecutor).Count());
+
+        var responseProperty = codeModel.FindNamespaceByName("TestSdk").Classes.SelectMany(c => c.Properties).FirstOrDefault(static p => p.Kind == CodePropertyKind.RequestBuilder);
         Assert.NotNull(responseProperty);
         Assert.Equal("some path item description", responseProperty.Documentation.Description);
     }
@@ -6213,7 +6230,7 @@ paths:
         var codeModel = builder.CreateSourceModel(node);
         var rootNS = codeModel.FindNamespaceByName("ApiSdk");
         Assert.NotNull(rootNS);
-        var inlineType = rootNS.FindChildByName<CodeClass>($"enumerationResponse_{expected}", true);
+        var inlineType = rootNS.FindChildByName<CodeClass>($"enumerationGetResponse_{expected}", true);
         Assert.NotNull(inlineType);
     }
     [Fact]
@@ -6525,7 +6542,7 @@ components:
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectResponse");
+        var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectGetResponse");
         Assert.NotNull(resultClass);
         Assert.Equal(4, resultClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom)).Count());
     }
@@ -6565,7 +6582,7 @@ paths:
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectResponse");
+        var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectGetResponse");
         Assert.NotNull(resultClass);
         var keysToCheck = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "datasets", "datakeys", "datainfo" };
         Assert.Empty(resultClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.Custom) && keysToCheck.Contains(x.Name)));
