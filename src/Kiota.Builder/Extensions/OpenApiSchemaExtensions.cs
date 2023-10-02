@@ -32,7 +32,8 @@ public static class OpenApiSchemaExtensions
     }
     internal static IEnumerable<OpenApiSchema> FlattenSchemaIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter)
     {
-        return schemas.Count == 1 && string.IsNullOrEmpty(schemas[0].Title) ?
+        if (schemas is null) return Enumerable.Empty<OpenApiSchema>();
+        return schemas.Count == 1 ?
                     schemas.FlattenEmptyEntries(subsequentGetter, 1) :
                     schemas;
     }
@@ -74,8 +75,9 @@ public static class OpenApiSchemaExtensions
 
     public static bool IsInherited(this OpenApiSchema? schema)
     {
-        var meaningfulSchemas = schema?.AllOf?.Where(IsSemanticallyMeaningful);
-        return meaningfulSchemas?.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) == 1 && meaningfulSchemas.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) == 1;
+        if (schema is null) return false;
+        var meaningfulSchemas = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).Where(IsSemanticallyMeaningful).ToArray();
+        return meaningfulSchemas.Count(static x => !string.IsNullOrEmpty(x.Reference?.Id)) == 1 && meaningfulSchemas.Count(static x => string.IsNullOrEmpty(x.Reference?.Id)) == 1;
     }
 
     internal static OpenApiSchema? MergeIntersectionSchemaEntries(this OpenApiSchema? schema)
@@ -99,7 +101,7 @@ public static class OpenApiSchemaExtensions
     {
         return schema?.OneOf?.Count(IsSemanticallyMeaningful) > 1;
     }
-    private static readonly HashSet<string> oDataTypes = new() {
+    private static readonly HashSet<string> oDataTypes = new(StringComparer.OrdinalIgnoreCase) {
         "number",
         "integer",
     };

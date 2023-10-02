@@ -6993,6 +6993,7 @@ paths:
 components:
   schemas:
     microsoft.graph.directoryObject:
+      type: object
       allOf:
         - title: 'directoryObject'
           required: ['@odata.type']
