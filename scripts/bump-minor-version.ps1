@@ -6,6 +6,7 @@ $mainCsprojContent = [xml](Get-Content -Path $mainCSProjpath)
 $version = $mainCsprojContent.Project.PropertyGroup[0].VersionPrefix
 $versionParts = $version.Split(".")
 $versionParts[1] = [int]$versionParts[1] + 1
+$versionParts[2] = 0
 $version = $versionParts -join "."
 $mainCsprojContent.Project.PropertyGroup[0].VersionPrefix = $version
 Format-XMLIndent -Content $mainCsprojContent | Set-Content -Path $mainCSProjpath -Encoding utf8
