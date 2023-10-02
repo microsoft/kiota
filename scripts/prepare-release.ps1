@@ -5,28 +5,8 @@ param (
     $date
 )
 
-Function Format-XMLIndent {
-    param
-    (
-        [xml]$Content
-    )
-
-    # String Writer and XML Writer objects to write XML to string
-    $StringWriter = New-Object System.IO.StringWriter 
-    $XmlWriter = New-Object System.XMl.XmlTextWriter $StringWriter 
-
-    # Default = None, change Formatting to Indented
-    $xmlWriter.Formatting = "indented" 
-
-    # Gets or sets how many IndentChars to write for each level in 
-    # the hierarchy when Formatting is set to Formatting.Indented
-    $xmlWriter.Indentation = 2
-    
-    $Content.WriteContentTo($XmlWriter) 
-    $XmlWriter.Flush();
-    $StringWriter.Flush() 
-    return $StringWriter.ToString()
-}
+$indentContentScriptPath = Join-Path -Path $PSScriptRoot -ChildPath "indent-xml-content.ps1"
+. $indentContentScriptPath
 
 if ($date -eq $null -or $date -eq "") {
     $date = Get-Date -Format "yyyy-MM-dd"
@@ -36,7 +16,7 @@ if ($date -eq $null -or $date -eq "") {
 $mainCSProjpath = Join-Path -Path $PSScriptRoot -ChildPath "../src/kiota/kiota.csproj"
 $mainCsprojContent = [xml](Get-Content -Path $mainCSProjpath)
 if ($version -eq $null -or $version -eq "") {
-    $version = $mainCsprojContent.Project.PropertyGroup.VersionPrefix
+    $version = $mainCsprojContent.Project.PropertyGroup[0].VersionPrefix
     Write-Information "No version provided, using $version"
 }
 else {
