@@ -131,10 +131,6 @@
     ],
     "Suppressions": [
       {
-        "Language": "java",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2954"
-      },
-      {
         "Language": "go",
         "Rationale": "https://github.com/microsoft/kiota/issues/2955"
       },
