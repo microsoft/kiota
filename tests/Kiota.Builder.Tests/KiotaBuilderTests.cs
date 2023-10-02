@@ -783,6 +783,30 @@ servers:
         Assert.Null(extensionResult);
     }
     [Fact]
+    public async Task DoesntFailOnParameterWithoutSchemaKiotaExtension()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStream(@"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  '/users/{user-id}':
+    get:
+      parameters:
+      - name: user-id
+        in: path");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, Language = GenerationLanguage.CLI }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var model = builder.CreateSourceModel(node);
+        Assert.NotNull(model);
+    }
+    [Fact]
     public async Task GetsUrlTreeNode()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
