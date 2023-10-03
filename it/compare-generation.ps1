@@ -61,15 +61,15 @@ else {
 $tmpFolder1 = New-TemporaryDirectory
 $tmpFolder2 = New-TemporaryDirectory
 
-Start-Process "./publish/kiota" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath} --dvr all --output $tmpFolder1" -Wait -NoNewWindow
-Start-Process "./src/kiota/bin/Debug/net7.0/kiota" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath} --dvr all --output $tmpFolder2" -Wait -NoNewWindow
+Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath} --dvr all --output $tmpFolder1" -Wait -NoNewWindow
+Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath} --dvr all --output $tmpFolder2" -Wait -NoNewWindow
 
 # Remove variable output files
-Remove-Item -Force (Join-Path -Path $tmpFolder1 -ChildPath "kiota-lock.json")
+Remove-Item (Join-Path -Path $tmpFolder1 -ChildPath "kiota-lock.json")
 if (Test-Path (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log")) {
     Remove-Item -Force (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log")
 }
-Remove-Item -Force (Join-Path -Path $tmpFolder2 -ChildPath "kiota-lock.json")
+Remove-Item (Join-Path -Path $tmpFolder2 -ChildPath "kiota-lock.json")
 if (Test-Path (Join-Path -Path $tmpFolder2 -ChildPath ".kiota.log")) {
     Remove-Item -Force (Join-Path -Path $tmpFolder2 -ChildPath ".kiota.log")
 }
@@ -83,8 +83,6 @@ Get-FileHash -InputStream ([IO.MemoryStream]::new([char[]]$HashString2))
 
 Write-Output "Folder 1: $tmpFolder1"
 Write-Output "Folder 2: $tmpFolder2"
-
-diff -r --color $tmpFolder1 $tmpFolder2
 
 if ($HashString1 -eq $HashString2) {
     Write-Output "The content of the folders is identical"
