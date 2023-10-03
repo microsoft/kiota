@@ -23,4 +23,17 @@ public sealed class StructuredMimeTypesCollectionTests
         Assert.Equal(1, mimeTypes.GetPriority("application/json"));
         Assert.Equal(0.8f, mimeTypes.GetPriority("application/xml"));
     }
+    [Fact]
+    public void DoesNotAddDuplicates()
+    {
+        Assert.Throws<ArgumentException>(() => new StructuredMimeTypesCollection(new[] { "application/json", "application/json;q=0.8" }));
+    }
+    [Fact]
+    public void ClearsEntries()
+    {
+        var mimeTypes = new StructuredMimeTypesCollection(new[] { "application/json", "application/xml;q=0.8" });
+        Assert.Equal(2, mimeTypes.Count);
+        mimeTypes.Clear();
+        Assert.Empty(mimeTypes);
+    }
 }
