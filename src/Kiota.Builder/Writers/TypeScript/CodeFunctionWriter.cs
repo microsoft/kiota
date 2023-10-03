@@ -246,13 +246,15 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         {
             var resultName = $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
             if (conventions.GetTypeString(targetClassType, currentElement, false) is string returnType && targetClassName.EqualsIgnoreCase(returnType)) return resultName;
-            if (targetClassType is CodeType currentType &&
-                currentType.TypeDefinition is CodeInterface definitionClass &&
-                definitionClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentNamespace &&
-                parentNamespace.FindChildByName<CodeFunction>(resultName) is CodeFunction factoryMethod)
+            if (targetClassType is CodeType currentType && currentType.TypeDefinition is CodeInterface definitionClass)
             {
-                var methodName = conventions.GetTypeString(new CodeType { Name = resultName, TypeDefinition = factoryMethod }, currentElement, false);
-                return methodName.ToFirstCharacterUpperCase();// static function is aliased
+                var factoryMethod = definitionClass.GetImmediateParentOfType<CodeFile>()?.FindChildByName<CodeFunction>(resultName) ?? 
+                                    definitionClass.GetImmediateParentOfType<CodeNamespace>()?.FindChildByName<CodeFunction>(resultName);
+                if (factoryMethod != null)
+                {
+                    var methodName = conventions.GetTypeString(new CodeType { Name = resultName, TypeDefinition = factoryMethod }, currentElement, false);
+                    return methodName.ToFirstCharacterUpperCase();// static function is aliased
+                }
             }
         }
         throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
