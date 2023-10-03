@@ -35,7 +35,7 @@ public class CodeFileDeclarationWriter : BaseElementWriter<CodeFileDeclaration, 
             // remove duplicate using, keep a single using for each internal type in the same namespace
             var enumeratedUsing = usings.ToArray();
             var filteredUsing = enumeratedUsing.Where(static x => x.IsExternal)
-                .Union(enumeratedUsing.ToArray()
+                .Union(enumeratedUsing
                     .Where(static x => x is { IsExternal: false, Declaration.TypeDefinition: not null })
                     .GroupBy(static x =>
                         $"{x.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name}.{x.Declaration?.Name.ToLowerInvariant()}")
