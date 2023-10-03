@@ -42,7 +42,7 @@ internal partial class StructuredMimeTypesCollection : ICollection<string>
     }
     public IEnumerator<string> GetEnumerator()
     {
-        return _mimeTypes.OrderByDescending(static x => x.Value).Select(static x => $"{x.Key};q={x.Value}").GetEnumerator();
+        return _mimeTypes.OrderByDescending(static x => x.Value).Select(NormalizeMimeType).GetEnumerator();
     }
     IEnumerator IEnumerable.GetEnumerator()
     {
@@ -74,7 +74,15 @@ internal partial class StructuredMimeTypesCollection : ICollection<string>
 
     public void CopyTo(string[] array, int arrayIndex)
     {
-        _mimeTypes.OrderByDescending(static x => x.Value).Select(static x => $"{x.Key};q={x.Value}").ToArray().CopyTo(array, arrayIndex);
+        _mimeTypes.OrderByDescending(static x => x.Value).Select(NormalizeMimeType).ToArray().CopyTo(array, arrayIndex);
+    }
+    private static string NormalizeMimeType(KeyValuePair<string, float> mimeType)
+    {
+        return NormalizeMimeType(mimeType.Key, mimeType.Value);
+    }
+    private static string NormalizeMimeType(string key, float value)
+    {
+        return $"{key};q={value}";
     }
 
     public bool Remove(string item)
@@ -86,5 +94,14 @@ internal partial class StructuredMimeTypesCollection : ICollection<string>
         }
         else
             return false;
+    }
+    public IEnumerable<string> GetMatchingMimeTypes(IEnumerable<string> searchTypes)
+    {
+        ArgumentNullException.ThrowIfNull(searchTypes);
+        return searchTypes.Select(GetKeyAndPriority)
+                        .OfType<KeyValuePair<string, float>>()
+                        .Select(static x => x.Key)
+                        .Select(x => _mimeTypes.TryGetValue(x, out var result) ? NormalizeMimeType(x, result) : null)
+                        .OfType<string>();
     }
 }

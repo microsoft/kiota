@@ -1420,9 +1420,10 @@ public partial class KiotaBuilder
                 Deprecation = deprecationInformation,
             };
             if (schema != null)
-            {
-                var mediaType = operation.Responses.Values.SelectMany(static x => x.Content).First(x => x.Value.Schema == schema).Key;
-                generatorMethod.AcceptedResponseTypes.Add(mediaType);
+            {//TODO compare schemas by openapi reference and by reference
+                var mediaTypes = config.OrderedStructuredMimeTypes.GetMatchingMimeTypes(operation.Responses.Values.SelectMany(static x => x.Content).Where(x => x.Value.Schema == schema).Select(static x => x.Key));
+                foreach (var mediaType in mediaTypes)
+                    generatorMethod.AcceptedResponseTypes.Add(mediaType);
             }
             if (config.Language == GenerationLanguage.CLI)
                 SetPathAndQueryParameters(generatorMethod, currentNode, operation);

@@ -9,6 +9,7 @@ using Kiota.Builder.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Moq;
+using SharpYaml.Tokens;
 using Xunit;
 
 namespace Kiota.Builder.Tests;
@@ -245,5 +246,91 @@ public sealed class ContentTypeMappingTests : IDisposable
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
         Assert.Equal(parameterType, executor.Parameters.OfKind(CodeParameterKind.RequestBody).Type.Name);
+    }
+    [Theory]
+    [InlineData("application/json, text/plain", "application/json", "application/json;q=1")]
+    public void GeneratesTheRightAcceptHeaderBasedOnContentAndStatus(string acceptHeader, string structuredMimeTypes, string expectedAcceptHeader)
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = acceptHeader.Split(',').Select(x => new {Key = x.Trim(), value = new OpenApiMediaType {
+                                            Schema = new OpenApiSchema {
+                                                Type = "object",
+                                                Properties = new Dictionary<string, OpenApiSchema> {
+                                                    {
+                                                        "id", new OpenApiSchema {
+                                                            Type = "string",
+                                                        }
+                                                    }
+                                                },
+                                                Reference = new OpenApiReference
+                                                {
+                                                    Id = "myobject",
+                                                    Type = ReferenceType.Schema
+                                                },
+                                                UnresolvedReference = false
+                                            }
+                                        }
+                                    }).ToDictionary(x => x.Key, x => x.value)
+                                },
+                            }
+                        }
+                    }
+                }
+            },
+            Components = new()
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", new OpenApiSchema {
+                            Type = "object",
+                            Properties = new Dictionary<string, OpenApiSchema> {
+                                {
+                                    "id", new OpenApiSchema {
+                                        Type = "string",
+                                    }
+                                }
+                            },
+                            Reference = new OpenApiReference
+                            {
+                                Id = "myobject",
+                                Type = ReferenceType.Schema
+                            },
+                            UnresolvedReference = false
+                        }
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration
+            {
+                ClientClassName = "TestClient",
+                ClientNamespaceName = "TestSdk",
+                ApiRootUrl = "https://localhost",
+                StructuredMimeTypes = new() { structuredMimeTypes }
+            }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
+        Assert.NotNull(rbNS);
+        var rbClass = rbNS.Classes.FirstOrDefault(static x => x.IsOfKind(CodeClassKind.RequestBuilder));
+        Assert.NotNull(rbClass);
+        var generator = rbClass.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.RequestGenerator));
+        Assert.NotNull(generator);
+        foreach (var header in expectedAcceptHeader.Split(','))
+            Assert.Contains(header.Trim(), generator.AcceptedResponseTypes);
     }
 }
