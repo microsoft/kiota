@@ -13,7 +13,7 @@ public static class OpenApiOperationExtensions
     /// cleans application/vnd.github.mercy-preview+json to application/json
     /// </summary>
     private static readonly Regex vendorSpecificCleanup = new(@"[^/]+\+", RegexOptions.Compiled, Constants.DefaultRegexTimeout);
-    public static OpenApiSchema? GetResponseSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
+    internal static OpenApiSchema? GetResponseSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
     {
         ArgumentNullException.ThrowIfNull(operation);
         // Return Schema that represents all the possible success responses!
@@ -27,19 +27,19 @@ public static class OpenApiOperationExtensions
                             .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
                             .SelectMany(re => re.Value.Content.GetValidSchemas(structuredMimeTypes));
     }
-    public static OpenApiSchema? GetRequestSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
+    internal static OpenApiSchema? GetRequestSchema(this OpenApiOperation operation, HashSet<string> structuredMimeTypes)
     {
         ArgumentNullException.ThrowIfNull(operation);
         return operation.RequestBody?.Content
                             .GetValidSchemas(structuredMimeTypes).FirstOrDefault();
     }
     private static readonly HashSet<string> multipartMimeTypes = new(1, StringComparer.OrdinalIgnoreCase) { "multipart/form-data" };
-    public static bool IsMultipartFormDataSchema(this IDictionary<string, OpenApiMediaType> source, HashSet<string> structuredMimeTypes)
+    internal static bool IsMultipartFormDataSchema(this IDictionary<string, OpenApiMediaType> source, HashSet<string> structuredMimeTypes)
     {
         return source.GetValidSchemas(structuredMimeTypes).FirstOrDefault() is OpenApiSchema schema &&
         source.GetValidSchemas(multipartMimeTypes).FirstOrDefault() == schema;
     }
-    public static IEnumerable<OpenApiSchema> GetValidSchemas(this IDictionary<string, OpenApiMediaType> source, HashSet<string> structuredMimeTypes)
+    internal static IEnumerable<OpenApiSchema> GetValidSchemas(this IDictionary<string, OpenApiMediaType> source, HashSet<string> structuredMimeTypes)
     {
         if (!(structuredMimeTypes?.Any() ?? false))
             throw new ArgumentNullException(nameof(structuredMimeTypes));
@@ -51,7 +51,7 @@ public static class OpenApiOperationExtensions
                             .Where(static s => s is not null) ??
                         Enumerable.Empty<OpenApiSchema>();
     }
-    public static OpenApiSchema? GetResponseSchema(this OpenApiResponse response, HashSet<string> structuredMimeTypes)
+    internal static OpenApiSchema? GetResponseSchema(this OpenApiResponse response, HashSet<string> structuredMimeTypes)
     {
         ArgumentNullException.ThrowIfNull(response);
         return response.Content.GetValidSchemas(structuredMimeTypes).FirstOrDefault();
