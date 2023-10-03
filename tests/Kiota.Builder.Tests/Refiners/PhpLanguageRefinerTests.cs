@@ -249,16 +249,16 @@ public class PhpLanguageRefinerTests
             Name = "Parent"
         };
         root.AddClass(model, parent);
-        
+
         var composedType = new CodeUnionType { Name = "Union" };
-        composedType.AddType(new CodeType { Name = "string" }, new CodeType { Name = "int"});
-        
+        composedType.AddType(new CodeType { Name = "string" }, new CodeType { Name = "int" });
+
         var composedProperty = parent.AddProperty(new CodeProperty
         {
             Name = "property",
             Type = composedType
         }).First();
-        
+
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.NotNull(root.FindChildByName<CodeClass>("UnionWrapper", false));
     }
