@@ -814,7 +814,7 @@ public class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("var response = await reqAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken) ?? Stream.Null;", result);
         Assert.Contains("IOutputFormatterFactory outputFormatterFactory = invocationContext.BindingContext.GetService(typeof(IOutputFormatterFactory)) as IOutputFormatterFactory ?? throw new ArgumentNullException(\"outputFormatterFactory\");", result);
         Assert.Contains("var formatter = outputFormatterFactory.GetFormatter(FormatterType.TEXT);", result);
-        Assert.Contains("await formatter.WriteOutputAsync(response, null, cancellationToken);", result);
+        Assert.Contains("await formatter.WriteOutputAsync(response, cancellationToken);", result);
         Assert.Contains("});", result);
         Assert.Contains("return command;", result);
     }
@@ -883,7 +883,7 @@ public class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("var response = await reqAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken) ?? Stream.Null;", result);
         Assert.Contains("IOutputFormatterFactory outputFormatterFactory = invocationContext.BindingContext.GetService(typeof(IOutputFormatterFactory)) as IOutputFormatterFactory ?? throw new ArgumentNullException(\"outputFormatterFactory\");", result);
         Assert.Contains("var formatter = outputFormatterFactory.GetFormatter(FormatterType.TEXT);", result);
-        Assert.Contains("await formatter.WriteOutputAsync(response, null, cancellationToken);", result);
+        Assert.Contains("await formatter.WriteOutputAsync(response, cancellationToken);", result);
         Assert.Contains("});", result);
         Assert.Contains("return command;", result);
     }
@@ -939,10 +939,8 @@ public class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("command.Description = \"Test description\";", result);
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
-        Assert.Contains("var jsonNoIndentOption = new Option<bool>(\"--json-no-indent\", r => {", result);
         Assert.Contains("var allOption = new Option<bool>(\"--all\")", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("command.AddOption(jsonNoIndentOption);", result);
         Assert.Contains("command.AddOption(outputOption);", result);
         Assert.Contains("command.AddOption(allOption);", result);
         Assert.Contains("command.SetHandler(async (invocationContext) => {", result);
@@ -953,13 +951,12 @@ public class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("var pagingData = new PageLinkData(requestInfo, null, itemName: \"item\", nextLinkName: \"nextLink\");", result);
         Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
         Assert.Contains("var pageResponse = await pagingService.GetPagedDataAsync((info, token) => reqAdapter.SendNoContentAsync(info, cancellationToken: token), pagingData, all, cancellationToken);", result);
-        Assert.Contains("formatterOptions = output.GetOutputFormatterOptions(new FormatterOptionsModel(!jsonNoIndent));", result);
         Assert.Contains("IOutputFormatter? formatter = null;", result);
         Assert.Contains("if (pageResponse?.StatusCode >= 200 && pageResponse?.StatusCode < 300) {", result);
         Assert.Contains("formatter = outputFormatterFactory.GetFormatter(output);", result);
         Assert.Contains("response = (response != Stream.Null) ? await outputFilter.FilterOutputAsync(response, query, cancellationToken) : response", result);
         Assert.Contains("formatter = outputFormatterFactory.GetFormatter(FormatterType.TEXT);", result);
-        Assert.Contains("await formatter.WriteOutputAsync(response, formatterOptions, cancellationToken);", result);
+        Assert.Contains("await formatter.WriteOutputAsync(response, cancellationToken);", result);
         Assert.Contains("});", result);
         Assert.Contains("return command;", result);
     }
@@ -1010,9 +1007,7 @@ public class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("command.Description = \"Test description\";", result);
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
-        Assert.Contains("var jsonNoIndentOption = new Option<bool>(\"--json-no-indent\", r => {", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("command.AddOption(jsonNoIndentOption);", result);
         Assert.Contains("command.AddOption(outputOption);", result);
         Assert.Contains("command.SetHandler(async (invocationContext) => {", result);
         Assert.Contains("var q = invocationContext.ParseResult.GetValueForOption(qOption);", result);
@@ -1020,9 +1015,8 @@ public class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
         Assert.Contains("var response = await reqAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken) ?? Stream.Null;", result);
-        Assert.Contains("var formatterOptions = output.GetOutputFormatterOptions(new FormatterOptionsModel(!jsonNoIndent));", result);
         Assert.Contains("response = (response != Stream.Null) ? await outputFilter.FilterOutputAsync(response, query, cancellationToken) : response", result);
-        Assert.Contains("await formatter.WriteOutputAsync(response, formatterOptions, cancellationToken);", result);
+        Assert.Contains("await formatter.WriteOutputAsync(response, cancellationToken);", result);
         Assert.Contains("});", result);
         Assert.Contains("return command;", result);
     }
@@ -1277,7 +1271,6 @@ public class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("Console.WriteLine(\"Success\");", result);
         Assert.Contains("return command;", result);
         Assert.DoesNotContain("command.AddOption(outputOption);", result);
-        Assert.DoesNotContain("var jsonNoIndentOption = new Option<bool>(\"--json-no-indent\", r => {", result);
     }
 
     [Fact]
@@ -1391,6 +1384,6 @@ public class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("Console.WriteLine(\"Success\");", result);
         Assert.Contains("return command;", result);
         Assert.DoesNotContain("response = (response != Stream.Null) ? await outputFilter.FilterOutputAsync(response, query, cancellationToken) : response", result);
-        Assert.DoesNotContain("await formatter.WriteOutputAsync(response, formatterOptions, cancellationToken);", result);
+        Assert.DoesNotContain("await formatter.WriteOutputAsync(response, cancellationToken);", result);
     }
 }
