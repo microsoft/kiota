@@ -664,8 +664,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
 
                 // Check for null model
                 // Add logging with reason for skipped execution here
-                writer.WriteLine("if (model is null)");
-                writer.StartBlock();
+                writer.StartBlock("if (model is null)");
                 writer.WriteLine("Console.Error.WriteLine(\"No model data to send.\");");
                 writer.WriteLine("return;");
                 writer.CloseBlock();
@@ -679,8 +678,7 @@ partial class CliCodeMethodWriter : CodeMethodWriter
                 requestBodyParam.Name = "stream";
                 // Check for file existence
                 // Add logging with reason for skipped execution here
-                writer.WriteLine($"if ({pName} is null || !{pName}.Exists)");
-                writer.StartBlock();
+                writer.StartBlock($"if ({pName} is null || !{pName}.Exists)");
                 writer.WriteLine("Console.Error.WriteLine(\"No available file to send.\");");
                 writer.WriteLine("return;");
                 writer.CloseBlock();
