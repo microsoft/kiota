@@ -268,7 +268,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     {
         return codeMethod.Kind switch
         {
-            CodeMethodKind.Deserializer => "array<string, callable(ParseNode): void>",
+            CodeMethodKind.Deserializer => "array<string|int, callable(ParseNode): void>",
             CodeMethodKind.Getter when codeMethod.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false => "array<string, mixed>",
             CodeMethodKind.Getter when codeMethod.AccessedProperty?.Type.IsCollection ?? false => $"array<{conventions.TranslateType(codeMethod.AccessedProperty.Type)}>",
             _ => conventions.GetTypeString(codeMethod.ReturnType, codeMethod)
@@ -719,7 +719,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.IncreaseIndent(2);
             errorMappings.ToList().ForEach(errorMapping =>
             {
-                writer.WriteLine($"'{errorMapping.Key}' => [{errorMapping.Value.Name}::class, '{CreateDiscriminatorMethodName}'],");
+                writer.WriteLine($"'{errorMapping.Key}' => [{errorMapping.Value.Name.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'],");
             });
             writer.DecreaseIndent();
             writer.WriteLine("];");
