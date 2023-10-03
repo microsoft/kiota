@@ -268,7 +268,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     {
         return codeMethod.Kind switch
         {
-            CodeMethodKind.Deserializer => "array<string|int, callable(ParseNode): void>",
+            CodeMethodKind.Deserializer => "array<string, callable(ParseNode): void>",
             CodeMethodKind.Getter when codeMethod.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false => "array<string, mixed>",
             CodeMethodKind.Getter when codeMethod.AccessedProperty?.Type.IsCollection ?? false => $"array<{conventions.TranslateType(codeMethod.AccessedProperty.Type)}>",
             _ => conventions.GetTypeString(codeMethod.ReturnType, codeMethod)
