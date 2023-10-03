@@ -258,7 +258,6 @@ public class PhpLanguageRefinerTests
             Name = "property",
             Type = composedType
         });
-
         await ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         Assert.NotNull(root.FindChildByName<CodeClass>("UnionWrapper", false));
     }
@@ -289,5 +288,4 @@ public class PhpLanguageRefinerTests
         Assert.True(root.FindChildByName<CodeClass>("Union", false) is CodeClass unionTypeWrapper && unionTypeWrapper.OriginalComposedType != null);
         Assert.True(root.FindChildByName<CodeClass>("UnionWrapper", false) is null);
     }
-
 }
