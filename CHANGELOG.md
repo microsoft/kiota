@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds codes files in typescript to reduce number of generated files. [#2116](https://github.com/microsoft/kiota/issues/2116)
 - Fix null reference exception when a parameter is defined without a schema. (CLI).
 - Log a message to stderr if a request is skipped due to missing data. (CLI) [#2210](https://github.com/microsoft/kiota/issues/2210)
+- Fixes code file generation in typescript [#3419](https://github.com/microsoft/kiota/issues/3419)
 
 ## [1.6.1] - 2023-09-11
 

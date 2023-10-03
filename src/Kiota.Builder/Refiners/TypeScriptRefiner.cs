@@ -174,7 +174,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
     {
-        List<CodeElement> functions = new List<CodeElement> { codeInterface };
+        List<CodeElement> functions = new List<CodeElement>();
 
         foreach (var element in codeNamespace.GetChildElements(true))
         {
@@ -182,7 +182,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 if (codeFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Serializer) &&
                     codeFunction.OriginalLocalMethod.Parameters
-                        .Any(x => x?.Type?.Name?.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase) ?? false))
+                        .Any(x => x.Type.Name?.Equals(codeInterface.Name, StringComparison.OrdinalIgnoreCase) ?? false))
                 {
                     functions.Add(codeFunction);
                 }
@@ -195,6 +195,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         }
 
+        if (!functions.Any())
+            return;
+
+        functions.Insert(0, codeInterface);
         codeNamespace.TryAddCodeFile(codeInterface.Name, functions.ToArray());
     }
 
@@ -204,10 +208,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .Where(static x => x.IsOfKind(CodeMethodKind.RequestGenerator))
             .SelectMany(static x => x.Parameters)
             .Where(static x => x.IsOfKind(CodeParameterKind.RequestConfiguration))
-            .Select(static x => x?.Type?.Name)
+            .Select(static x => x.Type?.Name)
             .Where(static x => !string.IsNullOrEmpty(x))
             .OfType<string>()
             .ToList();
+
+        if (!elementNames.Any())
+            return;
 
         List<CodeInterface> configClasses = codeNamespace.FindChildrenByName<CodeInterface>(elementNames, false)
             .Where(static x => x != null)
@@ -215,7 +222,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             .ToList();
 
         List<string> queryParamClassNames = configClasses.Where(x => x != null)
-            .Select(static w => w.GetPropertyOfKind(CodePropertyKind.QueryParameters)?.Type?.Name)
+            .Select(static w => w.GetPropertyOfKind(CodePropertyKind.QueryParameters)?.Type.Name)
             .Where(static x => !string.IsNullOrEmpty(x))
             .OfType<string>()
             .ToList();
