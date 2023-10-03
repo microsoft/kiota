@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The default status code response is now used as 4XX and 5XX when those class responses are not provided in the description. [#3245](https://github.com/microsoft/kiota/issues/3245)
 - Adds codes files in typescript to reduce number of generated files. [#2116](https://github.com/microsoft/kiota/issues/2116)
 - Fix null reference exception when a parameter is defined without a schema. (CLI).
+- Log a message to stderr if a request is skipped due to missing data. (CLI) [2210](https://github.com/microsoft/kiota/issues/2210)
 
 ## [1.6.1] - 2023-09-11
 
