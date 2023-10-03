@@ -17,21 +17,18 @@ internal partial class StructuredMimeTypesCollection : ICollection<string>
     public int Count => _mimeTypes.Count;
 
     public bool IsReadOnly => false;
-    public StructuredMimeTypesCollection()
-    {
-        _mimeTypes = new(StringComparer.OrdinalIgnoreCase);
-    }
+    public StructuredMimeTypesCollection() : this(Array.Empty<string>()) { }
     public StructuredMimeTypesCollection(IEnumerable<string> mimeTypes)
     {
         ArgumentNullException.ThrowIfNull(mimeTypes);
         _mimeTypes = mimeTypes.Select(GetKeyAndPriority)
                                 .OfType<KeyValuePair<string, float>>()
                                 .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase);
-        if (!_mimeTypes.Any())
-            throw new ArgumentException("No valid mime types were provided", nameof(mimeTypes));
     }
     private static KeyValuePair<string, float>? GetKeyAndPriority(string rawFormat)
     {
+        if (string.IsNullOrEmpty(rawFormat))
+            return null;
         var match = mimeTypesRegexInstance.Match(rawFormat);
         if (match.Success)
         {
@@ -53,10 +50,14 @@ internal partial class StructuredMimeTypesCollection : ICollection<string>
     }
     public bool Contains(string mimeType)
     {
+        if (string.IsNullOrEmpty(mimeType))
+            return false;
         return _mimeTypes.ContainsKey(mimeType);
     }
     public float? GetPriority(string mimeType)
     {
+        if (string.IsNullOrEmpty(mimeType))
+            return null;
         return _mimeTypes.TryGetValue(mimeType, out var priority) ? priority : null;
     }
 

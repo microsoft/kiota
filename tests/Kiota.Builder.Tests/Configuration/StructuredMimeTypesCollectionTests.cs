@@ -11,7 +11,6 @@ public sealed class StructuredMimeTypesCollectionTests
     public void Defensive()
     {
         Assert.Throws<ArgumentNullException>(() => new StructuredMimeTypesCollection(null!));
-        Assert.Throws<ArgumentException>(() => new StructuredMimeTypesCollection(Array.Empty<string>()));
     }
     [Fact]
     public void ParsesWithOrWithoutPriorities()
@@ -19,8 +18,6 @@ public sealed class StructuredMimeTypesCollectionTests
         var mimeTypes = new StructuredMimeTypesCollection(new[] { "application/json", "application/xml;q=0.8" });
         Assert.Equal("application/json;q=1", mimeTypes.First(), StringComparer.OrdinalIgnoreCase);
         Assert.Equal("application/xml;q=0.8", mimeTypes.Last(), StringComparer.OrdinalIgnoreCase);
-        Assert.Contains("application/json", mimeTypes);
-        Assert.Contains("application/xml", mimeTypes);
         Assert.DoesNotContain("application/atom+xml", mimeTypes);
         Assert.Null(mimeTypes.GetPriority("application/atom+xml"));
         Assert.Equal(1, mimeTypes.GetPriority("application/json"));

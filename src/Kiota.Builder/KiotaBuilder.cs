@@ -1526,7 +1526,7 @@ public partial class KiotaBuilder
                 var mediaType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Value;
                 foreach (var encodingEntry in mediaType.Encoding
                                                         .Where(x => !string.IsNullOrEmpty(x.Value.ContentType) &&
-                                                                config.StructuredMimeTypes.Contains(x.Value.ContentType.Split(';', StringSplitOptions.RemoveEmptyEntries)[0])))
+                                                                config.OrderedStructuredMimeTypes.Contains(x.Value.ContentType)))
                 {
                     if (CreateModelDeclarations(currentNode, requestBodySchema.Properties[encodingEntry.Key], operation, method, $"{operationType}RequestBody", isRequestBody: true) is CodeType propertyType &&
                         propertyType.TypeDefinition is not null)

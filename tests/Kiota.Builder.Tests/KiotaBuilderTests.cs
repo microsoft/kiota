@@ -817,8 +817,8 @@ servers:
         Assert.NotNull(treeNode);
         Assert.Equal("GraphClient", configuration.ClientClassName);
         Assert.Equal("Microsoft.Graph", configuration.ClientNamespaceName);
-        Assert.Contains("application/json", configuration.StructuredMimeTypes);
-        Assert.Contains("application/xml", configuration.StructuredMimeTypes);
+        Assert.Contains("application/json;q=1", configuration.StructuredMimeTypes);
+        Assert.Contains("application/xml;q=1", configuration.StructuredMimeTypes);
         _tempFiles.Add(tempFilePath);
     }
     [Fact]
@@ -6825,7 +6825,7 @@ components:
         Assert.NotNull(rbClass);
         var postMethod = rbClass.FindChildByName<CodeMethod>("Post", false);
         Assert.NotNull(postMethod);
-        var bodyParameter = postMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RequestBody));
+        var bodyParameter = postMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestBody));
         Assert.NotNull(bodyParameter);
         Assert.Equal("MultipartBody", bodyParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
         var addressClass = codeModel.FindChildByName<CodeClass>("Address");
