@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         return Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            CorrectCommonNames(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             DisableActionOf(generatedCode,
@@ -43,7 +45,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             cancellationToken.ThrowIfCancellationRequested();
-            ReplaceBinaryByNativeType(generatedCode, "bytes", string.Empty);
+            ReplaceBinaryByNativeType(generatedCode, "bytes", string.Empty, true);
             ReplaceReservedNames(
                 generatedCode,
                 new PythonReservedNamesProvider(),
@@ -68,10 +70,12 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ReplacePropertyNames(generatedCode,
                 new() {
+                    CodePropertyKind.AdditionalData,
                     CodePropertyKind.Custom,
                     CodePropertyKind.QueryParameter,
+                    CodePropertyKind.RequestBuilder,
                 },
-                static s => s.ToSnakeCase());
+                static s => s.ToFirstCharacterLowerCase().ToSnakeCase());
             AddParentClassToErrorClasses(
                 generatedCode,
                 "APIError",
@@ -114,7 +118,9 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                     $"{AbstractionsPackageName}.serialization.ParseNodeFactoryRegistry" });
             cancellationToken.ThrowIfCancellationRequested();
             AddQueryParameterMapperMethod(
-                generatedCode
+                generatedCode,
+                "get_query_parameter",
+                "original_name"
             );
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
@@ -158,6 +164,56 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeClass { OriginalComposedType: CodeIntersectionType intersectionType } && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             $"{AbstractionsPackageName}.serialization", "ParseNodeHelper"),
     };
+
+    private static void CorrectCommonNames(CodeElement currentElement)
+    {
+        if (currentElement is CodeMethod m &&
+            currentElement.Parent is CodeClass parentClassM)
+        {
+            parentClassM.RenameChildElement(m.Name, m.Name.ToFirstCharacterLowerCase().ToSnakeCase());
+
+            foreach (var param in m.Parameters)
+            {
+                param.Name = param.Name.ToFirstCharacterLowerCase().ToSnakeCase();
+            }
+        }
+        else if (currentElement is CodeClass c)
+        {
+            c.Name = c.Name.ToFirstCharacterUpperCase();
+        }
+        else if (currentElement is CodeProperty p &&
+            (p.IsOfKind(CodePropertyKind.RequestAdapter) ||
+            p.IsOfKind(CodePropertyKind.PathParameters) ||
+            p.IsOfKind(CodePropertyKind.QueryParameters) ||
+            p.IsOfKind(CodePropertyKind.UrlTemplate)) &&
+            currentElement.Parent is CodeClass parentClassP)
+        {
+            if (p.SerializationName != null)
+                p.SerializationName = p.Name;
+
+            parentClassP.RenameChildElement(p.Name, p.Name.ToFirstCharacterLowerCase().ToSnakeCase());
+        }
+        else if (currentElement is CodeIndexer i)
+        {
+            i.IndexParameter.Name = i.IndexParameter.Name.ToFirstCharacterLowerCase().ToSnakeCase();
+        }
+        else if (currentElement is CodeEnum e)
+        {
+            foreach (var option in e.Options)
+            {
+                if (!string.IsNullOrEmpty(option.Name) && Char.IsLower(option.Name[0]))
+                {
+                    if (string.IsNullOrEmpty(option.SerializationName))
+                    {
+                        option.SerializationName = option.Name;
+                    }
+                    option.Name = option.Name.ToCamelCase().ToFirstCharacterUpperCase();
+                }
+            }
+        }
+
+        CrawlTree(currentElement, element => CorrectCommonNames(element));
+    }
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {
         block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
@@ -184,6 +240,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
         }
+        currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
     private static void CorrectMethodType(CodeMethod currentMethod)

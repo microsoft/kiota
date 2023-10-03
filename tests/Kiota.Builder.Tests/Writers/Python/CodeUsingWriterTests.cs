@@ -35,7 +35,7 @@ public class CodeUsingWriterTests
             Alias = "baz",
             Declaration = new CodeType
             {
-                Name = "bar",
+                Name = "Bar",
                 TypeDefinition = codeClass,
             },
         };
@@ -50,7 +50,7 @@ public class CodeUsingWriterTests
         var usingWriter = new CodeUsingWriter("foo");
         var codeClass = root.AddClass(new CodeClass
         {
-            Name = "bar",
+            Name = "Bar",
 
         }).First();
         var us = new CodeUsing

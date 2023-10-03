@@ -14,7 +14,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PythonConventionServic
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLine("from enum import Enum");
         writer.WriteLine();
-        writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}(str, Enum):");
+        writer.WriteLine($"class {codeElement.Name}(str, Enum):");
         writer.IncreaseIndent();
         if (!codeElement.Options.Any())
         {
@@ -25,7 +25,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PythonConventionServic
             codeElement.Options.ToList().ForEach(x =>
             {
                 conventions.WriteInLineDescription(x.Documentation.Description, writer);
-                writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()} = \"{x.WireName}\",");
+                writer.WriteLine($"{x.Name} = \"{x.WireName}\",");
             });
         }
     }
