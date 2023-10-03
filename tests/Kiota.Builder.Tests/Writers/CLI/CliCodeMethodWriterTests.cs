@@ -1090,7 +1090,8 @@ public class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("var body = invocationContext.ParseResult.GetValueForOption(bodyOption) ?? string.Empty;", result);
         Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
         Assert.Contains("var model = parseNode.GetObjectValue<Content>(Content.CreateFromDiscriminatorValue);", result);
-        Assert.Contains("if (model is null) return;", result);
+        Assert.Contains("if (model is null)", result);
+        Assert.Contains("Console.Error.WriteLine(\"No model data to send.\")", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
@@ -1160,7 +1161,8 @@ public class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("var body = invocationContext.ParseResult.GetValueForOption(bodyOption) ?? string.Empty;", result);
         Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
         Assert.Contains("var model = parseNode.GetCollectionOfObjectValues<Content>(Content.CreateFromDiscriminatorValue)?.ToList();", result);
-        Assert.Contains("if (model is null) return;", result);
+        Assert.Contains("if (model is null)", result);
+        Assert.Contains("Console.Error.WriteLine(\"No model data to send.\")", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var reqAdapter = invocationContext.GetRequestAdapter()", result);
@@ -1220,7 +1222,8 @@ public class CliCodeMethodWriterTests : IDisposable
         Assert.Contains("inputFileOption.IsRequired = true;", result);
         Assert.Contains("command.AddOption(inputFileOption);", result);
         Assert.Contains("var inputFile = invocationContext.ParseResult.GetValueForOption(inputFileOption);", result);
-        Assert.Contains("if (inputFile is null || !inputFile.Exists) return;", result);
+        Assert.Contains("if (inputFile is null || !inputFile.Exists)", result);
+        Assert.Contains("Console.Error.WriteLine(\"No available file to send.\")", result);
         Assert.Contains("using var stream = inputFile.OpenRead();", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
         Assert.Contains("if (testPath is not null) requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
